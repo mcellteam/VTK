@@ -1,0 +1,6 @@
+
+Made a fork from https://gitlab.kitware.com/vtk/vtk on 4/4/2020 from master, 8f8860e.
+
+TODO: update when release v9.0.0 will be out.
+
+Keeping it as it is for now, build does not pass due to some download issues, so CMakeLists.txtr update will be needed.
