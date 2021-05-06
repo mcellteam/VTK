@@ -69,6 +69,12 @@ public:
   vtkGetStringMacro(MTLFileComment);
   //@}
 
+
+  // MCell - Specify names of objects to be exported
+  void SetActorNames(const std::vector<std::string>& ActorNames_) {
+	  ActorNames = ActorNames_;
+  }
+
 protected:
   vtkOBJExporter();
   ~vtkOBJExporter() override;
@@ -81,6 +87,9 @@ protected:
   char* MTLFileComment;
   bool FlipTexture;
   std::map<std::string, vtkTexture*> TextureFileMap;
+
+  // MCell
+  std::vector<std::string> ActorNames;
 
 private:
   vtkOBJExporter(const vtkOBJExporter&) = delete;

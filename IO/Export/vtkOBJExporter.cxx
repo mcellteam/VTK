@@ -131,11 +131,16 @@ void vtkOBJExporter::WriteData()
   vtkCollectionSimpleIterator actorsIt;
   vtkActor* anActor;
   int idStart = 1;
+  int actorIndex = 0; // MCell
   for (allActors->InitTraversal(actorsIt); (anActor = allActors->GetNextActor(actorsIt));)
   {
     vtkAssemblyPath* aPath;
     for (anActor->InitPathTraversal(); (aPath = anActor->GetNextPath());)
     {
+      assert(actorIndex < ActorNames.size());
+      fpObj << "\no " << ActorNames[actorIndex] << "\n"; // MCell - setting names
+      actorIndex++;
+
       vtkActor* aPart = vtkActor::SafeDownCast(aPath->GetLastNode()->GetViewProp());
       this->WriteAnActor(aPart, fpObj, fpMtl, modelName, idStart);
     }
@@ -297,7 +302,8 @@ void vtkOBJExporter::WriteAnActor(
   }
 
   // write out a group name and material
-  fpObj << "\ng grp" << idStart << "\n";
+  // fpObj << "\ng grp" << idStart << "\n"; // MCell - not needed, we are generating object name
+  fpObj << "\n"; // MCell - replacement of the previous line
   fpObj << "usemtl mtl" << idStart << "\n";
   // write out verts if any
   if (pd->GetNumberOfVerts() > 0)
