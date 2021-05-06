@@ -81,7 +81,9 @@ protected:
 
   void WriteData() override;
   void WriteAnActor(
-    vtkActor* anActor, std::ostream& fpObj, std::ostream& fpMat, std::string& modelName, int& id);
+    vtkActor* anActor, std::ostream& fpObj, std::ostream& fpMat, std::string& modelName, int& id
+	, const std::string& name // MCell
+  );
   char* FilePrefix;
   char* OBJFileComment;
   char* MTLFileComment;

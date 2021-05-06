@@ -1,0 +1,10 @@
+Clonend VTK repo with master commit 8f8860e75d716b95b714c7ddc3d865f6a5c05e38
+
+All changes are marked with comments 
+// MCell
+
+
+Multiline changes are ended with 
+// ^^MCell
+
+vtkObjectExporter.h/cxx was changed

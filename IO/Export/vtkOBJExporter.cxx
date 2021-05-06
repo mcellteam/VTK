@@ -137,12 +137,19 @@ void vtkOBJExporter::WriteData()
     vtkAssemblyPath* aPath;
     for (anActor->InitPathTraversal(); (aPath = anActor->GetNextPath());)
     {
-      assert(actorIndex < ActorNames.size());
-      fpObj << "\no " << ActorNames[actorIndex] << "\n"; // MCell - setting names
+      // MCell
+      if (actorIndex >= ActorNames.size()) {
+    	vtkErrorMacro(<< "Not enough names provided");
+    	return;
+      }
+      const std::string& name = ActorNames[actorIndex];
       actorIndex++;
+      // ^^ MCell
 
       vtkActor* aPart = vtkActor::SafeDownCast(aPath->GetLastNode()->GetViewProp());
-      this->WriteAnActor(aPart, fpObj, fpMtl, modelName, idStart);
+      this->WriteAnActor(aPart, fpObj, fpMtl, modelName, idStart
+    		  , name // MCell
+      );
     }
   }
   // Write texture files
@@ -171,7 +178,9 @@ void vtkOBJExporter::WriteData()
 }
 
 void vtkOBJExporter::WriteAnActor(
-  vtkActor* anActor, std::ostream& fpObj, std::ostream& fpMtl, std::string& modelName, int& idStart)
+  vtkActor* anActor, std::ostream& fpObj, std::ostream& fpMtl, std::string& modelName, int& idStart
+  , const std::string& name // MCell
+)
 {
   vtkDataSet* ds;
   vtkNew<vtkPolyData> pd;
@@ -200,7 +209,8 @@ void vtkOBJExporter::WriteAnActor(
   }
   vtkNumberToString convert;
   double temp;
-  fpMtl << "newmtl mtl" << idStart << "\n";
+  //fpMtl << "newmtl mtl" << idStart << "\n"; // MCell
+  fpMtl << "newmtl mtl_" << name << "\n"; // MCell
   tempd = prop->GetAmbientColor();
   temp = prop->GetAmbient();
   fpMtl << "Ka " << convert(temp * tempd[0]) << " " << convert(temp * tempd[1]) << " "
@@ -215,6 +225,12 @@ void vtkOBJExporter::WriteAnActor(
         << convert(temp * tempd[2]) << "\n";
   fpMtl << "Ns " << convert(prop->GetSpecularPower()) << "\n";
   fpMtl << "Tr " << convert(prop->GetOpacity()) << "\n";
+  // MCell
+  // Tr is not in spec but keeping it (http://paulbourke.net/dataformats/mtl/)
+  // interpreted as translucency by Blender
+  fpMtl << "d " << convert(prop->GetOpacity()) << "\n"; // d is used by Blender
+  // ^^MCell
+
   fpMtl << "illum 3\n";
 
   // Actor has the texture
@@ -266,6 +282,8 @@ void vtkOBJExporter::WriteAnActor(
     pd->DeepCopy(ds);
   }
 
+  fpObj << "\no " << name << "\n"; // MCell - object name
+
   // write out the points
   points = vtkPoints::New();
   trans->TransformPoints(pd->GetPoints(), points);
@@ -304,7 +322,8 @@ void vtkOBJExporter::WriteAnActor(
   // write out a group name and material
   // fpObj << "\ng grp" << idStart << "\n"; // MCell - not needed, we are generating object name
   fpObj << "\n"; // MCell - replacement of the previous line
-  fpObj << "usemtl mtl" << idStart << "\n";
+  //fpObj << "usemtl mtl" << idStart << "\n"; // MCell
+  fpObj << "usemtl mtl_" << name << "\n"; // MCell
   // write out verts if any
   if (pd->GetNumberOfVerts() > 0)
   {
