@@ -114,10 +114,10 @@
 /* Property class callbacks */
 static herr_t H5P__dacc_reg_prop(H5P_genclass_t *pclass);
 static herr_t H5P__encode_chunk_cache_nslots(const void *value, void **_pp,
-    size_t *size, void*);
+    size_t *size); // , void*);
 static herr_t H5P__decode_chunk_cache_nslots(const void **_pp, void *_value);
 static herr_t H5P__encode_chunk_cache_nbytes(const void *value, void **_pp,
-    size_t *size, void*);
+    size_t *size); // , void*);
 static herr_t H5P__decode_chunk_cache_nbytes(const void **_pp, void *_value);
 
 /* Property list callbacks */
@@ -125,7 +125,7 @@ static herr_t H5P__dacc_vds_view_enc(const void *value, void **pp, size_t *size)
 static herr_t H5P__dacc_vds_view_dec(const void **pp, void *value);
 static herr_t H5P__dapl_vds_file_pref_set(hid_t prop_id, const char* name, size_t size, void* value);
 static herr_t H5P__dapl_vds_file_pref_get(hid_t prop_id, const char* name, size_t size, void* value);
-static herr_t H5P__dapl_vds_file_pref_enc(const void *value, void **_pp, size_t *size, void*);
+static herr_t H5P__dapl_vds_file_pref_enc(const void *value, void **_pp, size_t *size); // , void*);
 static herr_t H5P__dapl_vds_file_pref_dec(const void **_pp, void *value);
 static herr_t H5P__dapl_vds_file_pref_del(hid_t prop_id, const char* name, size_t size, void* value);
 static herr_t H5P__dapl_vds_file_pref_copy(const char* name, size_t size, void* value);
@@ -314,14 +314,14 @@ H5P__dapl_vds_file_pref_get(hid_t H5_ATTR_UNUSED prop_id, const char H5_ATTR_UNU
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5P__dapl_vds_file_pref_enc(const void *value, void **_pp, size_t *size, void* udata)
+H5P__dapl_vds_file_pref_enc(const void *value, void **_pp, size_t *size) // , void* udata)
 {
     const char *vds_file_pref = *(const char * const *)value;
     uint8_t **pp = (uint8_t **)_pp;
     size_t len = 0;
     uint64_t enc_value;
     unsigned enc_size;
-    (void)udata;
+    // (void)udata;
 
     FUNC_ENTER_NOAPI_NOINIT_NOERR
 
@@ -880,12 +880,12 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5P__encode_chunk_cache_nslots(const void *value, void **_pp, size_t *size, void *udata)
+H5P__encode_chunk_cache_nslots(const void *value, void **_pp, size_t *size) //, void *udata)
 {
     uint64_t enc_value;     /* Property value to encode */
     uint8_t **pp = (uint8_t **)_pp;
     unsigned enc_size;      /* Size of encoded property */
-    (void)udata;
+    // (void)udata;
 
     FUNC_ENTER_PACKAGE_NOERR
 
@@ -983,12 +983,12 @@ H5P__decode_chunk_cache_nslots(const void **_pp, void *_value)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5P__encode_chunk_cache_nbytes(const void *value, void **_pp, size_t *size, void* udata)
+H5P__encode_chunk_cache_nbytes(const void *value, void **_pp, size_t *size) //, void* udata)
 {
     uint64_t enc_value;     /* Property value to encode */
     uint8_t **pp = (uint8_t **)_pp;
     unsigned enc_size;      /* Size of encoded property */
-    (void)udata;
+    // (void)udata;
 
     FUNC_ENTER_PACKAGE_NOERR
 

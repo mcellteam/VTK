@@ -305,7 +305,7 @@ static herr_t H5P__facc_fclose_degree_enc(const void *value, void **_pp, size_t 
 static herr_t H5P__facc_fclose_degree_dec(const void **pp, void *value);
 static herr_t H5P__facc_multi_type_enc(const void *value, void **_pp, size_t *size);
 static herr_t H5P__facc_multi_type_dec(const void **_pp, void *value);
-static herr_t H5P__facc_libver_type_enc(const void *value, void **_pp, size_t *size, void*);
+static herr_t H5P__facc_libver_type_enc(const void *value, void **_pp, size_t *size); // , void*);
 static herr_t H5P__facc_libver_type_dec(const void **_pp, void *value);
 
 /* Metadata cache log location property callbacks */
@@ -3871,11 +3871,11 @@ H5P__facc_multi_type_dec(const void **_pp, void *_value)
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5P__facc_libver_type_enc(const void *value, void **_pp, size_t *size, void* udata)
+H5P__facc_libver_type_enc(const void *value, void **_pp, size_t *size) // , void* udata)
 {
     const H5F_libver_t *type = (const H5F_libver_t *)value; /* Create local alias for values */
     uint8_t **pp = (uint8_t **)_pp;
-    (void)udata;
+    // (void)udata;
 
     FUNC_ENTER_STATIC_NOERR
 
