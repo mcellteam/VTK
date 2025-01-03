@@ -221,7 +221,7 @@ const char    *CommandName = NULL;
 /* various state variables */
 NamespaceInfo *currentNamespace = NULL;
 ClassInfo     *currentClass = NULL;
-FunctionInfo  *currentFunction = NULL;
+FunctionInfo  *currentFunction2 = NULL;
 TemplateInfo  *currentTemplate = NULL;
 const char    *currentEnumName = NULL;
 const char    *currentEnumValue = NULL;
@@ -1036,7 +1036,7 @@ void popTemplate()
 /*----------------------------------------------------------------
  * Function signatures
  *
- * operates on: currentFunction
+ * operates on: currentFunction2
  */
 
 /* "private" variables */
@@ -1569,7 +1569,7 @@ const char *getScope()
 /*----------------------------------------------------------------
  * Function stack
  *
- * operates on: currentFunction
+ * operates on: currentFunction2
  */
 
 /* "private" variables */
@@ -1580,9 +1580,9 @@ int functionDepth = 0;
 
 void pushFunction()
 {
-  functionStack[functionDepth] = currentFunction;
-  currentFunction = (FunctionInfo *)malloc(sizeof(FunctionInfo));
-  vtkParse_InitFunction(currentFunction);
+  functionStack[functionDepth] = currentFunction2;
+  currentFunction2 = (FunctionInfo *)malloc(sizeof(FunctionInfo));
+  vtkParse_InitFunction(currentFunction2);
   if (!functionStack[functionDepth])
   {
     startSig();
@@ -1599,10 +1599,10 @@ void pushFunction()
 
 void popFunction()
 {
-  FunctionInfo *newFunction = currentFunction;
+  FunctionInfo *newFunction = currentFunction2;
 
   --functionDepth;
-  currentFunction = functionStack[functionDepth];
+  currentFunction2 = functionStack[functionDepth];
   clearVarName();
   if (functionVarNameStack[functionDepth])
   {
@@ -6099,8 +6099,8 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 
     {
       postSig("(");
-      currentFunction->IsExplicit = ((getType() & VTK_PARSE_EXPLICIT) != 0);
-      set_return(currentFunction, getType(), getTypeId(), 0);
+      currentFunction2->IsExplicit = ((getType() & VTK_PARSE_EXPLICIT) != 0);
+      set_return(currentFunction2, getType(), getTypeId(), 0);
     }
 
     break;
@@ -6116,9 +6116,9 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
     {
       postSig(";");
       closeSig();
-      currentFunction->IsOperator = 1;
-      currentFunction->Name = "operator typecast";
-      currentFunction->Comment = vtkstrdup(getComment());
+      currentFunction2->IsOperator = 1;
+      currentFunction2->Name = "operator typecast";
+      currentFunction2->Comment = vtkstrdup(getComment());
       vtkParseDebug("Parsed operator", "operator typecast");
     }
 
@@ -6135,9 +6135,9 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
     {
       postSig(";");
       closeSig();
-      currentFunction->Name = (((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval.str);
-      currentFunction->Comment = vtkstrdup(getComment());
-      vtkParseDebug("Parsed operator", currentFunction->Name);
+      currentFunction2->Name = (((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval.str);
+      currentFunction2->Comment = vtkstrdup(getComment());
+      vtkParseDebug("Parsed operator", currentFunction2->Name);
     }
 
     break;
@@ -6146,8 +6146,8 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 
     {
       postSig("(");
-      currentFunction->IsOperator = 1;
-      set_return(currentFunction, getType(), getTypeId(), 0);
+      currentFunction2->IsOperator = 1;
+      set_return(currentFunction2, getType(), getTypeId(), 0);
     }
 
     break;
@@ -6175,16 +6175,16 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
     {
       postSig(";");
       closeSig();
-      currentFunction->Name = (((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval.str);
-      currentFunction->Comment = vtkstrdup(getComment());
-      vtkParseDebug("Parsed func", currentFunction->Name);
+      currentFunction2->Name = (((yyGLRStackItem const *)yyvsp)[YYFILL (-1)].yystate.yysemantics.yysval.str);
+      currentFunction2->Comment = vtkstrdup(getComment());
+      vtkParseDebug("Parsed func", currentFunction2->Name);
     }
 
     break;
 
   case 220:
 
-    { postSig(" const"); currentFunction->IsConst = 1; }
+    { postSig(" const"); currentFunction2->IsConst = 1; }
 
     break;
 
@@ -6230,11 +6230,11 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
       postSig(" "); postSig((((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval.str));
       if (strcmp((((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval.str), "final") == 0)
       {
-        currentFunction->IsFinal = 1;
+        currentFunction2->IsFinal = 1;
       }
       else if (strcmp((((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval.str), "override") == 0)
       {
-        currentFunction->IsOverride = 1;
+        currentFunction2->IsOverride = 1;
       }
     }
 
@@ -6242,7 +6242,7 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 
   case 234:
 
-    { currentFunction->IsDeleted = 1; }
+    { currentFunction2->IsDeleted = 1; }
 
     break;
 
@@ -6250,7 +6250,7 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 
     {
       postSig(" = 0");
-      currentFunction->IsPureVirtual = 1;
+      currentFunction2->IsPureVirtual = 1;
       if (currentClass) { currentClass->IsAbstract = 1; }
     }
 
@@ -6266,7 +6266,7 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 
     {
       chopSig();
-      set_return(currentFunction, getType(), getTypeId(), 0);
+      set_return(currentFunction2, getType(), getTypeId(), 0);
     }
 
     break;
@@ -6275,7 +6275,7 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 
     {
       postSig("(");
-      set_return(currentFunction, getType(), getTypeId(), 0);
+      set_return(currentFunction2, getType(), getTypeId(), 0);
     }
 
     break;
@@ -6292,18 +6292,18 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
       closeSig();
       if (getType() & VTK_PARSE_VIRTUAL)
       {
-        currentFunction->IsVirtual = 1;
+        currentFunction2->IsVirtual = 1;
       }
       if (getType() & VTK_PARSE_EXPLICIT)
       {
-        currentFunction->IsExplicit = 1;
+        currentFunction2->IsExplicit = 1;
       }
       if (getType() & VTK_PARSE_WRAPEXCLUDE)
       {
-        currentFunction->IsExcluded = 1;
+        currentFunction2->IsExcluded = 1;
       }
-      currentFunction->Name = (((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval.str);
-      currentFunction->Comment = vtkstrdup(getComment());
+      currentFunction2->Name = (((yyGLRStackItem const *)yyvsp)[YYFILL (-3)].yystate.yysemantics.yysval.str);
+      currentFunction2->Comment = vtkstrdup(getComment());
     }
 
     break;
@@ -6321,7 +6321,7 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
     {
       postSig(";");
       closeSig();
-      vtkParseDebug("Parsed func", currentFunction->Name);
+      vtkParseDebug("Parsed func", currentFunction2->Name);
     }
 
     break;
@@ -6358,13 +6358,13 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 
   case 266:
 
-    { currentFunction->IsVariadic = 1; postSig(", ..."); }
+    { currentFunction2->IsVariadic = 1; postSig(", ..."); }
 
     break;
 
   case 267:
 
-    { currentFunction->IsVariadic = 1; postSig("..."); }
+    { currentFunction2->IsVariadic = 1; postSig("..."); }
 
     break;
 
@@ -6381,14 +6381,14 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
       vtkParse_InitValue(param);
 
       handle_complex_type(param, getType(), (((yyGLRStackItem const *)yyvsp)[YYFILL (0)].yystate.yysemantics.yysval.integer), copySig());
-      add_legacy_parameter(currentFunction, param);
+      add_legacy_parameter(currentFunction2, param);
 
       if (getVarName())
       {
         param->Name = getVarName();
       }
 
-      vtkParse_AddParameterToFunction(currentFunction, param);
+      vtkParse_AddParameterToFunction(currentFunction2, param);
     }
 
     break;
@@ -6396,10 +6396,10 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
   case 270:
 
     {
-      int i = currentFunction->NumberOfParameters-1;
+      int i = currentFunction2->NumberOfParameters-1;
       if (getVarValue())
       {
-        currentFunction->Parameters[i]->Value = getVarValue();
+        currentFunction2->Parameters[i]->Value = getVarValue();
       }
     }
 
@@ -6675,7 +6675,7 @@ yyuserAction (yyRuleNum yyn, size_t yyrhslen, yyGLRStackItem* yyvsp,
 
   case 308:
 
-    { currentFunction->IsConst = 1; }
+    { currentFunction2->IsConst = 1; }
 
     break;
 
@@ -9997,7 +9997,7 @@ void start_class(const char *classname, int is_struct_or_union)
     access_level = VTK_ACCESS_PUBLIC;
   }
 
-  vtkParse_InitFunction(currentFunction);
+  vtkParse_InitFunction(currentFunction2);
   startSig();
   clearComment();
   clearType();
@@ -10687,15 +10687,15 @@ void handle_attribute(const char *att, int pack)
              args && role == VTK_PARSE_ATTRIB_FUNC)
     {
       /* add to the preconditions */
-      vtkParse_AddStringToArray(&currentFunction->Preconds,
-                                &currentFunction->NumberOfPreconds,
+      vtkParse_AddStringToArray(&currentFunction2->Preconds,
+                                &currentFunction2->NumberOfPreconds,
                                 vtkstrndup(args, la));
     }
     else if (l == 13 && strncmp(att, "vtk::sizehint", l) == 0 &&
              args && role == VTK_PARSE_ATTRIB_FUNC)
     {
       /* first arg is parameter name, unless return value hint */
-      ValueInfo *arg = currentFunction->ReturnValue;
+      ValueInfo *arg = currentFunction2->ReturnValue;
       size_t n = vtkParse_SkipId(args);
       preproc_int_t count;
       int is_unsigned;
@@ -10707,16 +10707,16 @@ void handle_attribute(const char *att, int pack)
       {
         do { n++; } while (args[n] == ' ');
         /* find the named parameter */
-        for (i = 0; i < currentFunction->NumberOfParameters; i++)
+        for (i = 0; i < currentFunction2->NumberOfParameters; i++)
         {
-          arg = currentFunction->Parameters[i];
+          arg = currentFunction2->Parameters[i];
           if (arg->Name && strlen(arg->Name) == l &&
               strncmp(arg->Name, args, l) == 0)
           {
             break;
           }
         }
-        if (i == currentFunction->NumberOfParameters)
+        if (i == currentFunction2->NumberOfParameters)
         {
           print_parser_error("unrecognized parameter name", args, l);
           exit(1);
@@ -10736,10 +10736,10 @@ void handle_attribute(const char *att, int pack)
           arg->CountHint = NULL;
           arg->Count = (int)count;
 #ifndef VTK_PARSE_LEGACY_REMOVE
-          if (arg == currentFunction->ReturnValue)
+          if (arg == currentFunction2->ReturnValue)
           {
-            currentFunction->HaveHint = 1;
-            currentFunction->HintSize = arg->Count;
+            currentFunction2->HaveHint = 1;
+            currentFunction2->HintSize = arg->Count;
           }
 #endif
         }
@@ -10790,9 +10790,9 @@ void add_legacy_parameter(FunctionInfo *func, ValueInfo *param)
 /* reject the function, do not output it */
 void reject_function()
 {
-  vtkParse_FreeFunction(currentFunction);
-  currentFunction = (FunctionInfo *)malloc(sizeof(FunctionInfo));
-  vtkParse_InitFunction(currentFunction);
+  vtkParse_FreeFunction(currentFunction2);
+  currentFunction2 = (FunctionInfo *)malloc(sizeof(FunctionInfo));
+  vtkParse_InitFunction(currentFunction2);
   startSig();
   getMacro();
 }
@@ -10806,11 +10806,11 @@ void output_function()
   int match;
 
   /* reject template specializations */
-  n = strlen(currentFunction->Name);
-  if (currentFunction->Name[n-1] == '>')
+  n = strlen(currentFunction2->Name);
+  if (currentFunction2->Name[n-1] == '>')
   {
     /* make sure there is a matching angle bracket */
-    while (n > 0 && currentFunction->Name[n-1] != '<') { n--; }
+    while (n > 0 && currentFunction2->Name[n-1] != '<') { n--; }
     if (n > 0)
     {
       reject_function();
@@ -10819,130 +10819,130 @@ void output_function()
   }
 
   /* exclude from wrapping */
-  if (currentFunction->ReturnValue &&
-      currentFunction->ReturnValue->Type & VTK_PARSE_WRAPEXCLUDE)
+  if (currentFunction2->ReturnValue &&
+      currentFunction2->ReturnValue->Type & VTK_PARSE_WRAPEXCLUDE)
   {
-    currentFunction->ReturnValue->Type ^= VTK_PARSE_WRAPEXCLUDE;
-    currentFunction->IsExcluded = 1;
+    currentFunction2->ReturnValue->Type ^= VTK_PARSE_WRAPEXCLUDE;
+    currentFunction2->IsExcluded = 1;
   }
 
   /* friend */
-  if (currentFunction->ReturnValue &&
-      currentFunction->ReturnValue->Type & VTK_PARSE_FRIEND)
+  if (currentFunction2->ReturnValue &&
+      currentFunction2->ReturnValue->Type & VTK_PARSE_FRIEND)
   {
-    currentFunction->ReturnValue->Type ^= VTK_PARSE_FRIEND;
+    currentFunction2->ReturnValue->Type ^= VTK_PARSE_FRIEND;
     output_friend_function();
     return;
   }
 
   /* typedef */
-  if (currentFunction->ReturnValue &&
-      currentFunction->ReturnValue->Type & VTK_PARSE_TYPEDEF)
+  if (currentFunction2->ReturnValue &&
+      currentFunction2->ReturnValue->Type & VTK_PARSE_TYPEDEF)
   {
     /* for now, reject it instead of turning a method into a typedef */
-    currentFunction->ReturnValue->Type ^= VTK_PARSE_TYPEDEF;
+    currentFunction2->ReturnValue->Type ^= VTK_PARSE_TYPEDEF;
     reject_function();
     return;
   }
 
   /* static */
-  if (currentFunction->ReturnValue &&
-      currentFunction->ReturnValue->Type & VTK_PARSE_STATIC)
+  if (currentFunction2->ReturnValue &&
+      currentFunction2->ReturnValue->Type & VTK_PARSE_STATIC)
   {
-    currentFunction->IsStatic = 1;
+    currentFunction2->IsStatic = 1;
   }
 
   /* virtual */
-  if (currentFunction->ReturnValue &&
-      currentFunction->ReturnValue->Type & VTK_PARSE_VIRTUAL)
+  if (currentFunction2->ReturnValue &&
+      currentFunction2->ReturnValue->Type & VTK_PARSE_VIRTUAL)
   {
-    currentFunction->IsVirtual = 1;
+    currentFunction2->IsVirtual = 1;
   }
 
   /* the signature */
-  if (!currentFunction->Signature)
+  if (!currentFunction2->Signature)
   {
-    currentFunction->Signature = getSig();
+    currentFunction2->Signature = getSig();
   }
 
   /* template information */
   if (currentTemplate)
   {
-    currentFunction->Template = currentTemplate;
+    currentFunction2->Template = currentTemplate;
     currentTemplate = NULL;
   }
 
   /* a void argument is the same as no parameters */
-  if (currentFunction->NumberOfParameters == 1 &&
-      (currentFunction->Parameters[0]->Type & VTK_PARSE_UNQUALIFIED_TYPE) ==
+  if (currentFunction2->NumberOfParameters == 1 &&
+      (currentFunction2->Parameters[0]->Type & VTK_PARSE_UNQUALIFIED_TYPE) ==
       VTK_PARSE_VOID)
   {
-    vtkParse_FreeValue(currentFunction->Parameters[0]);
-    free(currentFunction->Parameters);
-    currentFunction->NumberOfParameters = 0;
+    vtkParse_FreeValue(currentFunction2->Parameters[0]);
+    free(currentFunction2->Parameters);
+    currentFunction2->NumberOfParameters = 0;
   }
 
   /* is it defined in a legacy macro? */
   if (macro && strcmp(macro, "VTK_LEGACY") == 0)
   {
-    currentFunction->IsLegacy = 1;
+    currentFunction2->IsLegacy = 1;
   }
 
   /* set public, protected */
   if (currentClass)
   {
-    currentFunction->Access = access_level;
+    currentFunction2->Access = access_level;
   }
   else
   {
-    currentFunction->Access = VTK_ACCESS_PUBLIC;
+    currentFunction2->Access = VTK_ACCESS_PUBLIC;
   }
 
 #ifndef VTK_PARSE_LEGACY_REMOVE
   /* a void argument is the same as no parameters */
-  if (currentFunction->NumberOfArguments == 1 &&
-      (currentFunction->ArgTypes[0] & VTK_PARSE_UNQUALIFIED_TYPE) ==
+  if (currentFunction2->NumberOfArguments == 1 &&
+      (currentFunction2->ArgTypes[0] & VTK_PARSE_UNQUALIFIED_TYPE) ==
       VTK_PARSE_VOID)
   {
-    currentFunction->NumberOfArguments = 0;
+    currentFunction2->NumberOfArguments = 0;
   }
 
   /* if return type is void, set return class to void */
-  if (currentFunction->ReturnClass == NULL &&
-      (currentFunction->ReturnType & VTK_PARSE_UNQUALIFIED_TYPE) ==
+  if (currentFunction2->ReturnClass == NULL &&
+      (currentFunction2->ReturnType & VTK_PARSE_UNQUALIFIED_TYPE) ==
        VTK_PARSE_VOID)
   {
-    currentFunction->ReturnClass = "void";
+    currentFunction2->ReturnClass = "void";
   }
 
   /* set legacy flags */
   if (currentClass)
   {
-    currentFunction->IsPublic = (access_level == VTK_ACCESS_PUBLIC);
-    currentFunction->IsProtected = (access_level == VTK_ACCESS_PROTECTED);
+    currentFunction2->IsPublic = (access_level == VTK_ACCESS_PUBLIC);
+    currentFunction2->IsProtected = (access_level == VTK_ACCESS_PROTECTED);
   }
   else
   {
-    currentFunction->IsPublic = 1;
-    currentFunction->IsProtected = 0;
+    currentFunction2->IsPublic = 1;
+    currentFunction2->IsProtected = 0;
   }
 
   /* check for too many parameters */
-  if (currentFunction->NumberOfParameters > MAX_ARGS)
+  if (currentFunction2->NumberOfParameters > MAX_ARGS)
   {
-    currentFunction->ArrayFailure = 1;
+    currentFunction2->ArrayFailure = 1;
   }
 
-  for (i = 0; i < currentFunction->NumberOfParameters; i++)
+  for (i = 0; i < currentFunction2->NumberOfParameters; i++)
   {
-    ValueInfo *param = currentFunction->Parameters[i];
+    ValueInfo *param = currentFunction2->Parameters[i];
     /* tell old wrappers that multi-dimensional arrays are bad */
     if ((param->Type & VTK_PARSE_POINTER_MASK) != 0)
     {
       if (((param->Type & VTK_PARSE_INDIRECT) == VTK_PARSE_BAD_INDIRECT) ||
           ((param->Type & VTK_PARSE_POINTER_LOWMASK) != VTK_PARSE_POINTER))
       {
-        currentFunction->ArrayFailure = 1;
+        currentFunction2->ArrayFailure = 1;
       }
     }
 
@@ -10950,14 +10950,14 @@ void output_function()
     if ((param->Type & VTK_PARSE_BASE_TYPE) == VTK_PARSE_FUNCTION)
     {
       if (i != 0 || param->Type != VTK_PARSE_FUNCTION_PTR ||
-          currentFunction->NumberOfParameters != 2 ||
-          currentFunction->Parameters[1]->Type != VTK_PARSE_VOID_PTR ||
+          currentFunction2->NumberOfParameters != 2 ||
+          currentFunction2->Parameters[1]->Type != VTK_PARSE_VOID_PTR ||
           param->Function->NumberOfParameters != 1 ||
           param->Function->Parameters[0]->Type != VTK_PARSE_VOID_PTR ||
           param->Function->Parameters[0]->NumberOfDimensions != 0 ||
           param->Function->ReturnValue->Type != VTK_PARSE_VOID)
       {
-        currentFunction->ArrayFailure = 1;
+        currentFunction2->ArrayFailure = 1;
       }
     }
   }
@@ -10966,15 +10966,15 @@ void output_function()
   if (currentClass)
   {
     /* is it a delete function */
-    if (currentFunction->Name && !strcmp("Delete",currentFunction->Name))
+    if (currentFunction2->Name && !strcmp("Delete",currentFunction2->Name))
     {
       currentClass->HasDelete = 1;
     }
 
-    currentFunction->Class = currentClass->Name;
-    vtkParse_AddFunctionToClass(currentClass, currentFunction);
+    currentFunction2->Class = currentClass->Name;
+    vtkParse_AddFunctionToClass(currentClass, currentFunction2);
 
-    currentFunction = (FunctionInfo *)malloc(sizeof(FunctionInfo));
+    currentFunction2 = (FunctionInfo *)malloc(sizeof(FunctionInfo));
   }
   else
   {
@@ -10984,25 +10984,25 @@ void output_function()
     {
       if (currentNamespace->Functions[i]->Name &&
           strcmp(currentNamespace->Functions[i]->Name,
-                 currentFunction->Name) == 0)
+                 currentFunction2->Name) == 0)
       {
         if (currentNamespace->Functions[i]->NumberOfParameters ==
-            currentFunction->NumberOfParameters)
+            currentFunction2->NumberOfParameters)
         {
-          for (j = 0; j < currentFunction->NumberOfParameters; j++)
+          for (j = 0; j < currentFunction2->NumberOfParameters; j++)
           {
             if (currentNamespace->Functions[i]->Parameters[j]->Type ==
-                currentFunction->Parameters[j]->Type)
+                currentFunction2->Parameters[j]->Type)
             {
-              if (currentFunction->Parameters[j]->Type == VTK_PARSE_OBJECT &&
+              if (currentFunction2->Parameters[j]->Type == VTK_PARSE_OBJECT &&
                   strcmp(currentNamespace->Functions[i]->Parameters[j]->Class,
-                         currentFunction->Parameters[j]->Class) == 0)
+                         currentFunction2->Parameters[j]->Class) == 0)
               {
                 break;
               }
             }
           }
-          if (j == currentFunction->NumberOfParameters)
+          if (j == currentFunction2->NumberOfParameters)
           {
             match = 1;
             break;
@@ -11013,13 +11013,13 @@ void output_function()
 
     if (!match)
     {
-      vtkParse_AddFunctionToNamespace(currentNamespace, currentFunction);
+      vtkParse_AddFunctionToNamespace(currentNamespace, currentFunction2);
 
-      currentFunction = (FunctionInfo *)malloc(sizeof(FunctionInfo));
+      currentFunction2 = (FunctionInfo *)malloc(sizeof(FunctionInfo));
     }
   }
 
-  vtkParse_InitFunction(currentFunction);
+  vtkParse_InitFunction(currentFunction2);
   startSig();
 }
 
@@ -11172,8 +11172,8 @@ FileInfo *vtkParse_ParseFile(
   templateDepth = 0;
   currentTemplate = NULL;
 
-  currentFunction = (FunctionInfo *)malloc(sizeof(FunctionInfo));
-  vtkParse_InitFunction(currentFunction);
+  currentFunction2 = (FunctionInfo *)malloc(sizeof(FunctionInfo));
+  vtkParse_InitFunction(currentFunction2);
   startSig();
 
   parseDebug = 0;
@@ -11191,7 +11191,7 @@ FileInfo *vtkParse_ParseFile(
     return NULL;
   }
 
-  free(currentFunction);
+  free(currentFunction2);
   yylex_destroy();
 
   /* The main class name should match the file name */
