@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAppendLocationAttributes.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAppendLocationAttributes.h"
 
 #include "vtkCell.h"
@@ -27,9 +15,10 @@
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAppendLocationAttributes);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Generate points
 int vtkAppendLocationAttributes::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -81,6 +70,10 @@ int vtkAppendLocationAttributes::RequestData(vtkInformation* vtkNotUsed(request)
       pointArray->SetNumberOfTuples(numPoints);
       for (vtkIdType id = 0; id < numPoints; ++id)
       {
+        if (this->CheckAbort())
+        {
+          break;
+        }
         double x[3];
         input->GetPoint(id, x);
         pointArray->SetTypedTuple(id, x);
@@ -90,20 +83,22 @@ int vtkAppendLocationAttributes::RequestData(vtkInformation* vtkNotUsed(request)
   }
 
   this->UpdateProgress(1.0);
+  this->CheckAbort();
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAppendLocationAttributes::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAppendLocationAttributes::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "AppendPointLocations: " << (this->AppendPointLocations ? "On\n" : "Off\n");
   os << indent << "AppendCellCenters: " << (this->AppendCellCenters ? "On" : "Off") << endl;
 }
+VTK_ABI_NAMESPACE_END

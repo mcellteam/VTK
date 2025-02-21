@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataObjectGenerator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataObjectGenerator
  * @brief   produces simple (composite or atomic) data
@@ -29,7 +17,7 @@
  * vtkMultiBlockDataSet consisting of three blocks: image data, poly data,
  * multi-block (empty). Hierarchical Box data sets additionally require
  * the notion of groups, declared within "()" braces, to specify AMR depth.
- * "HB[ (UF1)(UF1)(UF1) ]" will create a vtkHierarchicalBoxDataSet representing
+ * "HB[ (UF1)(UF1)(UF1) ]" will create a vtkOverlappingAMR representing
  * an octree that is three levels deep, in which the firstmost cell in each level
  * is refined.
  */
@@ -40,6 +28,7 @@
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInternalStructureCache;
 
 class VTKFILTERSCORE_EXPORT vtkDataObjectGenerator : public vtkDataObjectAlgorithm
@@ -49,13 +38,13 @@ public:
   vtkTypeMacro(vtkDataObjectGenerator, vtkDataObjectAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The string that will be parsed to specify a dataobject structure.
    */
   vtkSetStringMacro(Program);
   vtkGetStringMacro(Program);
-  //@}
+  ///@}
 
 protected:
   vtkDataObjectGenerator();
@@ -115,4 +104,5 @@ private:
   void operator=(const vtkDataObjectGenerator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

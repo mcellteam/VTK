@@ -1,33 +1,23 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParallelVectors.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParallelVectors.h"
 
 #include "vtkArrayDispatch.h"
 #include "vtkCell3D.h"
 #include "vtkDataSet.h"
 #include "vtkDoubleArray.h"
-#include "vtkGenericCell.h"
-#include "vtkGradientFilter.h"
+#include "vtkIdList.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkLogger.h"
 #include "vtkMergePoints.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 #include "vtkPolyLine.h"
 #include "vtkPolygon.h"
+#include "vtkSMPTools.h"
+#include "vtkTriangle.h"
 
 #include "vtk_eigen.h"
 #include VTK_EIGEN(Eigenvalues)
@@ -36,7 +26,7 @@
 #include <array>
 #include <deque>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 // Given a triangle with two vector fields (v0, v1, v2) and (w0, w1, w2) defined
@@ -54,20 +44,22 @@ bool fieldAlignmentPointForTriangle(const double v0[3], const double v1[3], cons
 {
   // If the first field is zero across the entire face, the notion of parallel
   // vector fields is not applicable.
-  if (fabs(v0[0]) < VTK_DBL_EPSILON && fabs(v0[1]) < VTK_DBL_EPSILON &&
-    fabs(v0[2]) < VTK_DBL_EPSILON && fabs(v1[0]) < VTK_DBL_EPSILON &&
-    fabs(v1[1]) < VTK_DBL_EPSILON && fabs(v1[2]) < VTK_DBL_EPSILON &&
-    fabs(v2[0]) < VTK_DBL_EPSILON && fabs(v2[1]) < VTK_DBL_EPSILON && fabs(v2[2]) < VTK_DBL_EPSILON)
+  if (std::abs(v0[0]) < VTK_DBL_EPSILON && std::abs(v0[1]) < VTK_DBL_EPSILON &&
+    std::abs(v0[2]) < VTK_DBL_EPSILON && std::abs(v1[0]) < VTK_DBL_EPSILON &&
+    std::abs(v1[1]) < VTK_DBL_EPSILON && std::abs(v1[2]) < VTK_DBL_EPSILON &&
+    std::abs(v2[0]) < VTK_DBL_EPSILON && std::abs(v2[1]) < VTK_DBL_EPSILON &&
+    std::abs(v2[2]) < VTK_DBL_EPSILON)
   {
     return false;
   }
 
   // If the second field is zero across the entire face, the notion of parallel
   // vector fields is not applicable.
-  if (fabs(w0[0]) < VTK_DBL_EPSILON && fabs(w0[1]) < VTK_DBL_EPSILON &&
-    fabs(w0[2]) < VTK_DBL_EPSILON && fabs(w1[0]) < VTK_DBL_EPSILON &&
-    fabs(w1[1]) < VTK_DBL_EPSILON && fabs(w1[2]) < VTK_DBL_EPSILON &&
-    fabs(w2[0]) < VTK_DBL_EPSILON && fabs(w2[1]) < VTK_DBL_EPSILON && fabs(w2[2]) < VTK_DBL_EPSILON)
+  if (std::abs(w0[0]) < VTK_DBL_EPSILON && std::abs(w0[1]) < VTK_DBL_EPSILON &&
+    std::abs(w0[2]) < VTK_DBL_EPSILON && std::abs(w1[0]) < VTK_DBL_EPSILON &&
+    std::abs(w1[1]) < VTK_DBL_EPSILON && std::abs(w1[2]) < VTK_DBL_EPSILON &&
+    std::abs(w2[0]) < VTK_DBL_EPSILON && std::abs(w2[1]) < VTK_DBL_EPSILON &&
+    std::abs(w2[2]) < VTK_DBL_EPSILON)
   {
     return false;
   }
@@ -104,11 +96,11 @@ bool fieldAlignmentPointForTriangle(const double v0[3], const double v1[3], cons
   //
   // or, by symmetry arguments, $\mathbf{M} = \mathbf{V}^{-1} \mathbf{W}$.
   Eigen::Matrix<double, 3, 3> M;
-  if (fabs(V.determinant()) > VTK_DBL_EPSILON)
+  if (std::abs(V.determinant()) > VTK_DBL_EPSILON)
   {
     M = V.inverse() * W;
   }
-  else if (fabs(W.determinant()) > VTK_DBL_EPSILON)
+  else if (std::abs(W.determinant()) > VTK_DBL_EPSILON)
   {
     M = W.inverse() * V;
   }
@@ -117,7 +109,7 @@ bool fieldAlignmentPointForTriangle(const double v0[3], const double v1[3], cons
     return false;
   }
 
-  Eigen::EigenSolver<Eigen::Matrix<double, 3, 3> > eigensolver(M);
+  Eigen::EigenSolver<Eigen::Matrix<double, 3, 3>> eigensolver(M);
   Eigen::Matrix<std::complex<double>, 3, 3> eigenvectors = eigensolver.eigenvectors();
 
   for (int i = 0; i < 3; ++i)
@@ -125,20 +117,20 @@ bool fieldAlignmentPointForTriangle(const double v0[3], const double v1[3], cons
     const auto col = eigenvectors.col(i);
 
     // We are only interested in real solutions to the above equation.
-    if (fabs(col[0].imag()) > VTK_DBL_EPSILON || fabs(col[1].imag()) > VTK_DBL_EPSILON ||
-      fabs(col[2].imag()) > VTK_DBL_EPSILON)
+    if (std::abs(col[0].imag()) > VTK_DBL_EPSILON || std::abs(col[1].imag()) > VTK_DBL_EPSILON ||
+      std::abs(col[2].imag()) > VTK_DBL_EPSILON)
     {
       continue;
     }
 
     // Additionally, we require that our degenerate degree of freedom be nonzero
     // so we can rescale the eigenvectors to set it to unity.
-    if (fabs(col[2].real()) < VTK_DBL_EPSILON)
+    if (std::abs(col[2].real()) < VTK_DBL_EPSILON)
     {
       continue;
     }
 
-    std::array<double, 3> eigenvector = { col[0].real(), col[1].real(), col[2].real() };
+    std::array<double, 3> eigenvector = { { col[0].real(), col[1].real(), col[2].real() } };
 
     for (double& component : eigenvector)
     {
@@ -164,23 +156,17 @@ bool fieldAlignmentPointForTriangle(const double v0[3], const double v1[3], cons
 }
 
 // A Link is simply a pair of vertex ids.
-struct Link
+struct Link : public std::pair<vtkIdType, vtkIdType>
 {
   Link(const vtkIdType& handle0, const vtkIdType& handle1)
+    : std::pair<vtkIdType, vtkIdType>(handle0, handle1)
   {
-    this->Handles[0] = handle0;
-    this->Handles[1] = handle1;
   }
-
-  const vtkIdType& first() const { return this->Handles[0]; }
-  const vtkIdType& second() const { return this->Handles[1]; }
-
-  vtkIdType Handles[2];
 };
 
 // A Chain is a list of Links, allowing for O[1] prepending, appending and
 // joining.
-typedef std::deque<Link> Chain;
+using Chain = std::deque<Link>;
 
 // An PolyLineBuilder is a list of Chains that supports the addition of links and
 // the merging of chains.
@@ -207,39 +193,39 @@ struct PolyLineBuilder
     // link (a,b)
     for (auto& c : this->Chains)
     {
-      if (l.second() == c.front().first())
+      if (l.second == c.front().first)
       {
         // (a,b) -> (b,...)
-        if (l.first() != c.front().second())
+        if (l.first != c.front().second)
         {
           c.emplace_front(l);
         }
         return;
       }
-      else if (l.second() == c.back().second())
+      else if (l.second == c.back().second)
       {
         // (...,b)<- ~(a,b)
-        if (l.first() != c.back().first())
+        if (l.first != c.back().first)
         {
-          c.emplace_back(Link(l.second(), l.first()));
+          c.emplace_back(l.second, l.first);
         }
         return;
       }
-      else if (l.first() == c.back().second())
+      else if (l.first == c.back().second)
       {
         // (...,a) <- (a,b)
-        if (l.second() != c.back().first())
+        if (l.second != c.back().first)
         {
           c.emplace_back(l);
         }
         return;
       }
-      else if (l.first() == c.front().first())
+      else if (l.first == c.front().first)
       {
         // ~(a,b) -> (a,...)
-        if (l.second() != c.front().second())
+        if (l.second != c.front().second)
         {
-          c.emplace_front(Link(l.second(), l.first()));
+          c.emplace_front(l.second, l.first);
         }
         return;
       }
@@ -274,35 +260,35 @@ struct PolyLineBuilder
         }
 
         // chain c1 looks like (a,...,b)
-        if (c1->front().first() == c2->back().second())
+        if (c1->front().first == c2->back().second)
         {
           // (...,a) -> (a,...,b)
           c1->insert(
             c1->begin(), std::make_move_iterator(c2->begin()), std::make_move_iterator(c2->end()));
           c2->clear();
         }
-        else if (c2->front().first() == c1->back().second())
+        else if (c2->front().first == c1->back().second)
         {
           // (a,...,b) <- (b,...)
           c1->insert(
             c1->end(), std::make_move_iterator(c2->begin()), std::make_move_iterator(c2->end()));
           c2->clear();
         }
-        else if (c1->front().first() == c2->front().first())
+        else if (c1->front().first == c2->front().first)
         {
           // (a,...,b) <- (a,...)
           for (auto linkIt = c2->begin(); linkIt != c2->end(); ++linkIt)
           {
-            c1->emplace_front(Link(linkIt->second(), linkIt->first()));
+            c1->emplace_front(Link(linkIt->second, linkIt->first));
           }
           c2->clear();
         }
-        else if (c1->back().second() == c2->back().second())
+        else if (c1->back().second == c2->back().second)
         {
           // (...,a) <- (...,a)
           for (auto linkIt = c2->rbegin(); linkIt != c2->rend(); ++linkIt)
           {
-            c1->emplace_back(Link(linkIt->second(), linkIt->first()));
+            c1->emplace_back(linkIt->second, linkIt->first);
           }
           c2->clear();
         }
@@ -331,23 +317,22 @@ struct PolyLineBuilder
   std::size_t MergeLimit;
 };
 
-bool surfaceTessellationForCell(vtkCell3D* cell, std::vector<std::array<vtkIdType, 3> >& triangles)
+bool surfaceTessellationForCell(vtkCell3D* cell, std::vector<std::array<vtkIdType, 3>>& triangles,
+  vtkSmartPointer<vtkPolygon>& polygon, vtkSmartPointer<vtkIdList>& outTris)
 {
-  const vtkIdType* localPointIds;
-
+  const int numberOfFaces = cell->GetNumberOfFaces();
   // compute the number of triangles in the surface tessellation
+  std::size_t nTriangles = 0;
+  const vtkIdType* localPointIds;
+  for (int face = 0; face < numberOfFaces; ++face)
   {
-    std::size_t nTriangles = 0;
-    for (int face = 0; face < cell->GetNumberOfFaces(); ++face)
-    {
-      nTriangles += cell->GetFacePoints(face, localPointIds) - 2;
-    }
-    triangles.resize(nTriangles);
+    nTriangles += cell->GetFacePoints(face, localPointIds) - 2;
   }
+  triangles.resize(nTriangles);
 
-  std::size_t t = 0;
-
-  for (int face = 0; face < cell->GetNumberOfFaces(); ++face)
+  size_t triId = 0;
+  vtkIdType* pointIds = cell->GetPointIds()->GetPointer(0);
+  for (int face = 0; face < numberOfFaces; ++face)
   {
     int nPoints = cell->GetFacePoints(face, localPointIds);
 
@@ -359,48 +344,42 @@ bool surfaceTessellationForCell(vtkCell3D* cell, std::vector<std::array<vtkIdTyp
         return false;
       case 3:
       {
-        triangles[t++] = { cell->GetPointIds()->GetId(localPointIds[0]),
-          cell->GetPointIds()->GetId(localPointIds[1]),
-          cell->GetPointIds()->GetId(localPointIds[2]) };
+        triangles[triId++] = { { pointIds[localPointIds[0]], pointIds[localPointIds[1]],
+          pointIds[localPointIds[2]] } };
         break;
       }
       case 4:
       {
-        std::array<vtkIdType, 4> perimeter = { cell->GetPointIds()->GetId(localPointIds[0]),
-          cell->GetPointIds()->GetId(localPointIds[1]),
-          cell->GetPointIds()->GetId(localPointIds[2]),
-          cell->GetPointIds()->GetId(localPointIds[3]) };
+        std::array<vtkIdType, 4> perimeter = { { pointIds[localPointIds[0]],
+          pointIds[localPointIds[1]], pointIds[localPointIds[2]], pointIds[localPointIds[3]] } };
 
         std::rotate(
           perimeter.begin(), std::min_element(perimeter.begin(), perimeter.end()), perimeter.end());
 
         // This ordering ensures that the same two triangles are recovered if
         // the order of the perimeter points are reversed.
-        triangles[t++] = { perimeter[0], perimeter[1], perimeter[2] };
-        triangles[t++] = { perimeter[0], perimeter[3], perimeter[2] };
+        triangles[triId++] = { { perimeter[0], perimeter[1], perimeter[2] } };
+        triangles[triId++] = { { perimeter[0], perimeter[3], perimeter[2] } };
         break;
       }
       default:
       {
-        static vtkSmartPointer<vtkPolygon> polygon = vtkSmartPointer<vtkPolygon>::New();
-        static vtkSmartPointer<vtkIdList> outTris = vtkSmartPointer<vtkIdList>::New();
-
         polygon->GetPoints()->SetNumberOfPoints(nPoints);
         polygon->GetPointIds()->SetNumberOfIds(nPoints);
 
-        for (vtkIdType i = 0; i < nPoints; ++i)
+        for (int i = 0; i < nPoints; ++i)
         {
           polygon->GetPoints()->SetPoint(i, cell->GetPoints()->GetPoint(localPointIds[i]));
           polygon->GetPointIds()->SetId(i, i);
         }
 
-        polygon->Triangulate(outTris);
+        polygon->TriangulateLocalIds(0, outTris);
 
         for (vtkIdType i = 0; i < nPoints - 2; ++i)
         {
-          triangles[t++] = { cell->GetPointIds()->GetId(localPointIds[outTris->GetId(3 * i)]),
-            cell->GetPointIds()->GetId(localPointIds[outTris->GetId(3 * i + 1)]),
-            cell->GetPointIds()->GetId(localPointIds[outTris->GetId(3 * i + 2)]) };
+          triangles[triId++] = { { pointIds[localPointIds[outTris->GetId(3 * i)]],
+            pointIds[localPointIds[outTris->GetId(3 * i + 1)]],
+            pointIds[localPointIds[outTris->GetId(3 * i + 2)]] } };
         }
       }
     }
@@ -409,36 +388,258 @@ bool surfaceTessellationForCell(vtkCell3D* cell, std::vector<std::array<vtkIdTyp
 }
 }
 
-//----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkParallelVectors);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParallelVectors::vtkParallelVectors()
 {
   this->FirstVectorFieldName = nullptr;
   this->SecondVectorFieldName = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParallelVectors::~vtkParallelVectors()
 {
   this->SetFirstVectorFieldName(nullptr);
   this->SetSecondVectorFieldName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkParallelVectors::AcceptSurfaceTriangle(const vtkIdType*)
 {
   return true;
 }
 
-//----------------------------------------------------------------------------
-bool vtkParallelVectors::ComputeAdditionalCriteria(const vtkIdType*, double, double)
+//------------------------------------------------------------------------------
+bool vtkParallelVectors::ComputeAdditionalCriteria(
+  const vtkIdType*, double, double, std::vector<double>&)
 {
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkParallelVectors::Postfilter(
+  vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
+{
+  vtkInformation* info = outputVector->GetInformationObject(0);
+  vtkPolyData* output = vtkPolyData::SafeDownCast(info->Get(vtkDataObject::DATA_OBJECT()));
+
+  for (size_t i = 0; i < this->CriteriaArrays.size(); ++i)
+  {
+    output->GetPointData()->AddArray(this->CriteriaArrays[i]);
+  }
+}
+
+VTK_ABI_NAMESPACE_END
+
+//------------------------------------------------------------------------------
+namespace detail
+{
+VTK_ABI_NAMESPACE_BEGIN
+/**
+ * Struct to store the coordinates and the additional criteria of a surface triangle point
+ */
+struct SurfaceTrianglePoint
+{
+  std::array<vtkIdType, 3> TrianglePointIds;
+  std::array<double, 3> Coordinates;
+  std::array<double, 3> InterpolationWeights;
+  std::vector<double> Criteria;
+
+  SurfaceTrianglePoint(const std::array<vtkIdType, 3>& trianglePointIds,
+    const std::array<double, 3>& point, const std::array<double, 3>& interpolationWeights,
+    const std::vector<double>& criteria)
+    : TrianglePointIds(trianglePointIds)
+    , Coordinates(point)
+    , InterpolationWeights(interpolationWeights)
+    , Criteria(criteria)
+  {
+  }
+};
+
+/**
+ * Functor to collect the valid surface triangle points of each cell.
+ */
+template <typename VArrayType, typename WArrayType>
+class CollectValidCellSurfacePointsFunctor
+{
+  VArrayType* VField;
+  WArrayType* WField;
+  vtkDataSet* Input;
+  vtkParallelVectors* ParallelVectors;
+
+  std::vector<std::vector<SurfaceTrianglePoint>>& CellSurfaceTrianglePoints;
+  struct LocalData
+  {
+    vtkSmartPointer<vtkGenericCell> Cell;
+    vtkSmartPointer<vtkPolygon> Polygon;
+    vtkSmartPointer<vtkIdList> OutTris;
+    std::vector<double> CriterionArrayValues;
+    std::array<double, 3> Weights;
+  };
+  vtkSMPThreadLocal<LocalData> TLData;
+
+public:
+  CollectValidCellSurfacePointsFunctor(VArrayType* vField, WArrayType* wField, vtkDataSet* input,
+    vtkParallelVectors* parallelVectors,
+    std::vector<std::vector<SurfaceTrianglePoint>>& cellSurfaceTrianglePoints)
+    : VField(vField)
+    , WField(wField)
+    , Input(input)
+    , ParallelVectors(parallelVectors)
+    , CellSurfaceTrianglePoints(cellSurfaceTrianglePoints)
+  {
+    this->CellSurfaceTrianglePoints.resize(input->GetNumberOfCells());
+    // instantiate any data-structure that needs to be cached for parallel execution.
+    vtkNew<vtkGenericCell> cell;
+    this->Input->GetCell(0, cell);
+  }
+
+  void Initialize()
+  {
+    auto& tlData = this->TLData.Local();
+    tlData.Cell = vtkSmartPointer<vtkGenericCell>::New();
+    tlData.Polygon = vtkSmartPointer<vtkPolygon>::New();
+    tlData.OutTris = vtkSmartPointer<vtkIdList>::New();
+    tlData.CriterionArrayValues.resize(this->ParallelVectors->CriteriaArrays.size());
+  }
+
+  void operator()(vtkIdType begin, vtkIdType end)
+  {
+    auto& tlData = this->TLData.Local();
+    auto& cell = tlData.Cell;
+    auto& polygon = tlData.Polygon;
+    auto& outTris = tlData.OutTris;
+    auto& criterionArrayValues = tlData.CriterionArrayValues;
+    auto& weights = tlData.Weights;
+    auto vField = vtk::DataArrayTupleRange<3>(this->VField);
+    auto wField = vtk::DataArrayTupleRange<3>(this->WField);
+
+    std::vector<std::array<vtkIdType, 3>> surfaceTriangles;
+    for (vtkIdType cellId = begin; cellId < end; ++cellId)
+    {
+      // We only parse 3D linear cells
+      this->Input->GetCell(cellId, cell);
+      if (cell->GetCellDimension() != 3 || cell->IsLinear() != 1)
+      {
+        continue;
+      }
+      vtkCell3D* cell3D = static_cast<vtkCell3D*>(cell->GetRepresentativeCell());
+
+      // Compute the surface tessellation for the cell
+      if (!surfaceTessellationForCell(cell3D, surfaceTriangles, polygon, outTris))
+      {
+        vtkErrorWithObjectMacro(this->ParallelVectors, << "3D cell surface cannot be acquired");
+        continue;
+      }
+
+      double v[3][3];
+      double w[3][3];
+      int counter = 0;
+
+      // For each triangle comprising the cell's surface...
+      for (size_t triId = 0, totalTris = surfaceTriangles.size(); triId < totalTris; ++triId)
+      {
+        // If we are about to check the last triangle, but we have not inserted any other triangle,
+        // we skip this check, because we need at least two inserted triangles to create a link.
+        if (counter == 0 && triId == totalTris - 1)
+        {
+          break;
+        }
+        auto& trianglePointIds = surfaceTriangles[triId];
+        if (!this->ParallelVectors->AcceptSurfaceTriangle(trianglePointIds.data()))
+        {
+          continue;
+        }
+
+        // ...access the vector values at the vertices
+        int trianglePointId;
+        for (int i = 0; i < 3; i++)
+        {
+          trianglePointId = trianglePointIds[i];
+          for (int j = 0; j < 3; ++j)
+          {
+            v[i][j] = static_cast<double>(vField[trianglePointId][j]);
+            w[i][j] = static_cast<double>(wField[trianglePointId][j]);
+          }
+        }
+
+        // Compute the parametric location on the triangle where the vectors are
+        // parallel, and if they are in fact parallel
+        double st[2];
+        if (!fieldAlignmentPointForTriangle(v[0], v[1], v[2], w[0], w[1], w[2], st))
+        {
+          continue;
+        }
+
+        const double& s = st[0];
+        const double& t = st[1];
+
+        if (!this->ParallelVectors->ComputeAdditionalCriteria(
+              trianglePointIds.data(), s, t, criterionArrayValues))
+        {
+          continue;
+        }
+
+        double pCoords[3] = { s, t, 0.0 };
+        vtkTriangle::InterpolationFunctions(pCoords, weights.data());
+
+        // Convert the parametric location to an absolute location
+        double p[3][3];
+        for (int i = 0; i < 3; i++)
+        {
+          this->Input->GetPoint(trianglePointIds[i], p[i]);
+        }
+
+        std::array<double, 3> pOut;
+        for (int i = 0; i < 3; i++)
+        {
+          pOut[i] = (1. - s - t) * p[0][i] + s * p[1][i] + t * p[2][i];
+        }
+
+        this->CellSurfaceTrianglePoints[cellId].push_back(
+          SurfaceTrianglePoint(trianglePointIds, pOut, weights, criterionArrayValues));
+
+        if (counter == 2)
+        {
+          // If we are here, then we have found at least three faces that
+          // contain unique points on which the vector field is parallel.
+          // This can happen if the vector fields are constant across all
+          // corners of the tetrahedron, but then the concept of computing
+          // parallel vector lines becomes moot.
+          ++counter;
+          break;
+        }
+
+        // We have identified either our first or second point.
+        ++counter;
+      }
+    }
+  }
+
+  void Reduce() {}
+};
+
+struct CollectValidCellSurfacePointsWorker
+{
+  template <typename VArrayType, typename WArrayType>
+  void operator()(VArrayType* vArray, WArrayType* wArray, vtkDataSet* input,
+    vtkParallelVectors* parallelVectors,
+    std::vector<std::vector<SurfaceTrianglePoint>>& cellSurfaceTrianglePoints)
+  {
+    CollectValidCellSurfacePointsFunctor<VArrayType, WArrayType> functor(
+      vArray, wArray, input, parallelVectors, cellSurfaceTrianglePoints);
+    vtkSMPTools::For(0, input->GetNumberOfCells(), functor);
+  }
+};
+
+VTK_ABI_NAMESPACE_END
+}
+
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 int vtkParallelVectors::RequestData(
   vtkInformation* info, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -472,10 +673,16 @@ int vtkParallelVectors::RequestData(
   }
 
   // Access the two vector fields
+  vtkDataSetAttributes* inDA =
+    vtkDataSetAttributes::SafeDownCast(input->GetAttributesAsFieldData(vtkDataObject::POINT));
+  vtkDataSetAttributes* outDA =
+    vtkDataSetAttributes::SafeDownCast(output->GetAttributesAsFieldData(vtkDataObject::POINT));
+  outDA->InterpolateAllocate(inDA);
+
   vtkDataArray* vField =
-    vtkDataArray::SafeDownCast(input->GetPointData()->GetAbstractArray(this->FirstVectorFieldName));
-  vtkDataArray* wField = vtkDataArray::SafeDownCast(
-    input->GetPointData()->GetAbstractArray(this->SecondVectorFieldName));
+    vtkDataArray::SafeDownCast(inDA->GetAbstractArray(this->FirstVectorFieldName));
+  vtkDataArray* wField =
+    vtkDataArray::SafeDownCast(inDA->GetAbstractArray(this->SecondVectorFieldName));
 
   // Check that the two fields are, in fact, vector fields
   {
@@ -485,14 +692,12 @@ int vtkParallelVectors::RequestData(
       vtkErrorMacro(<< "Could not access first vector field \"" << this->FirstVectorFieldName
                     << "\"");
       fail = true;
-      ;
     }
     else if (vField->GetNumberOfComponents() != 3)
     {
       vtkErrorMacro(<< "First field \"" << this->FirstVectorFieldName
                     << "\" is not a vector field");
       fail = true;
-      ;
     }
 
     if (wField == nullptr)
@@ -500,7 +705,6 @@ int vtkParallelVectors::RequestData(
       vtkErrorMacro(<< "Could not access second vector field \"" << this->SecondVectorFieldName
                     << "\"");
       fail = true;
-      ;
     }
     else if (wField->GetNumberOfComponents() != 3)
     {
@@ -517,6 +721,17 @@ int vtkParallelVectors::RequestData(
 
   // Compute polylines that correspond to locations where  two vector point
   // fields are parallel.
+
+  // collection of valid surface triangle points of each cell
+  std::vector<std::vector<detail::SurfaceTrianglePoint>> cellSurfaceTrianglePoints;
+
+  detail::CollectValidCellSurfacePointsWorker worker;
+  using Dispatcher =
+    vtkArrayDispatch::Dispatch2ByValueType<vtkArrayDispatch::Reals, vtkArrayDispatch::Reals>;
+  if (!Dispatcher::Execute(vField, wField, worker, input, this, cellSurfaceTrianglePoints))
+  {
+    worker(vField, wField, input, this, cellSurfaceTrianglePoints);
+  }
 
   // Initialize the output points (collected using a point locator)
   vtkNew<vtkPoints> outputPoints;
@@ -538,94 +753,53 @@ int vtkParallelVectors::RequestData(
     polyLineBuilder.MergeLimit = static_cast<std::size_t>(std::cbrt(input->GetNumberOfCells()));
   }
 
-  std::vector<std::array<vtkIdType, 3> > surfaceTriangles;
+  vtkNew<vtkIdList> trianglePointIds;
+  trianglePointIds->SetNumberOfIds(3);
 
-  for (vtkIdType cellId = 0; cellId < input->GetNumberOfCells(); ++cellId)
+  for (auto& points : cellSurfaceTrianglePoints)
   {
-    // We only parse 3D cells
-    vtkCell3D* cell = vtkCell3D::SafeDownCast(input->GetCell(cellId));
-    if (cell == nullptr)
+    if (this->CheckAbort())
     {
-      continue;
+      break;
     }
-
-    // Compute the surface tessellation for the cell
-    if (!surfaceTessellationForCell(cell, surfaceTriangles))
-    {
-      vtkErrorMacro(<< "3D cell surface cannot be acquired");
-      continue;
-    }
-
-    double v[3][3];
-    double w[3][3];
-
     vtkIdType pIndex[2] = { -1, -1 };
     int counter = 0;
-
-    // For each triangle comprising the cell's surface...
-    for (const std::array<vtkIdType, 3>& triangle : surfaceTriangles)
+    // For each surface triangle point comprising the cell's surface...
+    for (auto& point : points)
     {
-      if (!this->AcceptSurfaceTriangle(triangle.data()))
+      if (counter == 2)
       {
-        continue;
-      }
-
-      // ...access the vector values at the vertices
-      for (int i = 0; i < 3; i++)
-      {
-        vField->GetTuple(triangle[i], v[i]);
-        wField->GetTuple(triangle[i], w[i]);
-      }
-
-      // Compute the parametric location on the triangle where the vectors are
-      // parallel, and if they are in fact parallel
-      double st[2];
-      if (!fieldAlignmentPointForTriangle(v[0], v[1], v[2], w[0], w[1], w[2], st))
-      {
-        continue;
-      }
-
-      const double& s = st[0];
-      const double& t = st[1];
-
-      // Convert the parametric location to an absolute location
-      double p[3][3];
-      for (int i = 0; i < 3; i++)
-      {
-        input->GetPoint(triangle[i], p[i]);
-      }
-
-      double p_out[3];
-      for (int i = 0; i < 3; i++)
-      {
-        p_out[i] = (1. - s - t) * p[0][i] + s * p[1][i] + t * p[2][i];
-      }
-
-      if (!this->ComputeAdditionalCriteria(triangle.data(), s, t))
-      {
-        continue;
+        // If we are here, then we have found at least three faces that
+        // contain unique points on which the vector field is parallel.
+        // This can happen if the vector fields are constant across all
+        // corners of the tetrahedron, but then the concept of computing
+        // parallel vector lines becomes moot.
+        ++counter;
+        break;
       }
 
       vtkIdType pIdx;
-      locator->InsertUniquePoint(p_out, pIdx);
-      if (pIdx != pIndex[counter])
+      // if point is not already in the output, add it
+      if (locator->InsertUniquePoint(point.Coordinates.data(), pIdx))
       {
-        if (counter == 2)
+        // interpolate output points based on input points
+        for (int i = 0; i < 3; ++i)
         {
-          // If we are here, then we have found at least three faces that
-          // contain unique points on which the vector field is parallel.
-          // This can happen if the vector fields are constant across all
-          // corners of the tetrahedron, but then the concept of computing
-          // parallel vector lines becomes moot.
-          ++counter;
-          break;
+          trianglePointIds->SetId(i, point.TrianglePointIds[i]);
         }
+        outDA->InterpolatePoint(inDA, pIdx, trianglePointIds, point.InterpolationWeights.data());
 
-        // We have identified either our first or second point. Record it
-        // and continue searching.
-        pIndex[counter] = pIdx;
-        ++counter;
+        // Add criteria values to their arrays
+        for (size_t i = 0; i < this->CriteriaArrays.size(); ++i)
+        {
+          this->CriteriaArrays[i]->InsertValue(pIdx, point.Criteria[i]);
+        }
       }
+
+      // We have identified either our first or second point. Record it
+      // and continue searching.
+      pIndex[counter] = pIdx;
+      ++counter;
     }
 
     // If our counter is less than 2, then we likely have found a point that
@@ -648,34 +822,39 @@ int vtkParallelVectors::RequestData(
   // For each contiguous chain, construct a polyline.
   for (auto& chain : polyLineBuilder.Chains)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkNew<vtkPolyLine> polyLine;
     polyLine->GetPointIds()->SetNumberOfIds(static_cast<vtkIdType>(chain.size() + 1));
     vtkIdType counter = 0;
     for (auto& link : chain)
     {
-      polyLine->GetPointIds()->SetId(counter++, link.first());
+      polyLine->GetPointIds()->SetId(counter++, link.first);
     }
-    polyLine->GetPointIds()->SetId(counter, static_cast<vtkIdType>(chain.back().second()));
+    polyLine->GetPointIds()->SetId(counter, static_cast<vtkIdType>(chain.back().second));
     outputLines->InsertNextCell(polyLine);
   }
 
   // Populate our output polydata.
   output->SetPoints(outputPoints);
   output->SetLines(outputLines);
+  outDA->Squeeze();
 
   this->Postfilter(info, inputVector, outputVector);
 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParallelVectors::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParallelVectors::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -685,3 +864,4 @@ void vtkParallelVectors::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SecondVectorFieldName:"
      << (this->SecondVectorFieldName ? this->SecondVectorFieldName : "(undefined)") << endl;
 }
+VTK_ABI_NAMESPACE_END

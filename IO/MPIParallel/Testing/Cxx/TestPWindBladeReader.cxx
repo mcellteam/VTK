@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPWindBladeReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test of vtkPWindBladeReader
 // .SECTION Description
 // Tests the vtkPWindBladeReader.
@@ -56,7 +44,7 @@ int TestPWindBladeReader(int argc, char* argv[])
 {
   vtkMPIController* controller = vtkMPIController::New();
   controller->Initialize(&argc, &argv, 0);
-  controller->SetGlobalController(controller);
+  vtkMPIController::SetGlobalController(controller);
 
   // Read file name.
   char* fname =
@@ -64,7 +52,7 @@ int TestPWindBladeReader(int argc, char* argv[])
 
   // Create the reader.
   vtkSmartPointer<vtkWindBladeReader> reader = vtkSmartPointer<vtkWindBladeReader>::New();
-  if (reader->IsA("vtkPWindBladeReader") == false)
+  if (!reader->IsA("vtkPWindBladeReader"))
   {
     vtkGenericWarningMacro(
       "Tried to make a vtkPWindBladeReader but got a vtkWindBladeReader instead.");
@@ -153,7 +141,16 @@ int TestPWindBladeReader(int argc, char* argv[])
   // interact with data
   renWin->Render();
 
-  int retVal = vtkRegressionTestImage(renWin);
+  int retVal;
+  if (controller->GetLocalProcessId() == 0)
+  {
+    retVal = vtkRegressionTestImage(renWin);
+  }
+  else
+  {
+    // Let non-zero ranks believe they passed - rank 0 will do the regression testing
+    retVal = vtkRegressionTester::PASSED;
+  }
 
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
@@ -174,7 +171,7 @@ int TestPWindBladeReader(int argc, char* argv[])
   iren->Delete();
 
   controller->Finalize(0);
-  controller->SetGlobalController(nullptr);
+  vtkMPIController::SetGlobalController(nullptr);
   controller->Delete();
 
   return !retVal;

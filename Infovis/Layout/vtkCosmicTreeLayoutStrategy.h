@@ -1,13 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCosmicTreeLayoutStrategy.h
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCosmicTreeLayoutStrategy
  * @brief   tree layout strategy reminiscent of astronomical systems
@@ -33,6 +26,7 @@
 #include "vtkGraphLayoutStrategy.h"
 #include "vtkInfovisLayoutModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 class vtkDataArray;
 class vtkPoints;
@@ -50,7 +44,7 @@ public:
    */
   void Layout() override;
 
-  //@{
+  ///@{
   /**
    * Should node size specifications be obeyed at leaf nodes only or
    * (with scaling as required to meet constraints) at every node in
@@ -62,9 +56,9 @@ public:
   vtkSetMacro(SizeLeafNodesOnly, vtkTypeBool);
   vtkGetMacro(SizeLeafNodesOnly, vtkTypeBool);
   vtkBooleanMacro(SizeLeafNodesOnly, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * How many levels of the tree should be laid out?
    * For large trees, you may wish to set the root and maximum depth
@@ -75,9 +69,9 @@ public:
    */
   vtkSetMacro(LayoutDepth, int);
   vtkGetMacro(LayoutDepth, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * What is the top-most tree node to lay out?
    * This node will become the largest containing circle in the layout.
@@ -89,9 +83,9 @@ public:
    */
   vtkSetMacro(LayoutRoot, vtkIdType);
   vtkGetMacro(LayoutRoot, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the array to be used for sizing nodes.
    * If this is set to an empty string or nullptr (the default),
@@ -100,7 +94,7 @@ public:
    */
   vtkSetStringMacro(NodeSizeArrayName);
   vtkGetStringMacro(NodeSizeArrayName);
-  //@}
+  ///@}
 
 protected:
   /// How are node sizes specified?
@@ -160,4 +154,5 @@ private:
   void operator=(const vtkCosmicTreeLayoutStrategy&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkCosmicTreeLayoutStrategy_h

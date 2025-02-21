@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageViewer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageViewer
  * @brief   Display a 2d image.
@@ -35,6 +23,7 @@
 #include "vtkImageMapper.h"  // For all the inline methods
 #include "vtkRenderWindow.h" // For all the inline methods
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInteractorStyleImage;
 
 class VTKINTERACTIONIMAGE_EXPORT vtkImageViewer : public vtkObject
@@ -53,9 +42,9 @@ public:
   /**
    * Render the resulting image.
    */
-  virtual void Render(void);
+  virtual void Render();
 
-  //@{
+  ///@{
   /**
    * Set/Get the input to the viewer.
    */
@@ -65,25 +54,25 @@ public:
   {
     this->ImageMapper->SetInputConnection(input);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * What is the possible Min/ Max z slices available.
    */
   int GetWholeZMin() { return this->ImageMapper->GetWholeZMin(); }
   int GetWholeZMax() { return this->ImageMapper->GetWholeZMax(); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the current Z Slice to display
    */
   int GetZSlice() { return this->ImageMapper->GetZSlice(); }
   void SetZSlice(int s) { this->ImageMapper->SetZSlice(s); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Sets window/level for mapping pixels to colors.
    */
@@ -91,36 +80,53 @@ public:
   double GetColorLevel() { return this->ImageMapper->GetColorLevel(); }
   void SetColorWindow(double s) { this->ImageMapper->SetColorWindow(s); }
   void SetColorLevel(double s) { this->ImageMapper->SetColorLevel(s); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These are here for using a tk window.
    */
   void SetDisplayId(void* a) { this->RenderWindow->SetDisplayId(a); }
   void SetWindowId(void* a) { this->RenderWindow->SetWindowId(a); }
   void SetParentId(void* a) { this->RenderWindow->SetParentId(a); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Set/Get the position in screen coordinates of the rendering window.
+   * Get the position (x and y) of the rendering window in
+   * screen coordinates (in pixels).
    */
   int* GetPosition() VTK_SIZEHINT(2) { return this->RenderWindow->GetPosition(); }
-  void SetPosition(int a, int b) { this->RenderWindow->SetPosition(a, b); }
-  virtual void SetPosition(int a[2]);
-  //@}
 
-  //@{
   /**
-   * Set/Get the size of the window in screen coordinates in pixels.
+   * Set the position (x and y) of the rendering window in
+   * screen coordinates (in pixels). This resizes the operating
+   * system's view/window and redraws it.
+   */
+  void SetPosition(int x, int y) { this->RenderWindow->SetPosition(x, y); }
+  virtual void SetPosition(int a[2]);
+  ///@}
+
+  ///@{
+  /**
+   * Get the size (width and height) of the rendering window in
+   * screen coordinates (in pixels).
    */
   int* GetSize() VTK_SIZEHINT(2) { return this->RenderWindow->GetSize(); }
-  void SetSize(int a, int b) { this->RenderWindow->SetSize(a, b); }
-  virtual void SetSize(int a[2]);
-  //@}
 
-  //@{
+  /**
+   * Set the size (width and height) of the rendering window in
+   * screen coordinates (in pixels). This resizes the operating
+   * system's view/window and redraws it.
+   *
+   * If the size has changed, this method will fire
+   * vtkCommand::WindowResizeEvent.
+   */
+  void SetSize(int width, int height) { this->RenderWindow->SetSize(width, height); }
+  virtual void SetSize(int a[2]);
+  ///@}
+
+  ///@{
   /**
    * Get the internal objects
    */
@@ -129,14 +135,14 @@ public:
   vtkGetObjectMacro(Renderer, vtkRenderer);
   vtkGetObjectMacro(ImageMapper, vtkImageMapper);
   vtkGetObjectMacro(Actor2D, vtkActor2D);
-  //@}
+  ///@}
 
   /**
    * Create and attach an interactor for this window
    */
   void SetupInteractor(vtkRenderWindowInteractor*);
 
-  //@{
+  ///@{
   /**
    * Create a window in memory instead of on the screen. This may not
    * be supported for every type of window and on some windows you may
@@ -146,7 +152,7 @@ public:
   vtkTypeBool GetOffScreenRendering();
   void OffScreenRenderingOn();
   void OffScreenRenderingOff();
-  //@}
+  ///@}
 
 protected:
   vtkImageViewer();
@@ -168,4 +174,5 @@ private:
   void operator=(const vtkImageViewer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

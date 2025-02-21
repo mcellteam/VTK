@@ -1,31 +1,24 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLinearTransform.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLinearTransform.h"
 
 #include "vtkDataArray.h"
 #include "vtkMath.h"
 #include "vtkMatrix4x4.h"
 #include "vtkPoints.h"
+#include "vtkSMPTools.h"
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 void vtkLinearTransform::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//------------------------------------------------------------------------
+namespace
+{ // anonymous
+
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3>
 inline void vtkLinearTransformPoint(T1 matrix[4][4], T2 in[3], T3 out[3])
 {
@@ -41,7 +34,7 @@ inline void vtkLinearTransformPoint(T1 matrix[4][4], T2 in[3], T3 out[3])
   out[2] = z;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3, class T4>
 inline void vtkLinearTransformDerivative(T1 matrix[4][4], T2 in[3], T3 out[3], T4 derivative[3][3])
 {
@@ -55,7 +48,7 @@ inline void vtkLinearTransformDerivative(T1 matrix[4][4], T2 in[3], T3 out[3], T
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3>
 inline void vtkLinearTransformVector(T1 matrix[4][4], T2 in[3], T3 out[3])
 {
@@ -68,7 +61,7 @@ inline void vtkLinearTransformVector(T1 matrix[4][4], T2 in[3], T3 out[3])
   out[2] = z;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3>
 inline void vtkLinearTransformNormal(T1 mat[4][4], T2 in[3], T3 out[3])
 {
@@ -83,95 +76,121 @@ inline void vtkLinearTransformNormal(T1 mat[4][4], T2 in[3], T3 out[3])
   vtkMath::Normalize(out);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3>
 inline void vtkLinearTransformPoints(T1 matrix[4][4], T2* in, T3* out, vtkIdType n)
 {
-  for (vtkIdType i = 0; i < n; i++)
-  {
-    vtkLinearTransformPoint(matrix, in, out);
-    in += 3;
-    out += 3;
-  }
+  // We use THRESHOLD to test if the data size is small enough
+  // to execute the functor serially. It's faster for a smaller number of transformation.
+  vtkSMPTools::For(0, n, vtkSMPTools::THRESHOLD,
+    [&](vtkIdType ptId, vtkIdType endPtId)
+    {
+      T2* pin = in + 3 * ptId;
+      T3* pout = out + 3 * ptId;
+      for (; ptId < endPtId; ++ptId)
+      {
+        vtkLinearTransformPoint(matrix, pin, pout);
+        pin += 3;
+        pout += 3;
+      }
+    });
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3>
 inline void vtkLinearTransformVectors(T1 matrix[4][4], T2* in, T3* out, vtkIdType n)
 {
-  for (vtkIdType i = 0; i < n; i++)
-  {
-    vtkLinearTransformVector(matrix, in, out);
-    in += 3;
-    out += 3;
-  }
+  // We use THRESHOLD to test if the data size is small enough
+  // to execute the functor serially. It's faster for a smaller number of transformation.
+  vtkSMPTools::For(0, n, vtkSMPTools::THRESHOLD,
+    [&](vtkIdType ptId, vtkIdType endPtId)
+    {
+      T2* pin = in + 3 * ptId;
+      T3* pout = out + 3 * ptId;
+      for (; ptId < endPtId; ++ptId)
+      {
+        vtkLinearTransformVector(matrix, pin, pout);
+        pin += 3;
+        pout += 3;
+      }
+    });
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3>
 inline void vtkLinearTransformNormals(T1 matrix[4][4], T2* in, T3* out, vtkIdType n)
 {
-  for (vtkIdType i = 0; i < n; i++)
-  {
-    // matrix has been transposed & inverted, so use TransformVector
-    vtkLinearTransformVector(matrix, in, out);
-    vtkMath::Normalize(out);
-    in += 3;
-    out += 3;
-  }
+  // We use THRESHOLD to test if the data size is small enough
+  // to execute the functor serially. It's faster for a smaller number of transformation.
+  vtkSMPTools::For(0, n, vtkSMPTools::THRESHOLD,
+    [&](vtkIdType ptId, vtkIdType endPtId)
+    {
+      T2* pin = in + 3 * ptId;
+      T3* pout = out + 3 * ptId;
+      for (; ptId < endPtId; ++ptId)
+      {
+        // matrix has been transposed & inverted, so use TransformVector
+        vtkLinearTransformVector(matrix, pin, pout);
+        vtkMath::Normalize(pout);
+        pin += 3;
+        pout += 3;
+      }
+    });
 }
 
-//------------------------------------------------------------------------
+} // anonymous namespace
+
+//------------------------------------------------------------------------------
 void vtkLinearTransform::InternalTransformPoint(const float in[3], float out[3])
 {
   vtkLinearTransformPoint(this->Matrix->Element, in, out);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::InternalTransformPoint(const double in[3], double out[3])
 {
   vtkLinearTransformPoint(this->Matrix->Element, in, out);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::InternalTransformNormal(const float in[3], float out[3])
 {
   vtkLinearTransformNormal(this->Matrix->Element, in, out);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::InternalTransformNormal(const double in[3], double out[3])
 {
   vtkLinearTransformNormal(this->Matrix->Element, in, out);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::InternalTransformVector(const float in[3], float out[3])
 {
   vtkLinearTransformVector(this->Matrix->Element, in, out);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::InternalTransformVector(const double in[3], double out[3])
 {
   vtkLinearTransformVector(this->Matrix->Element, in, out);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::InternalTransformDerivative(
   const float in[3], float out[3], float derivative[3][3])
 {
   vtkLinearTransformDerivative(this->Matrix->Element, in, out, derivative);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::InternalTransformDerivative(
   const double in[3], double out[3], double derivative[3][3])
 {
   vtkLinearTransformDerivative(this->Matrix->Element, in, out, derivative);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Transform the normals and vectors using the derivative of the
 // transformation.  Either inNms or inVrs can be set to nullptr.
 // Normals are multiplied by the inverse transpose of the transform
@@ -200,7 +219,7 @@ void vtkLinearTransform::TransformPointsNormalsVectors(vtkPoints* inPts, vtkPoin
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::TransformPoints(vtkPoints* inPts, vtkPoints* outPts)
 {
   vtkIdType n = inPts->GetNumberOfPoints();
@@ -235,20 +254,22 @@ void vtkLinearTransform::TransformPoints(vtkPoints* inPts, vtkPoints* outPts)
   }
   else
   {
-    double point[3];
-
-    for (vtkIdType i = 0; i < n; i++)
-    {
-      inPts->GetPoint(i, point);
-
-      vtkLinearTransformPoint(matrix, point, point);
-
-      outPts->SetPoint(m + i, point);
-    }
+    // for anything that isn't float or double
+    vtkSMPTools::For(0, n, vtkSMPTools::THRESHOLD,
+      [&](vtkIdType ptId, vtkIdType endPtId)
+      {
+        double point[3];
+        for (; ptId < endPtId; ++ptId)
+        {
+          inPts->GetPoint(ptId, point);
+          vtkLinearTransformPoint(matrix, point, point);
+          outPts->SetPoint(m + ptId, point);
+        }
+      });
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::TransformNormals(vtkDataArray* inNms, vtkDataArray* outNms)
 {
   vtkIdType n = inNms->GetNumberOfTuples();
@@ -286,22 +307,24 @@ void vtkLinearTransform::TransformNormals(vtkDataArray* inNms, vtkDataArray* out
   }
   else
   {
-    for (vtkIdType i = 0; i < n; i++)
-    {
-      double norm[3];
-
-      inNms->GetTuple(i, norm);
-
-      // use TransformVector because matrix is already transposed & inverted
-      vtkLinearTransformVector(matrix, norm, norm);
-      vtkMath::Normalize(norm);
-
-      outNms->SetTuple(m + i, norm);
-    }
+    // for anything that isn't float or double
+    vtkSMPTools::For(0, n, vtkSMPTools::THRESHOLD,
+      [&](vtkIdType ptId, vtkIdType endPtId)
+      {
+        double norm[3];
+        for (; ptId < endPtId; ++ptId)
+        {
+          inNms->GetTuple(ptId, norm);
+          // use TransformVector because matrix is already transposed & inverted
+          vtkLinearTransformVector(matrix, norm, norm);
+          vtkMath::Normalize(norm);
+          outNms->SetTuple(m + ptId, norm);
+        }
+      });
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearTransform::TransformVectors(vtkDataArray* inVrs, vtkDataArray* outVrs)
 {
   vtkIdType n = inVrs->GetNumberOfTuples();
@@ -335,15 +358,18 @@ void vtkLinearTransform::TransformVectors(vtkDataArray* inVrs, vtkDataArray* out
   }
   else
   {
-    for (vtkIdType i = 0; i < n; i++)
-    {
-      double vec[3];
-
-      inVrs->GetTuple(i, vec);
-
-      vtkLinearTransformVector(matrix, vec, vec);
-
-      outVrs->SetTuple(m + i, vec);
-    }
+    // for anything that isn't float or double
+    vtkSMPTools::For(0, n, vtkSMPTools::THRESHOLD,
+      [&](vtkIdType ptId, vtkIdType endPtId)
+      {
+        double vec[3];
+        for (; ptId < endPtId; ++ptId)
+        {
+          inVrs->GetTuple(ptId, vec);
+          vtkLinearTransformVector(matrix, vec, vec);
+          outVrs->SetTuple(m + ptId, vec);
+        }
+      });
   }
 }
+VTK_ABI_NAMESPACE_END

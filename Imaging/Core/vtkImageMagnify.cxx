@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMagnify.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageMagnify.h"
 
 #include "vtkImageData.h"
@@ -20,9 +8,12 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+#include <cmath>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageMagnify);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor: Sets default filter to be identity.
 vtkImageMagnify::vtkImageMagnify()
 {
@@ -31,7 +22,7 @@ vtkImageMagnify::vtkImageMagnify()
   this->MagnificationFactors[0] = this->MagnificationFactors[1] = this->MagnificationFactors[2] = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Computes any global image information associated with regions.
 int vtkImageMagnify::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -65,7 +56,7 @@ int vtkImageMagnify::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method computes the Region of input necessary to generate outRegion.
 // It assumes offset and size are multiples of Magnify Factors.
 int vtkImageMagnify::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
@@ -99,7 +90,7 @@ void vtkImageMagnify::InternalRequestUpdateExtent(int* inExt, int* outExt)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The templated execute function handles all the data types.
 // 2d even though operation is 1d.
 // Note: Slight misalignment (pixel replication is not nearest neighbor).
@@ -316,3 +307,4 @@ void vtkImageMagnify::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Interpolate: " << (this->Interpolate ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

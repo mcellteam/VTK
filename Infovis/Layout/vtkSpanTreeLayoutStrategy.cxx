@@ -1,23 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkSpanTreeLayoutStrategy.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 // File: vtkSpanTreeLayoutStrategy.cxx
 // Graph visualization library for VTK
@@ -39,8 +22,9 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkSmartPointer.h"
 #include "vtkTree.h"
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSpanTreeLayoutStrategy);
 
 vtkSpanTreeLayoutStrategy::vtkSpanTreeLayoutStrategy()
@@ -67,7 +51,7 @@ vtkSpanTreeLayoutStrategy::~vtkSpanTreeLayoutStrategy()
 // relationship between the proxy nodes in the graph used
 // to compute the layout, and edges in the original graph.
 
-struct _vtkBridge_s
+struct vtkBridge_s
 {
   vtkEdgeType edge;
   vtkIdType delta;
@@ -94,12 +78,11 @@ void vtkSpanTreeLayoutStrategy::Layout()
   vtkPoints* layout;
 
   // Auxiliary structures for placing bends into edges.
-  _vtkBridge_s* editlist;
-  _vtkBridge_s link;
+  vtkBridge_s* editlist;
+  vtkBridge_s link;
   link.delta = 0;
   link.anchor[1] = 0;
   vtkIdType editsize;
-  vtkEdgeType edge;
   vtkIdType i, nrNodes, nrEdges;
   double pointS[3], pointT[3], pointA[3];
   double edgePoints[6];
@@ -204,7 +187,7 @@ void vtkSpanTreeLayoutStrategy::Layout()
   // to compute the position for those points.
 
   editsize = 0;
-  editlist = new _vtkBridge_s[nrEdges];
+  editlist = new vtkBridge_s[nrEdges];
   this->Graph->GetEdges(edges);
   while (edges->HasNext())
   {
@@ -333,3 +316,4 @@ void vtkSpanTreeLayoutStrategy::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "DepthFirstSpanningTree: " << (this->DepthFirstSpanningTree ? "On" : "Off")
      << endl;
 }
+VTK_ABI_NAMESPACE_END

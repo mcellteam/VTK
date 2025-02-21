@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageEuclideanToPolar.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageEuclideanToPolar
  * @brief   Converts 2D Euclidean coordinates to polar.
@@ -26,6 +14,7 @@
 #include "vtkImagingGeneralModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGGENERAL_EXPORT vtkImageEuclideanToPolar : public vtkThreadedImageAlgorithm
 {
 public:
@@ -33,7 +22,7 @@ public:
   vtkTypeMacro(vtkImageEuclideanToPolar, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Theta is an angle. Maximum specifies when it maps back to 0.
    * ThetaMaximum defaults to 255 instead of 2PI, because unsigned char
@@ -41,11 +30,11 @@ public:
    */
   vtkSetMacro(ThetaMaximum, double);
   vtkGetMacro(ThetaMaximum, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageEuclideanToPolar();
-  ~vtkImageEuclideanToPolar() override {}
+  ~vtkImageEuclideanToPolar() override = default;
 
   double ThetaMaximum;
 
@@ -56,4 +45,5 @@ private:
   void operator=(const vtkImageEuclideanToPolar&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

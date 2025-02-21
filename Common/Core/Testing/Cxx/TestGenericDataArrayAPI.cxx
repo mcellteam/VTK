@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGenericDataArrayAPI.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGenericDataArray.h"
 
@@ -30,7 +18,6 @@
 #include <vector>
 
 // Concrete classes for testing:
-#include "vtkAOSDataArrayTemplate.h"
 #include "vtkCharArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkFloatArray.h"
@@ -59,7 +46,7 @@
 // This test has three main components:
 // - Entry point: TestGenericDataArrayAPI(). Add new array classes here.
 // - Unit test caller: ExerciseGenericDataArray(). Templated on value and array
-//   types. Calls individual unit test functions to excerise the array methods.
+//   types. Calls individual unit test functions to exercise the array methods.
 //   Add new unit test calls here.
 // - Unit test functions: Test_[methodSignature](). Templated on value type,
 //   array type, and possibly other parameters to simplify implementations.
@@ -98,59 +85,57 @@ int TestGenericDataArrayAPI(int, char*[])
   errors += ExerciseGenericDataArray<vtkIdType, vtkIdTypeArray>();
 
   // Explicit AoS arrays:
-  errors += ExerciseGenericDataArray<char, vtkAOSDataArrayTemplate<char> >();
-  errors += ExerciseGenericDataArray<double, vtkAOSDataArrayTemplate<double> >();
-  errors += ExerciseGenericDataArray<float, vtkAOSDataArrayTemplate<float> >();
-  errors += ExerciseGenericDataArray<int, vtkAOSDataArrayTemplate<int> >();
-  errors += ExerciseGenericDataArray<long, vtkAOSDataArrayTemplate<long> >();
-  errors += ExerciseGenericDataArray<long long, vtkAOSDataArrayTemplate<long long> >();
-  errors += ExerciseGenericDataArray<short, vtkAOSDataArrayTemplate<short> >();
-  errors += ExerciseGenericDataArray<signed char, vtkAOSDataArrayTemplate<signed char> >();
-  errors += ExerciseGenericDataArray<unsigned char, vtkAOSDataArrayTemplate<unsigned char> >();
-  errors += ExerciseGenericDataArray<unsigned int, vtkAOSDataArrayTemplate<unsigned int> >();
-  errors += ExerciseGenericDataArray<unsigned long, vtkAOSDataArrayTemplate<unsigned long> >();
+  errors += ExerciseGenericDataArray<char, vtkAOSDataArrayTemplate<char>>();
+  errors += ExerciseGenericDataArray<double, vtkAOSDataArrayTemplate<double>>();
+  errors += ExerciseGenericDataArray<float, vtkAOSDataArrayTemplate<float>>();
+  errors += ExerciseGenericDataArray<int, vtkAOSDataArrayTemplate<int>>();
+  errors += ExerciseGenericDataArray<long, vtkAOSDataArrayTemplate<long>>();
+  errors += ExerciseGenericDataArray<long long, vtkAOSDataArrayTemplate<long long>>();
+  errors += ExerciseGenericDataArray<short, vtkAOSDataArrayTemplate<short>>();
+  errors += ExerciseGenericDataArray<signed char, vtkAOSDataArrayTemplate<signed char>>();
+  errors += ExerciseGenericDataArray<unsigned char, vtkAOSDataArrayTemplate<unsigned char>>();
+  errors += ExerciseGenericDataArray<unsigned int, vtkAOSDataArrayTemplate<unsigned int>>();
+  errors += ExerciseGenericDataArray<unsigned long, vtkAOSDataArrayTemplate<unsigned long>>();
   errors +=
-    ExerciseGenericDataArray<unsigned long long, vtkAOSDataArrayTemplate<unsigned long long> >();
-  errors += ExerciseGenericDataArray<unsigned short, vtkAOSDataArrayTemplate<unsigned short> >();
-  errors += ExerciseGenericDataArray<vtkIdType, vtkAOSDataArrayTemplate<vtkIdType> >();
+    ExerciseGenericDataArray<unsigned long long, vtkAOSDataArrayTemplate<unsigned long long>>();
+  errors += ExerciseGenericDataArray<unsigned short, vtkAOSDataArrayTemplate<unsigned short>>();
+  errors += ExerciseGenericDataArray<vtkIdType, vtkAOSDataArrayTemplate<vtkIdType>>();
 
   // Explicit SoA arrays:
-  errors += ExerciseGenericDataArray<char, vtkSOADataArrayTemplate<char> >();
-  errors += ExerciseGenericDataArray<double, vtkSOADataArrayTemplate<double> >();
-  errors += ExerciseGenericDataArray<float, vtkSOADataArrayTemplate<float> >();
-  errors += ExerciseGenericDataArray<int, vtkSOADataArrayTemplate<int> >();
-  errors += ExerciseGenericDataArray<long, vtkSOADataArrayTemplate<long> >();
-  errors += ExerciseGenericDataArray<long long, vtkSOADataArrayTemplate<long long> >();
-  errors += ExerciseGenericDataArray<short, vtkSOADataArrayTemplate<short> >();
-  errors += ExerciseGenericDataArray<signed char, vtkSOADataArrayTemplate<signed char> >();
-  errors += ExerciseGenericDataArray<unsigned char, vtkSOADataArrayTemplate<unsigned char> >();
-  errors += ExerciseGenericDataArray<unsigned int, vtkSOADataArrayTemplate<unsigned int> >();
-  errors += ExerciseGenericDataArray<unsigned long, vtkSOADataArrayTemplate<unsigned long> >();
+  errors += ExerciseGenericDataArray<char, vtkSOADataArrayTemplate<char>>();
+  errors += ExerciseGenericDataArray<double, vtkSOADataArrayTemplate<double>>();
+  errors += ExerciseGenericDataArray<float, vtkSOADataArrayTemplate<float>>();
+  errors += ExerciseGenericDataArray<int, vtkSOADataArrayTemplate<int>>();
+  errors += ExerciseGenericDataArray<long, vtkSOADataArrayTemplate<long>>();
+  errors += ExerciseGenericDataArray<long long, vtkSOADataArrayTemplate<long long>>();
+  errors += ExerciseGenericDataArray<short, vtkSOADataArrayTemplate<short>>();
+  errors += ExerciseGenericDataArray<signed char, vtkSOADataArrayTemplate<signed char>>();
+  errors += ExerciseGenericDataArray<unsigned char, vtkSOADataArrayTemplate<unsigned char>>();
+  errors += ExerciseGenericDataArray<unsigned int, vtkSOADataArrayTemplate<unsigned int>>();
+  errors += ExerciseGenericDataArray<unsigned long, vtkSOADataArrayTemplate<unsigned long>>();
   errors +=
-    ExerciseGenericDataArray<unsigned long long, vtkSOADataArrayTemplate<unsigned long long> >();
-  errors += ExerciseGenericDataArray<unsigned short, vtkSOADataArrayTemplate<unsigned short> >();
-  errors += ExerciseGenericDataArray<vtkIdType, vtkSOADataArrayTemplate<vtkIdType> >();
+    ExerciseGenericDataArray<unsigned long long, vtkSOADataArrayTemplate<unsigned long long>>();
+  errors += ExerciseGenericDataArray<unsigned short, vtkSOADataArrayTemplate<unsigned short>>();
+  errors += ExerciseGenericDataArray<vtkIdType, vtkSOADataArrayTemplate<vtkIdType>>();
 
   // Explicit scale SoA arrays:
 #ifdef VTK_USE_SCALED_SOA_ARRAYS
-  errors += ExerciseGenericDataArray<char, vtkScaledSOADataArrayTemplate<char> >();
-  errors += ExerciseGenericDataArray<double, vtkScaledSOADataArrayTemplate<double> >();
-  errors += ExerciseGenericDataArray<float, vtkScaledSOADataArrayTemplate<float> >();
-  errors += ExerciseGenericDataArray<int, vtkScaledSOADataArrayTemplate<int> >();
-  errors += ExerciseGenericDataArray<long, vtkScaledSOADataArrayTemplate<long> >();
-  errors += ExerciseGenericDataArray<long long, vtkScaledSOADataArrayTemplate<long long> >();
-  errors += ExerciseGenericDataArray<short, vtkScaledSOADataArrayTemplate<short> >();
-  errors += ExerciseGenericDataArray<signed char, vtkScaledSOADataArrayTemplate<signed char> >();
-  errors +=
-    ExerciseGenericDataArray<unsigned char, vtkScaledSOADataArrayTemplate<unsigned char> >();
-  errors += ExerciseGenericDataArray<unsigned int, vtkScaledSOADataArrayTemplate<unsigned int> >();
-  errors +=
-    ExerciseGenericDataArray<unsigned long, vtkScaledSOADataArrayTemplate<unsigned long> >();
+  errors += ExerciseGenericDataArray<char, vtkScaledSOADataArrayTemplate<char>>();
+  errors += ExerciseGenericDataArray<double, vtkScaledSOADataArrayTemplate<double>>();
+  errors += ExerciseGenericDataArray<float, vtkScaledSOADataArrayTemplate<float>>();
+  errors += ExerciseGenericDataArray<int, vtkScaledSOADataArrayTemplate<int>>();
+  errors += ExerciseGenericDataArray<long, vtkScaledSOADataArrayTemplate<long>>();
+  errors += ExerciseGenericDataArray<long long, vtkScaledSOADataArrayTemplate<long long>>();
+  errors += ExerciseGenericDataArray<short, vtkScaledSOADataArrayTemplate<short>>();
+  errors += ExerciseGenericDataArray<signed char, vtkScaledSOADataArrayTemplate<signed char>>();
+  errors += ExerciseGenericDataArray<unsigned char, vtkScaledSOADataArrayTemplate<unsigned char>>();
+  errors += ExerciseGenericDataArray<unsigned int, vtkScaledSOADataArrayTemplate<unsigned int>>();
+  errors += ExerciseGenericDataArray<unsigned long, vtkScaledSOADataArrayTemplate<unsigned long>>();
   errors += ExerciseGenericDataArray<unsigned long long,
-    vtkScaledSOADataArrayTemplate<unsigned long long> >();
+    vtkScaledSOADataArrayTemplate<unsigned long long>>();
   errors +=
-    ExerciseGenericDataArray<unsigned short, vtkScaledSOADataArrayTemplate<unsigned short> >();
-  errors += ExerciseGenericDataArray<vtkIdType, vtkScaledSOADataArrayTemplate<vtkIdType> >();
+    ExerciseGenericDataArray<unsigned short, vtkScaledSOADataArrayTemplate<unsigned short>>();
+  errors += ExerciseGenericDataArray<vtkIdType, vtkScaledSOADataArrayTemplate<vtkIdType>>();
 #endif
 
   if (errors > 0)
@@ -175,6 +160,7 @@ int TestGenericDataArrayAPI(int, char*[])
 #define DataArrayAPICreateTestArray(name) vtkNew<ArrayT> name
 
 #define DataArrayAPINonFatalError(x)                                                               \
+  do                                                                                               \
   {                                                                                                \
     ArrayT* errorTempArray = ArrayT::New();                                                        \
     std::cerr << "Line " << __LINE__ << ": "                                                       \
@@ -184,9 +170,11 @@ int TestGenericDataArrayAPI(int, char*[])
               << x << std::endl;                                                                   \
     errorTempArray->Delete();                                                                      \
     ++errors;                                                                                      \
-  }
+  } while (false)
 
-#define DataArrayAPIError(x) DataArrayAPINonFatalError(x) return errors;
+#define DataArrayAPIError(x)                                                                       \
+  DataArrayAPINonFatalError(x);                                                                    \
+  return errors
 
 namespace
 {
@@ -252,7 +240,7 @@ int Test_void_GetTypedTuple_tupleIdx_tuple()
   std::vector<ScalarT> tuple(comps);
   for (vtkIdType tupleIdx = 0; tupleIdx < tuples; ++tupleIdx)
   {
-    source->GetTypedTuple(tupleIdx, &tuple[0]);
+    source->GetTypedTuple(tupleIdx, tuple.data());
     for (int compIdx = 0; compIdx < comps; ++compIdx)
     {
       if (tuple[compIdx] != static_cast<ScalarT>(refValue))
@@ -367,7 +355,7 @@ int Test_void_SetTypedTuple_tupleIdx_tuple()
     {
       tuple.push_back(static_cast<ScalarT>(((t * comps) + c) % 17));
     }
-    source->SetTypedTuple(t, &tuple[0]);
+    source->SetTypedTuple(t, tuple.data());
   }
 
   // Verify:
@@ -414,7 +402,7 @@ int Test_void_SetTypedComponent_tupleIdx_comp_value()
   std::vector<ScalarT> tuple(comps);
   for (vtkIdType i = 0; i < tuples; ++i)
   {
-    source->GetTypedTuple(i, &tuple[0]);
+    source->GetTypedTuple(i, tuple.data());
     for (int j = 0; j < comps; ++j)
     {
       ScalarT test = tuple[j];
@@ -630,7 +618,7 @@ int Test_void_InsertTypedTuple_idx_t()
     {
       tuple.push_back(static_cast<ScalarT>(((t * comps) + c) % 17));
     }
-    source->InsertTypedTuple(t, &tuple[0]);
+    source->InsertTypedTuple(t, tuple.data());
     if (source->GetSize() < ((t + 1) * comps))
     {
       DataArrayAPIError("Size should be at least " << ((t + 1) * comps) << " values, but is only "
@@ -681,7 +669,7 @@ int Test_vtkIdType_InsertNextTypedTuple_t()
     {
       tuple.push_back(static_cast<ScalarT>(((t * comps) + c) % 17));
     }
-    vtkIdType insertLoc = source->InsertNextTypedTuple(&tuple[0]);
+    vtkIdType insertLoc = source->InsertNextTypedTuple(tuple.data());
     if (insertLoc != t)
     {
       DataArrayAPIError(

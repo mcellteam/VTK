@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeRenderManager.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCompositeRenderManager.h"
 
 #include "vtkCompressCompositer.h"
@@ -23,11 +11,12 @@
 #include "vtkTimerLog.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositeRenderManager);
 
 vtkCxxSetObjectMacro(vtkCompositeRenderManager, Compositer, vtkCompositer);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeRenderManager::vtkCompositeRenderManager()
 {
   this->Compositer = vtkCompressCompositer::New();
@@ -43,7 +32,7 @@ vtkCompositeRenderManager::vtkCompositeRenderManager()
   this->TmpDepthData->SetNumberOfComponents(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeRenderManager::~vtkCompositeRenderManager()
 {
   this->SetCompositer(nullptr);
@@ -52,7 +41,7 @@ vtkCompositeRenderManager::~vtkCompositeRenderManager()
   this->TmpDepthData->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeRenderManager::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -60,7 +49,7 @@ void vtkCompositeRenderManager::PrintSelf(ostream& os, vtkIndent indent)
   this->Compositer->PrintSelf(os, indent.GetNextIndent());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeRenderManager::PreRenderProcessing()
 {
   vtkTimerLog::MarkStartEvent("Compositing");
@@ -75,7 +64,7 @@ void vtkCompositeRenderManager::PreRenderProcessing()
   this->RenderWindow->SetMultiSamples(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeRenderManager::PostRenderProcessing()
 {
   this->RenderWindow->SetMultiSamples(this->SavedMultiSamplesSetting);
@@ -120,3 +109,4 @@ void vtkCompositeRenderManager::PostRenderProcessing()
 
   vtkTimerLog::MarkEndEvent("Compositing");
 }
+VTK_ABI_NAMESPACE_END

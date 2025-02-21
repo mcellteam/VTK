@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVolumeReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVolumeReader
  * @brief   read image files
@@ -48,51 +36,52 @@
 #include "vtkIOImageModule.h" // For export macro
 #include "vtkImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOIMAGE_EXPORT vtkVolumeReader : public vtkImageAlgorithm
 {
 public:
   vtkTypeMacro(vtkVolumeReader, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify file prefix for the image file(s).
    */
-  vtkSetStringMacro(FilePrefix);
-  vtkGetStringMacro(FilePrefix);
-  //@}
+  vtkSetFilePathMacro(FilePrefix);
+  vtkGetFilePathMacro(FilePrefix);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The snprintf format used to build filename from FilePrefix and number.
    */
-  vtkSetStringMacro(FilePattern);
-  vtkGetStringMacro(FilePattern);
-  //@}
+  vtkSetFilePathMacro(FilePattern);
+  vtkGetFilePathMacro(FilePattern);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the range of files to read.
    */
   vtkSetVector2Macro(ImageRange, int);
   vtkGetVectorMacro(ImageRange, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the spacing for the data.
    */
   vtkSetVector3Macro(DataSpacing, double);
   vtkGetVectorMacro(DataSpacing, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the origin for the data.
    */
   vtkSetVector3Macro(DataOrigin, double);
   vtkGetVectorMacro(DataOrigin, double, 3);
-  //@}
+  ///@}
 
   /**
    * Other objects make use of this method.
@@ -114,4 +103,5 @@ private:
   void operator=(const vtkVolumeReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

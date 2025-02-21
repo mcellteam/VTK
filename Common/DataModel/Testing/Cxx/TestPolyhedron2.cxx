@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPolyhedron2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPlane.h"
 #include "vtkPolyhedron.h"
@@ -19,22 +7,19 @@
 
 #include "vtkCutter.h"
 #include "vtkNew.h"
-#include "vtkPlane.h"
 #include "vtkTestUtilities.h"
 #include "vtkXMLPolyDataWriter.h"
 #include "vtkXMLUnstructuredGridReader.h"
 #include "vtkXMLUnstructuredGridWriter.h"
 
 // Test of contour/clip of vtkPolyhedron. uses input from
-// https://gitlab.kitware.com/vtk/vtk/issues/14485
+// https://gitlab.kitware.com/vtk/vtk/-/issues/14485
 int TestPolyhedron2(int argc, char* argv[])
 {
-  if (argc < 3)
-    return 1; // test not run with data on the command line
-
   vtkObject::GlobalWarningDisplayOff();
 
-  const char* filename = argv[2];
+  const char* filename =
+    vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/polyhedron_mesh.vtu");
   vtkNew<vtkXMLUnstructuredGridReader> reader;
   reader->SetFileName(filename);
   reader->Update();

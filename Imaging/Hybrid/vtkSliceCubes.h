@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSliceCubes.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSliceCubes
  * @brief   generate isosurface(s) from volume four slices at a time
@@ -52,6 +40,7 @@
 #include "vtkImagingHybridModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkVolumeReader;
 
 class VTKIMAGINGHYBRID_EXPORT vtkSliceCubes : public vtkObject
@@ -65,38 +54,38 @@ public:
   void Write() { this->Update(); }
   void Update();
 
-  //@{
+  ///@{
   /**
    * Set/get object to read slices.
    */
   virtual void SetReader(vtkVolumeReader*);
   vtkGetObjectMacro(Reader, vtkVolumeReader);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify file name of marching cubes output file.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get isosurface contour value.
    */
   vtkSetMacro(Value, double);
   vtkGetMacro(Value, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify file name of marching cubes limits file. The limits file
    * speeds up subsequent reading of output triangle file.
    */
-  vtkSetStringMacro(LimitsFileName);
-  vtkGetStringMacro(LimitsFileName);
-  //@}
+  vtkSetFilePathMacro(LimitsFileName);
+  vtkGetFilePathMacro(LimitsFileName);
+  ///@}
 
 protected:
   vtkSliceCubes();
@@ -114,4 +103,5 @@ private:
   void operator=(const vtkSliceCubes&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeRGBAPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCompositeRGBAPass.h"
 #include "vtkFrameBufferObjectBase.h"
@@ -25,7 +13,7 @@
 
 // to be able to dump intermediate result into png files for debugging.
 // only for vtkCompositeRGBAPass developers.
-//#define VTK_COMPOSITE_RGBAPASS_DEBUG
+// #define VTK_COMPOSITE_RGBAPASS_DEBUG
 
 #include "vtkCamera.h"
 #include "vtkImageData.h"
@@ -38,23 +26,23 @@
 #include "vtkPNGWriter.h"
 #include "vtkPixelBufferObject.h"
 #include "vtkPointData.h"
-#include "vtkStdString.h"
 #include "vtkTimerLog.h"
 #include <sstream>
 
 #ifdef VTK_COMPOSITE_RGBAPASS_DEBUG
-//#include <unistd.h>
+// #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/types.h> // Linux specific gettid()
 #endif
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositeRGBAPass);
 vtkCxxSetObjectMacro(vtkCompositeRGBAPass, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkCompositeRGBAPass, Kdtree, vtkPKdTree);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeRGBAPass::vtkCompositeRGBAPass()
 {
   this->Controller = nullptr;
@@ -66,7 +54,7 @@ vtkCompositeRGBAPass::vtkCompositeRGBAPass()
   this->RawRGBABufferSize = 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeRGBAPass::~vtkCompositeRGBAPass()
 {
   if (this->Controller != nullptr)
@@ -92,7 +80,7 @@ vtkCompositeRGBAPass::~vtkCompositeRGBAPass()
   delete[] this->RawRGBABuffer;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeRGBAPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -117,13 +105,13 @@ void vtkCompositeRGBAPass::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositeRGBAPass::IsSupported(vtkOpenGLRenderWindow* context)
 {
   return (context != nullptr);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -238,9 +226,9 @@ void vtkCompositeRGBAPass::Render(const vtkRenderState* s)
   {
     // root
     // 1. figure out the back to front ordering
-    // 2. if root is not farest, save it in a TO
+    // 2. if root is not farthest, save it in a TO
     // 3. in back to front order:
-    // 3a. if this is step for root, render root TO (if not farest)
+    // 3a. if this is step for root, render root TO (if not farthest)
     // 3b. if satellite, get image, load it into TO, render quad
 
 #ifdef VTK_COMPOSITE_RGBAPASS_DEBUG
@@ -280,12 +268,8 @@ void vtkCompositeRGBAPass::Render(const vtkRenderState* s)
     timer->StopTimer();
     ostxx << "root0_" << vtkTimerLog::GetUniversalTime() << "_.png";
 
-    vtkStdString* sssxx = new vtkStdString;
-    (*sssxx) = ostxx.str();
-
     writer = vtkPNGWriter::New();
-    writer->SetFileName(*sssxx);
-    delete sssxx;
+    writer->SetFileName(ostxx.str().c_str());
     writer->SetInputConnection(converter->GetOutputPort());
     converter->Delete();
     importer->Delete();
@@ -335,9 +319,9 @@ void vtkCompositeRGBAPass::Render(const vtkRenderState* s)
       ostate->vtkglBlendFuncSeparate(
         GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-      glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // client to server
+      ostate->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1); // client to server
 
-      // 2. if root is not farest, save it in a TO
+      // 2. if root is not farthest, save it in a TO
       bool rootIsFarest = frontToBackList->GetValue(numProcs - 1) == 0;
       if (!rootIsFarest)
       {
@@ -351,7 +335,7 @@ void vtkCompositeRGBAPass::Render(const vtkRenderState* s)
       }
 
       // 3. in back to front order:
-      // 3a. if this is step for root, render root TO (if not farest)
+      // 3a. if this is step for root, render root TO (if not farthest)
       // 3b. if satellite, get image, load it into TO, render quad
 
       int procIndex = numProcs - 1;
@@ -434,12 +418,8 @@ void vtkCompositeRGBAPass::Render(const vtkRenderState* s)
     timer->StopTimer();
     osty << "rootend_" << vtkTimerLog::GetUniversalTime() << "_.png";
 
-    vtkStdString* sssy = new vtkStdString;
-    (*sssy) = osty.str();
-
     writer = vtkPNGWriter::New();
-    writer->SetFileName(*sssy);
-    delete sssy;
+    writer->SetFileName(osty.str().c_str());
     writer->SetInputConnection(converter->GetOutputPort());
     converter->Delete();
     importer->Delete();
@@ -465,7 +445,7 @@ void vtkCompositeRGBAPass::Render(const vtkRenderState* s)
     glReadPixels(0, 0, w, h, GL_RGBA, GL_FLOAT, static_cast<GLfloat*>(nullptr));
 
     // PBO to client
-    glPixelStorei(GL_PACK_ALIGNMENT, 1); // server to client
+    ostate->vtkglPixelStorei(GL_PACK_ALIGNMENT, 1); // server to client
     this->PBO->Download2D(VTK_FLOAT, this->RawRGBABuffer, dims, 4, continuousInc);
     this->PBO->UnBind();
 
@@ -495,12 +475,8 @@ void vtkCompositeRGBAPass::Render(const vtkRenderState* s)
     timer->StopTimer();
     ostxx << "satellite_send_" << vtkTimerLog::GetUniversalTime() << "_.png";
 
-    vtkStdString* sssxx = new vtkStdString;
-    (*sssxx) = ostxx.str();
-
     writer = vtkPNGWriter::New();
-    writer->SetFileName(*sssxx);
-    delete sssxx;
+    writer->SetFileName(ostxx.str().c_str());
     writer->SetInputConnection(converter->GetOutputPort());
     converter->Delete();
     importer->Delete();
@@ -522,7 +498,7 @@ void vtkCompositeRGBAPass::Render(const vtkRenderState* s)
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -549,3 +525,4 @@ void vtkCompositeRGBAPass::ReleaseGraphicsResources(vtkWindow* w)
     this->RootTexture = nullptr;
   }
 }
+VTK_ABI_NAMESPACE_END

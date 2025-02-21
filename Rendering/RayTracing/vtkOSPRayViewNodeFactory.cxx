@@ -1,32 +1,22 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayViewNodeFactory.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOSPRayViewNodeFactory.h"
 #include "vtkObjectFactory.h"
 
 #include "vtkOSPRayAMRVolumeMapperNode.h"
 #include "vtkOSPRayActorNode.h"
 #include "vtkOSPRayCameraNode.h"
-#include "vtkOSPRayCompositePolyDataMapper2Node.h"
+#include "vtkOSPRayCompositePolyDataMapperNode.h"
 #include "vtkOSPRayLightNode.h"
 #include "vtkOSPRayMoleculeMapperNode.h"
+#include "vtkOSPRayPointGaussianMapperNode.h"
 #include "vtkOSPRayPolyDataMapperNode.h"
 #include "vtkOSPRayRendererNode.h"
-#include "vtkOSPRayTetrahedraMapperNode.h"
+#include "vtkOSPRayUnstructuredVolumeMapperNode.h"
 #include "vtkOSPRayVolumeMapperNode.h"
 #include "vtkOSPRayVolumeNode.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkViewNode* ren_maker()
 {
   vtkOSPRayRendererNode* vn = vtkOSPRayRendererNode::New();
@@ -82,20 +72,26 @@ vtkViewNode* vm_maker()
 
 vtkViewNode* cpd_maker()
 {
-  vtkOSPRayCompositePolyDataMapper2Node* vn = vtkOSPRayCompositePolyDataMapper2Node::New();
+  vtkOSPRayCompositePolyDataMapperNode* vn = vtkOSPRayCompositePolyDataMapperNode::New();
   return vn;
 }
 
 vtkViewNode* tetm_maker()
 {
-  vtkOSPRayTetrahedraMapperNode* vn = vtkOSPRayTetrahedraMapperNode::New();
+  vtkOSPRayUnstructuredVolumeMapperNode* vn = vtkOSPRayUnstructuredVolumeMapperNode::New();
+  return vn;
+}
+
+vtkViewNode* particle_maker()
+{
+  vtkOSPRayPointGaussianMapperNode* vn = vtkOSPRayPointGaussianMapperNode::New();
   return vn;
 }
 
 //============================================================================
 vtkStandardNewMacro(vtkOSPRayViewNodeFactory);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayViewNodeFactory::vtkOSPRayViewNodeFactory()
 {
   // see vtkRenderWindow::GetRenderLibrary
@@ -113,19 +109,22 @@ vtkOSPRayViewNodeFactory::vtkOSPRayViewNodeFactory()
   this->RegisterOverride("vtkSmartVolumeMapper", vm_maker);
   this->RegisterOverride("vtkOSPRayVolumeMapper", vm_maker);
   this->RegisterOverride("vtkOpenGLGPUVolumeRayCastMapper", vm_maker);
-  this->RegisterOverride("vtkCompositePolyDataMapper2", cpd_maker);
+  this->RegisterOverride("vtkMultiBlockVolumeMapper", vm_maker);
+  this->RegisterOverride("vtkCompositePolyDataMapper", cpd_maker);
   this->RegisterOverride("vtkOpenGLProjectedTetrahedraMapper", tetm_maker);
   this->RegisterOverride("vtkUnstructuredGridVolumeZSweepMapper", tetm_maker);
   this->RegisterOverride("vtkUnstructuredGridVolumeRayCastMapper", tetm_maker);
   this->RegisterOverride("vtkAMRVolumeMapper", amrm_maker);
   this->RegisterOverride("vtkMoleculeMapper", molecule_maker);
+  this->RegisterOverride("vtkOpenGLPointGaussianMapper", particle_maker);
 }
 
-//----------------------------------------------------------------------------
-vtkOSPRayViewNodeFactory::~vtkOSPRayViewNodeFactory() {}
+//------------------------------------------------------------------------------
+vtkOSPRayViewNodeFactory::~vtkOSPRayViewNodeFactory() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayViewNodeFactory::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadraticEdge.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkQuadraticEdge.h"
 
 #include "vtkDoubleArray.h"
@@ -20,9 +8,13 @@
 #include "vtkObjectFactory.h"
 #include "vtkPoints.h"
 
+#include <algorithm> //std::copy
+#include <array>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkQuadraticEdge);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the line with two points.
 vtkQuadraticEdge::vtkQuadraticEdge()
 {
@@ -38,14 +30,14 @@ vtkQuadraticEdge::vtkQuadraticEdge()
   this->Line = vtkLine::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadraticEdge::~vtkQuadraticEdge()
 {
   this->Line->Delete();
   this->Scalars->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraticEdge::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& minDist2, double weights[])
 {
@@ -53,6 +45,15 @@ int vtkQuadraticEdge::EvaluatePosition(const double x[3], double closestPoint[3]
   double pc[3], dist2;
   int ignoreId, i, returnStatus, status;
   double lineWeights[2];
+
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
 
   pcoords[1] = pcoords[2] = 0.0;
 
@@ -62,17 +63,17 @@ int vtkQuadraticEdge::EvaluatePosition(const double x[3], double closestPoint[3]
   {
     if (i == 0)
     {
-      this->Line->Points->SetPoint(0, this->Points->GetPoint(0));
-      this->Line->Points->SetPoint(1, this->Points->GetPoint(2));
+      this->Line->Points->SetPoint(0, pts + 3 * 0);
+      this->Line->Points->SetPoint(1, pts + 3 * 2);
     }
     else
     {
-      this->Line->Points->SetPoint(0, this->Points->GetPoint(2));
-      this->Line->Points->SetPoint(1, this->Points->GetPoint(1));
+      this->Line->Points->SetPoint(0, pts + 3 * 2);
+      this->Line->Points->SetPoint(1, pts + 3 * 1);
     }
 
     status = this->Line->EvaluatePosition(x, closest, ignoreId, pc, dist2, lineWeights);
-    if (status != -1 && dist2 < minDist2)
+    if (status != -1 && ((dist2 < minDist2) || ((dist2 == minDist2) && (returnStatus == 0))))
     {
       returnStatus = status;
       minDist2 = dist2;
@@ -100,24 +101,33 @@ int vtkQuadraticEdge::EvaluatePosition(const double x[3], double closestPoint[3]
     else
     {
       // Compute weights only
-      this->InterpolationFunctions(pcoords, weights);
+      vtkQuadraticEdge::InterpolationFunctions(pcoords, weights);
     }
   }
 
   return returnStatus;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticEdge::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
   int i;
-  double a0[3], a1[3], a2[3];
-  this->Points->GetPoint(0, a0);
-  this->Points->GetPoint(1, a1);
-  this->Points->GetPoint(2, a2); // midside node
+  const double *a0, *a1, *a2;
 
-  this->InterpolationFunctions(pcoords, weights);
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+  a0 = pts;
+  a1 = pts + 3;
+  a2 = pts + 6; // midside node
+
+  vtkQuadraticEdge::InterpolationFunctions(pcoords, weights);
 
   for (i = 0; i < 3; i++)
   {
@@ -125,13 +135,13 @@ void vtkQuadraticEdge::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraticEdge::CellBoundary(int subId, const double pcoords[3], vtkIdList* pts)
 {
   return this->Line->CellBoundary(subId, pcoords, pts);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int LinearLines[2][2] = { { 0, 2 }, { 2, 1 } };
 
 void vtkQuadraticEdge::Contour(double value, vtkDataArray* cellScalars,
@@ -152,7 +162,7 @@ void vtkQuadraticEdge::Contour(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Line-line intersection. Intersection has to occur within [0,1] parametric
 // coordinates and with specified tolerance.
 
@@ -186,30 +196,16 @@ int vtkQuadraticEdge::IntersectWithLine(const double p1[3], const double p2[3], 
   return 0;
 }
 
-//----------------------------------------------------------------------------
-int vtkQuadraticEdge::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkQuadraticEdge::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
-
-  // The first line
-  ptIds->InsertId(0, this->PointIds->GetId(0));
-  pts->InsertPoint(0, this->Points->GetPoint(0));
-
-  ptIds->InsertId(1, this->PointIds->GetId(2));
-  pts->InsertPoint(1, this->Points->GetPoint(2));
-
-  // The second line
-  ptIds->InsertId(2, this->PointIds->GetId(2));
-  pts->InsertPoint(2, this->Points->GetPoint(2));
-
-  ptIds->InsertId(3, this->PointIds->GetId(1));
-  pts->InsertPoint(3, this->Points->GetPoint(1));
-
+  ptIds->SetNumberOfIds(4);
+  constexpr std::array<vtkIdType, 4> localPtIds{ 0, 2, 2, 1 };
+  std::copy(localPtIds.begin(), localPtIds.end(), ptIds->begin());
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticEdge::Derivatives(int vtkNotUsed(subId), const double vtkNotUsed(pcoords)[3],
   const double* vtkNotUsed(values), int vtkNotUsed(dim), double* vtkNotUsed(derivs))
 {
@@ -218,7 +214,7 @@ void vtkQuadraticEdge::Derivatives(int vtkNotUsed(subId), const double vtkNotUse
   vtkErrorMacro("Derivatives() is not implemented for this cell.");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip this quadratic edge using scalar value provided. Like contouring,
 // except that it cuts the edge to produce linear line segments.
 void vtkQuadraticEdge::Clip(double value, vtkDataArray* cellScalars,
@@ -238,7 +234,7 @@ void vtkQuadraticEdge::Clip(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute interpolation functions. Node [2] is the mid-edge node.
 void vtkQuadraticEdge::InterpolationFunctions(const double pcoords[3], double weights[3])
 {
@@ -249,7 +245,7 @@ void vtkQuadraticEdge::InterpolationFunctions(const double pcoords[3], double we
   weights[2] = 4.0 * r * (1.0 - r);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Derivatives in parametric space.
 void vtkQuadraticEdge::InterpolationDerivs(const double pcoords[3], double derivs[3])
 {
@@ -260,14 +256,14 @@ void vtkQuadraticEdge::InterpolationDerivs(const double pcoords[3], double deriv
   derivs[2] = 4.0 - r * 8.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkQEdgeCellPCoords[9] = { 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.0 };
 double* vtkQuadraticEdge::GetParametricCoords()
 {
   return vtkQEdgeCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticEdge::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -275,3 +271,4 @@ void vtkQuadraticEdge::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Line:\n";
   this->Line->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayCache.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOSPRayCache
  * @brief   temporal cache ospray structures to speed flipbooks
@@ -35,6 +23,7 @@
 
 #include "RTWrapper/RTWrapper.h" // for handle types
 
+VTK_ABI_NAMESPACE_BEGIN
 template <class T>
 class VTKRENDERINGRAYTRACING_EXPORT vtkOSPRayCache
 {
@@ -69,7 +58,7 @@ public:
     return nullptr;
   }
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of slots available in the cache.
    * Default is 0.
@@ -87,7 +76,7 @@ public:
     this->Size = sz;
   }
   size_t GetSize() { return this->Size; }
-  //@}
+  ///@}
 
   /**
    * Query whether cache contains tstep
@@ -109,7 +98,7 @@ private:
 
   size_t Size;
 
-  std::map<double, std::shared_ptr<T> > Contents;
+  std::map<double, std::shared_ptr<T>> Contents;
 };
 
 class vtkOSPRayCacheItemObject
@@ -126,5 +115,6 @@ public:
   RTW::Backend* backend = nullptr;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkOSPRayCache_h
 // VTK-HeaderTest-Exclude: vtkOSPRayCache.h

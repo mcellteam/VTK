@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkKMeansStatistics.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2010 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2010 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkKMeansStatistics
  * @brief   A class for KMeans clustering
@@ -100,6 +84,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkFiltersStatisticsModule.h" // For export macro
 #include "vtkStatisticsAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdTypeArray;
 class vtkIntArray;
 class vtkDoubleArray;
@@ -113,62 +98,79 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkKMeansStatistics* New();
 
-  //@{
+  ///@{
   /**
    * Set the DistanceFunctor.
    */
   virtual void SetDistanceFunctor(vtkKMeansDistanceFunctor*);
   vtkGetObjectMacro(DistanceFunctor, vtkKMeansDistanceFunctor);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the \a DefaultNumberOfClusters, used when no initial cluster coordinates are specified.
    */
   vtkSetMacro(DefaultNumberOfClusters, int);
   vtkGetMacro(DefaultNumberOfClusters, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the KValuesArrayName.
    */
   vtkSetStringMacro(KValuesArrayName);
   vtkGetStringMacro(KValuesArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the MaxNumIterations used to terminate iterations on
    * cluster center coordinates when the relative tolerance can not be met.
    */
   vtkSetMacro(MaxNumIterations, int);
   vtkGetMacro(MaxNumIterations, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the relative \a Tolerance used to terminate iterations on
    * cluster center coordinates.
    */
   vtkSetMacro(Tolerance, double);
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
 
   /**
    * Given a collection of models, calculate aggregate model
    * NB: not implemented
    */
-  void Aggregate(vtkDataObjectCollection*, vtkMultiBlockDataSet*) override { return; }
+  void Aggregate(vtkDataObjectCollection*, vtkMultiBlockDataSet*) override {}
 
   /**
    * A convenience method for setting properties by name.
    */
   bool SetParameter(const char* parameter, int index, vtkVariant value) override;
 
+  ///@{
+  /**
+   * If there is a ghost array in the input, then ghosts matching `GhostsToSkip` mask
+   * will be skipped. It is set to 0xff by default (every ghosts types are skipped).
+   *
+   * @sa
+   * vtkDataSetAttributes
+   * vtkFieldData
+   * vtkPointData
+   * vtkCellData
+   */
+  vtkSetMacro(GhostsToSkip, unsigned char);
+  vtkGetMacro(GhostsToSkip, unsigned char);
+  ///@}
+
 protected:
   vtkKMeansStatistics();
   ~vtkKMeansStatistics() override;
+
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   /**
    * Execute the calculations required by the Learn option.
@@ -188,7 +190,7 @@ protected:
   /**
    * Execute the calculations required by the Test option.
    */
-  void Test(vtkTable*, vtkMultiBlockDataSet*, vtkTable*) override { return; }
+  void Test(vtkTable*, vtkMultiBlockDataSet*, vtkTable*) override {}
 
   /**
    * Provide the appropriate assessment functor.
@@ -202,7 +204,7 @@ protected:
    * to handle distributed datasets).
    */
   virtual void UpdateClusterCenters(vtkTable* newClusterElements, vtkTable* curClusterElements,
-    vtkIdTypeArray* numMembershipChanges, vtkIdTypeArray* numElementsInCluster,
+    vtkIdTypeArray* numMembershipChanges, vtkIdTypeArray* numDataElementsInCluster,
     vtkDoubleArray* error, vtkIdTypeArray* startRunID, vtkIdTypeArray* endRunID,
     vtkIntArray* computeRun);
 
@@ -257,9 +259,17 @@ protected:
    */
   vtkKMeansDistanceFunctor* DistanceFunctor;
 
+  /**
+   * Number of ghosts in input data.
+   */
+  vtkIdType NumberOfGhosts;
+
+  unsigned char GhostsToSkip;
+
 private:
   vtkKMeansStatistics(const vtkKMeansStatistics&) = delete;
   void operator=(const vtkKMeansStatistics&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

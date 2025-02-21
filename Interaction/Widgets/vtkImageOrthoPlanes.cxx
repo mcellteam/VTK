@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageOrthoPlanes.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageOrthoPlanes.h"
 
 #include "vtkAlgorithm.h"
@@ -28,11 +16,12 @@
 
 #include <cmath>
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageOrthoPlanes);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void vtkImageOrthoPlanesInteractionCallback(
   vtkObject* obj, unsigned long, void* clientData, void* vtkNotUsed(callData))
 {
@@ -42,7 +31,7 @@ static void vtkImageOrthoPlanesInteractionCallback(
   orthoPlane->HandlePlaneEvent(currentImagePlane);
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageOrthoPlanes::vtkImageOrthoPlanes()
 {
   this->NumberOfPlanes = 3;
@@ -71,7 +60,7 @@ vtkImageOrthoPlanes::vtkImageOrthoPlanes()
   this->Transform = vtkTransform::New();
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageOrthoPlanes::~vtkImageOrthoPlanes()
 {
   if (this->Transform)
@@ -92,7 +81,7 @@ vtkImageOrthoPlanes::~vtkImageOrthoPlanes()
   delete[] this->ObserverTags;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::HandlePlaneEvent(vtkImagePlaneWidget* currentImagePlane)
 {
   int i = 0;
@@ -224,7 +213,7 @@ void vtkImageOrthoPlanes::HandlePlaneEvent(vtkImagePlaneWidget* currentImagePlan
   }
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::HandlePlanePush(
   vtkImagePlaneWidget* currentImagePlane, int indexOfModifiedPlane)
 {
@@ -292,7 +281,7 @@ void vtkImageOrthoPlanes::HandlePlanePush(
   }
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::HandlePlaneTranslate(
   vtkImagePlaneWidget* currentImagePlane, int indexOfModifiedPlane)
 {
@@ -327,7 +316,7 @@ void vtkImageOrthoPlanes::HandlePlaneTranslate(
   matrix->Delete();
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::HandlePlaneRotation(
   vtkImagePlaneWidget* currentImagePlane, int indexOfModifiedPlane)
 {
@@ -424,7 +413,7 @@ void vtkImageOrthoPlanes::HandlePlaneRotation(
   matrix->Delete();
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::HandlePlaneScale(
   vtkImagePlaneWidget* currentImagePlane, int indexOfModifiedPlane)
 {
@@ -576,7 +565,7 @@ void vtkImageOrthoPlanes::HandlePlaneScale(
   matrix->Delete();
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::SetTransformMatrix(
   vtkMatrix4x4* matrix, vtkImagePlaneWidget* currentImagePlane, int indexOfModifiedPlane)
 {
@@ -622,7 +611,7 @@ void vtkImageOrthoPlanes::SetTransformMatrix(
   }
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::SetPlane(int j, vtkImagePlaneWidget* currentImagePlane)
 {
   if (j > this->NumberOfPlanes)
@@ -700,7 +689,7 @@ void vtkImageOrthoPlanes::SetPlane(int j, vtkImagePlaneWidget* currentImagePlane
   }
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImagePlaneWidget* vtkImageOrthoPlanes::GetPlane(int i)
 {
   if (i < 0 || i >= this->NumberOfPlanes)
@@ -714,7 +703,7 @@ vtkImagePlaneWidget* vtkImageOrthoPlanes::GetPlane(int i)
   }
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::ResetPlanes()
 {
   int i = 0;
@@ -753,7 +742,7 @@ void vtkImageOrthoPlanes::ResetPlanes()
   this->Modified();
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::GetBounds(double bounds[6])
 {
   vtkAlgorithm* input = this->Planes[0]->GetReslice()->GetInputAlgorithm();
@@ -779,7 +768,7 @@ void vtkImageOrthoPlanes::GetBounds(double bounds[6])
   }
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageOrthoPlanes::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -787,3 +776,4 @@ void vtkImageOrthoPlanes::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Transform: " << this->Transform << "\n";
   this->Transform->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

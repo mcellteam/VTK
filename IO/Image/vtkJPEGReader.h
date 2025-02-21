@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkJPEGReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkJPEGReader
  * @brief   read JPEG files
@@ -31,6 +19,7 @@
 #include "vtkIOImageModule.h" // For export macro
 #include "vtkImageReader2.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOIMAGE_EXPORT vtkJPEGReader : public vtkImageReader2
 {
 public:
@@ -41,7 +30,7 @@ public:
   /**
    * Is the given file a JPEG file?
    */
-  int CanReadFile(const char* fname) override;
+  int CanReadFile(VTK_FILEPATH const char* fname) override;
 
   /**
    * Get the file extensions for this format.
@@ -56,8 +45,11 @@ public:
   const char* GetDescriptiveName() override { return "JPEG"; }
 
 protected:
-  vtkJPEGReader() {}
-  ~vtkJPEGReader() override {}
+  vtkJPEGReader() = default;
+  ~vtkJPEGReader() override = default;
+
+  template <class OT>
+  void InternalUpdate(vtkImageData* data, OT* outPtr);
 
   void ExecuteInformation() override;
   void ExecuteDataWithInformation(vtkDataObject* out, vtkInformation* outInfo) override;
@@ -66,4 +58,5 @@ private:
   vtkJPEGReader(const vtkJPEGReader&) = delete;
   void operator=(const vtkJPEGReader&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

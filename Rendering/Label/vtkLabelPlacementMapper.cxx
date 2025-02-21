@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLabelPlacementMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkLabelPlacementMapper.h"
 
@@ -46,6 +30,7 @@
 #include "vtkTransformCoordinateSystems.h"
 
 // From: http://www.flipcode.com/archives/2D_OBB_Intersection.shtml
+VTK_ABI_NAMESPACE_BEGIN
 class LabelRect
 {
 public:
@@ -136,11 +121,7 @@ public:
       double d1 = other.Corner[0][0] - Corner[2][0];
       double d2 = Corner[0][1] - other.Corner[2][1];
       double d3 = other.Corner[0][1] - Corner[2][1];
-      if (d0 < 0. && d1 < 0. && d2 < 0. && d3 < 0.)
-      {
-        return true;
-      }
-      return false;
+      return d0 < 0. && d1 < 0. && d2 < 0. && d3 < 0.;
     }
     else
     {
@@ -348,7 +329,7 @@ public:
     void Reset() { this->Labels.clear(); }
     void Insert(const LabelRect& rect) { this->Labels.push_back(rect); }
   };
-  std::vector<std::vector<ScreenTile> > Tiles;
+  std::vector<std::vector<ScreenTile>> Tiles;
   float ScreenOrigin[2];
   float TileSize[2];
   int NumTiles[2];
@@ -458,7 +439,7 @@ vtkStandardNewMacro(vtkLabelPlacementMapper);
 vtkCxxSetObjectMacro(vtkLabelPlacementMapper, AnchorTransform, vtkCoordinate);
 vtkCxxSetObjectMacro(vtkLabelPlacementMapper, RenderStrategy, vtkLabelRenderStrategy);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLabelPlacementMapper::vtkLabelPlacementMapper()
 {
   this->AnchorTransform = vtkCoordinate::New();
@@ -469,7 +450,6 @@ vtkLabelPlacementMapper::vtkLabelPlacementMapper()
   this->IteratorType = vtkLabelHierarchy::QUEUE;
   this->VisiblePoints = vtkSelectVisiblePoints::New();
   this->VisiblePoints->SetTolerance(0.002);
-  this->UseUnicodeStrings = false;
   this->PlaceAllLabels = false;
   this->OutputTraversedBounds = false;
   this->GeneratePerturbedLabelSpokes = false;
@@ -502,7 +482,7 @@ vtkLabelPlacementMapper::vtkLabelPlacementMapper()
   this->SetRenderStrategy(s);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLabelPlacementMapper::~vtkLabelPlacementMapper()
 {
   this->AnchorTransform->Delete();
@@ -514,7 +494,7 @@ vtkLabelPlacementMapper::~vtkLabelPlacementMapper()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLabelPlacementMapper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkLabelHierarchy");
@@ -523,7 +503,7 @@ int vtkLabelPlacementMapper::FillInputPortInformation(int vtkNotUsed(port), vtkI
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* vtkNotUsed(actor))
 {
   vtkSmartPointer<vtkTimerLog> log = vtkSmartPointer<vtkTimerLog>::New();
@@ -559,7 +539,7 @@ void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* v
   }
 
   // If the renderer size is zero, silently place no labels.
-  int* renSize = ren->GetSize();
+  const int* renSize = ren->GetSize();
   if (renSize[0] == 0 || renSize[1] == 0)
   {
     return;
@@ -602,12 +582,12 @@ void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* v
   // Compute frustum for excluding labels that are outside the visible region.
   double frustumPlanes[24];
   vtkLabelHierarchy::GetAnchorFrustumPlanes(frustumPlanes, ren, this->AnchorTransform);
-
   unsigned long allowableLabelArea = static_cast<unsigned long>(
     ((kdbounds[1] - kdbounds[0]) * (kdbounds[3] - kdbounds[2])) * this->MaximumLabelFraction);
   (void)allowableLabelArea;
+#ifndef NDEBUG
   unsigned long renderedLabelArea = 0;
-  unsigned long iteratedLabelArea = 0;
+#endif
   double camVec[3];
   if (this->PositionsAsNormals)
   {
@@ -718,14 +698,7 @@ void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* v
     }
 
     double bds[4];
-    if (this->UseUnicodeStrings)
-    {
-      this->RenderStrategy->ComputeLabelBounds(tpropCopy, inIter->GetUnicodeLabel(), bds);
-    }
-    else
-    {
-      this->RenderStrategy->ComputeLabelBounds(tpropCopy, inIter->GetLabel(), bds);
-    }
+    this->RenderStrategy->ComputeLabelBounds(tpropCopy, inIter->GetLabel(), bds);
 
     // Offset display position by lower left corner of bounding box
     dispx[0] = static_cast<int>(origin[0] + bds[0]);
@@ -791,17 +764,13 @@ void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* v
       }
 
       // Render it
-      if (this->UseUnicodeStrings)
-      {
-        this->RenderStrategy->RenderLabel(origin, tpropCopy, inIter->GetUnicodeLabel(), width);
-      }
-      else
-      {
-        this->RenderStrategy->RenderLabel(origin, tpropCopy, inIter->GetLabel(), width);
-      }
+      this->RenderStrategy->RenderLabel(origin, tpropCopy, inIter->GetLabel(), width);
+
+#ifndef NDEBUG
       int renderedHeight = static_cast<int>(bds[3] - bds[2]);
       int renderedWidth = static_cast<int>((bds[1] - bds[0] < width) ? (bds[1] - bds[0]) : width);
       renderedLabelArea += static_cast<unsigned long>(renderedWidth * renderedHeight);
+#endif
       continue;
     }
 
@@ -811,24 +780,14 @@ void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* v
                             << ur[0] << "," << ur[1] << ")");
       if (labelType == 0)
       {
-        if (this->UseUnicodeStrings)
-        {
-          vtkDebugMacro("Area: " << renderedLabelArea << "  /  " << allowableLabelArea << " \""
-                                 << inIter->GetUnicodeLabel().utf8_str() << "\"");
-        }
-        else
-        {
-          vtkDebugMacro("Area: " << renderedLabelArea << "  /  " << allowableLabelArea << " \""
-                                 << inIter->GetLabel().c_str() << "\"");
-        }
+        vtkDebugMacro("Area: " << renderedLabelArea << "  /  " << allowableLabelArea << " \""
+                               << inIter->GetLabel() << "\"");
       }
       else
       {
         vtkDebugMacro("Area: " << renderedLabelArea << "  /  " << allowableLabelArea);
       }
     }
-
-    iteratedLabelArea += static_cast<unsigned long>(sz[0] * sz[1]);
 
     double orient = tpropCopy->GetOrientation();
 
@@ -850,18 +809,13 @@ void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* v
     {
       r.Render(ren, this->Shape, this->Style, this->Margin, this->BackgroundColor,
         this->BackgroundOpacity);
+#ifndef NDEBUG
       renderedLabelArea += static_cast<unsigned long>(sz[0] * sz[1]);
+#endif
       if (labelType == 0)
       {
         // label is text
-        if (this->UseUnicodeStrings)
-        {
-          this->RenderStrategy->RenderLabel(origin, tpropCopy, inIter->GetUnicodeLabel());
-        }
-        else
-        {
-          this->RenderStrategy->RenderLabel(origin, tpropCopy, inIter->GetLabel());
-        }
+        this->RenderStrategy->RenderLabel(origin, tpropCopy, inIter->GetLabel());
 
         // TODO: 1. Perturb coincident points.
         //       2. Use GeneratePerturbedLabelSpokes to possibly render perturbed points.
@@ -901,7 +855,9 @@ void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* v
 
   vtkDebugMacro("------");
   vtkDebugMacro("Placed: " << placed);
+  (void)placed;
   vtkDebugMacro("Labels Occluded: " << occluded);
+  (void)occluded;
 
   delete[] zPtr;
 
@@ -911,20 +867,19 @@ void vtkLabelPlacementMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* v
   // cerr << log->GetElapsedTime() << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLabelPlacementMapper::ReleaseGraphicsResources(vtkWindow* win)
 {
   this->RenderStrategy->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLabelPlacementMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "AnchorTransform: " << this->AnchorTransform << "\n";
   os << indent << "MaximumLabelFraction: " << this->MaximumLabelFraction << "\n";
   os << indent << "PositionsAsNormals: " << (this->PositionsAsNormals ? "ON" : "OFF") << "\n";
-  os << indent << "UseUnicodeStrings: " << (this->UseUnicodeStrings ? "ON" : "OFF") << "\n";
   os << indent << "IteratorType: " << this->IteratorType << "\n";
   os << indent << "RenderStrategy: " << this->RenderStrategy << "\n";
   os << indent << "PlaceAllLabels: " << (this->PlaceAllLabels ? "ON" : "OFF") << "\n";
@@ -940,3 +895,4 @@ void vtkLabelPlacementMapper::PrintSelf(ostream& os, vtkIndent indent)
      << this->BackgroundColor[1] << ", " << this->BackgroundColor[2] << endl;
   os << indent << "BackgroundOpacity: " << this->BackgroundOpacity << "\n";
 }
+VTK_ABI_NAMESPACE_END

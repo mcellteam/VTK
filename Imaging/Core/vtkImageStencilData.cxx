@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageStencilData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageStencilData.h"
 
 #include "vtkDataArray.h"
@@ -26,9 +14,10 @@
 #include <algorithm>
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageStencilData);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 
@@ -240,7 +229,7 @@ void vtkImageStencilDataClipExtent(int ext1, int ext2, int* clist, int& clistlen
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilData::vtkImageStencilData()
 {
   this->Spacing[0] = 1;
@@ -266,13 +255,13 @@ vtkImageStencilData::vtkImageStencilData()
   this->Information->Set(vtkDataObject::DATA_EXTENT(), this->Extent, 6);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilData::~vtkImageStencilData()
 {
   this->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -289,7 +278,7 @@ void vtkImageStencilData::PrintSelf(ostream& os, vtkIndent indent)
      << this->Origin[2] << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::Initialize()
 {
   if (this->ExtentLists)
@@ -317,7 +306,7 @@ void vtkImageStencilData::Initialize()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::CopyInformationFromPipeline(vtkInformation* info)
 {
   // Let the superclass copy whatever it wants.
@@ -328,7 +317,7 @@ void vtkImageStencilData::CopyInformationFromPipeline(vtkInformation* info)
   this->CopyOriginAndSpacingFromPipeline(info);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::CopyInformationToPipeline(vtkInformation* info)
 {
   // Let the superclass copy information to the pipeline
@@ -339,7 +328,7 @@ void vtkImageStencilData::CopyInformationToPipeline(vtkInformation* info)
   info->Set(vtkDataObject::ORIGIN(), this->Origin, 3);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::CopyOriginAndSpacingFromPipeline(vtkInformation* info)
 {
   // Copy origin and spacing from pipeline information to the internal
@@ -354,7 +343,7 @@ void vtkImageStencilData::CopyOriginAndSpacingFromPipeline(vtkInformation* info)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::SetExtent(const int extent[6])
 {
   for (int i = 0; i < 6; i++)
@@ -363,14 +352,14 @@ void vtkImageStencilData::SetExtent(const int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::SetExtent(int x1, int x2, int y1, int y2, int z1, int z2)
 {
   int ext[6] = { x1, x2, y1, y2, z1, z2 };
   this->SetExtent(ext);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::ShallowCopy(vtkDataObject* o)
 {
   vtkImageStencilData* s = vtkImageStencilData::SafeDownCast(o);
@@ -383,7 +372,7 @@ void vtkImageStencilData::ShallowCopy(vtkDataObject* o)
   vtkDataObject::ShallowCopy(o);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::DeepCopy(vtkDataObject* o)
 {
   vtkImageStencilData* s = vtkImageStencilData::SafeDownCast(o);
@@ -396,7 +385,7 @@ void vtkImageStencilData::DeepCopy(vtkDataObject* o)
   vtkDataObject::DeepCopy(o);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::InternalImageStencilDataCopy(vtkImageStencilData* s)
 {
   // copy information that accompanies the data
@@ -452,7 +441,7 @@ void vtkImageStencilData::InternalImageStencilDataCopy(vtkImageStencilData* s)
   memcpy(this->Extent, s->GetExtent(), 6 * sizeof(int));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Change the extent of the stencil while preserving any data that lies
 // within the intersection of the new and old extents.  Any data that lies
 // outside of the intersection will be zeroed.
@@ -540,7 +529,7 @@ void vtkImageStencilData::ChangeExtent(const int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::AllocateExtents()
 {
   int extent[6];
@@ -596,7 +585,7 @@ void vtkImageStencilData::AllocateExtents()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given the total output x extent [xMin,xMax] and the current y, z indices,
 // return each sub-extent [r1,r2] that lies within within the unclipped
 // region in sequence.  A value of '0' is returned if no more sub-extents
@@ -699,7 +688,7 @@ int vtkImageStencilData::GetNextExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Checks if an index is inside the stencil.
 int vtkImageStencilData::IsInside(int xIdx, int yIdx, int zIdx)
 {
@@ -743,7 +732,7 @@ int vtkImageStencilData::IsInside(int xIdx, int yIdx, int zIdx)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //  Fills the stencil.  Extents must be set.
 void vtkImageStencilData::Fill()
 {
@@ -764,7 +753,7 @@ void vtkImageStencilData::Fill()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Insert a sub extent [r1,r2] on to the list for the x row at (yIdx,zIdx).
 void vtkImageStencilData::InsertNextExtent(int r1, int r2, int yIdx, int zIdx)
 {
@@ -776,7 +765,7 @@ void vtkImageStencilData::InsertNextExtent(int r1, int r2, int yIdx, int zIdx)
     &this->ExtentListLengths[this->NumberOfExtentEntries + 2 * incr]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::LogicalOperationExtent(
   int r1, int r2, int yIdx, int zIdx, Operation operation)
 {
@@ -819,31 +808,31 @@ void vtkImageStencilData::LogicalOperationExtent(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::InsertAndMergeExtent(int r1, int r2, int yIdx, int zIdx)
 {
   this->LogicalOperationExtent(r1, r2, yIdx, zIdx, Merge);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::RemoveExtent(int r1, int r2, int yIdx, int zIdx)
 {
   this->LogicalOperationExtent(r1, r2, yIdx, zIdx, Erase);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilData* vtkImageStencilData::GetData(vtkInformation* info)
 {
   return info ? vtkImageStencilData::SafeDownCast(info->Get(DATA_OBJECT())) : nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilData* vtkImageStencilData::GetData(vtkInformationVector* v, int i)
 {
   return vtkImageStencilData::GetData(v->GetInformationObject(i));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::LogicalOperationInPlace(vtkImageStencilData* stencil, Operation operation)
 {
   // Find the intersection of the two extents
@@ -912,7 +901,7 @@ void vtkImageStencilData::LogicalOperationInPlace(vtkImageStencilData* stencil, 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::Add(vtkImageStencilData* stencil1)
 {
   int extent[6], extent1[6], extent2[6];
@@ -939,7 +928,7 @@ void vtkImageStencilData::Add(vtkImageStencilData* stencil1)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::Subtract(vtkImageStencilData* stencil1)
 {
   int extent1[6], extent2[6];
@@ -958,7 +947,7 @@ void vtkImageStencilData::Subtract(vtkImageStencilData* stencil1)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilData::Replace(vtkImageStencilData* stencil1)
 {
   int extent[6], extent1[6], extent2[6], r1, r2, idy, idz, iter = 0;
@@ -1002,7 +991,7 @@ void vtkImageStencilData::Replace(vtkImageStencilData* stencil1)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStencilData::Clip(int extent[6])
 {
   int currentExtent[6];
@@ -1057,13 +1046,13 @@ int vtkImageStencilData::Clip(int extent[6])
   return modified;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // tolerance for float-to-int conversion in stencil operations, this value
 // is exactly 0.5*2^-16 (in voxel units, not physical units)
 
 #define VTK_STENCIL_TOL 7.62939453125e-06
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilRaster::vtkImageStencilRaster(const int extent[2])
 {
   int rsize = extent[1] - extent[0] + 1;
@@ -1088,7 +1077,7 @@ vtkImageStencilRaster::vtkImageStencilRaster(const int extent[2])
   this->UsedExtent[1] = -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilRaster::~vtkImageStencilRaster()
 {
   if (this->UsedExtent[1] >= this->UsedExtent[0])
@@ -1104,12 +1093,12 @@ vtkImageStencilRaster::~vtkImageStencilRaster()
   delete[] this->Raster;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilRaster::PrepareForNewData(const int allocateExtent[2])
 {
   if (this->UsedExtent[1] >= this->UsedExtent[0])
   {
-    // reset and re-use the allocated raster lines
+    // reset and reuse the allocated raster lines
     size_t imin = static_cast<size_t>(this->UsedExtent[0] - this->Extent[0]);
     size_t imax = static_cast<size_t>(this->UsedExtent[1] - this->Extent[0]);
     for (size_t i = imin; i <= imax; i++)
@@ -1125,7 +1114,7 @@ void vtkImageStencilRaster::PrepareForNewData(const int allocateExtent[2])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilRaster::PrepareExtent(int ymin, int ymax)
 {
   // this does not do any allocation, it just initializes any
@@ -1181,7 +1170,7 @@ void vtkImageStencilRaster::PrepareExtent(int ymin, int ymax)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilRaster::InsertPoint(int y, double x, int i)
 {
   size_t pos = static_cast<size_t>(y - this->Extent[0]);
@@ -1214,7 +1203,7 @@ void vtkImageStencilRaster::InsertPoint(int y, double x, int i)
   *rtail++ = x;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilRaster::InsertLine(const double pt1[2], const double pt2[2])
 {
   double x1 = pt1[0];
@@ -1307,18 +1296,7 @@ void vtkImageStencilRaster::InsertLine(const double pt1[2], const double pt2[2])
   }
 }
 
-#ifndef VTK_LEGACY_REMOVE
-//----------------------------------------------------------------------------
-void vtkImageStencilRaster::InsertLine(const double pt1[2], const double pt2[2], bool, bool)
-{
-  VTK_LEGACY_REPLACED_BODY(vtkImageStencilRaster::InsertLine(double[2], double[2], bool, bool),
-    "VTK 6.2", vtkImageStencilRaster::InsertLine(double[2], double[2]));
-
-  this->InsertLine(pt1, pt2);
-}
-#endif
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilRaster::FillStencilData(
   vtkImageStencilData* data, const int extent[6], int xj, int yj)
 {
@@ -1548,3 +1526,4 @@ void vtkImageStencilRaster::FillStencilData(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

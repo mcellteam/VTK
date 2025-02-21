@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkImageItem
@@ -28,10 +16,12 @@
 #include "vtkContextItem.h"
 #include "vtkRenderingContext2DModule.h" // For export macro
 #include "vtkSmartPointer.h"             // For SP ivars.
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 
-class VTKRENDERINGCONTEXT2D_EXPORT vtkImageItem : public vtkContextItem
+class VTKRENDERINGCONTEXT2D_EXPORT VTK_MARSHALAUTO vtkImageItem : public vtkContextItem
 {
 public:
   vtkTypeMacro(vtkImageItem, vtkContextItem);
@@ -49,26 +39,26 @@ public:
    */
   void SetImage(vtkImageData* image);
 
-  //@{
+  ///@{
   /**
    * Get the image of the item.
    */
   vtkGetObjectMacro(Image, vtkImageData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the position of the bottom corner of the image.
    */
   vtkSetVector2Macro(Position, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the position of the bottom corner of the image.
    */
   vtkGetVector2Macro(Position, float);
-  //@}
+  ///@}
 
 protected:
   vtkImageItem();
@@ -83,4 +73,5 @@ private:
   void operator=(const vtkImageItem&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkImageItem_h

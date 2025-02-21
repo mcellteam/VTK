@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkNetCDFPOPReader.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkNetCDFPOPReader.h"
 #include "vtkCallbackCommand.h"
@@ -29,10 +17,12 @@ PURPOSE.  See the above copyright notice for more information.
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkNetCDFPOPReader);
 
 //============================================================================
-#define CALL_NETCDF(call)                                                                          \
+#define CALL_NETCDF_INT(call)                                                                      \
+  do                                                                                               \
   {                                                                                                \
     int errorcode = call;                                                                          \
     if (errorcode != NC_NOERR)                                                                     \
@@ -40,7 +30,7 @@ vtkStandardNewMacro(vtkNetCDFPOPReader);
       vtkErrorMacro(<< "netCDF Error: " << nc_strerror(errorcode));                                \
       return 0;                                                                                    \
     }                                                                                              \
-  }
+  } while (false)
 //============================================================================
 
 class vtkNetCDFPOPReaderInternal
@@ -56,7 +46,7 @@ public:
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // set default values
 vtkNetCDFPOPReader::vtkNetCDFPOPReader()
 {
@@ -74,7 +64,7 @@ vtkNetCDFPOPReader::vtkNetCDFPOPReader()
     vtkCommand::ModifiedEvent, this->SelectionObserver);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // delete filename and netcdf file descriptor
 vtkNetCDFPOPReader::~vtkNetCDFPOPReader()
 {
@@ -93,7 +83,7 @@ vtkNetCDFPOPReader::~vtkNetCDFPOPReader()
   this->Internals = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFPOPReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -109,7 +99,7 @@ void vtkNetCDFPOPReader::PrintSelf(ostream& os, vtkIndent indent)
   this->Internals->VariableArraySelection->PrintSelf(os, indent.GetNextIndent());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // RequestInformation supplies global meta information
 // This should return the reality of what the reader is going to supply.
 // This retrieve the extents for the rectilinear grid
@@ -155,19 +145,19 @@ int vtkNetCDFPOPReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   {
     this->Internals->VariableMap[i] = -1;
     // get number of dimensions
-    CALL_NETCDF(nc_inq_varndims(this->NCDFFD, i, &dataDimension));
+    CALL_NETCDF_INT(nc_inq_varndims(this->NCDFFD, i, &dataDimension));
     // Variable Dimension ID's containing x,y,z coords for the rectilinear
     // grid spacing
-    CALL_NETCDF(nc_inq_vardimid(this->NCDFFD, i, dimidsp));
+    CALL_NETCDF_INT(nc_inq_vardimid(this->NCDFFD, i, dimidsp));
     if (dataDimension == 3)
     {
       this->Internals->VariableMap[i] = actualVariableCounter++;
       // get variable name
-      CALL_NETCDF(nc_inq_varname(this->NCDFFD, i, variableName));
+      CALL_NETCDF_INT(nc_inq_varname(this->NCDFFD, i, variableName));
       this->Internals->VariableArraySelection->AddArray(variableName);
       for (int m = 0; m < dataDimension; m++)
       {
-        CALL_NETCDF(nc_inq_dimlen(this->NCDFFD, dimidsp[m], dimensions + m));
+        CALL_NETCDF_INT(nc_inq_dimlen(this->NCDFFD, dimidsp[m], dimensions + m));
         // acquire variable dimensions
       }
       extent[0] = extent[2] = extent[4] = 0; // set extent
@@ -181,7 +171,7 @@ int vtkNetCDFPOPReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Setting extents of the rectilinear grid
 int vtkNetCDFPOPReader::RequestData(vtkInformation* request,
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
@@ -250,7 +240,7 @@ int vtkNetCDFPOPReader::RequestData(vtkInformation* request,
         this->Internals->VariableArraySelection->GetArrayName(this->Internals->VariableMap[i]),
         &varidp);
 
-      if (firstPass == true)
+      if (firstPass)
       {
         int dimidsp[3];
         nc_inq_vardimid(this->NCDFFD, varidp, dimidsp);
@@ -306,7 +296,7 @@ int vtkNetCDFPOPReader::RequestData(vtkInformation* request,
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // following 5 functions are used for paraview user interface
 void vtkNetCDFPOPReader::SelectionModifiedCallback(
   vtkObject*, unsigned long, void* clientdata, void*)
@@ -314,13 +304,13 @@ void vtkNetCDFPOPReader::SelectionModifiedCallback(
   static_cast<vtkNetCDFPOPReader*>(clientdata)->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNetCDFPOPReader::GetNumberOfVariableArrays()
 {
   return this->Internals->VariableArraySelection->GetNumberOfArrays();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkNetCDFPOPReader::GetVariableArrayName(int index)
 {
   if (index < 0 || index >= this->GetNumberOfVariableArrays())
@@ -330,13 +320,13 @@ const char* vtkNetCDFPOPReader::GetVariableArrayName(int index)
   return this->Internals->VariableArraySelection->GetArrayName(index);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNetCDFPOPReader::GetVariableArrayStatus(const char* name)
 {
   return this->Internals->VariableArraySelection->ArrayIsEnabled(name);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFPOPReader::SetVariableArrayStatus(const char* name, int status)
 {
   vtkDebugMacro("Set cell array \"" << name << "\" status to: " << status);
@@ -357,3 +347,4 @@ void vtkNetCDFPOPReader::SetVariableArrayStatus(const char* name, int status)
     this->Modified();
   }
 }
+VTK_ABI_NAMESPACE_END

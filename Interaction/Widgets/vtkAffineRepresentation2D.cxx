@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAffineRepresentation2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAffineRepresentation2D.h"
 #include "vtkActor2D.h"
 #include "vtkAssemblyPath.h"
@@ -34,6 +22,7 @@
 #include "vtkTransform.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAffineRepresentation2D);
 
 vtkCxxSetObjectMacro(vtkAffineRepresentation2D, Property, vtkProperty2D);
@@ -42,7 +31,7 @@ vtkCxxSetObjectMacro(vtkAffineRepresentation2D, TextProperty, vtkTextProperty);
 
 #define VTK_CIRCLE_RESOLUTION 64
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAffineRepresentation2D::vtkAffineRepresentation2D()
 {
   // It's best to have a small tolerance
@@ -187,7 +176,7 @@ vtkAffineRepresentation2D::vtkAffineRepresentation2D()
   this->CurrentShear[1] = 0.0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAffineRepresentation2D::~vtkAffineRepresentation2D()
 {
   this->Property->Delete();
@@ -230,7 +219,7 @@ vtkAffineRepresentation2D::~vtkAffineRepresentation2D()
   this->TotalTransform->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::GetTransform(vtkTransform* t)
 {
   this->CurrentTransform->Identity();
@@ -252,7 +241,7 @@ void vtkAffineRepresentation2D::GetTransform(vtkTransform* t)
   t->Concatenate(this->TotalTransform);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::PlaceWidget(double bounds[6])
 {
   this->Origin[0] = (bounds[1] + bounds[0]) / 2.0;
@@ -262,7 +251,7 @@ void vtkAffineRepresentation2D::PlaceWidget(double bounds[6])
   this->TotalTransform->Identity();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::SetOrigin(double ox, double oy, double oz)
 {
   if (this->Origin[0] != ox || this->Origin[1] != oy || this->Origin[2] != oz)
@@ -276,7 +265,7 @@ void vtkAffineRepresentation2D::SetOrigin(double ox, double oy, double oz)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAffineRepresentation2D::ComputeInteractionState(int X, int Y, int modify)
 {
   double p[3], tol = static_cast<double>(this->Tolerance);
@@ -422,7 +411,7 @@ int vtkAffineRepresentation2D::ComputeInteractionState(int X, int Y, int modify)
   return this->InteractionState;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Record the current event position, and the rectilinear wipe position.
 void vtkAffineRepresentation2D::StartWidgetInteraction(double startEventPos[2])
 {
@@ -438,7 +427,7 @@ void vtkAffineRepresentation2D::StartWidgetInteraction(double startEventPos[2])
   this->WidgetInteraction(startEventPos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Based on the displacement vector (computed in display coordinates) and
 // the cursor state (which corresponds to which part of the widget has been
 // selected), the widget points are modified.
@@ -488,7 +477,7 @@ void vtkAffineRepresentation2D::WidgetInteraction(double eventPos[2])
   this->Modified();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::EndWidgetInteraction(double vtkNotUsed(eventPos)[2])
 {
   // Have to play games here because of the "pipelined" nature of the
@@ -515,7 +504,7 @@ void vtkAffineRepresentation2D::EndWidgetInteraction(double vtkNotUsed(eventPos)
   this->CurrentShear[1] = 0.0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Translate everything
 void vtkAffineRepresentation2D::Translate(double eventPos[2])
 {
@@ -579,7 +568,7 @@ void vtkAffineRepresentation2D::Translate(double eventPos[2])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::Scale(double eventPos[2])
 {
   // Determine the relative motion
@@ -666,7 +655,7 @@ void vtkAffineRepresentation2D::Scale(double eventPos[2])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::Rotate(double eventPos[2])
 {
   double deltaAngle;
@@ -736,11 +725,11 @@ void vtkAffineRepresentation2D::Rotate(double eventPos[2])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Fiddle with matrix to apply shear
 void vtkAffineRepresentation2D::ApplyShear() {}
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::Shear(double eventPos[2])
 {
   // Determine the relative motion
@@ -819,7 +808,7 @@ void vtkAffineRepresentation2D::Shear(double eventPos[2])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::Highlight(int highlight)
 {
   if (highlight) // enable appropriate highlight actor
@@ -881,7 +870,7 @@ void vtkAffineRepresentation2D::Highlight(int highlight)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::CreateDefaultProperties()
 {
   this->Property = vtkProperty2D::New();
@@ -901,14 +890,14 @@ void vtkAffineRepresentation2D::CreateDefaultProperties()
   this->TextProperty->SetVerticalJustificationToBottom();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::UpdateText(const char* text, double eventPos[2])
 {
   this->TextMapper->SetInput(text);
   this->TextActor->SetPosition(eventPos[0] + 7, eventPos[1] + 7);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::BuildRepresentation()
 {
   if (this->GetMTime() > this->BuildTime ||
@@ -976,7 +965,7 @@ void vtkAffineRepresentation2D::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::ShallowCopy(vtkProp* prop)
 {
   vtkAffineRepresentation2D* rep = vtkAffineRepresentation2D::SafeDownCast(prop);
@@ -997,20 +986,24 @@ void vtkAffineRepresentation2D::ShallowCopy(vtkProp* prop)
   this->Superclass::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::GetActors2D(vtkPropCollection* pc)
 {
-  this->BoxActor->GetActors2D(pc);
-  this->HBoxActor->GetActors2D(pc);
-  this->CircleActor->GetActors2D(pc);
-  this->HCircleActor->GetActors2D(pc);
-  this->XAxis->GetActors2D(pc);
-  this->YAxis->GetActors2D(pc);
-  this->HXAxis->GetActors2D(pc);
-  this->HYAxis->GetActors2D(pc);
+  if (pc != nullptr && this->GetVisibility())
+  {
+    this->BoxActor->GetActors2D(pc);
+    this->HBoxActor->GetActors2D(pc);
+    this->CircleActor->GetActors2D(pc);
+    this->HCircleActor->GetActors2D(pc);
+    this->XAxis->GetActors2D(pc);
+    this->YAxis->GetActors2D(pc);
+    this->HXAxis->GetActors2D(pc);
+    this->HYAxis->GetActors2D(pc);
+  }
+  this->Superclass::GetActors2D(pc);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::ReleaseGraphicsResources(vtkWindow* win)
 {
   this->TextActor->ReleaseGraphicsResources(win);
@@ -1024,7 +1017,7 @@ void vtkAffineRepresentation2D::ReleaseGraphicsResources(vtkWindow* win)
   this->HYAxis->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAffineRepresentation2D::RenderOverlay(vtkViewport* viewport)
 {
   this->BuildRepresentation();
@@ -1061,7 +1054,7 @@ int vtkAffineRepresentation2D::RenderOverlay(vtkViewport* viewport)
   return count;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -1115,3 +1108,4 @@ void vtkAffineRepresentation2D::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Text Property: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

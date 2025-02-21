@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkKCoreDecomposition.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkKCoreDecomposition
  * @brief   Compute the k-core decomposition of the input graph.
@@ -44,6 +28,7 @@
 #include "vtkGraphAlgorithm.h"
 #include "vtkInfovisCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIntArray;
 
 class VTKINFOVISCORE_EXPORT vtkKCoreDecomposition : public vtkGraphAlgorithm
@@ -54,15 +39,15 @@ public:
   vtkTypeMacro(vtkKCoreDecomposition, vtkGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the output array name. If no output array name is
    * set then the name 'KCoreDecompositionNumbers' is used.
    */
   vtkSetStringMacro(OutputArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Directed graphs only.  Use only the in edges to
    * compute the vertex degree of a vertex.  The default
@@ -72,9 +57,9 @@ public:
   vtkSetMacro(UseInDegreeNeighbors, bool);
   vtkGetMacro(UseInDegreeNeighbors, bool);
   vtkBooleanMacro(UseInDegreeNeighbors, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Directed graphs only.  Use only the out edges to
    * compute the vertex degree of a vertex.  The default
@@ -84,9 +69,9 @@ public:
   vtkSetMacro(UseOutDegreeNeighbors, bool);
   vtkGetMacro(UseOutDegreeNeighbors, bool);
   vtkBooleanMacro(UseOutDegreeNeighbors, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Check the input graph for self loops and parallel
    * edges.  The k-core is not defined for graphs that
@@ -95,7 +80,7 @@ public:
   vtkSetMacro(CheckInputGraph, bool);
   vtkGetMacro(CheckInputGraph, bool);
   vtkBooleanMacro(CheckInputGraph, bool);
-  //@}
+  ///@}
 
 protected:
   vtkKCoreDecomposition();
@@ -117,4 +102,5 @@ private:
   void operator=(const vtkKCoreDecomposition&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

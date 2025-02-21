@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkHyperTreeGridEntry.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkHyperTreeGridEntry.h"
 
 #include "vtkBitArray.h"
@@ -21,20 +9,21 @@ PURPOSE.  See the above copyright notice for more information.
 
 #include <cassert>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 void vtkHyperTreeGridEntry::PrintSelf(ostream& os, vtkIndent indent)
 {
   os << indent << "--vtkHyperTreeGridEntry--" << endl;
   os << indent << "Index:" << this->Index << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridEntry::Dump(ostream& os)
 {
   os << "Index:" << this->Index << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHyperTree* vtkHyperTreeGridEntry::Initialize(
   vtkHyperTreeGrid* grid, vtkIdType treeIndex, bool create)
 {
@@ -43,28 +32,28 @@ vtkHyperTree* vtkHyperTreeGridEntry::Initialize(
   return grid->GetTree(treeIndex, create);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHyperTreeGridEntry::GetGlobalNodeIndex(const vtkHyperTree* tree) const
 {
   assert("pre: not_tree" && tree);
   return tree->GetGlobalIndexFromLocal(this->Index);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridEntry::SetGlobalIndexStart(vtkHyperTree* tree, vtkIdType index)
 {
   assert("pre: not_tree" && tree);
   tree->SetGlobalIndexStart(index);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridEntry::SetGlobalIndexFromLocal(vtkHyperTree* tree, vtkIdType index)
 {
   assert("pre: not_tree" && tree);
   tree->SetGlobalIndexFromLocal(this->Index, index);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridEntry::SetMask(
   const vtkHyperTreeGrid* grid, const vtkHyperTree* tree, bool value)
 {
@@ -73,7 +62,7 @@ void vtkHyperTreeGridEntry::SetMask(
     this->GetGlobalNodeIndex(tree), value);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHyperTreeGridEntry::IsMasked(const vtkHyperTreeGrid* grid, const vtkHyperTree* tree) const
 {
   if (tree && const_cast<vtkHyperTreeGrid*>(grid)->HasMask())
@@ -84,7 +73,7 @@ bool vtkHyperTreeGridEntry::IsMasked(const vtkHyperTreeGrid* grid, const vtkHype
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHyperTreeGridEntry::IsLeaf(
   const vtkHyperTreeGrid* grid, const vtkHyperTree* tree, unsigned int level) const
 {
@@ -96,12 +85,11 @@ bool vtkHyperTreeGridEntry::IsLeaf(
   return tree->IsLeaf(this->Index);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridEntry::SubdivideLeaf(
   const vtkHyperTreeGrid* grid, vtkHyperTree* tree, unsigned int level)
 {
   assert("pre: not_tree" && tree);
-  // JB Comment faire pour definir un accesseur a DepthLimiter qui est const
   assert("pre: depth_limiter" && level <= const_cast<vtkHyperTreeGrid*>(grid)->GetDepthLimiter());
   assert("pre: is_masked" && !this->IsMasked(grid, tree));
   if (this->IsLeaf(grid, tree, level))
@@ -110,7 +98,7 @@ void vtkHyperTreeGridEntry::SubdivideLeaf(
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHyperTreeGridEntry::IsTerminalNode(
   const vtkHyperTreeGrid* grid, const vtkHyperTree* tree, unsigned int level) const
 {
@@ -125,7 +113,7 @@ bool vtkHyperTreeGridEntry::IsTerminalNode(
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridEntry::ToChild(
   const vtkHyperTreeGrid* grid, const vtkHyperTree* tree, unsigned int level, unsigned char ichild)
 {
@@ -134,8 +122,8 @@ void vtkHyperTreeGridEntry::ToChild(
   assert("pre: not_tree" && tree);
   assert("pre: not_leaf" && !this->IsLeaf(grid, tree, level));
   assert("pre: not_valid_child" && ichild < tree->GetNumberOfChildren());
-  // JB Comment faire pour definir un accesseur a DepthLimiter qui est const
   assert("pre: depth_limiter" && level <= const_cast<vtkHyperTreeGrid*>(grid)->GetDepthLimiter());
   assert("pre: is_masked" && !IsMasked(grid, tree));
   this->Index = tree->GetElderChildIndex(this->Index) + ichild;
 }
+VTK_ABI_NAMESPACE_END

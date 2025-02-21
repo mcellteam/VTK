@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericInterpolatedVelocityField.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericInterpolatedVelocityField.h"
 
 #include "vtkDataSetAttributes.h" // for vtkDataSetAttributes::VECTORS
@@ -24,6 +12,7 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericInterpolatedVelocityField);
 
 typedef std::vector<vtkGenericDataSet*> DataSetsTypeBase;
@@ -203,7 +192,7 @@ int vtkGenericInterpolatedVelocityField::FunctionValues(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericInterpolatedVelocityField::AddDataSet(vtkGenericDataSet* dataset)
 {
   if (!dataset)
@@ -214,7 +203,7 @@ void vtkGenericInterpolatedVelocityField::AddDataSet(vtkGenericDataSet* dataset)
   this->DataSets->push_back(dataset);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set the last cell id to -1 so that the next search does not
 // start from the previous cell
@@ -228,7 +217,7 @@ void vtkGenericInterpolatedVelocityField::ClearLastCell()
     }
   }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the cell cached from last evaluation.
 vtkGenericAdaptorCell* vtkGenericInterpolatedVelocityField::GetLastCell()
@@ -245,7 +234,7 @@ vtkGenericAdaptorCell* vtkGenericInterpolatedVelocityField::GetLastCell()
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericInterpolatedVelocityField::GetLastLocalCoordinates(double pcoords[3])
 {
   int j;
@@ -308,3 +297,4 @@ void vtkGenericInterpolatedVelocityField::PrintSelf(ostream& os, vtkIndent inden
      << endl;
   os << indent << "LastDataSet : " << this->LastDataSet << endl;
 }
+VTK_ABI_NAMESPACE_END

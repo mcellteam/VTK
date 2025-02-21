@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPStructuredGridConnectivity.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME TestImplicitConnectivity.cxx -- Parallel implicit connectivity test
 //
 // .SECTION Description
@@ -259,16 +247,16 @@ vtkMultiBlockDataSet* GetRectGridDataSet(
 
   vtkRectilinearGrid* wholeGrid = vtkRectilinearGrid::New();
   GenerateRectGrid(wholeGrid, wholeExtent, origin);
-  //#ifdef DEBUG_ON
-  //  if( Controller->GetLocalProcessId() == 0 )
-  //    {
-  //    vtkRectilinearGridWriter* writer = vtkRectilinearGridWriter::New();
-  //    writer->SetFileName("RectilinearGrid.vtk");
-  //    writer->SetInputData( wholeGrid );
-  //    writer->Write();
-  //    writer->Delete();
-  //    }
-  //#endif
+  // #ifdef DEBUG_ON
+  //   if( Controller->GetLocalProcessId() == 0 )
+  //     {
+  //     vtkRectilinearGridWriter* writer = vtkRectilinearGridWriter::New();
+  //     writer->SetFileName("RectilinearGrid.vtk");
+  //     writer->SetInputData( wholeGrid );
+  //     writer->Write();
+  //     writer->Delete();
+  //     }
+  // #endif
   vtkRectilinearGridPartitioner* gridPartitioner = vtkRectilinearGridPartitioner::New();
   gridPartitioner->SetInputData(wholeGrid);
   gridPartitioner->SetNumberOfPartitions(numPartitions);

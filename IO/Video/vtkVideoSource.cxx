@@ -1,20 +1,7 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVideoSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkVideoSource.h"
 
-#include "vtkCriticalSection.h"
 #include "vtkDataArray.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
@@ -25,6 +12,8 @@
 #include "vtkTimerLog.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtksys/SystemTools.hxx"
+
+#include <mutex>
 
 //---------------------------------------------------------------
 // Important FrameBufferMutex rules:
@@ -65,6 +54,7 @@
 // Finally, when Execute() is reading from the FrameBuffer it must do
 // so from within a mutex lock.  Otherwise tearing artifacts might result.
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkVideoSource);
 
 #if defined(_MSC_VER)
@@ -72,7 +62,7 @@ vtkStandardNewMacro(vtkVideoSource);
 #pragma warning(disable : 4312)
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVideoSource::vtkVideoSource()
 {
   int i;
@@ -131,8 +121,6 @@ vtkVideoSource::vtkVideoSource()
   this->PlayerThreader = vtkMultiThreader::New();
   this->PlayerThreadId = -1;
 
-  this->FrameBufferMutex = vtkCriticalSection::New();
-
   this->FrameBufferSize = 0;
   this->FrameBuffer = nullptr;
   this->FrameBufferTimeStamps = nullptr;
@@ -145,7 +133,7 @@ vtkVideoSource::vtkVideoSource()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVideoSource::~vtkVideoSource()
 {
   // we certainly don't want to access a virtual
@@ -153,11 +141,10 @@ vtkVideoSource::~vtkVideoSource()
   this->vtkVideoSource::ReleaseSystemResources();
 
   this->SetFrameBufferSize(0);
-  this->FrameBufferMutex->Delete();
   this->PlayerThreader->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVideoSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   int idx;
@@ -229,7 +216,7 @@ void vtkVideoSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "FrameBufferRowAlignment: " << this->FrameBufferRowAlignment << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Update the FrameBuffers according to any changes in the FrameBuffer*
 // information.
 // This function should always be called from within a FrameBufferMutex lock
@@ -288,7 +275,7 @@ void vtkVideoSource::UpdateFrameBuffer()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize() should be overridden to initialize the hardware frame grabber
 void vtkVideoSource::Initialize()
 {
@@ -301,7 +288,7 @@ void vtkVideoSource::Initialize()
   this->UpdateFrameBuffer();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // ReleaseSystemResources() should be overridden to release the hardware
 void vtkVideoSource::ReleaseSystemResources()
 {
@@ -313,7 +300,7 @@ void vtkVideoSource::ReleaseSystemResources()
   this->Initialized = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVideoSource::SetFrameSize(int x, int y, int z)
 {
   if (x == this->FrameSize[0] && y == this->FrameSize[1] && z == this->FrameSize[2])
@@ -329,12 +316,12 @@ void vtkVideoSource::SetFrameSize(int x, int y, int z)
 
   if (this->Initialized)
   {
-    this->FrameBufferMutex->Lock();
+    this->FrameBufferMutex.lock();
     this->FrameSize[0] = x;
     this->FrameSize[1] = y;
     this->FrameSize[2] = z;
     this->UpdateFrameBuffer();
-    this->FrameBufferMutex->Unlock();
+    this->FrameBufferMutex.unlock();
   }
   else
   {
@@ -346,7 +333,7 @@ void vtkVideoSource::SetFrameSize(int x, int y, int z)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVideoSource::SetFrameRate(float rate)
 {
   if (this->FrameRate == rate)
@@ -358,7 +345,7 @@ void vtkVideoSource::SetFrameRate(float rate)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVideoSource::SetClipRegion(int x0, int x1, int y0, int y1, int z0, int z1)
 {
   if (this->ClipRegion[0] != x0 || this->ClipRegion[1] != x1 || this->ClipRegion[2] != y0 ||
@@ -367,7 +354,7 @@ void vtkVideoSource::SetClipRegion(int x0, int x1, int y0, int y1, int z0, int z
     this->Modified();
     if (this->Initialized)
     { // modify the FrameBufferExtent
-      this->FrameBufferMutex->Lock();
+      this->FrameBufferMutex.lock();
       this->ClipRegion[0] = x0;
       this->ClipRegion[1] = x1;
       this->ClipRegion[2] = y0;
@@ -375,7 +362,7 @@ void vtkVideoSource::SetClipRegion(int x0, int x1, int y0, int y1, int z0, int z
       this->ClipRegion[4] = z0;
       this->ClipRegion[5] = z1;
       this->UpdateFrameBuffer();
-      this->FrameBufferMutex->Unlock();
+      this->FrameBufferMutex.unlock();
     }
     else
     {
@@ -389,7 +376,7 @@ void vtkVideoSource::SetClipRegion(int x0, int x1, int y0, int y1, int z0, int z
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Copy pseudo-random noise into the frames.  This function may be called
 // asynchronously.
 void vtkVideoSource::InternalGrab()
@@ -401,7 +388,7 @@ void vtkVideoSource::InternalGrab()
   int* lptr;
 
   // get a thread lock on the frame buffer
-  this->FrameBufferMutex->Lock();
+  this->FrameBufferMutex.lock();
 
   if (this->AutoAdvance)
   {
@@ -461,10 +448,10 @@ void vtkVideoSource::InternalGrab()
 
   this->Modified();
 
-  this->FrameBufferMutex->Unlock();
+  this->FrameBufferMutex.unlock();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Sleep until the specified absolute time has arrived.
 // You must pass a handle to the current thread.
 // If '0' is returned, then the thread was aborted before or during the wait.
@@ -493,7 +480,7 @@ static int vtkThreadSleep(vtkMultiThreader::ThreadInfo* data, double time)
     // check to see if we are being told to quit
     int activeFlag;
     {
-      std::lock_guard<std::mutex>(*data->ActiveFlagLock);
+      std::lock_guard<std::mutex> lockGuard(*data->ActiveFlagLock);
       activeFlag = *(data->ActiveFlag);
     }
 
@@ -508,9 +495,9 @@ static int vtkThreadSleep(vtkMultiThreader::ThreadInfo* data, double time)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // this function runs in an alternate thread to asynchronously grab frames
-static void* vtkVideoSourceRecordThread(vtkMultiThreader::ThreadInfo* data)
+static VTK_THREAD_RETURN_TYPE vtkVideoSourceRecordThread(vtkMultiThreader::ThreadInfo* data)
 {
   vtkVideoSource* self = (vtkVideoSource*)(data->UserData);
 
@@ -524,10 +511,10 @@ static void* vtkVideoSourceRecordThread(vtkMultiThreader::ThreadInfo* data)
     frame++;
   } while (vtkThreadSleep(data, startTime + frame / rate));
 
-  return nullptr;
+  return VTK_THREAD_RETURN_VALUE;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the source to grab frames continuously.
 // You should override this as appropriate for your device.
 void vtkVideoSource::Record()
@@ -549,10 +536,10 @@ void vtkVideoSource::Record()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // this function runs in an alternate thread to 'play the tape' at the
 // specified frame rate.
-static void* vtkVideoSourcePlayThread(vtkMultiThreader::ThreadInfo* data)
+static VTK_THREAD_RETURN_TYPE vtkVideoSourcePlayThread(vtkMultiThreader::ThreadInfo* data)
 {
   vtkVideoSource* self = (vtkVideoSource*)(data->UserData);
 
@@ -566,10 +553,10 @@ static void* vtkVideoSourcePlayThread(vtkMultiThreader::ThreadInfo* data)
     frame++;
   } while (vtkThreadSleep(data, startTime + frame / rate));
 
-  return nullptr;
+  return VTK_THREAD_RETURN_VALUE;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the source to play back recorded frames.
 // You should override this as appropriate for your device.
 void vtkVideoSource::Play()
@@ -590,7 +577,7 @@ void vtkVideoSource::Play()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Stop continuous grabbing or playback.  You will have to override this
 // if your class overrides Play() and Record()
 void vtkVideoSource::Stop()
@@ -605,11 +592,11 @@ void vtkVideoSource::Stop()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Rewind back to the frame with the earliest timestamp.
 void vtkVideoSource::Rewind()
 {
-  this->FrameBufferMutex->Lock();
+  this->FrameBufferMutex.lock();
 
   double* stamp = this->FrameBufferTimeStamps;
   double lowest = 0;
@@ -646,14 +633,14 @@ void vtkVideoSource::Rewind()
     }
   }
 
-  this->FrameBufferMutex->Unlock();
+  this->FrameBufferMutex.unlock();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Fast-forward to the frame with the latest timestamp.
 void vtkVideoSource::FastForward()
 {
-  this->FrameBufferMutex->Lock();
+  this->FrameBufferMutex.lock();
 
   double* stamp = this->FrameBufferTimeStamps;
   double highest = 0;
@@ -698,25 +685,25 @@ void vtkVideoSource::FastForward()
     }
   }
 
-  this->FrameBufferMutex->Unlock();
+  this->FrameBufferMutex.unlock();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Rotate the buffers
 void vtkVideoSource::Seek(int n)
 {
-  this->FrameBufferMutex->Lock();
+  this->FrameBufferMutex.lock();
   this->AdvanceFrameBuffer(n);
   this->FrameIndex = (this->FrameIndex + n) % this->FrameBufferSize;
   while (this->FrameIndex < 0)
   {
     this->FrameIndex += this->FrameBufferSize;
   }
-  this->FrameBufferMutex->Unlock();
+  this->FrameBufferMutex.unlock();
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The grab function, which should (of course) be overridden to do
 // the appropriate hardware stuff.  This function should never be
 // called asynchronously.
@@ -728,7 +715,7 @@ void vtkVideoSource::Grab()
   this->InternalGrab();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Override this and provide checks to ensure an appropriate number
 // of components was asked for (i.e. 1 for greyscale, 3 for RGB,
 // or 4 for RGBA)
@@ -766,19 +753,19 @@ void vtkVideoSource::SetOutputFormat(int format)
 
   if (this->FrameBufferBitsPerPixel != numComponents * 8)
   {
-    this->FrameBufferMutex->Lock();
+    this->FrameBufferMutex.lock();
     this->FrameBufferBitsPerPixel = numComponents * 8;
     if (this->Initialized)
     {
       this->UpdateFrameBuffer();
     }
-    this->FrameBufferMutex->Unlock();
+    this->FrameBufferMutex.unlock();
   }
 
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // set or change the circular buffer size
 // you will have to override this if you want the buffers
 // to be device-specific (i.e. something other than vtkDataArray)
@@ -798,7 +785,7 @@ void vtkVideoSource::SetFrameBufferSize(int bufsize)
     return;
   }
 
-  this->FrameBufferMutex->Lock();
+  this->FrameBufferMutex.lock();
 
   if (this->FrameBuffer == nullptr)
   {
@@ -877,11 +864,11 @@ void vtkVideoSource::SetFrameBufferSize(int bufsize)
     this->UpdateFrameBuffer();
   }
 
-  this->FrameBufferMutex->Unlock();
+  this->FrameBufferMutex.unlock();
 }
 
-//----------------------------------------------------------------------------
-// This function MUST be called only from within a FrameBufferMutex->Lock()
+//------------------------------------------------------------------------------
+// This function MUST be called only from within a FrameBufferMutex.lock()
 void vtkVideoSource::AdvanceFrameBuffer(int n)
 {
   int i = (this->FrameBufferIndex - n) % this->FrameBufferSize;
@@ -892,12 +879,12 @@ void vtkVideoSource::AdvanceFrameBuffer(int n)
   this->FrameBufferIndex = i;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkVideoSource::GetFrameTimeStamp(int frame)
 {
   double timeStamp;
 
-  this->FrameBufferMutex->Lock();
+  this->FrameBufferMutex.lock();
 
   if (this->FrameBufferSize <= 0)
   {
@@ -905,12 +892,12 @@ double vtkVideoSource::GetFrameTimeStamp(int frame)
   }
 
   timeStamp = this->FrameBufferTimeStamps[(this->FrameBufferIndex + frame) % this->FrameBufferSize];
-  this->FrameBufferMutex->Unlock();
+  this->FrameBufferMutex.unlock();
 
   return timeStamp;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method returns the largest data that can be generated.
 int vtkVideoSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
@@ -967,7 +954,7 @@ int vtkVideoSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The UnpackRasterLine method should be overridden if the framebuffer uses
 // unusual pixel packing formats, such as XRGB XBRG BGRX BGR etc.
 // The version below assumes that the packing of the framebuffer is
@@ -988,7 +975,7 @@ void vtkVideoSource::UnpackRasterLine(char* outPtr, char* rowPtr, int start, int
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The Execute method is fairly complex, so I would not recommend overriding
 // it unless you have to.  Override the UnpackRasterLine() method instead.
 // You should only have to override it if you are using something other
@@ -1109,7 +1096,7 @@ int vtkVideoSource::RequestData(vtkInformation* vtkNotUsed(request),
   int saveOutputExtent4 = outputExtent[4];
   outputExtent[4] = firstOutputExtent4;
 
-  this->FrameBufferMutex->Lock();
+  this->FrameBufferMutex.lock();
 
   int index = this->FrameBufferIndex;
   this->FrameTimeStamp = this->FrameBufferTimeStamps[index % this->FrameBufferSize];
@@ -1193,7 +1180,8 @@ int vtkVideoSource::RequestData(vtkInformation* vtkNotUsed(request),
     outputExtent[4] = saveOutputExtent4;
   }
 
-  this->FrameBufferMutex->Unlock();
+  this->FrameBufferMutex.unlock();
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

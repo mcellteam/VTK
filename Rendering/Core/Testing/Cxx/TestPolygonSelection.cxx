@@ -1,22 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPolygonSelection.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
-#include "vtkExtractSelectedPolyDataIds.h"
+#include "vtkDataSetMapper.h"
+#include "vtkExtractSelection.h"
 #include "vtkHardwareSelector.h"
-#include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
 #include "vtkIntArray.h"
 #include "vtkInteractorEventRecorder.h"
@@ -28,7 +16,6 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
 #include "vtkSelection.h"
-#include "vtkSelectionNode.h"
 #include "vtkSmartPointer.h"
 #include "vtkSphereSource.h"
 
@@ -60,19 +47,15 @@ int TestPolygonSelection(int argc, char* argv[])
   sphere->SetPhiResolution(16);
   sphere->SetRadius(0.5);
 
-  vtkNew<vtkActor> sactor;
-  sactor->PickableOn(); // lets the HardwareSelector select in it
-  vtkNew<vtkPolyDataMapper> smapper;
-  sactor->SetMapper(smapper);
+  vtkNew<vtkPolyDataMapper> sMapper;
+  sMapper->SetInputConnection(sphere->GetOutputPort());
+
+  vtkNew<vtkActor> sActor;
+  sActor->PickableOn(); // let the HardwareSelector select in it
+  sActor->SetMapper(sMapper);
 
   vtkNew<vtkRenderer> ren;
-  ren->AddActor(sactor);
-  // extracted part
-  vtkNew<vtkPolyDataMapper> emapper;
-  vtkNew<vtkActor> eactor;
-  eactor->PickableOff();
-  eactor->SetMapper(emapper);
-  ren->AddActor(eactor);
+  ren->AddActor(sActor);
 
   vtkNew<vtkRenderWindow> renWin;
   renWin->SetSize(300, 300);
@@ -101,8 +84,6 @@ int TestPolygonSelection(int argc, char* argv[])
   recorder->SetInputString(eventLog);
 #endif
 
-  smapper->SetInputConnection(sphere->GetOutputPort());
-
   iren->Initialize();
   renWin->Render();
 
@@ -129,28 +110,32 @@ int TestPolygonSelection(int argc, char* argv[])
     vtkNew<vtkHardwareSelector> hardSel;
     hardSel->SetRenderer(ren);
 
-    int* wsize = ren->GetSize();
-    int* origin = ren->GetOrigin();
+    const int* wsize = ren->GetSize();
+    const int* origin = ren->GetOrigin();
     hardSel->SetArea(origin[0], origin[1], origin[0] + wsize[0] - 1, origin[1] + wsize[1] - 1);
     hardSel->SetFieldAssociation(vtkDataObject::FIELD_ASSOCIATION_CELLS);
 
     if (hardSel->CaptureBuffers())
     {
-      vtkSelection* psel = hardSel->GeneratePolygonSelection(
-        polygonPointsArray->GetPointer(0), polygonPointsArray->GetNumberOfTuples() * 2);
+      vtkSmartPointer<vtkSelection> sel;
+      sel.TakeReference(hardSel->GeneratePolygonSelection(
+        polygonPointsArray->GetPointer(0), polygonPointsArray->GetNumberOfTuples() * 2));
       hardSel->ClearBuffers();
 
-      vtkSmartPointer<vtkSelection> sel;
-      sel.TakeReference(psel);
-      vtkNew<vtkExtractSelectedPolyDataIds> selFilter;
+      vtkNew<vtkExtractSelection> selFilter;
       selFilter->SetInputConnection(0, sphere->GetOutputPort());
       selFilter->SetInputData(1, sel);
-      selFilter->Update();
 
-      emapper->SetInputConnection(selFilter->GetOutputPort());
-      emapper->Update();
+      vtkNew<vtkDataSetMapper> eMapper;
+      eMapper->SetInputConnection(selFilter->GetOutputPort());
 
-      sactor->SetVisibility(false);
+      vtkNew<vtkActor> eActor;
+      eActor->PickableOff();
+      eActor->SetMapper(eMapper);
+
+      ren->RemoveActor(sActor);
+      ren->AddActor(eActor);
+
       renWin->Render();
     }
   }

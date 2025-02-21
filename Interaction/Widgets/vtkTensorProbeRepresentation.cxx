@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTensorProbeRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTensorProbeRepresentation.h"
 #include "vtkActor.h"
 #include "vtkCellArray.h"
@@ -27,7 +15,8 @@
 #include "vtkRenderWindow.h"
 #include "vtkRenderer.h"
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkTensorProbeRepresentation::vtkTensorProbeRepresentation()
 {
   this->Trajectory = nullptr;
@@ -40,7 +29,7 @@ vtkTensorProbeRepresentation::vtkTensorProbeRepresentation()
   this->ProbeCellId = -1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTensorProbeRepresentation::~vtkTensorProbeRepresentation()
 {
   this->SetTrajectory(nullptr);
@@ -48,7 +37,7 @@ vtkTensorProbeRepresentation::~vtkTensorProbeRepresentation()
   this->TrajectoryActor->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorProbeRepresentation::SetTrajectory(vtkPolyData* args)
 {
   if (this->Trajectory != args)
@@ -68,7 +57,7 @@ void vtkTensorProbeRepresentation::SetTrajectory(vtkPolyData* args)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTensorProbeRepresentation::Move(double motionVector[2])
 {
   if (motionVector[0] == 0.0 && motionVector[1] == 0.0)
@@ -102,7 +91,7 @@ int vtkTensorProbeRepresentation::Move(double motionVector[2])
   return 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorProbeRepresentation ::FindClosestPointOnPolyline(
   double displayPos[2], double closestWorldPos[3], vtkIdType& cellId, int maxSpeed)
 {
@@ -173,7 +162,7 @@ void vtkTensorProbeRepresentation ::FindClosestPointOnPolyline(
   closestWorldPos[2] = closestT * p1[2] + (1 - closestT) * p2[2];
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the probe position as the one closest to the center
 void vtkTensorProbeRepresentation::Initialize()
 {
@@ -188,7 +177,7 @@ void vtkTensorProbeRepresentation::Initialize()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTensorProbeRepresentation ::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   // Since we know RenderOpaqueGeometry gets called first, will do the
@@ -200,25 +189,25 @@ int vtkTensorProbeRepresentation ::RenderOpaqueGeometry(vtkViewport* viewport)
   return count;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorProbeRepresentation::BuildRepresentation()
 {
   this->Initialize();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorProbeRepresentation::GetActors(vtkPropCollection* pc)
 {
   this->TrajectoryActor->GetActors(pc);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorProbeRepresentation::ReleaseGraphicsResources(vtkWindow* win)
 {
   this->TrajectoryActor->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorProbeRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -231,3 +220,4 @@ void vtkTensorProbeRepresentation::PrintSelf(ostream& os, vtkIndent indent)
      << "," << this->ProbePosition[2] << ")" << endl;
   os << indent << "ProbeCellId: " << this->ProbeCellId << endl;
 }
+VTK_ABI_NAMESPACE_END

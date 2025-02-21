@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPeriodicFiler.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPeriodicFilter
@@ -41,6 +29,7 @@
 #include <set>    // For block selection
 #include <vector> // For pieces number
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCompositeDataIterator;
 class vtkCompositeDataSet;
 class vtkDataObjectTreeIterator;
@@ -55,7 +44,7 @@ public:
   vtkTypeMacro(vtkPeriodicFilter, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get Iteration mode.
    * VTK_ITERATION_MODE_DIRECT_NB to specify the number of periods,
@@ -65,16 +54,16 @@ public:
   vtkGetMacro(IterationMode, int);
   void SetIterationModeToDirectNb() { this->SetIterationMode(VTK_ITERATION_MODE_DIRECT_NB); }
   void SetIterationModeToMax() { this->SetIterationMode(VTK_ITERATION_MODE_MAX); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get Number of periods.
    * Used only with ITERATION_MODE_DIRECT_NB.
    */
   vtkSetMacro(NumberOfPeriods, int);
   vtkGetMacro(NumberOfPeriods, int);
-  //@}
+  ///@}
 
   /**
    * Select the periodic pieces indices.
@@ -130,4 +119,5 @@ private:
   std::set<vtkIdType> Indices; // Selected indices
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

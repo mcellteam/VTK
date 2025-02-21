@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRectilinearGridWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRectilinearGridWriter
  * @brief   write vtk rectilinear grid data file
@@ -29,6 +17,7 @@
 #include "vtkDataWriter.h"
 #include "vtkIOLegacyModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRectilinearGrid;
 
 class VTKIOLEGACY_EXPORT vtkRectilinearGridWriter : public vtkDataWriter
@@ -38,15 +27,15 @@ public:
   vtkTypeMacro(vtkRectilinearGridWriter, vtkDataWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkRectilinearGrid* GetInput();
   vtkRectilinearGrid* GetInput(int port);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When WriteExtent is on, vtkStructuredPointsWriter writes
    * data extent in the output file. Otherwise, it writes dimensions.
@@ -57,14 +46,14 @@ public:
   vtkSetMacro(WriteExtent, bool);
   vtkGetMacro(WriteExtent, bool);
   vtkBooleanMacro(WriteExtent, bool);
-  //@}
+  ///@}
 
 protected:
   vtkRectilinearGridWriter()
     : WriteExtent(false)
   {
   }
-  ~vtkRectilinearGridWriter() override {}
+  ~vtkRectilinearGridWriter() override = default;
 
   void WriteData() override;
 
@@ -77,4 +66,5 @@ private:
   void operator=(const vtkRectilinearGridWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

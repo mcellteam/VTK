@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridContour.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridContour
  * @brief   Extract cells from a hyper tree grid
@@ -37,12 +25,16 @@
 #ifndef vtkHyperTreeGridContour_h
 #define vtkHyperTreeGridContour_h
 
+#include "vtkCellArray.h"              // For vtkCellArray
 #include "vtkContourValues.h"          // Needed for inline methods
 #include "vtkFiltersHyperTreeModule.h" // For export macro
 #include "vtkHyperTreeGridAlgorithm.h"
+#include "vtkNew.h"       // For vtkNew
+#include "vtkPointData.h" // For vtkPointData
 
 #include <vector> // For STL
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 class vtkCellData;
 class vtkContourHelper;
@@ -62,16 +54,16 @@ class VTKFILTERSHYPERTREE_EXPORT vtkHyperTreeGridContour : public vtkHyperTreeGr
 public:
   static vtkHyperTreeGridContour* New();
   vtkTypeMacro(vtkHyperTreeGridContour, vtkHyperTreeGridAlgorithm);
-  void PrintSelf(ostream&, vtkIndent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set / get a spatial locator for merging points. By default,
    * an instance of vtkMergePoints is used.
    */
   void SetLocator(vtkIncrementalPointLocator*);
   vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
-  //@}
+  ///@}
 
   /**
    * Create default locator. Used to create one when none is
@@ -84,7 +76,7 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Methods (inlined) to set / get contour values.
    */
@@ -96,7 +88,37 @@ public:
   vtkIdType GetNumberOfContours();
   void GenerateValues(int, double[2]);
   void GenerateValues(int, double, double);
-  //@}
+  ///@}
+
+  enum CellStrategy3D
+  {
+    USE_VOXELS,
+    USE_DECOMPOSED_POLYHEDRA
+  };
+  /**
+   * Set the contour strategy to apply.
+   * By default, strategy is USE_VOXELS.
+   * This method is time-efficient but can lead to bad results in the 3D case, where generated dual
+   * cells can be concave.
+   * USE_DECOMPOSED_POLYHEDRA allow better results in such cases (3D HTGs only).
+   * It takes advantage of the vtkPolyhedronUtilities::Decompose method to generate better contours.
+   * The dowside is this method is much slower than USE_VOXELS.
+   */
+  vtkSetClampMacro(Strategy3D, int, USE_VOXELS, USE_DECOMPOSED_POLYHEDRA);
+
+  ///@{
+  /**
+   * Set/Get whether or not the filter should use implicit arrays to store the
+   * output contour values (stored as point data of the output contour).
+   * Since these values are the same for each isosurface, some memory can be saved
+   * by storing each value only once using an indexed array.
+   *
+   * @attention This option have no effect if there is more than 256 contour values.
+   */
+  vtkSetMacro(UseImplicitArrays, bool);
+  vtkGetMacro(UseImplicitArrays, bool);
+  vtkBooleanMacro(UseImplicitArrays, bool);
+  ///@}
 
 protected:
   vtkHyperTreeGridContour();
@@ -118,9 +140,12 @@ protected:
   bool RecursivelyPreProcessTree(vtkHyperTreeGridNonOrientedCursor*);
 
   /**
-   * Recursively descend into tree down to leaves
+   * Recursively descend into the tree down to the leaves to construct the contour (verts, lines,
+   * polys). dualPointData represents the point data of the dual mesh, i.e. HTG cell data used for
+   * contouring.
    */
-  void RecursivelyProcessTree(vtkHyperTreeGridNonOrientedMooreSuperCursor*);
+  void RecursivelyProcessTree(vtkHyperTreeGridNonOrientedMooreSuperCursor*, vtkCellArray* verts,
+    vtkCellArray* lines, vtkCellArray* polys, vtkPointData* dualPointData);
 
   /**
    * Storage for contour values.
@@ -142,7 +167,7 @@ protected:
    */
   vtkIncrementalPointLocator* Locator;
 
-  //@{
+  ///@{
   /**
    * Pointers needed to perform isocontouring
    */
@@ -152,7 +177,7 @@ protected:
   vtkPixel* Pixel;
   vtkVoxel* Voxel;
   vtkIdList* Leaves;
-  //@}
+  ///@}
 
   /**
    * Storage for signs relative to current contour value
@@ -172,9 +197,18 @@ protected:
   vtkBitArray* InMask;
   vtkUnsignedCharArray* InGhostArray;
 
+  // Strategy used to represent dual cells in 3D
+  int Strategy3D = USE_VOXELS;
+
 private:
   vtkHyperTreeGridContour(const vtkHyperTreeGridContour&) = delete;
   void operator=(const vtkHyperTreeGridContour&) = delete;
+
+  // Use implicit arrays to store contour values
+  bool UseImplicitArrays = false;
+
+  struct vtkInternals;
+  std::unique_ptr<vtkInternals> Internals;
 };
 
 /**
@@ -250,4 +284,5 @@ inline void vtkHyperTreeGridContour::GenerateValues(
   this->ContourValues->GenerateValues(numContours, rangeStart, rangeEnd);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkHyperTreeGridContour_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArrayDataWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkArrayDataWriter.h"
 
 #include "vtkArrayData.h"
@@ -25,6 +13,7 @@
 #include <sstream>
 #include <stdexcept>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkArrayDataWriter);
 
 vtkArrayDataWriter::vtkArrayDataWriter()
@@ -58,11 +47,11 @@ void vtkArrayDataWriter::WriteData()
 {
   if (this->WriteToOutputString)
   {
-    this->OutputString = this->Write(this->Binary > 0 ? true : false);
+    this->OutputString = this->Write(this->Binary > 0);
   }
   else
   {
-    this->Write(this->FileName ? this->FileName : "", this->Binary > 0 ? true : false);
+    this->Write(this->FileName ? this->FileName : "", this->Binary > 0);
   }
 }
 
@@ -95,7 +84,7 @@ bool vtkArrayDataWriter::Write(ostream& stream, bool WriteBinary)
     if (!array_data)
       throw std::runtime_error("vtkArrayData input required.");
 
-    this->Write(array_data, stream, WriteBinary);
+    vtkArrayDataWriter::Write(array_data, stream, WriteBinary);
     return true;
   }
   catch (std::exception& e)
@@ -140,3 +129,4 @@ vtkStdString vtkArrayDataWriter::Write(vtkArrayData* array_data, bool WriteBinar
   vtkArrayDataWriter::Write(array_data, oss, WriteBinary);
   return oss.str();
 }
+VTK_ABI_NAMESPACE_END

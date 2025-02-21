@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageDifference.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageDifference
  * @brief   Compares images for regression tests.
@@ -30,8 +18,10 @@
 #define vtkImageDifference_h
 
 #include "vtkImagingCoreModule.h" // For export macro
+#include "vtkSmartPointer.h"      // For smart pointer
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageDifferenceThreadData;
 class vtkImageDifferenceSMPThreadLocal;
 
@@ -42,14 +32,14 @@ public:
   vtkTypeMacro(vtkImageDifference, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the Image to compare the input to.
    */
   void SetImageConnection(vtkAlgorithmOutput* output) { this->SetInputConnection(1, output); }
   void SetImageData(vtkDataObject* image) { this->SetInputData(1, image); }
   vtkImageData* GetImage();
-  //@}
+  ///@}
 
   /**
    * Return the total error in comparing the two images.
@@ -65,15 +55,15 @@ public:
   double GetThresholdedError() { return this->ThresholdedError; }
   void GetThresholdedError(double* e) { *e = this->GetThresholdedError(); }
 
-  //@{
+  ///@{
   /**
    * Specify a threshold tolerance for pixel differences.
    */
   vtkSetMacro(Threshold, int);
   vtkGetMacro(Threshold, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether the comparison will allow a shift of two
    * pixels between the images.  If set, then the minimum difference
@@ -81,46 +71,48 @@ public:
    * Otherwise, the difference is computed directly between pixels
    * of identical row/column values.
    */
-  vtkSetMacro(AllowShift, vtkTypeBool);
-  vtkGetMacro(AllowShift, vtkTypeBool);
-  vtkBooleanMacro(AllowShift, vtkTypeBool);
-  //@}
+  vtkSetMacro(AllowShift, bool);
+  vtkGetMacro(AllowShift, bool);
+  vtkBooleanMacro(AllowShift, bool);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether the comparison will include comparison of
    * averaged 3x3 data between the images. For graphics renderings
    * you normally would leave this on. For imaging operations it
    * should be off.
    */
-  vtkSetMacro(Averaging, vtkTypeBool);
-  vtkGetMacro(Averaging, vtkTypeBool);
-  vtkBooleanMacro(Averaging, vtkTypeBool);
-  //@}
+  vtkSetMacro(Averaging, bool);
+  vtkGetMacro(Averaging, bool);
+  vtkBooleanMacro(Averaging, bool);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When doing Averaging, adjust the threshold for the average
    * by this factor. Defaults to 0.5 requiring a better match
    */
   vtkSetMacro(AverageThresholdFactor, double);
   vtkGetMacro(AverageThresholdFactor, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageDifference();
-  ~vtkImageDifference() override {}
+  ~vtkImageDifference() override = default;
 
   // Parameters
-  vtkTypeBool AllowShift;
-  int Threshold;
-  vtkTypeBool Averaging;
+  // ideally threshold * averageThresholdFactor should be < 255/9
+  // to capture one pixel errors or 510/9 to capture 2 pixel errors
+  bool AllowShift = true;
+  bool Averaging = true;
+  int Threshold = 105;
+  double AverageThresholdFactor = 0.65;
 
   // Outputs
-  const char* ErrorMessage;
-  double Error;
-  double ThresholdedError;
-  double AverageThresholdFactor;
+  const char* ErrorMessage = nullptr;
+  double Error = 0.;
+  double ThresholdedError = 0.;
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
@@ -130,11 +122,14 @@ protected:
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData,
     int outExt[6], int threadId) override;
 
+  void GrowExtent(int* uExt, int* wholeExtent);
+  int ComputeSumedValue(unsigned char* values, vtkIdType* indices, int comp);
+
   // Used for vtkMultiThreader operation.
   vtkImageDifferenceThreadData* ThreadData;
 
   // Used for vtkSMPTools operation.
-  vtkImageDifferenceSMPThreadLocal* SMPThreadData;
+  vtkImageDifferenceSMPThreadLocal* SMPThreadData = nullptr;
 
 private:
   vtkImageDifference(const vtkImageDifference&) = delete;
@@ -143,4 +138,5 @@ private:
   friend class vtkImageDifferenceSMPFunctor;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

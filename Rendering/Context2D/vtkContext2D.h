@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContext2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkContext2D
@@ -30,14 +18,17 @@
 #include "vtkObject.h"
 #include "vtkRenderingContext2DModule.h" // For export macro
 
+#include <cstdint> // For std::uintptr_t
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkWindow;
 
 class vtkContext3D;
 class vtkStdString;
-class vtkUnicodeString;
 class vtkTextProperty;
 
 class vtkPoints2D;
+class vtkDataArray;
 class vtkVector2f;
 class vtkRectf;
 class vtkUnsignedCharArray;
@@ -166,6 +157,8 @@ public:
    * memory layout of the coordinates.
    */
   void DrawPoints(vtkPoints2D* points);
+  void DrawPoints(
+    vtkDataArray* positions, vtkUnsignedCharArray* colors, std::uintptr_t cacheIdentifier);
 
   /**
    * Draw a poly line between the specified points, where the float array is of
@@ -181,7 +174,7 @@ public:
    */
   void DrawPointSprites(vtkImageData* sprite, vtkPoints2D* points);
 
-  //@{
+  ///@{
   /**
    * Draw a series of point sprites, images centred at the points supplied.
    * The supplied vtkImageData is the sprite to be drawn, only squares will be
@@ -191,7 +184,9 @@ public:
   void DrawPointSprites(vtkImageData* sprite, vtkPoints2D* points, vtkUnsignedCharArray* colors);
   void DrawPointSprites(
     vtkImageData* sprite, float* points, int n, unsigned char* colors, int nc_comps);
-  //@}
+  void DrawPointSprites(vtkImageData* sprite, vtkDataArray* positions, vtkUnsignedCharArray* colors,
+    std::uintptr_t cacheIdentifier);
+  ///@}
 
   /**
    * Draw a series of point sprites, images centred at the points supplied.
@@ -200,7 +195,7 @@ public:
    */
   void DrawPointSprites(vtkImageData* sprite, float* points, int n);
 
-  //@{
+  ///@{
   /**
    * Draw a series of markers centered at the points supplied. The \a shape
    * argument controls the marker shape, and can be one of
@@ -210,6 +205,10 @@ public:
    * - VTK_MARKER_CIRCLE
    * - VTK_MARKER_DIAMOND
    * Marker size is determined by the current pen width.
+   * \param shape the shape of the marker
+   * \param highlight whether to highlight the marker or not
+   * \param points where to draw the markers
+   * \param n number of points
    * \param colors is an optional array of colors.
    * \param nc_comps is the number of components for the color.
    */
@@ -219,28 +218,34 @@ public:
   virtual void DrawMarkers(int shape, bool highlight, vtkPoints2D* points);
   virtual void DrawMarkers(
     int shape, bool highlight, vtkPoints2D* points, vtkUnsignedCharArray* colors);
-  //@}
+  ///@}
+
+  /**
+   * Cached draw command for markers. VBOs are rebuilt if available.
+   */
+  virtual void DrawMarkers(int shape, bool highlight, vtkDataArray* positions,
+    vtkUnsignedCharArray* colors, std::uintptr_t cacheIdentifier);
 
   /**
    * Draw a rectangle with origin at x, y and width w, height h
    */
   void DrawRect(float x, float y, float w, float h);
 
-  //@{
+  ///@{
   /**
    * Draw a quadrilateral at the specified points (4 points, 8 floats in x, y).
    */
   void DrawQuad(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
   void DrawQuad(float* p);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Draw a strip of quads
    */
   void DrawQuadStrip(vtkPoints2D* points);
   void DrawQuadStrip(float* p, int n);
-  //@}
+  ///@}
 
   /**
    * Draw a polygon specified specified by the points using the x and y arrays
@@ -352,33 +357,29 @@ public:
   void DrawPolyData(
     float x, float y, vtkPolyData* polyData, vtkUnsignedCharArray* colors, int scalarMode);
 
-  //@{
+  ///@{
   /**
    * Draw some text to the screen in a bounding rectangle with the alignment
    * of the text properties respecting the rectangle. The points should be
    * supplied as bottom corner (x, y), width, height.
    */
   void DrawStringRect(vtkPoints2D* rect, const vtkStdString& string);
-  void DrawStringRect(vtkPoints2D* rect, const vtkUnicodeString& string);
   void DrawStringRect(vtkPoints2D* rect, const char* string);
   void DrawStringRect(const float rect[4], const vtkStdString& string);
-  void DrawStringRect(const float rect[4], const vtkUnicodeString& string);
   void DrawStringRect(const float rect[4], const char* string);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Draw some text to the screen.
    */
   void DrawString(vtkPoints2D* point, const vtkStdString& string);
   void DrawString(float x, float y, const vtkStdString& string);
-  void DrawString(vtkPoints2D* point, const vtkUnicodeString& string);
-  void DrawString(float x, float y, const vtkUnicodeString& string);
   void DrawString(vtkPoints2D* point, const char* string);
   void DrawString(float x, float y, const char* string);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Compute the bounds of the supplied string. The bounds will be copied to the
    * supplied bounds variable, the first two elements are the bottom corner of
@@ -390,11 +391,9 @@ public:
    */
   void ComputeStringBounds(const vtkStdString& string, vtkPoints2D* bounds);
   void ComputeStringBounds(const vtkStdString& string, float bounds[4]);
-  void ComputeStringBounds(const vtkUnicodeString& string, vtkPoints2D* bounds);
-  void ComputeStringBounds(const vtkUnicodeString& string, float bounds[4]);
   void ComputeStringBounds(const char* string, vtkPoints2D* bounds);
   void ComputeStringBounds(const char* string, float bounds[4]);
-  //@}
+  ///@}
 
   /**
    * Compute the bounds of the supplied string while taking into account the
@@ -410,7 +409,7 @@ public:
    */
   int ComputeFontSizeForBoundedString(const vtkStdString& string, float width, float height);
 
-  //@{
+  ///@{
   /**
    * Draw a MathText formatted equation to the screen. See
    * http://matplotlib.sourceforge.net/users/mathtext.html for more information.
@@ -422,9 +421,9 @@ public:
   void DrawMathTextString(float x, float y, const vtkStdString& string);
   void DrawMathTextString(vtkPoints2D* point, const char* string);
   void DrawMathTextString(float x, float y, const char* string);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Draw a MathText formatted equation to the screen. See
    * http://matplotlib.sourceforge.net/users/mathtext.html for more information.
@@ -439,7 +438,7 @@ public:
     float x, float y, const vtkStdString& string, const vtkStdString& fallback);
   void DrawMathTextString(vtkPoints2D* point, const char* string, const char* fallback);
   void DrawMathTextString(float x, float y, const char* string, const char* fallback);
-  //@}
+  ///@}
 
   /**
    * Return true if MathText rendering available on the current device.
@@ -505,14 +504,14 @@ public:
    */
   void AppendTransform(vtkTransform2D* transform);
 
-  //@{
+  ///@{
   /**
    * Push/pop the transformation matrix for the painter (sets the underlying
    * matrix for the device when available).
    */
   void PushMatrix();
   void PopMatrix();
-  //@}
+  ///@}
 
   /**
    * Apply id as a color.
@@ -526,14 +525,14 @@ public:
    */
   static int FloatToInt(float x);
 
-  //@{
+  ///@{
   /**
    * Get the vtkContext3D device, in order to do some 3D rendering. This API
    * is very experimental, and may be moved around.
    */
   vtkGetObjectMacro(Context3D, vtkContext3D);
   virtual void SetContext3D(vtkContext3D* context);
-  //@}
+  ///@}
 
 protected:
   vtkContext2D();
@@ -581,4 +580,5 @@ inline int vtkContext2D::FloatToInt(float x)
   return static_cast<int>(x + tol);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkContext2D_h

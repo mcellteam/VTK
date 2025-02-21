@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointCloudFilter.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPointCloudFilter.h"
 
 #include "vtkAbstractPointLocator.h"
@@ -31,12 +19,13 @@
 #include "vtkStaticPointLocator.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Map input points to output. Basically the third pass of the algorithm.
 struct MapPoints
 {
@@ -50,21 +39,23 @@ struct MapPoints
     ArrayList arrays;
     arrays.AddArrays(outPts.size(), inPD, outPD, 0.0, false);
 
-    vtkSMPTools::For(0, inPts.size(), [&](vtkIdType ptId, vtkIdType endPtId) {
-      for (; ptId < endPtId; ++ptId)
+    vtkSMPTools::For(0, inPts.size(),
+      [&](vtkIdType ptId, vtkIdType endPtId)
       {
-        const vtkIdType outPtId = map[ptId];
-        if (outPtId != -1)
+        for (; ptId < endPtId; ++ptId)
         {
-          outPts[outPtId] = inPts[ptId];
-          arrays.Copy(ptId, outPtId);
+          const vtkIdType outPtId = map[ptId];
+          if (outPtId != -1)
+          {
+            outPts[outPtId] = inPts[ptId];
+            arrays.Copy(ptId, outPtId);
+          }
         }
-      }
-    });
+      });
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Map outlier points to second output. This is an optional pass of the
 // algorithm.
 struct MapOutliers
@@ -79,25 +70,27 @@ struct MapOutliers
     ArrayList arrays;
     arrays.AddArrays(outPts.size(), inPD, outPD, 0.0, false);
 
-    vtkSMPTools::For(0, inPts.size(), [&](vtkIdType ptId, vtkIdType endPtId) {
-      for (; ptId < endPtId; ++ptId)
+    vtkSMPTools::For(0, inPts.size(),
+      [&](vtkIdType ptId, vtkIdType endPtId)
       {
-        vtkIdType outPtId = map[ptId];
-        if (outPtId < 0)
+        for (; ptId < endPtId; ++ptId)
         {
-          outPtId = (-outPtId) - 1;
-          outPts[outPtId] = inPts[ptId];
-          arrays.Copy(ptId, outPtId);
+          vtkIdType outPtId = map[ptId];
+          if (outPtId < 0)
+          {
+            outPtId = (-outPtId) - 1;
+            outPts[outPtId] = inPts[ptId];
+            arrays.Copy(ptId, outPtId);
+          }
         }
-      }
-    });
+      });
   }
 }; // MapOutliers
 
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointCloudFilter::vtkPointCloudFilter()
 {
   this->PointMap = nullptr;
@@ -109,25 +102,25 @@ vtkPointCloudFilter::vtkPointCloudFilter()
   this->SetNumberOfOutputPorts(2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointCloudFilter::~vtkPointCloudFilter()
 {
   delete[] this->PointMap;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkPointCloudFilter::GetPointMap()
 {
   return this->PointMap;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPointCloudFilter::GetNumberOfPointsRemoved()
 {
   return this->NumberOfPointsRemoved;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // There are three high level passes. First we traverse all the input points
 // to see how many neighbors each point has within a specified radius, and a
 // map is created indicating whether an input point is to be copied to the
@@ -268,7 +261,7 @@ int vtkPointCloudFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointCloudFilter::GenerateVerticesIfRequested(vtkPolyData* output)
 {
   vtkIdType numPts;
@@ -292,14 +285,14 @@ void vtkPointCloudFilter::GenerateVerticesIfRequested(vtkPolyData* output)
   verts->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointCloudFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPointSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointCloudFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -310,3 +303,4 @@ void vtkPointCloudFilter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Generate Vertices: " << (this->GenerateVertices ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

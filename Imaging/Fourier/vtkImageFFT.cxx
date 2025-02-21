@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageFFT.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageFFT.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,16 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageFFT);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageFFT::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 // This extent of the components changes to real and imaginary values.
 int vtkImageFFT::IterativeRequestInformation(
   vtkInformation* vtkNotUsed(input), vtkInformation* output)
@@ -33,7 +28,7 @@ int vtkImageFFT::IterativeRequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void vtkImageFFTInternalRequestUpdateExtent(
   int* inExt, int* outExt, int* wExt, int iteration)
 {
@@ -42,7 +37,7 @@ static void vtkImageFFTInternalRequestUpdateExtent(
   inExt[iteration * 2 + 1] = wExt[iteration * 2 + 1];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method tells the superclass that the whole input array is needed
 // to compute any output region.
 int vtkImageFFT::IterativeRequestUpdateExtent(vtkInformation* input, vtkInformation* output)
@@ -56,7 +51,7 @@ int vtkImageFFT::IterativeRequestUpdateExtent(vtkInformation* input, vtkInformat
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated execute method handles any type input, but the output
 // is always doubles.
 template <class T>
@@ -85,8 +80,16 @@ void vtkImageFFTExecute(vtkImageFFT* self, vtkImageData* inData, int inExt[6], T
   // Reorder axes (The outs here are just placeholders)
   self->PermuteExtent(inExt, inMin0, inMax0, outMin1, outMax1, outMin2, outMax2);
   self->PermuteExtent(outExt, outMin0, outMax0, outMin1, outMax1, outMin2, outMax2);
-  self->PermuteIncrements(inData->GetIncrements(), inInc0, inInc1, inInc2);
-  self->PermuteIncrements(outData->GetIncrements(), outInc0, outInc1, outInc2);
+
+  // Compute the increments into a local array as `GetIncrements()` introduces
+  // a data race on `vtkImageData::Increments`.
+  vtkIdType inIncrements[3];
+  vtkIdType outIncrements[3];
+  inData->GetIncrements(inIncrements);
+  outData->GetIncrements(outIncrements);
+
+  self->PermuteIncrements(inIncrements, inInc0, inInc1, inInc2);
+  self->PermuteIncrements(outIncrements, outInc0, outInc1, outInc2);
 
   inSize0 = inMax0 - inMin0 + 1;
 
@@ -162,7 +165,7 @@ void vtkImageFFTExecute(vtkImageFFT* self, vtkImageData* inData, int inExt[6], T
   delete[] outComplex;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed input and output Datas, and executes the fft
 // algorithm to fill the output from the input.
 // Not threaded yet.
@@ -205,3 +208,4 @@ void vtkImageFFT::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
       return;
   }
 }
+VTK_ABI_NAMESPACE_END

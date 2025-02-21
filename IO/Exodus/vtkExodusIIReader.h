@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExodusIIReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkExodusIIReader
@@ -40,6 +25,7 @@
 #include "vtkIOExodusModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkDataSet;
 class vtkExodusIICache;
@@ -61,7 +47,7 @@ public:
   /**
    * Determine if the file can be read with this reader.
    */
-  virtual int CanReadFile(const char* fname);
+  virtual int CanReadFile(VTK_FILEPATH const char* fname);
 
   // virtual void Modified();
 
@@ -77,29 +63,29 @@ public:
    */
   virtual vtkMTimeType GetMetadataMTime();
 
-  //@{
+  ///@{
   /**
    * Specify file name of the Exodus file.
    */
-  virtual void SetFileName(const char* fname);
-  vtkGetStringMacro(FileName);
-  //@}
+  virtual void SetFileName(VTK_FILEPATH const char* fname);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify file name of the xml file.
    */
-  virtual void SetXMLFileName(const char* fname);
-  vtkGetStringMacro(XMLFileName);
-  //@}
+  virtual void SetXMLFileName(VTK_FILEPATH const char* fname);
+  vtkGetFilePathMacro(XMLFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Which TimeStep to read.
    */
   vtkSetMacro(TimeStep, int);
   vtkGetMacro(TimeStep, int);
-  //@}
+  ///@}
 
   /**
    * Convenience method to set the mode-shape which is same as
@@ -107,7 +93,7 @@ public:
    */
   void SetModeShape(int val) { this->SetTimeStep(val - 1); }
 
-  //@{
+  ///@{
   /**
    * Since ModeShapes are expected to run from [1,N] rather than [0, N-1],
    * this method will return the TimeStepRange offset by 1. Note this method
@@ -115,18 +101,18 @@ public:
    * this->HasModeShapes is set to true.
    */
   vtkGetVector2Macro(ModeShapesRange, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the available range of valid integer time steps.
    * Note this method returns the potential timesteps range irrespective of
    * whether this->HasModeShapes is set to false.
    */
   vtkGetVector2Macro(TimeStepRange, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Extra cell data array that can be generated.  By default, this array
    * is ON.  The value of the array is the integer id found
@@ -142,7 +128,7 @@ public:
   vtkTypeBool GetGenerateObjectIdCellArray();
   vtkBooleanMacro(GenerateObjectIdCellArray, vtkTypeBool);
   static const char* GetObjectIdArrayName() { return "ObjectId"; }
-  //@}
+  ///@}
 
   virtual void SetGenerateGlobalElementIdArray(vtkTypeBool g);
   vtkTypeBool GetGenerateGlobalElementIdArray();
@@ -167,7 +153,7 @@ public:
   virtual void SetFileId(int f);
   int GetFileId();
 
-  //@{
+  ///@{
   /**
    * Extra cell data array that can be generated.  By default, this array
    * is off.  The value of the array is the integer global id of the cell.
@@ -242,7 +228,7 @@ public:
     EDGE_ID = 106,      //!< edge id map (old-style edge_num_map or first new-style edge map) array
     ENTITY_COUNTS = 109 //!< polyhedra per-entity count ex_get_block returns the sum for polyhedra
   };
-  //@}
+  ///@}
 
   static const char* GetGlobalElementIdArrayName() { return "GlobalElementId"; }
   static const char* GetPedigreeElementIdArrayName() { return "PedigreeElementId"; }
@@ -262,7 +248,7 @@ public:
   static int GetGlobalEdgeID(vtkDataSet* data, int localID, int searchType);
   static const char* GetImplicitEdgeIdArrayName() { return "ImplicitEdgeId"; }
 
-  //@{
+  ///@{
   /**
    * Extra point data array that can be generated.  By default, this array
    * is ON.  The value of the array is the integer id of the node.
@@ -274,7 +260,7 @@ public:
   static int GetGlobalNodeID(vtkDataSet* data, int localID);
   static int GetGlobalNodeID(vtkDataSet* data, int localID, int searchType);
   static const char* GetImplicitNodeIdArrayName() { return "ImplicitNodeId"; }
-  //@}
+  ///@}
 
   /**
    * Get the name of the array that stores the mapping from side set
@@ -287,7 +273,7 @@ public:
    * cells back to the canonical side of the elements they bound.
    */
   static const char* GetSideSetSourceElementSideArrayName() { return "SourceElementSide"; }
-  //@{
+  ///@{
   /**
    * Geometric locations can include displacements.  By default,
    * this is ON.  The nodal positions are 'displaced' by the
@@ -300,9 +286,9 @@ public:
   vtkBooleanMacro(ApplyDisplacements, vtkTypeBool);
   virtual void SetDisplacementMagnitude(float s);
   float GetDisplacementMagnitude();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get whether the Exodus sequence number corresponds to time steps or mode shapes.
    * By default, HasModeShapes is false unless two time values in the Exodus file are identical,
@@ -311,9 +297,9 @@ public:
   virtual void SetHasModeShapes(vtkTypeBool ms);
   vtkTypeBool GetHasModeShapes();
   vtkBooleanMacro(HasModeShapes, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the time used to animate mode shapes.
    * This is a number between 0 and 1 that is used to scale the \a DisplacementMagnitude
@@ -323,9 +309,9 @@ public:
    */
   virtual void SetModeShapeTime(double phase);
   double GetModeShapeTime();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this flag is on (the default) and HasModeShapes is also on, then this
    * reader will report a continuous time range [0,1] and animate the
@@ -336,9 +322,9 @@ public:
   virtual void SetAnimateModeShapes(vtkTypeBool flag);
   vtkTypeBool GetAnimateModeShapes();
   vtkBooleanMacro(AnimateModeShapes, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When on, this option ignores the time values assigned to each time step in
    * the file. This can be useful for Exodus files where different time steps
@@ -348,16 +334,16 @@ public:
   virtual void SetIgnoreFileTime(bool flag);
   bool GetIgnoreFileTime();
   vtkBooleanMacro(IgnoreFileTime, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access to meta data generated by UpdateInformation.
    */
   const char* GetTitle();
   int GetDimensionality();
   int GetNumberOfTimeSteps();
-  //@}
+  ///@}
 
   int GetNumberOfNodesInFile();
   int GetNumberOfEdgesInFile();
@@ -372,6 +358,7 @@ public:
   int GetNumberOfEntriesInObject(int objectType, int objectIndex);
   int GetObjectId(int objectType, int objectIndex);
   const char* GetObjectName(int objectType, int objectIndex);
+  using Superclass::GetObjectName;
   int GetObjectIndex(int objectType, const char* objectName);
   int GetObjectIndex(int objectType, int id);
   int GetObjectStatus(int objectType, int objectIndex);
@@ -382,11 +369,11 @@ public:
   void SetObjectStatus(int objectType, int objectIndex, int status);
   void SetObjectStatus(int objectType, const char* objectName, int status);
 
-  //@{
+  ///@{
   /**
    * By default arrays are not loaded.  These methods allow the user to select
    * which arrays they want to load.  You can get information about the arrays
-   * by first caling UpdateInformation, and using GetPointArrayName ...
+   * by first calling UpdateInformation, and using GetPointArrayName ...
    * (Developer Note) This meta data is all accessed through vtkExodusMetadata
    */
   int GetNumberOfObjectArrays(int objectType);
@@ -400,13 +387,13 @@ public:
   }
   void SetObjectArrayStatus(int objectType, int arrayIndex, int status);
   void SetObjectArrayStatus(int objectType, const char* arrayName, int status);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * By default attributes are not loaded.  These methods allow the user to select
    * which attributes they want to load.  You can get information about the attributes
-   * by first caling UpdateInformation, and using GetObjectAttributeName ...
+   * by first calling UpdateInformation, and using GetObjectAttributeName ...
    * (Developer Note) This meta data is all accessed through vtkExodusMetadata
    */
   int GetNumberOfObjectAttributes(int objectType, int objectIndex);
@@ -424,18 +411,18 @@ public:
     this->SetObjectAttributeStatus(objectType, objectIndex,
       this->GetObjectAttributeIndex(objectType, objectIndex, attribName), status);
   }
-  //@}
+  ///@}
 
   virtual vtkIdType GetTotalNumberOfNodes();
   virtual vtkIdType GetTotalNumberOfEdges();
   virtual vtkIdType GetTotalNumberOfFaces();
   virtual vtkIdType GetTotalNumberOfElements();
 
-  //@{
+  ///@{
   /**
    * By default all parts are loaded. These methods allow the user to select
    * which parts they want to load.  You can get information about the parts
-   * by first caling UpdateInformation, and using GetPartArrayName ...
+   * by first calling UpdateInformation, and using GetPartArrayName ...
    */
   int GetNumberOfPartArrays();
   const char* GetPartArrayName(int arrayIdx);
@@ -445,13 +432,13 @@ public:
   void SetPartArrayStatus(const char*, int flag);
   int GetPartArrayStatus(int index);
   int GetPartArrayStatus(const char*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * By default all materials are loaded. These methods allow the user to
    * select which materials they want to load.  You can get information
-   * about the materials by first caling UpdateInformation, and using
+   * about the materials by first calling UpdateInformation, and using
    * GetMaterialArrayName ...
    */
   int GetNumberOfMaterialArrays();
@@ -461,13 +448,13 @@ public:
   void SetMaterialArrayStatus(const char*, int flag);
   int GetMaterialArrayStatus(int index);
   int GetMaterialArrayStatus(const char*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * By default all assemblies are loaded. These methods allow the user to
    * select which assemblies they want to load.  You can get information
-   * about the assemblies by first caling UpdateInformation, and using
+   * about the assemblies by first calling UpdateInformation, and using
    * GetAssemblyArrayName ...
    */
   int GetNumberOfAssemblyArrays();
@@ -477,14 +464,14 @@ public:
   void SetAssemblyArrayStatus(const char*, int flag);
   int GetAssemblyArrayStatus(int index);
   int GetAssemblyArrayStatus(const char*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * By default all hierarchy entries are loaded. These methods allow
    * the user to
    * select which hierarchy entries they want to load.  You can get information
-   * about the hierarchy entries by first caling UpdateInformation, and using
+   * about the hierarchy entries by first calling UpdateInformation, and using
    * GetHierarchyArrayName ...
    * these methods do not call functions in metaData. They call functions on
    * the ExodusXMLParser since it seemed silly to duplicate all the information
@@ -495,7 +482,7 @@ public:
   void SetHierarchyArrayStatus(const char*, int flag);
   int GetHierarchyArrayStatus(int index);
   int GetHierarchyArrayStatus(const char*);
-  //@}
+  ///@}
 
   vtkGetMacro(DisplayType, int);
   virtual void SetDisplayType(int type);
@@ -790,7 +777,7 @@ public:
    */
   double GetCacheSize();
 
-  //@{
+  ///@{
   /**
    * Should the reader output only points used by elements in the output mesh,
    * or all the points. Outputting all the points is much faster since the
@@ -805,7 +792,7 @@ public:
    */
   void SetSqueezePoints(bool sp);
   bool GetSqueezePoints();
-  //@}
+  ///@}
 
   virtual void Dump();
 
@@ -815,22 +802,22 @@ public:
    */
   vtkGraph* GetSIL();
 
-  //@{
+  ///@{
   /**
    * Every time the SIL is updated a this will return a different value.
    */
   vtkGetMacro(SILUpdateStamp, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the max_name_length in the file. This is the amount of space allocated
    * int the file for storing names of arrays, blocks, etc.
    */
   int GetMaxNameLength();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Exodus reader outputs global variables and global temporal variables,
    * together with some other variables as FieldData. These keys help identify
@@ -841,9 +828,9 @@ public:
    */
   static vtkInformationIntegerKey* GLOBAL_VARIABLE();
   static vtkInformationIntegerKey* GLOBAL_TEMPORAL_VARIABLE();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * In previous versions, the reader added the type of elements in the block to
    * the block name when no name was provided for the block. This has issues
@@ -854,7 +841,7 @@ public:
   vtkSetMacro(UseLegacyBlockNames, bool);
   vtkGetMacro(UseLegacyBlockNames, bool);
   vtkBooleanMacro(UseLegacyBlockNames, bool);
-  //@}
+  ///@}
 protected:
   vtkExodusIIReader();
   ~vtkExodusIIReader() override;
@@ -919,4 +906,5 @@ private:
   bool UseLegacyBlockNames;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

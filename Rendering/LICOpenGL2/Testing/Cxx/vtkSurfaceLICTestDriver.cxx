@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSurfaceLIC.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCamera.h"
 #include "vtkCellData.h"
@@ -19,7 +7,6 @@
 #include "vtkCompositeDataIterator.h"
 #include "vtkCompositeDataPipeline.h"
 #include "vtkCompositeDataSet.h"
-#include "vtkCompositePolyDataMapper2.h"
 #include "vtkDataObject.h"
 #include "vtkDataSet.h"
 #include "vtkObjectFactory.h"
@@ -36,7 +23,7 @@
 #include "vtkSurfaceLICInterface.h"
 #include "vtkSurfaceLICMapper.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include <string>
 #include <vector>
@@ -155,7 +142,7 @@ int vtkSurfaceLICTestDriver(int argc, char** argv, vtkDataObject* dataObj, int n
   }
 
   // Create a mapper and insert the vtkSurfaceLICmapper mapper into the
-  // mapper chain. This is essential since the entire logic of performin the
+  // mapper chain. This is essential since the entire logic of performing the
   // LIC is present in the vtkSurfaceLICmapper.
 
   vtkSmartPointer<vtkCompositeSurfaceLICMapper> mapper =
@@ -181,7 +168,7 @@ int vtkSurfaceLICTestDriver(int argc, char** argv, vtkDataObject* dataObj, int n
   cerr << details << endl;
 
   // If user chose a vector field, select it.
-  if (vectors != "")
+  if (!vectors.empty())
   {
     mapper->SetInputArrayToProcess(
       0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS, vectors.c_str());
@@ -282,7 +269,7 @@ int vtkSurfaceLICTestDriver(int argc, char** argv, vtkDataObject* dataObj, int n
   li->SetMaskOnSurface(mask_on_surface);
   li->SetMaskThreshold(mask_threshold);
   li->SetMaskIntensity(mask_intensity);
-  li->SetMaskColor(&mask_color_rgb[0]);
+  li->SetMaskColor(mask_color_rgb.data());
 
   vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
 

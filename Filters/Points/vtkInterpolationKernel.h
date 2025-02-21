@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInterpolationKernel.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInterpolationKernel
  * @brief   base class for interpolation kernels
@@ -54,6 +42,7 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractPointLocator;
 class vtkIdList;
 class vtkDoubleArray;
@@ -63,13 +52,13 @@ class vtkPointData;
 class VTKFILTERSPOINTS_EXPORT vtkInterpolationKernel : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard method for type and printing.
    */
   vtkAbstractTypeMacro(vtkInterpolationKernel, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Initialize the kernel. Pass information into the kernel that is
@@ -82,7 +71,7 @@ public:
    */
   virtual void Initialize(vtkAbstractPointLocator* loc, vtkDataSet* ds, vtkPointData* pd);
 
-  //@{
+  ///@{
   /**
    * Indicate whether the kernel needs initialization. By default this data
    * member is true, and using classes will invoke Initialize() on the
@@ -92,7 +81,7 @@ public:
   vtkSetMacro(RequiresInitialization, bool);
   vtkGetMacro(RequiresInitialization, bool);
   vtkBooleanMacro(RequiresInitialization, bool);
-  //@}
+  ///@}
 
   /**
    * Given a point x (and optional associated point id), determine the points
@@ -134,4 +123,5 @@ private:
   void operator=(const vtkInterpolationKernel&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

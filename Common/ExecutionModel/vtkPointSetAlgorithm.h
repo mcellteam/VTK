@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointSetAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPointSetAlgorithm
  * @brief   Superclass for algorithms that produce output of the same type as input
@@ -35,6 +23,7 @@
 #include "vtkAlgorithm.h"
 #include "vtkCommonExecutionModelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPointSet;
 class vtkPolyData;
 class vtkStructuredGrid;
@@ -47,13 +36,13 @@ public:
   vtkTypeMacro(vtkPointSetAlgorithm, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm.
    */
   vtkPointSet* GetOutput();
   vtkPointSet* GetOutput(int);
-  //@}
+  ///@}
 
   /**
    * Get the output as vtkPolyData.
@@ -70,7 +59,7 @@ public:
    */
   vtkUnstructuredGrid* GetUnstructuredGridOutput();
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection() to
@@ -80,9 +69,9 @@ public:
   void SetInputData(int, vtkDataObject*);
   void SetInputData(vtkPointSet*);
   void SetInputData(int, vtkPointSet*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use AddInputConnection() to
@@ -92,7 +81,7 @@ public:
   void AddInputData(vtkPointSet*);
   void AddInputData(int, vtkPointSet*);
   void AddInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
   // this method is not recommended for use, but lots of old style filters
   // use it
@@ -106,7 +95,7 @@ public:
 
 protected:
   vtkPointSetAlgorithm();
-  ~vtkPointSetAlgorithm() override {}
+  ~vtkPointSetAlgorithm() override = default;
 
   /**
    * This is called by the superclass.
@@ -133,7 +122,7 @@ protected:
     return 1;
   }
 
-  //@{
+  ///@{
   /**
    * This is called by the superclass.
    * This is the method you should override.
@@ -143,7 +132,12 @@ protected:
   {
     return 1;
   }
-  //@}
+  ///@}
+
+  virtual int ComputeInputUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*)
+  {
+    return 1;
+  }
 
   // see algorithm for more info
   int FillOutputPortInformation(int port, vtkInformation* info) override;
@@ -154,4 +148,5 @@ private:
   void operator=(const vtkPointSetAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

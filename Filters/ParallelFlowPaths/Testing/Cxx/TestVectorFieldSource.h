@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageAlgorithm.h"
 #include <vtkInformationVector.h>
 
@@ -11,15 +13,14 @@ public:
 
 protected:
   TestVectorFieldSource();
-  ~TestVectorFieldSource();
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputInfoVectors,
+  ~TestVectorFieldSource() override;
+  int RequestInformation(vtkInformation* request, vtkInformationVector** inputInfoVectors,
     vtkInformationVector* outputInfoVector) override;
   void GetSpacing(double dx[3]);
   void GetSize(double dx[3]);
-  virtual void ExecuteDataWithInformation(vtkDataObject* outData, vtkInformation* outInfo) override;
+  void ExecuteDataWithInformation(vtkDataObject* outData, vtkInformation* outInfo) override;
 
 private:
   int Extent[6];
   double BoundingBox[6];
-  int Spacing;
 };

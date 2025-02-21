@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWordCloud.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWordCloud.h"
 
 // Older versions of GCC do not implement regex. The first working
@@ -51,6 +39,7 @@
 #endif
 // stl
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -62,6 +51,7 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkWordCloud);
 
 namespace
@@ -90,8 +80,8 @@ struct ArchimedesValue
   double x, y;
 };
 void AddReplacementPairsToStopList(vtkWordCloud*, vtkWordCloud::StopWordsContainer&);
-bool AddWordToFinal(vtkWordCloud*, const std::string, const int, std::mt19937_64&,
-  double orientation, std::vector<ExtentOffset>&, vtkImageBlend*, std::string&);
+bool AddWordToFinal(vtkWordCloud*, std::string, int, std::mt19937_64&, double orientation,
+  std::vector<ExtentOffset>&, vtkImageBlend*, std::string&);
 
 void ArchimedesSpiral(std::vector<ExtentOffset>&, vtkWordCloud::SizesContainer&);
 void ReplaceMaskColorWithBackgroundColor(vtkImageData*, vtkWordCloud*);
@@ -101,27 +91,20 @@ void ExtractWordsFromString(std::string& str, std::vector<std::string>& words);
 void ShowColorSeriesNames(ostream& os);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWordCloud::vtkWordCloud()
   : BackgroundColorName("MidnightBlue")
   , BWMask(false)
   , ColorDistribution({ { .6, 1.0 } })
-  , ColorSchemeName("")
   , DPI(200)
-  , FileName("")
-  , FontFileName("")
   , FontMultiplier(6)
   , Gap(2)
   , MaskColorName("black")
-  , MaskFileName("")
   , MaxFontSize(48)
   , MinFontSize(12)
   , MinFrequency(1)
   , OrientationDistribution({ { -20, 20 } })
   , Sizes({ { 640, 480 } })
-  , StopListFileName("")
-  , Title("")
-  , WordColorName("")
 {
   this->SetNumberOfInputPorts(0);
 
@@ -140,7 +123,7 @@ vtkWordCloud::vtkWordCloud()
   this->WholeExtent[5] = 0;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWordCloud::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -157,7 +140,7 @@ int vtkWordCloud::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -167,7 +150,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   vtkImageData* output = vtkImageData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   // Check some parameters before we start
-  if (this->FileName.size() == 0)
+  if (this->FileName.empty())
   {
     vtkErrorMacro(<< "No FileName is set. Use SetFileName to set a file.");
     return 0;
@@ -177,17 +160,17 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
     vtkErrorMacro(<< "FileName " << this->FileName << " does not exist");
     return 0;
   }
-  if (this->FontFileName.size() > 0 && !vtksys::SystemTools::FileExists(this->FontFileName, true))
+  if (!this->FontFileName.empty() && !vtksys::SystemTools::FileExists(this->FontFileName, true))
   {
     vtkErrorMacro(<< "FontFileName " << this->FontFileName << " does not exist");
     return 0;
   }
-  if (this->MaskFileName.size() > 0 && !vtksys::SystemTools::FileExists(this->MaskFileName, true))
+  if (!this->MaskFileName.empty() && !vtksys::SystemTools::FileExists(this->MaskFileName, true))
   {
     vtkErrorMacro(<< "MaskFileName " << this->MaskFileName << " does not exist");
     return 0;
   }
-  if (this->StopListFileName.size() > 0 &&
+  if (!this->StopListFileName.empty() &&
     !vtksys::SystemTools::FileExists(this->StopListFileName, true))
   {
     vtkErrorMacro(<< "StopListFileName " << this->StopListFileName << " does not exist");
@@ -205,7 +188,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   this->SkippedWords.resize(0);
 
   // Generate a path for placement of words
-  std::vector< ::ExtentOffset> offset;
+  std::vector<::ExtentOffset> offset;
   ::ArchimedesSpiral(offset, this->Sizes);
 
   // Sort the word by frequency
@@ -218,7 +201,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   auto maskImage = vtkSmartPointer<vtkImageData>::New();
 
   // If a mask file is not defined, create a rectangular
-  if (this->MaskFileName == "")
+  if (this->MaskFileName.empty())
   {
     auto defaultMask = vtkSmartPointer<vtkImageCanvasSource2D>::New();
     defaultMask->SetScalarTypeToUnsignedChar();
@@ -292,7 +275,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
     std::vector<double> orientations;
     // If discrete orientations are present use them, otherwise
     // generate random orientations
-    if (this->Orientations.size() != 0)
+    if (!this->Orientations.empty())
     {
       orientations = this->Orientations;
     }
@@ -307,7 +290,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
     {
       added =
         ::AddWordToFinal(this, element.first, element.second, mt, o, offset, final, errorMessage);
-      if (errorMessage.size() != 0)
+      if (!errorMessage.empty())
       {
         vtkErrorMacro(<< errorMessage);
         return 0;
@@ -348,7 +331,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWordCloud::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -385,7 +368,7 @@ void vtkWordCloud::PrintSelf(ostream& os, vtkIndent indent)
   os << std::endl;
   os << "  Sizes: " << this->GetSizes()[0] << " " << this->GetSizes()[1] << std::endl;
   os << "  StopWords: ";
-  for (auto s : this->GetStopWords())
+  for (const auto& s : this->GetStopWords())
   {
     os << s << " ";
   }
@@ -406,7 +389,7 @@ std::multiset<std::pair<std::string, int>, Comparator> FindWordsSortedByFrequenc
 
   // If a StopListFileName is defined, use it, otherwise use the
   // built-in StopList.
-  if (wordCloud->GetStopListFileName().size() > 0)
+  if (!wordCloud->GetStopListFileName().empty())
   {
     CreateStopListFromFile(wordCloud->GetStopListFileName(), stopList);
   }
@@ -416,7 +399,7 @@ std::multiset<std::pair<std::string, int>, Comparator> FindWordsSortedByFrequenc
   }
 
   // Add user stop words
-  for (auto stop : wordCloud->GetStopWords())
+  for (const auto& stop : wordCloud->GetStopWords())
   {
     stopList.insert(stop);
   }
@@ -435,7 +418,7 @@ std::multiset<std::pair<std::string, int>, Comparator> FindWordsSortedByFrequenc
   std::map<std::string, int> wordContainer;
 
   // If a title is present add it with a high frequency
-  if (wordCloud->GetTitle().length() > 0)
+  if (!wordCloud->GetTitle().empty())
   {
     wordContainer[wordCloud->GetTitle()] = 1000;
   }
@@ -477,8 +460,9 @@ std::multiset<std::pair<std::string, int>, Comparator> FindWordsSortedByFrequenc
 
   // Defining a lambda function to compare two pairs. It will compare
   // two pairs using second field
-  Comparator compFunctor = [](const std::pair<std::string, int>& elem1,
-                             const std::pair<std::string, int>& elem2) {
+  Comparator compFunctor =
+    [](const std::pair<std::string, int>& elem1, const std::pair<std::string, int>& elem2)
+  {
     if (elem1.second == elem2.second)
     {
       return elem1.first.length() > elem2.first.length();
@@ -510,15 +494,15 @@ void AddReplacementPairsToStopList(
     ::ExtractWordsFromString(to, words);
 
     // Add each replacement to the stop list
-    for (auto w : words)
+    for (const auto& w : words)
     {
       stopList.insert(w);
     }
   }
 }
 
-bool AddWordToFinal(vtkWordCloud* wordCloud, const std::string word, const int frequency,
-  std::mt19937_64& mt, double orientation, std::vector<ExtentOffset>& offset, vtkImageBlend* final,
+bool AddWordToFinal(vtkWordCloud* wordCloud, std::string word, int frequency, std::mt19937_64& mt,
+  double orientation, std::vector<ExtentOffset>& offset, vtkImageBlend* final,
   std::string& errorMessage)
 {
   // Skip words below MinFrequency
@@ -534,17 +518,17 @@ bool AddWordToFinal(vtkWordCloud* wordCloud, const std::string word, const int f
   // Setup a property for the strings containing fixed parameters
   auto colors = vtkSmartPointer<vtkNamedColors>::New();
   auto textProperty = vtkSmartPointer<vtkTextProperty>::New();
-  if (wordCloud->GetWordColorName().length() > 0)
+  if (!wordCloud->GetWordColorName().empty())
   {
     textProperty->SetColor(colors->GetColor3d(wordCloud->GetWordColorName()).GetData());
   }
-  else if (wordCloud->GetColorSchemeName().length() > 0)
+  else if (!wordCloud->GetColorSchemeName().empty())
   {
     auto colorScheme = vtkSmartPointer<vtkColorSeries>::New();
     colorScheme->SetColorSchemeByName(wordCloud->GetColorSchemeName());
     vtkColor3ub color =
       colorScheme->GetColorRepeating(static_cast<int>(wordCloud->GetKeptWords().size()));
-    if (color.Compare(colors->GetColor3ub("black"), 1) && wordCloud->GetKeptWords().size() == 0)
+    if (color.Compare(colors->GetColor3ub("black"), 1) && wordCloud->GetKeptWords().empty())
     {
       std::ostringstream validNames;
       ShowColorSeriesNames(validNames);
@@ -565,7 +549,7 @@ bool AddWordToFinal(vtkWordCloud* wordCloud, const std::string word, const int f
   textProperty->SetLineOffset(4);
 
   // Check if a font file is present
-  if (wordCloud->GetFontFileName().length() > 0)
+  if (!wordCloud->GetFontFileName().empty())
   {
     textProperty->SetFontFile(wordCloud->GetFontFileName().c_str());
     textProperty->SetFontFamily(VTK_FONT_FILE);
@@ -588,7 +572,6 @@ bool AddWordToFinal(vtkWordCloud* wordCloud, const std::string word, const int f
   if (frequency == 1000)
   {
     fontSize *= 1.2;
-    ;
   }
   textProperty->SetFontSize(fontSize);
   textProperty->SetOrientation(orientation);
@@ -692,7 +675,7 @@ void ArchimedesSpiral(std::vector<ExtentOffset>& offset, vtkWordCloud::SizesCont
     double angle = deltaAngle * i;
     x = e * angle * std::cos(angle);
     y = e * angle * std::sin(angle);
-    archimedes.push_back(ArchimedesValue(x, y));
+    archimedes.emplace_back(x, y);
     maxX = std::max(maxX, x);
     minX = std::min(minX, x);
     maxY = std::max(maxY, y);
@@ -704,7 +687,7 @@ void ArchimedesSpiral(std::vector<ExtentOffset>& offset, vtkWordCloud::SizesCont
   {
     if (ar.x * scaleX + centerX - 50 < 0 || ar.y * scaleX + centerY < 0)
       continue;
-    offset.push_back(ExtentOffset(ar.x * scaleX + centerX - 50, ar.y * scaleX + centerY));
+    offset.emplace_back(ar.x * scaleX + centerX - 50, ar.y * scaleX + centerY);
   }
 }
 void ReplaceMaskColorWithBackgroundColor(vtkImageData* finalImage, vtkWordCloud* wordCloud)
@@ -772,7 +755,7 @@ void CreateStopListFromFile(std::string fileName, vtkWordCloud::StopWordsContain
   // Extract words
   std::vector<std::string> words;
   ::ExtractWordsFromString(s, words);
-  for (auto w : words)
+  for (const auto& w : words)
   {
     stopList.insert(w);
   }
@@ -788,7 +771,6 @@ void ExtractWordsFromString(std::string& str, std::vector<std::string>& words)
   {
     words.push_back((*i).str());
   }
-  return;
 #else
   vtksys::RegularExpression re("([0-9A-Za-z]+)");
   size_t next = 0;
@@ -797,676 +779,83 @@ void ExtractWordsFromString(std::string& str, std::vector<std::string>& words)
     words.push_back(str.substr(next + re.start(), re.end() - re.start()));
     next += re.end();
   }
-  return;
 #endif
 }
 
+const char* const stop_words[] = { "a", "able", "about", "above", "abst", "accordance", "according",
+  "accordingly", "across", "act", "actually", "added", "adj", "affected", "affecting", "affects",
+  "after", "afterwards", "again", "against", "ah", "all", "almost", "alone", "along", "already",
+  "also", "although", "always", "am", "among", "amongst", "an", "and", "announce", "another", "any",
+  "anybody", "anyhow", "anymore", "anyone", "anything", "anyway", "anyways", "anywhere",
+  "apparently", "approximately", "are", "aren", "arent", "arise", "around", "as", "aside", "ask",
+  "asking", "at", "auth", "available", "away", "awfully", "b", "back", "be", "became", "because",
+  "become", "becomes", "becoming", "been", "before", "beforehand", "begin", "beginning",
+  "beginnings", "begins", "behind", "being", "believe", "below", "beside", "besides", "between",
+  "beyond", "biol", "both", "brief", "briefly", "but", "by", "c", "ca", "came", "can", "cannot",
+  "can't", "cause", "causes", "certain", "certainly", "co", "com", "come", "comes", "contain",
+  "containing", "contains", "could", "couldnt", "cum", "d", "date", "did", "didn't", "different",
+  "do", "does", "doesn't", "doing", "done", "don't", "down", "downwards", "due", "dr", "during",
+  "e", "each", "ed", "edu", "effect", "eg", "eight", "eighty", "either", "else", "elsewhere", "end",
+  "ending", "enough", "especially", "et", "et-al", "etc", "even", "ever", "every", "everybody",
+  "everyone", "everything", "everywhere", "ex", "except", "f", "far", "few", "ff", "fifth", "first",
+  "five", "fix", "followed", "following", "follows", "for", "former", "formerly", "forth", "found",
+  "four", "from", "further", "furthermore", "g", "gave", "get", "gets", "getting", "give", "given",
+  "gives", "giving", "go", "goes", "gone", "got", "gotten", "h", "had", "happens", "hardly", "has",
+  "hasn", "have", "haven", "having", "he", "hed", "hence", "her", "here", "hereafter", "hereby",
+  "herein", "heres", "hereupon", "hers", "herself", "hes", "hi", "hid", "him", "himself", "his",
+  "hither", "home", "how", "howbeit", "however", "hundred", "i", "id", "ie", "if", "im",
+  "immediate", "immediately", "importance", "important", "in", "inc", "indeed", "index",
+  "information", "instead", "into", "invention", "inward", "is", "isn", "it", "itd", "it", "its",
+  "itself", "j", "jr", "just", "k", "keep", "keeps", "kept", "kg", "km", "know", "known", "knows",
+  "l", "largely", "last", "lately", "later", "latter", "latterly", "laude", "least", "less", "lest",
+  "let", "lets", "like", "liked", "likely", "line", "little", "ll", "look", "looking", "looks",
+  "ltd", "m", "made", "mainly", "make", "makes", "many", "may", "maybe", "me", "mean", "means",
+  "meantime", "meanwhile", "merely", "met", "mg", "mic", "might", "million", "miss", "ml", "more",
+  "moreover", "most", "mostly", "mr", "mrs", "much", "mug", "must", "my", "myself", "n", "na",
+  "name", "namely", "nay", "nd", "near", "nearly", "necessarily", "necessary", "need", "needs",
+  "neither", "never", "nevertheless", "new", "next", "nine", "ninety", "no", "nobody", "non",
+  "none", "nonetheless", "noone", "nor", "normally", "nos", "not", "noted", "nothing", "now",
+  "nowhere", "o", "obtain", "obtained", "obviously", "of", "off", "often", "oh", "ok", "okay",
+  "old", "omitted", "on", "once", "one", "ones", "only", "onto", "or", "ord", "org", "other",
+  "others", "otherwise", "ought", "our", "ours", "ourselves", "out", "outside", "over", "overall",
+  "owing", "own", "p", "page", "pages", "part", "particular", "particularly", "past", "per",
+  "perhaps", "ph", "placed", "please", "plus", "poorly", "possible", "possibly", "potentially",
+  "pp", "predominantly", "present", "previously", "primarily", "probably", "promptly", "proud",
+  "provides", "put", "q", "que", "quickly", "quite", "qv", "r", "ran", "rather", "rd", "re",
+  "readily", "really", "recent", "recently", "ref", "refs", "regarding", "regardless", "regards",
+  "related", "relatively", "research", "respectively", "resulted", "resulting", "results", "right",
+  "run", "s", "said", "same", "saw", "sat", "say", "saying", "says", "sec", "section", "see",
+  "seeing", "seem", "seemed", "seeming", "seems", "seen", "self", "selves", "sent", "seven",
+  "several", "shall", "she", "shed", "shes", "should", "shouldn", "show", "showed", "shown",
+  "showns", "shows", "significant", "significantly", "similar", "similarly", "since", "six",
+  "slightly", "so", "some", "somebody", "somehow", "someone", "somethan", "something", "sometime",
+  "sometimes", "somewhat", "somewhere", "soon", "sorry", "specifically", "specified", "specify",
+  "specifying", "still", "stop", "strongly", "sub", "substantially", "successfully", "such",
+  "sufficiently", "suggest", "sup", "sure", "t", "take", "taken", "taking", "tell", "tends", "th",
+  "than", "thank", "thanks", "thanx", "that", "thats", "the", "their", "theirs", "them",
+  "themselves", "then", "thence", "there", "thereafter", "thereby", "thered", "therefore",
+  "therein", "thereof", "therere", "theres", "thereto", "thereupon", "these", "they", "theyd",
+  "theyre", "think", "this", "those", "thou", "though", "thoughh", "thousand", "throug", "through",
+  "throughout", "thru", "thus", "til", "tip", "to", "together", "too", "took", "toward", "towards",
+  "tried", "tries", "truly", "try", "trying", "ts", "twice", "two", "u", "un", "under",
+  "unfortunately", "unless", "unlike", "unlikely", "until", "unto", "up", "upon", "ups", "us",
+  "use", "used", "useful", "usefully", "usefulness", "uses", "using", "usually", "v", "value",
+  "various", "ve", "very", "via", "viz", "vol", "vols", "vs", "w", "want", "wants", "was", "wasnt",
+  "wasnt", "way", "we", "wed", "welcome", "went", "were", "werent", "what", "whatever", "whats",
+  "when", "whence", "whenever", "where", "whereafter", "whereas", "whereby", "wherein", "wheres",
+  "whereupon", "wherever", "whether", "which", "while", "whim", "whither", "who", "whod", "whoever",
+  "whole", "whom", "whomever", "whos", "whose", "why", "widely", "will", "willing", "wish", "with",
+  "within", "without", "wont", "words", "world", "would", "wouldnt", "www", "x", "y", "yes", "yet",
+  "you", "youd", "your", "youre", "yours", "yourself", "yourselves", "z", "zero" };
+
 void CreateBuiltInStopList(vtkWordCloud::StopWordsContainer& stopList)
 {
-  stopList.insert("a");
-  stopList.insert("able");
-  stopList.insert("about");
-  stopList.insert("above");
-  stopList.insert("abst");
-  stopList.insert("accordance");
-  stopList.insert("according");
-  stopList.insert("accordingly");
-  stopList.insert("across");
-  stopList.insert("act");
-  stopList.insert("actually");
-  stopList.insert("added");
-  stopList.insert("adj");
-  stopList.insert("affected");
-  stopList.insert("affecting");
-  stopList.insert("affects");
-  stopList.insert("after");
-  stopList.insert("afterwards");
-  stopList.insert("again");
-  stopList.insert("against");
-  stopList.insert("ah");
-  stopList.insert("all");
-  stopList.insert("almost");
-  stopList.insert("alone");
-  stopList.insert("along");
-  stopList.insert("already");
-  stopList.insert("also");
-  stopList.insert("although");
-  stopList.insert("always");
-  stopList.insert("am");
-  stopList.insert("among");
-  stopList.insert("amongst");
-  stopList.insert("an");
-  stopList.insert("and");
-  stopList.insert("announce");
-  stopList.insert("another");
-  stopList.insert("any");
-  stopList.insert("anybody");
-  stopList.insert("anyhow");
-  stopList.insert("anymore");
-  stopList.insert("anyone");
-  stopList.insert("anything");
-  stopList.insert("anyway");
-  stopList.insert("anyways");
-  stopList.insert("anywhere");
-  stopList.insert("apparently");
-  stopList.insert("approximately");
-  stopList.insert("are");
-  stopList.insert("aren");
-  stopList.insert("arent");
-  stopList.insert("arise");
-  stopList.insert("around");
-  stopList.insert("as");
-  stopList.insert("aside");
-  stopList.insert("ask");
-  stopList.insert("asking");
-  stopList.insert("at");
-  stopList.insert("auth");
-  stopList.insert("available");
-  stopList.insert("away");
-  stopList.insert("awfully");
-  stopList.insert("b");
-  stopList.insert("back");
-  stopList.insert("be");
-  stopList.insert("became");
-  stopList.insert("because");
-  stopList.insert("become");
-  stopList.insert("becomes");
-  stopList.insert("becoming");
-  stopList.insert("been");
-  stopList.insert("before");
-  stopList.insert("beforehand");
-  stopList.insert("begin");
-  stopList.insert("beginning");
-  stopList.insert("beginnings");
-  stopList.insert("begins");
-  stopList.insert("behind");
-  stopList.insert("being");
-  stopList.insert("believe");
-  stopList.insert("below");
-  stopList.insert("beside");
-  stopList.insert("besides");
-  stopList.insert("between");
-  stopList.insert("beyond");
-  stopList.insert("biol");
-  stopList.insert("both");
-  stopList.insert("brief");
-  stopList.insert("briefly");
-  stopList.insert("but");
-  stopList.insert("by");
-  stopList.insert("c");
-  stopList.insert("ca");
-  stopList.insert("came");
-  stopList.insert("can");
-  stopList.insert("cannot");
-  stopList.insert("can't");
-  stopList.insert("cause");
-  stopList.insert("causes");
-  stopList.insert("certain");
-  stopList.insert("certainly");
-  stopList.insert("co");
-  stopList.insert("com");
-  stopList.insert("come");
-  stopList.insert("comes");
-  stopList.insert("contain");
-  stopList.insert("containing");
-  stopList.insert("contains");
-  stopList.insert("could");
-  stopList.insert("couldnt");
-  stopList.insert("cum");
-  stopList.insert("d");
-  stopList.insert("date");
-  stopList.insert("did");
-  stopList.insert("didn't");
-  stopList.insert("different");
-  stopList.insert("do");
-  stopList.insert("does");
-  stopList.insert("doesn't");
-  stopList.insert("doing");
-  stopList.insert("done");
-  stopList.insert("don't");
-  stopList.insert("down");
-  stopList.insert("downwards");
-  stopList.insert("due");
-  stopList.insert("dr");
-  stopList.insert("during");
-  stopList.insert("e");
-  stopList.insert("each");
-  stopList.insert("ed");
-  stopList.insert("edu");
-  stopList.insert("effect");
-  stopList.insert("eg");
-  stopList.insert("eight");
-  stopList.insert("eighty");
-  stopList.insert("either");
-  stopList.insert("else");
-  stopList.insert("elsewhere");
-  stopList.insert("end");
-  stopList.insert("ending");
-  stopList.insert("enough");
-  stopList.insert("especially");
-  stopList.insert("et");
-  stopList.insert("et-al");
-  stopList.insert("etc");
-  stopList.insert("even");
-  stopList.insert("ever");
-  stopList.insert("every");
-  stopList.insert("everybody");
-  stopList.insert("everyone");
-  stopList.insert("everything");
-  stopList.insert("everywhere");
-  stopList.insert("ex");
-  stopList.insert("except");
-  stopList.insert("f");
-  stopList.insert("far");
-  stopList.insert("few");
-  stopList.insert("ff");
-  stopList.insert("fifth");
-  stopList.insert("first");
-  stopList.insert("five");
-  stopList.insert("fix");
-  stopList.insert("followed");
-  stopList.insert("following");
-  stopList.insert("follows");
-  stopList.insert("for");
-  stopList.insert("former");
-  stopList.insert("formerly");
-  stopList.insert("forth");
-  stopList.insert("found");
-  stopList.insert("four");
-  stopList.insert("from");
-  stopList.insert("further");
-  stopList.insert("furthermore");
-  stopList.insert("g");
-  stopList.insert("gave");
-  stopList.insert("get");
-  stopList.insert("gets");
-  stopList.insert("getting");
-  stopList.insert("give");
-  stopList.insert("given");
-  stopList.insert("gives");
-  stopList.insert("giving");
-  stopList.insert("go");
-  stopList.insert("goes");
-  stopList.insert("gone");
-  stopList.insert("got");
-  stopList.insert("gotten");
-  stopList.insert("h");
-  stopList.insert("had");
-  stopList.insert("happens");
-  stopList.insert("hardly");
-  stopList.insert("has");
-  stopList.insert("hasn");
-  stopList.insert("have");
-  stopList.insert("haven");
-  stopList.insert("having");
-  stopList.insert("he");
-  stopList.insert("hed");
-  stopList.insert("hence");
-  stopList.insert("her");
-  stopList.insert("here");
-  stopList.insert("hereafter");
-  stopList.insert("hereby");
-  stopList.insert("herein");
-  stopList.insert("heres");
-  stopList.insert("hereupon");
-  stopList.insert("hers");
-  stopList.insert("herself");
-  stopList.insert("hes");
-  stopList.insert("hi");
-  stopList.insert("hid");
-  stopList.insert("him");
-  stopList.insert("himself");
-  stopList.insert("his");
-  stopList.insert("hither");
-  stopList.insert("home");
-  stopList.insert("how");
-  stopList.insert("howbeit");
-  stopList.insert("however");
-  stopList.insert("hundred");
-  stopList.insert("i");
-  stopList.insert("id");
-  stopList.insert("ie");
-  stopList.insert("if");
-  stopList.insert("im");
-  stopList.insert("immediate");
-  stopList.insert("immediately");
-  stopList.insert("importance");
-  stopList.insert("important");
-  stopList.insert("in");
-  stopList.insert("inc");
-  stopList.insert("indeed");
-  stopList.insert("index");
-  stopList.insert("information");
-  stopList.insert("instead");
-  stopList.insert("into");
-  stopList.insert("invention");
-  stopList.insert("inward");
-  stopList.insert("is");
-  stopList.insert("isn");
-  stopList.insert("it");
-  stopList.insert("itd");
-  stopList.insert("it");
-  stopList.insert("its");
-  stopList.insert("itself");
-  stopList.insert("j");
-  stopList.insert("jr");
-  stopList.insert("just");
-  stopList.insert("k");
-  stopList.insert("keep");
-  stopList.insert("keeps");
-  stopList.insert("kept");
-  stopList.insert("kg");
-  stopList.insert("km");
-  stopList.insert("know");
-  stopList.insert("known");
-  stopList.insert("knows");
-  stopList.insert("l");
-  stopList.insert("largely");
-  stopList.insert("last");
-  stopList.insert("lately");
-  stopList.insert("later");
-  stopList.insert("latter");
-  stopList.insert("latterly");
-  stopList.insert("laude");
-  stopList.insert("least");
-  stopList.insert("less");
-  stopList.insert("lest");
-  stopList.insert("let");
-  stopList.insert("lets");
-  stopList.insert("like");
-  stopList.insert("liked");
-  stopList.insert("likely");
-  stopList.insert("line");
-  stopList.insert("little");
-  stopList.insert("ll");
-  stopList.insert("look");
-  stopList.insert("looking");
-  stopList.insert("looks");
-  stopList.insert("ltd");
-  stopList.insert("m");
-  stopList.insert("made");
-  stopList.insert("mainly");
-  stopList.insert("make");
-  stopList.insert("makes");
-  stopList.insert("many");
-  stopList.insert("may");
-  stopList.insert("maybe");
-  stopList.insert("me");
-  stopList.insert("mean");
-  stopList.insert("means");
-  stopList.insert("meantime");
-  stopList.insert("meanwhile");
-  stopList.insert("merely");
-  stopList.insert("met");
-  stopList.insert("mg");
-  stopList.insert("mic");
-  stopList.insert("might");
-  stopList.insert("million");
-  stopList.insert("miss");
-  stopList.insert("ml");
-  stopList.insert("more");
-  stopList.insert("moreover");
-  stopList.insert("most");
-  stopList.insert("mostly");
-  stopList.insert("mr");
-  stopList.insert("mrs");
-  stopList.insert("much");
-  stopList.insert("mug");
-  stopList.insert("must");
-  stopList.insert("my");
-  stopList.insert("myself");
-  stopList.insert("n");
-  stopList.insert("na");
-  stopList.insert("name");
-  stopList.insert("namely");
-  stopList.insert("nay");
-  stopList.insert("nd");
-  stopList.insert("near");
-  stopList.insert("nearly");
-  stopList.insert("necessarily");
-  stopList.insert("necessary");
-  stopList.insert("need");
-  stopList.insert("needs");
-  stopList.insert("neither");
-  stopList.insert("never");
-  stopList.insert("nevertheless");
-  stopList.insert("new");
-  stopList.insert("next");
-  stopList.insert("nine");
-  stopList.insert("ninety");
-  stopList.insert("no");
-  stopList.insert("nobody");
-  stopList.insert("non");
-  stopList.insert("none");
-  stopList.insert("nonetheless");
-  stopList.insert("noone");
-  stopList.insert("nor");
-  stopList.insert("normally");
-  stopList.insert("nos");
-  stopList.insert("not");
-  stopList.insert("noted");
-  stopList.insert("nothing");
-  stopList.insert("now");
-  stopList.insert("nowhere");
-  stopList.insert("o");
-  stopList.insert("obtain");
-  stopList.insert("obtained");
-  stopList.insert("obviously");
-  stopList.insert("of");
-  stopList.insert("off");
-  stopList.insert("often");
-  stopList.insert("oh");
-  stopList.insert("ok");
-  stopList.insert("okay");
-  stopList.insert("old");
-  stopList.insert("omitted");
-  stopList.insert("on");
-  stopList.insert("once");
-  stopList.insert("one");
-  stopList.insert("ones");
-  stopList.insert("only");
-  stopList.insert("onto");
-  stopList.insert("or");
-  stopList.insert("ord");
-  stopList.insert("org");
-  stopList.insert("other");
-  stopList.insert("others");
-  stopList.insert("otherwise");
-  stopList.insert("ought");
-  stopList.insert("our");
-  stopList.insert("ours");
-  stopList.insert("ourselves");
-  stopList.insert("out");
-  stopList.insert("outside");
-  stopList.insert("over");
-  stopList.insert("overall");
-  stopList.insert("owing");
-  stopList.insert("own");
-  stopList.insert("p");
-  stopList.insert("page");
-  stopList.insert("pages");
-  stopList.insert("part");
-  stopList.insert("particular");
-  stopList.insert("particularly");
-  stopList.insert("past");
-  stopList.insert("per");
-  stopList.insert("perhaps");
-  stopList.insert("ph");
-  stopList.insert("placed");
-  stopList.insert("please");
-  stopList.insert("plus");
-  stopList.insert("poorly");
-  stopList.insert("possible");
-  stopList.insert("possibly");
-  stopList.insert("potentially");
-  stopList.insert("pp");
-  stopList.insert("predominantly");
-  stopList.insert("present");
-  stopList.insert("previously");
-  stopList.insert("primarily");
-  stopList.insert("probably");
-  stopList.insert("promptly");
-  stopList.insert("proud");
-  stopList.insert("provides");
-  stopList.insert("put");
-  stopList.insert("q");
-  stopList.insert("que");
-  stopList.insert("quickly");
-  stopList.insert("quite");
-  stopList.insert("qv");
-  stopList.insert("r");
-  stopList.insert("ran");
-  stopList.insert("rather");
-  stopList.insert("rd");
-  stopList.insert("re");
-  stopList.insert("readily");
-  stopList.insert("really");
-  stopList.insert("recent");
-  stopList.insert("recently");
-  stopList.insert("ref");
-  stopList.insert("refs");
-  stopList.insert("regarding");
-  stopList.insert("regardless");
-  stopList.insert("regards");
-  stopList.insert("related");
-  stopList.insert("relatively");
-  stopList.insert("research");
-  stopList.insert("respectively");
-  stopList.insert("resulted");
-  stopList.insert("resulting");
-  stopList.insert("results");
-  stopList.insert("right");
-  stopList.insert("run");
-  stopList.insert("s");
-  stopList.insert("said");
-  stopList.insert("same");
-  stopList.insert("saw");
-  stopList.insert("sat");
-  stopList.insert("say");
-  stopList.insert("saying");
-  stopList.insert("says");
-  stopList.insert("sec");
-  stopList.insert("section");
-  stopList.insert("see");
-  stopList.insert("seeing");
-  stopList.insert("seem");
-  stopList.insert("seemed");
-  stopList.insert("seeming");
-  stopList.insert("seems");
-  stopList.insert("seen");
-  stopList.insert("self");
-  stopList.insert("selves");
-  stopList.insert("sent");
-  stopList.insert("seven");
-  stopList.insert("several");
-  stopList.insert("shall");
-  stopList.insert("she");
-  stopList.insert("shed");
-  stopList.insert("shes");
-  stopList.insert("should");
-  stopList.insert("shouldn");
-  stopList.insert("show");
-  stopList.insert("showed");
-  stopList.insert("shown");
-  stopList.insert("showns");
-  stopList.insert("shows");
-  stopList.insert("significant");
-  stopList.insert("significantly");
-  stopList.insert("similar");
-  stopList.insert("similarly");
-  stopList.insert("since");
-  stopList.insert("six");
-  stopList.insert("slightly");
-  stopList.insert("so");
-  stopList.insert("some");
-  stopList.insert("somebody");
-  stopList.insert("somehow");
-  stopList.insert("someone");
-  stopList.insert("somethan");
-  stopList.insert("something");
-  stopList.insert("sometime");
-  stopList.insert("sometimes");
-  stopList.insert("somewhat");
-  stopList.insert("somewhere");
-  stopList.insert("soon");
-  stopList.insert("sorry");
-  stopList.insert("specifically");
-  stopList.insert("specified");
-  stopList.insert("specify");
-  stopList.insert("specifying");
-  stopList.insert("still");
-  stopList.insert("stop");
-  stopList.insert("strongly");
-  stopList.insert("sub");
-  stopList.insert("substantially");
-  stopList.insert("successfully");
-  stopList.insert("such");
-  stopList.insert("sufficiently");
-  stopList.insert("suggest");
-  stopList.insert("sup");
-  stopList.insert("sure");
-  stopList.insert("t");
-  stopList.insert("take");
-  stopList.insert("taken");
-  stopList.insert("taking");
-  stopList.insert("tell");
-  stopList.insert("tends");
-  stopList.insert("th");
-  stopList.insert("than");
-  stopList.insert("thank");
-  stopList.insert("thanks");
-  stopList.insert("thanx");
-  stopList.insert("that");
-  stopList.insert("thats");
-  stopList.insert("the");
-  stopList.insert("their");
-  stopList.insert("theirs");
-  stopList.insert("them");
-  stopList.insert("themselves");
-  stopList.insert("then");
-  stopList.insert("thence");
-  stopList.insert("there");
-  stopList.insert("thereafter");
-  stopList.insert("thereby");
-  stopList.insert("thered");
-  stopList.insert("therefore");
-  stopList.insert("therein");
-  stopList.insert("thereof");
-  stopList.insert("therere");
-  stopList.insert("theres");
-  stopList.insert("thereto");
-  stopList.insert("thereupon");
-  stopList.insert("these");
-  stopList.insert("they");
-  stopList.insert("theyd");
-  stopList.insert("theyre");
-  stopList.insert("think");
-  stopList.insert("this");
-  stopList.insert("those");
-  stopList.insert("thou");
-  stopList.insert("though");
-  stopList.insert("thoughh");
-  stopList.insert("thousand");
-  stopList.insert("throug");
-  stopList.insert("through");
-  stopList.insert("throughout");
-  stopList.insert("thru");
-  stopList.insert("thus");
-  stopList.insert("til");
-  stopList.insert("tip");
-  stopList.insert("to");
-  stopList.insert("together");
-  stopList.insert("too");
-  stopList.insert("took");
-  stopList.insert("toward");
-  stopList.insert("towards");
-  stopList.insert("tried");
-  stopList.insert("tries");
-  stopList.insert("truly");
-  stopList.insert("try");
-  stopList.insert("trying");
-  stopList.insert("ts");
-  stopList.insert("twice");
-  stopList.insert("two");
-  stopList.insert("u");
-  stopList.insert("un");
-  stopList.insert("under");
-  stopList.insert("unfortunately");
-  stopList.insert("unless");
-  stopList.insert("unlike");
-  stopList.insert("unlikely");
-  stopList.insert("until");
-  stopList.insert("unto");
-  stopList.insert("up");
-  stopList.insert("upon");
-  stopList.insert("ups");
-  stopList.insert("us");
-  stopList.insert("use");
-  stopList.insert("used");
-  stopList.insert("useful");
-  stopList.insert("usefully");
-  stopList.insert("usefulness");
-  stopList.insert("uses");
-  stopList.insert("using");
-  stopList.insert("usually");
-  stopList.insert("v");
-  stopList.insert("value");
-  stopList.insert("various");
-  stopList.insert("ve");
-  stopList.insert("very");
-  stopList.insert("via");
-  stopList.insert("viz");
-  stopList.insert("vol");
-  stopList.insert("vols");
-  stopList.insert("vs");
-  stopList.insert("w");
-  stopList.insert("want");
-  stopList.insert("wants");
-  stopList.insert("was");
-  stopList.insert("wasnt");
-  stopList.insert("wasnt");
-  stopList.insert("way");
-  stopList.insert("we");
-  stopList.insert("wed");
-  stopList.insert("welcome");
-  stopList.insert("went");
-  stopList.insert("were");
-  stopList.insert("werent");
-  stopList.insert("what");
-  stopList.insert("whatever");
-  stopList.insert("whats");
-  stopList.insert("when");
-  stopList.insert("whence");
-  stopList.insert("whenever");
-  stopList.insert("where");
-  stopList.insert("whereafter");
-  stopList.insert("whereas");
-  stopList.insert("whereby");
-  stopList.insert("wherein");
-  stopList.insert("wheres");
-  stopList.insert("whereupon");
-  stopList.insert("wherever");
-  stopList.insert("whether");
-  stopList.insert("which");
-  stopList.insert("while");
-  stopList.insert("whim");
-  stopList.insert("whither");
-  stopList.insert("who");
-  stopList.insert("whod");
-  stopList.insert("whoever");
-  stopList.insert("whole");
-  stopList.insert("whom");
-  stopList.insert("whomever");
-  stopList.insert("whos");
-  stopList.insert("whose");
-  stopList.insert("why");
-  stopList.insert("widely");
-  stopList.insert("will");
-  stopList.insert("willing");
-  stopList.insert("wish");
-  stopList.insert("with");
-  stopList.insert("within");
-  stopList.insert("without");
-  stopList.insert("wont");
-  stopList.insert("words");
-  stopList.insert("world");
-  stopList.insert("would");
-  stopList.insert("wouldnt");
-  stopList.insert("www");
-  stopList.insert("x");
-  stopList.insert("y");
-  stopList.insert("yes");
-  stopList.insert("yet");
-  stopList.insert("you");
-  stopList.insert("youd");
-  stopList.insert("your");
-  stopList.insert("youre");
-  stopList.insert("yours");
-  stopList.insert("yourself");
-  stopList.insert("yourselves");
-  stopList.insert("z");
-  stopList.insert("zero");
+  for (auto* word : stop_words)
+  {
+    stopList.insert(word);
+  }
 }
 }
 
 //  LocalWords:  FontFileName
+VTK_ABI_NAMESPACE_END

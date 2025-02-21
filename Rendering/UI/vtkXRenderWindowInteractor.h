@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXRenderWindowInteractor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXRenderWindowInteractor
  * @brief   an X event driven interface for a RenderWindow
@@ -34,12 +22,15 @@
 
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderingUIModule.h" // For export macro
+#include "vtkWrappingHints.h"     // For VTK_MARSHALAUTO
 #include <X11/Xlib.h>             // Needed for X types in the public interface
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCallbackCommand;
 class vtkXRenderWindowInteractorInternals;
 
-class VTKRENDERINGUI_EXPORT vtkXRenderWindowInteractor : public vtkRenderWindowInteractor
+class VTKRENDERINGUI_EXPORT VTK_MARSHALAUTO vtkXRenderWindowInteractor
+  : public vtkRenderWindowInteractor
 {
 public:
   static vtkXRenderWindowInteractor* New();
@@ -59,26 +50,12 @@ public:
   void TerminateApp() override;
 
   /**
-   * Run the event loop and return. This is provided so that you can
-   * implement your own event loop but yet use the vtk event handling as
-   * well.
+   * Process all user-interaction, timer events and return.
+   * If there are no events, this method returns immediately.
    */
   void ProcessEvents() override;
 
-  //@{
-  /**
-   * The BreakLoopFlag is checked in the Start() method.
-   * Setting it to anything other than zero will cause
-   * the interactor loop to terminate and return to the
-   * calling function.
-   */
-  vtkGetMacro(BreakLoopFlag, int);
-  void SetBreakLoopFlag(int);
-  void BreakLoopFlagOff();
-  void BreakLoopFlagOn();
-  //@}
-
-  //@{
+  ///@{
   /**
    * Enable/Disable interactions.  By default interactors are enabled when
    * initialized.  Initialize() must be called prior to enabling/disabling
@@ -90,7 +67,7 @@ public:
    */
   void Enable() override;
   void Disable() override;
-  //@}
+  ///@}
 
   /**
    * Update the Size data member and set the associated RenderWindow's
@@ -102,6 +79,12 @@ public:
    * Re-defines virtual function to get mouse position by querying X-server.
    */
   void GetMousePosition(int* x, int* y) override;
+
+  /**
+   * A X11 specific method to recover mouse position and modifier keys
+   * keys is a Xorg specified mask of modifier states
+   */
+  void GetMousePositionAndModifierKeysState(int* x, int* y, unsigned int* keys);
 
   void DispatchEvent(XEvent*);
 
@@ -125,25 +108,28 @@ protected:
   vtkXRenderWindowInteractorInternals* Internal;
 
   // Drag and drop related
+  int XdndSourceVersion;
   Window XdndSource;
+  Atom XdndFormatAtom;
+  Atom XdndURIListAtom;
+  Atom XdndTypeListAtom;
+  Atom XdndEnterAtom;
   Atom XdndPositionAtom;
   Atom XdndDropAtom;
   Atom XdndActionCopyAtom;
   Atom XdndStatusAtom;
   Atom XdndFinishedAtom;
 
-  //@{
+  ///@{
   /**
    * X-specific internal timer methods. See the superclass for detailed
    * documentation.
    */
   int InternalCreateTimer(int timerId, int timerType, unsigned long duration) override;
   int InternalDestroyTimer(int platformTimerId) override;
-  //@}
+  ///@}
 
   void FireTimers();
-
-  static int BreakLoopFlag;
 
   /**
    * This will start up the X event loop and never return. If you
@@ -152,9 +138,26 @@ protected:
    */
   void StartEventLoop() override;
 
+  /**
+   * Wait for new events
+   */
+  void WaitForEvents();
+
+  /**
+   * Check if a display connection is in use by any windows.
+   */
+  bool CheckDisplayId(Display* dpy);
+
+  /**
+   * Deallocate X resource that may have been allocated
+   * Also calls finalize on the render window if available
+   */
+  void Finalize();
+
 private:
   vtkXRenderWindowInteractor(const vtkXRenderWindowInteractor&) = delete;
   void operator=(const vtkXRenderWindowInteractor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

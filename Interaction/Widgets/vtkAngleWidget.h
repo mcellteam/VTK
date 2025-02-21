@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAngleWidget.h,v
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAngleWidget
  * @brief   measure the angle between two rays (defined by three points)
@@ -73,12 +61,14 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAngleRepresentation;
 class vtkHandleWidget;
 class vtkAngleWidgetCallback;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkAngleWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkAngleWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -86,13 +76,13 @@ public:
    */
   static vtkAngleWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for a VTK class.
    */
   vtkTypeMacro(vtkAngleWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * The method for activating and deactivating this widget. This method
@@ -149,7 +139,7 @@ public:
     Manipulate
   };
 
-  //@{
+  ///@{
   /**
    * Set the state of the widget. If the state is set to "Manipulate" then it
    * is assumed that the widget and its representation will be initialized
@@ -162,7 +152,7 @@ public:
    */
   virtual void SetWidgetStateToStart();
   virtual void SetWidgetStateToManipulate();
-  //@}
+  ///@}
 
   /**
    * Return the current widget state.
@@ -204,4 +194,5 @@ private:
   void operator=(const vtkAngleWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

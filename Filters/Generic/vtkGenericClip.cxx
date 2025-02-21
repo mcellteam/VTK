@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericClip.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericClip.h"
 
 #include "vtkCellArray.h"
@@ -40,11 +28,12 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericClip);
 vtkCxxSetObjectMacro(vtkGenericClip, ClipFunction, vtkImplicitFunction);
 vtkCxxSetObjectMacro(vtkGenericClip, Locator, vtkIncrementalPointLocator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with user-specified implicit function; InsideOut turned off; value
 // set to 0.0; and generate clip scalars turned off.
 vtkGenericClip::vtkGenericClip(vtkImplicitFunction* cf)
@@ -70,7 +59,7 @@ vtkGenericClip::vtkGenericClip(vtkImplicitFunction* cf)
   this->SecondaryCD = vtkCellData::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericClip::~vtkGenericClip()
 {
   if (this->Locator)
@@ -85,7 +74,7 @@ vtkGenericClip::~vtkGenericClip()
   this->SecondaryCD->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Do not say we have two outputs unless we are generating the clipped output.
 int vtkGenericClip::GetNumberOfOutputs()
 {
@@ -96,7 +85,7 @@ int vtkGenericClip::GetNumberOfOutputs()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If Clip functions is modified,
 // then this object is modified as well.
 vtkMTimeType vtkGenericClip::GetMTime()
@@ -118,7 +107,7 @@ vtkMTimeType vtkGenericClip::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGrid* vtkGenericClip::GetClippedOutput()
 {
   if (!this->GenerateClippedOutput)
@@ -128,7 +117,7 @@ vtkUnstructuredGrid* vtkGenericClip::GetClippedOutput()
   return vtkUnstructuredGrid::SafeDownCast(this->GetExecutive()->GetOutputData(1));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Clip through data generating surface.
 //
@@ -281,7 +270,7 @@ int vtkGenericClip::RequestData(vtkInformation* vtkNotUsed(request),
 
   // Process all cells and clip each in turn
   //
-  int abort = 0;
+  bool abort = false;
   vtkIdType updateTime = numCells / 20 + 1; // update roughly every 5%
 
   int num[2];
@@ -298,7 +287,7 @@ int vtkGenericClip::RequestData(vtkInformation* vtkNotUsed(request),
     if (!(cellId % updateTime))
     {
       this->UpdateProgress(static_cast<double>(cellId) / numCells);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
     }
 
     // perform the clipping
@@ -370,7 +359,7 @@ int vtkGenericClip::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By default,
 // an instance of vtkMergePoints is used.
 void vtkGenericClip::CreateDefaultLocator()
@@ -383,7 +372,7 @@ void vtkGenericClip::CreateDefaultLocator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericClip::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -417,7 +406,7 @@ void vtkGenericClip::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "InputScalarsSelection: " << this->InputScalarsSelection << endl;
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericClip::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -427,3 +416,4 @@ int vtkGenericClip::FillInputPortInformation(int port, vtkInformation* info)
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkGenericDataSet");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

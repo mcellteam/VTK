@@ -1,28 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestTableToGraph.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkActor.h"
 #include "vtkActor2D.h"
+#include "vtkAttributeDataToTableFilter.h"
 #include "vtkBitArray.h"
 #include "vtkCircularLayoutStrategy.h"
-#include "vtkDataObjectToTable.h"
 #include "vtkDataRepresentation.h"
 #include "vtkDelimitedTextReader.h"
 #include "vtkGlyph3D.h"
@@ -54,9 +38,9 @@
 
 // Uncomment the following line to show Qt tables of
 // the vertex and edge tables.
-//#define SHOW_QT_DATA_TABLES 1
+// #define SHOW_QT_DATA_TABLES 1
 
-#if SHOW_QT_DATA_TABLES
+#ifdef SHOW_QT_DATA_TABLES
 #include "vtkQtTableView.h"
 #include <QApplication>
 #endif
@@ -145,11 +129,11 @@ void TestTableToGraphRender(vtkRenderer* ren, vtkGraphAlgorithm* alg, int test, 
 
 int TestTableToGraph(int argc, char* argv[])
 {
-#if SHOW_QT_DATA_TABLES
+#ifdef SHOW_QT_DATA_TABLES
   QApplication app(argc, argv);
 #endif
 
-  const char* label = 0;
+  const char* label = nullptr;
   bool circular = true;
   for (int a = 1; a < argc; a++)
   {
@@ -329,22 +313,22 @@ int TestTableToGraph(int argc, char* argv[])
   //  view->GetRenderer()->ResetCamera();
   //  view->Update();
 
-#if SHOW_QT_DATA_TABLES
+#ifdef SHOW_QT_DATA_TABLES
   VTK_CREATE(vtkQtTableView, mergeView);
   mergeView->SetRepresentationFromInputConnection(merge->GetOutputPort());
   mergeView->GetWidget()->show();
 
-  VTK_CREATE(vtkDataObjectToTable, vertToTable);
+  VTK_CREATE(vtkAttributeDataToTableFilter, vertToTable);
   vertToTable->SetInputConnection(tableToGraph->GetOutputPort());
-  vertToTable->SetFieldType(vtkDataObjectToTable::POINT_DATA);
+  vertToTable->SetFieldAssociation(vtkDataObject::FIELD_ASSOCIATION_POINTS);
   VTK_CREATE(vtkQtTableView, vertView);
   vertView->SetRepresentationFromInputConnection(vertToTable->GetOutputPort());
   vertView->GetWidget()->show();
   vertView->Update();
 
-  VTK_CREATE(vtkDataObjectToTable, edgeToTable);
+  VTK_CREATE(vtkAttributeDataToTableFilter, edgeToTable);
   edgeToTable->SetInputConnection(tableToGraph->GetOutputPort());
-  edgeToTable->SetFieldType(vtkDataObjectToTable::CELL_DATA);
+  edgeToTable->SetFieldAssocitation(vtkDataObject::FIELD_ASSOCIATION_CELLS);
   VTK_CREATE(vtkQtTableView, edgeView);
   edgeView->SetRepresentationFromInputConnection(edgeToTable->GetOutputPort());
   edgeView->GetWidget()->show();
@@ -353,7 +337,7 @@ int TestTableToGraph(int argc, char* argv[])
   int retVal = vtkRegressionTestImage(win);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
-#if SHOW_QT_DATA_TABLES
+#ifdef SHOW_QT_DATA_TABLES
     QApplication::exec();
 #else
     iren->Initialize();

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    otherRectilinearGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // .NAME
 // .SECTION Description
@@ -39,23 +27,78 @@ int TestOID(ostream& strm)
   vtkImageData* id2Dyz = vtkImageData::New();
   vtkImageData* id3D = vtkImageData::New();
 
+  if (!id0D->SupportsGhostArray(vtkDataObject::POINT) ||
+    !id0D->SupportsGhostArray(vtkDataObject::CELL))
+  {
+    std::cerr << "Unexpected results on SupportsGhostArray\n";
+    return 1;
+  }
+
   id3D->SetDimensions(20, 20, 20);
+
+  if (id3D->GetCellSize(0) != 8)
+  {
+    std::cerr << "vtkImageData::GetCellSize(cellId) wrong for 3D image data.\n";
+    return 1;
+  }
 
   id2Dxy->SetDimensions(20, 20, 1);
 
+  if (id2Dxy->GetCellSize(0) != 4)
+  {
+    std::cerr << "vtkImageData::GetCellSize(cellId) wrong for 2D image data.\n";
+    return 1;
+  }
+
   id2Dxz->SetDimensions(20, 1, 20);
+
+  if (id2Dxz->GetCellSize(0) != 4)
+  {
+    std::cerr << "vtkImageData::GetCellSize(cellId) wrong for 2D image data.\n";
+    return 1;
+  }
 
   id2Dyz->SetDimensions(1, 20, 20);
 
+  if (id2Dyz->GetCellSize(0) != 4)
+  {
+    std::cerr << "vtkImageData::GetCellSize(cellId) wrong for 2D image data.\n";
+    return 1;
+  }
+
   id1Dx->SetDimensions(20, 1, 1);
 
+  if (id1Dx->GetCellSize(0) != 2)
+  {
+    std::cerr << "vtkImageData::GetCellSize(cellId) wrong for 1D image data.\n";
+    return 1;
+  }
+
   id1Dy->SetDimensions(1, 20, 1);
+
+  if (id1Dy->GetCellSize(0) != 2)
+  {
+    std::cerr << "vtkImageData::GetCellSize(cellId) wrong for 1D image data.\n";
+    return 1;
+  }
 
   strm << *id1Dy;
 
   id1Dz->SetDimensions(1, 1, 20);
 
+  if (id1Dz->GetCellSize(0) != 2)
+  {
+    std::cerr << "vtkImageData::GetCellSize(cellId) wrong for 1D image data.\n";
+    return 1;
+  }
+
   id0D->SetDimensions(1, 1, 1);
+
+  if (id0D->GetCellSize(0) != 1)
+  {
+    std::cerr << "vtkImageData::GetCellSize(cellId) wrong for 0D image data.\n";
+    return 1;
+  }
 
   strm << "id3D:" << *id3D;
 

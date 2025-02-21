@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkNIFTIImageHeader.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-   This software is distributed WITHOUT ANY WARRANTY; without even
-   the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-   PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkNIFTIImageHeader.h"
 #include "vtkNIFTIImagePrivate.h"
@@ -23,9 +11,10 @@ See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
 #include <cmath>
 #include <cstring>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkNIFTIImageHeader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 
@@ -41,16 +30,16 @@ double vtkNIFTINormalizeDouble(double d)
 }
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNIFTIImageHeader::vtkNIFTIImageHeader()
 {
   this->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNIFTIImageHeader::~vtkNIFTIImageHeader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::Initialize()
 {
   memset(this->Magic, '\0', sizeof(this->Magic));
@@ -96,7 +85,7 @@ void vtkNIFTIImageHeader::Initialize()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::SetHeader(const nifti_1_header* hdr)
 {
   // clear all fields (in case supplied header is Analyze 7.5)
@@ -161,7 +150,7 @@ void vtkNIFTIImageHeader::SetHeader(const nifti_1_header* hdr)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::GetHeader(nifti_1_header* hdr)
 {
   hdr->sizeof_hdr = NIFTI1HeaderSize;
@@ -218,7 +207,7 @@ void vtkNIFTIImageHeader::GetHeader(nifti_1_header* hdr)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::SetHeader(const nifti_2_header* hdr)
 {
   memcpy(this->Magic, hdr->magic, sizeof(hdr->magic));
@@ -264,7 +253,7 @@ void vtkNIFTIImageHeader::SetHeader(const nifti_2_header* hdr)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::GetHeader(nifti_2_header* hdr)
 {
   hdr->sizeof_hdr = NIFTI2HeaderSize;
@@ -315,7 +304,7 @@ void vtkNIFTIImageHeader::GetHeader(nifti_2_header* hdr)
   memset(hdr->unused_str, '\0', 15);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::DeepCopy(vtkNIFTIImageHeader* o)
 {
   if (o)
@@ -330,7 +319,7 @@ void vtkNIFTIImageHeader::DeepCopy(vtkNIFTIImageHeader* o)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -361,9 +350,9 @@ void vtkNIFTIImageHeader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SclSlope: " << this->SclSlope << "\n";
   os << indent << "SclInter: " << this->SclInter << "\n";
   os << indent << "SliceEnd: " << this->SliceEnd << "\n";
-  os << indent << "SliceCode: " << static_cast<int>(this->SliceCode) << "\n";
+  os << indent << "SliceCode: " << this->SliceCode << "\n";
   os.setf(std::ios::hex, std::ios::basefield);
-  os << indent << "XYZTUnits: 0x" << static_cast<int>(this->XYZTUnits) << "\n";
+  os << indent << "XYZTUnits: 0x" << this->XYZTUnits << "\n";
   os.unsetf(std::ios::hex);
   os << indent << "CalMax: " << this->CalMax << "\n";
   os << indent << "CalMin: " << this->CalMin << "\n";
@@ -421,7 +410,7 @@ void vtkNIFTIImageHeader::PrintSelf(ostream& os, vtkIndent indent)
   os << "\"\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::SetStringValue(char* x, const char* y, size_t n)
 {
   if (y == nullptr)
@@ -436,20 +425,21 @@ void vtkNIFTIImageHeader::SetStringValue(char* x, const char* y, size_t n)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::SetIntentName(const char* val)
 {
   this->SetStringValue(this->IntentName, val, 16);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::SetDescrip(const char* val)
 {
   this->SetStringValue(this->Descrip, val, 80);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageHeader::SetAuxFile(const char* val)
 {
   this->SetStringValue(this->AuxFile, val, 24);
 }
+VTK_ABI_NAMESPACE_END

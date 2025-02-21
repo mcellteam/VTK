@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSPHKernels.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Perform unit tests on SPH kernels. This means:
 // + integrating the kernels in 2D and 3D to ensure that the "volume"
 //   contained in the kernel sums to 1.0 (within epsilon)
@@ -32,7 +20,7 @@
 #include <sstream>
 #include <string>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper function
 template <class T>
 int TestSPHKernel(vtkSmartPointer<T> kernel, const std::string& description)
@@ -105,7 +93,7 @@ int TestSPHKernel(vtkSmartPointer<T> kernel, const std::string& description)
   return status;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestSPHKernels(int, char*[])
 {
   int status = EXIT_SUCCESS;

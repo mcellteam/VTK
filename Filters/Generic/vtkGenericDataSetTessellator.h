@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericDataSetTessellator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericDataSetTessellator
  * @brief   tessellates generic, higher-order datasets into linear cells
@@ -39,22 +27,23 @@
 #include "vtkFiltersGenericModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPointData;
 class vtkIncrementalPointLocator;
 
 class VTKFILTERSGENERIC_EXPORT vtkGenericDataSetTessellator : public vtkUnstructuredGridAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard VTK methods.
    */
   static vtkGenericDataSetTessellator* New();
   vtkTypeMacro(vtkGenericDataSetTessellator, vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off generation of a cell centered attribute with ids of the
    * original cells (as an input cell is tessellated into several linear
@@ -64,9 +53,9 @@ public:
   vtkSetMacro(KeepCellIds, vtkTypeBool);
   vtkGetMacro(KeepCellIds, vtkTypeBool);
   vtkBooleanMacro(KeepCellIds, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off merging of coincident points. Note that is merging is
    * on, points with different point attributes (e.g., normals) are merged,
@@ -75,16 +64,16 @@ public:
   vtkSetMacro(Merging, vtkTypeBool);
   vtkGetMacro(Merging, vtkTypeBool);
   vtkBooleanMacro(Merging, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get a spatial locator for merging points. By
    * default an instance of vtkMergePoints is used.
    */
   void SetLocator(vtkIncrementalPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
-  //@}
+  ///@}
 
   /**
    * Create default locator. Used to create one when none is specified.
@@ -118,4 +107,5 @@ private:
   void operator=(const vtkGenericDataSetTessellator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

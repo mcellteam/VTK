@@ -1,16 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #import "MyGLKViewController.h"
 #import "vtkIOSRenderWindow.h"
@@ -51,7 +40,7 @@ PURPOSE.  See the above copyright notice for more information.
 
 @interface MyGLKViewController ()
 {
-  std::deque<vtkSmartPointer<vtkParametricFunction> > parametricObjects;
+  std::deque<vtkSmartPointer<vtkParametricFunction>> parametricObjects;
 }
 
 @property (strong, nonatomic) EAGLContext* context;
@@ -150,10 +139,10 @@ PURPOSE.  See the above copyright notice for more information.
   //
   [self initializeParametricObjects];
 
-  std::vector<vtkSmartPointer<vtkParametricFunctionSource> > parametricFunctionSources;
-  std::vector<vtkSmartPointer<vtkRenderer> > renderers;
-  std::vector<vtkSmartPointer<vtkPolyDataMapper> > mappers;
-  std::vector<vtkSmartPointer<vtkActor> > actors;
+  std::vector<vtkSmartPointer<vtkParametricFunctionSource>> parametricFunctionSources;
+  std::vector<vtkSmartPointer<vtkRenderer>> renderers;
+  std::vector<vtkSmartPointer<vtkPolyDataMapper>> mappers;
+  std::vector<vtkSmartPointer<vtkActor>> actors;
 
   // No text mappers/actors in VTK GL2 yet
 #if 0
@@ -274,7 +263,7 @@ PURPOSE.  See the above copyright notice for more information.
 
   [EAGLContext setCurrentContext:self.context];
   [self resizeView];
-  [self getVTKRenderWindow] -> Render();
+  [self getVTKRenderWindow]->Render();
 }
 
 - (void)dealloc
@@ -320,7 +309,7 @@ PURPOSE.  See the above copyright notice for more information.
   double scale = self.view.contentScaleFactor;
   double newWidth = scale * self.view.bounds.size.width;
   double newHeight = scale * self.view.bounds.size.height;
-  [self getVTKRenderWindow] -> SetSize(newWidth, newHeight);
+  [self getVTKRenderWindow]->SetSize(newWidth, newHeight);
 }
 
 - (void)viewWillLayoutSubviews
@@ -331,7 +320,7 @@ PURPOSE.  See the above copyright notice for more information.
 - (void)glkView:(GLKView*)view drawInRect:(CGRect)rect
 {
   // std::cout << [self getVTKRenderWindow]->ReportCapabilities() << std::endl;
-  [self getVTKRenderWindow] -> Render();
+  [self getVTKRenderWindow]->Render();
 }
 
 //=================================================================

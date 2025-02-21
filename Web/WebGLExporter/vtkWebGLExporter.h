@@ -1,26 +1,17 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWebGLExporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWebGLExporter
- *
- * vtkWebGLExporter export the data of the scene to be used in the WebGL.
+ * @brief   vtkWebGLExporter export the data of the scene to be used in the WebGL.
  */
 
 #ifndef vtkWebGLExporter_h
 #define vtkWebGLExporter_h
 
+#include "vtkObject.h"
+#include "vtkWebGLExporterModule.h" // needed for export macro
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkActor2D;
 class vtkCellData;
@@ -33,11 +24,11 @@ class vtkTriangleFilter;
 class vtkWebGLObject;
 class vtkWebGLPolyData;
 
-#include "vtkObject.h"
-#include "vtkWebGLExporterModule.h" // needed for export macro
+VTK_ABI_NAMESPACE_END
 
 #include <string> // needed for internal structure
 
+VTK_ABI_NAMESPACE_BEGIN
 typedef enum
 {
   VTK_ONLYCAMERA = 0,
@@ -52,7 +43,7 @@ public:
   vtkTypeMacro(vtkWebGLExporter, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get all the needed information from the vtkRenderer
    */
@@ -67,7 +58,7 @@ public:
   void SetCenterOfRotation(float a1, float a2, float a3);
   void SetMaxAllowedSize(int mesh, int lines);
   void SetMaxAllowedSize(int size);
-  //@}
+  ///@}
 
   static void ComputeMD5(const unsigned char* content, int size, std::string& hash);
 
@@ -90,7 +81,7 @@ protected:
   double CameraLookAt[10];            // Camera Look At (fov, position[3], up[3], eye[3])
   bool GradientBackground;            // If the scene use a gradient background
   double Background1[3];              // Background color of the rendering screen (RGB)
-  double Background2[3];              // Scond background color
+  double Background2[3];              // Second background color
   double SceneSize[3];                // Size of the bounding box of the scene
   std::string SceneId;                // Id of the parsed scene
   float CenterOfRotation[3];          // Center Of Rotation
@@ -106,4 +97,5 @@ private:
   vtkInternal* Internal;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

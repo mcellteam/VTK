@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArcSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkArcSource.h"
 
 #include "vtkCellArray.h"
@@ -27,9 +15,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkArcSource);
 
-// --------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkArcSource::vtkArcSource(int res)
 {
   // Default first point
@@ -77,7 +66,7 @@ vtkArcSource::vtkArcSource(int res)
   this->SetNumberOfInputPorts(0);
 }
 
-// --------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkArcSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -88,7 +77,7 @@ int vtkArcSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-// --------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkArcSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -216,7 +205,7 @@ int vtkArcSource::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-// --------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkArcSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -246,3 +235,4 @@ void vtkArcSource::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

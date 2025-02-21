@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOverlappingAMR.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOverlappingAMR
  * @brief   hierarchical dataset of vtkUniformGrids
@@ -31,6 +19,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkUniformGridAMR.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAMRBox;
 class vtkCompositeDataIterator;
 class vtkUniformGrid;
@@ -55,34 +44,34 @@ public:
    */
   VTK_NEWINSTANCE vtkCompositeDataIterator* NewIterator() override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the global origin of the amr data set
    */
-  void SetOrigin(const double*);
+  void SetOrigin(const double origin[3]);
   double* GetOrigin();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the grid spacing at a given level
    */
   void SetSpacing(unsigned int level, const double spacing[3]);
   void GetSpacing(unsigned int level, double spacing[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the AMRBox for a given block
    */
   void SetAMRBox(unsigned int level, unsigned int id, const vtkAMRBox& box);
   const vtkAMRBox& GetAMRBox(unsigned int level, unsigned int id);
-  //@}
+  ///@}
 
   /**
    * Returns the bounding information of a data set.
    */
-  void GetBounds(unsigned int level, unsigned int id, double* bb);
+  void GetBounds(unsigned int level, unsigned int id, double bb[6]);
 
   /**
    * Returns the origin of an AMR block
@@ -118,14 +107,14 @@ public:
    */
   int GetRefinementRatio(unsigned int level);
 
-  //@{
+  ///@{
   /**
    * Set/Get the source id of a block. The source id is produced by an
    * AMR source, e.g. a file reader might set this to be a file block id
    */
   void SetAMRBlockSourceIndex(unsigned int level, unsigned int id, int sourceId);
   int GetAMRBlockSourceIndex(unsigned int level, unsigned int id);
-  //@}
+  ///@}
 
   /**
    * Returns the refinement ratio for the position pointed by the iterator.
@@ -174,9 +163,9 @@ public:
    * Get/Set the internal representation of amr meta meta data
    */
   vtkAMRInformation* GetAMRInfo() override { return Superclass::GetAMRInfo(); }
-  void SetAMRInfo(vtkAMRInformation* info) override { return Superclass::SetAMRInfo(info); }
+  void SetAMRInfo(vtkAMRInformation* info) override { Superclass::SetAMRInfo(info); }
 
-  //@{
+  ///@{
   /**
    * Check whether the data set is internally consistent, e.g.
    * whether the meta data and actual data blocks match.
@@ -187,11 +176,12 @@ public:
 protected:
   vtkOverlappingAMR();
   ~vtkOverlappingAMR() override;
-  //@}
+  ///@}
 
 private:
   vtkOverlappingAMR(const vtkOverlappingAMR&) = delete;
   void operator=(const vtkOverlappingAMR&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

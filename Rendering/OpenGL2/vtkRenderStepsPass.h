@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderStepsPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRenderStepsPass
  * @brief   Execute render passes sequentially.
@@ -35,11 +23,13 @@
 
 #include "vtkRenderPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSequencePass;
 class vtkCameraPass;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkRenderStepsPass : public vtkRenderPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkRenderStepsPass : public vtkRenderPass
 {
 public:
   static vtkRenderStepsPass* New();
@@ -59,61 +49,61 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Get the RenderPass used for the Camera Step
    */
   vtkGetObjectMacro(CameraPass, vtkCameraPass);
   void SetCameraPass(vtkCameraPass*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the RenderPass used for the Lights Step
    */
   vtkGetObjectMacro(LightsPass, vtkRenderPass);
   void SetLightsPass(vtkRenderPass*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the RenderPass used for the Opaque Step
    */
   vtkGetObjectMacro(OpaquePass, vtkRenderPass);
   void SetOpaquePass(vtkRenderPass*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the RenderPass used for the translucent Step
    */
   vtkGetObjectMacro(TranslucentPass, vtkRenderPass);
   void SetTranslucentPass(vtkRenderPass*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the RenderPass used for the Volume Step
    */
   vtkGetObjectMacro(VolumetricPass, vtkRenderPass);
   void SetVolumetricPass(vtkRenderPass*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the RenderPass used for the Overlay Step
    */
   vtkGetObjectMacro(OverlayPass, vtkRenderPass);
   void SetOverlayPass(vtkRenderPass*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the RenderPass used for the PostProcess Step
    */
   vtkGetObjectMacro(PostProcessPass, vtkRenderPass);
   void SetPostProcessPass(vtkRenderPass*);
-  //@}
+  ///@}
 
 protected:
   vtkRenderStepsPass();
@@ -133,4 +123,5 @@ private:
   void operator=(const vtkRenderStepsPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

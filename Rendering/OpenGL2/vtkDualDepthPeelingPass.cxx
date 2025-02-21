@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDualDepthPeelingPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkDualDepthPeelingPass.h"
 
@@ -40,17 +28,17 @@
 #include <algorithm>
 
 // Define to output details about each peel:
-//#define DEBUG_PEEL
+// #define DEBUG_PEEL
 
 // Define to output details about each frame:
-//#define DEBUG_FRAME
+// #define DEBUG_FRAME
 
 // Define to render the categorization of the initial volume-prepass pixel:
 // - Pixels with no opaque or translucent geometry will be red.
 // - Pixels with only opaque geometry will be green.
 // - Pixels with only translucent geometry will be blue.
 // - Pixels with both opaque and translucent geometry will be purple.
-//#define DEBUG_VOLUME_PREPASS_PIXELS
+// #define DEBUG_VOLUME_PREPASS_PIXELS
 
 // Recent OSX/ATI drivers perform some out-of-order execution that's causing
 // the dFdx/dFdy calls to be conditionally executed. Specifically, it looks
@@ -64,8 +52,9 @@
 
 using RenderEvent = vtkRenderTimerLog::ScopedEventLogger;
 
-#define TIME_FUNCTION(functionName) VTK_SCOPED_RENDER_EVENT(#functionName, this->Timer);
+#define TIME_FUNCTION(functionName) VTK_SCOPED_RENDER_EVENT(#functionName, this->Timer)
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDualDepthPeelingPass);
 vtkCxxSetObjectMacro(vtkDualDepthPeelingPass, VolumetricPass, vtkRenderPass);
 
@@ -626,7 +615,7 @@ bool vtkDualDepthPeelingPass::PreReplaceVolumetricShaderValues(
 
         // Peel passes set -1 in pixels that contain only opaque geometry,
         // so the opaque depth is fetched in order to z-composite volumes
-        // with opaque goemetry. To do this, the end point of front is clamped
+        // with opaque geometry. To do this, the end point of front is clamped
         // to opaque-depth and back ray-cast is skipped altogether since it
         // would be covered by opaque geometry anyway.
 
@@ -1075,7 +1064,10 @@ void vtkDualDepthPeelingPass::InitializeOcclusionQuery()
   int numPixels = this->ViewportHeight * this->ViewportWidth;
   this->OcclusionThreshold = numPixels * this->OcclusionRatio;
   this->TranslucentWrittenPixels = this->OcclusionThreshold + 1;
-  this->VolumetricWrittenPixels = this->OcclusionThreshold + 1;
+  // VolumetricWrittenPixels do not need to be initialized since the
+  // TranslucentWrittenPixels are initialized to be above the required OcclusionThreshold
+  // If they would, they may never be updated if IsRenderingVolumes is false
+  this->VolumetricWrittenPixels = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -1775,3 +1767,4 @@ void vtkDualDepthPeelingPass::DeleteOcclusionQueryIds()
   glDeleteQueries(1, &this->TranslucentOcclusionQueryId);
   glDeleteQueries(1, &this->VolumetricOcclusionQueryId);
 }
+VTK_ABI_NAMESPACE_END

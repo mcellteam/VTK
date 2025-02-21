@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXdmf3Writer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkXdmf3Writer.h"
 
@@ -41,14 +29,15 @@
 #include <stack>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkXdmf3Writer);
 
 //=============================================================================
 class vtkXdmf3Writer::Internals
 {
 public:
-  Internals() {}
-  ~Internals() {}
+  Internals() = default;
+  ~Internals() = default;
   void Init()
   {
     this->NumberOfTimeSteps = 1;
@@ -71,11 +60,12 @@ public:
   {
     shared_ptr<XdmfGridCollection> dest = XdmfGridCollection::New();
     dest->setType(XdmfGridCollectionType::Temporal());
-    this->DestinationGroups.push(dest);
+    this->DestinationGroups.emplace(dest);
     this->Destination = this->DestinationGroups.top();
     this->Domain->insert(dest);
   }
-  void WriteDataObject(vtkDataObject* dataSet, bool hasTime, double time, const char* name = 0)
+  void WriteDataObject(
+    vtkDataObject* dataSet, bool hasTime, double time, const char* name = nullptr)
   {
     if (!dataSet)
     {
@@ -87,7 +77,7 @@ public:
       {
         shared_ptr<XdmfGridCollection> group = XdmfGridCollection::New();
         this->Destination->insert(group);
-        this->DestinationGroups.push(group);
+        this->DestinationGroups.emplace(group);
         this->Destination = this->DestinationGroups.top();
         vtkMultiBlockDataSet* mbds = vtkMultiBlockDataSet::SafeDownCast(dataSet);
         for (unsigned int i = 0; i < mbds->GetNumberOfBlocks(); i++)
@@ -149,7 +139,7 @@ public:
   boost::shared_ptr<XdmfWriter> Writer;
   boost::shared_ptr<XdmfDomain> AggregateDomain;
   boost::shared_ptr<XdmfWriter> AggregateWriter;
-  std::stack<boost::shared_ptr<XdmfDomain> > DestinationGroups;
+  std::stack<boost::shared_ptr<XdmfDomain>> DestinationGroups;
 
   int NumberOfTimeSteps;
   int CurrentTimeIndex;
@@ -157,21 +147,21 @@ public:
 
 //==============================================================================
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmf3Writer::vtkXdmf3Writer()
 {
   this->FileName = nullptr;
   this->LightDataLimit = 100;
   this->WriteAllTimeSteps = false;
   this->TimeValues = nullptr;
-  this->TimeValues = 0;
+  this->TimeValues = nullptr;
   this->InitWriters = true;
 
   this->Internal = new Internals();
   this->SetNumberOfOutputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmf3Writer::~vtkXdmf3Writer()
 {
   this->SetFileName(nullptr);
@@ -182,7 +172,7 @@ vtkXdmf3Writer::~vtkXdmf3Writer()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmf3Writer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -224,7 +214,7 @@ int vtkXdmf3Writer::Write()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -244,7 +234,7 @@ int vtkXdmf3Writer::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -282,7 +272,7 @@ int vtkXdmf3Writer::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::RequestData(vtkInformation* request, vtkInformationVector** inputVector,
   vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -300,13 +290,13 @@ int vtkXdmf3Writer::RequestData(vtkInformation* request, vtkInformationVector** 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::GlobalContinueExecuting(int localContinueExecution)
 {
   return localContinueExecution;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmf3Writer::WriteDataInternal(vtkInformation* request)
 {
   bool isTemporal = false;
@@ -336,7 +326,7 @@ void vtkXdmf3Writer::WriteDataInternal(vtkInformation* request)
   size_t tempLength = testString.length();
   testString = testString.substr(0, (tempLength - 4));
   std::string choppedFileName = testString;
-  if (this->InitWriters == true)
+  if (this->InitWriters)
   {
     if (this->NumberOfProcesses == 1)
     {
@@ -387,7 +377,7 @@ void vtkXdmf3Writer::WriteDataInternal(vtkInformation* request)
       std::string rankGridName = "/Xdmf/Domain/Grid[1]";
 
       shared_ptr<XdmfGridController> partController =
-        XdmfGridController::New(rankFileName.c_str(), rankGridName.c_str());
+        XdmfGridController::New(rankFileName, rankGridName);
 
       // tricky part is we have to state what type we are referencing to.
       // otherwise readback fails.
@@ -486,8 +476,8 @@ void vtkXdmf3Writer::WriteDataInternal(vtkInformation* request)
   }
 }
 
-//----------------------------------------------------------------------------
-int vtkXdmf3Writer::CheckParametersInternal(int _NumberOfProcesses, int _MyRank)
+//------------------------------------------------------------------------------
+int vtkXdmf3Writer::CheckParametersInternal(int numberOfProcesses, int myRank)
 {
   if (!this->FileName)
   {
@@ -495,14 +485,15 @@ int vtkXdmf3Writer::CheckParametersInternal(int _NumberOfProcesses, int _MyRank)
     return 0;
   }
 
-  this->NumberOfProcesses = _NumberOfProcesses;
-  this->MyRank = _MyRank;
+  this->NumberOfProcesses = numberOfProcesses;
+  this->MyRank = myRank;
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::CheckParameters()
 {
   return this->CheckParametersInternal(1, 0);
 }
+VTK_ABI_NAMESPACE_END

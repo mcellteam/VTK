@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeoJSONReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGeoJSONReader.h"
 
@@ -38,17 +26,19 @@
 #include <iostream>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGeoJSONReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkGeoJSONReader::GeoJSONReaderInternal
 {
 public:
-  typedef struct
+  struct GeoJSONProperty_t
   {
     std::string Name;
     vtkVariant Value;
-  } GeoJSONProperty;
+  };
+  using GeoJSONProperty = struct GeoJSONProperty_t;
 
   // List of property names to read. Property value is used the default
   std::vector<GeoJSONProperty> PropertySpecs;
@@ -73,7 +63,7 @@ public:
     vtkPolyData* polyData, const std::vector<GeoJSONProperty>& featureProperties);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoJSONReader::GeoJSONReaderInternal::ParseRoot(const Json::Value& root,
   vtkPolyData* output, bool outlinePolygons, const char* serializedPropertiesArrayName)
 {
@@ -143,7 +133,7 @@ void vtkGeoJSONReader::GeoJSONReaderInternal::ParseRoot(const Json::Value& root,
   }
 
   // Check type
-  Json::Value rootType = root["type"];
+  Json::Value const& rootType = root["type"];
   if (rootType.isNull())
   {
     vtkGenericWarningMacro(<< "ParseRoot: Missing type node");
@@ -200,7 +190,7 @@ void vtkGeoJSONReader::GeoJSONReaderInternal::ParseRoot(const Json::Value& root,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoJSONReader::GeoJSONReaderInternal::CanParseFile(const char* filename, Json::Value& root)
 {
   if (!filename)
@@ -236,7 +226,7 @@ int vtkGeoJSONReader::GeoJSONReaderInternal::CanParseFile(const char* filename, 
   return VTK_OK;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoJSONReader::GeoJSONReaderInternal::CanParseString(char* input, Json::Value& root)
 {
   if (!input)
@@ -265,7 +255,7 @@ int vtkGeoJSONReader::GeoJSONReaderInternal::CanParseString(char* input, Json::V
   return VTK_OK;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoJSONReader::GeoJSONReaderInternal::ParseFeatureProperties(
   const Json::Value& propertiesNode, std::vector<GeoJSONProperty>& featureProperties,
   const char* serializedPropertiesArrayName)
@@ -280,7 +270,7 @@ void vtkGeoJSONReader::GeoJSONReaderInternal::ParseFeatureProperties(
     spec = *iter;
     property.Name = spec.Name;
 
-    Json::Value propertyNode = propertiesNode[spec.Name];
+    Json::Value const& propertyNode = propertiesNode[spec.Name];
     if (propertyNode.isNull())
     {
       property.Value = spec.Value;
@@ -334,7 +324,7 @@ void vtkGeoJSONReader::GeoJSONReaderInternal::ParseFeatureProperties(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoJSONReader::GeoJSONReaderInternal::InsertFeatureProperties(
   vtkPolyData* polyData, const std::vector<GeoJSONProperty>& featureProperties)
 {
@@ -366,7 +356,7 @@ void vtkGeoJSONReader::GeoJSONReaderInternal::InsertFeatureProperties(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGeoJSONReader::vtkGeoJSONReader()
 {
   this->FileName = nullptr;
@@ -380,7 +370,7 @@ vtkGeoJSONReader::vtkGeoJSONReader()
   this->Internal = new GeoJSONReaderInternal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGeoJSONReader::~vtkGeoJSONReader()
 {
   delete[] FileName;
@@ -388,7 +378,7 @@ vtkGeoJSONReader::~vtkGeoJSONReader()
   delete Internal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoJSONReader::AddFeatureProperty(const char* name, vtkVariant& typeAndDefaultValue)
 {
   GeoJSONReaderInternal::GeoJSONProperty property;
@@ -418,7 +408,7 @@ void vtkGeoJSONReader::AddFeatureProperty(const char* name, vtkVariant& typeAndD
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoJSONReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(request), vtkInformationVector* outputVector)
 {
@@ -465,10 +455,11 @@ int vtkGeoJSONReader::RequestData(vtkInformation* vtkNotUsed(request),
   return VTK_OK;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoJSONReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
   os << "vtkGeoJSONReader" << std::endl;
   os << "Filename: " << this->FileName << std::endl;
 }
+VTK_ABI_NAMESPACE_END

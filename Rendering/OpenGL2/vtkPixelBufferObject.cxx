@@ -1,28 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPixelBufferObject.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPixelBufferObject.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLRenderWindow.h"
 
 #include "vtkOpenGLError.h"
 
-//#define VTK_PBO_DEBUG
-//#define VTK_PBO_TIMING
+// #define VTK_PBO_DEBUG
+// #define VTK_PBO_TIMING
 
 #ifdef VTK_PBO_TIMING
 #include "vtkTimerLog.h"
@@ -32,6 +20,7 @@
 
 // Mapping from Usage values to OpenGL values.
 
+VTK_ABI_NAMESPACE_BEGIN
 static const GLenum OpenGLBufferObjectUsage[9] = { GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY,
   GL_STATIC_DRAW, GL_STATIC_READ, GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ,
   GL_DYNAMIC_COPY };
@@ -50,6 +39,7 @@ const GLenum OpenGLBufferObjectAccess[2] = {
 
 // targets
 const GLenum OpenGLBufferObjectTarget[2] = { GL_PIXEL_UNPACK_BUFFER, GL_PIXEL_PACK_BUFFER };
+VTK_ABI_NAMESPACE_END
 
 #ifdef VTK_PBO_DEBUG
 #include <pthread.h> // for debugging with MPI, pthread_self()
@@ -57,6 +47,7 @@ const GLenum OpenGLBufferObjectTarget[2] = { GL_PIXEL_UNPACK_BUFFER, GL_PIXEL_PA
 
 // converting double to float behind the
 // scene so we need sizeof(double)==4
+VTK_ABI_NAMESPACE_BEGIN
 template <class T>
 class vtksizeof
 {
@@ -80,10 +71,10 @@ static int vtkGetSize(int type)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkPixelBufferObject);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject::vtkPixelBufferObject()
 {
   this->Handle = 0;
@@ -95,25 +86,25 @@ vtkPixelBufferObject::vtkPixelBufferObject()
   this->Usage = StaticDraw;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject::~vtkPixelBufferObject()
 {
   this->DestroyBuffer();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPixelBufferObject::IsSupported(vtkRenderWindow*)
 {
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPixelBufferObject::LoadRequiredExtensions(vtkRenderWindow* vtkNotUsed(renWin))
 {
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::SetContext(vtkRenderWindow* renWin)
 {
   // avoid pointless re-assignment
@@ -136,19 +127,19 @@ void vtkPixelBufferObject::SetContext(vtkRenderWindow* renWin)
   this->Context->MakeCurrent();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderWindow* vtkPixelBufferObject::GetContext()
 {
   return this->Context;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::SetSize(unsigned int nTups, int nComps)
 {
   this->Size = nTups * nComps;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::Bind(BufferType type)
 {
   assert(this->Context);
@@ -181,7 +172,7 @@ void vtkPixelBufferObject::Bind(BufferType type)
   vtkOpenGLCheckErrorMacro("failed at glBindBuffer");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::UnBind()
 {
   assert(this->Context);
@@ -193,7 +184,7 @@ void vtkPixelBufferObject::UnBind()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::CreateBuffer()
 {
   if (!this->Handle)
@@ -205,7 +196,7 @@ void vtkPixelBufferObject::CreateBuffer()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::DestroyBuffer()
 {
   // because we don't hold a reference to the render
@@ -222,7 +213,7 @@ void vtkPixelBufferObject::DestroyBuffer()
   this->Handle = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 class vtkUpload3D
 {
@@ -346,14 +337,14 @@ public:
   }
 };
 
-//----------------------------------------------------------------------------
-void* vtkPixelBufferObject::MapBuffer(unsigned int nbytes, BufferType mode)
+//------------------------------------------------------------------------------
+void* vtkPixelBufferObject::MapBuffer(unsigned int numbytes, BufferType mode)
 {
   // from vtk to opengl enums
   GLenum target = OpenGLBufferObjectTarget[mode];
   GLenum access = OpenGLBufferObjectAccess[mode];
   GLenum usage = OpenGLBufferObjectUsage[mode];
-  GLuint size = static_cast<GLuint>(nbytes);
+  GLuint size = static_cast<GLuint>(numbytes);
   GLuint ioBuf = static_cast<GLuint>(this->Handle);
 
   if (!ioBuf)
@@ -383,7 +374,7 @@ void* vtkPixelBufferObject::MapBuffer(unsigned int nbytes, BufferType mode)
   return pPBO;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void* vtkPixelBufferObject::MapBuffer(int type, unsigned int numtuples, int comps, BufferType mode)
 {
   // from vtk to opengl enums
@@ -395,7 +386,7 @@ void* vtkPixelBufferObject::MapBuffer(int type, unsigned int numtuples, int comp
   return this->MapBuffer(size, mode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void* vtkPixelBufferObject::MapBuffer(BufferType mode)
 {
   // from vtk to opengl enum
@@ -427,7 +418,7 @@ void* vtkPixelBufferObject::MapBuffer(BufferType mode)
   return pPBO;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::UnmapBuffer(BufferType mode)
 {
   GLuint ioBuf = static_cast<GLuint>(this->Handle);
@@ -448,7 +439,7 @@ void vtkPixelBufferObject::UnmapBuffer(BufferType mode)
   vtkOpenGLCheckErrorMacro("failed at glBindBuffer(0)");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPixelBufferObject::Upload3D(int type, void* data, unsigned int dims[3], int numComponents,
   vtkIdType continuousIncrements[3], int components, int* componentList)
 {
@@ -523,7 +514,7 @@ bool vtkPixelBufferObject::Upload3D(int type, void* data, unsigned int dims[3], 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::Allocate(int type, unsigned int numtuples, int comps, BufferType mode)
 {
   assert(this->Context);
@@ -537,15 +528,15 @@ void vtkPixelBufferObject::Allocate(int type, unsigned int numtuples, int comps,
   this->Allocate(size, mode);
 }
 
-//----------------------------------------------------------------------------
-void vtkPixelBufferObject::Allocate(unsigned int nbytes, BufferType mode)
+//------------------------------------------------------------------------------
+void vtkPixelBufferObject::Allocate(unsigned int numbytes, BufferType mode)
 {
   assert(this->Context);
 
   // from vtk to opengl enums
   GLenum target = OpenGLBufferObjectTarget[mode];
   GLenum usage = OpenGLBufferObjectUsage[mode];
-  GLuint size = static_cast<GLuint>(nbytes);
+  GLuint size = static_cast<GLuint>(numbytes);
   GLuint ioBuf = static_cast<GLuint>(this->Handle);
 
   if (!ioBuf)
@@ -565,7 +556,7 @@ void vtkPixelBufferObject::Allocate(unsigned int nbytes, BufferType mode)
   glBindBuffer(target, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::ReleaseMemory()
 {
   assert(this->Context);
@@ -577,7 +568,7 @@ void vtkPixelBufferObject::ReleaseMemory()
   this->Size = 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class TPBO, class TCPU>
 void vtkDownload3D(
   TPBO* pboPtr, TCPU* cpuPtr, unsigned int dims[3], int numcomps, vtkIdType increments[3])
@@ -609,7 +600,7 @@ void vtkDownload3D(
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class OType>
 void vtkDownload3DSpe(
   int iType, void* iData, OType odata, unsigned int dims[3], int numcomps, vtkIdType increments[3])
@@ -629,7 +620,7 @@ void vtkDownload3DSpe(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPixelBufferObject::Download3D(
   int type, void* data, unsigned int dims[3], int numcomps, vtkIdType increments[3])
 {
@@ -682,7 +673,7 @@ bool vtkPixelBufferObject::Download3D(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixelBufferObject::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -692,3 +683,4 @@ void vtkPixelBufferObject::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "VTK Type: " << vtkImageScalarTypeNameMacro(this->Type) << endl;
   os << indent << "Usage:" << BufferObjectUsageAsString[this->Usage] << endl;
 }
+VTK_ABI_NAMESPACE_END

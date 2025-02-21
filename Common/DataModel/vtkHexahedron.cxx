@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkHexahedron.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkHexahedron.h"
 
 #include "vtkCellArray.h"
@@ -19,7 +8,6 @@
 #include "vtkDoubleArray.h"
 #include "vtkIncrementalPointLocator.h"
 #include "vtkLine.h"
-#include "vtkMarchingCubesTriangleCases.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
@@ -27,22 +15,23 @@
 #include "vtkPolygon.h"
 #include "vtkQuad.h"
 
+#include <algorithm> //std::copy
+#include <array>
 #include <cassert>
-#ifndef VTK_LEGACY_REMOVE // needed temporarily in deprecated methods
 #include <vector>
-#endif
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkHexahedron);
 
 namespace
 {
-static const double VTK_DIVERGED = 1.e6;
-static const int VTK_HEX_MAX_ITERATION = 10;
-static const double VTK_HEX_CONVERGED = 1.e-05;
-static const double VTK_HEX_OUTSIDE_CELL_TOLERANCE = 1.e-06;
+const double VTK_DIVERGED = 1.e6;
+const int VTK_HEX_MAX_ITERATION = 10;
+const double VTK_HEX_CONVERGED = 1.e-05;
+const double VTK_HEX_OUTSIDE_CELL_TOLERANCE = 1.e-06;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the hexahedron with eight points.
 vtkHexahedron::vtkHexahedron()
 {
@@ -58,14 +47,14 @@ vtkHexahedron::vtkHexahedron()
   this->Quad = vtkQuad::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHexahedron::~vtkHexahedron()
 {
   this->Line->Delete();
   this->Quad->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //  Method to calculate parametric coordinates in an eight noded
 //  linear hexahedron element from global coordinates.
 //
@@ -76,9 +65,15 @@ int vtkHexahedron::EvaluatePosition(const double x[3], double closestPoint[3], i
   double derivs[24];
 
   // Efficient point access
-  vtkDoubleArray* ptArray = static_cast<vtkDoubleArray*>(this->Points->GetData());
-  const double* pts = ptArray->GetPointer(0);
-  const double *pt0, *pt1, *pt;
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
+  const double *pt0, *pt1;
 
   // compute a bound on the volume to get a scale for an acceptable determinant
   vtkIdType diagonals[4][2] = { { 0, 6 }, { 1, 7 }, { 2, 4 }, { 3, 5 } };
@@ -94,7 +89,7 @@ int vtkHexahedron::EvaluatePosition(const double x[3], double closestPoint[3], i
     }
   }
   // longestDiagonal value is already squared
-  double volumeBound = pow(longestDiagonal, 1.5);
+  double volumeBound = longestDiagonal * std::sqrt(longestDiagonal);
   double determinantTolerance = 1e-20 < .00001 * volumeBound ? 1e-20 : .00001 * volumeBound;
 
   //  set initial position for Newton's method
@@ -106,21 +101,21 @@ int vtkHexahedron::EvaluatePosition(const double x[3], double closestPoint[3], i
   for (iteration = 0; !converged && (iteration < VTK_HEX_MAX_ITERATION); iteration++)
   {
     //  calculate element interpolation functions and derivatives
-    this->InterpolationFunctions(pcoords, weights);
-    this->InterpolationDerivs(pcoords, derivs);
+    vtkHexahedron::InterpolationFunctions(pcoords, weights);
+    vtkHexahedron::InterpolationDerivs(pcoords, derivs);
 
     //  calculate newton functions
     double fcol[3] = { 0, 0, 0 }, rcol[3] = { 0, 0, 0 }, scol[3] = { 0, 0, 0 },
            tcol[3] = { 0, 0, 0 };
     for (int i = 0; i < 8; i++)
     {
-      pt = pts + 3 * i;
       for (int j = 0; j < 3; j++)
       {
-        fcol[j] += pt[j] * weights[i];
-        rcol[j] += pt[j] * derivs[i];
-        scol[j] += pt[j] * derivs[i + 8];
-        tcol[j] += pt[j] * derivs[i + 16];
+        const double coord = pts[3 * i + j];
+        fcol[j] += coord * weights[i];
+        rcol[j] += coord * derivs[i];
+        scol[j] += coord * derivs[i + 8];
+        tcol[j] += coord * derivs[i + 16];
       }
     }
 
@@ -171,7 +166,7 @@ int vtkHexahedron::EvaluatePosition(const double x[3], double closestPoint[3], i
     return -1;
   }
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkHexahedron::InterpolationFunctions(pcoords, weights);
 
   double lowerlimit = 0.0 - VTK_HEX_OUTSIDE_CELL_TOLERANCE;
   double upperlimit = 1.0 + VTK_HEX_OUTSIDE_CELL_TOLERANCE;
@@ -214,7 +209,7 @@ int vtkHexahedron::EvaluatePosition(const double x[3], double closestPoint[3], i
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute iso-parametric interpolation functions
 //
 void vtkHexahedron::InterpolationFunctions(const double pcoords[3], double sf[8])
@@ -225,17 +220,22 @@ void vtkHexahedron::InterpolationFunctions(const double pcoords[3], double sf[8]
   sm = 1. - pcoords[1];
   tm = 1. - pcoords[2];
 
-  sf[0] = rm * sm * tm;
-  sf[1] = pcoords[0] * sm * tm;
-  sf[2] = pcoords[0] * pcoords[1] * tm;
-  sf[3] = rm * pcoords[1] * tm;
-  sf[4] = rm * sm * pcoords[2];
-  sf[5] = pcoords[0] * sm * pcoords[2];
-  sf[6] = pcoords[0] * pcoords[1] * pcoords[2];
-  sf[7] = rm * pcoords[1] * pcoords[2];
+  const auto rmXsm = rm * sm;
+  const auto p0Xsm = pcoords[0] * sm;
+  const auto p0Xp1 = pcoords[0] * pcoords[1];
+  const auto rmXp1 = rm * pcoords[1];
+
+  sf[0] = rmXsm * tm;
+  sf[1] = p0Xsm * tm;
+  sf[2] = p0Xp1 * tm;
+  sf[3] = rmXp1 * tm;
+  sf[4] = rmXsm * pcoords[2];
+  sf[5] = p0Xsm * pcoords[2];
+  sf[6] = p0Xp1 * pcoords[2];
+  sf[7] = rmXp1 * pcoords[2];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHexahedron::InterpolationDerivs(const double pcoords[3], double derivs[24])
 {
   double rm, sm, tm;
@@ -246,48 +246,57 @@ void vtkHexahedron::InterpolationDerivs(const double pcoords[3], double derivs[2
 
   // r-derivatives
   derivs[0] = -sm * tm;
-  derivs[1] = sm * tm;
+  derivs[1] = -derivs[0];
   derivs[2] = pcoords[1] * tm;
-  derivs[3] = -pcoords[1] * tm;
+  derivs[3] = -derivs[2];
   derivs[4] = -sm * pcoords[2];
-  derivs[5] = sm * pcoords[2];
+  derivs[5] = -derivs[4];
   derivs[6] = pcoords[1] * pcoords[2];
-  derivs[7] = -pcoords[1] * pcoords[2];
+  derivs[7] = -derivs[6];
 
   // s-derivatives
   derivs[8] = -rm * tm;
   derivs[9] = -pcoords[0] * tm;
-  derivs[10] = pcoords[0] * tm;
-  derivs[11] = rm * tm;
+  derivs[10] = -derivs[9];
+  derivs[11] = -derivs[8];
   derivs[12] = -rm * pcoords[2];
   derivs[13] = -pcoords[0] * pcoords[2];
-  derivs[14] = pcoords[0] * pcoords[2];
-  derivs[15] = rm * pcoords[2];
+  derivs[14] = -derivs[13];
+  derivs[15] = -derivs[12];
 
   // t-derivatives
   derivs[16] = -rm * sm;
   derivs[17] = -pcoords[0] * sm;
   derivs[18] = -pcoords[0] * pcoords[1];
   derivs[19] = -rm * pcoords[1];
-  derivs[20] = rm * sm;
-  derivs[21] = pcoords[0] * sm;
-  derivs[22] = pcoords[0] * pcoords[1];
-  derivs[23] = rm * pcoords[1];
+  derivs[20] = -derivs[16];
+  derivs[21] = -derivs[17];
+  derivs[22] = -derivs[18];
+  derivs[23] = -derivs[19];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHexahedron::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
   int i, j;
-  double pt[3];
+  const double* pt;
 
   this->InterpolationFunctions(pcoords, weights);
+
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
 
   x[0] = x[1] = x[2] = 0.0;
   for (i = 0; i < 8; i++)
   {
-    this->Points->GetPoint(i, pt);
+    pt = pts + 3 * i;
     for (j = 0; j < 3; j++)
     {
       x[j] += pt[j] * weights[i];
@@ -295,7 +304,7 @@ void vtkHexahedron::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHexahedron::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], vtkIdList* pts)
 {
   double t1 = pcoords[0] - pcoords[1];
@@ -370,20 +379,20 @@ int vtkHexahedron::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], 
 
 namespace
 {
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Hexahedron topology
 //
-//  3_______2
+//  1_______2
 //  |\     /|
-//  |7\___/6|
+//  |5\___/6|
 //  | |   | |
 //  | |___| |
-//  |4/   \5|
+//  |4/   \7|
 //  |/_____\|
-//  0       1
+//  0       3
 //
-static constexpr vtkIdType edges[vtkHexahedron::NumberOfEdges][2] = {
+constexpr vtkIdType edges[vtkHexahedron::NumberOfEdges][2] = {
   { 0, 1 }, // 0
   { 1, 2 }, // 1
   { 3, 2 }, // 2
@@ -397,20 +406,19 @@ static constexpr vtkIdType edges[vtkHexahedron::NumberOfEdges][2] = {
   { 3, 7 }, // 10
   { 2, 6 }, // 11
 };
-static constexpr vtkIdType
-  faces[vtkHexahedron::NumberOfFaces][vtkHexahedron::MaximumFaceSize + 1] = {
-    { 0, 4, 7, 3, -1 }, // 0
-    { 1, 2, 6, 5, -1 }, // 1
-    { 0, 1, 5, 4, -1 }, // 2
-    { 3, 7, 6, 2, -1 }, // 3
-    { 0, 3, 2, 1, -1 }, // 4
-    { 4, 5, 6, 7, -1 }, // 5
-  };
-static constexpr vtkIdType edgeToAdjacentFaces[vtkHexahedron::NumberOfEdges][2] = {
+constexpr vtkIdType faces[vtkHexahedron::NumberOfFaces][vtkHexahedron::MaximumFaceSize + 1] = {
+  { 0, 4, 7, 3, -1 }, // 0
+  { 1, 2, 6, 5, -1 }, // 1
+  { 0, 1, 5, 4, -1 }, // 2
+  { 3, 7, 6, 2, -1 }, // 3
+  { 0, 3, 2, 1, -1 }, // 4
+  { 4, 5, 6, 7, -1 }, // 5
+};
+constexpr vtkIdType edgeToAdjacentFaces[vtkHexahedron::NumberOfEdges][2] = {
   { 2, 4 }, // 0
   { 1, 4 }, // 1
   { 3, 4 }, // 2
-  { 0, 3 }, // 3
+  { 0, 4 }, // 3
   { 2, 5 }, // 4
   { 1, 5 }, // 5
   { 3, 5 }, // 6
@@ -420,57 +428,57 @@ static constexpr vtkIdType edgeToAdjacentFaces[vtkHexahedron::NumberOfEdges][2] 
   { 0, 3 }, // 10
   { 1, 3 }, // 11
 };
-static constexpr vtkIdType
-  faceToAdjacentFaces[vtkHexahedron::NumberOfFaces][vtkHexahedron::MaximumFaceSize] = {
-    { 4, 2, 5, 3 }, // 0
-    { 4, 3, 5, 2 }, // 1
-    { 4, 1, 5, 0 }, // 2
-    { 0, 5, 1, 4 }, // 3
-    { 0, 3, 1, 2 }, // 4
-    { 2, 1, 0, 3 }, // 5
-  };
-static constexpr vtkIdType
-  pointToIncidentEdges[vtkHexahedron::NumberOfPoints][vtkHexahedron::MaximumValence] = {
-    { 0, 8, 3 },  // 0
-    { 0, 1, 9 },  // 1
-    { 1, 2, 11 }, // 2
-    { 2, 3, 10 }, // 3
-    { 4, 7, 8 },  // 4
-    { 4, 9, 5 },  // 5
-    { 5, 11, 6 }, // 6
-    { 6, 10, 7 }, // 7
-  };
-static constexpr vtkIdType
-  pointToIncidentFaces[vtkHexahedron::NumberOfPoints][vtkHexahedron::MaximumValence] = {
-    { 2, 0, 4 }, // 0
-    { 4, 1, 0 }, // 1
-    { 4, 3, 1 }, // 2
-    { 4, 0, 3 }, // 3
-    { 5, 3, 0 }, // 4
-    { 0, 1, 5 }, // 5
-    { 1, 3, 5 }, // 6
-    { 3, 0, 5 }, // 7
-  };
-static constexpr vtkIdType
-  pointToOneRingPoints[vtkHexahedron::NumberOfPoints][vtkHexahedron::MaximumValence] = {
-    { 1, 4, 3 }, // 0
-    { 0, 2, 5 }, // 1
-    { 1, 3, 6 }, // 2
-    { 2, 0, 7 }, // 3
-    { 5, 7, 0 }, // 4
-    { 4, 1, 6 }, // 5
-    { 5, 2, 7 }, // 6
-    { 6, 3, 4 }, // 7
-  };
+constexpr vtkIdType faceToAdjacentFaces[vtkHexahedron::NumberOfFaces]
+                                       [vtkHexahedron::MaximumFaceSize] = {
+                                         { 4, 2, 5, 3 }, // 0
+                                         { 4, 3, 5, 2 }, // 1
+                                         { 4, 1, 5, 0 }, // 2
+                                         { 0, 5, 1, 4 }, // 3
+                                         { 0, 3, 1, 2 }, // 4
+                                         { 2, 1, 0, 3 }, // 5
+                                       };
+constexpr vtkIdType pointToIncidentEdges[vtkHexahedron::NumberOfPoints]
+                                        [vtkHexahedron::MaximumValence] = {
+                                          { 0, 8, 3 },  // 0
+                                          { 0, 1, 9 },  // 1
+                                          { 1, 2, 11 }, // 2
+                                          { 2, 3, 10 }, // 3
+                                          { 7, 8, 4 },  // 4
+                                          { 4, 9, 5 },  // 5
+                                          { 5, 11, 6 }, // 6
+                                          { 6, 10, 7 }, // 7
+                                        };
+constexpr vtkIdType pointToIncidentFaces[vtkHexahedron::NumberOfPoints]
+                                        [vtkHexahedron::MaximumValence] = {
+                                          { 2, 0, 4 }, // 0
+                                          { 4, 1, 2 }, // 1
+                                          { 4, 3, 1 }, // 2
+                                          { 4, 0, 3 }, // 3
+                                          { 5, 2, 0 }, // 4
+                                          { 2, 1, 5 }, // 5
+                                          { 1, 3, 5 }, // 6
+                                          { 3, 0, 5 }, // 7
+                                        };
+constexpr vtkIdType pointToOneRingPoints[vtkHexahedron::NumberOfPoints]
+                                        [vtkHexahedron::MaximumValence] = {
+                                          { 1, 4, 3 }, // 0
+                                          { 0, 2, 5 }, // 1
+                                          { 1, 3, 6 }, // 2
+                                          { 2, 0, 7 }, // 3
+                                          { 5, 7, 0 }, // 4
+                                          { 4, 1, 6 }, // 5
+                                          { 5, 2, 7 }, // 6
+                                          { 6, 3, 4 }, // 7
+                                        };
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHexahedron::GetCentroid(double centroid[3]) const
 {
   return vtkHexahedron::ComputeCentroid(this->Points, nullptr, centroid);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHexahedron::ComputeCentroid(
   vtkPoints* points, const vtkIdType* pointIds, double centroid[3])
 {
@@ -500,19 +508,12 @@ bool vtkHexahedron::ComputeCentroid(
   return true;
 }
 
-//----------------------------------------------------------------------------
-bool vtkHexahedron::IsInsideOut()
-{
-  double pt1[3], pt2[3];
-  this->Points->GetPoint(0, pt1);
-  this->Points->GetPoint(6, pt2);
-  return (pt2[0] - pt1[0]) * (pt2[1] - pt1[1]) * (pt2[2] - pt1[2]) < 0.0;
-}
-
 // Marching cubes case table
 //
+VTK_ABI_NAMESPACE_END
 #include "vtkMarchingCubesTriangleCases.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 void vtkHexahedron::Contour(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* verts, vtkCellArray* lines,
   vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
@@ -520,7 +521,7 @@ void vtkHexahedron::Contour(double value, vtkDataArray* cellScalars,
 {
   static const int CASE_MASK[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
   vtkMarchingCubesTriangleCases* triCase;
-  EDGE_LIST* edge;
+  int* edge;
   int i, j, index;
   const vtkIdType* vert;
   int v1, v2, newCellId;
@@ -593,49 +594,49 @@ void vtkHexahedron::Contour(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkHexahedron::GetEdgeToAdjacentFacesArray(vtkIdType edgeId)
 {
   assert(edgeId < vtkHexahedron::NumberOfEdges && "edgeId too large");
   return edgeToAdjacentFaces[edgeId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkHexahedron::GetFaceToAdjacentFacesArray(vtkIdType faceId)
 {
   assert(faceId < vtkHexahedron::NumberOfFaces && "faceId too large");
   return faceToAdjacentFaces[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkHexahedron::GetPointToIncidentEdgesArray(vtkIdType pointId)
 {
   assert(pointId < vtkHexahedron::NumberOfPoints && "pointId too large");
   return pointToIncidentEdges[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkHexahedron::GetPointToIncidentFacesArray(vtkIdType pointId)
 {
   assert(pointId < vtkHexahedron::NumberOfPoints && "pointId too large");
   return pointToIncidentFaces[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkHexahedron::GetPointToOneRingPointsArray(vtkIdType pointId)
 {
   assert(pointId < vtkHexahedron::NumberOfPoints && "pointId too large");
   return pointToOneRingPoints[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkHexahedron::GetEdgeArray(vtkIdType edgeId)
 {
   assert(edgeId < vtkHexahedron::NumberOfEdges && "edgeId too large");
   return edges[edgeId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the case table for table-based isocontouring (aka marching cubes
 // style implementations). A linear 3D cell with N vertices will have 2**N
 // cases. The cases list three edges in order to produce one output triangle.
@@ -644,7 +645,7 @@ int* vtkHexahedron::GetTriangleCases(int caseId)
   return &(*(vtkMarchingCubesTriangleCases::GetCases() + caseId)->edges);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkHexahedron::GetEdge(int edgeId)
 {
   const vtkIdType* verts;
@@ -662,14 +663,14 @@ vtkCell* vtkHexahedron::GetEdge(int edgeId)
   return this->Line;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkHexahedron::GetFaceArray(vtkIdType faceId)
 {
   assert(faceId < vtkHexahedron::NumberOfFaces && "faceId too large");
   return faces[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkHexahedron::GetFace(int faceId)
 {
   const vtkIdType* verts;
@@ -686,7 +687,7 @@ vtkCell* vtkHexahedron::GetFace(int faceId)
   return this->Quad;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Intersect hexa faces against line. Each hexa face is a quadrilateral.
 //
@@ -765,125 +766,28 @@ int vtkHexahedron::IntersectWithLine(const double p1[3], const double p2[3], dou
   return intersection;
 }
 
-//----------------------------------------------------------------------------
-int vtkHexahedron::Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkHexahedron::TriangulateLocalIds(int index, vtkIdList* ptIds)
 {
-  int p[4], i;
-
-  ptIds->Reset();
-  pts->Reset();
-
   // Create five tetrahedron. Triangulation varies depending upon index. This
-  // is necessary to insure compatible voxel triangulations.
-  if ((index % 2))
+  // is necessary to ensure compatible voxel triangulations.
+  ptIds->SetNumberOfIds(20);
+  if (index % 2)
   {
-    p[0] = 0;
-    p[1] = 1;
-    p[2] = 3;
-    p[3] = 4;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
-
-    p[0] = 1;
-    p[1] = 4;
-    p[2] = 5;
-    p[3] = 6;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
-
-    p[0] = 1;
-    p[1] = 4;
-    p[2] = 6;
-    p[3] = 3;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
-
-    p[0] = 1;
-    p[1] = 3;
-    p[2] = 6;
-    p[3] = 2;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
-
-    p[0] = 3;
-    p[1] = 6;
-    p[2] = 7;
-    p[3] = 4;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
+    constexpr std::array<vtkIdType, 20> localPtIds{ 0, 1, 3, 4, 1, 4, 5, 6, 1, 4, 6, 3, 1, 3, 6, 2,
+      3, 6, 7, 4 };
+    std::copy(localPtIds.begin(), localPtIds.end(), ptIds->begin());
   }
   else
   {
-    p[0] = 2;
-    p[1] = 1;
-    p[2] = 5;
-    p[3] = 0;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
-
-    p[0] = 0;
-    p[1] = 2;
-    p[2] = 3;
-    p[3] = 7;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
-
-    p[0] = 2;
-    p[1] = 5;
-    p[2] = 6;
-    p[3] = 7;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
-
-    p[0] = 0;
-    p[1] = 7;
-    p[2] = 4;
-    p[3] = 5;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
-
-    p[0] = 0;
-    p[1] = 2;
-    p[2] = 7;
-    p[3] = 5;
-    for (i = 0; i < 4; i++)
-    {
-      ptIds->InsertNextId(this->PointIds->GetId(p[i]));
-      pts->InsertNextPoint(this->Points->GetPoint(p[i]));
-    }
+    constexpr std::array<vtkIdType, 20> localPtIds{ 2, 1, 5, 0, 0, 2, 3, 7, 2, 5, 6, 7, 0, 7, 4, 5,
+      0, 2, 7, 5 };
+    std::copy(localPtIds.begin(), localPtIds.end(), ptIds->begin());
   }
-
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute derivatives in x-y-z directions. Use chain rule in combination
 // with interpolation function derivatives.
 //
@@ -917,7 +821,7 @@ void vtkHexahedron::Derivatives(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given parametric coordinates compute inverse Jacobian transformation
 // matrix. Returns 9 elements of 3x3 inverse Jacobian plus interpolation
 // function derivatives.
@@ -958,7 +862,7 @@ void vtkHexahedron::JacobianInverse(const double pcoords[3], double** inverse, d
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHexahedron::GetPointToOneRingPoints(vtkIdType pointId, const vtkIdType*& pts)
 {
   assert(pointId < vtkHexahedron::NumberOfPoints && "pointId too large");
@@ -966,7 +870,7 @@ vtkIdType vtkHexahedron::GetPointToOneRingPoints(vtkIdType pointId, const vtkIdT
   return vtkHexahedron::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHexahedron::GetPointToIncidentFaces(vtkIdType pointId, const vtkIdType*& faceIds)
 {
   assert(pointId < vtkHexahedron::NumberOfPoints && "pointId too large");
@@ -974,7 +878,7 @@ vtkIdType vtkHexahedron::GetPointToIncidentFaces(vtkIdType pointId, const vtkIdT
   return vtkHexahedron::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHexahedron::GetPointToIncidentEdges(vtkIdType pointId, const vtkIdType*& edgeIds)
 {
   assert(pointId < vtkHexahedron::NumberOfPoints && "pointId too large");
@@ -982,7 +886,7 @@ vtkIdType vtkHexahedron::GetPointToIncidentEdges(vtkIdType pointId, const vtkIdT
   return vtkHexahedron::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHexahedron::GetFaceToAdjacentFaces(vtkIdType faceId, const vtkIdType*& faceIds)
 {
   assert(faceId < vtkHexahedron::NumberOfFaces && "faceId too large");
@@ -990,41 +894,21 @@ vtkIdType vtkHexahedron::GetFaceToAdjacentFaces(vtkIdType faceId, const vtkIdTyp
   return vtkHexahedron::MaximumFaceSize;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHexahedron::GetEdgeToAdjacentFaces(vtkIdType edgeId, const vtkIdType*& pts)
 {
   assert(edgeId < vtkHexahedron::NumberOfEdges && "edgeId too large");
   pts = edgeToAdjacentFaces[edgeId];
 }
 
-#ifndef VTK_LEGACY_REMOVE
-//----------------------------------------------------------------------------
-void vtkHexahedron::GetEdgePoints(int edgeId, int*& pts)
-{
-  VTK_LEGACY_REPLACED_BODY(vtkHexahedron::GetEdgePoints(int, int*&), "VTK 9.0",
-    vtkHexahedron::GetEdgePoints(vtkIdType, const vtkIdType*&));
-  static std::vector<int> tmp(std::begin(faces[edgeId]), std::end(faces[edgeId]));
-  pts = tmp.data();
-}
-
-//----------------------------------------------------------------------------
-void vtkHexahedron::GetFacePoints(int faceId, int*& pts)
-{
-  VTK_LEGACY_REPLACED_BODY(vtkHexahedron::GetFacePoints(int, int*&), "VTK 9.0",
-    vtkHexahedron::GetFacePoints(vtkIdType, const vtkIdType*&));
-  static std::vector<int> tmp(std::begin(faces[faceId]), std::end(faces[faceId]));
-  pts = tmp.data();
-}
-#endif
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHexahedron::GetEdgePoints(vtkIdType edgeId, const vtkIdType*& pts)
 {
   assert(edgeId < vtkHexahedron::NumberOfEdges && "edgeId too large");
   pts = this->GetEdgeArray(edgeId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHexahedron::GetFacePoints(vtkIdType faceId, const vtkIdType*& pts)
 {
   assert(faceId < vtkHexahedron::NumberOfFaces && "faceId too large");
@@ -1032,7 +916,7 @@ vtkIdType vtkHexahedron::GetFacePoints(vtkIdType faceId, const vtkIdType*& pts)
   return vtkHexahedron::MaximumFaceSize;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkHexahedronCellPCoords[24] = {
   0.0, 0.0, 0.0, //
   1.0, 0.0, 0.0, //
@@ -1049,7 +933,7 @@ double* vtkHexahedron::GetParametricCoords()
   return vtkHexahedronCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHexahedron::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1059,3 +943,4 @@ void vtkHexahedron::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Quad:\n";
   this->Quad->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

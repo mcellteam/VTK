@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractPropPicker.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractPropPicker
  * @brief   abstract API for pickers that can pick an instance of vtkProp
@@ -67,6 +55,7 @@
 #include "vtkAbstractPicker.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkProp;
 class vtkPropAssembly;
 class vtkAssembly;
@@ -82,7 +71,7 @@ public:
   vtkTypeMacro(vtkAbstractPropPicker, vtkAbstractPicker);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Return the vtkAssemblyPath that has been picked. The assembly path lists
    * all the vtkProps that form an assembly. If no assembly is present, then
@@ -93,7 +82,7 @@ public:
    */
   virtual void SetPath(vtkAssemblyPath*);
   vtkGetObjectMacro(Path, vtkAssemblyPath);
-  //@}
+  ///@}
 
   // The following are convenience methods to maintain API with older
   // versions of VTK, and to allow query for the return type of a pick. Note:
@@ -156,4 +145,5 @@ private:
   void operator=(const vtkAbstractPropPicker&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

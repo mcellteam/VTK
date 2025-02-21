@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPDataSetWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPDataSetWriter.h"
 #include "vtkDataSet.h"
@@ -27,11 +15,12 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPDataSetWriter);
 
 vtkCxxSetObjectMacro(vtkPDataSetWriter, Controller, vtkMultiProcessController);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPDataSetWriter::vtkPDataSetWriter()
 {
   this->StartPiece = 0;
@@ -47,14 +36,14 @@ vtkPDataSetWriter::vtkPDataSetWriter()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPDataSetWriter::~vtkPDataSetWriter()
 {
   this->SetFilePattern(nullptr);
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDataSetWriter::SetNumberOfPieces(int num)
 {
   if (num == this->NumberOfPieces)
@@ -70,7 +59,7 @@ void vtkPDataSetWriter::SetNumberOfPieces(int num)
   this->EndPiece = num - 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetWriter::Write()
 {
   int i;
@@ -284,18 +273,21 @@ int vtkPDataSetWriter::Write()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetWriter::WriteUnstructuredMetaData(
   vtkDataSet* input, char* root, char* str, size_t strSize, ostream* fptr)
 {
-  int i;
+  if (!root || !str)
+  {
+    return 0;
+  }
 
   // We should indicate the type of data that is being saved.
   *fptr << "      dataType=\"" << input->GetClassName() << "\"" << endl;
   // This is making the assumption that all the files will be written out by
   // some processes.
   *fptr << "      numberOfPieces=\"" << this->NumberOfPieces << "\" >" << endl;
-  for (i = 0; i < this->NumberOfPieces; ++i)
+  for (int i = 0; i < this->NumberOfPieces; ++i)
   {
     snprintf(str, strSize, this->FilePattern, root, i);
     *fptr << "  <Piece fileName=\"" << str << "\" />" << endl;
@@ -309,7 +301,7 @@ int vtkPDataSetWriter::WriteUnstructuredMetaData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetWriter::WriteImageMetaData(
   vtkImageData* input, char* root, char* str, size_t strSize, ostream* fptr)
 {
@@ -376,7 +368,7 @@ int vtkPDataSetWriter::WriteImageMetaData(
       for (int count = 0; iter != this->Extents.end(); ++iter, ++count)
       {
         sendBuffer[count * 7] = iter->first;
-        memcpy(sendBuffer.data() + count * 7 + 1, &iter->second[0], 6 * sizeof(int));
+        memcpy(sendBuffer.data() + count * 7 + 1, iter->second.data(), 6 * sizeof(int));
       }
     }
     std::vector<int> recvBuffer;
@@ -404,7 +396,7 @@ int vtkPDataSetWriter::WriteImageMetaData(
 
   for (int i = 0; i < this->NumberOfPieces; ++i)
   {
-    pi = &this->Extents[i][0];
+    pi = this->Extents[i].data();
     snprintf(str, strSize, this->FilePattern, root, i);
     *fptr << "  <Piece fileName=\"" << str << "\"" << endl
           << "      extent=\"" << pi[0] << " " << pi[1] << " " << pi[2] << " " << pi[3] << " "
@@ -419,7 +411,7 @@ int vtkPDataSetWriter::WriteImageMetaData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetWriter::WriteRectilinearGridMetaData(
   vtkRectilinearGrid* input, char* root, char* str, size_t strSize, ostream* fptr)
 {
@@ -438,7 +430,7 @@ int vtkPDataSetWriter::WriteRectilinearGridMetaData(
   *fptr << "      numberOfPieces=\"" << this->NumberOfPieces << "\" >" << endl;
   for (i = 0; i < this->NumberOfPieces; ++i)
   {
-    pi = &this->Extents[i][0];
+    pi = this->Extents[i].data();
     snprintf(str, strSize, this->FilePattern, root, i);
     *fptr << "  <Piece fileName=\"" << str << "\"" << endl
           << "      extent=\"" << pi[0] << " " << pi[1] << " " << pi[2] << " " << pi[3] << " "
@@ -454,7 +446,7 @@ int vtkPDataSetWriter::WriteRectilinearGridMetaData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetWriter::WriteStructuredGridMetaData(
   vtkStructuredGrid* input, char* root, char* str, size_t strSize, ostream* fptr)
 {
@@ -473,7 +465,7 @@ int vtkPDataSetWriter::WriteStructuredGridMetaData(
   *fptr << "      numberOfPieces=\"" << this->NumberOfPieces << "\" >" << endl;
   for (i = 0; i < this->NumberOfPieces; ++i)
   {
-    pi = &this->Extents[i][0];
+    pi = this->Extents[i].data();
     snprintf(str, strSize, this->FilePattern, root, i);
     *fptr << "  <Piece fileName=\"" << str << "\"" << endl
           << "      extent=\"" << pi[0] << " " << pi[1] << " " << pi[2] << " " << pi[3] << " "
@@ -489,7 +481,7 @@ int vtkPDataSetWriter::WriteStructuredGridMetaData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Open a vtk data file. Returns nullptr if error.
 ostream* vtkPDataSetWriter::OpenFile()
 {
@@ -563,7 +555,7 @@ void vtkPDataSetWriter::DeleteFiles()
   remove(this->FileName);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDataSetWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -575,3 +567,4 @@ void vtkPDataSetWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "FilePattern: " << this->FilePattern << endl;
   os << indent << "UseRelativeFileNames: " << this->UseRelativeFileNames << endl;
 }
+VTK_ABI_NAMESPACE_END

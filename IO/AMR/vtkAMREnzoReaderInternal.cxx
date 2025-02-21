@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAMREnzoReaderInternal.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMREnzoReaderInternal.h"
 
 #define H5_USE_16_API
@@ -34,18 +22,19 @@
 #include "vtksys/FStream.hxx"
 #include "vtksys/SystemTools.hxx"
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //                       Functions for Parsing File Names
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-static std::string GetEnzoMajorFileName(const char* path)
+VTK_ABI_NAMESPACE_BEGIN
+static std::string GetEnzoMajorFileName(const std::string& path)
 {
-  return (vtksys::SystemTools::GetFilenameName(std::string(path)));
+  return vtksys::SystemTools::GetFilenameName(path);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //                       Class vtkEnzoReaderBlock (begin)
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 void vtkEnzoReaderBlock::Init()
 {
@@ -274,13 +263,13 @@ void vtkEnzoReaderBlock::GetLevelBasedIds(std::vector<vtkEnzoReaderBlock>& block
   }
 }
 //------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //                       Class vtkEnzoReaderBlock ( end )
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //                     Class  vtkEnzoReaderInternal (begin)
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkEnzoReaderInternal::vtkEnzoReaderInternal()
 {
@@ -429,7 +418,7 @@ int vtkEnzoReaderInternal::LoadAttribute(const char* attribute, int blockIdx)
   if (attrIndx < 0)
   {
     vtkGenericWarningMacro(
-      "Attribute (" << attribute << ") data does not exist in file " << blckFile.c_str());
+      "Attribute (" << attribute << ") data does not exist in file " << blckFile);
     H5Gclose(rootIndx);
     H5Fclose(fileIndx);
     return 0;
@@ -581,7 +570,7 @@ int vtkEnzoReaderInternal::LoadAttribute(const char* attribute, int blockIdx)
 }
 
 //------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // parse the hierarchy file to create block structures, including the bounding
 // box, cell dimensions, grid / node dimensions, number of particles, level Id,
 // block file name, and particle file name of each block
@@ -590,8 +579,7 @@ void vtkEnzoReaderInternal::ReadBlockStructures()
   vtksys::ifstream stream(this->HierarchyFileName.c_str());
   if (!stream)
   {
-    vtkGenericWarningMacro(
-      "Invalid hierarchy file name: " << this->HierarchyFileName.c_str() << endl);
+    vtkGenericWarningMacro("Invalid hierarchy file name: " << this->HierarchyFileName << endl);
     return;
   }
 
@@ -723,9 +711,9 @@ void vtkEnzoReaderInternal::ReadBlockStructures()
       stream >> theStr; // '='
       stream >> szName;
 
-      //      std::cout << "szname: " << szName.c_str() << std::endl;
+      //      std::cout << "szname: " << szName << std::endl;
       //      std::cout.flush();
-      tmpBlk.BlockFileName = this->DirectoryName + "/" + GetEnzoMajorFileName(szName.c_str());
+      tmpBlk.BlockFileName = this->DirectoryName + "/" + GetEnzoMajorFileName(szName);
 
       // obtain the particle file name (szName includes the full path)
       while (theStr != "NumberOfParticles")
@@ -743,7 +731,7 @@ void vtkEnzoReaderInternal::ReadBlockStructures()
         }
         stream >> theStr; // '='
         stream >> szName;
-        tmpBlk.ParticleFileName = this->DirectoryName + "/" + GetEnzoMajorFileName(szName.c_str());
+        tmpBlk.ParticleFileName = this->DirectoryName + "/" + GetEnzoMajorFileName(szName);
       }
 
       tmpBlk.Level = levlId;
@@ -752,7 +740,7 @@ void vtkEnzoReaderInternal::ReadBlockStructures()
       if (static_cast<int>(this->Blocks.size()) != tmpBlk.Index)
       {
         vtkGenericWarningMacro("The blocks in the hierarchy file "
-          << this->HierarchyFileName.c_str() << " are currently expected to be "
+          << this->HierarchyFileName << " are currently expected to be "
           << " listed in order." << endl);
         return;
       }
@@ -812,14 +800,14 @@ void vtkEnzoReaderInternal::ReadBlockStructures()
 }
 
 //------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // obtain the general information of the dataset (number of dimensions)
 void vtkEnzoReaderInternal::ReadGeneralParameters()
 {
   vtksys::ifstream stream(this->MajorFileName.c_str());
   if (!stream)
   {
-    vtkGenericWarningMacro("Invalid parameter file " << this->MajorFileName.c_str() << endl);
+    vtkGenericWarningMacro("Invalid parameter file " << this->MajorFileName << endl);
     return;
   }
 
@@ -849,7 +837,7 @@ void vtkEnzoReaderInternal::ReadGeneralParameters()
 }
 
 //------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // get the bounding box of the root block based on those of its descendants
 void vtkEnzoReaderInternal::DetermineRootBoundingBox()
 {
@@ -871,7 +859,7 @@ void vtkEnzoReaderInternal::DetermineRootBoundingBox()
 }
 
 //------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // perform an initial collection of attribute names (for block and particles)
 void vtkEnzoReaderInternal::GetAttributeNames()
 {
@@ -910,7 +898,7 @@ void vtkEnzoReaderInternal::GetAttributeNames()
 
   if (fileIndx < 0)
   {
-    vtkGenericWarningMacro("Failed to open HDF5 grid file " << blckFile.c_str());
+    vtkGenericWarningMacro("Failed to open HDF5 grid file " << blckFile);
     return;
   }
 
@@ -963,7 +951,7 @@ void vtkEnzoReaderInternal::GetAttributeNames()
         // it's a particle variable and skip over coordinate arrays
         if (strncmp(tempName, "particle_position_", 18) != 0)
         {
-          this->ParticleAttributeNames.push_back(tempName);
+          this->ParticleAttributeNames.emplace_back(tempName);
         }
       }
       else if ((strlen(tempName) > 16) && (strncmp(tempName, "tracer_particles", 16) == 0))
@@ -971,12 +959,12 @@ void vtkEnzoReaderInternal::GetAttributeNames()
         // it's a tracer_particle variable and skip over coordinate arrays
         if (strncmp(tempName, "tracer_particle_position_", 25) != 0)
         {
-          this->TracerParticleAttributeNames.push_back(tempName);
+          this->TracerParticleAttributeNames.emplace_back(tempName);
         }
       }
       else
       {
-        this->BlockAttributeNames.push_back(tempName);
+        this->BlockAttributeNames.emplace_back(tempName);
       }
     }
   }
@@ -985,7 +973,7 @@ void vtkEnzoReaderInternal::GetAttributeNames()
   H5Fclose(fileIndx);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function checks the block attributes, of which some might be actually
 // particle attributes since a flexible (not standard) attributes naming scheme
 // (such as the one adopted in cosmological datasets) causes this Enzo reader,
@@ -1085,7 +1073,7 @@ void vtkEnzoReaderInternal::CheckAttributeNames()
   toExport.clear();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // get the meta data
 void vtkEnzoReaderInternal::ReadMetaData()
 {
@@ -1121,3 +1109,4 @@ void vtkEnzoReaderInternal::ReadMetaData()
   // verify the initial set of attribute names
   this->CheckAttributeNames();
 }
+VTK_ABI_NAMESPACE_END

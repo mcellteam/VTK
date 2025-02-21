@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkGenericDataSetTessellator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkGenericDataSetTessellator.h"
 
 #include "vtkCellArray.h"
@@ -34,10 +23,11 @@
 #include "vtkUnsignedCharArray.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericDataSetTessellator);
 
 vtkCxxSetObjectMacro(vtkGenericDataSetTessellator, Locator, vtkIncrementalPointLocator);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 vtkGenericDataSetTessellator::vtkGenericDataSetTessellator()
 {
@@ -48,7 +38,7 @@ vtkGenericDataSetTessellator::vtkGenericDataSetTessellator()
   this->Locator = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericDataSetTessellator::~vtkGenericDataSetTessellator()
 {
   if (this->Locator)
@@ -59,7 +49,7 @@ vtkGenericDataSetTessellator::~vtkGenericDataSetTessellator()
   this->InternalPD->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 int vtkGenericDataSetTessellator::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -84,7 +74,7 @@ int vtkGenericDataSetTessellator::RequestData(vtkInformation* vtkNotUsed(request
   vtkCellData* outputCD = output->GetCellData();
   vtkGenericAdaptorCell* cell;
   vtkIdType numInserted = 0, numNew, i;
-  int abortExecute = 0;
+  bool abortExecute = false;
 
   // Copy original points and point data
   vtkPoints* newPts = vtkPoints::New();
@@ -173,7 +163,7 @@ int vtkGenericDataSetTessellator::RequestData(vtkInformation* vtkNotUsed(request
     if (!(count % updateCount))
     {
       this->UpdateProgress(static_cast<double>(count) / numCells);
-      abortExecute = this->GetAbortExecute();
+      abortExecute = this->CheckAbort();
     }
 
     cell = cellIt->GetCell();
@@ -220,7 +210,7 @@ int vtkGenericDataSetTessellator::RequestData(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericDataSetTessellator::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -231,7 +221,7 @@ int vtkGenericDataSetTessellator::FillInputPortInformation(int port, vtkInformat
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By
 // default an instance of vtkMergePoints is used.
 void vtkGenericDataSetTessellator::CreateDefaultLocator()
@@ -242,7 +232,7 @@ void vtkGenericDataSetTessellator::CreateDefaultLocator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericDataSetTessellator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -267,7 +257,7 @@ void vtkGenericDataSetTessellator::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkGenericDataSetTessellator::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -280,3 +270,4 @@ vtkMTimeType vtkGenericDataSetTessellator::GetMTime()
   }
   return mTime;
 }
+VTK_ABI_NAMESPACE_END

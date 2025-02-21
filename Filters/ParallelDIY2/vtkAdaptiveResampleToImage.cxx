@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkAdaptiveResampleToImage.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkAdaptiveResampleToImage.h"
 
 #include "vtkCellData.h"
@@ -45,6 +34,7 @@
 
 namespace impl
 {
+VTK_ABI_NAMESPACE_BEGIN
 vtkUnsignedCharArray* get_mask_array(vtkDataSetAttributes* dsa)
 {
   return vtkUnsignedCharArray::SafeDownCast(dsa->GetArray(vtkDataSetAttributes::GhostArrayName()));
@@ -103,9 +93,9 @@ vtkSmartPointer<vtkIdList> get_ids(vtkDataSetAttributes* source, unsigned char g
   return ids->GetNumberOfIds() > 0 ? ids.GetPointer() : nullptr;
 }
 
-bool merge(vtkImageData* target, std::vector<vtkSmartPointer<vtkImageData> >& sources)
+bool merge(vtkImageData* target, std::vector<vtkSmartPointer<vtkImageData>>& sources)
 {
-  if (sources.size() == 0)
+  if (sources.empty())
   {
     return false;
   }
@@ -144,27 +134,28 @@ bool merge(vtkImageData* target, std::vector<vtkSmartPointer<vtkImageData> >& so
     auto inPD = sources[idx]->GetPointData();
     if (auto ptids = get_ids(inPD, vtkDataSetAttributes::HIDDENPOINT))
     {
-      ptList.TransformData(idx, inPD, opd, [&ptids](vtkAbstractArray* in, vtkAbstractArray* out) {
-        out->InsertTuples(ptids, ptids, in);
-      });
+      ptList.TransformData(idx, inPD, opd,
+        [&ptids](vtkAbstractArray* in, vtkAbstractArray* out)
+        { out->InsertTuples(ptids, ptids, in); });
     }
 
     auto inCD = sources[idx]->GetCellData();
     if (auto cellids = get_ids(inCD, vtkDataSetAttributes::HIDDENCELL))
     {
-      cellList.TransformData(
-        idx, inCD, ocd, [&cellids](vtkAbstractArray* in, vtkAbstractArray* out) {
-          out->InsertTuples(cellids, cellids, in);
-        });
+      cellList.TransformData(idx, inCD, ocd,
+        [&cellids](vtkAbstractArray* in, vtkAbstractArray* out)
+        { out->InsertTuples(cellids, cellids, in); });
     }
   }
   return true;
 }
+VTK_ABI_NAMESPACE_END
 }
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAdaptiveResampleToImage);
 vtkCxxSetObjectMacro(vtkAdaptiveResampleToImage, Controller, vtkMultiProcessController);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAdaptiveResampleToImage::vtkAdaptiveResampleToImage()
   : Controller(nullptr)
   , NumberOfImages(0)
@@ -173,13 +164,13 @@ vtkAdaptiveResampleToImage::vtkAdaptiveResampleToImage()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAdaptiveResampleToImage::~vtkAdaptiveResampleToImage()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAdaptiveResampleToImage::FillOutputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
@@ -187,7 +178,7 @@ int vtkAdaptiveResampleToImage::FillOutputPortInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAdaptiveResampleToImage::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -221,13 +212,14 @@ int vtkAdaptiveResampleToImage::RequestData(
     /*dim*/ 1, diy::interval(0, assigner.nblocks() - 1), assigner.nblocks());
   decomposer.decompose(comm.rank(), assigner, master);
 
-  std::vector<std::vector<vtkSmartPointer<vtkImageData> > > resamples(boxes.size());
+  std::vector<std::vector<vtkSmartPointer<vtkImageData>>> resamples(boxes.size());
   vtkLogStartScope(TRACE, "local resample");
 
   const auto localBounds = vtkDIYUtilities::GetLocalBounds(inputDO);
   std::transform(boxes.begin(), boxes.end(), resamples.begin(),
-    [&inputDO, &localBounds, this](const vtkBoundingBox& bbox) {
-      std::vector<vtkSmartPointer<vtkImageData> > retval;
+    [&inputDO, &localBounds, this](const vtkBoundingBox& bbox)
+    {
+      std::vector<vtkSmartPointer<vtkImageData>> retval;
       vtkSmartPointer<vtkImageData> img =
         localBounds.Intersects(bbox) ? impl::resample(bbox, inputDO, this) : nullptr;
       if (img)
@@ -239,52 +231,54 @@ int vtkAdaptiveResampleToImage::RequestData(
   vtkLogEndScope("local resample");
 
   vtkLogStartScope(TRACE, "global exchange");
-  diy::all_to_all(master, assigner, [&resamples, &comm](vtkImageData*, const diy::ReduceProxy& rp) {
-    if (rp.in_link().size() == 0)
+  diy::all_to_all(master, assigner,
+    [&resamples, &comm](vtkImageData*, const diy::ReduceProxy& rp)
     {
-      // 1. enqueue
-      const auto& out_link = rp.out_link();
-      for (int cc = 0, max = out_link.size(); cc < max; ++cc)
+      if (rp.in_link().size() == 0)
       {
-        // resample input to image.
-        const auto target = out_link.target(cc);
-        auto& image_vector = resamples[target.gid];
-        if (image_vector.size() > 0 && target.proc != comm.rank())
+        // 1. enqueue
+        const auto& out_link = rp.out_link();
+        for (int cc = 0, max = out_link.size(); cc < max; ++cc)
         {
-          // send non-empty data to non-local block only.
-          assert(image_vector.size() == 1);
-          auto image = image_vector[0];
-          rp.enqueue<vtkDataSet*>(target, image);
-          // vtkLogF(TRACE, "enqueue for %d", target.gid);
-          image_vector.clear(); // free up memory
+          // resample input to image.
+          const auto target = out_link.target(cc);
+          auto& image_vector = resamples[target.gid];
+          if (!image_vector.empty() && target.proc != comm.rank())
+          {
+            // send non-empty data to non-local block only.
+            assert(image_vector.size() == 1);
+            auto image = image_vector[0];
+            rp.enqueue<vtkDataSet*>(target, image);
+            // vtkLogF(TRACE, "enqueue for %d", target.gid);
+            image_vector.clear(); // free up memory
+          }
         }
       }
-    }
-    else
-    {
-      // 2. dequeue
-      const auto& in_link = rp.in_link();
-      for (int cc = 0, max = in_link.size(); cc < max; ++cc)
+      else
       {
-        const auto source = in_link.target(cc);
-        if (rp.incoming(source.gid).size() == 0)
+        // 2. dequeue
+        const auto& in_link = rp.in_link();
+        for (int cc = 0, max = in_link.size(); cc < max; ++cc)
         {
-          continue;
-        }
+          const auto source = in_link.target(cc);
+          if (rp.incoming(source.gid).empty())
+          {
+            continue;
+          }
 
-        vtkDataSet* ptr = nullptr;
-        rp.dequeue<vtkDataSet*>(source, ptr);
-        if (ptr)
-        {
-          // vtkLogF(TRACE, "dequeue from %d", source.gid);
-          auto img = vtkImageData::SafeDownCast(ptr);
-          assert(img);
-          resamples[rp.gid()].push_back(img);
-          ptr->Delete();
+          vtkDataSet* ptr = nullptr;
+          rp.dequeue<vtkDataSet*>(source, ptr);
+          if (ptr)
+          {
+            // vtkLogF(TRACE, "dequeue from %d", source.gid);
+            auto img = vtkImageData::SafeDownCast(ptr);
+            assert(img);
+            resamples[rp.gid()].emplace_back(img);
+            ptr->Delete();
+          }
         }
       }
-    }
-  });
+    });
   vtkLogEndScope("global exchange");
 
   // remove null images.
@@ -296,7 +290,8 @@ int vtkAdaptiveResampleToImage::RequestData(
 
   auto outputPD = vtkPartitionedDataSet::GetData(outputVector, 0);
   master.foreach (
-    [&outputPD, &resamples](vtkImageData* block, const diy::Master::ProxyWithLink& ln) {
+    [&outputPD, &resamples](vtkImageData* block, const diy::Master::ProxyWithLink& ln)
+    {
       if (impl::merge(block, resamples[ln.gid()]))
       {
         outputPD->SetPartition(outputPD->GetNumberOfPartitions(), block);
@@ -306,7 +301,7 @@ int vtkAdaptiveResampleToImage::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAdaptiveResampleToImage::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -314,3 +309,4 @@ void vtkAdaptiveResampleToImage::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SamplingDimensions: " << this->SamplingDimensions[0] << ", "
      << this->SamplingDimensions[1] << ", " << this->SamplingDimensions[2] << endl;
 }
+VTK_ABI_NAMESPACE_END

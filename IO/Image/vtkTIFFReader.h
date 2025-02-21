@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTIFFReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTIFFReader
  * @brief   read TIFF files
@@ -28,6 +16,7 @@
 
 #include "vtkImageReader2.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOIMAGE_EXPORT vtkTIFFReader : public vtkImageReader2
 {
 public:
@@ -38,7 +27,7 @@ public:
   /**
    * Is the given file name a tiff file?
    */
-  int CanReadFile(const char* fname) override;
+  int CanReadFile(VTK_FILEPATH const char* fname) override;
 
   /**
    * Get the file extensions for this format.
@@ -63,37 +52,37 @@ public:
    * ORIENTATION_RIGHTTOP        6       (row 0 rhs, col 0 top)
    * ORIENTATION_RIGHTBOT        7       (row 0 rhs, col 0 bottom)
    * ORIENTATION_LEFTBOT         8       (row 0 lhs, col 0 bottom)
-   * User need to explicitly include vtk_tiff.h header to have access to those #define
+   * User need to explicitly include vtk_tiff.h header to have access to those these macros
    */
   void SetOrientationType(unsigned int orientationType);
   vtkGetMacro(OrientationType, unsigned int);
 
-  //@{
+  ///@{
   /**
    * Get method to check if orientation type is specified.
    */
   vtkGetMacro(OrientationTypeSpecifiedFlag, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get methods to see if manual origin has been set.
    */
   vtkSetMacro(OriginSpecifiedFlag, bool);
   vtkGetMacro(OriginSpecifiedFlag, bool);
   vtkBooleanMacro(OriginSpecifiedFlag, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get if the spacing flag has been specified.
    */
   vtkSetMacro(SpacingSpecifiedFlag, bool);
   vtkGetMacro(SpacingSpecifiedFlag, bool);
   vtkBooleanMacro(SpacingSpecifiedFlag, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When set to true (default false), TIFFTAG_COLORMAP, if any, will be
    * ignored.
@@ -101,7 +90,7 @@ public:
   vtkSetMacro(IgnoreColorMap, bool);
   vtkGetMacro(IgnoreColorMap, bool);
   vtkBooleanMacro(IgnoreColorMap, bool);
-  //@}
+  ///@}
 protected:
   vtkTIFFReader();
   ~vtkTIFFReader() override;
@@ -196,4 +185,5 @@ private:
   bool IgnoreColorMap;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

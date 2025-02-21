@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDIYDataExchanger.h"
 #include "vtkFieldData.h"
 #include "vtkIntArray.h"
@@ -26,12 +28,12 @@ static vtkSmartPointer<vtkDataSet> GetDataSet(int sourceId)
 }
 
 static bool DoTest(
-  vtkMultiProcessController* controller, const std::map<int, std::vector<int> >& communication)
+  vtkMultiProcessController* controller, const std::map<int, std::vector<int>>& communication)
 {
   const int nranks = controller->GetNumberOfProcesses();
   const int rank = controller->GetLocalProcessId();
 
-  std::vector<vtkSmartPointer<vtkDataSet> > sendBuffer;
+  std::vector<vtkSmartPointer<vtkDataSet>> sendBuffer;
   std::vector<int> sendCounts(nranks);
 
   auto iter = communication.find(rank);
@@ -48,7 +50,7 @@ static bool DoTest(
     }
   }
 
-  std::vector<vtkSmartPointer<vtkDataSet> > recvBuffer;
+  std::vector<vtkSmartPointer<vtkDataSet>> recvBuffer;
   std::vector<int> recvCounts;
   vtkNew<vtkDIYDataExchanger> exchanger;
   exchanger->SetController(controller);

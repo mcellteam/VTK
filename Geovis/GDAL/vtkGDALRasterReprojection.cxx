@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGDALRasterReprojection.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-   This software is distributed WITHOUT ANY WARRANTY; without even
-   the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-   PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGDALRasterReprojection.h"
 
 // VTK Includes
@@ -23,18 +11,19 @@
 #include <gdalwarper.h>
 #include <ogr_spatialref.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGDALRasterReprojection);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALRasterReprojection::vtkGDALRasterReprojection()
 {
   this->MaxError = 0.0;
   this->ResamplingAlgorithm = 0;
 }
 
-//----------------------------------------------------------------------------
-vtkGDALRasterReprojection::~vtkGDALRasterReprojection() {}
+//------------------------------------------------------------------------------
+vtkGDALRasterReprojection::~vtkGDALRasterReprojection() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReprojection::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
@@ -44,7 +33,7 @@ void vtkGDALRasterReprojection::PrintSelf(ostream& os, vtkIndent indent)
      << std::endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGDALRasterReprojection::SuggestOutputDimensions(GDALDataset* dataset,
   const char* projection, double geoTransform[6], int* nPixels, int* nLines, double maxError)
 {
@@ -91,7 +80,7 @@ bool vtkGDALRasterReprojection::SuggestOutputDimensions(GDALDataset* dataset,
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGDALRasterReprojection::Reproject(GDALDataset* input, GDALDataset* output)
 {
   // Convert this->ResamplingAlgorithm to GDALResampleAlg
@@ -159,3 +148,4 @@ bool vtkGDALRasterReprojection::Reproject(GDALDataset* input, GDALDataset* outpu
 
   return true;
 }
+VTK_ABI_NAMESPACE_END

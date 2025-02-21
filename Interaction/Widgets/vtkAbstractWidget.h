@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractWidget.h,v
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractWidget
  * @brief   define the API for widget / widget representation
@@ -54,21 +42,24 @@
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkInteractorObserver.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALMANUAL
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkWidgetEventTranslator;
 class vtkWidgetCallbackMapper;
 class vtkWidgetRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkAbstractWidget : public vtkInteractorObserver
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALMANUAL vtkAbstractWidget
+  : public vtkInteractorObserver
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard macros implementing standard VTK methods.
    */
   vtkTypeMacro(vtkAbstractWidget, vtkInteractorObserver);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Methods for activating this widget. Note that the widget representation
@@ -79,7 +70,7 @@ public:
    */
   void SetEnabled(int) override;
 
-  //@{
+  ///@{
   /**
    * Methods to change whether the widget responds to interaction.
    * Set this to Off to disable interaction. On by default.
@@ -87,9 +78,14 @@ public:
    * that they pass on the flag to all component widgets.
    */
   vtkSetClampMacro(ProcessEvents, vtkTypeBool, 0, 1);
-  vtkGetMacro(ProcessEvents, vtkTypeBool);
+  virtual vtkTypeBool GetProcessEvents()
+  {
+    vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning ProcessEvents of "
+                  << this->ProcessEvents);
+    return this->ProcessEvents;
+  }
   vtkBooleanMacro(ProcessEvents, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Get the event translator. Careful manipulation of this class enables
@@ -122,7 +118,7 @@ public:
   void SetParent(vtkAbstractWidget* parent) { this->Parent = parent; }
   vtkGetObjectMacro(Parent, vtkAbstractWidget);
 
-  //@{
+  ///@{
   /**
    * Return an instance of vtkWidgetRepresentation used to represent this
    * widget in the scene. Note that the representation is a subclass of
@@ -134,9 +130,9 @@ public:
     this->CreateDefaultRepresentation();
     return this->WidgetRep;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on or off the management of the cursor. Cursor management is
    * typically disabled for subclasses when composite widgets are
@@ -147,7 +143,7 @@ public:
   vtkSetMacro(ManagesCursor, vtkTypeBool);
   vtkGetMacro(ManagesCursor, vtkTypeBool);
   vtkBooleanMacro(ManagesCursor, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Override the superclass method. This will automatically change the
@@ -191,9 +187,15 @@ protected:
   // On by default.
   vtkTypeBool ProcessEvents;
 
+  // Used by subclasses to ensure different events comes from the same
+  // hardware device. Such as starting a move with the right controller
+  // should then only respond to move events from the right controller.
+  int LastDevice;
+
 private:
   vtkAbstractWidget(const vtkAbstractWidget&) = delete;
   void operator=(const vtkAbstractWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

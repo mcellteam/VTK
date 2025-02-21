@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOggTheoraWriter.cxx
-
-  Copyright (c) Michael Wild, Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Michael Wild
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOggTheoraWriter.h"
 
@@ -24,7 +13,8 @@
 
 #include <ctime>
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOggTheoraWriterInternal
 {
 public:
@@ -59,14 +49,14 @@ private:
   th_ycbcr_buffer thImage;   // the Y'CbCr image buffer
   ogg_stream_state oggState; // the ogg stream state (has to be cleared)
   FILE* outFile;             // the output file stream
-  bool haveImageData;        // indicater whether a frame has to be encoded
+  bool haveImageData;        // indicator whether a frame has to be encoded
                              // (for the leap-frogging)
 
   int openedFile;
   int closedFile;
 };
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOggTheoraWriterInternal::vtkOggTheoraWriterInternal(vtkOggTheoraWriter* creator)
 {
   this->Writer = creator;
@@ -88,7 +78,7 @@ vtkOggTheoraWriterInternal::vtkOggTheoraWriterInternal(vtkOggTheoraWriter* creat
   this->FrameRate = 25;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOggTheoraWriterInternal::~vtkOggTheoraWriterInternal()
 {
   if (!this->closedFile)
@@ -97,7 +87,7 @@ vtkOggTheoraWriterInternal::~vtkOggTheoraWriterInternal()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOggTheoraWriterInternal::Start()
 {
   this->closedFile = 0;
@@ -153,7 +143,7 @@ int vtkOggTheoraWriterInternal::Start()
   // the frame rate (as a fraction)
   thInfo.fps_numerator = this->FrameRate;
   thInfo.fps_denominator = 1;
-  // pixel ascpect ratio
+  // pixel aspect ratio
   thInfo.aspect_numerator = 1;
   thInfo.aspect_denominator = 1;
 
@@ -182,8 +172,8 @@ int vtkOggTheoraWriterInternal::Start()
     // make sure there's nothing left laying around...
     delete[] this->thImage[i].data;
     // allocate the image plane
-    size_t siz = this->thImage[i].width * this->thImage[i].height;
-    this->thImage[i].data = new unsigned char[siz];
+    size_t size = this->thImage[i].width * this->thImage[i].height;
+    this->thImage[i].data = new unsigned char[size];
   }
 
   // thInfo is no longer needed
@@ -201,7 +191,7 @@ int vtkOggTheoraWriterInternal::Start()
   return this->WriteHeader();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // ripped from libtheora-1.0/examples/encoder_example.c
 int vtkOggTheoraWriterInternal::WriteHeader()
 {
@@ -261,7 +251,7 @@ int vtkOggTheoraWriterInternal::WriteHeader()
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOggTheoraWriterInternal::Write(vtkImageData* id)
 {
   // encode the frame from the last call.
@@ -283,7 +273,7 @@ int vtkOggTheoraWriterInternal::Write(vtkImageData* id)
   return ret;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // ripped from libtheora-1.0/examples/encoder_example.c
 int vtkOggTheoraWriterInternal::EncodeFrame(th_ycbcr_buffer, int lastFrame)
 {
@@ -317,7 +307,7 @@ int vtkOggTheoraWriterInternal::EncodeFrame(th_ycbcr_buffer, int lastFrame)
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOggTheoraWriterInternal::End()
 {
   // flush remaining frame
@@ -349,14 +339,14 @@ void vtkOggTheoraWriterInternal::End()
   this->closedFile = 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOggTheoraWriterInternal::RGB2YCbCr(vtkImageData* id, th_ycbcr_buffer ycbcr)
 {
   // convenience
   typedef unsigned char uchar;
 
   //
-  // constant coefficiens
+  // constant coefficients
   //
 
   static const uchar OffY = 16, OffCr = 128, OffCb = 128;
@@ -463,10 +453,10 @@ void vtkOggTheoraWriterInternal::RGB2YCbCr(vtkImageData* id, th_ycbcr_buffer ycb
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOggTheoraWriter);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOggTheoraWriter::vtkOggTheoraWriter()
 {
   this->Internals = nullptr;
@@ -475,13 +465,13 @@ vtkOggTheoraWriter::vtkOggTheoraWriter()
   this->Subsampling = 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOggTheoraWriter::~vtkOggTheoraWriter()
 {
   delete this->Internals;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOggTheoraWriter::Start()
 {
   this->Error = 1;
@@ -512,7 +502,7 @@ void vtkOggTheoraWriter::Start()
   this->Initialized = 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOggTheoraWriter::Write()
 {
   if (this->Error)
@@ -569,7 +559,7 @@ void vtkOggTheoraWriter::Write()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOggTheoraWriter::End()
 {
   if (this->Internals)
@@ -581,7 +571,7 @@ void vtkOggTheoraWriter::End()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOggTheoraWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -589,3 +579,4 @@ void vtkOggTheoraWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Rate: " << this->Rate << endl;
   os << indent << "Subsampling: " << this->Subsampling << endl;
 }
+VTK_ABI_NAMESPACE_END

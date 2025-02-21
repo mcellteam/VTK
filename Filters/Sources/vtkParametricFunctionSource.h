@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParametricFunctionSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParametricFunctionSource
  * @brief   tessellate parametric functions
@@ -50,6 +38,7 @@
 #include "vtkFiltersSourcesModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkParametricFunction;
 
@@ -64,15 +53,15 @@ public:
    */
   static vtkParametricFunctionSource* New();
 
-  //@{
+  ///@{
   /**
    * Specify the parametric function to use to generate the tessellation.
    */
   virtual void SetParametricFunction(vtkParametricFunction*);
   vtkGetObjectMacro(ParametricFunction, vtkParametricFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of subdivisions / tessellations in the u parametric
    * direction. Note that the number of tessellant points in the u
@@ -80,9 +69,9 @@ public:
    */
   vtkSetClampMacro(UResolution, int, 2, VTK_INT_MAX);
   vtkGetMacro(UResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of subdivisions / tessellations in the v parametric
    * direction. Note that the number of tessellant points in the v
@@ -90,9 +79,9 @@ public:
    */
   vtkSetClampMacro(VResolution, int, 2, VTK_INT_MAX);
   vtkGetMacro(VResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of subdivisions / tessellations in the w parametric
    * direction. Note that the number of tessellant points in the w
@@ -100,9 +89,9 @@ public:
    */
   vtkSetClampMacro(WResolution, int, 2, VTK_INT_MAX);
   vtkGetMacro(WResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the generation of texture coordinates. This is off by
    * default.
@@ -113,9 +102,9 @@ public:
   vtkBooleanMacro(GenerateTextureCoordinates, vtkTypeBool);
   vtkSetClampMacro(GenerateTextureCoordinates, vtkTypeBool, 0, 1);
   vtkGetMacro(GenerateTextureCoordinates, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the generation of normals. This is on by
    * default.
@@ -125,7 +114,7 @@ public:
   vtkBooleanMacro(GenerateNormals, vtkTypeBool);
   vtkSetClampMacro(GenerateNormals, vtkTypeBool, 0, 1);
   vtkGetMacro(GenerateNormals, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Enumerate the supported scalar generation modes.<br>
@@ -172,35 +161,35 @@ public:
     SCALAR_FUNCTION_DEFINED
   };
 
-  //@{
+  ///@{
   /**
    * Get/Set the mode used for the scalar data.
    * See SCALAR_MODE for a description of the types of scalars generated.
    */
   vtkSetClampMacro(ScalarMode, int, SCALAR_NONE, SCALAR_FUNCTION_DEFINED);
   vtkGetMacro(ScalarMode, int);
-  void SetScalarModeToNone(void) { this->SetScalarMode(SCALAR_NONE); }
-  void SetScalarModeToU(void) { this->SetScalarMode(SCALAR_U); }
-  void SetScalarModeToV(void) { this->SetScalarMode(SCALAR_V); }
-  void SetScalarModeToU0(void) { this->SetScalarMode(SCALAR_U0); }
-  void SetScalarModeToV0(void) { this->SetScalarMode(SCALAR_V0); }
-  void SetScalarModeToU0V0(void) { this->SetScalarMode(SCALAR_U0V0); }
-  void SetScalarModeToModulus(void) { this->SetScalarMode(SCALAR_MODULUS); }
-  void SetScalarModeToPhase(void) { this->SetScalarMode(SCALAR_PHASE); }
-  void SetScalarModeToQuadrant(void) { this->SetScalarMode(SCALAR_QUADRANT); }
-  void SetScalarModeToX(void) { this->SetScalarMode(SCALAR_X); }
-  void SetScalarModeToY(void) { this->SetScalarMode(SCALAR_Y); }
-  void SetScalarModeToZ(void) { this->SetScalarMode(SCALAR_Z); }
-  void SetScalarModeToDistance(void) { this->SetScalarMode(SCALAR_DISTANCE); }
-  void SetScalarModeToFunctionDefined(void) { this->SetScalarMode(SCALAR_FUNCTION_DEFINED); }
-  //@}
+  void SetScalarModeToNone() { this->SetScalarMode(SCALAR_NONE); }
+  void SetScalarModeToU() { this->SetScalarMode(SCALAR_U); }
+  void SetScalarModeToV() { this->SetScalarMode(SCALAR_V); }
+  void SetScalarModeToU0() { this->SetScalarMode(SCALAR_U0); }
+  void SetScalarModeToV0() { this->SetScalarMode(SCALAR_V0); }
+  void SetScalarModeToU0V0() { this->SetScalarMode(SCALAR_U0V0); }
+  void SetScalarModeToModulus() { this->SetScalarMode(SCALAR_MODULUS); }
+  void SetScalarModeToPhase() { this->SetScalarMode(SCALAR_PHASE); }
+  void SetScalarModeToQuadrant() { this->SetScalarMode(SCALAR_QUADRANT); }
+  void SetScalarModeToX() { this->SetScalarMode(SCALAR_X); }
+  void SetScalarModeToY() { this->SetScalarMode(SCALAR_Y); }
+  void SetScalarModeToZ() { this->SetScalarMode(SCALAR_Z); }
+  void SetScalarModeToDistance() { this->SetScalarMode(SCALAR_DISTANCE); }
+  void SetScalarModeToFunctionDefined() { this->SetScalarMode(SCALAR_FUNCTION_DEFINED); }
+  ///@}
 
   /**
    * Return the MTime also considering the parametric function.
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output points.
    * See the documentation for the vtkAlgorithm::Precision enum for an
@@ -208,7 +197,7 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkParametricFunctionSource();
@@ -251,4 +240,5 @@ private:
   void operator=(const vtkParametricFunctionSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

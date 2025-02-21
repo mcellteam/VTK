@@ -1,27 +1,7 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostBreadthFirstSearch.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
-/*
- * Copyright (C) 2008 The Trustees of Indiana University.
- * Use, modification and distribution is subject to the Boost Software
- * License, Version 1.0. (See http://www.boost.org/LICENSE_1_0.txt)
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-FileCopyrightText: Copyright (C) 2008 The Trustees of Indiana University
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov AND BSL-1.0
 #include "vtkBoostBreadthFirstSearch.h"
 
 #include "vtkCellArray.h"
@@ -52,6 +32,7 @@
 
 using namespace boost;
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostBreadthFirstSearch);
 
 // Redefine the bfs visitor, the only visitor we
@@ -60,7 +41,7 @@ template <typename DistanceMap>
 class my_distance_recorder : public default_bfs_visitor
 {
 public:
-  my_distance_recorder() {}
+  my_distance_recorder() = default;
   my_distance_recorder(DistanceMap dist, vtkIdType* far)
     : d(dist)
     , far_vertex(far)
@@ -97,9 +78,9 @@ vtkBoostBreadthFirstSearch::vtkBoostBreadthFirstSearch()
 {
   // Default values for the origin vertex
   this->OriginVertexIndex = 0;
-  this->InputArrayName = 0;
-  this->OutputArrayName = 0;
-  this->OutputSelectionType = 0;
+  this->InputArrayName = nullptr;
+  this->OutputArrayName = nullptr;
+  this->OutputSelectionType = nullptr;
   this->SetOutputSelectionType("MAX_DIST_FROM_ROOT");
   this->OriginValue = -1;
   this->OutputSelection = false;
@@ -110,9 +91,9 @@ vtkBoostBreadthFirstSearch::vtkBoostBreadthFirstSearch()
 
 vtkBoostBreadthFirstSearch::~vtkBoostBreadthFirstSearch()
 {
-  this->SetInputArrayName(0);
-  this->SetOutputArrayName(0);
-  this->SetOutputSelectionType(0);
+  this->SetInputArrayName(nullptr);
+  this->SetOutputArrayName(nullptr);
+  this->SetOutputSelectionType(nullptr);
 }
 
 void vtkBoostBreadthFirstSearch::SetOriginSelection(vtkSelection* s)
@@ -138,7 +119,7 @@ void vtkBoostBreadthFirstSearch::SetOriginVertex(vtkIdType index)
 // know the specific index of the vertex.
 void vtkBoostBreadthFirstSearch::SetOriginVertex(vtkStdString arrayName, vtkVariant value)
 {
-  this->SetInputArrayName(arrayName);
+  this->SetInputArrayName(arrayName.c_str());
   this->OriginValue = value;
   this->Modified();
 }
@@ -167,7 +148,7 @@ vtkIdType vtkBoostBreadthFirstSearch::GetVertexIndex(vtkAbstractArray* abstract,
   else
   {
     vtkStringArray* stringArray = vtkArrayDownCast<vtkStringArray>(abstract);
-    vtkStdString stringValue(value.ToString());
+    std::string stringValue(value.ToString());
     for (int i = 0; i < stringArray->GetNumberOfTuples(); ++i)
     {
       if (stringValue == stringArray->GetValue(i))
@@ -331,7 +312,7 @@ void vtkBoostBreadthFirstSearch::PrintSelf(ostream& os, vtkIndent indent)
      << (this->OutputSelectionType ? this->OutputSelectionType : "(none)") << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostBreadthFirstSearch::FillInputPortInformation(int port, vtkInformation* info)
 {
   // now add our info
@@ -347,7 +328,7 @@ int vtkBoostBreadthFirstSearch::FillInputPortInformation(int port, vtkInformatio
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostBreadthFirstSearch::FillOutputPortInformation(int port, vtkInformation* info)
 {
   // now add our info
@@ -361,3 +342,4 @@ int vtkBoostBreadthFirstSearch::FillOutputPortInformation(int port, vtkInformati
   }
   return 1;
 }
+VTK_ABI_NAMESPACE_END

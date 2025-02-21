@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRTXMLPolyDataReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRTXMLPolyDataReader.h"
 #include "vtkDirectory.h"
 #include "vtkObjectFactory.h"
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRTXMLPolyDataReader);
 
 class vtkRTXMLPolyDataReaderInternals
@@ -27,15 +16,14 @@ public:
   std::vector<std::string> ProcessedFileList;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRTXMLPolyDataReader::vtkRTXMLPolyDataReader()
-  : vtkXMLPolyDataReader()
 {
   this->Internal = new vtkRTXMLPolyDataReaderInternals;
   this->DataLocation = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRTXMLPolyDataReader::~vtkRTXMLPolyDataReader()
 {
   delete this->Internal;
@@ -48,7 +36,7 @@ void vtkRTXMLPolyDataReader::SetLocation(const char* dataLocation)
   this->ResetReader();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRTXMLPolyDataReader::UpdateToNextFile()
 {
   if (!this->Internal->AvailableDataFileList.empty())
@@ -63,7 +51,7 @@ void vtkRTXMLPolyDataReader::UpdateToNextFile()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkRTXMLPolyDataReader::GetNextFileName()
 {
   if (!this->Internal->AvailableDataFileList.empty())
@@ -76,7 +64,7 @@ const char* vtkRTXMLPolyDataReader::GetNextFileName()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRTXMLPolyDataReader::NewDataAvailable()
 {
   // TODO: data concurrency issue
@@ -112,7 +100,7 @@ int vtkRTXMLPolyDataReader::NewDataAvailable()
       char* file = this->GetDataFileFullPathName(dataDir->GetFile(i));
       if (!IsProcessed(file))
       {
-        this->Internal->AvailableDataFileList.push_back(file);
+        this->Internal->AvailableDataFileList.emplace_back(file);
       }
       else
       {
@@ -133,7 +121,7 @@ int vtkRTXMLPolyDataReader::NewDataAvailable()
 // Internal method to return the fullpath name of a file, which
 // is the concatenation of "this->DataLocation" and "name"
 // caller has to free the memory of returned fullpath name.
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkRTXMLPolyDataReader::GetDataFileFullPathName(const char* name)
 {
   char* fullpath;
@@ -167,14 +155,14 @@ void vtkRTXMLPolyDataReader::InitializeToCurrentDir()
   this->SetLocation("./");
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRTXMLPolyDataReader::IsProcessed(const char* fname)
 {
   int size = static_cast<int>(this->Internal->ProcessedFileList.size());
   for (int i = 0; i < size; i++)
   {
-    const char* aFile = this->Internal->ProcessedFileList[i].c_str();
-    if (strcmp(fname, aFile) == 0)
+    const char* file = this->Internal->ProcessedFileList[i].c_str();
+    if (strcmp(fname, file) == 0)
     {
       return 1;
     }
@@ -182,7 +170,7 @@ int vtkRTXMLPolyDataReader::IsProcessed(const char* fname)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRTXMLPolyDataReader::ResetReader()
 {
   // assume the DataLocation is set at this point
@@ -194,7 +182,8 @@ void vtkRTXMLPolyDataReader::ResetReader()
   dataDir->Open(this->DataLocation);
   for (int i = 0; i < dataDir->GetNumberOfFiles(); i++)
   {
-    this->Internal->ProcessedFileList.push_back(this->GetDataFileFullPathName(dataDir->GetFile(i)));
+    this->Internal->ProcessedFileList.emplace_back(
+      this->GetDataFileFullPathName(dataDir->GetFile(i)));
   }
   // initialize with an empty filename if filename is not set
   if (!this->GetFileName())
@@ -204,9 +193,10 @@ void vtkRTXMLPolyDataReader::ResetReader()
   dataDir->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRTXMLPolyDataReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "DataLocation: " << (this->DataLocation ? this->DataLocation : "(none)") << "\n";
 }
+VTK_ABI_NAMESPACE_END

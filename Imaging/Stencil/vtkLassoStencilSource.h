@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLassoStencilSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLassoStencilSource
  * @brief   Create a stencil from a contour
@@ -32,6 +20,7 @@
 #include "vtkImageStencilSource.h"
 #include "vtkImagingStencilModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 class vtkSpline;
 class vtkLSSPointMap;
@@ -49,7 +38,7 @@ public:
     SPLINE = 1
   };
 
-  //@{
+  ///@{
   /**
    * The shape to use, default is "Polygon".  The spline is a
    * cardinal spline.  Bezier splines are not yet supported.
@@ -59,9 +48,9 @@ public:
   void SetShapeToPolygon() { this->SetShape(POLYGON); }
   void SetShapeToSpline() { this->SetShape(SPLINE); }
   virtual const char* GetShapeAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The points that make up the lassoo.  The loop does not
    * have to be closed, the last point will automatically be
@@ -69,18 +58,18 @@ public:
    */
   virtual void SetPoints(vtkPoints* points);
   vtkGetObjectMacro(Points, vtkPoints);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The slice orientation.  The default is 2, which is XY.
    * Other values are 0, which is YZ, and 1, which is XZ.
    */
   vtkGetMacro(SliceOrientation, int);
   vtkSetClampMacro(SliceOrientation, int, 0, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The points for a particular slice.  This will override the
    * points that were set by calling SetPoints() for the slice.
@@ -88,7 +77,7 @@ public:
    */
   virtual void SetSlicePoints(int i, vtkPoints* points);
   virtual vtkPoints* GetSlicePoints(int i);
-  //@}
+  ///@}
 
   /**
    * Remove points from all slices.
@@ -118,4 +107,5 @@ private:
   void operator=(const vtkLassoStencilSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

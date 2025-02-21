@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContextItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkAbstractContextItem
@@ -29,7 +17,9 @@
 
 #include "vtkObject.h"
 #include "vtkRenderingContext2DModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkContext2D;
 class vtkContextMouseEvent;
 class vtkContextKeyEvent;
@@ -37,7 +27,7 @@ class vtkContextScene;
 class vtkContextScenePrivate;
 class vtkVector2f;
 
-class VTKRENDERINGCONTEXT2D_EXPORT vtkAbstractContextItem : public vtkObject
+class VTKRENDERINGCONTEXT2D_EXPORT VTK_MARSHALAUTO vtkAbstractContextItem : public vtkObject
 {
 public:
   vtkTypeMacro(vtkAbstractContextItem, vtkObject);
@@ -71,6 +61,7 @@ public:
    * Add child items to this item. Increments reference count of item.
    * \return the index of the child item.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   vtkIdType AddItem(vtkAbstractContextItem* item);
 
   /**
@@ -78,6 +69,7 @@ public:
    * \param item the item to be removed.
    * \return true on success, false otherwise.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   bool RemoveItem(vtkAbstractContextItem* item);
 
   /**
@@ -91,6 +83,7 @@ public:
    * Get the item at the specified index.
    * \return the item at the specified index (null if index is invalid).
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   vtkAbstractContextItem* GetItem(vtkIdType index);
 
   /**
@@ -251,38 +244,49 @@ public:
    */
   virtual vtkVector2f MapFromScene(const vtkVector2f& point);
 
-  //@{
+  ///@{
   /**
    * Get the visibility of the item (should it be drawn).
    */
-  vtkGetMacro(Visible, bool);
-  //@}
+  virtual bool GetVisible()
+  {
+    vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning Visible of "
+                  << this->Visible);
+    return this->Visible;
+  }
 
-  //@{
+  ///@}
+
+  ///@{
   /**
    * Set the visibility of the item (should it be drawn).
    * Visible by default.
    */
   vtkSetMacro(Visible, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get if the item is interactive (should respond to mouse events).
    */
   vtkGetMacro(Interactive, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set if the item is interactive (should respond to mouse events).
    */
   vtkSetMacro(Interactive, bool);
-  //@}
+  ///@}
 
 protected:
   vtkAbstractContextItem();
   ~vtkAbstractContextItem() override;
+
+  /**
+   * Release cache entries created by this context item.
+   */
+  virtual void ReleaseGraphicsCache();
 
   /**
    * Point to the scene the item is on - can be null.
@@ -316,4 +320,5 @@ private:
   void operator=(const vtkAbstractContextItem&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkContextItem_h

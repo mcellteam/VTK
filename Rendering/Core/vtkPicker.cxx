@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPicker.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPicker.h"
 
 #include "vtkAbstractVolumeMapper.h"
@@ -40,9 +28,10 @@
 #include "vtkVertex.h"
 #include "vtkVolume.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPicker);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with initial tolerance of 1/40th of window. There are no
 // pick methods and picking is performed from the renderer's actors.
 vtkPicker::vtkPicker()
@@ -64,7 +53,7 @@ vtkPicker::vtkPicker()
   this->Transform = vtkTransform::New();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPicker::~vtkPicker()
 {
   this->Actors->Delete();
@@ -73,7 +62,7 @@ vtkPicker::~vtkPicker()
   this->Transform->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Update state when prop3D is picked.
 void vtkPicker::MarkPicked(vtkAssemblyPath* path, vtkProp3D* vtkNotUsed(prop3D),
   vtkAbstractMapper3D* m, double tMin, double mapperPos[3])
@@ -157,7 +146,7 @@ int vtkPicker::Pick3DPoint(double pos[3], vtkRenderer* renderer)
   viewport = renderer->GetViewport();
   if (renderer->GetRenderWindow())
   {
-    int* winSizePtr = renderer->GetRenderWindow()->GetSize();
+    const int* winSizePtr = renderer->GetRenderWindow()->GetSize();
     if (winSizePtr)
     {
       winSize[0] = winSizePtr[0];
@@ -266,8 +255,7 @@ int vtkPicker::Pick3DPoint(double pos[3], vtkRenderer* renderer)
           {
             this->MarkPicked(path, static_cast<vtkProp3D*>(propCandidate), mapper, 0.0, pos);
 
-            // The IsItemPresent method returns "index+1"
-            int prevIndex = this->Prop3Ds->IsItemPresent(prop) - 1;
+            int prevIndex = this->Prop3Ds->IndexOfFirstOccurence(prop);
 
             if (prevIndex < 0)
             {
@@ -303,7 +291,7 @@ int vtkPicker::Pick3DPoint(double pos[3], vtkRenderer* renderer)
   return picked;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPicker::Pick3DPoint(double selectionPt[3], double focalPt[3], vtkRenderer* ren)
 {
   // Initialize the picking process
@@ -321,7 +309,7 @@ int vtkPicker::Pick3DPoint(double selectionPt[3], double focalPt[3], vtkRenderer
   return result;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Perform pick operation with selection point provided. Normally the
 // first two values for the selection point are x-y pixel coordinate, and
 // the third value is =0. Return non-zero if something was successfully picked.
@@ -514,7 +502,7 @@ int vtkPicker::Pick3DInternal(vtkRenderer* renderer, double p1World[4], double p
   viewport = renderer->GetViewport();
   if (renderer->GetRenderWindow())
   {
-    int* winSizePtr = renderer->GetRenderWindow()->GetSize();
+    const int* winSizePtr = renderer->GetRenderWindow()->GetSize();
     if (winSizePtr)
     {
       winSize[0] = winSizePtr[0];
@@ -670,8 +658,7 @@ int vtkPicker::Pick3DInternal(vtkRenderer* renderer, double p1World[4], double p
             p[1] = (1.0 - t) * p1World[1] + t * p2World[1];
             p[2] = (1.0 - t) * p1World[2] + t * p2World[2];
 
-            // The IsItemPresent method returns "index+1"
-            int prevIndex = this->Prop3Ds->IsItemPresent(prop) - 1;
+            int prevIndex = this->Prop3Ds->IndexOfFirstOccurence(prop);
 
             if (prevIndex >= 0)
             {
@@ -715,7 +702,7 @@ int vtkPicker::Pick3DInternal(vtkRenderer* renderer, double p1World[4], double p
   return picked;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Intersect data with specified ray.
 double vtkPicker::IntersectWithLine(const double p1[3], const double p2[3], double tol,
   vtkAssemblyPath* path, vtkProp3D* prop3D, vtkAbstractMapper3D* mapper)
@@ -823,7 +810,7 @@ bool vtkPicker::CalculateRay(
   return (rayFactor > 0.0);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize the picking process.
 void vtkPicker::Initialize()
 {
@@ -844,7 +831,7 @@ void vtkPicker::Initialize()
   this->GlobalTMin = VTK_DOUBLE_MAX;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkActorCollection* vtkPicker::GetActors()
 {
   if (this->Actors->GetNumberOfItems() != this->PickedPositions->GetNumberOfPoints())
@@ -854,7 +841,7 @@ vtkActorCollection* vtkPicker::GetActors()
   return this->Actors;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPicker::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -891,3 +878,4 @@ void vtkPicker::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "MapperPosition: (" << this->MapperPosition[0] << "," << this->MapperPosition[1]
      << "," << this->MapperPosition[2] << ")\n";
 }
+VTK_ABI_NAMESPACE_END

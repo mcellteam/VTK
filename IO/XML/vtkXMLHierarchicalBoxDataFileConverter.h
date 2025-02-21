@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLHierarchicalBoxDataFileConverter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLHierarchicalBoxDataFileConverter
  * @brief   converts older *.vth, *.vthb
@@ -28,6 +16,7 @@
 #include "vtkIOXMLModule.h" // needed for export macro.
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkXMLDataElement;
 
 class VTKIOXML_EXPORT vtkXMLHierarchicalBoxDataFileConverter : public vtkObject
@@ -37,21 +26,21 @@ public:
   vtkTypeMacro(vtkXMLHierarchicalBoxDataFileConverter, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the input filename.
    */
-  vtkSetStringMacro(InputFileName);
-  vtkGetStringMacro(InputFileName);
-  //@}
+  vtkSetFilePathMacro(InputFileName);
+  vtkGetFilePathMacro(InputFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the output filename.
    */
-  vtkSetStringMacro(OutputFileName);
-  vtkGetStringMacro(OutputFileName);
-  //@}
+  vtkSetFilePathMacro(OutputFileName);
+  vtkGetFilePathMacro(OutputFileName);
+  ///@}
 
   /**
    * Converts the input file to new format and writes out the output file.
@@ -70,11 +59,12 @@ protected:
   char* InputFileName;
   char* OutputFileName;
   char* FilePath;
-  vtkSetStringMacro(FilePath);
+  vtkSetFilePathMacro(FilePath);
 
 private:
   vtkXMLHierarchicalBoxDataFileConverter(const vtkXMLHierarchicalBoxDataFileConverter&) = delete;
   void operator=(const vtkXMLHierarchicalBoxDataFileConverter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

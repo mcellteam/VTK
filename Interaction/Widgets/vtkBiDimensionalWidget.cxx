@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBiDimensionalWidget.cxx,v
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBiDimensionalWidget.h"
 #include "vtkBiDimensionalRepresentation.h"
 #include "vtkBiDimensionalRepresentation2D.h"
@@ -27,6 +15,7 @@
 #include "vtkWidgetCallbackMapper.h"
 #include "vtkWidgetEvent.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBiDimensionalWidget);
 
 // The bidimensional widget observes the handles.
@@ -51,7 +40,7 @@ public:
   vtkBiDimensionalWidget* BiDimensionalWidget;
 };
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBiDimensionalWidget::vtkBiDimensionalWidget()
 {
   this->ManagesCursor = 1;
@@ -132,7 +121,7 @@ vtkBiDimensionalWidget::vtkBiDimensionalWidget()
   this->CenterSelected = 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBiDimensionalWidget::~vtkBiDimensionalWidget()
 {
   this->Point1Widget->RemoveObserver(this->BiDimensionalWidgetCallback1);
@@ -152,7 +141,7 @@ vtkBiDimensionalWidget::~vtkBiDimensionalWidget()
   this->BiDimensionalWidgetCallback4->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -162,7 +151,7 @@ void vtkBiDimensionalWidget::CreateDefaultRepresentation()
   vtkBiDimensionalRepresentation::SafeDownCast(this->WidgetRep)->InstantiateHandleRepresentation();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::SetEnabled(int enabling)
 {
   // The handle widgets are not actually enabled until they are placed.
@@ -263,7 +252,7 @@ void vtkBiDimensionalWidget::SetEnabled(int enabling)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBiDimensionalWidget::IsMeasureValid()
 {
   if (this->WidgetState == vtkBiDimensionalWidget::Manipulate ||
@@ -278,7 +267,7 @@ int vtkBiDimensionalWidget::IsMeasureValid()
 }
 
 // The following methods are the callbacks that the bidimensional widget responds to.
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::AddPointAction(vtkAbstractWidget* w)
 {
   vtkBiDimensionalWidget* self = vtkBiDimensionalWidget::SafeDownCast(w);
@@ -394,7 +383,7 @@ void vtkBiDimensionalWidget::AddPointAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::MoveAction(vtkAbstractWidget* w)
 {
   vtkBiDimensionalWidget* self = vtkBiDimensionalWidget::SafeDownCast(w);
@@ -641,7 +630,7 @@ void vtkBiDimensionalWidget::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkBiDimensionalWidget* self = vtkBiDimensionalWidget::SafeDownCast(w);
@@ -685,21 +674,21 @@ void vtkBiDimensionalWidget::EndSelectAction(vtkAbstractWidget* w)
 
 // These are callbacks that are active when the user is manipulating the
 // handles of the angle widget.
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::StartBiDimensionalInteraction()
 {
   this->Superclass::StartInteraction();
   this->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::EndBiDimensionalInteraction()
 {
   this->Superclass::EndInteraction();
   this->InvokeEvent(vtkCommand::EndInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::SetProcessEvents(vtkTypeBool pe)
 {
   this->Superclass::SetProcessEvents(pe);
@@ -710,7 +699,7 @@ void vtkBiDimensionalWidget::SetProcessEvents(vtkTypeBool pe)
   this->Point4Widget->SetProcessEvents(pe);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::SetWidgetStateToStart()
 {
   this->WidgetState = vtkBiDimensionalWidget::Start;
@@ -726,7 +715,7 @@ void vtkBiDimensionalWidget::SetWidgetStateToStart()
   this->ReleaseFocus();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::SetWidgetStateToManipulate()
 {
   this->WidgetState = vtkBiDimensionalWidget::Manipulate;
@@ -742,9 +731,10 @@ void vtkBiDimensionalWidget::SetWidgetStateToManipulate()
   this->ReleaseFocus();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

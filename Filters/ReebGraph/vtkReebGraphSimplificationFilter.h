@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReebGraphSimplificationFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkReebGraphSimplificationFilter
  * @brief   simplify an input Reeb graph.
@@ -26,6 +14,7 @@
 #include "vtkDirectedGraphAlgorithm.h"
 #include "vtkFiltersReebGraphModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkReebGraph;
 class vtkReebGraphSimplificationMetric;
 
@@ -36,14 +25,14 @@ public:
   vtkTypeMacro(vtkReebGraphSimplificationFilter, vtkDirectedGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the persistence threshold for simplification (from 0 to 1).
    * Default value: 0 (no simplification).
    */
   vtkSetMacro(SimplificationThreshold, double);
   vtkGetMacro(SimplificationThreshold, double);
-  //@}
+  ///@}
 
   /**
    * Set the persistence metric evaluation code
@@ -72,4 +61,5 @@ private:
   void operator=(const vtkReebGraphSimplificationFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

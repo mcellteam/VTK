@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSampleImplicitFunctionFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSampleImplicitFunctionFilter.h"
 
 #include "vtkCellData.h"
@@ -27,6 +15,7 @@
 #include "vtkSMPTools.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSampleImplicitFunctionFilter);
 vtkCxxSetObjectMacro(vtkSampleImplicitFunctionFilter, ImplicitFunction, vtkImplicitFunction);
 
@@ -39,12 +28,15 @@ struct SampleDataSet
   vtkDataSet* Input;
   vtkImplicitFunction* Function;
   float* Scalars;
+  vtkSampleImplicitFunctionFilter* Filter;
 
   // Constructor
-  SampleDataSet(vtkDataSet* input, vtkImplicitFunction* imp, float* s)
+  SampleDataSet(
+    vtkDataSet* input, vtkImplicitFunction* imp, float* s, vtkSampleImplicitFunctionFilter* filter)
     : Input(input)
     , Function(imp)
     , Scalars(s)
+    , Filter(filter)
   {
   }
 
@@ -52,8 +44,17 @@ struct SampleDataSet
   {
     double x[3];
     float* n = this->Scalars + ptId;
+    bool isFirst = vtkSMPTools::GetSingleThread();
     for (; ptId < endPtId; ++ptId)
     {
+      if (isFirst)
+      {
+        this->Filter->CheckAbort();
+      }
+      if (this->Filter->GetAbortOutput())
+      {
+        break;
+      }
       this->Input->GetPoint(ptId, x);
       *n++ = this->Function->FunctionValue(x);
     }
@@ -66,13 +67,16 @@ struct SampleDataSetWithGradients
   vtkImplicitFunction* Function;
   float* Scalars;
   float* Gradients;
+  vtkSampleImplicitFunctionFilter* Filter;
 
   // Constructor
-  SampleDataSetWithGradients(vtkDataSet* input, vtkImplicitFunction* imp, float* s, float* g)
+  SampleDataSetWithGradients(vtkDataSet* input, vtkImplicitFunction* imp, float* s, float* g,
+    vtkSampleImplicitFunctionFilter* filter)
     : Input(input)
     , Function(imp)
     , Scalars(s)
     , Gradients(g)
+    , Filter(filter)
   {
   }
 
@@ -81,8 +85,18 @@ struct SampleDataSetWithGradients
     double x[3], g[3];
     float* n = this->Scalars + ptId;
     float* v = this->Gradients + 3 * ptId;
+    bool isFirst = vtkSMPTools::GetSingleThread();
+
     for (; ptId < endPtId; ++ptId)
     {
+      if (isFirst)
+      {
+        this->Filter->CheckAbort();
+      }
+      if (this->Filter->GetAbortOutput())
+      {
+        break;
+      }
       this->Input->GetPoint(ptId, x);
       *n++ = this->Function->FunctionValue(x);
       this->Function->FunctionGradient(x, g);
@@ -95,7 +109,7 @@ struct SampleDataSetWithGradients
 
 } // anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Okay define the VTK class proper
 vtkSampleImplicitFunctionFilter::vtkSampleImplicitFunctionFilter()
 {
@@ -110,7 +124,7 @@ vtkSampleImplicitFunctionFilter::vtkSampleImplicitFunctionFilter()
   this->SetGradientArrayName("Implicit gradients");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSampleImplicitFunctionFilter::~vtkSampleImplicitFunctionFilter()
 {
   this->SetImplicitFunction(nullptr);
@@ -118,7 +132,7 @@ vtkSampleImplicitFunctionFilter::~vtkSampleImplicitFunctionFilter()
   this->SetGradientArrayName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Produce the output data
 int vtkSampleImplicitFunctionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -177,12 +191,12 @@ int vtkSampleImplicitFunctionFilter::RequestData(vtkInformation* vtkNotUsed(requ
   // Threaded execute
   if (this->ComputeGradients)
   {
-    SampleDataSetWithGradients sample(input, this->ImplicitFunction, scalars, gradients);
+    SampleDataSetWithGradients sample(input, this->ImplicitFunction, scalars, gradients, this);
     vtkSMPTools::For(0, numPts, sample);
   }
   else
   {
-    SampleDataSet sample(input, this->ImplicitFunction, scalars);
+    SampleDataSet sample(input, this->ImplicitFunction, scalars, this);
     vtkSMPTools::For(0, numPts, sample);
   }
 
@@ -203,14 +217,14 @@ int vtkSampleImplicitFunctionFilter::RequestData(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSampleImplicitFunctionFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkSampleImplicitFunctionFilter::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -225,14 +239,14 @@ vtkMTimeType vtkSampleImplicitFunctionFilter::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSampleImplicitFunctionFilter::ReportReferences(vtkGarbageCollector* collector)
 {
   this->Superclass::ReportReferences(collector);
   vtkGarbageCollectorReport(collector, this->ImplicitFunction, "ImplicitFunction");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSampleImplicitFunctionFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -268,3 +282,4 @@ void vtkSampleImplicitFunctionFilter::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)" << endl;
   }
 }
+VTK_ABI_NAMESPACE_END

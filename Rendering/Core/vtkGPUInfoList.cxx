@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGPUInfoList.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGPUInfoList.h"
 
@@ -22,14 +10,15 @@
 #include "vtkGPUInfoListArray.h"
 #include <vector>
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkGPUInfoList* vtkGPUInfoList::New()
 {
   vtkObject* ret = vtkGraphicsFactory::CreateInstance("vtkGPUInfoList");
   return static_cast<vtkGPUInfoList*>(ret);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Tells if the operating system has been probed. Initial value is false.
 bool vtkGPUInfoList::IsProbed()
@@ -37,7 +26,7 @@ bool vtkGPUInfoList::IsProbed()
   return this->Probed;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the number of GPUs.
 // \pre probed: IsProbed()
@@ -52,7 +41,7 @@ int vtkGPUInfoList::GetNumberOfGPUs()
   return static_cast<int>(this->Array->v.size());
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return information about GPU i.
 // \pre probed: IsProbed()
@@ -68,7 +57,7 @@ vtkGPUInfo* vtkGPUInfoList::GetGPUInfo(int i)
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Default constructor. Set Probed to false. Set Array to nullptr.
 vtkGPUInfoList::vtkGPUInfoList()
@@ -77,7 +66,7 @@ vtkGPUInfoList::vtkGPUInfoList()
   this->Array = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGPUInfoList::~vtkGPUInfoList()
 {
   if (this->Array != nullptr)
@@ -93,7 +82,7 @@ vtkGPUInfoList::~vtkGPUInfoList()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGPUInfoList::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -112,3 +101,4 @@ void vtkGPUInfoList::PrintSelf(ostream& os, vtkIndent indent)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

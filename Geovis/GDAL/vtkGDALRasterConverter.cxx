@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGDALRasterConverter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-   This software is distributed WITHOUT ANY WARRANTY; without even
-   the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-   PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGDALRasterConverter.h"
 
@@ -42,9 +30,10 @@
 // applied when converting between formats.
 #define INVERT_ROWS 0
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGDALRasterConverter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkGDALRasterConverter::vtkGDALRasterConverterInternal
 {
 public:
@@ -57,7 +46,7 @@ public:
   void FindDataRange(GDALRasterBand* band, double* minValue, double* maxValue);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Translates vtk data type to GDAL data type
 GDALDataType vtkGDALRasterConverter::vtkGDALRasterConverterInternal::ToGDALDataType(int vtkDataType)
 {
@@ -89,7 +78,7 @@ GDALDataType vtkGDALRasterConverter::vtkGDALRasterConverterInternal::ToGDALDataT
   return gdalType;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Copies contents of GDALDataset to vtkDataArray
 template <typename VTK_TYPE>
 void vtkGDALRasterConverter::vtkGDALRasterConverterInternal::CopyToVTK(
@@ -199,7 +188,7 @@ void vtkGDALRasterConverter::vtkGDALRasterConverterInternal::CopyToVTK(
   delete[] buffer;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Iterate overall values in raster band to find min & max
 template <typename VTK_TYPE>
 void vtkGDALRasterConverter::vtkGDALRasterConverterInternal::FindDataRange(
@@ -229,7 +218,7 @@ void vtkGDALRasterConverter::vtkGDALRasterConverterInternal::FindDataRange(
   delete[] buffer;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Copy vtkDataArray contents to GDAL raster bands
 struct StaticCopyToGDAL
 {
@@ -254,7 +243,7 @@ struct StaticCopyToGDAL
         gdalColor.c2 = static_cast<short>(inputColor[1] * 255.0);
         gdalColor.c3 = static_cast<short>(inputColor[2] * 255.0);
         gdalColor.c4 = static_cast<short>(inputColor[3] * 255.0);
-        gdalColorTable.get()->SetColorEntry(i, &gdalColor);
+        gdalColorTable->SetColorEntry(i, &gdalColor);
       }
     }
 
@@ -311,27 +300,27 @@ struct StaticCopyToGDAL
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALRasterConverter::vtkGDALRasterConverter()
 {
   this->Internal = new vtkGDALRasterConverterInternal();
   this->NoDataValue = vtkMath::Nan();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALRasterConverter::~vtkGDALRasterConverter()
 {
   delete this->Internal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterConverter::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
   os << "vtkGDALRasterConverter" << std::endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Copy image data contents, origin, & spacing to GDALDataset
 bool vtkGDALRasterConverter::CopyToGDAL(vtkImageData* input, GDALDataset* output, int flipAxis[3])
 {
@@ -375,11 +364,11 @@ bool vtkGDALRasterConverter::CopyToGDAL(vtkImageData* input, GDALDataset* output
     worker(array, output);
   }
 
-  // Finis
+  // Finish
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 GDALDataset* vtkGDALRasterConverter::CreateGDALDataset(
   vtkImageData* imageData, const char* mapProjection, int flipAxis[3])
 {
@@ -395,7 +384,7 @@ GDALDataset* vtkGDALRasterConverter::CreateGDALDataset(
   return dataset;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGrid* vtkGDALRasterConverter::CreateVTKUniformGrid(GDALDataset* dataset)
 {
   // Set vtk origin & spacing from GDALGeoTransform
@@ -485,7 +474,7 @@ vtkUniformGrid* vtkGDALRasterConverter::CreateVTKUniformGrid(GDALDataset* datase
   return image;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 GDALDataset* vtkGDALRasterConverter::CreateGDALDataset(
   int xDim, int yDim, int vtkDataType, int numberOfBands)
 {
@@ -495,7 +484,7 @@ GDALDataset* vtkGDALRasterConverter::CreateGDALDataset(
   return dataset;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterConverter::CopyBandInfo(GDALDataset* src, GDALDataset* dest)
 {
   // Copy color interpretation and color table info
@@ -515,7 +504,7 @@ void vtkGDALRasterConverter::CopyBandInfo(GDALDataset* src, GDALDataset* dest)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterConverter::SetGDALProjection(GDALDataset* dataset, const char* projectionString)
 {
   // Use OGRSpatialReference to convert to WKT
@@ -528,7 +517,7 @@ void vtkGDALRasterConverter::SetGDALProjection(GDALDataset* dataset, const char*
   CPLFree(wkt);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterConverter::SetGDALGeoTransform(
   GDALDataset* dataset, double origin[2], double spacing[2], int flipAxis[2])
 {
@@ -542,7 +531,7 @@ void vtkGDALRasterConverter::SetGDALGeoTransform(
   dataset->SetGeoTransform(geoTransform);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterConverter::CopyNoDataValues(GDALDataset* src, GDALDataset* dst)
 {
   // Check that raster count is consistent and > 0
@@ -574,7 +563,7 @@ void vtkGDALRasterConverter::CopyNoDataValues(GDALDataset* src, GDALDataset* dst
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterConverter::WriteTifFile(GDALDataset* dataset, const char* filename)
 {
   const char* fmt = "GTiff";
@@ -591,7 +580,7 @@ void vtkGDALRasterConverter::WriteTifFile(GDALDataset* dataset, const char* file
   GDALClose(copy);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGDALRasterConverter::FindDataRange(
   GDALDataset* dataset, int bandId, double* minValue, double* maxValue)
 {
@@ -636,3 +625,4 @@ bool vtkGDALRasterConverter::FindDataRange(
 
   return true;
 }
+VTK_ABI_NAMESPACE_END

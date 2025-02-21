@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageStack.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkImageStack.h"
 #include "vtkAssemblyPath.h"
@@ -22,9 +10,10 @@
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageStack);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStack::vtkImageStack()
 {
   this->Images = vtkImageSliceCollection::New();
@@ -32,7 +21,7 @@ vtkImageStack::vtkImageStack()
   this->ActiveLayer = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStack::~vtkImageStack()
 {
   if (this->Images)
@@ -54,7 +43,7 @@ vtkImageStack::~vtkImageStack()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageSlice* vtkImageStack::GetActiveImage()
 {
   vtkImageSlice* activeImage = nullptr;
@@ -74,10 +63,10 @@ vtkImageSlice* vtkImageStack::GetActiveImage()
   return activeImage;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::AddImage(vtkImageSlice* prop)
 {
-  if (!this->Images->IsItemPresent(prop) && !vtkImageStack::SafeDownCast(prop))
+  if (this->Images->IndexOfFirstOccurence(prop) < 0 && !vtkImageStack::SafeDownCast(prop))
   {
     this->Images->AddItem(prop);
     prop->AddConsumer(this);
@@ -85,10 +74,10 @@ void vtkImageStack::AddImage(vtkImageSlice* prop)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::RemoveImage(vtkImageSlice* prop)
 {
-  if (this->Images->IsItemPresent(prop))
+  if (this->Images->IndexOfFirstOccurence(prop) >= 0)
   {
     prop->RemoveConsumer(this);
     this->Images->RemoveItem(prop);
@@ -96,13 +85,27 @@ void vtkImageStack::RemoveImage(vtkImageSlice* prop)
   }
 }
 
-//----------------------------------------------------------------------------
-int vtkImageStack::HasImage(vtkImageSlice* prop)
+//------------------------------------------------------------------------------
+vtkTypeBool vtkImageStack::HasImage(vtkImageSlice* prop)
 {
-  return this->Images->IsItemPresent(prop);
+  int index = this->Images->IndexOfFirstOccurence(prop);
+
+  // VTK_DEPRECATED_IN_9_5_0()
+  // Remove "#if" block and keep "#else" when removing 9.5.0 deprecations
+#if defined(VTK_LEGACY_REMOVE)
+  return (index >= 0);
+#else
+  // VTK_DEPRECATED_IN_9_5_0()
+  // Keep "#if" block and remove this "#else" when removing 9.5.0 deprecations
+
+  // The implementation used to call IsItemPresent(), which, despite its name,
+  // returned an index, not a boolean.  Preserve the old behaviour.  0 means
+  // the item is not found, otherwise return the index + 1.
+  return index + 1;
+#endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::GetImages(vtkPropCollection* vc)
 {
   vtkCollectionSimpleIterator pit;
@@ -114,7 +117,7 @@ void vtkImageStack::GetImages(vtkPropCollection* vc)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::ShallowCopy(vtkProp* prop)
 {
   vtkImageStack* v = vtkImageStack::SafeDownCast(prop);
@@ -133,16 +136,17 @@ void vtkImageStack::ShallowCopy(vtkProp* prop)
   }
 
   // Now do prop superclass (NOT vtkImageSlice)
+  // NOLINTNEXTLINE(bugprone-parent-virtual-call)
   this->vtkProp3D::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::SetProperty(vtkImageProperty*)
 {
   // do nothing
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageProperty* vtkImageStack::GetProperty()
 {
   // Get the property with the active layer number
@@ -162,13 +166,13 @@ vtkImageProperty* vtkImageStack::GetProperty()
   return this->Property;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::SetMapper(vtkImageMapper3D*)
 {
   // do nothing
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageMapper3D* vtkImageStack::GetMapper()
 {
   // Get the mapper with the active layer number
@@ -181,7 +185,7 @@ vtkImageMapper3D* vtkImageStack::GetMapper()
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkImageStack::GetBounds()
 {
   this->UpdatePaths();
@@ -239,7 +243,7 @@ double* vtkImageStack::GetBounds()
   return this->Bounds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkImageStack::HasTranslucentPolygonalGeometry()
 {
@@ -257,7 +261,7 @@ vtkTypeBool vtkImageStack::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Assembly-like behavior
 void vtkImageStack::PokeMatrices(vtkMatrix4x4* matrix)
 {
@@ -293,7 +297,7 @@ void vtkImageStack::PokeMatrices(vtkMatrix4x4* matrix)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStack::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   vtkDebugMacro(<< "vtkImageStack::RenderOpaqueGeometry");
@@ -357,7 +361,7 @@ int vtkImageStack::RenderOpaqueGeometry(vtkViewport* viewport)
   return rendered;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStack::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
 {
   vtkDebugMacro(<< "vtkImageStack::RenderTranslucentPolygonalGeometry");
@@ -417,7 +421,7 @@ int vtkImageStack::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
   return rendered;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStack::RenderOverlay(vtkViewport* viewport)
 {
   vtkDebugMacro(<< "vtkImageStack::RenderOverlay");
@@ -477,7 +481,7 @@ int vtkImageStack::RenderOverlay(vtkViewport* viewport)
   return rendered;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::ReleaseGraphicsResources(vtkWindow* win)
 {
   vtkCollectionSimpleIterator pit;
@@ -489,7 +493,7 @@ void vtkImageStack::ReleaseGraphicsResources(vtkWindow* win)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImageStack::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -508,7 +512,7 @@ vtkMTimeType vtkImageStack::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImageStack::GetRedrawMTime()
 {
   // Just call GetMTime on ourselves, not GetRedrawMTime
@@ -528,14 +532,14 @@ vtkMTimeType vtkImageStack::GetRedrawMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::InitPathTraversal()
 {
   this->UpdatePaths();
   this->Paths->InitTraversal();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAssemblyPath* vtkImageStack::GetNextPath()
 {
   if (this->Paths)
@@ -545,14 +549,14 @@ vtkAssemblyPath* vtkImageStack::GetNextPath()
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStack::GetNumberOfPaths()
 {
   this->UpdatePaths();
   return this->Paths->GetNumberOfItems();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::UpdatePaths()
 {
   if (this->GetMTime() > this->PathTime ||
@@ -585,7 +589,7 @@ void vtkImageStack::UpdatePaths()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::BuildPaths(vtkAssemblyPaths* paths, vtkAssemblyPath* path)
 {
   // the path consists only of the active image
@@ -599,7 +603,7 @@ void vtkImageStack::BuildPaths(vtkAssemblyPaths* paths, vtkAssemblyPath* path)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStack::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -608,3 +612,4 @@ void vtkImageStack::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ActiveLayer: " << this->ActiveLayer << "\n";
   os << indent << "ActiveImage: " << this->GetActiveImage() << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImporter
  * @brief   importer abstract class
@@ -45,14 +33,22 @@
 #ifndef vtkImporter_h
 #define vtkImporter_h
 
+#include "vtkDataAssembly.h"   // for vtkDataAssembly
 #include "vtkIOImportModule.h" // For export macro
+#include "vtkSmartPointer.h"   // for vtkSmartPointer
+
 #include "vtkObject.h"
 
-#include <string>
+#include <string> // for std::string
 
-class vtkDataArray;
+VTK_ABI_NAMESPACE_BEGIN
+class vtkAbstractArray;
+class vtkActorCollection;
+class vtkCollection;
 class vtkDataSet;
 class vtkDoubleArray;
+class vtkInformationIntegerKey;
+class vtkLightCollection;
 class vtkRenderWindow;
 class vtkRenderer;
 
@@ -62,15 +58,35 @@ public:
   vtkTypeMacro(vtkImporter, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the renderer that contains the imported actors, cameras and
    * lights.
    */
   vtkGetObjectMacro(Renderer, vtkRenderer);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Get the hierarchy of actors, cameras and lights in the renderer.
+   * Implementations should strive to pack the hierarchy information from
+   * the file in to a vtkDataAssembly using node names from the file.
+   */
+  vtkGetObjectMacro(SceneHierarchy, vtkDataAssembly);
+  ///@}
+
+  ///@{
+  /**
+   * Get collection of actors, cameras and lights that were imported by
+   * this importer. Note that this may return empty collections
+   * if not used in the concrete importer.
+   */
+  vtkActorCollection* GetImportedActors() { return this->ActorCollection.Get(); }
+  vtkCollection* GetImportedCameras() { return this->CameraCollection.Get(); }
+  vtkLightCollection* GetImportedLights() { return this->LightCollection.Get(); }
+  ///@}
+
+  ///@{
   /**
    * Set the vtkRenderWindow to contain the imported actors, cameras and
    * lights, If no vtkRenderWindow is set, one will be created and can be
@@ -81,21 +97,26 @@ public:
    */
   virtual void SetRenderWindow(vtkRenderWindow*);
   vtkGetObjectMacro(RenderWindow, vtkRenderWindow);
-  //@}
+  ///@}
 
-  //@{
   /**
-   * Import the actors, cameras, lights and properties into a vtkRenderWindow.
+   * Import the actors, cameras, lights and properties into a vtkRenderWindow
+   * and return if it was successful of not.
    */
-  void Read();
-  void Update() { this->Read(); }
-  //@}
+  VTK_UNBLOCKTHREADS
+  bool Update();
+
+  /**
+   * Import the actors, cameras, lights and properties into a vtkRenderWindow
+   */
+  VTK_DEPRECATED_IN_9_4_0("This method is deprecated, please use Update instead")
+  void Read() { this->Update(); };
 
   /**
    * Recover a printable string that let importer implementation
    * Describe their outputs.
    */
-  virtual std::string GetOutputsDescription() { return ""; };
+  virtual std::string GetOutputsDescription() { return ""; }
 
   /**
    * Get the number of available animations.
@@ -107,30 +128,70 @@ public:
    * Get the name of an animation.
    * Return an empty if not provided by implementation.
    */
-  virtual std::string GetAnimationName(vtkIdType vtkNotUsed(animationIndex)) { return ""; };
+  virtual std::string GetAnimationName(vtkIdType vtkNotUsed(animationIndex)) { return ""; }
 
-  //@{
+  ///@{
   /**
    * Enable/Disable/Get the status of specific animations
    */
-  virtual void EnableAnimation(vtkIdType vtkNotUsed(animationIndex)){};
-  virtual void DisableAnimation(vtkIdType vtkNotUsed(animationIndex)){};
-  virtual bool IsAnimationEnabled(vtkIdType vtkNotUsed(animationIndex)) { return false; };
-  //@}
+  virtual void EnableAnimation(vtkIdType vtkNotUsed(animationIndex)) {}
+  virtual void DisableAnimation(vtkIdType vtkNotUsed(animationIndex)) {}
+  virtual bool IsAnimationEnabled(vtkIdType vtkNotUsed(animationIndex)) { return false; }
+  ///@}
 
   /**
-   * Get temporal informations for the currently enabled animations.
-   * the three return arguments can be defined or not.
-   * Return true in case of success, false otherwise.
+   * Get the number of available cameras.
+   * Return 0 if not provided by implementation.
    */
-  virtual bool GetTemporalInformation(
-    vtkIdType animationIndex, int& nbTimeSteps, double timeRange[2], vtkDoubleArray* timeSteps);
+  virtual vtkIdType GetNumberOfCameras() { return 0; }
 
   /**
-   * Import the actors, camera, lights and properties at a specific timestep.
-   * If not reimplemented, only call Update().
+   * Get the name of a camera.
+   * Return an empty string if not provided by implementation.
    */
-  virtual void UpdateTimeStep(double timeStep);
+  virtual std::string GetCameraName(vtkIdType vtkNotUsed(camIndex)) { return ""; }
+
+  /**
+   * Enable a specific camera.
+   * If a negative index is provided, no camera from the importer is used.
+   * Does nothing if not provided by implementation.
+   */
+  virtual void SetCamera(vtkIdType vtkNotUsed(camIndex)) {}
+
+  /**
+   * Get temporal information for the provided animationIndex and frameRate.
+   * This implementation return false, but concrete class implementation
+   * behavior is as follows.
+   * frameRate is used to define the number of frames for one second of simulation,
+   * set to zero if timeSteps are not needed.
+   * If animation is present in the dataset, timeRange should be set by this method, return true.
+   * If animation is present and frameRate > 0, nbTimeSteps and timeSteps should also be set, return
+   * true. If animation is not present, return false.
+   */
+  virtual bool GetTemporalInformation(vtkIdType animationIndex, double frameRate, int& nbTimeSteps,
+    double timeRange[2], vtkDoubleArray* timeSteps);
+
+  /**
+   * Import the actors, camera, lights and properties at a specific time value.
+   */
+  VTK_DEPRECATED_IN_9_4_0("This method is deprecated, please use UpdateAtTimeValue instead")
+  virtual void UpdateTimeStep(double timeValue);
+
+  /**
+   * Import the actors, camera, lights and properties at a specific time value.
+   * Returns if successful or not.
+   * If not reimplemented, only call Update() and return its output.
+   */
+  virtual bool UpdateAtTimeValue(double timeValue);
+
+  ///@{
+  /**
+   * Enable/Disable armature actors import if supported.
+   */
+  vtkSetMacro(ImportArmature, bool);
+  vtkGetMacro(ImportArmature, bool);
+  vtkBooleanMacro(ImportArmature, bool);
+  ///@}
 
 protected:
   vtkImporter();
@@ -142,18 +203,52 @@ protected:
   virtual void ImportCameras(vtkRenderer*) {}
   virtual void ImportLights(vtkRenderer*) {}
   virtual void ImportProperties(vtkRenderer*) {}
+  virtual void ReadData();
+
+  enum class UpdateStatusEnum : bool
+  {
+    SUCCESS,
+    FAILURE
+  };
+
+  /**
+   * Set the update status.
+   * Importer implementation should set this during Import
+   * if import fails for any reason.
+   * vtkImporter::Update set this to SUCCESS on call.
+   * Default is SUCCESS;
+   */
+  void SetUpdateStatus(UpdateStatusEnum updateStatus)
+  {
+    this->UpdateStatus = updateStatus;
+    this->Modified();
+  }
+
+  /**
+   * Get the update status
+   */
+  UpdateStatusEnum GetUpdateStatus() { return this->UpdateStatus; }
 
   static std::string GetDataSetDescription(vtkDataSet* ds, vtkIndent indent);
-  static std::string GetArrayDescription(vtkDataArray* array, vtkIndent indent);
+  static std::string GetArrayDescription(vtkAbstractArray* array, vtkIndent indent);
 
-  vtkRenderer* Renderer;
-  vtkRenderWindow* RenderWindow;
+  vtkRenderer* Renderer = nullptr;
+  vtkRenderWindow* RenderWindow = nullptr;
+  vtkSmartPointer<vtkDataAssembly> SceneHierarchy;
 
-  virtual void ReadData();
+  vtkNew<vtkActorCollection> ActorCollection;
+  vtkNew<vtkCollection> CameraCollection;
+  vtkNew<vtkLightCollection> LightCollection;
 
 private:
   vtkImporter(const vtkImporter&) = delete;
   void operator=(const vtkImporter&) = delete;
+
+  bool SetAndCheckUpdateStatus();
+
+  UpdateStatusEnum UpdateStatus = UpdateStatusEnum::SUCCESS;
+  bool ImportArmature = false;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

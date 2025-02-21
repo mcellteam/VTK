@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphToPolyData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkGraphToPolyData
  * @brief   convert a vtkGraph to vtkPolyData
@@ -24,7 +8,7 @@
  *
  * Converts a vtkGraph to a vtkPolyData.  This assumes that the points
  * of the graph have already been filled (perhaps by vtkGraphLayout),
- * and coverts all the edge of the graph into lines in the polydata.
+ * and converts all the edge of the graph into lines in the polydata.
  * The vertex data is passed along to the point data, and the edge data
  * is passed along to the cell data.
  *
@@ -38,6 +22,7 @@
 #include "vtkFiltersSourcesModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSSOURCES_EXPORT vtkGraphToPolyData : public vtkPolyDataAlgorithm
 {
 public:
@@ -45,7 +30,7 @@ public:
   vtkTypeMacro(vtkGraphToPolyData, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Create a second output containing points and orientation vectors
    * for drawing arrows or other glyphs on edges.  This output should be
@@ -57,9 +42,9 @@ public:
   vtkSetMacro(EdgeGlyphOutput, bool);
   vtkGetMacro(EdgeGlyphOutput, bool);
   vtkBooleanMacro(EdgeGlyphOutput, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The position of the glyph point along the edge.
    * 0 puts a glyph point at the source of each edge.
@@ -69,11 +54,11 @@ public:
    */
   vtkSetMacro(EdgeGlyphPosition, double);
   vtkGetMacro(EdgeGlyphPosition, double);
-  //@}
+  ///@}
 
 protected:
   vtkGraphToPolyData();
-  ~vtkGraphToPolyData() override {}
+  ~vtkGraphToPolyData() override = default;
 
   bool EdgeGlyphOutput;
   double EdgeGlyphPosition;
@@ -95,4 +80,5 @@ private:
   void operator=(const vtkGraphToPolyData&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

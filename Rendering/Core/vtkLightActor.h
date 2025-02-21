@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLightActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLightActor
  * @brief   a cone and a frustum to represent a spotlight.
@@ -40,6 +28,7 @@
 #include "vtkProp3D.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLight;
 class vtkConeSource;
 class vtkPolyDataMapper;
@@ -56,15 +45,15 @@ public:
   vtkTypeMacro(vtkLightActor, vtkProp3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The spotlight to represent. Initial value is NULL.
    */
   void SetLight(vtkLight* light);
   vtkGetObjectMacro(Light, vtkLight);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the location of the near and far clipping planes along the
    * direction of projection.  Both of these values must be positive.
@@ -73,16 +62,16 @@ public:
   void SetClippingRange(double dNear, double dFar);
   void SetClippingRange(const double a[2]);
   vtkGetVector2Macro(ClippingRange, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get properties of the different actors used to represent
    * the camera
    */
   vtkProperty* GetConeProperty();
   vtkProperty* GetFrustumProperty();
-  //@}
+  ///@}
 
   /**
    * Support the standard render methods.
@@ -134,4 +123,5 @@ private:
   void operator=(const vtkLightActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

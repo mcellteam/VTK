@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnsignedDistance.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkUnsignedDistance
  * @brief   compute unsigned (i.e., non-negative) distances from an input point cloud
@@ -39,7 +27,7 @@
  * This filter has one other unusual capability: it is possible to append
  * data in a sequence of operations to generate a single output. This is
  * useful when you have multiple point clouds (e.g., possibly from multiple
- * acqusition scans) and want to incrementally accumulate all the data.
+ * acquisition scans) and want to incrementally accumulate all the data.
  * However, the user must be careful to either specify the Bounds or
  * order the input such that the bounds of the first input completely
  * contains all other input data.  This is because the geometry and topology
@@ -69,13 +57,14 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 class vtkAbstractPointLocator;
 
 class VTKFILTERSPOINTS_EXPORT vtkUnsignedDistance : public vtkImageAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiating the class, providing type information,
    * and printing.
@@ -83,27 +72,27 @@ public:
   static vtkUnsignedDistance* New();
   vtkTypeMacro(vtkUnsignedDistance, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the i-j-k dimensions on which to computer the distance function.
    */
   vtkGetVectorMacro(Dimensions, int, 3);
   void SetDimensions(int i, int j, int k);
   void SetDimensions(const int dim[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get the region in space in which to perform the sampling. If
    * not specified, it will be computed automatically.
    */
   vtkSetVector6Macro(Bounds, double);
   vtkGetVectorMacro(Bounds, double, 6);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control how the model bounds are computed. If the ivar AdjustBounds
    * is set, then the bounds specified (or computed automatically) is modified
@@ -113,9 +102,9 @@ public:
   vtkSetMacro(AdjustBounds, vtkTypeBool);
   vtkGetMacro(AdjustBounds, vtkTypeBool);
   vtkBooleanMacro(AdjustBounds, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the amount to grow the model bounds (if the ivar AdjustBounds
    * is set). The value is a fraction of the maximum length of the sides
@@ -123,18 +112,18 @@ public:
    */
   vtkSetClampMacro(AdjustDistance, double, -1.0, 1.0);
   vtkGetMacro(AdjustDistance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get the radius of influence of each point. Smaller values
    * generally improve performance markedly.
    */
   vtkSetClampMacro(Radius, double, 0.0, VTK_FLOAT_MAX);
   vtkGetMacro(Radius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a point locator. By default a vtkStaticPointLocator is
    * used. The locator performs efficient searches to locate points
@@ -142,9 +131,9 @@ public:
    */
   void SetLocator(vtkAbstractPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkAbstractPointLocator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The outer boundary of the volume can be assigned a particular value
    * after distances are computed. This can be used to close or "cap" all
@@ -153,9 +142,9 @@ public:
   vtkSetMacro(Capping, vtkTypeBool);
   vtkGetMacro(Capping, vtkTypeBool);
   vtkBooleanMacro(Capping, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the capping value to use. The CapValue is also used as an
    * initial distance value at each point in the dataset. By default, the
@@ -163,9 +152,9 @@ public:
    */
   vtkSetMacro(CapValue, double);
   vtkGetMacro(CapValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the desired output scalar type. Currently only real types are
    * supported. By default, VTK_FLOAT scalars are created.
@@ -174,7 +163,7 @@ public:
   vtkGetMacro(OutputScalarType, int);
   void SetOutputScalarTypeToFloat() { this->SetOutputScalarType(VTK_FLOAT); }
   void SetOutputScalarTypeToDouble() { this->SetOutputScalarType(VTK_DOUBLE); }
-  //@}
+  ///@}
 
   /**
    * Initialize the filter for appending data. You must invoke the
@@ -228,4 +217,5 @@ private:
   void operator=(const vtkUnsignedDistance&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkConnectivityFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkConnectivityFilter
  * @brief   extract data based on geometric connectivity
@@ -51,7 +39,7 @@
  * or number of cells.
  *
  * @sa
- * vtkPolyDataConnectivityFilter
+ * vtkPolyDataConnectivityFilter, vtkGenerateRegionIds
  */
 
 #ifndef vtkConnectivityFilter_h
@@ -60,6 +48,8 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkPointSetAlgorithm.h"
 
+#include "vtkNew.h" // for member
+
 #define VTK_EXTRACT_POINT_SEEDED_REGIONS 1
 #define VTK_EXTRACT_CELL_SEEDED_REGIONS 2
 #define VTK_EXTRACT_SPECIFIED_REGIONS 3
@@ -67,6 +57,7 @@
 #define VTK_EXTRACT_ALL_REGIONS 5
 #define VTK_EXTRACT_CLOSEST_POINT_REGION 6
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkDataSet;
 class vtkFloatArray;
@@ -86,7 +77,7 @@ public:
    */
   static vtkConnectivityFilter* New();
 
-  //@{
+  ///@{
   /**
    * Turn on/off connectivity based on scalar value. If on, cells are connected
    * only if they share points AND one of the cells scalar values falls in the
@@ -95,17 +86,17 @@ public:
   vtkSetMacro(ScalarConnectivity, vtkTypeBool);
   vtkGetMacro(ScalarConnectivity, vtkTypeBool);
   vtkBooleanMacro(ScalarConnectivity, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scalar range to use to extract cells based on scalar connectivity.
    */
   vtkSetVector2Macro(ScalarRange, double);
   vtkGetVector2Macro(ScalarRange, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the extraction of connected surfaces.
    */
@@ -131,7 +122,7 @@ public:
   }
   void SetExtractionModeToAllRegions() { this->SetExtractionMode(VTK_EXTRACT_ALL_REGIONS); }
   const char* GetExtractionModeAsString();
-  //@}
+  ///@}
 
   /**
    * Initialize list of point ids/cell ids used to seed regions.
@@ -163,28 +154,28 @@ public:
    */
   void DeleteSpecifiedRegion(int id);
 
-  //@{
+  ///@{
   /**
    * Use to specify x-y-z point coordinates when extracting the region
    * closest to a specified point.
    */
   vtkSetVector3Macro(ClosestPoint, double);
   vtkGetVectorMacro(ClosestPoint, double, 3);
-  //@}
+  ///@}
 
   /**
    * Obtain the number of connected regions.
    */
   int GetNumberOfExtractedRegions();
 
-  //@{
+  ///@{
   /**
    * Turn on/off the coloring of connected regions.
    */
   vtkSetMacro(ColorRegions, vtkTypeBool);
   vtkGetMacro(ColorRegions, vtkTypeBool);
   vtkBooleanMacro(ColorRegions, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Enumeration of the various ways to assign RegionIds when
@@ -197,15 +188,15 @@ public:
     CELL_COUNT_ASCENDING
   };
 
-  //@{
+  ///@{
   /**
    * Set/get mode controlling how RegionIds are assigned.
    */
-  //@}
+  ///@}
   vtkSetMacro(RegionIdAssignmentMode, int);
   vtkGetMacro(RegionIdAssignmentMode, int);
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -213,67 +204,107 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set/get the activation of the compression for the output arrays.
+   * When on, the output arrays is compressed to optimize memory.
+   * This is used only when ColorRegions is true.
+   * Default is true.
+   */
+  vtkSetMacro(CompressArrays, bool);
+  vtkGetMacro(CompressArrays, bool);
+  vtkBooleanMacro(CompressArrays, bool);
+  ///@}
 
 protected:
   vtkConnectivityFilter();
   ~vtkConnectivityFilter() override;
 
+  ///@{
+  /**
+   * Usual vtkAlgorithm method implementations.
+   */
   vtkTypeBool ProcessRequest(
     vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-
-  // Usual data generation method
   int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  // Requires a vtkDataSet
   int FillInputPortInformation(int port, vtkInformation* info) override;
+  // Outputs a vtkDataSet
   int FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info) override;
+  ///@}
 
-  vtkTypeBool ColorRegions; // boolean turns on/off scalar gen for separate regions
-  int ExtractionMode;       // how to extract regions
-  int OutputPointsPrecision;
-  vtkIdList* Seeds;              // id's of points or cells used to seed regions
-  vtkIdList* SpecifiedRegionIds; // regions specified for extraction
-  vtkIdTypeArray* RegionSizes;   // size (in cells) of each region extracted
+  /**
+   * Add regions ids array to output dataset.
+   * Compress arrays if CompressArrays is on.
+   */
+  void AddRegionsIds(vtkDataSet* output, vtkDataArray* pointArray, vtkDataArray* cellArray);
 
-  double ClosestPoint[3];
+  // boolean turns on/off scalar gen for separate regions
+  vtkTypeBool ColorRegions = 0;
+  // how to extract regions
+  int ExtractionMode = VTK_EXTRACT_LARGEST_REGION;
+  int OutputPointsPrecision = vtkAlgorithm::DEFAULT_PRECISION;
+  // id's of points or cells used to seed regions
+  vtkIdList* Seeds = nullptr;
+  // regions specified for extraction
+  vtkIdList* SpecifiedRegionIds = nullptr;
+  // size (in cells) of each region extracted
+  vtkIdTypeArray* RegionSizes = nullptr;
 
-  vtkTypeBool ScalarConnectivity;
-  double ScalarRange[2];
+  double ClosestPoint[3] = { 0, 0, 0 };
 
-  int RegionIdAssignmentMode;
+  vtkTypeBool ScalarConnectivity = 0;
+  double ScalarRange[2] = { 0, 1 };
 
+  int RegionIdAssignmentMode = UNSPECIFIED;
+
+  /**
+   * Mark current cell as visited and assign region number.  Note:
+   * traversal occurs across shared vertices.
+   */
   void TraverseAndMark(vtkDataSet* input);
 
   void OrderRegionIds(vtkIdTypeArray* pointRegionIds, vtkIdTypeArray* cellRegionIds);
 
-private:
-  // used to support algorithm execution
-  vtkFloatArray* CellScalars;
-  vtkIdList* NeighborCellPointIds;
-  vtkIdType* Visited;
-  vtkIdType* PointMap;
-  vtkIdTypeArray* NewScalars;
-  vtkIdTypeArray* NewCellScalars;
-  vtkIdType RegionNumber;
-  vtkIdType PointNumber;
-  vtkIdType NumCellsInRegion;
-  vtkDataArray* InScalars;
-  vtkIdList* Wave;
-  vtkIdList* Wave2;
-  vtkIdList* PointIds;
-  vtkIdList* CellIds;
+  /**
+   * Compress the given array, returning a vtkImplicitArray.
+   * Useful for RegionId arrays, that often have a small amount of different values.
+   *
+   * see ColorRegions.
+   * Uses vtkToImplicitArrayFilter and relevant strategy.
+   */
+  vtkSmartPointer<vtkDataArray> CompressWithImplicit(vtkDataArray* array);
 
 private:
+  // used to support algorithm execution
+  vtkNew<vtkFloatArray> CellScalars;
+  vtkNew<vtkIdList> NeighborCellPointIds;
+  vtkIdType* Visited = nullptr;
+  vtkIdType* PointMap = nullptr;
+  vtkNew<vtkIdTypeArray> NewScalars;
+  vtkNew<vtkIdTypeArray> NewCellScalars;
+  vtkIdType RegionNumber = 0;
+  vtkIdType PointNumber = 0;
+  vtkIdType NumCellsInRegion = 0;
+  vtkDataArray* InScalars = nullptr;
+  vtkIdList* Wave = nullptr;
+  vtkIdList* Wave2 = nullptr;
+  vtkIdList* PointIds = nullptr;
+  vtkIdList* CellIds = nullptr;
+  bool CompressArrays = true;
+
   vtkConnectivityFilter(const vtkConnectivityFilter&) = delete;
   void operator=(const vtkConnectivityFilter&) = delete;
 };
 
-//@{
 /**
  * Return the method of extraction as a string.
  */
-inline const char* vtkConnectivityFilter::GetExtractionModeAsString(void)
+inline const char* vtkConnectivityFilter::GetExtractionModeAsString()
 {
   if (this->ExtractionMode == VTK_EXTRACT_POINT_SEEDED_REGIONS)
   {
@@ -300,6 +331,6 @@ inline const char* vtkConnectivityFilter::GetExtractionModeAsString(void)
     return "ExtractLargestRegion";
   }
 }
-//@}
 
+VTK_ABI_NAMESPACE_END
 #endif

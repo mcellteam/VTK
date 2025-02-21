@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestDataArrayRange.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkDataArrayRange.h"
 
@@ -19,11 +7,14 @@
 #include "vtkDataArray.h"
 #include "vtkFloatArray.h"
 #include "vtkSOADataArrayTemplate.h"
+#include "vtkSmartPointer.h"
+#include "vtkTypeInt32Array.h"
 #ifdef VTK_USE_SCALED_SOA_ARRAYS
 #include "vtkScaledSOADataArrayTemplate.h"
 #endif
 
 #include <algorithm>
+#include <cstdint>
 #include <numeric>
 #include <type_traits>
 #include <utility>
@@ -47,18 +38,24 @@ std::size_t NumErrors = 0;
 
 // Various properties required by random access iterators:
 #define CHECK_ITER_TYPE(type)                                                                      \
-  static_assert(std::is_default_constructible<Iter>::value,                                        \
-    "Iterator types must be default constructable at " LOCATION());                                \
-  static_assert(std::is_copy_constructible<Iter>::value,                                           \
-    "Iterator types must be copy constructible at " LOCATION());                                   \
-  static_assert(std::is_copy_assignable<Iter>::value,                                              \
-    "Iterator types must be copy assignable at " LOCATION());                                      \
-  static_assert(                                                                                   \
-    std::is_destructible<Iter>::value, "Iterator types must be destructible at " LOCATION());
+  do                                                                                               \
+  {                                                                                                \
+    static_assert(std::is_default_constructible<Iter>::value,                                      \
+      "Iterator types must be default constructable at " LOCATION());                              \
+    static_assert(std::is_copy_constructible<Iter>::value,                                         \
+      "Iterator types must be copy constructible at " LOCATION());                                 \
+    static_assert(std::is_copy_assignable<Iter>::value,                                            \
+      "Iterator types must be copy assignable at " LOCATION());                                    \
+    static_assert(                                                                                 \
+      std::is_destructible<Iter>::value, "Iterator types must be destructible at " LOCATION());    \
+  } while (false)
 
 #define LOG_ERROR(message)                                                                         \
-  ++NumErrors;                                                                                     \
-  std::cerr << NumErrors << ": " << message << "\n"
+  do                                                                                               \
+  {                                                                                                \
+    ++NumErrors;                                                                                   \
+    std::cerr << NumErrors << ": " << message << "\n";                                             \
+  } while (false)
 
 #define CHECK_TRUE(expr)                                                                           \
   do                                                                                               \
@@ -153,7 +150,7 @@ void TestIota(Range range)
 // TupleRange:
 //==============================================================================
 //==============================================================================
-template <typename ArrayType>
+template <typename ArrayType, typename ForceValueTypeForVtkDataArray>
 struct UnitTestValueRangeAPI
 {
   static constexpr vtk::ComponentIdType NumComps = 3;
@@ -167,16 +164,20 @@ struct UnitTestValueRangeAPI
     array->SetNumberOfComponents(NumComps);
 
     this->TestEmptyRange(vtk::DataArrayValueRange(array));
-    this->TestEmptyRange(vtk::DataArrayValueRange(da));
-    this->TestEmptyRange(vtk::DataArrayValueRange<NumComps>(array));
-    this->TestEmptyRange(vtk::DataArrayValueRange<NumComps>(da));
+    this->TestEmptyRange(
+      vtk::DataArrayValueRange<vtk::detail::DynamicTupleSize, ForceValueTypeForVtkDataArray>(da));
+    this->TestEmptyRange(vtk::DataArrayValueRange(array));
+    this->TestEmptyRange(vtk::DataArrayValueRange<NumComps, ForceValueTypeForVtkDataArray>(da));
 
     array->SetNumberOfTuples(this->NumTuples);
 
     this->TestEmptyRange(vtk::DataArrayValueRange(array, 4, 4));
-    this->TestEmptyRange(vtk::DataArrayValueRange(da, 4, 4));
-    this->TestEmptyRange(vtk::DataArrayValueRange<NumComps>(array, 4, 4));
-    this->TestEmptyRange(vtk::DataArrayValueRange<NumComps>(da, 4, 4));
+    this->TestEmptyRange(
+      vtk::DataArrayValueRange<vtk::detail::DynamicTupleSize, ForceValueTypeForVtkDataArray>(
+        da, 4, 4));
+    this->TestEmptyRange(vtk::DataArrayValueRange(array, 4, 4));
+    this->TestEmptyRange(
+      vtk::DataArrayValueRange<NumComps, ForceValueTypeForVtkDataArray>(da, 4, 4));
 
     FillValueRangeIota(vtk::DataArrayValueRange<NumComps>(array));
 
@@ -188,7 +189,8 @@ struct UnitTestValueRangeAPI
       DispatchRangeTests<ArrayType, vtk::detail::DynamicTupleSize>(range, array, 0, NumValues);
     }
     { // Full, dynamic-size, generic-typed range
-      auto range = vtk::DataArrayValueRange(da);
+      auto range =
+        vtk::DataArrayValueRange<vtk::detail::DynamicTupleSize, ForceValueTypeForVtkDataArray>(da);
       DispatchRangeTests<vtkDataArray, vtk::detail::DynamicTupleSize>(range, array, 0, NumValues);
     }
     { // Full, fixed-size, real typed range
@@ -196,7 +198,7 @@ struct UnitTestValueRangeAPI
       DispatchRangeTests<ArrayType, NumComps>(range, array, 0, NumValues);
     }
     { // Full, fixed-size, generic-typed range
-      auto range = vtk::DataArrayValueRange<NumComps>(da);
+      auto range = vtk::DataArrayValueRange<NumComps, ForceValueTypeForVtkDataArray>(da);
       DispatchRangeTests<vtkDataArray, NumComps>(range, array, 0, NumValues);
     }
     { // Partial, dynamic-size, real typed range
@@ -204,7 +206,9 @@ struct UnitTestValueRangeAPI
       DispatchRangeTests<ArrayType, vtk::detail::DynamicTupleSize>(range, array, pStart, pEnd);
     }
     { // Partial, dynamic-size, generic-typed range
-      auto range = vtk::DataArrayValueRange(da, pStart, pEnd);
+      auto range =
+        vtk::DataArrayValueRange<vtk::detail::DynamicTupleSize, ForceValueTypeForVtkDataArray>(
+          da, pStart, pEnd);
       DispatchRangeTests<vtkDataArray, vtk::detail::DynamicTupleSize>(range, array, pStart, pEnd);
     }
     { // Partial, fixed-size, real typed range
@@ -212,7 +216,8 @@ struct UnitTestValueRangeAPI
       DispatchRangeTests<ArrayType, NumComps>(range, array, pStart, pEnd);
     }
     { // Partial, fixed-size, generic-typed range
-      auto range = vtk::DataArrayValueRange<NumComps>(da, pStart, pEnd);
+      auto range =
+        vtk::DataArrayValueRange<NumComps, ForceValueTypeForVtkDataArray>(da, pStart, pEnd);
       DispatchRangeTests<vtkDataArray, NumComps>(range, array, pStart, pEnd);
     }
   }
@@ -258,6 +263,8 @@ struct UnitTestValueRangeAPI
     CHECK_EQUAL(range.cend() - range.cbegin(), range.size());
     CHECK_EQUAL_NODUMP(*range.begin(), range[0]);
     CHECK_EQUAL_NODUMP(*(range.begin() + 1), range[1]);
+    CHECK_EQUAL_NODUMP(reinterpret_cast<std::intptr_t>(range.data()),
+      reinterpret_cast<std::intptr_t>(array->GetVoidPointer(0)));
 
     TestIota(range);
   }
@@ -267,11 +274,11 @@ struct UnitTestValueRangeAPI
   {
     using ConstRange = typename std::add_const<Range>::type;
     using MutableRange = typename std::remove_const<Range>::type;
+    using ActualValueType = vtk::GetAPIType<RangeArrayType, ForceValueTypeForVtkDataArray>;
     (void)range; // decltype doesn't actually count as a usage.
 
     CHECK_IS_BASE_TYPE_OF(typename Range::ArrayType, RangeArrayType);
-    CHECK_TYPEDEF(typename Range::ValueType, vtk::GetAPIType<RangeArrayType>);
-    CHECK_TYPEDEF(typename Range::ValueType, vtk::GetAPIType<RangeArrayType>);
+    CHECK_TYPEDEF(typename Range::ValueType, ActualValueType);
     CHECK_TYPEDEF(typename Range::size_type, vtk::ValueIdType);
     CHECK_TYPEDEF(typename Range::size_type, decltype(range.size()));
     CHECK_TYPEDEF(typename Range::iterator, decltype(std::declval<MutableRange>().begin()));
@@ -285,6 +292,8 @@ struct UnitTestValueRangeAPI
     CHECK_TYPEDEF(typename Range::ArrayType, decltype(*range.GetArray()));
     CHECK_TYPEDEF(vtk::ValueIdType, decltype(range.GetBeginValueId()));
     CHECK_TYPEDEF(vtk::ValueIdType, decltype(range.GetEndValueId()));
+    CHECK_TYPEDEF(
+      typename Range::ValueType, typename vtk::detail::StripPointers<decltype(range.data())>::type);
 
     static_assert(Range::TupleSizeTag == RangeTupleSize, "Range::TupleSizeTag incorrect.");
   }
@@ -331,7 +340,7 @@ struct UnitTestValueRangeAPI
   }
 };
 
-template <typename ArrayType>
+template <typename ArrayType, typename ForceValueTypeForVtkDataArray>
 struct UnitTestValueIteratorAPI
 {
   static constexpr vtk::ComponentIdType NumComps = 3;
@@ -343,7 +352,7 @@ struct UnitTestValueIteratorAPI
     vtkNew<ArrayType> array;
     array->SetNumberOfComponents(NumComps);
     array->SetNumberOfTuples(NumTuples);
-    FillValueRangeIota(vtk::DataArrayValueRange<NumComps>(array));
+    FillValueRangeIota(vtk::DataArrayValueRange(array));
 
     auto da = static_cast<vtkDataArray*>(array);
 
@@ -352,15 +361,16 @@ struct UnitTestValueIteratorAPI
       DispatchRangeTests(range);
     }
     { // Full, dynamic-size, generic-typed range
-      auto range = vtk::DataArrayValueRange(da);
+      auto range =
+        vtk::DataArrayValueRange<vtk::detail::DynamicTupleSize, ForceValueTypeForVtkDataArray>(da);
       DispatchRangeTests(range);
     }
     { // Full, fixed-size, real typed range
-      auto range = vtk::DataArrayValueRange<NumComps>(array);
+      auto range = vtk::DataArrayValueRange(array);
       DispatchRangeTests(range);
     }
     { // Full, fixed-size, generic-typed range
-      auto range = vtk::DataArrayValueRange<NumComps>(da);
+      auto range = vtk::DataArrayValueRange<NumComps, ForceValueTypeForVtkDataArray>(da);
       DispatchRangeTests(range);
     }
   }
@@ -769,7 +779,8 @@ struct UnitTestValueIteratorAPI
     CHECK_TRUE(iter == iter1);
 
     {
-      using namespace std;
+      // ADL swap:
+      using std::swap;
       swap(iter1, iter2);
     }
 
@@ -779,7 +790,8 @@ struct UnitTestValueIteratorAPI
     CHECK_TRUE(iter == iter2);
 
     {
-      using namespace std;
+      // ADL swap:
+      using std::swap;
       swap(iter1, iter2);
     }
 
@@ -836,7 +848,7 @@ struct UnitTestValueIteratorAPI
   }
 };
 
-template <typename ArrayType>
+template <typename ArrayType, typename ForceValueTypeForVtkDataArray>
 struct UnitTestValueReferenceAPI
 {
   static constexpr vtk::ComponentIdType NumComps = 9;
@@ -847,7 +859,7 @@ struct UnitTestValueReferenceAPI
     vtkNew<ArrayType> array;
     array->SetNumberOfComponents(NumComps);
     array->SetNumberOfTuples(NumTuples);
-    FillValueRangeIota(vtk::DataArrayValueRange<NumComps>(array));
+    FillValueRangeIota(vtk::DataArrayValueRange(array));
 
     auto da = static_cast<vtkDataArray*>(array);
 
@@ -856,7 +868,8 @@ struct UnitTestValueReferenceAPI
       DispatchRangeTests(range);
     }
     { // Full, dynamic-size, generic-typed range
-      auto range = vtk::DataArrayValueRange(da);
+      auto range =
+        vtk::DataArrayValueRange<vtk::detail::DynamicTupleSize, ForceValueTypeForVtkDataArray>(da);
       DispatchRangeTests(range);
     }
     { // Full, fixed-size, real typed range
@@ -864,7 +877,7 @@ struct UnitTestValueReferenceAPI
       DispatchRangeTests(range);
     }
     { // Full, fixed-size, generic-typed range
-      auto range = vtk::DataArrayValueRange<NumComps>(da);
+      auto range = vtk::DataArrayValueRange<NumComps, ForceValueTypeForVtkDataArray>(da);
       DispatchRangeTests(range);
     }
   }
@@ -975,6 +988,7 @@ struct UnitTestValueReferenceAPI
 
     APIType val2 = val1 + 1;
 
+    // ADL swap:
     using std::swap;
     swap(ref1, val2);
 
@@ -1326,41 +1340,41 @@ struct UnitTestEdgeCases
     TestSpecializations();
 
     std::cerr << "SOA<float> <--> AOS<float>\n";
-    DispatchValueCompat<vtkSOADataArrayTemplate<float>, vtkAOSDataArrayTemplate<float> >();
+    DispatchValueCompat<vtkSOADataArrayTemplate<float>, vtkAOSDataArrayTemplate<float>>();
 
     std::cerr << "AOS<float> <--> SOA<float>\n";
-    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkSOADataArrayTemplate<float> >();
+    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkSOADataArrayTemplate<float>>();
 
     std::cerr << "SOA<double> <--> AOS<float>\n";
-    DispatchValueCompat<vtkSOADataArrayTemplate<double>, vtkAOSDataArrayTemplate<float> >();
+    DispatchValueCompat<vtkSOADataArrayTemplate<double>, vtkAOSDataArrayTemplate<float>>();
 
     std::cerr << "AOS<float> <--> SOA<double>\n";
-    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkSOADataArrayTemplate<double> >();
+    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkSOADataArrayTemplate<double>>();
 
     std::cerr << "SOA<int> <--> AOS<float>\n";
-    DispatchValueCompat<vtkSOADataArrayTemplate<int>, vtkAOSDataArrayTemplate<float> >();
+    DispatchValueCompat<vtkSOADataArrayTemplate<int>, vtkAOSDataArrayTemplate<float>>();
 
     std::cerr << "AOS<float> <--> SOA<int>\n";
-    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkSOADataArrayTemplate<int> >();
+    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkSOADataArrayTemplate<int>>();
 
 #ifdef VTK_USE_SCALED_SOA_ARRAYS
     std::cerr << "ScaleSOA<float> <--> AOS<float>\n";
-    DispatchValueCompat<vtkScaledSOADataArrayTemplate<float>, vtkAOSDataArrayTemplate<float> >();
+    DispatchValueCompat<vtkScaledSOADataArrayTemplate<float>, vtkAOSDataArrayTemplate<float>>();
 
     std::cerr << "AOS<float> <--> ScaleSOA<float>\n";
-    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkScaledSOADataArrayTemplate<float> >();
+    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkScaledSOADataArrayTemplate<float>>();
 
     std::cerr << "ScaleSOA<double> <--> AOS<float>\n";
-    DispatchValueCompat<vtkScaledSOADataArrayTemplate<double>, vtkAOSDataArrayTemplate<float> >();
+    DispatchValueCompat<vtkScaledSOADataArrayTemplate<double>, vtkAOSDataArrayTemplate<float>>();
 
     std::cerr << "AOS<float> <--> ScaleSOA<double>\n";
-    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkScaledSOADataArrayTemplate<double> >();
+    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkScaledSOADataArrayTemplate<double>>();
 
     std::cerr << "ScaleSOA<int> <--> AOS<float>\n";
-    DispatchValueCompat<vtkScaledSOADataArrayTemplate<int>, vtkAOSDataArrayTemplate<float> >();
+    DispatchValueCompat<vtkScaledSOADataArrayTemplate<int>, vtkAOSDataArrayTemplate<float>>();
 
     std::cerr << "AOS<float> <--> ScaleSOA<int>\n";
-    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkScaledSOADataArrayTemplate<int> >();
+    DispatchValueCompat<vtkAOSDataArrayTemplate<float>, vtkScaledSOADataArrayTemplate<int>>();
 #endif
   }
 
@@ -1370,7 +1384,7 @@ struct UnitTestEdgeCases
 #ifndef VTK_DEBUG_RANGE_ITERATORS
     // These should use the objects in vtkDataArrayTupleRange_AOS.h, which
     // end up using ValueType* pointers for component iterators.
-    TestAOSSpecialization<vtkAOSDataArrayTemplate<float> >();
+    TestAOSSpecialization<vtkAOSDataArrayTemplate<float>>();
     TestAOSSpecialization<vtkFloatArray>();
 #endif
   }
@@ -1659,6 +1673,7 @@ struct UnitTestEdgeCases
       auto it2 = start2;
       for (auto it1 = start1; it1 < end1; ++it1)
       {
+        // ADL swap:
         using std::swap;
         swap(*it1, *it2++);
       }
@@ -1718,31 +1733,93 @@ struct UnitTestEdgeCases
   }
 };
 
-template <typename ArrayType>
+template <typename ArrayType, typename ForceValueTypeForVtkDataArray = double>
 void RunTestsForArray()
 {
   std::cerr << "ValueRangeAPI:\n";
-  UnitTestValueRangeAPI<ArrayType>{}();
+  UnitTestValueRangeAPI<ArrayType, ForceValueTypeForVtkDataArray>{}();
   std::cerr << "ValueIteratorAPI:\n";
-  UnitTestValueIteratorAPI<ArrayType>{}();
+  UnitTestValueIteratorAPI<ArrayType, ForceValueTypeForVtkDataArray>{}();
   std::cerr << "ValueReferenceAPI:\n";
-  UnitTestValueReferenceAPI<ArrayType>{}();
+  UnitTestValueReferenceAPI<ArrayType, ForceValueTypeForVtkDataArray>{}();
 }
 
+// Exercise DataArrayValueRange for vtkGenericDataArray.
+template <typename ValueT>
+class MockDataArray : public vtkGenericDataArray<MockDataArray<ValueT>, ValueT>
+{
+  using GenericDataArrayType = vtkGenericDataArray<MockDataArray<ValueT>, ValueT>;
+
+public:
+  vtkTemplateTypeMacro(MockDataArray<ValueT>, GenericDataArrayType);
+  using ValueType = typename Superclass::ValueType;
+  static MockDataArray* New() { VTK_STANDARD_NEW_BODY(MockDataArray<ValueT>); }
+  void* GetVoidPointer(vtkIdType idx) override { return this->Buffer->GetBuffer() + idx; }
+  ValueType GetValue(vtkIdType valueIdx) const { return this->Buffer->GetBuffer()[valueIdx]; }
+  void SetValue(vtkIdType valueIdx, ValueType value)
+  {
+    this->Buffer->GetBuffer()[valueIdx] = value;
+  }
+  void GetTypedTuple(vtkIdType tupleIdx, ValueType* tuple) const
+  {
+    const vtkIdType valueIdx = tupleIdx * this->NumberOfComponents;
+    std::copy(this->Buffer->GetBuffer() + valueIdx,
+      this->Buffer->GetBuffer() + valueIdx + this->NumberOfComponents, tuple);
+  }
+  void SetTypedTuple(vtkIdType tupleIdx, const ValueType* tuple)
+  {
+    const vtkIdType valueIdx = tupleIdx * this->NumberOfComponents;
+    std::copy(tuple, tuple + this->NumberOfComponents, this->Buffer->GetBuffer() + valueIdx);
+  }
+  ValueType GetTypedComponent(vtkIdType tupleIdx, int compIdx) const
+  {
+    return this->Buffer->GetBuffer()[this->NumberOfComponents * tupleIdx + compIdx];
+  }
+  void SetTypedComponent(vtkIdType tupleIdx, int compIdx, ValueType value)
+  {
+    const vtkIdType valueIdx = tupleIdx * this->NumberOfComponents + compIdx;
+    this->SetValue(valueIdx, value);
+  }
+
+protected:
+  vtkNew<vtkBuffer<ValueT>> Buffer;
+  bool AllocateTuples(vtkIdType numTuples)
+  {
+    vtkIdType numValues = numTuples * this->GetNumberOfComponents();
+    if (this->Buffer->Allocate(numValues))
+    {
+      this->Size = this->Buffer->GetSize();
+      return true;
+    }
+    return false;
+  }
+  bool ReallocateTuples(vtkIdType numTuples)
+  {
+    if (this->Buffer->Reallocate(numTuples * this->GetNumberOfComponents()))
+    {
+      this->Size = this->Buffer->GetSize();
+      return true;
+    }
+    return false;
+  }
+  friend class vtkGenericDataArray<MockDataArray<ValueT>, ValueT>;
+};
 } // end anon namespace
 
 int TestDataArrayValueRange(int, char*[])
 {
   std::cerr << "AOS:\n";
-  RunTestsForArray<vtkAOSDataArrayTemplate<float> >();
+  RunTestsForArray<vtkAOSDataArrayTemplate<float>>();
   std::cerr << "SOA:\n";
-  RunTestsForArray<vtkSOADataArrayTemplate<float> >();
+  RunTestsForArray<vtkSOADataArrayTemplate<float>>();
 #ifdef VTK_USE_SCALED_SOA_ARRAYS
   std::cerr << "ScaleSOA:\n";
-  RunTestsForArray<vtkScaledSOADataArrayTemplate<float> >();
+  RunTestsForArray<vtkScaledSOADataArrayTemplate<float>>();
 #endif
   std::cerr << "vtkFloatArray:\n";
   RunTestsForArray<vtkFloatArray>();
+  std::cerr << "MockDataArray<vtkTypeInt32>:\n";
+  RunTestsForArray<MockDataArray<vtkTypeInt32>, /*ForceValueTypeForVtkDataArray=*/vtkTypeInt32>();
 
   std::cerr << "\nEdgeCases:\n";
   UnitTestEdgeCases{}();

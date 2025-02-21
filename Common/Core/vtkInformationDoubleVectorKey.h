@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationDoubleVectorKey.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInformationDoubleVectorKey
  * @brief   Key for double vector values.
@@ -28,6 +16,7 @@
 
 #include "vtkCommonInformationKeyManager.h" // Manage instances of this type.
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCORE_EXPORT vtkInformationDoubleVectorKey : public vtkInformationKey
 {
 public:
@@ -42,13 +31,13 @@ public:
    * name, a location and a required length. This method is provided for
    * wrappers. Use the constructor directly from C++ instead.
    */
-  static vtkInformationDoubleVectorKey* MakeKey(
+  static VTK_NEWINSTANCE vtkInformationDoubleVectorKey* MakeKey(
     const char* name, const char* location, int length = -1)
   {
     return new vtkInformationDoubleVectorKey(name, location, length);
   }
 
-  //@{
+  ///@{
   /**
    * Get/Set the value associated with this key in the given
    * information object.
@@ -59,7 +48,7 @@ public:
   double Get(vtkInformation* info, int idx);
   void Get(vtkInformation* info, double* value);
   int Length(vtkInformation* info);
-  //@}
+  ///@}
 
   /**
    * Copy the entry associated with this key from one information
@@ -82,4 +71,5 @@ private:
   void operator=(const vtkInformationDoubleVectorKey&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

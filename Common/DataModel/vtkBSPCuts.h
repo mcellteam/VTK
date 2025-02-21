@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBSPCuts.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkBSPCuts
@@ -39,6 +24,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkDataObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkKdNode;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkBSPCuts : public vtkDataObject
@@ -47,6 +33,11 @@ public:
   static vtkBSPCuts* New();
   vtkTypeMacro(vtkBSPCuts, vtkDataObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+
+  /**
+   * Returns VTK_BSP_CUTS.
+   */
+  int GetDataObjectType() override { return VTK_BSP_CUTS; }
 
   /**
    * Initialize the cuts with arrays of information.  This type of
@@ -104,27 +95,27 @@ public:
   void PrintTree();
   void PrintArrays();
 
-  //@{
+  ///@{
   /**
    * Retrieve an instance of this class from an information object.
    */
   static vtkBSPCuts* GetData(vtkInformation* info);
   static vtkBSPCuts* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
   /**
    * Restore data object to initial state,
    */
   void Initialize() override;
 
-  //@{
+  ///@{
   /**
    * Shallow copy.  These copy the data, but not any of the
    * pipeline connections.
    */
   void ShallowCopy(vtkDataObject* src) override;
   void DeepCopy(vtkDataObject* src) override;
-  //@}
+  ///@}
 
 protected:
   vtkBSPCuts();
@@ -134,7 +125,7 @@ protected:
 
   static int CountNodes(vtkKdNode* kd);
   static void SetMinMaxId(vtkKdNode* kd);
-  static void _PrintTree(vtkKdNode* kd, int depth);
+  static void PrintTree_(vtkKdNode* kd, int depth);
 
   void BuildTree(vtkKdNode* kd, int idx);
   int WriteArray(vtkKdNode* kd, int loc);
@@ -164,4 +155,5 @@ protected:
   void operator=(const vtkBSPCuts&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

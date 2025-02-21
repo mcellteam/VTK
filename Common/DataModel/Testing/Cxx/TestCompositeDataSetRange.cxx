@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestCompositeDataSetRange.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtkCompositeDataIterator.h>
 #include <vtkCompositeDataSetRange.h>
@@ -37,7 +25,7 @@ bool TestCopy(vtkCompositeDataSet* src)
   // Create tree structure:
   dst->CopyStructure(src);
 
-  { // Copy dataset pointer into new datset:
+  { // Copy dataset pointer into new dataset:
     const auto srcRange = vtk::Range(src);
     const auto dstRange = vtk::Range(dst);
     std::copy(srcRange.begin(), srcRange.end(), dstRange.begin());
@@ -235,22 +223,23 @@ bool TestOptions(vtkCompositeDataSet* cds)
 vtkSmartPointer<vtkCompositeDataSet> CreateDataSet()
 {
   auto addPolyData = [](unsigned int blockNum,
-                       vtkMultiBlockDataSet* mbds) -> vtkSmartPointer<vtkPolyData> {
+                       vtkMultiBlockDataSet* mbds) -> vtkSmartPointer<vtkPolyData>
+  {
     vtkNew<vtkPolyData> pd;
     mbds->SetBlock(blockNum, pd);
     return { pd };
   };
 
   auto addMultiBlock = [](unsigned int blockNum,
-                         vtkMultiBlockDataSet* mbds) -> vtkSmartPointer<vtkMultiBlockDataSet> {
+                         vtkMultiBlockDataSet* mbds) -> vtkSmartPointer<vtkMultiBlockDataSet>
+  {
     auto newMbds = vtkSmartPointer<vtkMultiBlockDataSet>::New();
     mbds->SetBlock(blockNum, newMbds);
     return newMbds;
   };
 
-  auto addNullDataSet = [](unsigned int blockNum, vtkMultiBlockDataSet* mbds) -> void {
-    mbds->SetBlock(blockNum, nullptr);
-  };
+  auto addNullDataSet = [](unsigned int blockNum, vtkMultiBlockDataSet* mbds) -> void
+  { mbds->SetBlock(blockNum, nullptr); };
 
   auto cds00 = vtkSmartPointer<vtkMultiBlockDataSet>::New();
   cds00->SetNumberOfBlocks(4);
@@ -289,8 +278,7 @@ vtkSmartPointer<vtkCompositeDataSet> CreateDataSet()
   cds40->SetNumberOfBlocks(1);
   addPolyData(0, cds40);
 
-  // explicit move needed to silence warnings about C++11 defect
-  return std::move(cds00);
+  return cds00;
 }
 
 } // end anon namespace

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkViewDependentErrorMetric.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkViewDependentErrorMetric
  * @brief   Objects that compute a
@@ -32,6 +20,7 @@
 #include "vtkGenericSubdivisionErrorMetric.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkViewport;
 class vtkCoordinate;
 
@@ -44,15 +33,15 @@ public:
    */
   static vtkViewDependentErrorMetric* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK type and error macros.
    */
   vtkTypeMacro(vtkViewDependentErrorMetric, vtkGenericSubdivisionErrorMetric);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return the squared screen-based geometric accuracy measured in pixels.
    * An accuracy less or equal to 0.25 (0.5^2) ensures that the screen-space
@@ -63,7 +52,7 @@ public:
    * \post positive_result: result>0
    */
   vtkGetMacro(PixelTolerance, double);
-  //@}
+  ///@}
 
   /**
    * Set the squared screen-based geometric accuracy measured in pixels.
@@ -75,14 +64,14 @@ public:
    */
   void SetPixelTolerance(double value);
 
-  //@{
+  ///@{
   /**
    * Set/Get the renderer with `renderer' on which the error metric
    * is based. The error metric use the active camera of the renderer.
    */
   vtkGetObjectMacro(Viewport, vtkViewport);
   void SetViewport(vtkViewport* viewport);
-  //@}
+  ///@}
 
   /**
    * Does the edge need to be subdivided according to the distance between
@@ -142,4 +131,5 @@ private:
   void operator=(const vtkViewDependentErrorMetric&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

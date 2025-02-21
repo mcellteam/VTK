@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVtkJSViewNodeFactory.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkJSONRenderWindowExporter.h"
 
 #include <vtkDataObject.h>
@@ -28,11 +16,12 @@
 #include <memory>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 // When exporting a VTK render window, we must also write the datasets
 // associated with the render window into the same archive. To do this, we
-// construct an intermediate archiver that neither opens nore closes the
+// construct an intermediate archiver that neither opens nor closes the
 // archive and simply pipes its contents into a subdirectory of a parent
 // archive.
 class vtkJSONDataSetArchiver : public vtkArchiver
@@ -44,22 +33,22 @@ public:
   virtual void SetRenderWindowArchiver(vtkArchiver*);
   vtkGetObjectMacro(RenderWindowArchiver, vtkArchiver);
 
-  virtual void OpenArchive() override {}
-  virtual void CloseArchive() override {}
-  virtual void InsertIntoArchive(
-    const std::string& relativePath, const char* data, std::streamsize size) override
+  void OpenArchive() override {}
+  void CloseArchive() override {}
+  void InsertIntoArchive(
+    const std::string& relativePath, const char* data, std::size_t size) override
   {
     this->RenderWindowArchiver->InsertIntoArchive(this->SubArchiveName(relativePath), data, size);
   }
 
-  virtual bool Contains(const std::string& relativePath) override
+  bool Contains(const std::string& relativePath) override
   {
     return this->RenderWindowArchiver->Contains(this->SubArchiveName(relativePath));
   }
 
 private:
   vtkJSONDataSetArchiver() { this->RenderWindowArchiver = vtkArchiver::New(); }
-  virtual ~vtkJSONDataSetArchiver() override { this->SetRenderWindowArchiver(nullptr); }
+  ~vtkJSONDataSetArchiver() override { this->SetRenderWindowArchiver(nullptr); }
 
   std::string SubArchiveName(const std::string& relativePath)
   {
@@ -72,11 +61,11 @@ vtkStandardNewMacro(vtkJSONDataSetArchiver);
 vtkCxxSetObjectMacro(vtkJSONDataSetArchiver, RenderWindowArchiver, vtkArchiver);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkJSONRenderWindowExporter);
 vtkCxxSetObjectMacro(vtkJSONRenderWindowExporter, Archiver, vtkArchiver);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkJSONRenderWindowExporter::vtkJSONRenderWindowExporter()
 {
   this->Serializer = vtkVtkJSSceneGraphSerializer::New();
@@ -86,7 +75,7 @@ vtkJSONRenderWindowExporter::vtkJSONRenderWindowExporter()
   this->CompactOutput = true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkJSONRenderWindowExporter::~vtkJSONRenderWindowExporter()
 {
   this->SetSerializer(nullptr);
@@ -94,7 +83,7 @@ vtkJSONRenderWindowExporter::~vtkJSONRenderWindowExporter()
   this->Factory->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkJSONRenderWindowExporter::SetSerializer(vtkVtkJSSceneGraphSerializer* args)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting Serializer to " << args);
@@ -115,7 +104,7 @@ void vtkJSONRenderWindowExporter::SetSerializer(vtkVtkJSSceneGraphSerializer* ar
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkJSONRenderWindowExporter::WriteData()
 {
   if (this->GetSerializer() == nullptr)
@@ -197,8 +186,9 @@ void vtkJSONRenderWindowExporter::WriteData()
   this->GetArchiver()->CloseArchive();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkJSONRenderWindowExporter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

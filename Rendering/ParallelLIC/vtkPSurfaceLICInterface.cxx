@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPSurfaceLICInterface.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPSurfaceLICInterface.h"
 
 #include "vtkMPI.h"
@@ -20,21 +8,24 @@
 #include "vtkPainterCommunicator.h"
 #include "vtkParallelTimer.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPSurfaceLICInterface);
 
-//----------------------------------------------------------------------------
-vtkPSurfaceLICInterface::vtkPSurfaceLICInterface() {}
+//------------------------------------------------------------------------------
+vtkPSurfaceLICInterface::vtkPSurfaceLICInterface() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+#ifdef vtkPSurfaceLICInterfaceDEBUG
 vtkPSurfaceLICInterface::~vtkPSurfaceLICInterface()
 {
-#ifdef vtkPSurfaceLICInterfaceDEBUG
   cerr << "=====vtkPSurfaceLICInterface::~vtkPSurfaceLICInterface" << endl;
-#endif
 }
+#else
+vtkPSurfaceLICInterface::~vtkPSurfaceLICInterface() = default;
+#endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPSurfaceLICInterface::NeedToUpdateCommunicator()
 {
   // TODO -- with slice widget in PV the input dataset
@@ -61,7 +52,7 @@ bool vtkPSurfaceLICInterface::NeedToUpdateCommunicator()
   return updateComm != 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPSurfaceLICInterface::GetGlobalMinMax(
   vtkPainterCommunicator* painterComm, float& min, float& max)
 {
@@ -77,7 +68,7 @@ void vtkPSurfaceLICInterface::GetGlobalMinMax(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPSurfaceLICInterface::StartTimerEvent(const char* event)
 {
 #if defined(vtkSurfaceLICInterfaceTIME)
@@ -88,7 +79,7 @@ void vtkPSurfaceLICInterface::StartTimerEvent(const char* event)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPSurfaceLICInterface::EndTimerEvent(const char* event)
 {
 #if defined(vtkSurfaceLICInterfaceTIME)
@@ -99,7 +90,7 @@ void vtkPSurfaceLICInterface::EndTimerEvent(const char* event)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPSurfaceLICInterface::WriteTimerLog(const char* fileName)
 {
 #if defined(vtkSurfaceLICInterfaceTIME)
@@ -121,7 +112,7 @@ void vtkPSurfaceLICInterface::WriteTimerLog(const char* fileName)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPainterCommunicator* vtkPSurfaceLICInterface::CreateCommunicator(int include)
 {
   // if we're using MPI and it's been initialized then
@@ -139,9 +130,10 @@ vtkPainterCommunicator* vtkPSurfaceLICInterface::CreateCommunicator(int include)
   return comm;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPSurfaceLICInterface::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "LogFileName=" << this->LogFileName << endl;
 }
+VTK_ABI_NAMESPACE_END

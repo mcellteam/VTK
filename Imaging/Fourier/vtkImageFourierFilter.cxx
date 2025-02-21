@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageFourierFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageFourierFilter.h"
 
 #include "vtkMath.h"
@@ -21,7 +9,14 @@
         Vectors of complex numbers.
 =========================================================================*/
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+void vtkImageFourierFilter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 // This function calculates one step of a FFT.
 // It is specialized for a factor of 2.
 // It is engineered for no decimation.
@@ -87,7 +82,7 @@ void vtkImageFourierFilter::ExecuteFftStep2(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function calculates one step of a FFT (using any factor).
 // It is engineered for no decimation.
 //  N: length of arrays
@@ -138,7 +133,7 @@ void vtkImageFourierFilter::ExecuteFftStepN(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function calculates the whole fft (or rfft) of an array.
 // The contents of the input array are changed.
 // It is engineered for no decimation so input and output cannot be equal.
@@ -201,7 +196,7 @@ void vtkImageFourierFilter::ExecuteFftForwardBackward(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function calculates the whole fft of an array.
 // The contents of the input array are changed.
 // (It is engineered for no decimation)
@@ -210,7 +205,7 @@ void vtkImageFourierFilter::ExecuteFft(vtkImageComplex* in, vtkImageComplex* out
   this->ExecuteFftForwardBackward(in, out, N, 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function calculates the whole fft of an array.
 // The contents of the input array are changed.
 // (It is engineered for no decimation)
@@ -219,7 +214,7 @@ void vtkImageFourierFilter::ExecuteRfft(vtkImageComplex* in, vtkImageComplex* ou
   this->ExecuteFftForwardBackward(in, out, N, -1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Called each axis over which the filter is executed.
 int vtkImageFourierFilter::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -236,3 +231,4 @@ int vtkImageFourierFilter::RequestData(
 
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
+VTK_ABI_NAMESPACE_END

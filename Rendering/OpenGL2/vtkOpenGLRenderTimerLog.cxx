@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLRenderTimerLog.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLRenderTimerLog.h"
 
@@ -22,6 +10,7 @@
 #include <cassert>
 #include <utility>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLRenderTimerLog);
 
 //------------------------------------------------------------------------------
@@ -36,7 +25,7 @@ void vtkOpenGLRenderTimerLog::PrintSelf(std::ostream& os, vtkIndent indent)
 }
 
 //------------------------------------------------------------------------------
-bool vtkOpenGLRenderTimerLog::IsSupported()
+bool vtkOpenGLRenderTimerLog::IsSupported() VTK_FUTURE_CONST
 {
   return vtkOpenGLRenderTimer::IsSupported();
 }
@@ -153,7 +142,7 @@ vtkOpenGLRenderTimerLog::~vtkOpenGLRenderTimerLog()
 }
 
 //------------------------------------------------------------------------------
-bool vtkOpenGLRenderTimerLog::DoLogging()
+bool vtkOpenGLRenderTimerLog::DoLogging() VTK_FUTURE_CONST
 {
   if (!this->LoggingEnabled)
   {
@@ -208,12 +197,12 @@ vtkOpenGLRenderTimerLog::OGLEvent& vtkOpenGLRenderTimerLog::NewEvent()
 
   if (openEvent)
   {
-    openEvent->Events.push_back(OGLEvent());
+    openEvent->Events.emplace_back();
     return openEvent->Events.back();
   }
   else
   {
-    this->CurrentFrame.Events.push_back(OGLEvent());
+    this->CurrentFrame.Events.emplace_back();
     return this->CurrentFrame.Events.back();
   }
 }
@@ -421,3 +410,4 @@ void vtkOpenGLRenderTimerLog::ForceCloseEvent(OGLEvent& event)
     this->ForceCloseEvent(subEvent);
   }
 }
+VTK_ABI_NAMESPACE_END

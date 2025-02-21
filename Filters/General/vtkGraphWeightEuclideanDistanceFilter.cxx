@@ -1,27 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphWeightEuclideanDistanceFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGraphWeightEuclideanDistanceFilter.h"
 
 #include "vtkGraph.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGraphWeightEuclideanDistanceFilter);
 
 float vtkGraphWeightEuclideanDistanceFilter::ComputeWeight(
-  vtkGraph* const graph, const vtkEdgeType& edge) const
+  vtkGraph* graph, const vtkEdgeType& edge) const
 {
   double p1[3];
   graph->GetPoint(edge.Source, p1);
@@ -34,7 +23,7 @@ float vtkGraphWeightEuclideanDistanceFilter::ComputeWeight(
   return w;
 }
 
-bool vtkGraphWeightEuclideanDistanceFilter::CheckRequirements(vtkGraph* const graph) const
+bool vtkGraphWeightEuclideanDistanceFilter::CheckRequirements(vtkGraph* graph) const
 {
   vtkPoints* points = graph->GetPoints();
   if (!points)
@@ -44,8 +33,9 @@ bool vtkGraphWeightEuclideanDistanceFilter::CheckRequirements(vtkGraph* const gr
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphWeightEuclideanDistanceFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   vtkGraphWeightFilter::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

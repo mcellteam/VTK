@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkXMLMultiGroupDataReader.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLMultiGroupDataReader
  * @brief   Reader for multi-block datasets
@@ -26,7 +15,10 @@
 #include "vtkIOXMLModule.h" // For export macro
 #include "vtkXMLMultiBlockDataReader.h"
 
-class VTKIOXML_EXPORT vtkXMLMultiGroupDataReader : public vtkXMLMultiBlockDataReader
+VTK_ABI_NAMESPACE_BEGIN
+class VTK_DEPRECATED_IN_9_5_0(
+  "Please use `vtkXMLMultiBlockDataReader` instead.") VTKIOXML_EXPORT vtkXMLMultiGroupDataReader
+  : public vtkXMLMultiBlockDataReader
 {
 public:
   static vtkXMLMultiGroupDataReader* New();
@@ -45,4 +37,5 @@ private:
   void operator=(const vtkXMLMultiGroupDataReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

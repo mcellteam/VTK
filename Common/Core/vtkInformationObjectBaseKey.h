@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationObjectBaseKey.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInformationObjectBaseKey
  * @brief   Key for vtkObjectBase values.
@@ -28,6 +16,7 @@
 
 #include "vtkCommonInformationKeyManager.h" // Manage instances of this type.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkObjectBase;
 
 class VTKCOMMONCORE_EXPORT vtkInformationObjectBaseKey : public vtkInformationKey
@@ -46,20 +35,20 @@ public:
    * which class types can be set with this key). This method is provided
    * for wrappers. Use the constructor directly from C++ instead.
    */
-  static vtkInformationObjectBaseKey* MakeKey(
+  static VTK_NEWINSTANCE vtkInformationObjectBaseKey* MakeKey(
     const char* name, const char* location, const char* requiredClass = nullptr)
   {
     return new vtkInformationObjectBaseKey(name, location, requiredClass);
   }
 
-  //@{
+  ///@{
   /**
    * Get/Set the value associated with this key in the given
    * information object.
    */
   void Set(vtkInformation* info, vtkObjectBase*);
   vtkObjectBase* Get(vtkInformation* info);
-  //@}
+  ///@}
 
   /**
    * Copy the entry associated with this key from one information
@@ -84,4 +73,5 @@ private:
   void operator=(const vtkInformationObjectBaseKey&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

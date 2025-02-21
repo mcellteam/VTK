@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAVIWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAVIWriter
  * @brief   Writes Windows AVI files.
@@ -29,6 +17,7 @@
 #include "vtkGenericMovieWriter.h"
 #include "vtkIOMovieModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAVIWriterInternal;
 
 class VTKIOMOVIE_EXPORT vtkAVIWriter : public vtkGenericMovieWriter
@@ -38,7 +27,7 @@ public:
   vtkTypeMacro(vtkAVIWriter, vtkGenericMovieWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * These methods start writing an AVI file, write a frame to the file
    * and then end the writing process.
@@ -46,17 +35,17 @@ public:
   void Start() override;
   void Write() override;
   void End() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the frame rate, in frame/s.
    */
   vtkSetClampMacro(Rate, int, 1, 5000);
   vtkGetMacro(Rate, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the compression quality.
    * 0 means worst quality and smallest file size
@@ -64,9 +53,9 @@ public:
    */
   vtkSetClampMacro(Quality, int, 0, 2);
   vtkGetMacro(Quality, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get if the user should be prompted for compression options, i.e.
    * pick a compressor, set the compression rate (override Rate), etc.).
@@ -75,9 +64,9 @@ public:
   vtkSetMacro(PromptCompressionOptions, int);
   vtkGetMacro(PromptCompressionOptions, int);
   vtkBooleanMacro(PromptCompressionOptions, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the compressor FourCC.
    * A FourCC (literally, four-character code) is a sequence of four bytes
@@ -98,7 +87,7 @@ public:
    */
   vtkSetStringMacro(CompressorFourCC);
   vtkGetStringMacro(CompressorFourCC);
-  //@}
+  ///@}
 
 protected:
   vtkAVIWriter();
@@ -117,4 +106,5 @@ private:
   void operator=(const vtkAVIWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

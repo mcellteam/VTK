@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPhyloXMLTreeReadWrite.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAbstractArray.h"
 #include "vtkDataSetAttributes.h"
@@ -26,7 +14,7 @@
 #include "vtkTree.h"
 #include "vtkUnsignedCharArray.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool VerifyArrayValue(vtkTree* tree, vtkIdType index, const char* arrayName, const char* baseline)
 {
   vtkAbstractArray* array = tree->GetVertexData()->GetAbstractArray(arrayName);
@@ -36,7 +24,7 @@ bool VerifyArrayValue(vtkTree* tree, vtkIdType index, const char* arrayName, con
     return false;
   }
   std::string value = array->GetVariantValue(index).ToString();
-  if (value.compare(baseline) != 0)
+  if (value != baseline)
   {
     cout << "value for " << arrayName << " is " << value << ", should be " << baseline << endl;
     return false;
@@ -44,7 +32,7 @@ bool VerifyArrayValue(vtkTree* tree, vtkIdType index, const char* arrayName, con
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool VerifyArrayAttribute(
   vtkTree* tree, const char* arrayName, const char* attributeName, const char* baseline)
 {
@@ -63,7 +51,7 @@ bool VerifyArrayAttribute(
     if (strcmp(key->GetName(), attributeName) == 0)
     {
       std::string value = info->Get(key);
-      if (value.compare(baseline) == 0)
+      if (value == baseline)
       {
         return true;
       }
@@ -79,7 +67,7 @@ bool VerifyArrayAttribute(
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool VerifyColor(vtkTree* tree, vtkIdType vertex, unsigned char r, unsigned char g, unsigned char b)
 {
   vtkUnsignedCharArray* array =
@@ -115,7 +103,7 @@ bool VerifyColor(vtkTree* tree, vtkIdType vertex, unsigned char r, unsigned char
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestPhyloXMLTreeReadWrite(int argc, char* argv[])
 {
   // get the full path to the input file
@@ -339,7 +327,7 @@ int TestPhyloXMLTreeReadWrite(int argc, char* argv[])
   // write this vtkTree out to to a string in PhyloXML format
   vtkNew<vtkPhyloXMLTreeWriter> writer;
   writer->SetInputData(tree);
-  writer->SetWriteToOutputString(1);
+  writer->SetWriteToOutputString(true);
   writer->IgnoreArray("node weight");
   writer->Update();
   std::string phyloXML = writer->GetOutputString();
@@ -355,11 +343,11 @@ int TestPhyloXMLTreeReadWrite(int argc, char* argv[])
   // identical to our previous PhyloXML string.
   vtkNew<vtkPhyloXMLTreeWriter> writer2;
   writer2->SetInputData(tree2);
-  writer2->SetWriteToOutputString(1);
+  writer2->SetWriteToOutputString(true);
   writer2->IgnoreArray("node weight");
   writer2->Update();
   std::string phyloXML2 = writer2->GetOutputString();
-  if (phyloXML.compare(phyloXML2) != 0)
+  if (phyloXML != phyloXML2)
   {
     cout << "output strings do not match." << endl;
     return EXIT_FAILURE;

@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkHigherOrderWedge.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkHigherOrderWedge.h"
 
 #include "vtkCellData.h"
@@ -28,11 +17,13 @@
 #include "vtkPoints.h"
 #include "vtkTriangle.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 #include "vtkWedge.h"
+
+#include <array>
 
 // VTK_21_POINT_WEDGE is defined (or not) in vtkHigherOrderInterpolation.h
 #ifdef VTK_21_POINT_WEDGE
+VTK_ABI_NAMESPACE_BEGIN
 static double vtkHigherOrderWedge21ParametricCoords[21 * 3] = { 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
   1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.5,
   0.0, 0.5, 0.0, 1.0, 0.5, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.5, 0.0, 1.0, 0.5,
@@ -67,6 +58,7 @@ static constexpr vtkIdType vtkHigherOrderWedge21QuadFace[3][9] = {
 };
 static constexpr vtkIdType vtkHigherOrderWedge21Edge[9][3] = { { 0, 1, 6 }, { 1, 2, 7 },
   { 2, 0, 8 }, { 3, 4, 9 }, { 4, 5, 10 }, { 5, 3, 11 }, { 0, 3, 12 }, { 1, 4, 13 }, { 2, 5, 14 } };
+VTK_ABI_NAMESPACE_END
 #endif
 
 // Return the offset into the array of face-DOFs of triangle barycentric integer coordinates (i,j)
@@ -102,6 +94,7 @@ static constexpr vtkIdType vtkHigherOrderWedge21Edge[9][3] = { { 0, 1, 6 }, { 1,
 // return offset = 2 since the face-DOF for this triangle
 // are ordered { +, @, o }.
 //
+VTK_ABI_NAMESPACE_BEGIN
 static int triangleDOFOffset(int order, int i, int j)
 {
   int off = i + order * (j - 1) - (j * (j + 1)) / 2;
@@ -208,7 +201,9 @@ void vtkHigherOrderWedge::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Approx: " << this->Approx << "\n";
 }
 
-void vtkHigherOrderWedge::GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* result, int edgeId)
+void vtkHigherOrderWedge::SetEdgeIdsAndPoints(int edgeId,
+  const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+  const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points)
 {
   const int* order = this->GetOrder();
 #ifdef VTK_21_POINT_WEDGE
@@ -219,12 +214,10 @@ void vtkHigherOrderWedge::GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* res
       vtkErrorMacro("Asked for invalid edge " << edgeId << " of 21-point wedge");
       return;
     }
-    result->Points->SetNumberOfPoints(3);
-    result->PointIds->SetNumberOfIds(3);
+    set_number_of_ids_and_points(3);
     for (int ii = 0; ii < 3; ++ii)
     {
-      result->Points->SetPoint(ii, this->Points->GetPoint(vtkHigherOrderWedge21Edge[edgeId][ii]));
-      result->PointIds->SetId(ii, this->PointIds->GetId(vtkHigherOrderWedge21Edge[edgeId][ii]));
+      set_ids_and_points(ii, vtkHigherOrderWedge21Edge[edgeId][ii]);
     }
   }
 #endif
@@ -232,12 +225,10 @@ void vtkHigherOrderWedge::GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* res
   vtkVector2i eidx = vtkHigherOrderInterpolation::GetPointIndicesBoundingWedgeEdge(edgeId);
   vtkIdType npts = order[oi >= 0 ? oi : 0] + 1;
   int sn = 0;
-  result->Points->SetNumberOfPoints(npts);
-  result->PointIds->SetNumberOfIds(npts);
+  set_number_of_ids_and_points(npts);
   for (int i = 0; i < 2; ++i, ++sn)
   {
-    result->Points->SetPoint(sn, this->Points->GetPoint(eidx[i]));
-    result->PointIds->SetId(sn, this->PointIds->GetId(eidx[i]));
+    set_ids_and_points(sn, eidx[i]);
   }
   // Now add edge-interior points in axis order:
   int offset = 6;
@@ -253,41 +244,8 @@ void vtkHigherOrderWedge::GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* res
   }
   for (int jj = 0; jj < order[oi >= 0 ? oi : 0] - 1; ++jj, ++sn)
   {
-    result->Points->SetPoint(sn, this->Points->GetPoint(offset + jj));
-    result->PointIds->SetId(sn, this->PointIds->GetId(offset + jj));
+    set_ids_and_points(sn, offset + jj);
   }
-}
-
-vtkCell* vtkHigherOrderWedge::GetFaceWithoutRationalWeights(int faceId)
-{
-  if (faceId < 0 || faceId >= 5)
-  {
-    return nullptr;
-  }
-
-  const int* order = this->GetOrder();
-  int tOrder = order[2];
-
-  // std::cout << "Cell " << this << " face " << faceId << "\n";
-  switch (faceId)
-  {
-      // Triangular faces
-    case 0:
-      return this->GetTriangularFace(/*i axis*/ 1, /*k*/ 0);
-    case 1:
-      return this->GetTriangularFace(/*i axis*/ 0, /*k*/ tOrder);
-      // Quadrilateral faces
-    case 2:
-      return this->GetQuadrilateralFace(/*di*/ +1, /*dj*/ 0);
-    case 3:
-      return this->GetQuadrilateralFace(/*di*/ -1, /*dj*/ +1);
-    case 4:
-      return this->GetQuadrilateralFace(/*di*/ 0, /*dj*/ -1);
-    default:
-      vtkErrorMacro("Unhandled wedge face " << faceId);
-      break;
-  }
-  return nullptr;
 }
 
 void vtkHigherOrderWedge::Initialize() {}
@@ -446,12 +404,21 @@ void vtkHigherOrderWedge::EvaluateLocation(
   subId = 0; // TODO: Should this be -1?
   this->InterpolateFunctions(pcoords, weights);
 
-  double p[3];
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
+  const double* p;
   x[0] = x[1] = x[2] = 0.;
   vtkIdType nPoints = this->GetPoints()->GetNumberOfPoints();
   for (vtkIdType idx = 0; idx < nPoints; ++idx)
   {
-    this->Points->GetPoint(idx, p);
+    p = pts + 3 * idx;
     for (vtkIdType jdx = 0; jdx < 3; ++jdx)
     {
       x[jdx] += p[jdx] * weights[idx];
@@ -527,36 +494,78 @@ int vtkHigherOrderWedge::IntersectWithLine(
   return intersection ? 1 : 0;
 }
 
-int vtkHigherOrderWedge::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+int vtkHigherOrderWedge::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  ptIds->Reset();
-  pts->Reset();
+  // Note that the node numbering between the vtkWedge and vtkHigherOrderWedge is different:
+  //
+  //    vtkWedge                vtkHigherOrderWedge
+  //  4 +-------+ 5               5 +-------+ 4
+  //    |\     /|                   |\     /|
+  //    | \   / |                   | \   / |
+  //    |  \ /  |                   |  \ /  |
+  //    | 3 +   |                   | 3 +   |
+  //    |   |   |                   |   |   |
+  //  1 +...|...+ 2               2 +...|...+ 1
+  //     \  |  ,                     \  |  ,
+  //      \ | ,                       \ | ,
+  //       \|,                         \|,
+  //      0 +                         0 +
+  //
+  // For this reason, in order to not get tetrahedra with negative Jacobian,
+  // the nodes 2 and 3 of each tetra are swapped.
 
+  constexpr std::array<vtkIdType, 12> linearWedgeLocalPtIds = { 0, 2, 3, 1, 1, 3, 4, 5, 1, 2, 3,
+    5 };
+
+  int i, j, k, corner;
+  const int* order = this->GetOrder();
   vtkIdType nwedge = this->GetNumberOfApproximatingWedges();
-  vtkVector3i ijk;
-  for (int i = 0; i < nwedge; ++i)
+  ptIds->SetNumberOfIds(nwedge * 12);
+  int count = 0;
+#ifdef VTK_21_POINT_WEDGE
+  if (order[3] == 21)
   {
-    vtkWedge* approx = this->GetApproximateWedge(i);
-    if (!this->SubCellCoordinatesFromId(ijk, i))
+    for (int subId = 0; subId < nwedge; ++subId)
     {
-      continue;
+      if (subId < 0 || subId >= 12)
+      {
+        vtkWarningMacro("Bad subId " << subId << " for 21-point wedge.");
+        return 0;
+      }
+      for (vtkIdType ic : linearWedgeLocalPtIds)
+      {
+        corner = vtkHigherOrderWedge21ApproxCorners[subId][ic];
+        ptIds->SetId(count, corner);
+        count++;
+      }
     }
-    if (approx->Triangulate(
-          (ijk[0] + ijk[1] + ijk[2]) % 2, this->TmpIds.GetPointer(), this->TmpPts.GetPointer()))
+    return 1;
+  }
+#endif
+
+  // Get the point coordinates (and optionally scalars) for each of the 6 corners
+  // in the approximating wedge spanning half of (i, i+1) x (j, j+1) x (k, k+1):
+  // vtkIdType aconn[8]; // = {0, 1, 2, 3, 4, 5, 6, 7};
+  // std::cout << "Wedgeproximate " << subId << "\n";
+  bool orientation;
+  constexpr int deltas[2][3][2] = {
+    { { 0, 0 }, { 1, 0 }, { 0, 1 } }, // positive orientation: r, s axes increase as i, j increase
+    { { 1, 1 }, { 0, 1 }, { 1, 0 } }  // negative orientation: r, s axes decrease as i, j increase
+  };
+  for (int subId = 0; subId < nwedge; ++subId)
+  {
+    if (!linearWedgeLocationFromSubId(subId, order[0], order[2], i, j, k, orientation))
     {
-      // Sigh. Triangulate methods all reset their points/ids
-      // so we must copy them to our output.
-      vtkIdType np = this->TmpPts->GetNumberOfPoints();
-      vtkIdType ni = this->TmpIds->GetNumberOfIds();
-      vtkIdType offset = pts->GetNumberOfPoints();
-      for (vtkIdType ii = 0; ii < np; ++ii)
-      {
-        pts->InsertNextPoint(this->TmpPts->GetPoint(ii));
-      }
-      for (vtkIdType ii = 0; ii < ni; ++ii)
-      {
-        ptIds->InsertNextId(this->TmpIds->GetId(ii) + offset);
-      }
+      vtkWarningMacro(
+        "Bad subId " << subId << " for order " << order[0] << " " << order[1] << " " << order[2]);
+      return 0;
+    }
+    for (vtkIdType ic : linearWedgeLocalPtIds)
+    {
+      corner = this->PointIndexFromIJK(i + deltas[orientation ? 0 : 1][ic % 3][0],
+        j + deltas[orientation ? 0 : 1][ic % 3][1], k + ((ic / 3) ? 1 : 0));
+      ptIds->SetId(count, corner);
+      count++;
     }
   }
   return 1;
@@ -565,7 +574,7 @@ int vtkHigherOrderWedge::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vt
 void vtkHigherOrderWedge::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
-  this->getInterp()->WedgeEvaluateDerivative(
+  this->GetInterpolation()->WedgeEvaluateDerivative(
     this->Order, pcoords, this->GetPoints(), values, dim, derivs);
 }
 
@@ -880,19 +889,16 @@ bool vtkHigherOrderWedge::TransformFaceToCellParams(int bdyFace, double* pcoords
       pcoords[1] = 0.0;
       pcoords[2] = tmp[1];
       return true;
-      // return this->GetQuadrilateralFace(/*di*/ +1, /*dj*/ 0);
     case 3:
       pcoords[0] = 1.0 - tmp[0];
       pcoords[1] = tmp[0];
       pcoords[2] = tmp[1];
       return true;
-      // return this->GetQuadrilateralFace(/*di*/ -1, /*dj*/ +1);
     case 4:
       pcoords[0] = 0.0;
       pcoords[1] = tmp[0];
       pcoords[2] = tmp[1];
       return true;
-      // return this->GetQuadrilateralFace(/*di*/  0, /*dj*/ -1);
     default:
     {
       vtkWarningMacro("Invalid face " << bdyFace << " (expected value in [0,5]).");
@@ -1071,48 +1077,60 @@ vtkWedge* vtkHigherOrderWedge::GetApproximateWedge(
   return approx;
 }
 
-vtkHigherOrderTriangle* vtkHigherOrderWedge::GetTriangularFace(int iAxis, int kk)
+void vtkHigherOrderWedge::GetTriangularFace(int faceId, const int* order,
+  const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+  const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points)
 {
-#ifdef VTK_21_POINT_WEDGE
-  const int nptsActual = this->Order[3];
-#endif
-  const int rsOrder = this->Order[0];
+  int iAxis;
+  int kk;
+  if (faceId == 0)
+  {
+    iAxis = 1;
+    kk = 0;
+  }
+  else if (faceId == 1)
+  {
+    iAxis = 0;
+    kk = order[2];
+  }
+  else
+  {
+    iAxis = 1;
+    kk = 0;
+    vtkGenericWarningMacro("faceId for GetTriangularFace should be 0 or 1 " << faceId);
+  }
 
-  vtkHigherOrderTriangle* result = this->getBdyTri();
+#ifdef VTK_21_POINT_WEDGE
+  const int nptsActual = order[3];
+#endif
+  const int rsOrder = order[0];
+
 #ifdef VTK_21_POINT_WEDGE
   if (nptsActual == 21)
   {
-    result->Points->SetNumberOfPoints(7);
-    result->PointIds->SetNumberOfIds(7);
-    result->Initialize();
+    set_number_of_ids_and_points(7);
     for (int ii = 0; ii < 7; ++ii)
     {
       vtkIdType srcId = vtkHigherOrderWedge21TriFace[kk == 0 ? 0 : 1][ii];
-      result->Points->SetPoint(ii, this->Points->GetPoint(srcId));
-      result->PointIds->SetId(ii, this->PointIds->GetId(srcId));
+      set_ids_and_points(ii, srcId);
     }
-    return result;
+    return;
   }
 #endif
   vtkIdType npts = (rsOrder + 1) * (rsOrder + 2) / 2;
-  result->Points->SetNumberOfPoints(npts);
-  result->PointIds->SetNumberOfIds(npts);
-  result->Initialize();
+  set_number_of_ids_and_points(npts);
   vtkIdType bary[3];
   for (int jj = 0; jj <= rsOrder; ++jj)
   {
     for (int ii = 0; ii <= (rsOrder - jj); ++ii)
     {
-      vtkIdType srcId =
-        iAxis == 0 ? this->PointIndexFromIJK(ii, jj, kk) : this->PointIndexFromIJK(jj, ii, kk);
+      vtkIdType srcId = iAxis == 0 ? vtkHigherOrderWedge::PointIndexFromIJK(ii, jj, kk, order)
+                                   : vtkHigherOrderWedge::PointIndexFromIJK(jj, ii, kk, order);
       bary[0] = ii;
       bary[1] = jj;
       bary[2] = rsOrder - ii - jj;
-      vtkIdType dstId = result->Index(bary, rsOrder);
-      result->Points->SetPoint(dstId, this->Points->GetPoint(srcId));
-      // result->PointIds->SetId(dstId, srcId);
-      // result->PointIds->SetId(dstId, dstId);
-      result->PointIds->SetId(dstId, this->PointIds->GetId(srcId));
+      vtkIdType dstId = vtkHigherOrderTriangle::Index(bary, rsOrder);
+      set_ids_and_points(dstId, srcId);
 
       /*
       vtkVector3d vpt;
@@ -1122,51 +1140,68 @@ vtkHigherOrderTriangle* vtkHigherOrderWedge::GetTriangularFace(int iAxis, int kk
       */
     }
   }
-  return result;
 }
 
-vtkHigherOrderQuadrilateral* vtkHigherOrderWedge::GetQuadrilateralFace(int di, int dj)
+void vtkHigherOrderWedge::GetQuadrilateralFace(int faceId, const int* order,
+  const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+  const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points, int* faceOrder)
 {
-  vtkHigherOrderQuadrilateral* result = this->getBdyQuad();
+  int di;
+  int dj;
+  if (faceId == 2)
+  {
+    di = +1;
+    dj = 0;
+  }
+  else if (faceId == 3)
+  {
+    di = -1;
+    dj = +1;
+  }
+  else if (faceId == 4)
+  {
+    di = 0;
+    dj = -1;
+  }
+  else
+  {
+    di = +1;
+    dj = 0;
+    vtkGenericWarningMacro("faceId for GetQuadrilateralFace should be 2, 3, 4 " << faceId);
+  }
+
 #ifdef VTK_21_POINT_WEDGE
-  const int nptsActual = this->Order[3];
+  const int nptsActual = order[3];
   if (nptsActual == 21)
   {
-    result->Points->SetNumberOfPoints(9);
-    result->PointIds->SetNumberOfIds(9);
-    result->Initialize();
+    set_number_of_ids_and_points(9);
     int quadFace = (di == -dj ? 1 : (dj == 0 ? 0 : 2));
     for (int ii = 0; ii < 9; ++ii)
     {
       vtkIdType srcId = vtkHigherOrderWedge21QuadFace[quadFace][ii];
-      result->Points->SetPoint(ii, this->Points->GetPoint(srcId));
-      result->PointIds->SetId(ii, this->PointIds->GetId(srcId));
+      set_ids_and_points(ii, srcId);
     }
-    result->SetOrder(2, 2);
-    return result;
+    faceOrder[0] = 2;
+    faceOrder[1] = 2;
+    return;
   }
 #endif
-  const int rsOrder = this->Order[0];
-  const int tOrder = this->Order[2];
+  const int rsOrder = order[0];
+  const int tOrder = order[2];
 
   vtkIdType npts = (rsOrder + 1) * (tOrder + 1);
-  result->Points->SetNumberOfPoints(npts);
-  result->PointIds->SetNumberOfIds(npts);
-  result->Initialize();
-  result->SetOrder(rsOrder, tOrder);
-
+  set_number_of_ids_and_points(npts);
+  faceOrder[0] = rsOrder;
+  faceOrder[1] = tOrder;
   for (int kk = 0; kk <= tOrder; ++kk)
   {
     int si = (di >= 0 ? 0 : rsOrder);
     int sj = (dj >= 0 ? 0 : rsOrder);
     for (int ii = 0; ii <= rsOrder; ++ii, si += di, sj += dj)
     {
-      int srcId = this->PointIndexFromIJK(si, sj, kk);
-      int dstId = result->PointIndexFromIJK(ii, kk, 0);
-      result->Points->SetPoint(dstId, this->Points->GetPoint(srcId));
-      result->PointIds->SetId(dstId, this->PointIds->GetId(srcId));
-      // result->PointIds->SetId(dstId, dstId);
-      // result->PointIds->SetId(dstId, srcId);
+      int srcId = vtkHigherOrderWedge::PointIndexFromIJK(si, sj, kk, order);
+      int dstId = vtkHigherOrderQuadrilateral::PointIndexFromIJK(ii, kk, faceOrder);
+      set_ids_and_points(dstId, srcId);
       /*
       vtkVector3d vpt;
       this->Points->GetPoint(srcId, vpt.GetData());
@@ -1175,30 +1210,61 @@ vtkHigherOrderQuadrilateral* vtkHigherOrderWedge::GetQuadrilateralFace(int di, i
       */
     }
   }
-
-  return result;
 }
 
 /**\brief Set the degree  of the cell, given a vtkDataSet and cellId
  */
 void vtkHigherOrderWedge::SetOrderFromCellData(
-  vtkCellData* cell_data, const vtkIdType numPts, const vtkIdType cell_id)
+  vtkCellData* cell_data, vtkIdType numPts, vtkIdType cell_id)
 {
-  if (cell_data->SetActiveAttribute(
-        "HigherOrderDegrees", vtkDataSetAttributes::AttributeTypes::HIGHERORDERDEGREES) != -1)
+  vtkHigherOrderWedge::SetOrderFromCellData(cell_data, numPts, cell_id, this->Order);
+}
+
+void vtkHigherOrderWedge::SetOrderFromCellData(
+  vtkCellData* cell_data, vtkIdType numPts, vtkIdType cell_id, int* order)
+{
+  vtkDataArray* v = cell_data->GetHigherOrderDegrees();
+  if (v)
   {
     double degs[3];
-    vtkDataArray* v = cell_data->GetHigherOrderDegrees();
     v->GetTuple(cell_id, degs);
-    this->SetOrder(degs[0], degs[1], degs[2], numPts);
+    order[0] = degs[0];
+    order[1] = degs[1];
+    order[2] = degs[2];
   }
   else
   {
-    this->SetUniformOrderFromNumPoints(numPts);
+    const double n = static_cast<double>(numPts);
+    static const double third(1. / 3.);
+    static const double ninth(1. / 9.);
+    static const double twentyseventh(1. / 27.);
+    const double term =
+      std::cbrt(third * sqrt(third) * sqrt((27.0 * n - 2.0) * n) + n - twentyseventh);
+    int deg = static_cast<int>(round(term + ninth / term - 4 * third));
+
+#ifdef VTK_21_POINT_WEDGE
+    if (numPts == 21)
+    {
+      deg = 2;
+    }
+#endif
+    order[0] = order[1] = order[2] = deg;
   }
+#ifdef VTK_21_POINT_WEDGE
+  if (numPts == 21)
+  {
+    order[3] = numPts;
+    if ((order[0] != 2) || (order[2] != 2))
+      vtkGenericWarningMacro("For Wedge 21, the degrees should be quadratic.");
+    return;
+  }
+#endif
+  order[3] = (order[0] + 1) * (order[1] + 2) / 2 * (order[2] + 1);
+  if (order[3] != numPts)
+    vtkGenericWarningMacro("The degrees are not correctly set in the input file.");
 }
 
-void vtkHigherOrderWedge::SetUniformOrderFromNumPoints(const vtkIdType numPts)
+void vtkHigherOrderWedge::SetUniformOrderFromNumPoints(vtkIdType numPts)
 {
   const double n = static_cast<double>(numPts);
   static const double third(1. / 3.);
@@ -1218,10 +1284,13 @@ void vtkHigherOrderWedge::SetUniformOrderFromNumPoints(const vtkIdType numPts)
   this->SetOrder(deg, deg, deg, numPts);
 }
 
-void vtkHigherOrderWedge::SetOrder(const int s, const int t, const int u, const vtkIdType numPts)
+void vtkHigherOrderWedge::SetOrder(int s, int t, int u, vtkIdType numPts)
 {
   if (s != t)
     vtkErrorMacro("For wedges, the first two degrees should be equals.");
+
+  if (this->PointParametricCoordinates && (Order[0] != s || Order[2] != u))
+    this->PointParametricCoordinates->Reset();
   Order[0] = s;
   Order[1] = s;
   Order[2] = u;
@@ -1263,3 +1332,17 @@ const int* vtkHigherOrderWedge::GetOrder()
   }
   return this->Order;
 }
+
+bool vtkHigherOrderWedge::PointCountSupportsUniformOrder(vtkIdType pointsPerCell)
+{
+  const double n = static_cast<double>(pointsPerCell);
+  static const double third(1. / 3.);
+  static const double ninth(1. / 9.);
+  static const double twentyseventh(1. / 27.);
+  const double term =
+    std::cbrt(third * sqrt(third) * sqrt((27.0 * n - 2.0) * n) + n - twentyseventh);
+  int deg = static_cast<int>(round(term + ninth / term - 4 * third));
+  int numPointsFromDeg = (deg + 1) * (deg + 2) / 2 * (deg + 1);
+  return (numPointsFromDeg == static_cast<int>(pointsPerCell));
+}
+VTK_ABI_NAMESPACE_END

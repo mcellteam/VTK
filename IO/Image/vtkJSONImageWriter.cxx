@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkJSONImageWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkJSONImageWriter.h"
 
 #include "vtkCharArray.h"
@@ -29,9 +17,10 @@
 #include <vtksys/FStream.hxx>
 #include <vtksys/SystemTools.hxx>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkJSONImageWriter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkJSONImageWriter::vtkJSONImageWriter()
 {
   this->FileName = nullptr;
@@ -40,20 +29,21 @@ vtkJSONImageWriter::vtkJSONImageWriter()
   this->SetNumberOfOutputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkJSONImageWriter::~vtkJSONImageWriter()
 {
   this->SetFileName(nullptr);
+  this->SetArrayName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkJSONImageWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "FileName: " << (this->FileName ? this->FileName : "(none)") << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkJSONImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
@@ -107,7 +97,8 @@ int vtkJSONImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
     {
       continue;
     }
-    if (this->ArrayName && strlen(this->ArrayName) > 0 && strcmp(array->GetName(), this->ArrayName))
+    if (this->ArrayName && strlen(this->ArrayName) > 0 &&
+      strcmp(array->GetName(), this->ArrayName) != 0)
     {
       continue;
     }
@@ -151,9 +142,10 @@ int vtkJSONImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkJSONImageWriter::Write()
 {
   this->Modified();
   this->UpdateWholeExtent();
 }
+VTK_ABI_NAMESPACE_END

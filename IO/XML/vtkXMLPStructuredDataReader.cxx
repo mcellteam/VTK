@@ -1,20 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPStructuredDataReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLPStructuredDataReader.h"
 
-#include "vtkDataArray.h"
+#include "vtkAbstractArray.h"
 #include "vtkDataSet.h"
 #include "vtkExtentSplitter.h"
 #include "vtkInformation.h"
@@ -25,7 +13,8 @@
 
 #include <sstream>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkXMLPStructuredDataReader::vtkXMLPStructuredDataReader()
 {
   this->ExtentSplitter = vtkExtentSplitter::New();
@@ -45,7 +34,7 @@ vtkXMLPStructuredDataReader::vtkXMLPStructuredDataReader()
   memset(this->SubPieceCellIncrements, 0, sizeof(this->SubPieceCellIncrements));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPStructuredDataReader::~vtkXMLPStructuredDataReader()
 {
   if (this->NumberOfPieces)
@@ -55,13 +44,13 @@ vtkXMLPStructuredDataReader::~vtkXMLPStructuredDataReader()
   this->ExtentSplitter->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredDataReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPStructuredDataReader::GetNumberOfPoints()
 {
   return (static_cast<vtkIdType>(this->PointDimensions[0]) *
@@ -69,7 +58,7 @@ vtkIdType vtkXMLPStructuredDataReader::GetNumberOfPoints()
     static_cast<vtkIdType>(this->PointDimensions[2]));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPStructuredDataReader::GetNumberOfCells()
 {
   return (static_cast<vtkIdType>(this->CellDimensions[0]) *
@@ -77,7 +66,7 @@ vtkIdType vtkXMLPStructuredDataReader::GetNumberOfCells()
     static_cast<vtkIdType>(this->CellDimensions[2]));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredDataReader::ReadXMLData()
 {
   // Get the requested Update Extent.
@@ -168,7 +157,7 @@ void vtkXMLPStructuredDataReader::ReadXMLData()
   this->SetOutputExtent(this->UpdateExtent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPStructuredDataReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -177,7 +166,7 @@ int vtkXMLPStructuredDataReader::RequestInformation(
   return this->Superclass::RequestInformation(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPStructuredDataReader::ReadPrimaryElement(vtkXMLDataElement* ePrimary)
 {
   if (!this->Superclass::ReadPrimaryElement(ePrimary))
@@ -208,7 +197,7 @@ int vtkXMLPStructuredDataReader::ReadPrimaryElement(vtkXMLDataElement* ePrimary)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredDataReader::CopyOutputInformation(vtkInformation* outInfo, int port)
 {
   // Let the superclass copy information first.
@@ -227,10 +216,15 @@ void vtkXMLPStructuredDataReader::SetupOutputData()
   this->Superclass::SetupOutputData();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredDataReader::SetupPieces(int numPieces)
 {
   this->Superclass::SetupPieces(numPieces);
+  if (!numPieces)
+  {
+    return;
+  }
+
   this->PieceExtents = new int[6 * this->NumberOfPieces];
   int i;
   for (i = 0; i < this->NumberOfPieces; ++i)
@@ -245,7 +239,7 @@ void vtkXMLPStructuredDataReader::SetupPieces(int numPieces)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredDataReader::DestroyPieces()
 {
   delete[] this->PieceExtents;
@@ -253,7 +247,7 @@ void vtkXMLPStructuredDataReader::DestroyPieces()
   this->Superclass::DestroyPieces();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPStructuredDataReader::ReadPiece(vtkXMLDataElement* ePiece)
 {
   // Superclass will create a reader for the piece's file.
@@ -273,7 +267,7 @@ int vtkXMLPStructuredDataReader::ReadPiece(vtkXMLDataElement* ePiece)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPStructuredDataReader::ReadPieceData()
 {
   // Use the internal reader to read the piece.
@@ -296,8 +290,9 @@ int vtkXMLPStructuredDataReader::ReadPieceData()
   return this->Superclass::ReadPieceData();
 }
 
-//----------------------------------------------------------------------------
-void vtkXMLPStructuredDataReader::CopyArrayForPoints(vtkDataArray* inArray, vtkDataArray* outArray)
+//------------------------------------------------------------------------------
+void vtkXMLPStructuredDataReader::CopyArrayForPoints(
+  vtkAbstractArray* inArray, vtkAbstractArray* outArray)
 {
   if (!inArray || !outArray)
   {
@@ -308,8 +303,9 @@ void vtkXMLPStructuredDataReader::CopyArrayForPoints(vtkDataArray* inArray, vtkD
     this->SubExtent, this->SubPointDimensions, inArray, outArray);
 }
 
-//----------------------------------------------------------------------------
-void vtkXMLPStructuredDataReader::CopyArrayForCells(vtkDataArray* inArray, vtkDataArray* outArray)
+//------------------------------------------------------------------------------
+void vtkXMLPStructuredDataReader::CopyArrayForCells(
+  vtkAbstractArray* inArray, vtkAbstractArray* outArray)
 {
   if (!inArray || !outArray)
   {
@@ -320,10 +316,10 @@ void vtkXMLPStructuredDataReader::CopyArrayForCells(vtkDataArray* inArray, vtkDa
     this->SubExtent, this->SubCellDimensions, inArray, outArray);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredDataReader ::CopySubExtent(int* inExtent, int* inDimensions,
   vtkIdType* inIncrements, int* outExtent, int* outDimensions, vtkIdType* outIncrements,
-  int* subExtent, int* subDimensions, vtkDataArray* inArray, vtkDataArray* outArray)
+  int* subExtent, int* subDimensions, vtkAbstractArray* inArray, vtkAbstractArray* outArray)
 {
   unsigned int components = inArray->GetNumberOfComponents();
   unsigned int tupleSize = inArray->GetDataTypeSize() * components;
@@ -374,7 +370,7 @@ void vtkXMLPStructuredDataReader ::CopySubExtent(int* inExtent, int* inDimension
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPStructuredDataReader::ComputePieceSubExtents()
 {
   // Reset the extent splitter.
@@ -419,9 +415,10 @@ int vtkXMLPStructuredDataReader::ComputePieceSubExtents()
       }
     }
     e_with_warning_C4701 << "The UpdateExtent cannot be filled.";
-    vtkErrorMacro(<< e_with_warning_C4701.str().c_str());
+    vtkErrorMacro(<< e_with_warning_C4701.str());
     return 0;
   }
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

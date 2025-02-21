@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestLabelPlacer2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkActor2D.h"
@@ -37,7 +25,7 @@
 
 #define PTSMULT 10
 #define TXTMULT (PTSMULT * PTSMULT)
-//#define GENERATE_TEST_POINTS
+// #define GENERATE_TEST_POINTS
 
 static const char* vtkTextLabelList[] = {
   "Barbey",
@@ -2497,7 +2485,7 @@ int TestLabelPlacer2D(int argc, char* argv[])
 
   // rw->Render();
 
-  int retval = vtkRegressionTestImageThreshold(rw, 60.0);
+  int retval = vtkRegressionTestImageThreshold(rw, 0.05);
   if (retval == vtkRegressionTester::DO_INTERACTOR)
   {
     ri->Start();

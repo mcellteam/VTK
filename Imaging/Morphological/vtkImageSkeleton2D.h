@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSkeleton2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageSkeleton2D
  * @brief   Skeleton of 2D images.
@@ -33,6 +21,7 @@
 #include "vtkImageIterateFilter.h"
 #include "vtkImagingMorphologicalModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGMORPHOLOGICAL_EXPORT vtkImageSkeleton2D : public vtkImageIterateFilter
 {
 public:
@@ -40,14 +29,14 @@ public:
   vtkTypeMacro(vtkImageSkeleton2D, vtkImageIterateFilter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * When prune is on, only closed loops are left unchanged.
    */
   vtkSetMacro(Prune, vtkTypeBool);
   vtkGetMacro(Prune, vtkTypeBool);
   vtkBooleanMacro(Prune, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Sets the number of cycles in the erosion.
@@ -56,7 +45,7 @@ public:
 
 protected:
   vtkImageSkeleton2D();
-  ~vtkImageSkeleton2D() override {}
+  ~vtkImageSkeleton2D() override = default;
 
   vtkTypeBool Prune;
 
@@ -70,4 +59,5 @@ private:
   void operator=(const vtkImageSkeleton2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

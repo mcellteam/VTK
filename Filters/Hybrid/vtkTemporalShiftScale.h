@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTemporalShiftScale.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTemporalShiftScale
  * @brief   modify the time range/steps of temporal data
@@ -36,6 +24,9 @@
 #include "vtkAlgorithm.h"
 #include "vtkFiltersHybridModule.h" // For export macro
 
+#include <map> // for std::map
+
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSHYBRID_EXPORT vtkTemporalShiftScale : public vtkAlgorithm
 {
 public:
@@ -43,7 +34,7 @@ public:
   vtkTypeMacro(vtkTemporalShiftScale, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Apply a translation to the data before scaling.
    * To convert T{5,100} to T{0,1} use Preshift=-5, Scale=1/95, PostShift=0
@@ -51,25 +42,25 @@ public:
    */
   vtkSetMacro(PreShift, double);
   vtkGetMacro(PreShift, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Apply a translation to the time
    */
   vtkSetMacro(PostShift, double);
   vtkGetMacro(PostShift, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Apply a scale to the time.
    */
   vtkSetMacro(Scale, double);
   vtkGetMacro(Scale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If Periodic is true, requests for time will be wrapped around so that
    * the source appears to be a periodic time source. If data exists for times
@@ -86,9 +77,9 @@ public:
   vtkSetMacro(Periodic, vtkTypeBool);
   vtkGetMacro(Periodic, vtkTypeBool);
   vtkBooleanMacro(Periodic, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * if Periodic time is enabled, this flag determines if the last time step is the same
    * as the first. If PeriodicEndCorrection is true, then it is assumed that the input
@@ -101,9 +92,9 @@ public:
   vtkSetMacro(PeriodicEndCorrection, vtkTypeBool);
   vtkGetMacro(PeriodicEndCorrection, vtkTypeBool);
   vtkBooleanMacro(PeriodicEndCorrection, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * if Periodic time is enabled, this controls how many time periods time is reported
    * for. A filter cannot output an infinite number of time steps and therefore a finite
@@ -111,7 +102,7 @@ public:
    */
   vtkSetMacro(MaximumNumberOfPeriods, double);
   vtkGetMacro(MaximumNumberOfPeriods, double);
-  //@}
+  ///@}
 
 protected:
   vtkTemporalShiftScale();
@@ -153,6 +144,9 @@ protected:
 private:
   vtkTemporalShiftScale(const vtkTemporalShiftScale&) = delete;
   void operator=(const vtkTemporalShiftScale&) = delete;
+
+  std::map<double, double> OutputToInputTimes;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRuledSurfaceFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRuledSurfaceFilter.h"
 
 #include "vtkCellArray.h"
@@ -23,8 +11,10 @@
 #include "vtkPolyData.h"
 #include "vtkPolyLine.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRuledSurfaceFilter);
 
+//------------------------------------------------------------------------------
 vtkRuledSurfaceFilter::vtkRuledSurfaceFilter()
 {
   this->DistanceFactor = 3.0;
@@ -40,11 +30,13 @@ vtkRuledSurfaceFilter::vtkRuledSurfaceFilter()
   this->Ids->SetNumberOfIds(4);
 }
 
+//------------------------------------------------------------------------------
 vtkRuledSurfaceFilter::~vtkRuledSurfaceFilter()
 {
   this->Ids->Delete();
 }
 
+//------------------------------------------------------------------------------
 int vtkRuledSurfaceFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -56,9 +48,8 @@ int vtkRuledSurfaceFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkPolyData* input = vtkPolyData::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkPolyData* output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  vtkPoints *inPts, *newPts = nullptr;
   vtkIdType i, numPts, numLines;
-  vtkCellArray *inLines, *newPolys, *newStrips;
+  vtkCellArray* inLines;
   const vtkIdType* pts = nullptr;
   const vtkIdType* pts2 = nullptr;
   vtkIdType npts = 0;
@@ -69,7 +60,7 @@ int vtkRuledSurfaceFilter::RequestData(vtkInformation* vtkNotUsed(request),
   //
   vtkDebugMacro(<< "Creating a ruled surface");
 
-  inPts = input->GetPoints();
+  vtkPoints* inPts = input->GetPoints();
   inLines = input->GetLines();
   if (!inPts || !inLines)
   {
@@ -89,7 +80,7 @@ int vtkRuledSurfaceFilter::RequestData(vtkInformation* vtkNotUsed(request),
 
   if (this->RuledMode == VTK_RULED_MODE_RESAMPLE) // generating new points
   {
-    newPts = vtkPoints::New();
+    vtkNew<vtkPoints> newPts;
     output->SetPoints(newPts);
     outPD->InterpolateAllocate(inPD, numPts);
     if (this->PassLines) // need to copy input points
@@ -100,25 +91,22 @@ int vtkRuledSurfaceFilter::RequestData(vtkInformation* vtkNotUsed(request),
         outPD->CopyData(inPD, i, i);
       }
     }
-    newPts->Delete();
-    newStrips = vtkCellArray::New();
+    vtkNew<vtkCellArray> newStrips;
     newStrips->AllocateEstimate(
       2 * (this->Resolution[1] + 1) * this->Resolution[0] * (numLines - 1), 1);
     output->SetStrips(newStrips);
-    newStrips->Delete();
   }
   else // using original points
   {
     output->SetPoints(inPts);
     output->GetPointData()->PassData(input->GetPointData());
-    newPolys = vtkCellArray::New();
+    vtkNew<vtkCellArray> newPolys;
     newPolys->AllocateEstimate(2 * numPts, 1);
     output->SetPolys(newPolys);
-    newPolys->Delete();
   }
 
   // For each pair of lines (as selected by Offset and OnRatio), create a
-  // stripe (a ruled surfac between two lines).
+  // stripe (a ruled surface between two lines).
   //
   inLines->InitTraversal();
   inLines->GetNextCell(npts, pts);
@@ -126,7 +114,7 @@ int vtkRuledSurfaceFilter::RequestData(vtkInformation* vtkNotUsed(request),
   {
     // abort/progress methods
     this->UpdateProgress((double)i / numLines);
-    if (this->GetAbortExecute())
+    if (this->CheckAbort())
     {
       break; // out of line loop
     }
@@ -139,7 +127,7 @@ int vtkRuledSurfaceFilter::RequestData(vtkInformation* vtkNotUsed(request),
       switch (this->RuledMode)
       {
         case VTK_RULED_MODE_RESAMPLE:
-          this->Resample(output, input, inPts, newPts, npts, pts, npts2, pts2);
+          this->Resample(output, input, inPts, output->GetPoints(), npts, pts, npts2, pts2);
           break;
         case VTK_RULED_MODE_POINT_WALK:
           this->PointWalk(output, inPts, npts, pts, npts2, pts2);
@@ -166,6 +154,7 @@ int vtkRuledSurfaceFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
+//------------------------------------------------------------------------------
 void vtkRuledSurfaceFilter::Resample(vtkPolyData* output, vtkPolyData* input, vtkPoints* inPts,
   vtkPoints* newPts, int npts, const vtkIdType* pts, int npts2, const vtkIdType* pts2)
 {
@@ -378,6 +367,7 @@ void vtkRuledSurfaceFilter::Resample(vtkPolyData* output, vtkPolyData* input, vt
   }
 }
 
+//------------------------------------------------------------------------------
 void vtkRuledSurfaceFilter::PointWalk(vtkPolyData* output, vtkPoints* inPts, int npts,
   const vtkIdType* pts, int npts2, const vtkIdType* pts2)
 {
@@ -528,6 +518,7 @@ void vtkRuledSurfaceFilter::PointWalk(vtkPolyData* output, vtkPoints* inPts, int
   }   // while still building the stripe
 }
 
+//------------------------------------------------------------------------------
 const char* vtkRuledSurfaceFilter::GetRuledModeAsString()
 {
   if (this->RuledMode == VTK_RULED_MODE_RESAMPLE)
@@ -540,6 +531,7 @@ const char* vtkRuledSurfaceFilter::GetRuledModeAsString()
   }
 }
 
+//------------------------------------------------------------------------------
 void vtkRuledSurfaceFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -554,3 +546,4 @@ void vtkRuledSurfaceFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Orient Loops: " << (this->OrientLoops ? "On\n" : "Off\n");
   os << indent << "Pass Lines: " << (this->PassLines ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

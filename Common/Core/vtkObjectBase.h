@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkObjectBase.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkObjectBase
  * @brief   abstract base class for most VTK objects
@@ -49,12 +37,17 @@
 #define VTK_HAS_INITIALIZE_OBJECT_BASE
 
 #include "vtkCommonCoreModule.h" // For export macro
+#include "vtkDeprecation.h"
+#include "vtkFeatures.h" // for VTK_USE_MEMKIND
 #include "vtkIndent.h"
 #include "vtkSystemIncludes.h"
 #include "vtkType.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
 #include <atomic> // For std::atomic
+#include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGarbageCollector;
 class vtkGarbageCollectorToObjectBaseFriendship;
 class vtkWeakPointerBase;
@@ -65,7 +58,7 @@ typedef void* (*vtkMallocingFunction)(size_t);
 typedef void* (*vtkReallocingFunction)(void*, size_t);
 typedef void (*vtkFreeingFunction)(void*);
 
-class VTKCOMMONCORE_EXPORT vtkObjectBase
+class VTKCOMMONCORE_EXPORT VTK_MARSHALAUTO vtkObjectBase
 {
   /**
    * Return the class name as a string. This method is overridden
@@ -84,7 +77,14 @@ public:
   /**
    * Return the class name as a string.
    */
+  VTK_MARSHALGETTER(ClassName)
   const char* GetClassName() const;
+
+  /**
+   * The object description printed in messages and PrintSelf
+   * output. To be used only for reporting purposes.
+   */
+  virtual std::string GetObjectDescription() const;
 
 #ifdef VTK_WORKAROUND_WINDOWS_MANGLE
 #undef GetClassNameW
@@ -121,7 +121,7 @@ public:
   static vtkIdType GetNumberOfGenerationsFromBaseType(const char* name);
 
   /**
-   * Given a the name of a base class of this class type, return the distance
+   * Given the name of a base class of this class type, return the distance
    * of inheritance between this class type and the named class (how many
    * generations of inheritance are there between this class and the named
    * class). If the named class is not in this class's inheritance tree, return
@@ -158,7 +158,7 @@ public:
   }
 
   // Called by implementations of vtkObject::New(). Centralized location for
-  // vtkDebugLeaks registration:
+  // vtkDebugLeaks registration.
   void InitializeObjectBase();
 
 #if defined(_WIN32) || defined(VTK_USE_MEMKIND)
@@ -173,7 +173,7 @@ public:
    */
   void Print(ostream& os);
 
-  //@{
+  ///@{
   /**
    * Methods invoked by print to print information about the object
    * including superclasses. Typically not called by the user (use
@@ -183,36 +183,46 @@ public:
   virtual void PrintSelf(ostream& os, vtkIndent indent);
   virtual void PrintHeader(ostream& os, vtkIndent indent);
   virtual void PrintTrailer(ostream& os, vtkIndent indent);
-  //@}
+  ///@}
 
   /**
    * Increase the reference count (mark as used by another object).
    */
-  virtual void Register(vtkObjectBase* o);
+  void Register(vtkObjectBase* o);
 
   /**
    * Decrease the reference count (release by another object). This
    * has the same effect as invoking Delete() (i.e., it reduces the
    * reference count by 1).
    */
+  // XXX(virtual): VTK_DEPRECATED_IN_9_2_0("Override `UsesGarbageCollector()` instead")
   virtual void UnRegister(vtkObjectBase* o);
+
+  /// @{
+  /**
+   * Indicate whether the class uses `vtkGarbageCollector` or not.
+   *
+   * Most classes will not need to do this, but if the class participates in a
+   * strongly-connected reference count cycle, participation can resolve these
+   * cycles.
+   *
+   * If overriding this method to return true, the `ReportReferences` method
+   * should be overridden to report references that may be in cycles.
+   */
+  virtual bool UsesGarbageCollector() const { return false; }
+  /// @}
 
   /**
    * Return the current reference count of this object.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   int GetReferenceCount() { return this->ReferenceCount; }
 
   /**
    * Sets the reference count. (This is very dangerous, use with care.)
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   void SetReferenceCount(int);
-
-/**
- * Legacy.  Do not call.
- */
-#ifndef VTK_LEGACY_REMOVE
-  void PrintRevisions(ostream&) {}
-#endif
 
   /**
    * The name of a directory, ideally mounted -o dax, to memory map an
@@ -222,14 +232,14 @@ public:
    */
   static void SetMemkindDirectory(const char* directoryname);
 
-  //@{
+  ///@{
   /**
    * A global state flag that controls whether vtkObjects are
    * constructed in the usual way (the default) or within the extended
    * memory space.
    */
   static bool GetUsingMemkind();
-  //@}
+  ///@}
 
   /**
    * A class to help modify and restore the global UsingMemkind state, like
@@ -238,12 +248,18 @@ public:
    */
   class VTKCOMMONCORE_EXPORT vtkMemkindRAII
   {
+#ifdef VTK_USE_MEMKIND
     bool OriginalValue;
+#endif
 
   public:
     vtkMemkindRAII(bool newValue);
     ~vtkMemkindRAII();
     vtkMemkindRAII(vtkMemkindRAII const&) = default;
+
+  private:
+    void Save(bool newValue);
+    void Restore();
   };
 
   /**
@@ -255,10 +271,6 @@ public:
 protected:
   vtkObjectBase();
   virtual ~vtkObjectBase();
-
-#ifndef VTK_LEGACY_REMOVE
-  virtual void CollectRevisions(ostream&) {} // Legacy; do not use!
-#endif
 
   std::atomic<int32_t> ReferenceCount;
   vtkWeakPointerBase** WeakPointers;
@@ -281,6 +293,8 @@ protected:
   // Call this to unconditionally call memkind_free
   static vtkFreeingFunction GetAlternateFreeFunction();
 
+  virtual void ObjectFinalize();
+
 private:
   friend VTKCOMMONCORE_EXPORT ostream& operator<<(ostream& os, vtkObjectBase& o);
   friend class vtkGarbageCollectorToObjectBaseFriendship;
@@ -292,10 +306,24 @@ private:
   bool IsInMemkind;
   void SetIsInMemkind(bool);
 
+  ///@{
+  /**
+   * Some classes need to clear the reference counts manually due to the way
+   * they work.
+   */
+  friend class vtkInformationKey;
+  friend class vtkGarbageCollector;
+  void ClearReferenceCounts();
+  ///@}
+
+  friend class vtkDebugLeaks;
+  virtual const char* GetDebugClassName() const;
+
 protected:
   vtkObjectBase(const vtkObjectBase&) {}
   void operator=(const vtkObjectBase&) {}
 };
+VTK_ABI_NAMESPACE_END
 #endif
 
 // VTK-HeaderTest-Exclude: vtkObjectBase.h

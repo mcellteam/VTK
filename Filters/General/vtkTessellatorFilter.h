@@ -1,17 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkTessellatorFilter.h
-Language:  C++
-
-Copyright 2003 Sandia Corporation.
-Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-license for use of this work by or on behalf of the
-U.S. Government. Redistribution and use in source and binary forms, with
-or without modification, are permitted provided that this Notice and any
-statement of authorship are reproduced on all copies.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-NVIDIA-USGov
 #ifndef vtkTessellatorFilter_h
 #define vtkTessellatorFilter_h
 
@@ -25,7 +14,7 @@ statement of authorship are reproduced on all copies.
  * after ParaView 1.4.0.
  *
  * This filter rifles through all the cells in an input vtkDataSet. It
- * tesselates each cell and uses the vtkStreamingTessellator and
+ * tessellates each cell and uses the vtkStreamingTessellator and
  * vtkDataSetEdgeSubdivisionCriterion classes to generate simplices that
  * approximate the nonlinear mesh using some approximation metric (encoded
  * in the particular vtkDataSetEdgeSubdivisionCriterion::EvaluateLocationAndFields
@@ -56,6 +45,7 @@ statement of authorship are reproduced on all copies.
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkDataSet;
 class vtkDataSetEdgeSubdivisionCriterion;
@@ -81,7 +71,7 @@ public:
 
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set the dimension of the output tessellation.
    * Cells in dimensions higher than the given value will have
@@ -92,11 +82,14 @@ public:
    */
   vtkSetClampMacro(OutputDimension, int, 1, 3);
   vtkGetMacro(OutputDimension, int);
-  //@}
+  ///@}
 
+// With VTK_USE_FUTURE_CONST, vtkGetMacro already makes the member const.
+#if !VTK_USE_FUTURE_CONST
   int GetOutputDimension() const;
+#endif
 
-  //@{
+  ///@{
   /**
    * These are convenience routines for setting properties maintained by the
    * tessellator and subdivider. They are implemented here for ParaView's
@@ -106,17 +99,17 @@ public:
   int GetMaximumNumberOfSubdivisions();
   virtual void SetChordError(double ce);
   double GetChordError();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods are for the ParaView client.
    */
   virtual void ResetFieldCriteria();
-  virtual void SetFieldCriterion(int field, double chord);
-  //@}
+  virtual void SetFieldCriterion(int field, double err);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The adaptive tessellation will output vertices that are not shared
    * among cells, even where they should be. This can be corrected to
@@ -126,7 +119,7 @@ public:
   vtkGetMacro(MergePoints, vtkTypeBool);
   vtkSetMacro(MergePoints, vtkTypeBool);
   vtkBooleanMacro(MergePoints, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkTessellatorFilter();
@@ -163,7 +156,7 @@ protected:
   vtkTypeBool MergePoints;
   vtkPointLocator* Locator;
 
-  //@{
+  ///@{
   /**
    * These member variables are set by SetupOutput for use inside the
    * callback members OutputLine and OutputTriangle.
@@ -172,7 +165,7 @@ protected:
   vtkPoints* OutputPoints;
   vtkDataArray** OutputAttributes;
   int* OutputAttributeIndices;
-  //@}
+  ///@}
 
   static void AddAPoint(const double*, vtkEdgeSubdivisionCriterion*, void*, const void*);
   static void AddALine(
@@ -191,9 +184,13 @@ private:
   void operator=(const vtkTessellatorFilter&) = delete;
 };
 
+// With VTK_USE_FUTURE_CONST, vtkGetMacro already makes the member const.
+#if !VTK_USE_FUTURE_CONST
 inline int vtkTessellatorFilter::GetOutputDimension() const
 {
   return this->OutputDimension;
 }
+#endif
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkTessellatorFilter_h

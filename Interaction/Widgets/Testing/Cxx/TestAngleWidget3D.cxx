@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestAngleWidget3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 //
 // This example tests the vtkAngleWidget.
 
@@ -35,6 +23,9 @@
 #include "vtkTestUtilities.h"
 #include "vtkTesting.h"
 #include "vtkXMLPolyDataReader.h"
+
+namespace
+{
 
 const char TestAngleWidget3DEventLog[] = "# StreamVersion 1\n"
                                          "RenderEvent 0 0 0 0 0 0 0\n"
@@ -666,6 +657,8 @@ public:
   }
 };
 
+}
+
 // The actual test function
 int TestAngleWidget3D(int argc, char* argv[])
 {
@@ -694,6 +687,8 @@ int TestAngleWidget3D(int argc, char* argv[])
   handle->GetProperty()->SetColor(1, 0, 0);
   vtkSmartPointer<vtkAngleRepresentation3D> rep = vtkSmartPointer<vtkAngleRepresentation3D>::New();
   rep->SetHandleRepresentation(handle);
+  rep->SetScale(vtkMath::Pi() / 180.0);
+  rep->SetLabelFormat("%-#6.3g rad");
 
   vtkSmartPointer<vtkAngleWidget> widget = vtkSmartPointer<vtkAngleWidget>::New();
   widget->SetInteractor(iren);

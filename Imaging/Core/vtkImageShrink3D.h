@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageShrink3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageShrink3D
  * @brief   Subsamples an image.
@@ -26,6 +14,7 @@
 #include "vtkImagingCoreModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImageShrink3D : public vtkThreadedImageAlgorithm
 {
 public:
@@ -33,23 +22,23 @@ public:
   vtkTypeMacro(vtkImageShrink3D, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the shrink factors
    */
   vtkSetVector3Macro(ShrinkFactors, int);
   vtkGetVector3Macro(ShrinkFactors, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the pixel to use as origin.
    */
   vtkSetVector3Macro(Shift, int);
   vtkGetVector3Macro(Shift, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Choose Mean, Minimum, Maximum, Median or sub sampling.
    * The neighborhood operations are not centered on the sampled pixel.
@@ -60,7 +49,7 @@ public:
   void SetAveraging(vtkTypeBool);
   vtkTypeBool GetAveraging() { return this->GetMean(); }
   vtkBooleanMacro(Averaging, vtkTypeBool);
-  //@}
+  ///@}
 
   void SetMean(vtkTypeBool);
   vtkGetMacro(Mean, vtkTypeBool);
@@ -80,7 +69,7 @@ public:
 
 protected:
   vtkImageShrink3D();
-  ~vtkImageShrink3D() override {}
+  ~vtkImageShrink3D() override = default;
 
   int ShrinkFactors[3];
   int Shift[3];
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkImageShrink3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

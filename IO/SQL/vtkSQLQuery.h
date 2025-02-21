@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSQLQuery.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkSQLQuery
  * @brief   executes an sql query and retrieves results
@@ -61,6 +45,7 @@
 #include "vtkRowQuery.h"
 #include "vtkStdString.h" // for EscapeString()
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSQLDatabase;
 class vtkVariant;
 class vtkVariantArray;
@@ -71,7 +56,7 @@ public:
   vtkTypeMacro(vtkSQLQuery, vtkRowQuery);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The query string to be executed.  Since some databases will
    * process the query string as soon as it's set, this method returns
@@ -79,7 +64,7 @@ public:
    */
   virtual bool SetQuery(const char* query);
   virtual const char* GetQuery();
-  //@}
+  ///@}
 
   /**
    * Return true if the query is active (i.e. execution was successful
@@ -104,12 +89,12 @@ public:
   virtual bool CommitTransaction() { return true; }
   virtual bool RollbackTransaction() { return true; }
 
-  //@{
+  ///@{
   /**
    * Return the database associated with the query.
    */
   vtkGetObjectMacro(Database, vtkSQLDatabase);
-  //@}
+  ///@}
 
   /**
    * Bind a parameter to a placeholder in a query.  A full discussion
@@ -188,7 +173,7 @@ public:
    * defaults to true.
 
    * A default, simple-minded implementation is provided for
-   * database backends that do not provde a way to escape
+   * database backends that do not provide a way to escape
    * strings for use inside queries.
    */
   virtual vtkStdString EscapeString(vtkStdString s, bool addSurroundingQuotes = true);
@@ -225,4 +210,5 @@ private:
   void operator=(const vtkSQLQuery&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkSQLQuery_h

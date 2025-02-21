@@ -1,27 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContextDevice2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkContextDevice2D.h"
 #include "vtkAbstractMapper.h" // for VTK_SCALAR_MODE defines
 #include "vtkBrush.h"
 #include "vtkCellIterator.h"
+#include "vtkFloatArray.h"
 #include "vtkMathTextUtilities.h"
 #include "vtkPen.h"
 #include "vtkPolyData.h"
 #include "vtkRect.h"
-#include "vtkStdString.h"
 #include "vtkTextProperty.h"
 #include "vtkUnsignedCharArray.h"
 
@@ -29,6 +17,7 @@
 #include <cassert>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkAbstractObjectFactoryNewMacro(vtkContextDevice2D);
 
 vtkContextDevice2D::vtkContextDevice2D()
@@ -41,7 +30,7 @@ vtkContextDevice2D::vtkContextDevice2D()
   this->TextProp = vtkTextProperty::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkContextDevice2D::~vtkContextDevice2D()
 {
   this->Pen->Delete();
@@ -49,13 +38,13 @@ vtkContextDevice2D::~vtkContextDevice2D()
   this->TextProp->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkContextDevice2D::MathTextIsSupported()
 {
   return vtkMathTextUtilities::GetInstance() != nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::DrawPolyData(
   float p[2], float scale, vtkPolyData* polyData, vtkUnsignedCharArray* colors, int scalarMode)
 {
@@ -114,7 +103,7 @@ void vtkContextDevice2D::DrawPolyData(
       }
     }
 
-    if (cellType == VTK_LINE || cellType == VTK_POLY_LINE )
+    if (cellType == VTK_LINE || cellType == VTK_POLY_LINE)
     {
       this->DrawPoly(verts.data(), numPoints, vertColors.data(), 4);
     }
@@ -126,32 +115,32 @@ void vtkContextDevice2D::DrawPolyData(
   cell->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::ApplyPen(vtkPen* pen)
 {
   this->Pen->DeepCopy(pen);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::ApplyBrush(vtkBrush* brush)
 {
   this->Brush->DeepCopy(brush);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::ApplyTextProp(vtkTextProperty* prop)
 {
   // This is a deep copy, but is called shallow for some reason...
   this->TextProp->ShallowCopy(prop);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkContextDevice2D::GetBufferIdMode() const
 {
   return this->BufferId != nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::BufferIdModeBegin(vtkAbstractContextBufferId* bufferId)
 {
   assert("pre: not_yet" && !this->GetBufferIdMode());
@@ -162,7 +151,7 @@ void vtkContextDevice2D::BufferIdModeBegin(vtkAbstractContextBufferId* bufferId)
   assert("post: started" && this->GetBufferIdMode());
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::BufferIdModeEnd()
 {
   assert("pre: started" && this->GetBufferIdMode());
@@ -172,7 +161,7 @@ void vtkContextDevice2D::BufferIdModeEnd()
   assert("post: done" && !this->GetBufferIdMode());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -184,11 +173,49 @@ void vtkContextDevice2D::PrintSelf(ostream& os, vtkIndent indent)
   this->TextProp->PrintSelf(os, indent.GetNextIndent());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::DrawMarkers(int, bool, float*, int, unsigned char*, int) {}
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextDevice2D::DrawColoredPolygon(float*, int, unsigned char*, int)
 {
   vtkErrorMacro("DrawColoredPolygon not implemented on this device.");
 }
+
+//------------------------------------------------------------------------------
+void vtkContextDevice2D::DrawPoints(
+  vtkDataArray* positions, vtkUnsignedCharArray* colors, std::uintptr_t)
+{
+  float* f = vtkArrayDownCast<vtkFloatArray>(positions)->GetPointer(0);
+  const int nv = positions->GetNumberOfTuples();
+
+  auto c = (colors && colors->GetNumberOfTuples() > 0) ? colors->GetPointer(0) : nullptr;
+  const int nc_comps = colors ? colors->GetNumberOfComponents() : 0;
+  this->DrawPoints(f, nv, c, nc_comps);
+}
+
+//------------------------------------------------------------------------------
+void vtkContextDevice2D::DrawPointSprites(
+  vtkImageData* sprite, vtkDataArray* positions, vtkUnsignedCharArray* colors, std::uintptr_t)
+{
+  float* f = vtkArrayDownCast<vtkFloatArray>(positions)->GetPointer(0);
+  const int nv = positions->GetNumberOfTuples();
+
+  auto c = (colors && colors->GetNumberOfTuples() > 0) ? colors->GetPointer(0) : nullptr;
+  const int nc_comps = colors ? colors->GetNumberOfComponents() : 0;
+  this->DrawPointSprites(sprite, f, nv, c, nc_comps);
+}
+
+//------------------------------------------------------------------------------
+void vtkContextDevice2D::DrawMarkers(
+  int shape, bool highlight, vtkDataArray* positions, vtkUnsignedCharArray* colors, std::uintptr_t)
+{
+  float* f = vtkArrayDownCast<vtkFloatArray>(positions)->GetPointer(0);
+  const int nv = positions->GetNumberOfTuples();
+
+  auto c = (colors && colors->GetNumberOfTuples() > 0) ? colors->GetPointer(0) : nullptr;
+  const int nc_comps = colors ? colors->GetNumberOfComponents() : 0;
+  this->DrawMarkers(shape, highlight, f, nv, c, nc_comps);
+}
+
+VTK_ABI_NAMESPACE_END

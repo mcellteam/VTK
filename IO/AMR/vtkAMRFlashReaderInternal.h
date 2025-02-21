@@ -1,22 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAMRFlashReaderInternal.hpp
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAMRFlashReaderInternal
- *
- *
- *  Consists of the low-level Flash Reader used by the vtkAMRFlashReader.
+ * @brief   Consists of the low-level Flash Reader used by the vtkAMRFlashReader.
  *
  * @sa
  *  vtkAMRFlashReader
@@ -52,6 +38,7 @@
 #define FLASH_READER_FLASH3_FFV8 8
 #define FLASH_READER_FLASH3_FFV9 9
 
+VTK_ABI_NAMESPACE_BEGIN
 typedef struct tagFlashReaderIntegerScalar
 {
   char Name[20]; // name  of the integer scalar
@@ -76,7 +63,7 @@ typedef struct tagFlashReaderSimulationParameters
   double RedShift;
 } FlashReaderSimulationParameters;
 
-typedef struct tagBlock
+typedef struct tagFlashReaderBlock
 {
   int Index;                   // Id of the block
   int Level;                   // LOD level
@@ -90,7 +77,7 @@ typedef struct tagBlock
   double Center[3];            // center of the block
   double MinBounds[3];         // lower left  of the bounding box
   double MaxBounds[3];         // upper right of the bounding box
-} Block;
+} FlashReaderBlock;
 
 typedef struct tagFlashReaderSimulationInformation
 {
@@ -154,7 +141,7 @@ public:
   FlashReaderSimulationInformation SimulationInformation; // CFD simulation
 
   // blocks
-  std::vector<Block> Blocks;
+  std::vector<FlashReaderBlock> Blocks;
   std::vector<int> LeafBlocks;
   std::vector<std::string> AttributeNames;
 
@@ -168,7 +155,7 @@ public:
   double GetTime();
 
   void Init();
-  void SetFileName(char* fileName) { this->FileName = fileName; }
+  void SetFileName(VTK_FILEPATH char* fileName) { this->FileName = fileName; }
   const char* GetParticleName(char* variableName)
   {
     static std::string particleName;
@@ -200,5 +187,6 @@ public:
 // ----------------------------------------------------------------------------
 //                     Class  vtkFlashReaderInternal ( end )
 // ----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_END
 #endif /* vtkAMRFlashReaderInternal_h */
 // VTK-HeaderTest-Exclude: vtkAMRFlashReaderInternal.h

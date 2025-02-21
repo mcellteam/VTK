@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCaptionWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCaptionWidget.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCaptionRepresentation.h"
@@ -24,6 +12,7 @@
 #include "vtkWidgetCallbackMapper.h"
 #include "vtkWidgetEvent.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCaptionWidget);
 
 // The point widget invokes events that we watch for. Basically
@@ -54,7 +43,7 @@ public:
   vtkCaptionWidget* CaptionWidget;
 };
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCaptionWidget::vtkCaptionWidget()
 {
   // The priority of the point widget is set a little higher than me.
@@ -77,14 +66,14 @@ vtkCaptionWidget::vtkCaptionWidget()
   this->HandleWidget->AddObserver(vtkCommand::EndInteractionEvent, this->AnchorCallback, 1.0);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCaptionWidget::~vtkCaptionWidget()
 {
   this->HandleWidget->Delete();
   this->AnchorCallback->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionWidget::SetEnabled(int enabling)
 {
   if (this->Interactor)
@@ -112,7 +101,7 @@ void vtkCaptionWidget::SetEnabled(int enabling)
   this->Superclass::SetEnabled(enabling);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -121,7 +110,7 @@ void vtkCaptionWidget::CreateDefaultRepresentation()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionWidget::SetCaptionActor2D(vtkCaptionActor2D* capActor)
 {
   vtkCaptionRepresentation* capRep = reinterpret_cast<vtkCaptionRepresentation*>(this->WidgetRep);
@@ -138,7 +127,7 @@ void vtkCaptionWidget::SetCaptionActor2D(vtkCaptionActor2D* capActor)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCaptionActor2D* vtkCaptionWidget::GetCaptionActor2D()
 {
   vtkCaptionRepresentation* capRep = reinterpret_cast<vtkCaptionRepresentation*>(this->WidgetRep);
@@ -152,14 +141,14 @@ vtkCaptionActor2D* vtkCaptionWidget::GetCaptionActor2D()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionWidget::StartAnchorInteraction()
 {
   this->Superclass::StartInteraction();
   this->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionWidget::AnchorInteraction()
 {
   vtkCaptionRepresentation* rep = reinterpret_cast<vtkCaptionRepresentation*>(this->WidgetRep);
@@ -169,15 +158,16 @@ void vtkCaptionWidget::AnchorInteraction()
   this->InvokeEvent(vtkCommand::InteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionWidget::EndAnchorInteraction()
 {
   this->Superclass::EndInteraction();
   this->InvokeEvent(vtkCommand::EndInteractionEvent, nullptr);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

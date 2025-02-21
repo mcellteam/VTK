@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageAppendComponents.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageAppendComponents
  * @brief   Collects components from two inputs into
@@ -29,11 +17,13 @@
 #include "vtkImagingCoreModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImageAppendComponents : public vtkThreadedImageAlgorithm
 {
 public:
   static vtkImageAppendComponents* New();
   vtkTypeMacro(vtkImageAppendComponents, vtkThreadedImageAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Replace one of the input connections with a new input.  You can
@@ -43,7 +33,7 @@ public:
    */
   virtual void ReplaceNthInputConnection(int idx, vtkAlgorithmOutput* input);
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection() to
@@ -51,9 +41,9 @@ public:
    */
   void SetInputData(int num, vtkDataObject* input);
   void SetInputData(vtkDataObject* input) { this->SetInputData(0, input); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get one input to this filter. This method is only for support of
    * old-style pipeline connections.  When writing new code you should
@@ -61,7 +51,7 @@ public:
    */
   vtkDataObject* GetInput(int num);
   vtkDataObject* GetInput() { return this->GetInput(0); }
-  //@}
+  ///@}
 
   /**
    * Get the number of inputs to this filter. This method is only for
@@ -71,8 +61,8 @@ public:
   int GetNumberOfInputs() { return this->GetNumberOfInputConnections(0); }
 
 protected:
-  vtkImageAppendComponents() {}
-  ~vtkImageAppendComponents() override {}
+  vtkImageAppendComponents() = default;
+  ~vtkImageAppendComponents() override = default;
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -88,6 +78,5 @@ private:
   void operator=(const vtkImageAppendComponents&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageAppendComponents.h

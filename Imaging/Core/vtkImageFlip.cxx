@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageFlip.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageFlip.h"
 
 #include "vtkDataSetAttributes.h"
@@ -22,9 +10,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageFlip);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageFlip::vtkImageFlip()
 {
   this->PreserveImageExtent = 1;
@@ -39,7 +28,7 @@ vtkImageFlip::vtkImageFlip()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageFlip::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -98,20 +87,10 @@ int vtkImageFlip::RequestInformation(vtkInformation* vtkNotUsed(request),
   outInfo->Set(vtkDataObject::SPACING(), spacing, 3);
   outInfo->Set(vtkDataObject::ORIGIN(), origin, 3);
 
-  vtkInformation* inScalarInfo = vtkDataObject::GetActiveFieldInformation(
-    inInfo, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::SCALARS);
-  if (!inScalarInfo)
-  {
-    vtkErrorMacro("Missing scalar field on input information!");
-    return 0;
-  }
-  vtkDataObject::SetPointDataActiveScalarInfo(outInfo,
-    inScalarInfo->Get(vtkDataObject::FIELD_ARRAY_TYPE()),
-    inScalarInfo->Get(vtkDataObject::FIELD_NUMBER_OF_COMPONENTS()));
-  return 1;
+  return this->RequestInformationBase(inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageFlip::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -120,3 +99,4 @@ void vtkImageFlip::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "FlipAboutOrigin: " << (this->FlipAboutOrigin ? "On\n" : "Off\n");
   os << indent << "PreserveImageExtent: " << (this->PreserveImageExtent ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

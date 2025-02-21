@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlotArea.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPlotArea
  * @brief   draws an area plot.
@@ -28,7 +16,11 @@
 
 #include "vtkPlot.h"
 
-class VTKCHARTSCORE_EXPORT vtkPlotArea : public vtkPlot
+#include "vtkChartsCoreModule.h" // for export macro
+#include "vtkWrappingHints.h"    // For VTK_MARSHALAUTO
+
+VTK_ABI_NAMESPACE_BEGIN
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPlotArea : public vtkPlot
 {
 public:
   static vtkPlotArea* New();
@@ -44,38 +36,32 @@ public:
    */
   using Superclass::SetInputArray;
 
-  //@{
   /**
-   * Overridden to set the brush color.
+   * Set the plot color with integer values (comprised between 0 and 255)
    */
   void SetColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a) override;
-  void SetColor(double r, double g, double b) override;
-  //@}
+  void SetColor(unsigned char r, unsigned char g, unsigned char b) override;
 
-  //@{
+  ///@{
+  /**
+   * Set the plot color with floating values (comprised between 0.0 and 1.0)
+   */
+  void SetColorF(double r, double g, double b, double a) override;
+  void SetColorF(double r, double g, double b) override;
+  ///@}
+
+  ///@{
   /**
    * Get/set the valid point mask array name.
    */
   vtkGetMacro(ValidPointMaskName, vtkStdString);
   vtkSetMacro(ValidPointMaskName, vtkStdString);
-  //@}
-
-  /**
-   * Perform any updates to the item that may be necessary before rendering.
-   */
-  void Update() override;
+  ///@}
 
   /**
    * Get the bounds for this plot as (Xmin, Xmax, Ymin, Ymax).
    */
   void GetBounds(double bounds[4]) override;
-
-  /**
-   * Subclasses that build data caches to speed up painting should override this
-   * method to update such caches. This is called on each Paint, hence
-   * subclasses must add checks to avoid rebuilding of cache, unless necessary.
-   */
-  void UpdateCache() override;
 
   /**
    * Paint event for the XY plot, called whenever the chart needs to be drawn
@@ -97,16 +83,8 @@ public:
    * -1 if no point was found.
    */
   vtkIdType GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
-    vtkVector2f* location,
-#ifndef VTK_LEGACY_REMOVE
-    vtkIdType* segmentId) override;
-#else
-    vtkIdType* segmentId = nullptr) override;
-#endif // VTK_LEGACY_REMOVE
-
-#ifndef VTK_LEGACY_REMOVE
+    vtkVector2f* location, vtkIdType* segmentId) override;
   using vtkPlot::GetNearestPoint;
-#endif // VTK_LEGACY_REMOVE
 
   /**
    * Generate and return the tooltip label string for this plot
@@ -114,6 +92,14 @@ public:
    */
   vtkStdString GetTooltipLabel(
     const vtkVector2d& plotPos, vtkIdType seriesIndex, vtkIdType segmentIndex) override;
+
+  /**
+   * Update the internal cache. Returns true if cache was successfully updated. Default does
+   * nothing.
+   * This method is called by Update() when either the plot's data has changed or
+   * CacheRequiresUpdate() returns true. It is not necessary to call this method explicitly.
+   */
+  bool UpdateCache() override;
 
 protected:
   vtkPlotArea();
@@ -134,4 +120,5 @@ private:
   vtkTimeStamp UpdateTime;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkIdentityTransform.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkIdentityTransform
  * @brief   a transform that doesn't do anything
@@ -29,6 +17,7 @@
 #include "vtkCommonTransformsModule.h" // For export macro
 #include "vtkLinearTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONTRANSFORMS_EXPORT vtkIdentityTransform : public vtkLinearTransform
 {
 public:
@@ -67,34 +56,34 @@ public:
   // identity transformation.
   void Inverse() override {}
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation without calling Update.
    * Meant for use only within other VTK classes.
    */
   void InternalTransformPoint(const float in[3], float out[3]) override;
   void InternalTransformPoint(const double in[3], double out[3]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation without calling Update.
    * Meant for use only within other VTK classes.
    */
   void InternalTransformNormal(const float in[3], float out[3]) override;
   void InternalTransformNormal(const double in[3], double out[3]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation without calling Update.
    * Meant for use only within other VTK classes.
    */
   void InternalTransformVector(const float in[3], float out[3]) override;
   void InternalTransformVector(const double in[3], double out[3]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation as well as its derivative
    * without calling Update.  Meant for use only within other VTK
@@ -104,7 +93,7 @@ public:
     const float in[3], float out[3], float derivative[3][3]) override;
   void InternalTransformDerivative(
     const double in[3], double out[3], double derivative[3][3]) override;
-  //@}
+  ///@}
 
   /**
    * Make a transform of the same type.  This will actually
@@ -123,4 +112,5 @@ private:
   void operator=(const vtkIdentityTransform&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

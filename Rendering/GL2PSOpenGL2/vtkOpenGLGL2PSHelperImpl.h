@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLGL2PSHelperImpl.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkOpenGLGL2PSHelperImpl
@@ -25,6 +13,7 @@
 #include "vtkOpenGLGL2PSHelper.h"
 #include "vtkRenderingGL2PSOpenGL2Module.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMatrix4x4;
 class vtkPoints;
 
@@ -74,7 +63,7 @@ protected:
   static void GetTransformParameters(vtkRenderer* ren, vtkMatrix4x4* actorMatrix,
     vtkMatrix4x4* xform, double vpOrigin[2], double halfSize[2], double zfact[2]);
 
-  //@{
+  ///@{
   /**
    * Project the point from world coordinates into device coordinates.
    */
@@ -83,9 +72,9 @@ protected:
     double halfWidth, double halfHeight, double zfact1, double zfact2);
   static void ProjectPoints(
     vtkPoints* points, vtkRenderer* ren, vtkMatrix4x4* actorMatrix = nullptr);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Unproject the point from device coordinates into world coordinates.
    * Input Z coordinate should be in NDC space.
@@ -94,7 +83,7 @@ protected:
     double viewportOrigin[2], double halfWidth, double halfHeight, double zfact1, double zfact2);
   static void UnprojectPoints(
     double* points3D, vtkIdType numPoints, vtkRenderer* ren, vtkMatrix4x4* actorMatrix = nullptr);
-  //@}
+  ///@}
 
   void DrawPathPS(vtkPath* path, double rasterPos[3], double windowPos[2], unsigned char rgba[4],
     double scale[2], double rotateAngle, float strokeWidth, const std::string& label);
@@ -108,4 +97,5 @@ private:
   void operator=(const vtkOpenGLGL2PSHelperImpl&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkOpenGLGL2PSHelperImpl_h

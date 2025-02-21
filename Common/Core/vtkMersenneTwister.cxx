@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMersenneTwister.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /* Many thanks to M. Matsumoto, T. Nishimura and M. Saito for the       */
 /* implementation of their algorithm, the Mersenne Twister, taken from  */
@@ -24,6 +13,7 @@
 /* Monte Carlo and Quasi-Monte Carlo Methods 1998,        */
 /* Springer, 2000, pp 56--69.                             */
 
+// NOLINTNEXTLINE(bugprone-suspicious-include)
 #include "vtkMersenneTwister_Private.cxx"
 #include "vtkMultiThreader.h"
 #include "vtkNew.h"
@@ -112,10 +102,10 @@ protected:
   mt_parameter_map Parameters;
 };
 
-static const int NMersenneExponents = 15;
-static const int MersenneExponents[NMersenneExponents] = { 521, 607, 1279, 2203, 2281, 3217, 4253,
-  4423, 9689, 9941, 11213, 19937, 21701, 23209, 44497 };
-static const int* MersenneExponentsEnd = MersenneExponents + NMersenneExponents;
+const int NMersenneExponents = 15;
+const int MersenneExponents[NMersenneExponents] = { 521, 607, 1279, 2203, 2281, 3217, 4253, 4423,
+  9689, 9941, 11213, 19937, 21701, 23209, 44497 };
+const int* MersenneExponentsEnd = MersenneExponents + NMersenneExponents;
 }
 
 #include <algorithm>
@@ -123,6 +113,7 @@ static const int* MersenneExponentsEnd = MersenneExponents + NMersenneExponents;
 #include "vtkMersenneTwister.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMersenneTwisterInternals : public MersenneTwister
 {
 public:
@@ -135,19 +126,19 @@ public:
 
 vtkStandardNewMacro(vtkMersenneTwister);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMersenneTwister::vtkMersenneTwister()
 {
   this->Internal = new vtkMersenneTwisterInternals();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMersenneTwister::~vtkMersenneTwister()
 {
   delete this->Internal;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMersenneTwister::InitializeSequence(
   vtkMersenneTwister::SequenceId id, vtkTypeUInt32 seed, int periodExp)
 {
@@ -156,7 +147,7 @@ void vtkMersenneTwister::InitializeSequence(
     periodExp = MersenneExponents[periodExp % 15];
   }
 
-  if (this->Internal->Values.insert(vtkMersenneTwisterInternals::Value(id, 0.)).second == false)
+  if (!this->Internal->Values.insert(vtkMersenneTwisterInternals::Value(id, 0.)).second)
   {
     vtkWarningMacro(<< "Initializing process " << id << " which is already "
                     << "initialized. This may break sequence encapsulation.");
@@ -167,7 +158,7 @@ void vtkMersenneTwister::InitializeSequence(
   this->Next(id);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMersenneTwister::SequenceId vtkMersenneTwister::InitializeNewSequence(
   vtkTypeUInt32 seed, int periodExp)
 {
@@ -188,7 +179,7 @@ vtkMersenneTwister::SequenceId vtkMersenneTwister::InitializeNewSequence(
   return id;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMersenneTwister::GetValue(vtkMersenneTwister::SequenceId id)
 {
   vtkMersenneTwisterInternals::ValueIt it = this->Internal->Values.find(id);
@@ -200,7 +191,7 @@ double vtkMersenneTwister::GetValue(vtkMersenneTwister::SequenceId id)
   return this->Internal->Values.find(id)->second;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMersenneTwister::Next(vtkMersenneTwister::SequenceId id)
 {
   static const double norm = 1. / static_cast<double>(std::numeric_limits<vtkTypeUInt64>::max());
@@ -221,8 +212,9 @@ void vtkMersenneTwister::Next(vtkMersenneTwister::SequenceId id)
   it->second = this->Internal->Random64(id) * norm;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMersenneTwister::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

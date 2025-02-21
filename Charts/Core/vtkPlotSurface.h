@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlotSurface.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPlotSurface
@@ -28,12 +16,14 @@
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkNew.h"              //  For vtkNew ivar
 #include "vtkPlot3D.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkContext2D;
 class vtkLookupTable;
 class vtkTable;
 
-class VTKCHARTSCORE_EXPORT vtkPlotSurface : public vtkPlot3D
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPlotSurface : public vtkPlot3D
 {
 public:
   vtkTypeMacro(vtkPlotSurface, vtkPlot3D);
@@ -50,7 +40,7 @@ public:
    */
   void SetInputData(vtkTable* input) override;
 
-  //@{
+  ///@{
   /**
    * Set the input to the surface plot.
    * Do not use these versions of SetInputData, as all the parameters
@@ -62,7 +52,7 @@ public:
     const vtkStdString& zName, const vtkStdString& colorName) override;
   void SetInputData(
     vtkTable* input, vtkIdType xColumn, vtkIdType yColumn, vtkIdType zColumn) override;
-  //@}
+  ///@}
 
   /**
    * Set the range of the input data for the X dimension.  By default it is
@@ -112,7 +102,7 @@ protected:
   /**
    * Surface to render.
    */
-  std::vector<vtkVector3f> Surface;
+  vtkNew<vtkPoints> Surface;
 
   /**
    * The number of rows in the input table.
@@ -144,7 +134,7 @@ protected:
    */
   vtkNew<vtkLookupTable> LookupTable;
 
-  //@{
+  ///@{
   /**
    * user-defined data ranges
    */
@@ -152,7 +142,7 @@ protected:
   float XMaximum;
   float YMinimum;
   float YMaximum;
-  //@}
+  ///@}
 
   /**
    * true if user-defined data scaling has already been applied,
@@ -165,4 +155,5 @@ private:
   void operator=(const vtkPlotSurface&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPlotSurface_h

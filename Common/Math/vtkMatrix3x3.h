@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMatrix3x3.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMatrix3x3
  * @brief   represent and manipulate 3x3 transformation matrices
@@ -29,8 +17,10 @@
 
 #include "vtkCommonMathModule.h" // For export macro
 #include "vtkObject.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
-class VTKCOMMONMATH_EXPORT vtkMatrix3x3 : public vtkObject
+VTK_ABI_NAMESPACE_BEGIN
+class VTKCOMMONMATH_EXPORT VTK_MARSHALAUTO vtkMatrix3x3 : public vtkObject
 {
   // Some of the methods in here have a corresponding static (class)
   // method taking a pointer to 9 doubles that constitutes a user
@@ -70,7 +60,7 @@ public:
    */
   void DeepCopy(const double elements[9])
   {
-    this->DeepCopy(*this->Element, elements);
+    vtkMatrix3x3::DeepCopy(*this->Element, elements);
     this->Modified();
   }
 
@@ -174,12 +164,17 @@ public:
   /**
    * Return a pointer to the first element of the matrix (double[9]).
    */
-  double* GetData() { return *this->Element; }
+  double* GetData() VTK_SIZEHINT(9) { return *this->Element; }
 
   /**
    * Return a pointer to the first element of the matrix (double[9]).
    */
   const double* GetData() const { return *this->Element; }
+
+  /**
+   * Copies data into the matrix.
+   */
+  void SetData(const double data[9]) { vtkMatrix3x3::DeepCopy(data); }
 
 protected:
   vtkMatrix3x3();
@@ -215,4 +210,5 @@ inline bool vtkMatrix3x3::IsIdentity()
   }
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

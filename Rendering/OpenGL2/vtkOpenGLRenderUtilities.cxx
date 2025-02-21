@@ -1,19 +1,7 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLRenderUtilities.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLRenderUtilities.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include "vtkNew.h"
 #include "vtkOpenGLBufferObject.h"
@@ -23,10 +11,11 @@
 #include "vtkRenderingOpenGLConfigure.h"
 #include "vtkShaderProgram.h"
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkOpenGLRenderUtilities::vtkOpenGLRenderUtilities() = default;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLRenderUtilities::~vtkOpenGLRenderUtilities() = default;
 
 void vtkOpenGLRenderUtilities::PrintSelf(ostream& os, vtkIndent indent)
@@ -34,7 +23,7 @@ void vtkOpenGLRenderUtilities::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // a program must be bound
 // a VAO must be bound
 void vtkOpenGLRenderUtilities::RenderQuad(
@@ -44,7 +33,7 @@ void vtkOpenGLRenderUtilities::RenderQuad(
   vtkOpenGLRenderUtilities::RenderTriangles(verts, 4, iboData, 6, tcoords, program, vao);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // a program must be bound
 // a VAO must be bound
 void vtkOpenGLRenderUtilities::RenderTriangles(float* verts, unsigned int numVerts, GLuint* iboData,
@@ -223,3 +212,4 @@ void vtkOpenGLRenderUtilities::MarkDebugEvent(const std::string& event)
   vtkOpenGLClearErrorMacro();
 #endif // VTK_OPENGL_ENABLE_STREAM_ANNOTATIONS
 }
+VTK_ABI_NAMESPACE_END

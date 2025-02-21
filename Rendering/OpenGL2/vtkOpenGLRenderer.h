@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLRenderer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLRenderer
  * @brief   OpenGL renderer
@@ -24,11 +12,20 @@
 #define vtkOpenGLRenderer_h
 
 #include "vtkRenderer.h"
+
+#include "vtkOpenGLQuadHelper.h"       // for ivar
+#include "vtkPBRIrradianceTexture.h"   // for ivar
+#include "vtkPBRLUTTexture.h"          // for ivar
+#include "vtkPBRPrefilterTexture.h"    // for ivar
 #include "vtkRenderingOpenGL2Module.h" // For export macro
 #include "vtkSmartPointer.h"           // For vtkSmartPointer
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
+#include <memory>                      // for unique_ptr
 #include <string>                      // Ivars
 #include <vector>                      // STL Header
 
+VTK_ABI_NAMESPACE_BEGIN
+class vtkFloatArray;
 class vtkOpenGLFXAAFilter;
 class vtkRenderPass;
 class vtkOpenGLState;
@@ -36,13 +33,14 @@ class vtkOpenGLTexture;
 class vtkOrderIndependentTranslucentPass;
 class vtkTextureObject;
 class vtkDepthPeelingPass;
-class vtkPBRIrradianceTexture;
-class vtkPBRLUTTexture;
-class vtkPBRPrefilterTexture;
 class vtkShaderProgram;
 class vtkShadowMapPass;
+class vtkSSAOPass;
+class vtkPolyData;
+class vtkTexturedActor2D;
+class vtkPolyDataMapper2D;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkOpenGLRenderer : public vtkRenderer
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkOpenGLRenderer : public vtkRenderer
 {
 public:
   static vtkOpenGLRenderer* New();
@@ -52,7 +50,7 @@ public:
   /**
    * Concrete open gl render method.
    */
-  void DeviceRender(void) override;
+  void DeviceRender() override;
 
   /**
    * Overridden to support hidden line removal.
@@ -67,12 +65,12 @@ public:
    */
   void DeviceRenderTranslucentPolygonalGeometry(vtkFrameBufferObjectBase* fbo = nullptr) override;
 
-  void Clear(void) override;
+  void Clear() override;
 
   /**
    * Ask lights to load themselves into graphics pipeline.
    */
-  int UpdateLights(void) override;
+  int UpdateLights() override;
 
   /**
    * Is rendering at translucent geometry stage using depth peeling and
@@ -81,16 +79,6 @@ public:
    * (Used by vtkOpenGLProperty or vtkOpenGLTexture)
    */
   int GetDepthPeelingHigherLayer();
-
-  /**
-   * Indicate if this system is subject to the Apple/AMD bug
-   * of not having a working glPrimitiveId <rdar://20747550>.
-   * The bug is fixed on macOS 10.11 and later, and this method
-   * will return false when the OS is new enough.
-   */
-#ifndef VTK_LEGACY_REMOVE
-  bool HaveApplePrimitiveIdBug();
-#endif
 
   /**
    * Indicate if this system is subject to the apple/NVIDIA bug that causes
@@ -134,26 +122,54 @@ public:
   // get the number of lights turned on
   vtkGetMacro(LightingCount, int);
 
-  //@{
+  ///@{
   /**
    * Set the user light transform applied after the camera transform.
    * Can be null to disable it.
    */
   void SetUserLightTransform(vtkTransform* transform);
   vtkTransform* GetUserLightTransform();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get environment textures used for image based lighting.
    */
+  vtkSetSmartPointerMacro(EnvMapLookupTable, vtkPBRLUTTexture);
   vtkPBRLUTTexture* GetEnvMapLookupTable();
+  vtkSetSmartPointerMacro(EnvMapIrradiance, vtkPBRIrradianceTexture);
   vtkPBRIrradianceTexture* GetEnvMapIrradiance();
+  vtkSetSmartPointerMacro(EnvMapPrefiltered, vtkPBRPrefilterTexture);
   vtkPBRPrefilterTexture* GetEnvMapPrefiltered();
-  //@}
+  ///@}
 
   /**
-   * Overriden in order to connect the texture to the environment map textures.
+   * Get spherical harmonics coefficients used for irradiance
+   */
+  vtkFloatArray* GetSphericalHarmonics();
+
+  ///@{
+  /**
+   * Use spherical harmonics instead of irradiance texture
+   */
+  vtkSetMacro(UseSphericalHarmonics, bool);
+  vtkGetMacro(UseSphericalHarmonics, bool);
+  vtkBooleanMacro(UseSphericalHarmonics, bool);
+  ///@}
+
+  /**
+   * Set/Get the environment texture used for image based lighting.
+   * This texture is supposed to represent the scene background.
+   * If it is not a cubemap, the texture is supposed to represent an equirectangular projection.
+   * If used with raytracing backends, the texture must be an equirectangular projection and must be
+   * constructed with a valid vtkImageData.
+   * Warning, this texture must be expressed in linear color space.
+   * If the texture is in sRGB color space, set the color flag on the texture or
+   * set the argument isSRGB to true.
+   * Note that this texture can be omitted if LUT, SpecularColorMap and SphericalHarmonics
+   * are used and provided
+   *
+   * @sa vtkTexture::UseSRGBColorSpaceOn
    */
   void SetEnvironmentTexture(vtkTexture* texture, bool isSRGB = false) override;
 
@@ -208,6 +224,11 @@ protected:
    */
   vtkShadowMapPass* ShadowMapPass;
 
+  /**
+   * SSAO is delegated to an instance of vtkSSAOPass
+   */
+  vtkSSAOPass* SSAOPass;
+
   // Is rendering at translucent geometry stage using depth peeling and
   // rendering a layer other than the first one? (Boolean value)
   // If so, the uniform variables UseTexture and Texture can be set.
@@ -226,13 +247,21 @@ protected:
    */
   vtkSmartPointer<vtkTransform> UserLightTransform;
 
-  vtkPBRLUTTexture* EnvMapLookupTable;
-  vtkPBRIrradianceTexture* EnvMapIrradiance;
-  vtkPBRPrefilterTexture* EnvMapPrefiltered;
+  vtkSmartPointer<vtkPBRLUTTexture> EnvMapLookupTable;
+  vtkSmartPointer<vtkPBRIrradianceTexture> EnvMapIrradiance;
+  vtkSmartPointer<vtkPBRPrefilterTexture> EnvMapPrefiltered;
+  vtkSmartPointer<vtkFloatArray> SphericalHarmonics;
+  bool UseSphericalHarmonics;
+
+  vtkSmartPointer<vtkTexturedActor2D> BackgroundTextureActor;
+  vtkSmartPointer<vtkTexturedActor2D> BackgroundGradientActor;
+  vtkSmartPointer<vtkPolyDataMapper2D> BackgroundMapper;
+  vtkSmartPointer<vtkPolyData> BackgroundQuad;
 
 private:
   vtkOpenGLRenderer(const vtkOpenGLRenderer&) = delete;
   void operator=(const vtkOpenGLRenderer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

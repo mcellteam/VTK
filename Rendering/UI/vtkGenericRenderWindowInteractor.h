@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericRenderWindowInteractor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericRenderWindowInteractor
  * @brief   platform-independent programmable render window interactor.
@@ -28,8 +16,11 @@
 
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderingUIModule.h" // For export macro
+#include "vtkWrappingHints.h"     // For VTK_MARSHALAUTO
 
-class VTKRENDERINGUI_EXPORT vtkGenericRenderWindowInteractor : public vtkRenderWindowInteractor
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGUI_EXPORT VTK_MARSHALAUTO vtkGenericRenderWindowInteractor
+  : public vtkRenderWindowInteractor
 {
 public:
   static vtkGenericRenderWindowInteractor* New();
@@ -43,7 +34,7 @@ public:
    */
   virtual void TimerEvent();
 
-  //@{
+  ///@{
   /**
    * Flag that indicates whether the TimerEvent method should call ResetTimer
    * to simulate repeating timers with an endless stream of one shot timers.
@@ -59,20 +50,20 @@ public:
   vtkSetMacro(TimerEventResetsTimer, vtkTypeBool);
   vtkGetMacro(TimerEventResetsTimer, vtkTypeBool);
   vtkBooleanMacro(TimerEventResetsTimer, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkGenericRenderWindowInteractor();
   ~vtkGenericRenderWindowInteractor() override;
 
-  //@{
+  ///@{
   /**
    * Generic internal timer methods. See the superclass for detailed
    * documentation.
    */
   int InternalCreateTimer(int timerId, int timerType, unsigned long duration) override;
   int InternalDestroyTimer(int platformTimerId) override;
-  //@}
+  ///@}
 
   vtkTypeBool TimerEventResetsTimer;
 
@@ -81,4 +72,5 @@ private:
   void operator=(const vtkGenericRenderWindowInteractor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

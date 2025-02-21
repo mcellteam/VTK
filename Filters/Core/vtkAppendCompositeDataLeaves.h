@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAppendCompositeDataLeaves.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAppendCompositeDataLeaves
  * @brief   appends one or more composite datasets with the same structure together into a single
@@ -58,6 +46,7 @@
 #include "vtkCompositeDataSetAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCompositeDataIterator;
 class vtkDataSet;
 
@@ -69,7 +58,7 @@ public:
   vtkTypeMacro(vtkAppendCompositeDataLeaves, vtkCompositeDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/get whether the field data of each dataset in the composite dataset is copied to the
    * output. If AppendFieldData is non-zero, then field data arrays from all the inputs are added to
@@ -78,7 +67,7 @@ public:
   vtkSetMacro(AppendFieldData, vtkTypeBool);
   vtkGetMacro(AppendFieldData, vtkTypeBool);
   vtkBooleanMacro(AppendFieldData, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkAppendCompositeDataLeaves();
@@ -128,4 +117,5 @@ private:
   void operator=(const vtkAppendCompositeDataLeaves&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkAppendCompositeDataLeaves_h

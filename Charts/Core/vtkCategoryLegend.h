@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCategoryLegend.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkCategoryLegend
@@ -33,15 +21,19 @@
 #include "vtkNew.h"              // For vtkNew ivars
 #include "vtkStdString.h"        // For vtkStdString ivars
 #include "vtkVector.h"           // For vtkRectf
+#include "vtkWrappingHints.h"    // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkScalarsToColors;
 class vtkTextProperty;
 class vtkVariantArray;
 
-class VTKCHARTSCORE_EXPORT vtkCategoryLegend : public vtkChartLegend
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkCategoryLegend : public vtkChartLegend
 {
 public:
   vtkTypeMacro(vtkCategoryLegend, vtkChartLegend);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
+
   static vtkCategoryLegend* New();
 
   /**
@@ -64,7 +56,7 @@ public:
    */
   vtkRectf GetBoundingRect(vtkContext2D* painter) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the vtkScalarsToColors used to draw this legend.
    * Since this legend represents categorical data, this
@@ -72,34 +64,34 @@ public:
    */
   virtual void SetScalarsToColors(vtkScalarsToColors* stc);
   virtual vtkScalarsToColors* GetScalarsToColors();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the array of values that will be represented by this legend.
    * This array must contain distinct annotated values from the ScalarsToColors.
    * Each value in this array will be drawn as a separate entry within this
    * legend.
    */
-  vtkGetMacro(Values, vtkVariantArray*);
-  vtkSetMacro(Values, vtkVariantArray*);
-  //@}
+  vtkGetObjectMacro(Values, vtkVariantArray);
+  virtual void SetValues(vtkVariantArray*);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/set the title text of the legend.
    */
   virtual void SetTitle(const vtkStdString& title);
   virtual vtkStdString GetTitle();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/set the label to use for outlier data.
    */
   vtkGetMacro(OutlierLabel, vtkStdString);
   vtkSetMacro(OutlierLabel, vtkStdString);
-  //@}
+  ///@}
 
 protected:
   vtkCategoryLegend();
@@ -118,4 +110,5 @@ private:
   void operator=(const vtkCategoryLegend&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBooleanOperationPolyDataFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBooleanOperationPolyDataFilter.h"
 
 #include "vtkCellData.h"
@@ -26,11 +14,11 @@
 #include "vtkPointData.h"
 #include "vtkSmartPointer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBooleanOperationPolyDataFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBooleanOperationPolyDataFilter::vtkBooleanOperationPolyDataFilter()
-  : vtkPolyDataAlgorithm()
 {
   this->Tolerance = 1e-6;
   this->Operation = VTK_UNION;
@@ -40,12 +28,12 @@ vtkBooleanOperationPolyDataFilter::vtkBooleanOperationPolyDataFilter()
   this->SetNumberOfOutputPorts(2);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBooleanOperationPolyDataFilter::~vtkBooleanOperationPolyDataFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBooleanOperationPolyDataFilter::SortPolyData(
-  vtkPolyData* input, vtkIdList* interList, vtkIdList* unionList)
+  vtkPolyData* input, vtkIdList* intersectionList, vtkIdList* unionList)
 {
   int numCells = input->GetNumberOfCells();
 
@@ -61,12 +49,12 @@ void vtkBooleanOperationPolyDataFilter::SortPolyData(
     }
     else
     {
-      interList->InsertNextId(cid);
+      intersectionList->InsertNextId(cid);
     }
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBooleanOperationPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -100,6 +88,7 @@ int vtkBooleanOperationPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(re
   PolyDataIntersection->SetInputConnection(1, this->GetInputConnection(1, 0));
   PolyDataIntersection->SplitFirstOutputOn();
   PolyDataIntersection->SplitSecondOutputOn();
+  PolyDataIntersection->SetContainerAlgorithm(this);
   PolyDataIntersection->Update();
 
   if (PolyDataIntersection->GetStatus() != 1)
@@ -118,6 +107,7 @@ int vtkBooleanOperationPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(re
   PolyDataDistance->SetInputConnection(0, PolyDataIntersection->GetOutputPort(1));
   PolyDataDistance->SetInputConnection(1, PolyDataIntersection->GetOutputPort(2));
   PolyDataDistance->ComputeSecondDistanceOn();
+  PolyDataDistance->SetContainerAlgorithm(this);
   PolyDataDistance->Update();
 
   vtkPolyData* pd0 = PolyDataDistance->GetOutput();
@@ -216,7 +206,7 @@ int vtkBooleanOperationPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(re
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBooleanOperationPolyDataFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -241,7 +231,7 @@ void vtkBooleanOperationPolyDataFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ReorientDifferenceCells: " << this->ReorientDifferenceCells << "\n";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBooleanOperationPolyDataFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -260,7 +250,7 @@ int vtkBooleanOperationPolyDataFilter::FillInputPortInformation(int port, vtkInf
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBooleanOperationPolyDataFilter ::CopyCells(vtkPolyData* in, vtkPolyData* out, int idx,
   vtkDataSetAttributes::FieldList& pointFieldList, vtkDataSetAttributes::FieldList& cellFieldList,
   vtkIdList* cellIds, bool reverseCells)
@@ -300,6 +290,10 @@ void vtkBooleanOperationPolyDataFilter ::CopyCells(vtkPolyData* in, vtkPolyData*
   vtkSmartPointer<vtkIdList> newCellPts = vtkSmartPointer<vtkIdList>::New();
   for (vtkIdType cellId = 0; cellId < cellIds->GetNumberOfIds(); cellId++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     in->GetCell(cellIds->GetId(cellId), cell);
     vtkIdList* cellPts = cell->GetPointIds();
     vtkIdType numCellPts = cell->GetNumberOfPoints();
@@ -347,3 +341,4 @@ void vtkBooleanOperationPolyDataFilter ::CopyCells(vtkPolyData* in, vtkPolyData*
     newCellPts->Reset();
   } // for all cells
 }
+VTK_ABI_NAMESPACE_END

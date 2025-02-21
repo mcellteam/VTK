@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQtSQLDatabase.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkQtSQLDatabase
  * @brief   maintains a connection to an sql database
@@ -28,15 +12,12 @@
 #ifndef vtkQtSQLDatabase_h
 #define vtkQtSQLDatabase_h
 
-// Check for Qt SQL module before defining this class.
-#include <qglobal.h> // Needed to check if SQL is available
-#if (QT_EDITION & QT_MODULE_SQL)
-
 #include "vtkGUISupportQtSQLModule.h" // For export macro
 #include "vtkSQLDatabase.h"
 
 #include <QtSql/QSqlDatabase> // For the database member
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSQLQuery;
 class vtkStringArray;
 
@@ -108,53 +89,53 @@ public:
    */
   const char* GetLastErrorText() override;
 
-  //@{
+  ///@{
   /**
    * String representing Qt database type (e.g. "mysql").
    */
   const char* GetDatabaseType() override { return this->DatabaseType; }
   vtkSetStringMacro(DatabaseType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The database server host name.
    */
   vtkSetStringMacro(HostName);
   vtkGetStringMacro(HostName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The user name for connecting to the database server.
    */
   vtkSetStringMacro(UserName);
   vtkGetStringMacro(UserName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The name of the database to connect to.
    */
   vtkSetStringMacro(DatabaseName);
   vtkGetStringMacro(DatabaseName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Additional options for the database.
    */
   vtkSetStringMacro(ConnectOptions);
   vtkGetStringMacro(ConnectOptions);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The port used for connecting to the database.
    */
-  vtkSetClampMacro(Port, int, 0, 65535);
-  vtkGetMacro(Port, int);
-  //@}
+  vtkSetClampMacro(DbPort, int, 0, 65535);
+  vtkGetMacro(DbPort, int);
+  ///@}
 
   /**
    * Create a the proper subclass given a URL.
@@ -176,7 +157,7 @@ protected:
   char* HostName;
   char* UserName;
   char* DatabaseName;
-  int Port;
+  int DbPort;
   char* ConnectOptions;
 
   QSqlDatabase QtDatabase;
@@ -207,6 +188,6 @@ private:
   void operator=(const vtkQtSQLDatabase&) = delete;
 };
 
-#endif // (QT_EDITION & QT_MODULE_SQL)
+VTK_ABI_NAMESPACE_END
 #endif // vtkQtSQLDatabase_h
 // VTK-HeaderTest-Exclude: vtkQtSQLDatabase.h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageLogarithmicScale.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageLogarithmicScale.h"
 
 #include "vtkImageData.h"
@@ -20,9 +8,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageLogarithmicScale);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor sets default values
 vtkImageLogarithmicScale::vtkImageLogarithmicScale()
 {
@@ -31,7 +20,7 @@ vtkImageLogarithmicScale::vtkImageLogarithmicScale()
   this->Constant = 10.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class T>
 void vtkImageLogarithmicScaleExecute(vtkImageLogarithmicScale* self, vtkImageData* inData,
@@ -69,7 +58,7 @@ void vtkImageLogarithmicScaleExecute(vtkImageLogarithmicScale* self, vtkImageDat
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output region, and executes the filter
 // algorithm to fill the output from the input.
 // It just executes a switch statement to call the correct function for
@@ -101,3 +90,4 @@ void vtkImageLogarithmicScale::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Constant: " << this->Constant << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTableToGraph.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkTableToGraph
  * @brief   convert a vtkTable into a vtkGraph
@@ -69,6 +53,7 @@
 #include "vtkGraphAlgorithm.h"
 #include "vtkInfovisCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 class vtkMutableDirectedGraph;
 class vtkStringArray;
@@ -102,13 +87,13 @@ public:
    */
   void ClearLinkEdges();
 
-  //@{
+  ///@{
   /**
    * The graph describing how to link the columns in the table.
    */
   vtkGetObjectMacro(LinkGraph, vtkMutableDirectedGraph);
   void SetLinkGraph(vtkMutableDirectedGraph* g);
-  //@}
+  ///@}
 
   /**
    * Links the columns in a specific order.
@@ -117,14 +102,14 @@ public:
   void LinkColumnPath(
     vtkStringArray* column, vtkStringArray* domain = nullptr, vtkBitArray* hidden = nullptr);
 
-  //@{
+  ///@{
   /**
    * Specify the directedness of the output graph.
    */
   vtkSetMacro(Directed, bool);
   vtkGetMacro(Directed, bool);
   vtkBooleanMacro(Directed, bool);
-  //@}
+  ///@}
 
   /**
    * Get the current modified time.
@@ -164,4 +149,5 @@ private:
   void operator=(const vtkTableToGraph&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

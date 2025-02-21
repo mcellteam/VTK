@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLinearCellExtrusionFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLinearCellExtrusionFilter.h"
 
 #include "vtkCellArray.h"
@@ -27,9 +15,10 @@
 #include <array>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLinearCellExtrusionFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLinearCellExtrusionFilter::vtkLinearCellExtrusionFilter()
 {
   // set default array
@@ -37,7 +26,7 @@ vtkLinearCellExtrusionFilter::vtkLinearCellExtrusionFilter()
     0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLinearCellExtrusionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -69,13 +58,17 @@ int vtkLinearCellExtrusionFilter::RequestData(vtkInformation* vtkNotUsed(request
 
   output->Allocate(polys->GetSize() * 2); // estimation
 
-  std::vector<std::array<double, 3> > topPoints;
+  std::vector<std::array<double, 3>> topPoints;
   std::vector<vtkIdType> polyhedronIds; // used for polyhedrons
 
   vtkIdType cellId = 0;
   auto iter = vtk::TakeSmartPointer(polys->NewIterator());
   for (iter->GoToFirstCell(); !iter->IsDoneWithTraversal(); iter->GoToNextCell(), cellId++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkIdType cellSize;
     const vtkIdType* cellPoints;
     iter->GetCurrentCell(cellSize, cellPoints);
@@ -210,7 +203,7 @@ int vtkLinearCellExtrusionFilter::RequestData(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearCellExtrusionFilter::CreateDefaultLocator()
 {
   if (!this->Locator)
@@ -219,7 +212,7 @@ void vtkLinearCellExtrusionFilter::CreateDefaultLocator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearCellExtrusionFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -230,10 +223,11 @@ void vtkLinearCellExtrusionFilter::PrintSelf(ostream& os, vtkIndent indent)
      << indent << "MergeDuplicatePoints: " << (this->MergeDuplicatePoints ? "ON" : "OFF") << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLinearCellExtrusionFilter::FillOutputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkUnstructuredGrid");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

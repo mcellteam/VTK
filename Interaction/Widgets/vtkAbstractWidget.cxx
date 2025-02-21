@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractWidget.cxx,v
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAbstractWidget.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCommand.h"
@@ -23,7 +11,8 @@
 #include "vtkWidgetEventTranslator.h"
 #include "vtkWidgetRepresentation.h"
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkAbstractWidget::vtkAbstractWidget()
 {
   // Setup event processing
@@ -50,7 +39,7 @@ vtkAbstractWidget::vtkAbstractWidget()
   this->CallbackMapper->SetEventTranslator(this->EventTranslator);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractWidget::~vtkAbstractWidget()
 {
   if (this->WidgetRep)
@@ -70,7 +59,7 @@ vtkAbstractWidget::~vtkAbstractWidget()
   this->SetEnabled(0);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractWidget::SetWidgetRepresentation(vtkWidgetRepresentation* r)
 {
   if (r != this->WidgetRep)
@@ -100,7 +89,7 @@ void vtkAbstractWidget::SetWidgetRepresentation(vtkWidgetRepresentation* r)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractWidget::SetEnabled(int enabling)
 {
   if (enabling) //----------------
@@ -207,7 +196,7 @@ void vtkAbstractWidget::SetEnabled(int enabling)
   //  }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractWidget::ProcessEventsHandler(
   vtkObject* vtkNotUsed(object), unsigned long vtkEvent, void* clientdata, void* calldata)
 {
@@ -232,7 +221,7 @@ void vtkAbstractWidget::ProcessEventsHandler(
     int modifier = vtkEvent::GetModifier(self->Interactor);
 
     // If neither the ctrl nor the shift keys are pressed, give
-    // NoModifier a preference over AnyModifer.
+    // NoModifier a preference over AnyModifier.
     if (modifier == vtkEvent::AnyModifier)
     {
       widgetEvent = self->EventTranslator->GetTranslation(vtkEvent, vtkEvent::NoModifier,
@@ -258,7 +247,7 @@ void vtkAbstractWidget::ProcessEventsHandler(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractWidget::Render()
 {
   if (!this->Parent && this->Interactor)
@@ -267,7 +256,7 @@ void vtkAbstractWidget::Render()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractWidget::SetPriority(float f)
 {
   if (f != this->Priority)
@@ -276,7 +265,7 @@ void vtkAbstractWidget::SetPriority(float f)
 
     // We are going to re-add all the events to the interactor. The
     // interactor observer maintains a sorted list of command-observers, sorted
-    // by prioirty. The sorting happens only during insertion of a command-
+    // by priority. The sorting happens only during insertion of a command-
     // observer into the list. Yeah.. Look at the documentation of SetPriority
     // in vtkInteractorObserver. That documentation recommends setting the
     // interactor to nullptr and back again. We won't do that because it will
@@ -323,7 +312,7 @@ void vtkAbstractWidget::SetPriority(float f)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -344,3 +333,4 @@ void vtkAbstractWidget::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Parent: " << this->Parent << "\n";
 }
+VTK_ABI_NAMESPACE_END

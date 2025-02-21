@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageHistogram.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageHistogram
  * @brief   Compute the histogram for an image.
@@ -34,6 +22,7 @@
 #include "vtkImagingStatisticsModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageStencilData;
 class vtkIdTypeArray;
 class vtkImageHistogramThreadData;
@@ -57,7 +46,7 @@ public:
     Sqrt = 2
   };
 
-  //@{
+  ///@{
   /**
    * Set the component for which to generate a histogram.  The default
    * value is -1, which produces a histogram that is the sum of the
@@ -65,9 +54,9 @@ public:
    */
   vtkSetMacro(ActiveComponent, int);
   vtkGetMacro(ActiveComponent, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this is On, then the histogram binning will be done automatically.
    * For char and unsigned char data, there will be 256 bins with unit
@@ -82,9 +71,9 @@ public:
   vtkSetMacro(AutomaticBinning, vtkTypeBool);
   vtkBooleanMacro(AutomaticBinning, vtkTypeBool);
   vtkGetMacro(AutomaticBinning, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The maximum number of bins to use when AutomaticBinning is On.
    * When AutomaticBinning is On, the size of the output histogram
@@ -95,49 +84,49 @@ public:
    */
   vtkSetMacro(MaximumNumberOfBins, int);
   vtkGetMacro(MaximumNumberOfBins, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The number of bins in histogram (default 256).  This is automatically
    * computed unless AutomaticBinning is Off.
    */
   vtkSetMacro(NumberOfBins, int);
   vtkGetMacro(NumberOfBins, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The value for the center of the first bin (default 0).  This is
    * automatically computed unless AutomaticBinning is Off.
    */
   vtkSetMacro(BinOrigin, double);
   vtkGetMacro(BinOrigin, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The bin spacing (default 1).  This is automatically computed unless
    * AutomaticBinning is Off.
    */
   vtkSetMacro(BinSpacing, double);
   vtkGetMacro(BinSpacing, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use a stencil to compute the histogram for just a part of the image.
    */
   void SetStencilData(vtkImageStencilData* stencil);
   vtkImageStencilData* GetStencil();
-  //@}
+  ///@}
 
   /**
    * Equivalent to SetInputConnection(1, algOutput).
    */
   void SetStencilConnection(vtkAlgorithmOutput* algOutput);
 
-  //@{
+  ///@{
   /**
    * If this is On, then a histogram image will be produced as the output.
    * Regardless of this setting, the histogram is always available as a
@@ -146,18 +135,18 @@ public:
   vtkSetMacro(GenerateHistogramImage, vtkTypeBool);
   vtkBooleanMacro(GenerateHistogramImage, vtkTypeBool);
   vtkGetMacro(GenerateHistogramImage, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the size of the histogram image that is produced as output.
    * The default is 256 by 256.
    */
   vtkSetVector2Macro(HistogramImageSize, int);
   vtkGetVector2Macro(HistogramImageSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scale to use for the histogram image.  The default is
    * a linear scale, but sqrt and log provide better visualization.
@@ -168,7 +157,7 @@ public:
   void SetHistogramImageScaleToSqrt() { this->SetHistogramImageScale(vtkImageHistogram::Sqrt); }
   vtkGetMacro(HistogramImageScale, int);
   const char* GetHistogramImageScaleAsString();
-  //@}
+  ///@}
 
   /**
    * Get the histogram as a vtkIdTypeArray.  You must call Update()
@@ -238,4 +227,5 @@ private:
   friend class vtkImageHistogramFunctor;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

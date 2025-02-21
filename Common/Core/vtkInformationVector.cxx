@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationVector.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationVector.h"
 
 #include "vtkGarbageCollector.h"
@@ -20,6 +8,7 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkInformationVector);
 
 class vtkInformationVectorInternals
@@ -30,7 +19,7 @@ public:
   ~vtkInformationVectorInternals();
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationVectorInternals::~vtkInformationVectorInternals()
 {
   // Delete all the information objects.
@@ -44,20 +33,20 @@ vtkInformationVectorInternals::~vtkInformationVectorInternals()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationVector::vtkInformationVector()
 {
   this->Internal = new vtkInformationVectorInternals;
   this->NumberOfInformationObjects = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationVector::~vtkInformationVector()
 {
   delete this->Internal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVector::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -72,7 +61,7 @@ void vtkInformationVector::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVector::SetNumberOfInformationObjects(int newNumber)
 {
   // Adjust the number of objects.
@@ -106,7 +95,7 @@ void vtkInformationVector::SetNumberOfInformationObjects(int newNumber)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVector::SetInformationObject(int index, vtkInformation* newInfo)
 {
   if (newInfo && index >= 0 && index < this->NumberOfInformationObjects)
@@ -148,7 +137,7 @@ void vtkInformationVector::SetInformationObject(int index, vtkInformation* newIn
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformation* vtkInformationVector::GetInformationObject(int index)
 {
   if (index >= 0 && index < this->NumberOfInformationObjects)
@@ -158,14 +147,14 @@ vtkInformation* vtkInformationVector::GetInformationObject(int index)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVector::Append(vtkInformation* info)
 {
   // Setting an entry beyond the end will automatically append.
   this->SetInformationObject(this->NumberOfInformationObjects, info);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVector::Remove(vtkInformation* info)
 {
   // Search for the information object and remove it.
@@ -180,7 +169,7 @@ void vtkInformationVector::Remove(vtkInformation* info)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVector::Remove(int i)
 {
   if (i < this->NumberOfInformationObjects)
@@ -194,8 +183,8 @@ void vtkInformationVector::Remove(int i)
   }
 }
 
-//----------------------------------------------------------------------------
-void vtkInformationVector::Copy(vtkInformationVector* from, int deep)
+//------------------------------------------------------------------------------
+void vtkInformationVector::Copy(vtkInformationVector* from, vtkTypeBool deep)
 {
   // if deep we can reuse existing info objects
   if (deep)
@@ -218,19 +207,7 @@ void vtkInformationVector::Copy(vtkInformationVector* from, int deep)
   }
 }
 
-//----------------------------------------------------------------------------
-void vtkInformationVector::Register(vtkObjectBase* o)
-{
-  this->RegisterInternal(o, 1);
-}
-
-//----------------------------------------------------------------------------
-void vtkInformationVector::UnRegister(vtkObjectBase* o)
-{
-  this->UnRegisterInternal(o, 1);
-}
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVector::ReportReferences(vtkGarbageCollector* collector)
 {
   this->Superclass::ReportReferences(collector);
@@ -239,3 +216,4 @@ void vtkInformationVector::ReportReferences(vtkGarbageCollector* collector)
     vtkGarbageCollectorReport(collector, this->Internal->Vector[i], "Entry");
   }
 }
+VTK_ABI_NAMESPACE_END

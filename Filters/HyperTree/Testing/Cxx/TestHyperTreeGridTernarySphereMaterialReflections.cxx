@@ -1,17 +1,5 @@
-/*==================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestHyperTreeGridTernarySphereMaterialReflections.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-===================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .SECTION Thanks
 // This test was written by Philippe Pebay, Kitware 2012
 // This test was revised by Philippe Pebay, 2016
@@ -34,7 +22,7 @@
 #include "vtkRenderer.h"
 #include "vtkTimerLog.h"
 
-//#define HYPERTREEGRID_GETRUSAGE
+// #define HYPERTREEGRID_GETRUSAGE
 #ifdef HYPERTREEGRID_GETRUSAGE
 #include <sys/resource.h>
 #endif
@@ -69,11 +57,11 @@ int TestHyperTreeGridTernarySphereMaterialReflections(int argc, char* argv[])
   getrusage(RUSAGE_SELF, &usage1);
 #endif
   vtkHyperTreeGrid* H = vtkHyperTreeGrid::SafeDownCast(htg);
-  vtkIdType nV = H->GetNumberOfVertices();
+  vtkIdType nC = H->GetNumberOfCells();
   vtkIdType nL = H->GetNumberOfLeaves();
   cerr << "Time for 1 HyperTreeGridSource: " << timer->GetElapsedTime() << endl;
-  cerr << "  number of tree vertices: " << nV << endl;
-  cerr << "  number of tree leaves: " << nL << " (" << (double)nL / (double)nV * 100.00 << "%)\n";
+  cerr << "  number of tree vertices: " << nC << endl;
+  cerr << "  number of tree leaves: " << nL << " (" << (double)nL / (double)nC * 100.00 << "%)\n";
 #ifdef HYPERTREEGRID_GETRUSAGE
   cerr << "  increase in max. resident set size: " << (usage1.ru_maxrss - usage0.ru_maxrss) / 1024
        << " kiB\n";
@@ -247,7 +235,7 @@ int TestHyperTreeGridTernarySphereMaterialReflections(int argc, char* argv[])
   // Render and test
   renWin->Render();
 
-  int retVal = vtkRegressionTestImageThreshold(renWin, 110);
+  int retVal = vtkRegressionTestImageThreshold(renWin, 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Start();

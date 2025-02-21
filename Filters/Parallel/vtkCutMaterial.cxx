@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCutMaterial.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCutMaterial.h"
 
 #include "vtkCell.h"
@@ -27,6 +15,7 @@
 #include "vtkThreshold.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCutMaterial);
 
 // Instantiate object with no input and no defined output.
@@ -102,7 +91,9 @@ int vtkCutMaterial::RequestData(vtkInformation* vtkNotUsed(request),
   thresh->SetInputData(input);
   thresh->SetInputArrayToProcess(
     0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, this->MaterialArrayName);
-  thresh->ThresholdBetween(this->Material - 0.5, this->Material + 0.5);
+  thresh->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  thresh->SetLowerThreshold(this->Material - 0.5);
+  thresh->SetUpperThreshold(this->Material + 0.5);
   thresh->Update();
 
   const double* bds = thresh->GetOutput()->GetBounds();
@@ -233,3 +224,4 @@ void vtkCutMaterial::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Normal: " << this->Normal[0] << ", " << this->Normal[1] << ", "
      << this->Normal[2] << endl;
 }
+VTK_ABI_NAMESPACE_END

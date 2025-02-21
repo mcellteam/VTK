@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSpatialAlgorithm.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageSpatialAlgorithm.h"
 
 #include "vtkDataArray.h"
@@ -24,9 +12,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageSpatialAlgorithm);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageSpatialAlgorithm filter.
 vtkImageSpatialAlgorithm::vtkImageSpatialAlgorithm()
 {
@@ -35,7 +24,7 @@ vtkImageSpatialAlgorithm::vtkImageSpatialAlgorithm()
   this->HandleBoundaries = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageSpatialAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -57,7 +46,7 @@ void vtkImageSpatialAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
   os << ").\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageSpatialAlgorithm::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -73,7 +62,7 @@ int vtkImageSpatialAlgorithm::RequestInformation(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // A helper method to compute output image extent
 void vtkImageSpatialAlgorithm::ComputeOutputWholeExtent(int extent[6], int handleBoundaries)
 {
@@ -90,7 +79,7 @@ void vtkImageSpatialAlgorithm::ComputeOutputWholeExtent(int extent[6], int handl
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method computes the extent of the input region necessary to generate
 // an output region.  Before this method is called "region" should have the
 // extent of the output region.  After this method finishes, "region" should
@@ -113,7 +102,7 @@ int vtkImageSpatialAlgorithm::RequestUpdateExtent(vtkInformation* vtkNotUsed(req
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageSpatialAlgorithm::InternalRequestUpdateExtent(
   int* extent, int* inExtent, int* wholeExtent)
 {
@@ -156,3 +145,4 @@ void vtkImageSpatialAlgorithm::InternalRequestUpdateExtent(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

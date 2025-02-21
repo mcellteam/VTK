@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPResampleFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPResampleFilter.h"
 
 #include "vtkCellData.h"
@@ -30,11 +18,12 @@
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPResampleFilter);
 
 vtkCxxSetObjectMacro(vtkPResampleFilter, Controller, vtkMultiProcessController);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPResampleFilter::vtkPResampleFilter()
   : UseInputBounds(0)
 {
@@ -48,13 +37,13 @@ vtkPResampleFilter::vtkPResampleFilter()
   vtkMath::UninitializeBounds(this->Bounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPResampleFilter::~vtkPResampleFilter()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkPResampleFilter::CalculateBounds(vtkDataSet* input)
 {
   double localBounds[6];
@@ -102,7 +91,7 @@ double* vtkPResampleFilter::CalculateBounds(vtkDataSet* input)
   return this->Bounds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPResampleFilter::RequestInformation(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -115,7 +104,7 @@ int vtkPResampleFilter::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPResampleFilter::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector*)
 {
@@ -129,7 +118,7 @@ int vtkPResampleFilter::RequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPResampleFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -163,7 +152,7 @@ int vtkPResampleFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPResampleFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -174,7 +163,7 @@ int vtkPResampleFilter::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPResampleFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -190,3 +179,4 @@ void vtkPResampleFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SamplingDimension " << this->SamplingDimension[0] << " x "
      << this->SamplingDimension[1] << " x " << this->SamplingDimension[2] << endl;
 }
+VTK_ABI_NAMESPACE_END

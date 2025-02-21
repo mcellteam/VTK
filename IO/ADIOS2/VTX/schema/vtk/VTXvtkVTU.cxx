@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    VTXvtkVTU.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /*
  * VTXvtkVTU.cxx
@@ -24,6 +12,7 @@
 #include "VTXvtkVTU.txx"
 
 #include "vtkCellArray.h"
+#include "vtkCellData.h"
 #include "vtkDoubleArray.h"
 #include "vtkIdTypeArray.h"
 #include "vtkIntArray.h"
@@ -40,6 +29,7 @@ namespace vtx
 {
 namespace schema
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 VTXvtkVTU::VTXvtkVTU(const std::string& schema, adios2::IO& io, adios2::Engine& engine)
   : VTXvtkBase("vtu", schema, io, engine)
@@ -48,10 +38,10 @@ VTXvtkVTU::VTXvtkVTU(const std::string& schema, adios2::IO& io, adios2::Engine& 
   InitTimes();
 }
 
-VTXvtkVTU::~VTXvtkVTU() {}
+VTXvtkVTU::~VTXvtkVTU() = default;
 
 // PRIVATE
-void VTXvtkVTU::DoFill(vtkMultiBlockDataSet* multiBlock, const size_t step)
+void VTXvtkVTU::DoFill(vtkMultiBlockDataSet* multiBlock, size_t step)
 {
   ReadPiece(step, 0); // just read piece 0 for now
 
@@ -62,7 +52,7 @@ void VTXvtkVTU::DoFill(vtkMultiBlockDataSet* multiBlock, const size_t step)
   multiBlock->SetBlock(0, pieces);
 }
 
-void VTXvtkVTU::ReadPiece(const size_t step, const size_t pieceID)
+void VTXvtkVTU::ReadPiece(size_t step, size_t pieceID)
 {
   if (!ReadDataSets(types::DataSetType::Cells, step, pieceID))
   {
@@ -82,9 +72,28 @@ void VTXvtkVTU::ReadPiece(const size_t step, const size_t pieceID)
                                 "information, in VTK::IOADIOS2 VTX reader\n");
   }
 
+  // optional
+  ReadDataSets(types::DataSetType::CellData, step, pieceID);
+
   this->Engine.PerformGets();
 
-  // TODO CellData
+  // Associate CellData
+  {
+    auto itCellDataSet = this->Pieces[pieceID].find(types::DataSetType::CellData);
+
+    if (itCellDataSet != this->Pieces[pieceID].end())
+    {
+      types::DataSet& dataSet = this->Pieces[pieceID][types::DataSetType::CellData];
+      for (auto& dataArrayPair : dataSet)
+      {
+        types::DataArray& dataArray = dataArrayPair.second;
+        if (dataArray.IsUpdated)
+        {
+          this->UnstructuredGrid->GetCellData()->AddArray(dataArray.Data.GetPointer());
+        }
+      }
+    }
+  }
 
   // Associate PointData
   {
@@ -92,7 +101,7 @@ void VTXvtkVTU::ReadPiece(const size_t step, const size_t pieceID)
     for (auto& dataArrayPair : dataSet)
     {
       const std::string& variableName = dataArrayPair.first;
-      if (this->TIMENames.count(variableName) == 1)
+      if (VTXvtkVTU::TIMENames.count(variableName) == 1)
       {
         continue;
       }
@@ -214,8 +223,9 @@ void VTXvtkVTU::ReadPiece(const size_t step, const size_t pieceID)
 
 void VTXvtkVTU::Init()
 {
-  auto lf_InitPieceDataSetType = [&](types::Piece& piece, const types::DataSetType type,
-                                   const pugi::xml_node& pieceNode) {
+  auto lf_InitPieceDataSetType =
+    [&](types::Piece& piece, const types::DataSetType type, const pugi::xml_node& pieceNode)
+  {
     const std::string nodeName = DataSetType(type);
     const pugi::xml_node dataSetNode = helper::XMLNode(
       nodeName, pieceNode, true, "when reading " + nodeName + " node in ImageData", false);
@@ -237,6 +247,8 @@ void VTXvtkVTU::Init()
   for (const pugi::xml_node& xmlPieceNode : xmlUnstructuredGridNode.children("Piece"))
   {
     types::Piece piece;
+    // CellData persist
+    lf_InitPieceDataSetType(piece, types::DataSetType::CellData, xmlPieceNode);
     lf_InitPieceDataSetType(piece, types::DataSetType::PointData, xmlPieceNode);
     lf_InitPieceDataSetType(piece, types::DataSetType::Cells, xmlPieceNode);
     lf_InitPieceDataSetType(piece, types::DataSetType::Points, xmlPieceNode);
@@ -254,12 +266,13 @@ void VTXvtkVTU::Init()
 
 #define declare_type(T)                                                                            \
   void VTXvtkVTU::SetBlocks(                                                                       \
-    adios2::Variable<T> variable, types::DataArray& dataArray, const size_t step)                  \
+    adios2::Variable<T> variable, types::DataArray& dataArray, size_t step)                        \
   {                                                                                                \
     SetBlocksCommon(variable, dataArray, step);                                                    \
   }
 VTK_IO_ADIOS2_VTX_ARRAY_TYPE(declare_type)
 #undef declare_type
 
+VTK_ABI_NAMESPACE_END
 } // end namespace schema
 } // end namespace vtx

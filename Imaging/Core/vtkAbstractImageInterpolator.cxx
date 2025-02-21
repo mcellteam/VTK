@@ -1,22 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractImageInterpolator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAbstractImageInterpolator.h"
 #include "vtkDataArray.h"
 #include "vtkImageData.h"
 #include "vtkImageInterpolatorInternals.h"
+#include "vtkMatrix3x3.h"
 #include "vtkPointData.h"
 #include "vtkTypeTraits.h"
 
@@ -28,8 +17,9 @@
 #undef VTK_USE_UINT64
 #define VTK_USE_UINT64 0
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // default do-nothing interpolation functions
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -54,25 +44,30 @@ void vtkInterpolateNOP<F>::RowInterpolationFunc(vtkInterpolationWeights*, int, i
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractImageInterpolator::vtkAbstractImageInterpolator()
 {
   this->Scalars = nullptr;
   this->BorderMode = VTK_IMAGE_BORDER_CLAMP;
   this->SlidingWindow = false;
+  this->UseDirection = false;
 
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 6; ++i)
   {
     this->StructuredBoundsDouble[i] = 0.0;
     this->StructuredBoundsFloat[i] = 0.0f;
   }
 
-  for (int j = 0; j < 3; j++)
+  for (int j = 0; j < 3; ++j)
   {
     this->Extent[2 * j] = 0;
     this->Extent[2 * j + 1] = -1;
     this->Spacing[j] = 1.0;
     this->Origin[j] = 0.0;
+    for (int i = 0; i < 3; ++i)
+    {
+      this->Direction[j * 3 + i] = (j == i ? 1.0 : 0.0);
+    }
   }
 
   this->OutValue = 0.0;
@@ -94,7 +89,7 @@ vtkAbstractImageInterpolator::vtkAbstractImageInterpolator()
   this->RowInterpolationFuncFloat = &(vtkInterpolateNOP<float>::RowInterpolationFunc);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractImageInterpolator::~vtkAbstractImageInterpolator()
 {
   if (this->Scalars)
@@ -104,7 +99,7 @@ vtkAbstractImageInterpolator::~vtkAbstractImageInterpolator()
   delete this->InterpolationInfo;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::DeepCopy(vtkAbstractImageInterpolator* obj)
 {
   this->SetTolerance(obj->Tolerance);
@@ -115,6 +110,15 @@ void vtkAbstractImageInterpolator::DeepCopy(vtkAbstractImageInterpolator* obj)
   this->SetSlidingWindow(obj->SlidingWindow);
   obj->GetExtent(this->Extent);
   obj->GetOrigin(this->Origin);
+  obj->GetDirection(this->Direction);
+  this->UseDirection = obj->UseDirection;
+  if (this->UseDirection)
+  {
+    for (int i = 0; i < 9; ++i)
+    {
+      this->InverseDirection[i] = obj->InverseDirection[i];
+    }
+  }
   obj->GetSpacing(this->Spacing);
   if (this->Scalars)
   {
@@ -129,7 +133,7 @@ void vtkAbstractImageInterpolator::DeepCopy(vtkAbstractImageInterpolator* obj)
   *this->InterpolationInfo = *obj->InterpolationInfo;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -144,12 +148,17 @@ void vtkAbstractImageInterpolator::PrintSelf(ostream& os, vtkIndent indent)
      << " " << this->Extent[3] << " " << this->Extent[4] << " " << this->Extent[5] << "\n";
   os << indent << "Origin: " << this->Origin[0] << " " << this->Origin[1] << " " << this->Origin[2]
      << "\n";
+  os << indent << "Direction: ";
+  for (int i = 0; i < 9; ++i)
+  {
+    os << this->Direction[i] << (i < 8 ? " " : "\n");
+  }
   os << indent << "Spacing: " << this->Spacing[0] << " " << this->Spacing[1] << " "
      << this->Spacing[2] << "\n";
 }
 
-//----------------------------------------------------------------------------
-void vtkAbstractImageInterpolator::SetBorderMode(int mode)
+//------------------------------------------------------------------------------
+void vtkAbstractImageInterpolator::SetBorderMode(vtkImageBorderMode mode)
 {
   mode = vtkMath::ClampValue(mode, VTK_IMAGE_BORDER_CLAMP, VTK_IMAGE_BORDER_MIRROR);
   if (this->BorderMode != mode)
@@ -159,7 +168,7 @@ void vtkAbstractImageInterpolator::SetBorderMode(int mode)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkAbstractImageInterpolator::GetBorderModeAsString()
 {
   switch (this->BorderMode)
@@ -174,7 +183,7 @@ const char* vtkAbstractImageInterpolator::GetBorderModeAsString()
   return "";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::SetComponentOffset(int offset)
 {
   if (this->ComponentOffset != offset)
@@ -184,7 +193,7 @@ void vtkAbstractImageInterpolator::SetComponentOffset(int offset)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::SetComponentCount(int count)
 {
   if (this->ComponentCount != count)
@@ -194,7 +203,7 @@ void vtkAbstractImageInterpolator::SetComponentCount(int count)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAbstractImageInterpolator::ComputeNumberOfComponents(int inputCount)
 {
   // validate the component range to extract
@@ -209,13 +218,13 @@ int vtkAbstractImageInterpolator::ComputeNumberOfComponents(int inputCount)
   return count;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAbstractImageInterpolator::GetNumberOfComponents()
 {
   return this->InterpolationInfo->NumberOfComponents;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::SetOutValue(double value)
 {
   if (this->OutValue != value)
@@ -225,7 +234,7 @@ void vtkAbstractImageInterpolator::SetOutValue(double value)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::SetTolerance(double value)
 {
   if (this->Tolerance != value)
@@ -235,7 +244,7 @@ void vtkAbstractImageInterpolator::SetTolerance(double value)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::SetSlidingWindow(bool x)
 {
   if (this->SlidingWindow != x)
@@ -245,7 +254,7 @@ void vtkAbstractImageInterpolator::SetSlidingWindow(bool x)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::Initialize(vtkDataObject* o)
 {
   // free any previous scalars
@@ -271,6 +280,18 @@ void vtkAbstractImageInterpolator::Initialize(vtkDataObject* o)
 
   // get the image information
   data->GetSpacing(this->Spacing);
+  vtkMatrix3x3* matrix = data->GetDirectionMatrix();
+  if (matrix->IsIdentity())
+  {
+    this->UseDirection = false;
+    vtkMatrix3x3::Identity(this->Direction);
+  }
+  else
+  {
+    this->UseDirection = true;
+    vtkMatrix3x3::DeepCopy(this->Direction, data->GetDirectionMatrix());
+    vtkMatrix3x3::Invert(this->Direction, this->InverseDirection);
+  }
   data->GetOrigin(this->Origin);
   data->GetExtent(this->Extent);
 
@@ -278,7 +299,7 @@ void vtkAbstractImageInterpolator::Initialize(vtkDataObject* o)
   this->Update();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::ReleaseData()
 {
   if (this->Scalars)
@@ -291,7 +312,7 @@ void vtkAbstractImageInterpolator::ReleaseData()
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class F>
 void vtkSlidingWindowAllocateWorkspace(vtkInterpolationWeights* weights, F*)
 {
@@ -361,7 +382,7 @@ void vtkSlidingWindowAllocateWorkspace(vtkInterpolationWeights* weights, F*)
   weights->LastZ = extent[4] - 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply a 1D filter in the X direction.
 // The inPtr parameter must be positioned at the correct slice.
 template <class T, class F>
@@ -407,7 +428,7 @@ void vtkSlidingWindowX(const T* inPtr, F* outPtr, int pixelCount, int ncomp, con
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply a 1D filter along the Y or Z direction, given kernelSize rows
 // of data as input and producing one row of data as output.  This function
 // must be called for each row of the output to filter a whole slice.
@@ -443,7 +464,7 @@ void vtkSlidingWindowYOrZ(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply a 2D filter to image slices,
 // The inPtr parameter must be positioned at the correct slice.
 template <class T, class F>
@@ -518,15 +539,15 @@ void vtkSlidingWindow2D(const T* inPtr, F* outPtr, const int extent[6], int idX,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class F, class T>
 struct vtkSlidingWindow
 {
   static void InterpolateRow(
-    vtkInterpolationWeights* weights, int idX, int idY, int idZ, F* outPtr, int n);
+    vtkInterpolationWeights* weights, int idX, int idY, int idZ, F* outPtr, int pixelCount);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply separable blur filter fX, fY, fZ to an image with minimum
 // memory overhead (3 rows of temp storage for 2D, 3 slices for 3D).
 // The aX, aY, and aZ contain increments for the X, Y, and Z
@@ -668,7 +689,7 @@ void vtkSlidingWindow<F, T>::InterpolateRow(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // get row interpolation function for different interpolation modes
 // and different scalar types
 template <class F>
@@ -686,7 +707,7 @@ void vtkSlidingWindowGetRowInterpolationFunc(
 
 } // namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::Update()
 {
   vtkDataArray* scalars = this->Scalars;
@@ -792,13 +813,28 @@ void vtkAbstractImageInterpolator::Update()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkAbstractImageInterpolator::CoordinateToIJK(const double point[3], double p[3])
+{
+  p[0] = point[0] - this->Origin[0];
+  p[1] = point[1] - this->Origin[1];
+  p[2] = point[2] - this->Origin[2];
+
+  if (this->UseDirection)
+  {
+    vtkMatrix3x3::MultiplyPoint(this->InverseDirection, p, p);
+  }
+
+  p[0] /= this->Spacing[0];
+  p[1] /= this->Spacing[1];
+  p[2] /= this->Spacing[2];
+}
+
+//------------------------------------------------------------------------------
 bool vtkAbstractImageInterpolator::Interpolate(const double point[3], double* value)
 {
   double p[3];
-  p[0] = (point[0] - this->Origin[0]) / this->Spacing[0];
-  p[1] = (point[1] - this->Origin[1]) / this->Spacing[1];
-  p[2] = (point[2] - this->Origin[2]) / this->Spacing[2];
+  this->CoordinateToIJK(point, p);
 
   if (this->CheckBoundsIJK(p))
   {
@@ -814,19 +850,12 @@ bool vtkAbstractImageInterpolator::Interpolate(const double point[3], double* va
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkAbstractImageInterpolator::Interpolate(double x, double y, double z, int component)
 {
   double value = this->OutValue;
-  double point[3];
-  point[0] = x;
-  point[1] = y;
-  point[2] = z;
-
-  double p[3];
-  p[0] = (point[0] - this->Origin[0]) / this->Spacing[0];
-  p[1] = (point[1] - this->Origin[1]) / this->Spacing[1];
-  p[2] = (point[2] - this->Origin[2]) / this->Spacing[2];
+  double p[3] = { x, y, z };
+  this->CoordinateToIJK(p, p);
 
   if (this->CheckBoundsIJK(p))
   {
@@ -847,31 +876,31 @@ double vtkAbstractImageInterpolator::Interpolate(double x, double y, double z, i
   return value;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::GetInterpolationFunc(
   void (**)(vtkInterpolationInfo*, const double[3], double*))
 {
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::GetInterpolationFunc(
   void (**)(vtkInterpolationInfo*, const float[3], float*))
 {
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::GetRowInterpolationFunc(
   void (**)(vtkInterpolationWeights*, int, int, int, double*, int))
 {
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::GetRowInterpolationFunc(
   void (**)(vtkInterpolationWeights*, int, int, int, float*, int))
 {
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::GetSlidingWindowFunc(
   void (**)(vtkInterpolationWeights*, int, int, int, double*, int))
 {
@@ -879,7 +908,7 @@ void vtkAbstractImageInterpolator::GetSlidingWindowFunc(
     &this->RowInterpolationFuncDouble, this->InterpolationInfo->ScalarType);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::GetSlidingWindowFunc(
   void (**)(vtkInterpolationWeights*, int, int, int, float*, int))
 {
@@ -887,21 +916,21 @@ void vtkAbstractImageInterpolator::GetSlidingWindowFunc(
     &this->RowInterpolationFuncFloat, this->InterpolationInfo->ScalarType);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::PrecomputeWeightsForExtent(
   const double[16], const int[6], int[6], vtkInterpolationWeights*&)
 {
   vtkErrorMacro("PrecomputeWeights not supported for this interpolator");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::PrecomputeWeightsForExtent(
   const float[16], const int[6], int[6], vtkInterpolationWeights*&)
 {
   vtkErrorMacro("PrecomputeWeights not supported for this interpolator");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractImageInterpolator::FreePrecomputedWeights(vtkInterpolationWeights*& weights)
 {
   int* extent = weights->WeightExtent;
@@ -958,20 +987,4 @@ void vtkAbstractImageInterpolator::FreePrecomputedWeights(vtkInterpolationWeight
 
   weights = nullptr;
 }
-
-//----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-int* vtkAbstractImageInterpolator::GetWholeExtent()
-{
-  VTK_LEGACY_REPLACED_BODY(vtkAbstractImageInterpolator::GetWholeExtent, "VTK 7.1",
-    vtkAbstractImageInterpolator::GetExtent);
-  return this->GetExtent();
-}
-
-void vtkAbstractImageInterpolator::GetWholeExtent(int extent[6])
-{
-  VTK_LEGACY_REPLACED_BODY(vtkAbstractImageInterpolator::GetWholeExtent, "VTK 7.1",
-    vtkAbstractImageInterpolator::GetExtent);
-  this->GetExtent(extent);
-}
-#endif
+VTK_ABI_NAMESPACE_END

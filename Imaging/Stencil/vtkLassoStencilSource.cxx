@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLassoStencilSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLassoStencilSource.h"
 
 #include "vtkCardinalSpline.h"
@@ -29,15 +17,16 @@
 #include <cmath>
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLassoStencilSource);
 vtkCxxSetObjectMacro(vtkLassoStencilSource, Points, vtkPoints);
 
-//----------------------------------------------------------------------------
-class vtkLSSPointMap : public std::map<int, vtkSmartPointer<vtkPoints> >
+//------------------------------------------------------------------------------
+class vtkLSSPointMap : public std::map<int, vtkSmartPointer<vtkPoints>>
 {
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLassoStencilSource::vtkLassoStencilSource()
 {
   this->SetNumberOfInputPorts(0);
@@ -51,7 +40,7 @@ vtkLassoStencilSource::vtkLassoStencilSource()
   this->PointMap = new vtkLSSPointMap();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLassoStencilSource::~vtkLassoStencilSource()
 {
   this->SetPoints(nullptr);
@@ -69,7 +58,7 @@ vtkLassoStencilSource::~vtkLassoStencilSource()
   this->PointMap = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLassoStencilSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -80,7 +69,7 @@ void vtkLassoStencilSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SlicePoints: " << this->PointMap->size() << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkLassoStencilSource::GetShapeAsString()
 {
   switch (this->Shape)
@@ -93,7 +82,7 @@ const char* vtkLassoStencilSource::GetShapeAsString()
   return "";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkLassoStencilSource::GetMTime()
 {
   vtkMTimeType mTime = this->vtkImageStencilSource::GetMTime();
@@ -124,7 +113,7 @@ vtkMTimeType vtkLassoStencilSource::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLassoStencilSource::SetSlicePoints(int i, vtkPoints* points)
 {
   vtkLSSPointMap::iterator iter = this->PointMap->find(i);
@@ -158,13 +147,13 @@ void vtkLassoStencilSource::SetSlicePoints(int i, vtkPoints* points)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLassoStencilSource::RemoveAllSlicePoints()
 {
   this->PointMap->clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPoints* vtkLassoStencilSource::GetSlicePoints(int i)
 {
   vtkLSSPointMap::iterator iter = this->PointMap->find(i);
@@ -175,12 +164,12 @@ vtkPoints* vtkLassoStencilSource::GetSlicePoints(int i)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // tolerance for stencil operations
 
 #define VTK_STENCIL_TOL 7.62939453125e-06
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute a reduced extent based on the bounds of the shape.
 static void vtkLassoStencilSourceSubExtent(vtkPoints* points, const double origin[3],
   const double spacing[3], const int extent[6], int subextent[6])
@@ -216,7 +205,7 @@ static void vtkLassoStencilSourceSubExtent(vtkPoints* points, const double origi
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Rasterize a polygon into the stencil
 static int vtkLassoStencilSourcePolygon(vtkPoints* points, vtkImageStencilData* data,
   vtkImageStencilRaster* raster, const int extent[6], const double origin[3],
@@ -277,7 +266,7 @@ static int vtkLassoStencilSourcePolygon(vtkPoints* points, vtkImageStencilData* 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Generate the splines for the given set of points.  The splines
 // will be closed if the final point is equal to the first point.
 // The parametric value for the resulting spline will be valid over
@@ -381,7 +370,7 @@ static void vtkLassoStencilSourceCreateSpline(vtkPoints* points, const double or
   dmax = d;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Rasterize a spline contour into the stencil
 static int vtkLassoStencilSourceSpline(vtkPoints* points, vtkImageStencilData* data,
   vtkImageStencilRaster* raster, const int extent[6], const double origin[3],
@@ -441,7 +430,7 @@ static int vtkLassoStencilSourceSpline(vtkPoints* points, vtkImageStencilData* d
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int vtkLassoStencilSourceExecute(vtkPoints* points, vtkImageStencilData* data,
   vtkImageStencilRaster* raster, int extent[6], double origin[3], double spacing[3], int shape,
   int xj, int yj, vtkSpline* xspline, vtkSpline* yspline)
@@ -467,7 +456,7 @@ static int vtkLassoStencilSourceExecute(vtkPoints* points, vtkImageStencilData* 
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLassoStencilSource::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -566,3 +555,4 @@ int vtkLassoStencilSource::RequestData(
 
   return result;
 }
+VTK_ABI_NAMESPACE_END

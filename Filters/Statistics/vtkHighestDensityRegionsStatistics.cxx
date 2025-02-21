@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHighestDensityRegionsStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkHighestDensityRegionsStatistics.h"
 
@@ -29,9 +17,10 @@
 #include <set>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkHighestDensityRegionsStatistics);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHighestDensityRegionsStatistics::vtkHighestDensityRegionsStatistics()
 {
   this->SmoothHC1[0] = 0.;
@@ -42,10 +31,10 @@ vtkHighestDensityRegionsStatistics::vtkHighestDensityRegionsStatistics()
   this->NumberOfRequestedColumnsPair = 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHighestDensityRegionsStatistics::~vtkHighestDensityRegionsStatistics() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHighestDensityRegionsStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -54,7 +43,7 @@ void vtkHighestDensityRegionsStatistics::PrintSelf(ostream& os, vtkIndent indent
      << this->SmoothHC2[0] << ", " << this->SmoothHC2[1] << "\n";
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHighestDensityRegionsStatistics::SetSigmaMatrix(
   double s11, double s12, double s21, double s22)
 {
@@ -85,13 +74,13 @@ void vtkHighestDensityRegionsStatistics::SetSigmaMatrix(
   this->Modified();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHighestDensityRegionsStatistics::SetSigma(double sigma)
 {
   this->SetSigmaMatrix(sigma * sigma, 0, 0, sigma * sigma);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHighestDensityRegionsStatistics::Learn(
   vtkTable* inData, vtkTable* vtkNotUsed(inParameters), vtkMultiBlockDataSet* outMeta)
 {
@@ -102,7 +91,7 @@ void vtkHighestDensityRegionsStatistics::Learn(
 
   vtkNew<vtkTable> outputColumns;
 
-  std::set<std::set<vtkStdString> >::const_iterator reqIt;
+  std::set<std::set<vtkStdString>>::const_iterator reqIt;
 
   // Make sure the number of requested pairs of columns is 0
   // before the computation.
@@ -115,20 +104,18 @@ void vtkHighestDensityRegionsStatistics::Learn(
     // Each request contains only one pair of columns of interest
     // (if there are others, they are ignored).
     std::set<vtkStdString>::const_iterator colIt = reqIt->begin();
-    const vtkStdString& colY = *colIt;
+    const std::string& colY = *colIt;
     if (!inData->GetColumnByName(colY.c_str()))
     {
-      vtkWarningMacro(
-        "InData table does not have a column " << colY.c_str() << ". Ignoring this pair.");
+      vtkWarningMacro("InData table does not have a column " << colY << ". Ignoring this pair.");
       continue;
     }
 
     ++colIt;
-    const vtkStdString& colX = *colIt;
+    const std::string& colX = *colIt;
     if (!inData->GetColumnByName(colX.c_str()))
     {
-      vtkWarningMacro(
-        "InData table does not have a column " << colX.c_str() << ". Ignoring this pair.");
+      vtkWarningMacro("InData table does not have a column " << colX << ". Ignoring this pair.");
       continue;
     }
 
@@ -188,16 +175,16 @@ void vtkHighestDensityRegionsStatistics::Learn(
   info->Set(vtkCompositeDataSet::NAME(), "Estimator of density Data");
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHighestDensityRegionsStatistics::Derive(vtkMultiBlockDataSet*) {}
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkHighestDensityRegionsStatistics::ComputeHDR(vtkDataArray* inObs, vtkDataArray* outDensity)
 {
   return ComputeHDR(inObs, inObs, outDensity);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkHighestDensityRegionsStatistics ::ComputeHDR(
   vtkDataArray* inObs, vtkDataArray* inPointsOfInterest, vtkDataArray* outDensity)
 {
@@ -239,7 +226,7 @@ double vtkHighestDensityRegionsStatistics ::ComputeHDR(
   return sum;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkHighestDensityRegionsStatistics::ComputeSmoothGaussianKernel(
   int vtkNotUsed(dimension), double khx, double khy)
 {
@@ -249,3 +236,4 @@ double vtkHighestDensityRegionsStatistics::ComputeSmoothGaussianKernel(
 
   return (exp(-d * 0.5)) / (2.0 * vtkMath::Pi() * this->Determinant);
 }
+VTK_ABI_NAMESPACE_END

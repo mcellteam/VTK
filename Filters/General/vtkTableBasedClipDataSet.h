@@ -1,31 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTableBasedClipDataSet.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*****************************************************************************
- *
- * Copyright (c) 2000 - 2009, Lawrence Livermore National Security, LLC
- * Produced at the Lawrence Livermore National Laboratory
- * LLNL-CODE-400124
- * All rights reserved.
- *
- * This file was adapted from the VisIt clipper (vtkVisItClipper). For  details,
- * see https://visit.llnl.gov/.  The full copyright notice is contained in the
- * file COPYRIGHT located at the root of the VisIt distribution or at
- * http://www.llnl.gov/visit/copyright.html.
- *
- *****************************************************************************/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2000 - 2009, Lawrence Livermore National Security, LLC
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkTableBasedClipDataSet
@@ -81,6 +56,11 @@
  *  points produces degenerate cells, which can be fixed by post-processing the
  *  output with a filter like vtkCleanGrid.
  *
+ * @warning
+ * This class has been threaded with vtkSMPTools. Using TBB or other
+ * non-sequential type (set in the CMake variable
+ * VTK_SMP_IMPLEMENTATION_TYPE) may improve performance significantly.
+ *
  * @par Thanks:
  *  This filter was adapted from the VisIt clipper (vtkVisItClipper).
  *
@@ -91,12 +71,16 @@
 #ifndef vtkTableBasedClipDataSet_h
 #define vtkTableBasedClipDataSet_h
 
-#include "vtkFiltersGeneralModule.h" // For export macro
+#include "vtkFiltersGeneralModule.h"    // For export macro
+#include "vtkIncrementalPointLocator.h" // For vtkIncrementalPointLocator
 #include "vtkUnstructuredGridAlgorithm.h"
+#include "vtkWeakPointer.h" // Needed for weak pointer to the vtkIncrementalPointLocator
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCallbackCommand;
+class vtkDoubleArray;
 class vtkImplicitFunction;
-class vtkIncrementalPointLocator;
+class vtkPolyData;
 
 class VTKFILTERSGENERAL_EXPORT vtkTableBasedClipDataSet : public vtkUnstructuredGridAlgorithm
 {
@@ -111,11 +95,11 @@ public:
   static vtkTableBasedClipDataSet* New();
 
   /**
-   * Get the MTime for which the point locator and clip function are considered.
+   * Get the MTime for which the clip function are considered.
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the InsideOut flag. With this flag off, a vertex is considered
    * inside (the implicit function or the isosurface) if the (function or scalar)
@@ -126,9 +110,9 @@ public:
   vtkSetMacro(InsideOut, vtkTypeBool);
   vtkGetMacro(InsideOut, vtkTypeBool);
   vtkBooleanMacro(InsideOut, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the clipping value of the implicit function (if an implicit function
    * is applied) or scalar data array (if a scalar data array is used), with 0.0
@@ -137,9 +121,9 @@ public:
    */
   vtkSetMacro(Value, double);
   vtkGetMacro(Value, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get flag UseValueAsOffset, with true as the default value. With this flag
    * on, IVAR Value is used as an offset parameter to the implicit function. Value
@@ -148,9 +132,9 @@ public:
   vtkSetMacro(UseValueAsOffset, bool);
   vtkGetMacro(UseValueAsOffset, bool);
   vtkBooleanMacro(UseValueAsOffset, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the implicit function with which to perform the clipping operation.
    * Unless an implicit function is defined, the specified input scalar data will
@@ -158,9 +142,9 @@ public:
    */
   virtual void SetClipFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(ClipFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get flag GenerateClipScalars, with 0 as the default value. With this
    * flag on, the scalar point data values obtained by evaluating the implicit
@@ -170,38 +154,20 @@ public:
   vtkSetMacro(GenerateClipScalars, vtkTypeBool);
   vtkGetMacro(GenerateClipScalars, vtkTypeBool);
   vtkBooleanMacro(GenerateClipScalars, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
-  /**
-   * Set/Get a point locator locator for merging duplicate points. By default,
-   * an instance of vtkMergePoints is used. Note that this IVAR is provided
-   * in this class only because this filter may resort to its sibling class
-   * vtkClipDataSet when processing some special grids (such as cylinders or
-   * cones with capping faces in the form of a vtkPolyData) while the latter
-   * requires a point locator. This filter itself does not need a locator.
-   */
-  void SetLocator(vtkIncrementalPointLocator* locator);
-  vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
-  //@}
-
-  //@{
+  ///@{
   /**
    * Set/Get the tolerance used for merging duplicate points near the clipping
    * intersection cells. This tolerance may prevent the generation of degenerate
-   * primitives. Note that only 3D cells actually use this IVAR.
+   * primitives. Note that only 3D cells actually use this IVAR when vtkClipDataSet
+   * is invoked as last resort.
    */
   vtkSetClampMacro(MergeTolerance, double, 0.0001, 0.25);
   vtkGetMacro(MergeTolerance, double);
-  //@}
+  ///@}
 
-  /**
-   * Create a default point locator when none is specified. The point locator is
-   * used to merge coincident points.
-   */
-  void CreateDefaultLocator();
-
-  //@{
+  ///@{
   /**
    * Set/Get whether a second output is generated. The second output contains the
    * polygonal data that is clipped away by the iso-surface.
@@ -209,14 +175,14 @@ public:
   vtkSetMacro(GenerateClippedOutput, vtkTypeBool);
   vtkGetMacro(GenerateClippedOutput, vtkTypeBool);
   vtkBooleanMacro(GenerateClippedOutput, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Return the clipped output.
    */
   vtkUnstructuredGrid* GetClippedOutput();
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::Precision enum for an explanation of the available
@@ -224,7 +190,29 @@ public:
    */
   vtkSetClampMacro(OutputPointsPrecision, int, SINGLE_PRECISION, DEFAULT_PRECISION);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Specify the number of input cells in a batch, where a batch defines
+   * a subset of the input cells operated on during threaded
+   * execution. Generally this is only used for debugging or performance
+   * studies (since batch size affects the thread workload).
+   *
+   * Default is 1000.
+   */
+  vtkSetClampMacro(BatchSize, unsigned int, 1, VTK_INT_MAX);
+  vtkGetMacro(BatchSize, unsigned int);
+  ///@}
+
+  ///@{
+  /**
+   * Specify a spatial locator for merging points.
+   * Forwarded to vtkClipDataSet.
+   */
+  void SetLocator(vtkIncrementalPointLocator* locator);
+  vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
+  ///@}
 
 protected:
   vtkTableBasedClipDataSet(vtkImplicitFunction* cf = nullptr);
@@ -233,55 +221,39 @@ protected:
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
+private:
   /**
    * This function resorts to the sibling class vtkClipDataSet to handle
    * special grids (such as cylinders or cones with capping faces in the
    * form a vtkPolyData).
    */
-  void ClipDataSet(vtkDataSet* pDataSet, vtkDataArray* clipAray, vtkUnstructuredGrid* unstruct);
-
-  /**
-   * This function takes a vtkImageData as a vtkRectilinearGrid, which is then
-   * clipped by ClipRectilinearGridData(......).
-   */
-  void ClipImageData(
-    vtkDataSet* inputGrd, vtkDataArray* clipAray, double isoValue, vtkUnstructuredGrid* outputUG);
+  void ClipDataSet(vtkDataSet* pDataSet, vtkUnstructuredGrid* outputUG);
 
   /**
    * This function clips a vtkPolyData object based on a specified iso-value
-   * (isoValue) using a scalar point data array (clipAray) that is either just an
+   * (isoValue) using a scalar point data array that is either just an
    * input scalar point data array or the result of evaluating an implicit function
    * (provided via SetClipFunction()). The clipping result is exported to outputUG.
    */
-  void ClipPolyData(
-    vtkDataSet* inputGrd, vtkDataArray* clipAray, double isoValue, vtkUnstructuredGrid* outputUG);
+  void ClipPolyData(vtkPolyData* inputGrid, vtkImplicitFunction* implicitFunction,
+    vtkDoubleArray* scalars, double isoValue, vtkUnstructuredGrid* outputUG);
 
   /**
-   * This function clips a vtkRectilinearGrid based on a specified iso-value
-   * (isoValue) using a scalar point data array (clipAray) that is either just an
+   * This function clips a DataSet based on a specified iso-value
+   * (isoValue) using a scalar point data array that is either just an
    * input scalar point data array or the result of evaluating an implicit function
    * (provided via SetClipFunction()). The clipping result is exported to outputUG.
    */
-  void ClipRectilinearGridData(
-    vtkDataSet* inputGrd, vtkDataArray* clipAray, double isoValue, vtkUnstructuredGrid* outputUG);
+  template <class TGrid>
+  void ClipTDataSet(TGrid* inputGrid, vtkImplicitFunction* implicitFunction,
+    vtkDoubleArray* scalars, double isoValue, vtkUnstructuredGrid* outputUG);
 
   /**
-   * This function clips a vtkStructuredGrid based on a specified iso-value
-   * (isoValue) using a scalar point data array (clipAray) that is either just an
-   * input scalar point data array or the result of evaluating an implicit function
-   * (provided via SetClipFunction()). The clipping result is exported to outputUG.
+   * This function handles the actual steps of the clipping operation.
    */
-  void ClipStructuredGridData(
-    vtkDataSet* inputGrd, vtkDataArray* clipAray, double isoValue, vtkUnstructuredGrid* outputUG);
-
-  /**
-   * This function clips a vtkUnstructuredGrid based on a specified iso-value
-   * (isoValue) using a scalar point data array (clipAray) that is either just an
-   * input scalar point data array or the result of evaluating an implicit function
-   * (provided via SetClipFunction()). The clipping result is exported to outputUG.
-   */
-  void ClipUnstructuredGridData(
-    vtkDataSet* inputGrd, vtkDataArray* clipAray, double isoValue, vtkUnstructuredGrid* outputUG);
+  template <typename TGrid, typename TInputIdType, bool InsideOut>
+  vtkSmartPointer<vtkUnstructuredGrid> ClipTDataSet(
+    TGrid* input, vtkImplicitFunction* implicitFunction, vtkDoubleArray* scalars, double isoValue);
 
   /**
    * Register a callback function with the InternalProgressObserver.
@@ -293,6 +265,7 @@ protected:
    */
   void InternalProgressCallback(vtkAlgorithm* algorithm);
 
+protected:
   vtkTypeBool InsideOut;
   vtkTypeBool GenerateClipScalars;
   vtkTypeBool GenerateClippedOutput;
@@ -301,13 +274,16 @@ protected:
   double MergeTolerance;
   vtkCallbackCommand* InternalProgressObserver;
   vtkImplicitFunction* ClipFunction;
-  vtkIncrementalPointLocator* Locator;
+  unsigned int BatchSize;
 
   int OutputPointsPrecision;
+
+  vtkWeakPointer<vtkIncrementalPointLocator> Locator;
 
 private:
   vtkTableBasedClipDataSet(const vtkTableBasedClipDataSet&) = delete;
   void operator=(const vtkTableBasedClipDataSet&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

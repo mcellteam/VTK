@@ -1,18 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAutoCorrelativeStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-#include "vtkToolkits.h"
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAutoCorrelativeStatistics.h"
 #include "vtkStatisticsAlgorithmPrivate.h"
@@ -25,7 +12,6 @@
 #include "vtkMultiBlockDataSet.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
 #include "vtkTableFFT.h"
@@ -35,9 +21,10 @@
 #include <set>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAutoCorrelativeStatistics);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAutoCorrelativeStatistics::vtkAutoCorrelativeStatistics()
 {
   this->AssessNames->SetNumberOfValues(1);
@@ -46,17 +33,17 @@ vtkAutoCorrelativeStatistics::vtkAutoCorrelativeStatistics()
   this->SliceCardinality = 0; // Invalid value by default. Correct value must be specified.
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAutoCorrelativeStatistics::~vtkAutoCorrelativeStatistics() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAutoCorrelativeStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "SliceCardinality: " << this->SliceCardinality << "\n";
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAutoCorrelativeStatistics::Aggregate(
   vtkDataObjectCollection* inMetaColl, vtkMultiBlockDataSet* outMeta)
 {
@@ -177,7 +164,7 @@ void vtkAutoCorrelativeStatistics::Aggregate(
         double M2Xt_c = currentTab->GetValueByName(r, "M2 Xt").ToDouble();
         double MXsXt_c = currentTab->GetValueByName(r, "M XsXt").ToDouble();
 
-        // Update global statics
+        // Update global statistics
         int N = n + n_c;
 
         double invN = 1. / static_cast<double>(N);
@@ -220,7 +207,7 @@ void vtkAutoCorrelativeStatistics::Aggregate(
   } // b
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAutoCorrelativeStatistics::Learn(
   vtkTable* inData, vtkTable* inPara, vtkMultiBlockDataSet* outMeta)
 {
@@ -274,16 +261,15 @@ void vtkAutoCorrelativeStatistics::Learn(
   row->SetNumberOfValues(7);
 
   // Loop over requests
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one column of interest (if there are others, they are ignored)
     std::set<vtkStdString>::const_iterator it = rit->begin();
-    vtkStdString varName = *it;
-    if (!inData->GetColumnByName(varName))
+    std::string const& varName = *it;
+    if (!inData->GetColumnByName(varName.c_str()))
     {
-      vtkWarningMacro(
-        "InData table does not have a column " << varName.c_str() << ". Ignoring it.");
+      vtkWarningMacro("InData table does not have a column " << varName << ". Ignoring it.");
       continue;
     }
 
@@ -346,13 +332,13 @@ void vtkAutoCorrelativeStatistics::Learn(
       {
         inv_n = 1. / (r + 1.);
 
-        xs = inData->GetValueByName(r, varName).ToDouble();
+        xs = inData->GetValueByName(r, varName.c_str()).ToDouble();
         delta = xs - meanXs;
         meanXs += delta * inv_n;
         deltaXsn = xs - meanXs;
         mom2Xs += delta * deltaXsn;
 
-        xt = inData->GetValueByName(r + rowOffset, varName).ToDouble();
+        xt = inData->GetValueByName(r + rowOffset, varName.c_str()).ToDouble();
         delta = xt - meanXt;
         meanXt += delta * inv_n;
         mom2Xt += delta * (xt - meanXt);
@@ -385,7 +371,7 @@ void vtkAutoCorrelativeStatistics::Learn(
   row->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAutoCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 {
   if (!inMeta || inMeta->GetNumberOfBlocks() < 1)
@@ -429,17 +415,17 @@ void vtkAutoCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
     }
 
     int numDerived = 9;
-    vtkStdString derivedNames[] = { "Variance Xs", "Variance Xt", "Covariance", "Determinant",
+    std::string derivedNames[] = { "Variance Xs", "Variance Xt", "Covariance", "Determinant",
       "Slope Xt/Xs", "Intercept Xt/Xs", "Slope Xs/Xt", "Intercept Xs/Xt", "Autocorrelation" };
 
     // Find or create columns for derived statistics
     vtkDoubleArray* derivedCol;
     for (int j = 0; j < numDerived; ++j)
     {
-      if (!modelTab->GetColumnByName(derivedNames[j]))
+      if (!modelTab->GetColumnByName(derivedNames[j].c_str()))
       {
         derivedCol = vtkDoubleArray::New();
-        derivedCol->SetName(derivedNames[j]);
+        derivedCol->SetName(derivedNames[j].c_str());
         derivedCol->SetNumberOfTuples(nRow);
         modelTab->AddColumn(derivedCol);
         derivedCol->Delete();
@@ -526,7 +512,7 @@ void vtkAutoCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 
       for (int j = 0; j < numDerived; ++j)
       {
-        modelTab->SetValueByName(i, derivedNames[j], derivedVals[j]);
+        modelTab->SetValueByName(i, derivedNames[j].c_str(), derivedVals[j]);
       }
     } // nRow
 
@@ -556,7 +542,7 @@ void vtkAutoCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   timeTable->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Use the invalid value of -1 for p-values if R is absent
 vtkDoubleArray* vtkAutoCorrelativeStatistics::CalculatePValues(vtkDoubleArray* statCol)
 {
@@ -574,7 +560,7 @@ vtkDoubleArray* vtkAutoCorrelativeStatistics::CalculatePValues(vtkDoubleArray* s
   return testCol;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAutoCorrelativeStatistics::SelectAssessFunctor(
   vtkTable* outData, vtkDataObject* inMetaDO, vtkStringArray* rowNames, AssessFunctor*& dfunc)
 {
@@ -603,7 +589,7 @@ void vtkAutoCorrelativeStatistics::SelectAssessFunctor(
     return;
   }
 
-  vtkStdString varName = rowNames->GetValue(0);
+  std::string varName = rowNames->GetValue(0);
 
   // Downcast meta columns to string arrays for efficient data access
   vtkStringArray* vars = vtkArrayDownCast<vtkStringArray>(modelTab->GetColumnByName("Variable"));
@@ -618,7 +604,7 @@ void vtkAutoCorrelativeStatistics::SelectAssessFunctor(
     if (vars->GetValue(r) == varName)
     {
       // Grab the data for the requested variable
-      vtkAbstractArray* arr = outData->GetColumnByName(varName);
+      vtkAbstractArray* arr = outData->GetColumnByName(varName.c_str());
       if (!arr)
       {
         return;
@@ -640,3 +626,4 @@ void vtkAutoCorrelativeStatistics::SelectAssessFunctor(
 
   // If arrived here it means that the variable of interest was not found in the parameter table
 }
+VTK_ABI_NAMESPACE_END

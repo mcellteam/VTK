@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLagrangeCurve.h"
 #include "vtkLagrangeHexahedron.h"
 #include "vtkLagrangeInterpolation.h"
@@ -20,7 +22,6 @@
 #include "vtkXMLPolyDataWriter.h"
 
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
 #include "vtkAxis.h"
 #include "vtkChartXY.h"
@@ -33,7 +34,6 @@
 #include "vtkRegressionTestImage.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
-#include "vtkTable.h"
 
 #include <sstream>
 #include <vector>
@@ -56,7 +56,7 @@ static int expectedDOFIndices2[] = {
 
   16, 22, 17, //
   20, 26, 21, //
-  18, 23, 19, //
+  19, 23, 18, //
 
   4, 12, 5,   //
   15, 25, 13, //
@@ -72,12 +72,12 @@ static int expectedDOFIndices3[] = {
   24, 40, 41, 26, //
   32, 56, 57, 36, //
   33, 58, 59, 37, //
-  28, 44, 45, 30, //
+  30, 44, 45, 28, //
 
   25, 42, 43, 27, //
   34, 60, 61, 38, //
   35, 62, 63, 39, //
-  29, 46, 47, 31, //
+  31, 46, 47, 29, //
 
   4, 16, 17, 5,   //
   22, 52, 53, 18, //
@@ -240,15 +240,15 @@ static const double expectedEdgePoints333[48][3] = {
   { 1, 0, 0.333333 },
   { 1, 0, 0.666667 },
 
-  { 0, 1, 0 },
-  { 0, 1, 1 },
-  { 0, 1, 0.333333 },
-  { 0, 1, 0.666667 },
-
   { 1, 1, 0 },
   { 1, 1, 1 },
   { 1, 1, 0.333333 },
   { 1, 1, 0.666667 },
+
+  { 0, 1, 0 },
+  { 0, 1, 1 },
+  { 0, 1, 0.333333 },
+  { 0, 1, 0.666667 },
 };
 
 static bool SnapFace(vtkPoints* pts)
@@ -294,7 +294,7 @@ static vtkSmartPointer<vtkLagrangeHexahedron> CreateCell(const vtkVector3i& test
     */
   }
   vtkCell* hexc = hex.GetPointer();
-  hexc->Initialize(npts, &conn[0], pts);
+  hexc->Initialize(npts, conn.data(), pts);
 
   return hex;
 }
@@ -383,7 +383,7 @@ bool TestEvaluation(T& hex)
   vtkVector3d param(1., 1., 1.);
   vtkVector3d posn;
   std::vector<double> shape(hex->GetPoints()->GetNumberOfPoints());
-  hex->EvaluateLocation(subId, param.GetData(), posn.GetData(), &shape[0]);
+  hex->EvaluateLocation(subId, param.GetData(), posn.GetData(), shape.data());
   std::cout << "\nEvaluateLocation" << param << " -> " << posn << "\n";
   ok &= testEqual(subId, 0, "EvaluateLocation: subId should be 0");
   vtkVector3d p6;
@@ -394,7 +394,7 @@ bool TestEvaluation(T& hex)
   vtkVector3d closest;
   double minDist2 = -1.0; // invalid
   int result = hex->EvaluatePosition(
-    posn.GetData(), closest.GetData(), subId, param.GetData(), minDist2, &shape[0]);
+    posn.GetData(), closest.GetData(), subId, param.GetData(), minDist2, shape.data());
   std::cout << "\nEvaluatePosition" << posn << " -> " << param << " dist " << minDist2 << " subid "
             << subId << " status " << result << "\n";
   ok &= testEqual(result, 1, "EvaluatePosition: proper return code for interior point");

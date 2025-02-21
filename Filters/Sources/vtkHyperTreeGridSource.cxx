@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkHyperTreeGridSource.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkHyperTreeGridSource.h"
 
 #include "vtkBitArray.h"
@@ -33,12 +21,13 @@ PURPOSE.  See the above copyright notice for more information.
 #include <cassert>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkHyperTreeGridSource);
 vtkCxxSetObjectMacro(vtkHyperTreeGridSource, DescriptorBits, vtkBitArray);
 vtkCxxSetObjectMacro(vtkHyperTreeGridSource, MaskBits, vtkBitArray);
 vtkCxxSetObjectMacro(vtkHyperTreeGridSource, Quadric, vtkQuadric);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHyperTreeGridSource::vtkHyperTreeGridSource()
 {
   // This a source: no input ports
@@ -104,7 +93,7 @@ vtkHyperTreeGridSource::vtkHyperTreeGridSource()
   this->Quadric->SetCoefficients(1., 1., 1., 0., 0., 0., 0., 0., 0., -1.);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHyperTreeGridSource::~vtkHyperTreeGridSource()
 {
   if (this->XCoordinates)
@@ -158,7 +147,7 @@ vtkHyperTreeGridSource::~vtkHyperTreeGridSource()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -210,7 +199,7 @@ void vtkHyperTreeGridSource::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SetDimensions(const unsigned int* dims)
 {
   this->Dimension = 0;
@@ -251,7 +240,7 @@ void vtkHyperTreeGridSource::SetDimensions(const unsigned int* dims)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SetDimensions(unsigned int dimx, unsigned int dimy, unsigned int dimz)
 {
   unsigned int dims[3];
@@ -261,19 +250,19 @@ void vtkHyperTreeGridSource::SetDimensions(unsigned int dimx, unsigned int dimy,
   this->SetDimensions(dims);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SetIndexingModeToKJI()
 {
   this->SetTransposedRootIndexing(false);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SetIndexingModeToIJK()
 {
   this->SetTransposedRootIndexing(true);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SetLevelZeroMaterialIndex(vtkIdTypeArray* indexArray)
 {
   if (this->LevelZeroMaterialIndex == indexArray)
@@ -300,32 +289,14 @@ void vtkHyperTreeGridSource::SetLevelZeroMaterialIndex(vtkIdTypeArray* indexArra
   this->Modified();
 }
 
-#ifndef VTK_LEGACY_REMOVE
-//----------------------------------------------------------------------------
-unsigned int vtkHyperTreeGridSource::GetMaximumLevel()
-{
-  VTK_LEGACY_REPLACED_BODY(
-    vtkHyperTreeGridSource::GetMaximumLevel, "VTK 9", vtkHyperTreeGridSource::GetMaxDepth);
-  return this->GetMaxDepth();
-}
-
-//----------------------------------------------------------------------------
-void vtkHyperTreeGridSource::SetMaximumLevel(unsigned int levels)
-{
-  VTK_LEGACY_REPLACED_BODY(
-    vtkHyperTreeGridSource::SetMaximumLevel, "VTK 9", vtkHyperTreeGridSource::SetMaxDepth);
-  this->SetMaxDepth(levels);
-}
-#endif
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkHyperTreeGridSource::GetMaxDepth()
 {
   assert("post: positive_result" && this->MaxDepth >= 1);
   return this->MaxDepth;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SetMaxDepth(unsigned int levels)
 {
   if (levels < 1)
@@ -344,14 +315,14 @@ void vtkHyperTreeGridSource::SetMaxDepth(unsigned int levels)
   assert("post: is_set" && this->GetMaxDepth() == levels);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridSource::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkHyperTreeGrid");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridSource::RequestInformation(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -378,11 +349,12 @@ int vtkHyperTreeGridSource::RequestInformation(
   extent[4] = 0;
   extent[5] = this->Dimensions[2] - 1;
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), extent, 6);
+  outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridSource::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -395,12 +367,16 @@ int vtkHyperTreeGridSource::RequestData(
     return 0;
   }
 
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  this->Piece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  this->NumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+
   output->Initialize();
-  if (this->UseMask)
-  {
-    vtkNew<vtkBitArray> mask;
-    output->SetMask(mask);
-  }
+
+  // A mask is required when using UseMask or when assigning trees to pieces,
+  // so we create it every time.
+  vtkNew<vtkBitArray> mask;
+  output->SetMask(mask);
 
   vtkCellData* outData = output->GetCellData();
 
@@ -419,10 +395,12 @@ int vtkHyperTreeGridSource::RequestData(
 
     if (!this->DescriptorBits && !this->InitializeFromStringDescriptor())
     {
+      vtkErrorMacro(<< "Could not initialize string descriptor.");
       return 0;
     }
     else if (this->DescriptorBits && !this->InitializeFromBitsDescriptor())
     {
+      vtkErrorMacro(<< "Could not initialize bits descriptor.");
       return 0;
     }
   } // if this->UseDescriptor
@@ -625,7 +603,7 @@ int vtkHyperTreeGridSource::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridSource::ProcessTrees(vtkHyperTreeGrid*, vtkDataObject* outputDO)
 {
   // Downcast output data object to hyper tree grid
@@ -635,6 +613,9 @@ int vtkHyperTreeGridSource::ProcessTrees(vtkHyperTreeGrid*, vtkDataObject* outpu
     vtkErrorMacro("Incorrect type of output: " << outputDO->GetClassName());
     return 0;
   }
+
+  // Reset process counter
+  this->CurrentTreeProcess = 0;
 
   // Iterate over all hyper trees
   vtkIdType nbTrees;
@@ -647,6 +628,7 @@ int vtkHyperTreeGridSource::ProcessTrees(vtkHyperTreeGrid*, vtkDataObject* outpu
     nbTrees = output->GetMaxNumberOfTrees();
   }
   vtkNew<vtkHyperTreeGridNonOrientedCursor> cursor;
+  vtkIdType offset = 0;
   for (vtkIdType itree = 0; itree < nbTrees; ++itree)
   {
     vtkIdType index = itree;
@@ -667,7 +649,21 @@ int vtkHyperTreeGridSource::ProcessTrees(vtkHyperTreeGrid*, vtkDataObject* outpu
 
     if (this->UseDescriptor)
     {
-      this->InitTreeFromDescriptor(output, cursor, index, idx);
+      if (!this->DescriptorBits)
+      {
+        char currentChar = this->LevelDescriptors[0][index + offset];
+        if (currentChar != 'R' && currentChar != '.')
+        {
+          this->CurrentTreeProcess = currentChar - '0';
+          offset++;
+          if (this->CurrentTreeProcess < 0 || this->CurrentTreeProcess > 9)
+          {
+            vtkErrorMacro("Unexpected level " << CurrentTreeProcess);
+            return 0;
+          }
+        }
+      }
+      this->InitTreeFromDescriptor(output, cursor, index, idx, offset);
     }
     else
     {
@@ -689,31 +685,36 @@ int vtkHyperTreeGridSource::ProcessTrees(vtkHyperTreeGrid*, vtkDataObject* outpu
   return 1;
 }
 
-//----------------------------------------------------------------------------
-void vtkHyperTreeGridSource::InitTreeFromDescriptor(
-  vtkHyperTreeGrid* output, vtkHyperTreeGridNonOrientedCursor* cursor, int treeIdx, int idx[3])
+//------------------------------------------------------------------------------
+void vtkHyperTreeGridSource::InitTreeFromDescriptor(vtkHyperTreeGrid* output,
+  vtkHyperTreeGridNonOrientedCursor* cursor, int treeIdx, int idx[3], int offset)
 {
   // Subdivide using descriptor
   if (!this->DescriptorBits)
   {
-    this->SubdivideFromStringDescriptor(output, cursor, 0, treeIdx, 0, idx, 0);
+    this->SubdivideFromStringDescriptor(output, cursor, 0, treeIdx, 0, idx, 0, offset);
   }
   else
   {
     this->SubdivideFromBitsDescriptor(output, cursor, 0, treeIdx, 0, idx, 0);
   }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
 {
-  size_t descLen = strlen(this->Descriptor);
+  std::string descNoProcess = this->Descriptor;
+  for (char c = '0'; c <= '9'; c++)
+  {
+    descNoProcess.erase(
+      std::remove(descNoProcess.begin(), descNoProcess.end(), c), descNoProcess.end());
+  }
 
   // Verify that grid and material specifications are consistent
-  if (this->UseMask && strlen(this->Mask) != descLen)
+  if (this->UseMask && strlen(this->Mask) != descNoProcess.size())
   {
     vtkErrorMacro(<< "Material mask is used but has length " << strlen(this->Mask)
-                  << " != " << descLen << " which is the length of the grid descriptor.");
-
+                  << " != " << descNoProcess.size()
+                  << " which is the length of the grid descriptor, omitting process qualifiers.");
     return 0;
   }
 
@@ -731,6 +732,7 @@ int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
   unsigned int nRefined = 0;
   unsigned int nLeaves = 0;
   unsigned int nNextLevel = nTotal;
+  unsigned int maskCounter = 0;
   bool rootLevel = true;
   std::ostringstream descriptor;
   std::ostringstream mask;
@@ -739,10 +741,16 @@ int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
   this->LevelDescriptors.clear();
   this->LevelMasks.clear();
 
-  for (size_t i = 0; i < descLen; ++i)
+  // Iterate through descriptor strings
+  for (size_t i = 0; i < strlen(this->Descriptor); ++i)
   {
     char c = this->Descriptor[i];
-    char m = this->UseMask ? this->Mask[i] : 0;
+    char m = 0;
+    if (!isdigit(c) && this->UseMask)
+    {
+      // Only read mask value when the current descriptor character is not a process number
+      m = this->Mask[maskCounter++];
+    }
     switch (c)
     {
       case ' ':
@@ -768,31 +776,14 @@ int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
         this->LevelDescriptors.push_back(descriptor.str());
         this->LevelMasks.push_back(mask.str());
 
-        // Check whether cursor is still at rool level
-        if (rootLevel)
+        if (!this->IsLevelDescriptorConsistent(
+              rootLevel, nRefined, nLeaves, nTotal, nNextLevel, descriptor))
         {
-          rootLevel = false;
+          return 0;
+        }
 
-          // Verify that total number of root cells is consistent with descriptor
-          if (nRefined + nLeaves != nTotal)
-          {
-            vtkErrorMacro(<< "String " << this->Descriptor << " describes " << nRefined + nLeaves
-                          << " root cells != " << nTotal);
-            return 0;
-          }
-        } // if (rootLevel)
-        else
-        {
-          // Verify that level descriptor cardinality matches expected value
-          if (descriptor.str().size() != nNextLevel)
-          {
-            vtkErrorMacro(<< "String level descriptor " << descriptor.str().c_str()
-                          << " has cardinality " << descriptor.str().size()
-                          << " which is not expected value of " << nNextLevel);
-
-            return 0;
-          }
-        } // else
+        // Changing level means we're not are root level
+        rootLevel = false;
 
         // Predict next level descriptor cardinality
         nNextLevel = nRefined * this->BlockSize;
@@ -804,12 +795,11 @@ int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
         nLeaves = 0;
         break; // case '|'
 
-      case '1':
       case 'R':
         //  Refined cell, verify mask consistency if needed
         if (this->UseMask && m == '0')
         {
-          vtkErrorMacro(<< "A refined branch must contain material.");
+          vtkErrorMacro(<< "A refined branch cannot be masked.");
           return 0;
         }
         // Refined cell, update branch counter
@@ -823,7 +813,6 @@ int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
         }
         break; // case 'R'
 
-      case '0':
       case '.':
         // Leaf cell, update leaf counter
         ++nLeaves;
@@ -835,21 +824,49 @@ int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
           mask << m;
         }
         break; // case '.'
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+      {
+        // Process-specific tree. Can only be used at root level
+        if (!rootLevel)
+        {
+          vtkErrorMacro(
+            << "It is only possible to use digits to bind trees to parallel pieces at root level");
+          return 0;
+        }
+        char piece = c - '0';
+        if (piece >= this->NumPieces)
+        {
+          vtkErrorMacro(<< "Can not assign tree to piece " << static_cast<int>(piece)
+                        << ". Available number of pieces: " << this->NumPieces);
+          return 0;
+        }
 
+        // Simply append into the descriptor
+        descriptor << c;
+
+        break; // case 'digit'
+      }
       default:
         vtkErrorMacro(<< "Unrecognized character: " << c << " at pos " << i << " in descriptor "
                       << this->Descriptor);
 
-        return 0; // default
-    }             // switch(c)
-  }               // c
+        return 0;
+    } // switch(c)
+  }   // char loop
 
   // Verify and append last level string
-  if (descriptor.str().size() != nNextLevel)
+  if (!this->IsLevelDescriptorConsistent(
+        rootLevel, nRefined, nLeaves, nTotal, nNextLevel, descriptor))
   {
-    vtkErrorMacro(<< "String level descriptor " << descriptor.str().c_str() << " has cardinality "
-                  << descriptor.str().size() << " which is not expected value of " << nNextLevel);
-
     return 0;
   }
 
@@ -868,7 +885,7 @@ int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
     nNextLevel = nRefined * this->BlockSize;
     if (nRefined > 0)
     {
-      this->LevelDescriptors.emplace_back(std::string('.', nNextLevel));
+      this->LevelDescriptors.emplace_back(nNextLevel, '.');
     }
   }
 
@@ -890,16 +907,45 @@ int vtkHyperTreeGridSource::InitializeFromStringDescriptor()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+bool vtkHyperTreeGridSource::IsLevelDescriptorConsistent(bool isRootLevel, unsigned int nRefined,
+  unsigned int nLeaves, unsigned int nTotal, unsigned int nNextLevel,
+  const std::ostringstream& descriptor)
+{
+  // Check whether cursor is still at rool level
+  if (isRootLevel)
+  {
+    // Verify that total number of root cells is consistent with descriptor
+    if (nRefined + nLeaves != nTotal)
+    {
+      vtkErrorMacro(<< "String " << this->Descriptor << " describes " << nRefined + nLeaves
+                    << " root cells != " << nTotal);
+      return false;
+    }
+  } // if (rootLevel)
+  else
+  {
+    // Verify that level descriptor cardinality matches expected value
+    if (descriptor.str().size() != nNextLevel)
+    {
+      vtkErrorMacro(<< "String level descriptor " << descriptor.str() << " has cardinality "
+                    << descriptor.str().size() << " which is not expected value of " << nNextLevel);
+      return false;
+    }
+  }
+
+  return true;
+}
+
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SubdivideFromStringDescriptor(vtkHyperTreeGrid* output,
   vtkHyperTreeGridNonOrientedCursor* cursor, unsigned int level, int treeIdx, int childIdx,
-  int idx[3], int parentPos)
+  int idx[3], int parentPos, int offset)
 {
   // Get handle on point data
   vtkCellData* outData = output->GetCellData();
 
   // Calculate pointer into level descriptor string
-  unsigned int pointer = level ? childIdx + parentPos * this->BlockSize : treeIdx;
+  unsigned int pointer = level ? childIdx + parentPos * this->BlockSize : treeIdx + offset;
 
   // Calculate the node global index
   vtkIdType id = this->LevelBitsIndexCnt[level];
@@ -916,8 +962,9 @@ void vtkHyperTreeGridSource::SubdivideFromStringDescriptor(vtkHyperTreeGrid* out
     outData->GetArray("Intercepts")->InsertTuple3(id, v, 0., 3.);
   }
 
-  // Initialize global index of tree
+  // Initialize global index of tree and mask state
   cursor->SetGlobalIndexFromLocal(id);
+  cursor->SetMask(false);
 
   // Subdivide further or stop recursion with terminal leaf
   if (level + 1 < this->MaxDepth &&
@@ -930,12 +977,7 @@ void vtkHyperTreeGridSource::SubdivideFromStringDescriptor(vtkHyperTreeGrid* out
     //      set value by tree with SetGlobalIndexStart only once
     //    if explicit
     //      set value by cell with SetGlobalIndexFromLocal
-    // 2) if use mask
-    //    set mask to false
-    if (this->UseMask)
-    {
-      cursor->SetMask(false);
-    }
+    // 2) set mask to false
 
     // Subdivide hyper tree grid leaf
     cursor->SubdivideLeaf();
@@ -1001,8 +1043,8 @@ void vtkHyperTreeGridSource::SubdivideFromStringDescriptor(vtkHyperTreeGrid* out
           cursor->ToChild(newChildIdx);
 
           // Recurse
-          this->SubdivideFromStringDescriptor(
-            output, cursor, level + 1, treeIdx, newChildIdx, newIdx, this->LevelCounters.at(level));
+          this->SubdivideFromStringDescriptor(output, cursor, level + 1, treeIdx, newChildIdx,
+            newIdx, this->LevelCounters.at(level), 0);
 
           // Reset cursor to parent
           cursor->ToParent();
@@ -1019,12 +1061,18 @@ void vtkHyperTreeGridSource::SubdivideFromStringDescriptor(vtkHyperTreeGrid* out
   else if (this->UseMask)
   {
     // Blank leaf if needed
-    bool masked = this->LevelMasks.at(level).at(pointer) == '0' ? 1 : 0;
+    bool masked = this->LevelMasks.at(level).at(pointer - offset) == '0';
     output->GetMask()->InsertTuple1(id, masked);
   } // else if
+
+  // Process selection for root trees: remove the entire tree if it's not selected for this process
+  if (level == 0 && this->CurrentTreeProcess != this->Piece)
+  {
+    output->RemoveTree(treeIdx);
+  }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridSource::InitializeFromBitsDescriptor()
 {
   // Verify that grid and material specifications are consistent
@@ -1059,7 +1107,6 @@ int vtkHyperTreeGridSource::InitializeFromBitsDescriptor()
   this->LevelBitsIndex.clear();
   this->LevelBitsIndex.push_back(0);
   vtkIdType nRefined = 0;
-  vtkIdType nLeaves = 0;
   vtkIdType nNextLevel = nTotal;
   vtkIdType nCurrentLevelCount = 0;
   vtkIdType descSize = this->DescriptorBits->GetNumberOfTuples();
@@ -1071,13 +1118,11 @@ int vtkHyperTreeGridSource::InitializeFromBitsDescriptor()
     {
       nNextLevel = nRefined * this->BlockSize;
       nRefined = 0;
-      nLeaves = 0;
       nCurrentLevelCount = 0;
       ++nCurrentLevel;
       this->LevelBitsIndex.push_back(i);
     }
     nRefined += this->DescriptorBits->GetValue(i);
-    nLeaves += this->DescriptorBits->GetValue(i) == 0 ? 1 : 0;
 
     ++nCurrentLevelCount;
   }
@@ -1090,7 +1135,7 @@ int vtkHyperTreeGridSource::InitializeFromBitsDescriptor()
     vtkErrorMacro(<< "Level descriptor " << nCurrentLevel << " has cardinality "
                   << nCurrentLevelCount << " which is not expected value of " << nNextLevel);
 
-    return 0;
+    return 1;
   }
 
   ++nCurrentLevel;
@@ -1106,7 +1151,7 @@ int vtkHyperTreeGridSource::InitializeFromBitsDescriptor()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SubdivideFromBitsDescriptor(vtkHyperTreeGrid* output,
   vtkHyperTreeGridNonOrientedCursor* cursor, unsigned int level, int treeIdx, int childIdx,
   int idx[3], int parentPos)
@@ -1267,7 +1312,7 @@ void vtkHyperTreeGridSource::SubdivideFromBitsDescriptor(vtkHyperTreeGrid* outpu
   } // else
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SubdivideFromQuadric(vtkHyperTreeGrid* output,
   vtkHyperTreeGridNonOrientedCursor* cursor, unsigned int level, int treeIdx, const int idx[3],
   double origin[3], double size[3])
@@ -1324,7 +1369,7 @@ void vtkHyperTreeGridSource::SubdivideFromQuadric(vtkHyperTreeGrid* output,
   } // v
 
   // Subdivide iff quadric changes sign within cell
-  bool subdivide = (nPos != nVert && nNeg != nVert) ? true : false;
+  bool subdivide = nPos != nVert && nNeg != nVert;
 
   // Assign cell value
   if (subdivide && level + 1 == this->MaxDepth)
@@ -1459,7 +1504,7 @@ void vtkHyperTreeGridSource::SubdivideFromQuadric(vtkHyperTreeGrid* output,
   {
     if (this->UseMask)
     {
-      cursor->SetMask((nPos > 0) ? 1 : 0);
+      cursor->SetMask(nPos > 0);
     }
 
     // Cell values
@@ -1475,7 +1520,7 @@ void vtkHyperTreeGridSource::SubdivideFromQuadric(vtkHyperTreeGrid* output,
   } // else
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::SetQuadricCoefficients(double q[10])
 {
   if (!this->Quadric)
@@ -1486,19 +1531,19 @@ void vtkHyperTreeGridSource::SetQuadricCoefficients(double q[10])
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridSource::GetQuadricCoefficients(double q[10])
 {
   this->Quadric->GetCoefficients(q);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkHyperTreeGridSource::GetQuadricCoefficients()
 {
   return this->Quadric->GetCoefficients();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkHyperTreeGridSource::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -1512,7 +1557,7 @@ vtkMTimeType vtkHyperTreeGridSource::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBitArray* vtkHyperTreeGridSource::ConvertDescriptorStringToBitArray(const std::string& str)
 {
   vtkBitArray* desc = vtkBitArray::New();
@@ -1551,8 +1596,9 @@ vtkBitArray* vtkHyperTreeGridSource::ConvertDescriptorStringToBitArray(const std
   return desc;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBitArray* vtkHyperTreeGridSource::ConvertMaskStringToBitArray(const std::string& str)
 {
   return ConvertDescriptorStringToBitArray(str);
 }
+VTK_ABI_NAMESPACE_END

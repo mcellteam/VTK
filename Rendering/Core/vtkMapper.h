@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMapper
  * @brief   abstract class specifies interface to map data to graphics primitives
@@ -48,9 +36,11 @@
 #define vtkMapper_h
 
 #include "vtkAbstractMapper3D.h"
+#include "vtkDeprecation.h"         // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkRenderingCoreModule.h" // For export macro
 #include "vtkSmartPointer.h"        // needed for vtkSmartPointer.
 #include "vtkSystemIncludes.h"      // For VTK_COLOR_MODE_DEFAULT and _MAP_SCALARS
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 #include <vector>                   // for method args
 
 #define VTK_RESOLVE_OFF 0
@@ -65,6 +55,7 @@
 #define VTK_MATERIALMODE_DIFFUSE 2
 #define VTK_MATERIALMODE_AMBIENT_AND_DIFFUSE 3
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkDataSet;
 class vtkDataObject;
@@ -74,10 +65,11 @@ class vtkImageData;
 class vtkProp;
 class vtkRenderer;
 class vtkScalarsToColors;
+class vtkSelection;
 class vtkUnsignedCharArray;
 class vtkWindow;
 
-class VTKRENDERINGCORE_EXPORT vtkMapper : public vtkAbstractMapper3D
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkMapper : public vtkAbstractMapper3D
 {
 public:
   vtkTypeMacro(vtkMapper, vtkAbstractMapper3D);
@@ -107,13 +99,13 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow*) override {}
 
-  //@{
+  ///@{
   /**
    * Specify a lookup table for the mapper to use.
    */
   void SetLookupTable(vtkScalarsToColors* lut);
   vtkScalarsToColors* GetLookupTable();
-  //@}
+  ///@}
 
   /**
    * Create default lookup table. Generally used to create one when none
@@ -121,16 +113,16 @@ public:
    */
   virtual void CreateDefaultLookupTable();
 
-  //@{
+  ///@{
   /**
    * Turn on/off flag to control whether scalar data is used to color objects.
    */
   vtkSetMacro(ScalarVisibility, vtkTypeBool);
   vtkGetMacro(ScalarVisibility, vtkTypeBool);
   vtkBooleanMacro(ScalarVisibility, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off flag to control whether the mapper's data is static. Static data
    * means that the mapper does not propagate updates down the pipeline, greatly
@@ -140,9 +132,9 @@ public:
   vtkSetMacro(Static, vtkTypeBool);
   vtkGetMacro(Static, vtkTypeBool);
   vtkBooleanMacro(Static, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * default (ColorModeToDefault), unsigned char scalars are treated
    * as colors, and NOT mapped through the lookup table, while
@@ -160,14 +152,14 @@ public:
   void SetColorModeToDefault() { this->SetColorMode(VTK_COLOR_MODE_DEFAULT); }
   void SetColorModeToMapScalars() { this->SetColorMode(VTK_COLOR_MODE_MAP_SCALARS); }
   void SetColorModeToDirectScalars() { this->SetColorMode(VTK_COLOR_MODE_DIRECT_SCALARS); }
-  //@}
+  ///@}
 
   /**
    * Return the method of coloring scalar data.
    */
   const char* GetColorModeAsString();
 
-  //@{
+  ///@{
   /**
    * By default, vertex color is used to map colors to a surface.
    * Colors are interpolated after being mapped.
@@ -177,9 +169,9 @@ public:
   vtkSetMacro(InterpolateScalarsBeforeMapping, vtkTypeBool);
   vtkGetMacro(InterpolateScalarsBeforeMapping, vtkTypeBool);
   vtkBooleanMacro(InterpolateScalarsBeforeMapping, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control whether the mapper sets the lookuptable range based on its
    * own ScalarRange, or whether it will use the LookupTable ScalarRange
@@ -191,9 +183,9 @@ public:
   vtkSetMacro(UseLookupTableScalarRange, vtkTypeBool);
   vtkGetMacro(UseLookupTableScalarRange, vtkTypeBool);
   vtkBooleanMacro(UseLookupTableScalarRange, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify range in terms of scalar minimum and maximum (smin,smax). These
    * values are used to map scalars into lookup table. Has no effect when
@@ -201,7 +193,7 @@ public:
    */
   vtkSetVector2Macro(ScalarRange, double);
   vtkGetVectorMacro(ScalarRange, double, 2);
-  //@}
+  ///@}
 
   /**
    * Control how the filter works with scalar point data and cell attribute
@@ -243,7 +235,7 @@ public:
   }
   void SetScalarModeToUseFieldData() { this->SetScalarMode(VTK_SCALAR_MODE_USE_FIELD_DATA); }
 
-  //@{
+  ///@{
   /**
    * When ScalarMode is set to UsePointFieldData or UseCellFieldData,
    * you can specify which array to use for coloring using these methods.
@@ -251,7 +243,7 @@ public:
    */
   void SelectColorArray(int arrayNum);
   void SelectColorArray(const char* arrayName);
-  //@}
+  ///@}
 
   // When ScalarMode is set to UseFieldData, set the index of the
   // tuple by which to color the entire data set. By default, the
@@ -262,7 +254,7 @@ public:
   vtkSetMacro(FieldDataTupleId, vtkIdType);
   vtkGetMacro(FieldDataTupleId, vtkIdType);
 
-  //@{
+  ///@{
   /**
    * Legacy:
    * These methods used to be used to specify the array component.
@@ -270,7 +262,7 @@ public:
    */
   void ColorByArrayComponent(int arrayNum, int component);
   void ColorByArrayComponent(const char* arrayName, int component);
-  //@}
+  ///@}
 
   /**
    * Set/Get the array name or number and component to color by.
@@ -289,7 +281,7 @@ public:
    */
   const char* GetScalarModeAsString();
 
-  //@{
+  ///@{
   /**
    * Set/Get a global flag that controls whether coincident topology (e.g., a
    * line on top of a polygon) is shifted to avoid z-buffer resolution (and
@@ -312,9 +304,9 @@ public:
   {
     SetResolveCoincidentTopology(VTK_RESOLVE_SHIFT_ZBUFFER);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to set the polygon offset scale factor and units.
    * Used when ResolveCoincidentTopology is set to PolygonOffset.
@@ -322,18 +314,18 @@ public:
    */
   static void SetResolveCoincidentTopologyPolygonOffsetParameters(double factor, double units);
   static void GetResolveCoincidentTopologyPolygonOffsetParameters(double& factor, double& units);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to set the polygon offset values relative to the global
    * Used when ResolveCoincidentTopology is set to PolygonOffset.
    */
   void SetRelativeCoincidentTopologyPolygonOffsetParameters(double factor, double units);
   void GetRelativeCoincidentTopologyPolygonOffsetParameters(double& factor, double& units);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to set the line offset scale factor and units.
    * Used when ResolveCoincidentTopology is set to PolygonOffset.
@@ -341,18 +333,18 @@ public:
    */
   static void SetResolveCoincidentTopologyLineOffsetParameters(double factor, double units);
   static void GetResolveCoincidentTopologyLineOffsetParameters(double& factor, double& units);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to set the line offset values relative to the global
    * Used when ResolveCoincidentTopology is set to PolygonOffset.
    */
   void SetRelativeCoincidentTopologyLineOffsetParameters(double factor, double units);
   void GetRelativeCoincidentTopologyLineOffsetParameters(double& factor, double& units);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to set the point offset value
    * Used when ResolveCoincidentTopology is set to PolygonOffset.
@@ -360,18 +352,18 @@ public:
    */
   static void SetResolveCoincidentTopologyPointOffsetParameter(double units);
   static void GetResolveCoincidentTopologyPointOffsetParameter(double& units);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to set the point offset value relative to the global
    * Used when ResolveCoincidentTopology is set to PolygonOffset.
    */
   void SetRelativeCoincidentTopologyPointOffsetParameter(double units);
   void GetRelativeCoincidentTopologyPointOffsetParameter(double& units);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the net parameters for handling coincident topology
    * obtained by summing the global values with the relative values.
@@ -379,9 +371,9 @@ public:
   void GetCoincidentTopologyPolygonOffsetParameters(double& factor, double& units);
   void GetCoincidentTopologyLineOffsetParameters(double& factor, double& units);
   void GetCoincidentTopologyPointOffsetParameter(double& units);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used when ResolveCoincidentTopology is set to PolygonOffset. The polygon
    * offset can be applied either to the solid polygonal faces or the
@@ -391,16 +383,16 @@ public:
    */
   static void SetResolveCoincidentTopologyPolygonOffsetFaces(int faces);
   static int GetResolveCoincidentTopologyPolygonOffsetFaces();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to set the z-shift if ResolveCoincidentTopology is set to
    * ShiftZBuffer. This is a global variable.
    */
   static void SetResolveCoincidentTopologyZShift(double val);
   static double GetResolveCoincidentTopologyZShift();
-  //@}
+  ///@}
 
   /**
    * Return bounding box (array of six doubles) of data expressed as
@@ -423,15 +415,19 @@ public:
    */
   vtkDataSet* GetInput();
 
+  ///@{
   /**
    * Get the input to this mapper as a vtkDataSet, instead of as a
    * more specialized data type that the subclass may return from
    * GetInput().  This method is provided for use in the wrapper languages,
    * C++ programmers should use GetInput() instead.
    */
-  vtkDataSet* GetInputAsDataSet() { return this->GetInput(); }
+  vtkDataSet* GetDataSetInput() { return this->GetInput(); }
+  VTK_DEPRECATED_IN_9_5_0("Use GetDataSetInput() instead.")
+  vtkDataSet* GetInputAsDataSet() { return this->GetDataSetInput(); }
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Map the scalars (if there are any scalars and ScalarVisibility is on)
    * through the lookup table, returning an unsigned char RGBA array. This is
@@ -443,9 +439,9 @@ public:
   virtual vtkUnsignedCharArray* MapScalars(double alpha, int& cellFlag);
   virtual vtkUnsignedCharArray* MapScalars(vtkDataSet* input, double alpha);
   virtual vtkUnsignedCharArray* MapScalars(vtkDataSet* input, double alpha, int& cellFlag);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Some introspection on the type of data the mapper will render
    * used by props to determine if they should invoke the mapper
@@ -453,7 +449,7 @@ public:
    */
   virtual bool HasOpaqueGeometry();
   virtual bool HasTranslucentPolygonalGeometry();
-  //@}
+  ///@}
 
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
@@ -503,6 +499,21 @@ public:
    */
   vtkImageData* GetColorTextureMap();
 
+  ///@{
+  /**
+   * Set/Get selection used to display particular points or cells in a second pass.
+   * This can be use to efficiently display a selection.
+   */
+  vtkGetObjectMacro(Selection, vtkSelection);
+  virtual void SetSelection(vtkSelection*);
+  ///@}
+
+  /**
+   * Create an image of the lookup table \a lkup.
+   */
+  static vtkSmartPointer<vtkImageData> BuildColorTextureImage(
+    vtkScalarsToColors* lkup, int colorMode);
+
 protected:
   vtkMapper();
   ~vtkMapper() override;
@@ -547,9 +558,12 @@ protected:
   double CoincidentLineOffset;
   double CoincidentPointOffset;
 
+  vtkSelection* Selection = nullptr;
+
 private:
   vtkMapper(const vtkMapper&) = delete;
   void operator=(const vtkMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLStickMapper
  * @brief   use imposters to draw cylinders
@@ -25,6 +14,7 @@
 #include "vtkOpenGLPolyDataMapper.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGOPENGL2_EXPORT vtkOpenGLStickMapper : public vtkOpenGLPolyDataMapper
 {
 public:
@@ -32,26 +22,26 @@ public:
   vtkTypeMacro(vtkOpenGLStickMapper, vtkOpenGLPolyDataMapper);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Convenience method to set the array to scale with.
    */
   vtkSetStringMacro(ScaleArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Convenience method to set the array to orient with
    */
   vtkSetStringMacro(OrientationArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Convenience method to set the array to select with
    */
   vtkSetStringMacro(SelectionIdArray);
-  //@}
+  ///@}
 
 protected:
   vtkOpenGLStickMapper();
@@ -100,4 +90,5 @@ private:
   void operator=(const vtkOpenGLStickMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

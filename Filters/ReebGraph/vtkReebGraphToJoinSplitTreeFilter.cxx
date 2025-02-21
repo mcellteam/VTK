@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReebGraphToJoinSplitTreeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkReebGraphToJoinSplitTreeFilter.h"
 
 #include "vtkDataSetAttributes.h"
@@ -28,10 +16,11 @@
 #include <algorithm>
 #include <boost/pending/disjoint_sets.hpp>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
-//----------------------------------------------------------------------------
-inline static bool vtkReebGraphVertexSoS(
+//------------------------------------------------------------------------------
+inline bool vtkReebGraphVertexSoS(
   const std::pair<int, double>& v0, const std::pair<int, double>& v1)
 {
   return ((v0.second < v1.second) || ((v0.second == v1.second) && (v0.first < v1.first)));
@@ -40,7 +29,7 @@ inline static bool vtkReebGraphVertexSoS(
 
 vtkStandardNewMacro(vtkReebGraphToJoinSplitTreeFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReebGraphToJoinSplitTreeFilter::vtkReebGraphToJoinSplitTreeFilter()
 {
   this->SetNumberOfInputPorts(2);
@@ -48,10 +37,10 @@ vtkReebGraphToJoinSplitTreeFilter::vtkReebGraphToJoinSplitTreeFilter()
   this->FieldId = 0;
 }
 
-//----------------------------------------------------------------------------
-vtkReebGraphToJoinSplitTreeFilter::~vtkReebGraphToJoinSplitTreeFilter() {}
+//------------------------------------------------------------------------------
+vtkReebGraphToJoinSplitTreeFilter::~vtkReebGraphToJoinSplitTreeFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphToJoinSplitTreeFilter::FillInputPortInformation(
   int portNumber, vtkInformation* info)
 {
@@ -70,14 +59,14 @@ int vtkReebGraphToJoinSplitTreeFilter::FillInputPortInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphToJoinSplitTreeFilter::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDirectedGraph::DATA_TYPE_NAME(), "vtkReebGraph");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReebGraphToJoinSplitTreeFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -85,13 +74,13 @@ void vtkReebGraphToJoinSplitTreeFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Field Id: " << this->FieldId << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReebGraph* vtkReebGraphToJoinSplitTreeFilter::GetOutput()
 {
   return vtkReebGraph::SafeDownCast(this->GetOutputDataObject(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -136,12 +125,12 @@ int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(re
 
       // first, uncompress the input Reeb graph.
       vtkMutableDirectedGraph* unCompressedGraph = vtkMutableDirectedGraph::New();
-      std::vector<std::pair<int, double> > vertexList;
+      std::vector<std::pair<int, double>> vertexList;
       for (int i = 0; i < vertexInfo->GetNumberOfTuples(); i++)
       {
         int vertexId = (int)*(vertexInfo->GetTuple(i));
         double scalarValue = scalarField->GetComponent(vertexId, 0);
-        vertexList.push_back(std::pair<int, double>(vertexId, scalarValue));
+        vertexList.emplace_back(vertexId, scalarValue);
       }
 
       vtkEdgeListIterator* eIt = vtkEdgeListIterator::New();
@@ -154,7 +143,7 @@ int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(re
         {
           int vertexId = deg2NodeList->GetVariantValue(i).ToInt();
           double scalarValue = scalarField->GetComponent(vertexId, 0);
-          vertexList.push_back(std::pair<int, double>(vertexId, scalarValue));
+          vertexList.emplace_back(vertexId, scalarValue);
         }
       } while (eIt->HasNext());
       eIt->Delete();
@@ -221,7 +210,7 @@ int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(re
       if (IsSplitTree)
       {
         // reverse the list of vertices
-        std::vector<std::pair<int, double> > tmpVector(vertexList);
+        std::vector<std::pair<int, double>> tmpVector(vertexList);
         for (int i = static_cast<int>(tmpVector.size()) - 1; i >= 0; i--)
         {
           vertexList[vertexList.size() - i - 1] = tmpVector[i];
@@ -229,7 +218,7 @@ int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(re
       }
 
       // then, prepare the necessary adjacency information
-      std::vector<std::vector<int> > halfStars(vertexList.size());
+      std::vector<std::vector<int>> halfStars(vertexList.size());
 
       vertexInfo = vtkArrayDownCast<vtkDataArray>(
         unCompressedGraph->GetVertexData()->GetAbstractArray("Vertex Ids"));
@@ -254,7 +243,7 @@ int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(re
       unCompressedGraph->Delete();
 
       // prepare the intermediate data-structure
-      std::vector<std::pair<std::pair<int, int>, std::vector<int> > > edgeList(vertexList.size());
+      std::vector<std::pair<std::pair<int, int>, std::vector<int>>> edgeList(vertexList.size());
       for (unsigned int i = 0; i < edgeList.size(); i++)
       {
         edgeList[i].first.first = -1;
@@ -264,7 +253,7 @@ int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(re
       // prepare the unionFind
       std::vector<int> rank(vertexList.size());
       std::vector<int> parent(vertexList.size());
-      boost::disjoint_sets<int*, int*> unionFind(&rank[0], &parent[0]);
+      boost::disjoint_sets<int*, int*> unionFind(rank.data(), parent.data());
 
       // enables a compressed usage of the UF
       std::vector<int> vertexToUFQueryMap(vertexList.size());
@@ -307,7 +296,7 @@ int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(re
               // twice.
               //
               // High-index degenerate merge have a very very low probability of
-              // appearance which is roughly inversely proportionnal to way more
+              // appearance which is roughly inversely proportional to way more
               // than its index.
               if (representatives[k] == representative)
               {
@@ -430,3 +419,4 @@ int vtkReebGraphToJoinSplitTreeFilter::RequestData(vtkInformation* vtkNotUsed(re
   }
   return 0;
 }
+VTK_ABI_NAMESPACE_END

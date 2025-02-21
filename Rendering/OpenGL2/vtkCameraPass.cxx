@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCameraPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCameraPass.h"
 #include "vtkObjectFactory.h"
@@ -24,17 +12,18 @@
 #include "vtkRenderState.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCameraPass);
 vtkCxxSetObjectMacro(vtkCameraPass, DelegatePass, vtkRenderPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCameraPass::vtkCameraPass()
 {
   this->DelegatePass = nullptr;
   this->AspectRatioOverride = 1.0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCameraPass::~vtkCameraPass()
 {
   if (this->DelegatePass != nullptr)
@@ -43,7 +32,7 @@ vtkCameraPass::~vtkCameraPass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -67,7 +56,7 @@ void vtkCameraPass::GetTiledSizeAndOrigin(
   ren->GetTiledSizeAndOrigin(width, height, originX, originY);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -152,7 +141,7 @@ void vtkCameraPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after delegate pass");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -165,3 +154,4 @@ void vtkCameraPass::ReleaseGraphicsResources(vtkWindow* w)
     this->DelegatePass->ReleaseGraphicsResources(w);
   }
 }
+VTK_ABI_NAMESPACE_END

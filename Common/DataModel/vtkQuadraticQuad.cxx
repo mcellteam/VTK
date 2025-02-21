@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadraticQuad.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkQuadraticQuad.h"
 
 #include "vtkCellData.h"
@@ -22,10 +10,13 @@
 #include "vtkPoints.h"
 #include "vtkQuad.h"
 #include "vtkQuadraticEdge.h"
+#include <algorithm> //std::copy
+#include <array>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkQuadraticQuad);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the quad with eight points.
 vtkQuadraticQuad::vtkQuadraticQuad()
 {
@@ -51,7 +42,7 @@ vtkQuadraticQuad::vtkQuadraticQuad()
   this->PointIds->SetNumberOfIds(8);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadraticQuad::~vtkQuadraticQuad()
 {
   this->Edge->Delete();
@@ -62,7 +53,7 @@ vtkQuadraticQuad::~vtkQuadraticQuad()
   this->CellData->Delete();
   this->CellScalars->Delete();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkQuadraticQuad::GetEdge(int edgeId)
 {
   edgeId = (edgeId < 0 ? 0 : (edgeId > 3 ? 3 : edgeId));
@@ -81,7 +72,7 @@ vtkCell* vtkQuadraticQuad::GetEdge(int edgeId)
   return this->Edge;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static int LinearQuads[4][4] = {
   { 0, 4, 8, 7 },
@@ -96,7 +87,7 @@ void vtkQuadraticQuad::Subdivide(double* weights)
   double pc[3], x[3];
 
   pc[0] = pc[1] = 0.5;
-  this->InterpolationFunctions(pc, weights);
+  vtkQuadraticQuad::InterpolationFunctions(pc, weights);
 
   double p[3];
   x[0] = x[1] = x[2] = 0.0;
@@ -111,7 +102,7 @@ void vtkQuadraticQuad::Subdivide(double* weights)
   this->Points->SetPoint(8, x);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraticQuad::EvaluatePosition(const double* x, double closestPoint[3], int& subId,
   double pcoords[3], double& minDist2, double weights[])
 {
@@ -120,19 +111,28 @@ int vtkQuadraticQuad::EvaluatePosition(const double* x, double closestPoint[3], 
   double tempWeights[4];
   double closest[3];
 
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
   // compute the midquad node
   this->Subdivide(weights);
 
   // four linear quads are used
   for (minDist2 = VTK_DOUBLE_MAX, i = 0; i < 4; i++)
   {
-    this->Quad->Points->SetPoint(0, this->Points->GetPoint(LinearQuads[i][0]));
-    this->Quad->Points->SetPoint(1, this->Points->GetPoint(LinearQuads[i][1]));
-    this->Quad->Points->SetPoint(2, this->Points->GetPoint(LinearQuads[i][2]));
-    this->Quad->Points->SetPoint(3, this->Points->GetPoint(LinearQuads[i][3]));
+    this->Quad->Points->SetPoint(0, pts + 3 * LinearQuads[i][0]);
+    this->Quad->Points->SetPoint(1, pts + 3 * LinearQuads[i][1]);
+    this->Quad->Points->SetPoint(2, pts + 3 * LinearQuads[i][2]);
+    this->Quad->Points->SetPoint(3, pts + 3 * LinearQuads[i][3]);
 
     status = this->Quad->EvaluatePosition(x, closest, ignoreId, pc, dist2, tempWeights);
-    if (status != -1 && dist2 < minDist2)
+    if (status != -1 && ((dist2 < minDist2) || ((dist2 == minDist2) && (returnStatus == 0))))
     {
       returnStatus = status;
       minDist2 = dist2;
@@ -174,25 +174,34 @@ int vtkQuadraticQuad::EvaluatePosition(const double* x, double closestPoint[3], 
     else
     {
       // Compute weights only
-      this->InterpolationFunctions(pcoords, weights);
+      vtkQuadraticQuad::InterpolationFunctions(pcoords, weights);
     }
   }
 
   return returnStatus;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticQuad::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
   int i, j;
-  double pt[3];
+  const double* pt;
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkQuadraticQuad::InterpolationFunctions(pcoords, weights);
+
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
 
   x[0] = x[1] = x[2] = 0.0;
   for (i = 0; i < 8; i++)
   {
-    this->Points->GetPoint(i, pt);
+    pt = pts + 3 * i;
     for (j = 0; j < 3; j++)
     {
       x[j] += pt[j] * weights[i];
@@ -200,7 +209,7 @@ void vtkQuadraticQuad::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraticQuad::CellBoundary(int subId, const double pcoords[3], vtkIdList* pts)
 {
   return this->Quad->CellBoundary(subId, pcoords, pts);
@@ -208,7 +217,7 @@ int vtkQuadraticQuad::CellBoundary(int subId, const double pcoords[3], vtkIdList
 
 static double MidPoints[1][3] = { { 0.5, 0.5, 0.0 } };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticQuad::InterpolateAttributes(
   vtkPointData* inPd, vtkCellData* inCd, vtkIdType cellId, vtkDataArray* cellScalars)
 {
@@ -236,8 +245,12 @@ void vtkQuadraticQuad::InterpolateAttributes(
     this->PointData->CopyData(inPd, this->PointIds->GetId(i), i);
     this->CellScalars->SetValue(i, cellScalars->GetTuple1(i));
   }
-  // copy the cell data over to the linear cell
-  this->CellData->CopyData(inCd, cellId, 0);
+
+  // copy the cell data over to the linear cells
+  for (i = 0; i < 4; i++)
+  {
+    this->CellData->CopyData(inCd, cellId, i);
+  }
 
   // Interpolate new values
   double p[3];
@@ -245,7 +258,7 @@ void vtkQuadraticQuad::InterpolateAttributes(
   this->CellScalars->Resize(9);
   for (numMidPts = 0; numMidPts < 1; numMidPts++)
   {
-    this->InterpolationFunctions(MidPoints[numMidPts], weights);
+    vtkQuadraticQuad::InterpolationFunctions(MidPoints[numMidPts], weights);
 
     x[0] = x[1] = x[2] = 0.0;
     s = 0.0;
@@ -264,7 +277,7 @@ void vtkQuadraticQuad::InterpolateAttributes(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticQuad::Contour(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* verts, vtkCellArray* lines,
   vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
@@ -287,7 +300,7 @@ void vtkQuadraticQuad::Contour(double value, vtkDataArray* cellScalars,
       this->CellData, i, outCd);
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip this quadratic quad using scalar value provided. Like contouring,
 // except that it cuts the quad to produce other quads and triangles.
 void vtkQuadraticQuad::Clip(double value, vtkDataArray* cellScalars,
@@ -312,7 +325,7 @@ void vtkQuadraticQuad::Clip(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Line-line intersection. Intersection has to occur within [0,1] parametric
 // coordinates and with specified tolerance.
 int vtkQuadraticQuad::IntersectWithLine(
@@ -342,105 +355,44 @@ int vtkQuadraticQuad::IntersectWithLine(
   return 0;
 }
 
-//----------------------------------------------------------------------------
-int vtkQuadraticQuad::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkQuadraticQuad::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
-
   // Create six linear triangles: one at each corner and two
   // to cover the remaining quadrilateral.
-
   // First the corner vertices
-  ptIds->InsertId(0, this->PointIds->GetId(0));
-  ptIds->InsertId(1, this->PointIds->GetId(4));
-  ptIds->InsertId(2, this->PointIds->GetId(7));
-  pts->InsertPoint(0, this->Points->GetPoint(0));
-  pts->InsertPoint(1, this->Points->GetPoint(4));
-  pts->InsertPoint(2, this->Points->GetPoint(7));
-
-  ptIds->InsertId(3, this->PointIds->GetId(4));
-  ptIds->InsertId(4, this->PointIds->GetId(1));
-  ptIds->InsertId(5, this->PointIds->GetId(5));
-  pts->InsertPoint(3, this->Points->GetPoint(4));
-  pts->InsertPoint(4, this->Points->GetPoint(1));
-  pts->InsertPoint(5, this->Points->GetPoint(5));
-
-  ptIds->InsertId(6, this->PointIds->GetId(5));
-  ptIds->InsertId(7, this->PointIds->GetId(2));
-  ptIds->InsertId(8, this->PointIds->GetId(6));
-  pts->InsertPoint(6, this->Points->GetPoint(5));
-  pts->InsertPoint(7, this->Points->GetPoint(2));
-  pts->InsertPoint(8, this->Points->GetPoint(6));
-
-  ptIds->InsertId(9, this->PointIds->GetId(6));
-  ptIds->InsertId(10, this->PointIds->GetId(3));
-  ptIds->InsertId(11, this->PointIds->GetId(7));
-  pts->InsertPoint(9, this->Points->GetPoint(6));
-  pts->InsertPoint(10, this->Points->GetPoint(3));
-  pts->InsertPoint(11, this->Points->GetPoint(7));
+  ptIds->SetNumberOfIds(18);
+  constexpr std::array<vtkIdType, 12> localPtIdsCorners{ 0, 4, 7, 4, 1, 5, 5, 2, 6, 6, 3, 7 };
+  std::copy(localPtIdsCorners.begin(), localPtIdsCorners.end(), ptIds->begin());
 
   // Now the two remaining triangles
   // Choose the triangulation that minimizes the edge length
   // across the cell.
-  double x4[3], x5[3], x6[3], x7[3];
-  this->Points->GetPoint(4, x4);
-  this->Points->GetPoint(5, x5);
-  this->Points->GetPoint(6, x6);
-  this->Points->GetPoint(7, x7);
-
-  if (vtkMath::Distance2BetweenPoints(x4, x6) <= vtkMath::Distance2BetweenPoints(x5, x7))
+  double d1 = vtkMath::Distance2BetweenPoints(this->Points->GetPoint(4), this->Points->GetPoint(6));
+  double d2 = vtkMath::Distance2BetweenPoints(this->Points->GetPoint(5), this->Points->GetPoint(7));
+  if (d1 <= d2)
   {
-    ptIds->InsertId(12, this->PointIds->GetId(4));
-    ptIds->InsertId(13, this->PointIds->GetId(6));
-    ptIds->InsertId(14, this->PointIds->GetId(7));
-    pts->InsertPoint(12, this->Points->GetPoint(4));
-    pts->InsertPoint(13, this->Points->GetPoint(6));
-    pts->InsertPoint(14, this->Points->GetPoint(7));
-
-    ptIds->InsertId(15, this->PointIds->GetId(4));
-    ptIds->InsertId(16, this->PointIds->GetId(5));
-    ptIds->InsertId(17, this->PointIds->GetId(6));
-    pts->InsertPoint(15, this->Points->GetPoint(4));
-    pts->InsertPoint(16, this->Points->GetPoint(5));
-    pts->InsertPoint(17, this->Points->GetPoint(6));
+    constexpr std::array<vtkIdType, 6> localPtIds1{ 4, 6, 7, 4, 5, 6 };
+    std::copy(localPtIds1.begin(), localPtIds1.end(), ptIds->begin() + 12);
   }
   else
   {
-    ptIds->InsertId(12, this->PointIds->GetId(5));
-    ptIds->InsertId(13, this->PointIds->GetId(6));
-    ptIds->InsertId(14, this->PointIds->GetId(7));
-    pts->InsertPoint(12, this->Points->GetPoint(5));
-    pts->InsertPoint(13, this->Points->GetPoint(6));
-    pts->InsertPoint(14, this->Points->GetPoint(7));
-
-    ptIds->InsertId(15, this->PointIds->GetId(5));
-    ptIds->InsertId(16, this->PointIds->GetId(7));
-    ptIds->InsertId(17, this->PointIds->GetId(4));
-    pts->InsertPoint(15, this->Points->GetPoint(5));
-    pts->InsertPoint(16, this->Points->GetPoint(7));
-    pts->InsertPoint(17, this->Points->GetPoint(4));
+    constexpr std::array<vtkIdType, 6> localPtIds2{ 5, 6, 7, 5, 7, 4 };
+    std::copy(localPtIds2.begin(), localPtIds2.end(), ptIds->begin() + 12);
   }
-
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticQuad::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
-  double sum[3];
+  double sum[2], p[3];
   double functionDerivs[16];
-  double elemNodes[8][3];
   double *J[3], J0[3], J1[3], J2[3];
   double *JI[3], JI0[3], JI1[3], JI2[3];
 
-  for (int i = 0; i < 8; i++)
-  {
-    this->Points->GetPoint(i, elemNodes[i]);
-  }
-
-  this->InterpolationDerivs(pcoords, functionDerivs);
+  vtkQuadraticQuad::InterpolationDerivs(pcoords, functionDerivs);
 
   // Compute transposed Jacobian and inverse Jacobian
   J[0] = J0;
@@ -456,11 +408,12 @@ void vtkQuadraticQuad::Derivatives(
 
   for (int i = 0; i < 8; i++)
   {
+    this->Points->GetPoint(i, p);
     for (int j = 0; j < 2; j++)
     {
       for (int k = 0; k < 3; k++)
       {
-        J[j][k] += elemNodes[i][k] * functionDerivs[j * 8 + i];
+        J[j][k] += p[k] * functionDerivs[j * 8 + i];
       }
     }
   }
@@ -486,7 +439,7 @@ void vtkQuadraticQuad::Derivatives(
   // First compute derivatives in local x'-y' coordinate system
   for (int j = 0; j < dim; j++)
   {
-    sum[0] = sum[1] = sum[2] = 0.0;
+    sum[0] = sum[1] = 0.0;
     for (int i = 0; i < 8; i++) // loop over interp. function derivatives
     {
       sum[0] += functionDerivs[i] * values[dim * i + j];
@@ -502,7 +455,7 @@ void vtkQuadraticQuad::Derivatives(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute interpolation functions. The first four nodes are the corner
 // vertices; the others are mid-edge nodes.
 void vtkQuadraticQuad::InterpolationFunctions(const double pcoords[3], double weights[8])
@@ -523,7 +476,7 @@ void vtkQuadraticQuad::InterpolationFunctions(const double pcoords[3], double we
   weights[3] = (1.0 - r) * s - 0.5 * (weights[6] + weights[7]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Derivatives in parametric space.
 void vtkQuadraticQuad::InterpolationDerivs(const double pcoords[3], double derivs[16])
 {
@@ -554,7 +507,7 @@ void vtkQuadraticQuad::InterpolationDerivs(const double pcoords[3], double deriv
   derivs[11] = (1.0 - r) - 0.5 * (derivs[14] + derivs[15]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkQQuadCellPCoords[24] = {
   0.0, 0.0, 0.0, //
   1.0, 0.0, 0.0, //
@@ -570,7 +523,7 @@ double* vtkQuadraticQuad::GetParametricCoords()
   return vtkQQuadCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticQuad::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -582,3 +535,4 @@ void vtkQuadraticQuad::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Scalars:\n";
   this->Scalars->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

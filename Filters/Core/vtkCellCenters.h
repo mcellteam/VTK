@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCellCenters.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCellCenters
  * @brief   generate points at center of cells
@@ -42,6 +30,7 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 
 class VTKFILTERSCORE_EXPORT vtkCellCenters : public vtkPolyDataAlgorithm
@@ -55,7 +44,7 @@ public:
    */
   static vtkCellCenters* New();
 
-  //@{
+  ///@{
   /**
    * Enable/disable the generation of vertex cells. The default
    * is Off.
@@ -63,9 +52,9 @@ public:
   vtkSetMacro(VertexCells, bool);
   vtkGetMacro(VertexCells, bool);
   vtkBooleanMacro(VertexCells, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable whether input cell data arrays should be passed through (or
    * copied) as output point data arrays. Default is `true` i.e. the arrays will
@@ -74,7 +63,22 @@ public:
   vtkSetMacro(CopyArrays, bool);
   vtkGetMacro(CopyArrays, bool);
   vtkBooleanMacro(CopyArrays, bool);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Enable/disable whether the ghost cells are converted into ghost points.
+   * For example, if ON, the input HIDDENCELLS and REFINEDCELLS are converted into HIDDENPOINTS.
+   * If OFF, the ghost array is just passed to the output as well as the `GhostsToSkip` from
+   * the input `vtkCellData`.
+   * It is ON by default.
+   *
+   * @sa vtkFieldData
+   */
+  vtkSetMacro(ConvertGhostCellsToGhostPoints, bool);
+  vtkGetMacro(ConvertGhostCellsToGhostPoints, bool);
+  vtkBooleanMacro(ConvertGhostCellsToGhostPoints, bool);
+  ///@}
 
   /**
    * Compute centers of cells from a dataset, storing them in the centers array.
@@ -90,10 +94,12 @@ protected:
 
   bool VertexCells = false;
   bool CopyArrays = true;
+  bool ConvertGhostCellsToGhostPoints = true;
 
 private:
   vtkCellCenters(const vtkCellCenters&) = delete;
   void operator=(const vtkCellCenters&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

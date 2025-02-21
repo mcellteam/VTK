@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    BoxClipTriangulate.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 // This test makes sure that vtkBoxClipDataSet correctly triangulates all cell
 // types.
 
@@ -121,7 +104,7 @@ class BoxClipTriangulateFailed
 {
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static void CheckWinding(vtkBoxClipDataSet* alg)
 {
@@ -175,7 +158,7 @@ static void CheckWinding(vtkBoxClipDataSet* alg)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static vtkSmartPointer<vtkUnstructuredGrid> BuildInput(
   int type, vtkIdType numcells, const vtkIdType* cells)
@@ -230,7 +213,7 @@ static vtkSmartPointer<vtkUnstructuredGrid> BuildInput(
   return input;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static void Check2DPrimitive(int type, vtkIdType numcells, const vtkIdType* cells)
 {
@@ -273,7 +256,7 @@ static void Check2DPrimitive(int type, vtkIdType numcells, const vtkIdType* cell
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static void Check3DPrimitive(
   int type, vtkIdType numcells, const vtkIdType* cells, vtkIdType numSurfacePolys)
@@ -325,7 +308,7 @@ static void Check3DPrimitive(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int BoxClipTriangulate(int, char*[])
 {

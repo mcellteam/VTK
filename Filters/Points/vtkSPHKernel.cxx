@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSPHKernel.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSPHKernel.h"
 #include "vtkAbstractPointLocator.h"
 #include "vtkDataArray.h"
@@ -22,11 +10,12 @@
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkSPHKernel, CutoffArray, vtkDataArray);
 vtkCxxSetObjectMacro(vtkSPHKernel, DensityArray, vtkDataArray);
 vtkCxxSetObjectMacro(vtkSPHKernel, MassArray, vtkDataArray);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSPHKernel::vtkSPHKernel()
 {
   this->RequiresInitialization = true;
@@ -37,7 +26,7 @@ vtkSPHKernel::vtkSPHKernel()
   this->MassArray = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSPHKernel::~vtkSPHKernel()
 {
   this->SetCutoffArray(nullptr);
@@ -45,7 +34,7 @@ vtkSPHKernel::~vtkSPHKernel()
   this->SetMassArray(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // At this point, the spatial step, the dimension of the kernel, the cutoff
 // factor, and the sigma normalization factor should be known.
 void vtkSPHKernel::Initialize(vtkAbstractPointLocator* loc, vtkDataSet* ds, vtkPointData* attr)
@@ -59,28 +48,15 @@ void vtkSPHKernel::Initialize(vtkAbstractPointLocator* loc, vtkDataSet* ds, vtkP
   this->DefaultVolume = pow(this->SpatialStep, this->Dimension);
 
   // See if cutoff array is provided.
-  if (this->CutoffArray && this->CutoffArray->GetNumberOfComponents() == 1)
-  {
-    this->UseCutoffArray = true;
-  }
-  else
-  {
-    this->UseCutoffArray = false;
-  }
+  this->UseCutoffArray = this->CutoffArray && this->CutoffArray->GetNumberOfComponents() == 1;
 
   // See if local mass and density information is provided
-  if (this->DensityArray && this->MassArray && this->DensityArray->GetNumberOfComponents() == 1 &&
-    this->MassArray->GetNumberOfComponents() == 1)
-  {
-    this->UseArraysForVolume = true;
-  }
-  else
-  {
-    this->UseArraysForVolume = false;
-  }
+  this->UseArraysForVolume = this->DensityArray && this->MassArray &&
+    this->DensityArray->GetNumberOfComponents() == 1 &&
+    this->MassArray->GetNumberOfComponents() == 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Radius around point is cutoff factor * smoothing length. That is unless
 // cutoff array is provided.
 vtkIdType vtkSPHKernel::ComputeBasis(double x[3], vtkIdList* pIds, vtkIdType ptId)
@@ -99,7 +75,7 @@ vtkIdType vtkSPHKernel::ComputeBasis(double x[3], vtkIdList* pIds, vtkIdType ptI
   return pIds->GetNumberOfIds();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkSPHKernel::ComputeWeights(double x[3], vtkIdList* pIds, vtkDoubleArray* weights)
 {
   vtkIdType numPts = pIds->GetNumberOfIds();
@@ -136,7 +112,7 @@ vtkIdType vtkSPHKernel::ComputeWeights(double x[3], vtkIdList* pIds, vtkDoubleAr
   return numPts;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkSPHKernel::ComputeDerivWeights(
   double x[3], vtkIdList* pIds, vtkDoubleArray* weights, vtkDoubleArray* gradWeights)
 {
@@ -167,7 +143,7 @@ vtkIdType vtkSPHKernel::ComputeDerivWeights(
   return numPts;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSPHKernel::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -181,3 +157,4 @@ void vtkSPHKernel::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Density Array: " << this->DensityArray << "\n";
   os << indent << "Mass Array: " << this->MassArray << "\n";
 }
+VTK_ABI_NAMESPACE_END

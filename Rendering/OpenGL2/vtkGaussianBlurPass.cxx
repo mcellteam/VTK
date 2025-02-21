@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGaussianBlurPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGaussianBlurPass.h"
 #include "vtkObjectFactory.h"
@@ -31,7 +19,7 @@
 
 // to be able to dump intermediate passes into png files for debugging.
 // only for vtkGaussianBlurPass developers.
-//#define VTK_GAUSSIAN_BLUR_PASS_DEBUG
+// #define VTK_GAUSSIAN_BLUR_PASS_DEBUG
 
 #ifdef VTK_GAUSSIAN_BLUR_PASS_DEBUG
 #include "vtkImageExtractComponents.h"
@@ -43,9 +31,10 @@
 #include "vtkGaussianBlurPassFS.h"
 #include "vtkGaussianBlurPassVS.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGaussianBlurPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGaussianBlurPass::vtkGaussianBlurPass()
 {
   this->FrameBufferObject = nullptr;
@@ -54,7 +43,7 @@ vtkGaussianBlurPass::vtkGaussianBlurPass()
   this->BlurProgram = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGaussianBlurPass::~vtkGaussianBlurPass()
 {
   if (this->FrameBufferObject != nullptr)
@@ -71,13 +60,13 @@ vtkGaussianBlurPass::~vtkGaussianBlurPass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGaussianBlurPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -223,7 +212,7 @@ void vtkGaussianBlurPass::Render(const vtkRenderState* s)
       renWin->GetShaderCache()->ReadyShaderProgram(this->BlurProgram->Program);
     }
 
-    if (!this->BlurProgram->Program || this->BlurProgram->Program->GetCompiled() != true)
+    if (!this->BlurProgram->Program || !this->BlurProgram->Program->GetCompiled())
     {
       vtkErrorMacro("Couldn't build the shader program. At this point , it can be an error in a "
                     "shader or a driver bug.");
@@ -355,7 +344,7 @@ void vtkGaussianBlurPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -388,3 +377,4 @@ void vtkGaussianBlurPass::ReleaseGraphicsResources(vtkWindow* w)
     this->Pass2 = nullptr;
   }
 }
+VTK_ABI_NAMESPACE_END

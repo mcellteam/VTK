@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointFillPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPointFillPass
  * @brief   Implement a post-processing fillpass
@@ -30,14 +18,17 @@
 
 #include "vtkDepthImageProcessingPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDepthPeelingPassLayerList; // Pimpl
 class vtkOpenGLFramebufferObject;
 class vtkOpenGLQuadHelper;
 class vtkOpenGLRenderWindow;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkPointFillPass : public vtkDepthImageProcessingPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkPointFillPass
+  : public vtkDepthImageProcessingPass
 {
 public:
   static vtkPointFillPass* New();
@@ -57,7 +48,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * How far in front of a point must a neighboring point
    * be to be used as a filler candidate.  Expressed as
@@ -66,9 +57,9 @@ public:
    */
   vtkSetMacro(CandidatePointRatio, float);
   vtkGetMacro(CandidatePointRatio, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * How large of an angle must the filler candidates
    * span before a point will be filled. Expressed in
@@ -77,7 +68,7 @@ public:
    */
   vtkSetMacro(MinimumCandidateAngle, float);
   vtkGetMacro(MinimumCandidateAngle, float);
-  //@}
+  ///@}
 
 protected:
   /**
@@ -107,4 +98,5 @@ private:
   void operator=(const vtkPointFillPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

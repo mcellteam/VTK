@@ -3,6 +3,9 @@ set(classes
   vtkGenericRenderWindowInteractor
 )
 
+set(headers)
+set(nowrap_headers)
+
 # Setup factory overrides and add window system specific render windows.
 if (VTK_USE_X)
   # Add some custom overrides
@@ -32,7 +35,8 @@ elseif (VTK_USE_COCOA)
   endif ()
   list(APPEND sources vtkCocoaRenderWindowInteractor.mm)
   list(APPEND headers
-    vtkCocoaRenderWindowInteractor.h
+    vtkCocoaRenderWindowInteractor.h)
+  list(APPEND nowrap_headers
     vtkCocoaMacOSXSDKCompatibility.h)
   # Set specified Objective-C++ flags, if any.
   if (VTK_REQUIRED_OBJCXX_FLAGS)
@@ -62,6 +66,12 @@ elseif (APPLE_IOS)
       PROPERTIES
         COMPILE_FLAGS "${VTK_REQUIRED_OBJCXX_FLAGS}")
   endif ()
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  # Add some custom overrides
+  vtk_object_factory_declare(
+    BASE vtkRenderWindowInteractor
+    OVERRIDE vtkWebAssemblyRenderWindowInteractor)
+  list(APPEND classes vtkWebAssemblyRenderWindowInteractor)
 else () # use generic
   vtk_object_factory_declare(
     BASE vtkRenderWindowInteractor
@@ -72,14 +82,24 @@ vtk_object_factory_configure(
   SOURCE_FILE vtk_object_factory_source
   HEADER_FILE vtk_object_factory_header
   EXPORT_MACRO "VTKRENDERINGUI_EXPORT"
-  )
+  EXTRA_INCLUDES "<vtkCollection.h>" "<vtkObjectFactoryCollection.h>" "<vtkLogger.h>" "<cstdlib>")
 
 vtk_module_add_module(VTK::RenderingUI
   CLASSES ${classes}
   HEADERS ${headers}
+  NOWRAP_HEADERS ${nowrap_headers}
   SOURCES ${sources} ${vtk_object_factory_source}
   PRIVATE_HEADERS ${vtk_object_factory_header}
   )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  vtk_module_link_options(VTK::RenderingUI
+    INTERFACE
+      "$<BUILD_INTERFACE:--js-library=${CMAKE_CURRENT_SOURCE_DIR}/vtkWebAssemblyRenderWindowInteractor.js>"
+      "$<INSTALL_INTERFACE:--js-library=$<INSTALL_PREFIX>/${_vtk_build_LIBRARY_DESTINATION}/vtkWebAssemblyRenderWindowInteractor.js>")
+  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vtkWebAssemblyRenderWindowInteractor.js"
+    DESTINATION ${_vtk_build_LIBRARY_DESTINATION})
+endif ()
 
 if (VTK_USE_X)
   vtk_module_find_package(
@@ -100,3 +120,4 @@ endif ()
 if (APPLE_IOS)
   vtk_module_link(VTK::RenderingUI PUBLIC "-framework UIKit")
 endif ()
+vtk_add_test_mangling(VTK::RenderingUI)

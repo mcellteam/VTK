@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ImageBSplineCoefficients.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Test the computation of b-spline coefficients for image interpolation
 //
 // The command line arguments are:
@@ -89,7 +77,8 @@ int ImageBSplineCoefficients(int argc, char* argv[])
     { 6.08451, 185.60837, 0.0 },
   };
 
-  int modes[3] = { VTK_IMAGE_BORDER_CLAMP, VTK_IMAGE_BORDER_REPEAT, VTK_IMAGE_BORDER_MIRROR };
+  vtkImageBorderMode modes[3] = { VTK_IMAGE_BORDER_CLAMP, VTK_IMAGE_BORDER_REPEAT,
+    VTK_IMAGE_BORDER_MIRROR };
 
   int m = VTK_IMAGE_BSPLINE_DEGREE_MAX;
 
@@ -97,7 +86,7 @@ int ImageBSplineCoefficients(int argc, char* argv[])
   {
     for (int jj = 0; jj < 3; jj++)
     {
-      int mode = modes[jj];
+      vtkImageBorderMode mode = modes[jj];
 
       coeffs->SetSplineDegree(j);
       coeffs->SetBorderMode(mode);

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLParser.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLParser
  * @brief   Parse XML to handle element tags and attributes.
@@ -29,12 +17,10 @@
 #include "vtkIOXMLParserModule.h" // For export macro
 #include "vtkObject.h"
 
-extern "C"
-{
-  void vtkXMLParserStartElement(void*, const char*, const char**);
-  void vtkXMLParserEndElement(void*, const char*);
-  void vtkXMLParserCharacterDataHandler(void*, const char*, int);
-}
+VTK_ABI_NAMESPACE_BEGIN
+void vtkXMLParserStartElement(void*, const char*, const char**);
+void vtkXMLParserEndElement(void*, const char*);
+void vtkXMLParserCharacterDataHandler(void*, const char*, int);
 
 class VTKIOXMLPARSER_EXPORT vtkXMLParser : public vtkObject
 {
@@ -44,15 +30,15 @@ public:
 
   static vtkXMLParser* New();
 
-  //@{
+  ///@{
   /**
    * Get/Set the input stream.
    */
   vtkSetMacro(Stream, istream*);
   vtkGetMacro(Stream, istream*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used by subclasses and their supporting classes.  These methods
    * wrap around the tellg and seekg methods of the input stream to
@@ -60,23 +46,23 @@ public:
    */
   vtkTypeInt64 TellG();
   void SeekG(vtkTypeInt64 position);
-  //@}
+  ///@}
 
   /**
    * Parse the XML input.
    */
   virtual int Parse();
 
-  //@{
+  ///@{
   /**
    * Parse the XML message. If length is specified, parse only the
    * first "length" characters
    */
   virtual int Parse(const char* inputString);
   virtual int Parse(const char* inputString, unsigned int length);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When parsing fragments of XML, or when streaming XML,
    * use the following three methods:
@@ -90,27 +76,27 @@ public:
   virtual int InitializeParser();
   virtual int ParseChunk(const char* inputString, unsigned int length);
   virtual int CleanupParser();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set and get file name.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this is off (the default), CharacterDataHandler will be called to
    * process text within XML Elements. If this is on, the text will be
    * ignored.
    */
-  vtkSetMacro(IgnoreCharacterData, int);
-  vtkGetMacro(IgnoreCharacterData, int);
-  //@}
+  vtkSetMacro(IgnoreCharacterData, vtkTypeBool);
+  vtkGetMacro(IgnoreCharacterData, vtkTypeBool);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set and get the encoding the parser should expect (nullptr defaults to
    * Expat's own default encoder, i.e UTF-8).
@@ -119,7 +105,13 @@ public:
    */
   vtkSetStringMacro(Encoding);
   vtkGetStringMacro(Encoding);
-  //@}
+  ///@}
+
+  /**
+   * The Expat library can only handle binary files > 2Gb if either
+   * size_of(long) == 8 or the "large size" feature is present
+   */
+  static bool hasLargeOffsets();
 
 protected:
   vtkXMLParser();
@@ -204,7 +196,7 @@ protected:
   friend void vtkXMLParserEndElement(void*, const char*);
   friend void vtkXMLParserCharacterDataHandler(void*, const char*, int);
 
-  int IgnoreCharacterData;
+  vtkTypeBool IgnoreCharacterData;
 
 private:
   vtkXMLParser(const vtkXMLParser&) = delete;
@@ -220,4 +212,5 @@ inline void vtkXMLParserCharacterDataHandler(void* parser, const char* data, int
   static_cast<vtkXMLParser*>(parser)->CharacterDataHandler(data, length);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

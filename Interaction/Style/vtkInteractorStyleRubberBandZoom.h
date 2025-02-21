@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleRubberBandZoom.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInteractorStyleRubberBandZoom
  * @brief   zoom in by amount indicated by rubber band box
@@ -27,18 +15,21 @@
 
 #include "vtkInteractionStyleModule.h" // For export macro
 #include "vtkInteractorStyle.h"
-#include "vtkRect.h" // for vtkRecti
+#include "vtkRect.h"          // for vtkRecti
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUnsignedCharArray;
 
-class VTKINTERACTIONSTYLE_EXPORT vtkInteractorStyleRubberBandZoom : public vtkInteractorStyle
+class VTKINTERACTIONSTYLE_EXPORT VTK_MARSHALAUTO vtkInteractorStyleRubberBandZoom
+  : public vtkInteractorStyle
 {
 public:
   static vtkInteractorStyleRubberBandZoom* New();
   vtkTypeMacro(vtkInteractorStyleRubberBandZoom, vtkInteractorStyle);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * When set to true (default, false), the interactor will lock the rendered box to the
    * viewport's aspect ratio.
@@ -46,9 +37,9 @@ public:
   vtkSetMacro(LockAspectToViewport, bool);
   vtkGetMacro(LockAspectToViewport, bool);
   vtkBooleanMacro(LockAspectToViewport, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When set to true (default, false), the position where the user starts the
    * interaction is treated as the center of the box rather that one of the
@@ -62,9 +53,9 @@ public:
   vtkSetMacro(CenterAtStartPosition, bool);
   vtkGetMacro(CenterAtStartPosition, bool);
   vtkBooleanMacro(CenterAtStartPosition, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If camera is in perspective projection mode, this interactor style uses
    * vtkCamera::Dolly to dolly the camera ahead for zooming. However, that can
@@ -77,22 +68,30 @@ public:
   vtkSetMacro(UseDollyForPerspectiveProjection, bool);
   vtkGetMacro(UseDollyForPerspectiveProjection, bool);
   vtkBooleanMacro(UseDollyForPerspectiveProjection, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Event bindings
    */
   void OnMouseMove() override;
   void OnLeftButtonDown() override;
   void OnLeftButtonUp() override;
-  //@}
+  ///@}
 
 protected:
   vtkInteractorStyleRubberBandZoom();
   ~vtkInteractorStyleRubberBandZoom() override;
 
   void Zoom() override;
+
+  virtual void ZoomTraditional(const vtkRecti& box);
+
+  /**
+   * Calculates the focal point to be used when zooming on perspective
+   * projection using the view angle based on the provided rubber band box.
+   */
+  virtual vtkVector3d CalculatePerspectiveZoomFocalPoint(const vtkRecti& box) const;
 
   int StartPosition[2];
   int EndPosition[2];
@@ -112,9 +111,7 @@ private:
    * endPosition or both.
    */
   void AdjustBox(int startPosition[2], int endPosition[2]) const;
-
-  void ZoomTraditional(const vtkRecti& box);
-  void ZoomPerspectiveProjectionUsingViewAngle(const vtkRecti& box);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

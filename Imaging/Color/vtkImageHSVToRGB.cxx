@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageHSVToRGB.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageHSVToRGB.h"
 
 #include "vtkImageData.h"
@@ -19,9 +7,10 @@
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageHSVToRGB);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageHSVToRGB::vtkImageHSVToRGB()
 {
   this->Maximum = 255.0;
@@ -29,7 +18,7 @@ vtkImageHSVToRGB::vtkImageHSVToRGB()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class T>
 void vtkImageHSVToRGBExecute(
@@ -97,7 +86,7 @@ void vtkImageHSVToRGBExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageHSVToRGB::ThreadedExecute(
   vtkImageData* inData, vtkImageData* outData, int outExt[6], int id)
 {
@@ -139,3 +128,4 @@ void vtkImageHSVToRGB::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Maximum: " << this->Maximum << "\n";
 }
+VTK_ABI_NAMESPACE_END

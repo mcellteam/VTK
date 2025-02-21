@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangeTriangle.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLagrangeTriangle.h"
 
 #include "vtkCellArray.h"
@@ -29,14 +17,12 @@
 #define ENABLE_CACHING
 #define SEVEN_POINT_TRIANGLE
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLagrangeTriangle);
-//----------------------------------------------------------------------------
-vtkLagrangeTriangle::vtkLagrangeTriangle()
-  : vtkHigherOrderTriangle()
-{
-}
+//------------------------------------------------------------------------------
+vtkLagrangeTriangle::vtkLagrangeTriangle() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLagrangeTriangle::~vtkLagrangeTriangle() = default;
 
 void vtkLagrangeTriangle::PrintSelf(ostream& os, vtkIndent indent)
@@ -47,11 +33,22 @@ void vtkLagrangeTriangle::PrintSelf(ostream& os, vtkIndent indent)
 vtkCell* vtkLagrangeTriangle::GetEdge(int edgeId)
 {
   vtkLagrangeCurve* result = EdgeCell;
-  this->GetEdgeWithoutRationalWeights(result, edgeId);
+  const auto set_number_of_ids_and_points = [&](const vtkIdType& npts) -> void
+  {
+    result->Points->SetNumberOfPoints(npts);
+    result->PointIds->SetNumberOfIds(npts);
+  };
+  const auto set_ids_and_points = [&](const vtkIdType& edge_id, const vtkIdType& face_id) -> void
+  {
+    result->Points->SetPoint(edge_id, this->Points->GetPoint(face_id));
+    result->PointIds->SetId(edge_id, this->PointIds->GetId(face_id));
+  };
+
+  this->SetEdgeIdsAndPoints(edgeId, set_number_of_ids_and_points, set_ids_and_points);
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLagrangeTriangle::InterpolateFunctions(const double pcoords[3], double* weights)
 {
   // Adapted from P. Silvester, "High-Order Polynomial Triangular Finite
@@ -109,13 +106,13 @@ void vtkLagrangeTriangle::InterpolateFunctions(const double pcoords[3], double* 
 
       for (vtkIdType dim = 0; dim < 3; dim++)
       {
-        weights[idx] *= eta(n, lambda[dim], tau[dim]);
+        weights[idx] *= Eta(n, lambda[dim], tau[dim]);
       }
     }
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLagrangeTriangle::InterpolateDerivs(const double pcoords[3], double* derivs)
 {
   // Analytic differentiation of the triangle shape functions, as defined in
@@ -183,13 +180,13 @@ void vtkLagrangeTriangle::InterpolateDerivs(const double pcoords[3], double* der
       vtkIdType lambda[3];
       this->ToBarycentricIndex(idx, lambda);
 
-      double eta_alpha = eta(n, lambda[0], tau[0]);
-      double eta_beta = eta(n, lambda[1], tau[1]);
-      double eta_gamma = eta(n, lambda[2], tau[2]);
+      double eta_alpha = Eta(n, lambda[0], tau[0]);
+      double eta_beta = Eta(n, lambda[1], tau[1]);
+      double eta_gamma = Eta(n, lambda[2], tau[2]);
 
-      double d_eta_alpha = d_eta(n, lambda[0], tau[0]);
-      double d_eta_beta = d_eta(n, lambda[1], tau[1]);
-      double d_eta_gamma = d_eta(n, lambda[2], tau[2]);
+      double d_eta_alpha = Deta(n, lambda[0], tau[0]);
+      double d_eta_beta = Deta(n, lambda[1], tau[1]);
+      double d_eta_gamma = Deta(n, lambda[2], tau[2]);
 
       double d_f_d_tau1 = (d_eta_alpha * eta_beta * eta_gamma - eta_alpha * eta_beta * d_eta_gamma);
       double d_f_d_tau2 = (eta_alpha * d_eta_beta * eta_gamma - eta_alpha * eta_beta * d_eta_gamma);
@@ -200,7 +197,8 @@ void vtkLagrangeTriangle::InterpolateDerivs(const double pcoords[3], double* der
   }
 }
 
-vtkHigherOrderCurve* vtkLagrangeTriangle::getEdgeCell()
+vtkHigherOrderCurve* vtkLagrangeTriangle::GetEdgeCell()
 {
   return EdgeCell;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGLTFDocumentLoader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkGLTFDocumentLoader
@@ -37,15 +25,19 @@
 #ifndef vtkGLTFDocumentLoader_h
 #define vtkGLTFDocumentLoader_h
 
+#include "GLTFSampler.h"         // For "Sampler"
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkObject.h"
-#include "vtkSmartPointer.h" // For SmartPointer
+#include "vtkResourceStream.h" // For "vtkResourceStream"
+#include "vtkSmartPointer.h"   // For "vtkSmartPointer"
+#include "vtkURILoader.h"      // For "vtkURILoader"
 
 #include <map>    // For std::map
 #include <memory> // For std::shared_ptr
 #include <string> // For std::string
 #include <vector> // For std::vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkDataArray;
 class vtkFloatArray;
@@ -53,7 +45,6 @@ class vtkImageData;
 class vtkMatrix4x4;
 class vtkPoints;
 class vtkPolyData;
-class vtkTransform;
 class vtkUnsignedShortArray;
 
 class VTKIOGEOMETRY_EXPORT vtkGLTFDocumentLoader : public vtkObject
@@ -171,7 +162,7 @@ public:
     // accessor indices from the .gltf file, the map's keys correspond to attribute names
     std::map<std::string, int> AttributeIndices;
     // attribute values
-    std::map<std::string, vtkSmartPointer<vtkFloatArray> > AttributeValues;
+    std::map<std::string, vtkSmartPointer<vtkFloatArray>> AttributeValues;
   };
 
   /**
@@ -189,7 +180,7 @@ public:
     vtkSmartPointer<vtkCellArray> Indices;
 
     // attribute values from buffer data
-    std::map<std::string, vtkSmartPointer<vtkDataArray> > AttributeValues;
+    std::map<std::string, vtkSmartPointer<vtkDataArray>> AttributeValues;
 
     vtkSmartPointer<vtkPolyData> Geometry;
 
@@ -198,12 +189,26 @@ public:
     int Material;
     int Mode;
     int CellSize; // 1, 2 or 3, depending on draw mode
+
+    // Primitive-specific extension metadata
+    struct Extensions
+    {
+      // KHR_draco_mesh_compression extension
+      // Only metadata are read (decoding and modifying the internal model is not done yet)
+      struct KHRDracoMeshCompression
+      {
+        int BufferView = -1;
+        std::map<std::string, int> AttributeIndices;
+      };
+      Primitive::Extensions::KHRDracoMeshCompression KHRDracoMetaData;
+    };
+    Primitive::Extensions ExtensionMetaData;
   };
 
   /**
    * This struct describes a glTF node object.
    * A node represents an object within a scene.
-   * Nodes can contain transform properties (stored as vtkTransform objects) as well as indices to
+   * Nodes can contain transform properties (stored as vtkMatrix4x4 objects) as well as indices to
    * children nodes, forming a hierarchy. No node may be a direct descendant of more than one node.
    */
   struct Node
@@ -213,8 +218,8 @@ public:
     int Mesh;
     int Skin;
 
-    vtkSmartPointer<vtkTransform> Transform;
-    vtkSmartPointer<vtkTransform> GlobalTransform;
+    vtkSmartPointer<vtkMatrix4x4> Transform;
+    vtkSmartPointer<vtkMatrix4x4> GlobalTransform;
 
     bool TRSLoaded;
 
@@ -265,7 +270,7 @@ public:
   struct TextureInfo
   {
     int Index = -1;
-    int TexCoord;
+    int TexCoord = -1;
   };
 
   /**
@@ -323,6 +328,9 @@ public:
     bool DoubleSided;
 
     std::string Name;
+
+    // extension KHR_materials_unlit
+    bool Unlit;
   };
 
   /**
@@ -340,27 +348,8 @@ public:
    * This struct describes a glTF sampler object.
    * Samplers specify filter and wrapping options corresponding to GL types.
    */
-  struct Sampler
+  struct Sampler : public GLTFSampler
   {
-    enum FilterType : unsigned short
-    {
-      NEAREST = 9728,
-      LINEAR = 9729,
-      NEAREST_MIPMAP_NEAREST = 9984,
-      LINEAR_MIPMAP_NEAREST = 9985,
-      NEAREST_MIPMAP_LINEAR = 9986,
-      LINEAR_MIPMAP_LINEAR = 9987
-    };
-    enum WrapType : unsigned short
-    {
-      CLAMP_TO_EDGE = 33071,
-      MIRRORED_REPEAT = 33648,
-      REPEAT = 10497
-    };
-    FilterType MagFilter;
-    FilterType MinFilter;
-    WrapType WrapS;
-    WrapType WrapT;
     std::string Name;
   };
 
@@ -382,11 +371,12 @@ public:
    */
   struct Skin
   {
-    std::vector<vtkSmartPointer<vtkMatrix4x4> > InverseBindMatrices;
+    std::vector<vtkSmartPointer<vtkMatrix4x4>> InverseBindMatrices;
     std::vector<int> Joints;
     int InverseBindMatricesAccessorId;
     int Skeleton;
     std::string Name;
+    vtkSmartPointer<vtkPolyData> Armature;
   };
 
   /**
@@ -442,7 +432,7 @@ public:
 
   /**
    * This struct describes a glTF camera object.
-   * glTF can define both perpective or orthographic cameras.
+   * glTF can define both perspective or orthographic cameras.
    * Some of the struct's members will be unused depending on the camera type.
    */
   struct Camera
@@ -503,7 +493,7 @@ public:
   {
     std::vector<Accessor> Accessors;
     std::vector<Animation> Animations;
-    std::vector<std::vector<char> > Buffers;
+    std::vector<std::vector<char>> Buffers;
     std::vector<BufferView> BufferViews;
     std::vector<Camera> Cameras;
     std::vector<Image> Images;
@@ -520,11 +510,13 @@ public:
     std::string BufferMetaData;
     int DefaultScene;
     std::string FileName;
+    vtkSmartPointer<vtkResourceStream> Stream;
+    vtkSmartPointer<vtkURILoader> URILoader;
   };
 
   /**
-   * Apply the specified animation, at the specified time, to the internal Model. Changes node
-   * transforms and morphing weights.
+   * Apply the specified animation, at the specified time value t, to the internal Model. Changes
+   * node transforms and morphing weights.
    */
   bool ApplyAnimation(float t, int animationId, bool forceStep = false);
 
@@ -533,17 +525,28 @@ public:
    */
   void ResetAnimation(int animationId);
 
+  ///@{
   /**
-   * Load the binary part of a binary glTF (.glb) file. Returns false if no valid binary part was
-   * found.
+   * @brief Load the binary part of a binary glTF (.glb) file.
+   * Input can either be a file (LoadFileBuffer) or a stream (LoadStreamBuffer).
+   * @return false if no valid binary part was found.
    */
-  bool LoadFileBuffer(const std::string& fileName, std::vector<char>& glbBuffer);
+  bool LoadFileBuffer(VTK_FILEPATH const std::string& fileName, std::vector<char>& glbBuffer);
+  bool LoadStreamBuffer(vtkResourceStream* stream, std::vector<char>& glbBuffer);
+  ///@}
 
+  ///@{
   /**
-   * Reset internal Model struct, and serialize glTF metadata (all json information) into it.
-   * To load buffers, use LoadModelData
+   * @brief Reset internal Model struct, and serialize glTF metadata (all json information) into it.
+   *
+   * To load buffers, use LoadModelData.
+   * Input can either be a file (LoadModelMetaDataFromFile) or a stream + optional URI loader.
+   *
+   * @return `true` if internal model is correctly filled, `false` otherwise.
    */
-  bool LoadModelMetaDataFromFile(std::string FileName);
+  bool LoadModelMetaDataFromFile(VTK_FILEPATH const std::string& FileName);
+  bool LoadModelMetaDataFromStream(vtkResourceStream* stream, vtkURILoader* loader = nullptr);
+  ///@}
 
   /**
    * Load buffer data into the internal Model.
@@ -568,12 +571,82 @@ public:
   /**
    * Get the list of extensions that are supported by this loader
    */
-  const std::vector<std::string>& GetSupportedExtensions();
+  virtual std::vector<std::string> GetSupportedExtensions();
 
   /**
    * Get the list of extensions that are used by the current model
    */
   const std::vector<std::string>& GetUsedExtensions();
+
+  /**
+   * Concatenate the current node's local transform to its parent's global transform, storing
+   * the resulting transform in the node's globalTransform field. Then does the same for the current
+   * node's children.
+   * Recursive.
+   */
+  void BuildGlobalTransforms(unsigned int nodeIndex, vtkSmartPointer<vtkMatrix4x4> parentTransform);
+
+  /**
+   * Build all global transforms
+   */
+  void BuildGlobalTransforms();
+
+  /**
+   * Compute all joint matrices of the skin of a specific node
+   */
+  static void ComputeJointMatrices(const Model& model, const Skin& skin, Node& node,
+    std::vector<vtkSmartPointer<vtkMatrix4x4>>& jointMats);
+
+  /**
+   * Some extensions require a preparation on the model before building VTK objects.
+   * For example, a subclass supporting KHR_draco_mesh_compression could override this function
+   * to consume the extension metadata and modify the internal model.
+   * This is not done in VTK yet which does not modify the internal model once read.
+   */
+  virtual void PrepareData() {}
+
+  ///@{
+  /**
+   * Set/Get the Stream start, where the GLB starts. By default it is 0,
+   * but can be different than 0 for file formats have a GLB embedded in it,
+   * for instance 3D Tiles B3DM.
+   */
+  vtkSetMacro(GLBStart, vtkTypeInt64);
+  vtkGetMacro(GLBStart, vtkTypeInt64);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get whether to load animation keyframes from buffers
+   *
+   * Defaults to true
+   */
+  vtkSetMacro(LoadAnimation, bool);
+  vtkGetMacro(LoadAnimation, bool);
+  vtkBooleanMacro(LoadAnimation, bool);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get whether to load images from filesystem and bufferView, if available
+   *
+   * Defaults to true
+   */
+  vtkSetMacro(LoadImages, bool);
+  vtkGetMacro(LoadImages, bool);
+  vtkBooleanMacro(LoadImages, bool);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get whether to load inverse bind matrices from buffers into model's Skin structs
+   *
+   * Defaults to true
+   */
+  vtkSetMacro(LoadSkinMatrix, bool);
+  vtkGetMacro(LoadSkinMatrix, bool);
+  vtkBooleanMacro(LoadSkinMatrix, bool);
+  ///@}
 
 protected:
   vtkGLTFDocumentLoader() = default;
@@ -616,6 +689,11 @@ private:
   bool BuildPolyDataFromPrimitive(Primitive& primitive);
 
   /**
+   * Creates and populates the Skin's geometry vtkPolyData member with all the armature hierarchy
+   */
+  bool BuildPolyDataFromSkin(Skin& skin);
+
+  /**
    * Load keyframes from buffers.
    */
   bool LoadAnimationData();
@@ -625,18 +703,19 @@ private:
    */
   bool LoadImageData();
 
-  /**
-   * Concatenate the current node's local transform to its parent's global transform, storing
-   * the resulting transform in the node's globalTransform field. Then does the same for the current
-   * node's children.
-   * Recursive.
-   */
-  void BuildGlobalTransforms(unsigned int nodeIndex, vtkSmartPointer<vtkTransform> parentTransform);
-
   std::shared_ptr<Model> InternalModel;
 
   static const std::vector<std::string> SupportedExtensions;
   std::vector<std::string> UsedExtensions;
+  vtkTypeInt64 GLBStart = 0;
+
+  /**
+   * Selectively load model data
+   */
+  bool LoadAnimation = true;
+  bool LoadImages = true;
+  bool LoadSkinMatrix = true;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

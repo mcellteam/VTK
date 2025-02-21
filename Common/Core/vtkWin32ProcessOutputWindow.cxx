@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWin32ProcessOutputWindow.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWin32ProcessOutputWindow.h"
 
 #include "vtkObjectFactory.h"
@@ -34,11 +22,12 @@
 #endif
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkWin32ProcessOutputWindow);
 
 extern "C" int vtkEncodedArrayWin32OutputWindowProcessWrite(const char* fname);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWin32ProcessOutputWindow::vtkWin32ProcessOutputWindow()
 {
   this->OutputPipe = 0;
@@ -46,7 +35,7 @@ vtkWin32ProcessOutputWindow::vtkWin32ProcessOutputWindow()
   this->Count = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWin32ProcessOutputWindow::~vtkWin32ProcessOutputWindow()
 {
   if (this->OutputPipe)
@@ -55,13 +44,13 @@ vtkWin32ProcessOutputWindow::~vtkWin32ProcessOutputWindow()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32ProcessOutputWindow::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32ProcessOutputWindow::DisplayText(const char* text)
 {
   // Display the text if the pipe has not been broken.
@@ -78,7 +67,7 @@ void vtkWin32ProcessOutputWindow::DisplayText(const char* text)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32ProcessOutputWindow::Initialize()
 {
   // Write the executable as a temporary file.  It will delete itself.
@@ -152,7 +141,7 @@ int vtkWin32ProcessOutputWindow::Initialize()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32ProcessOutputWindow::Write(const char* data, size_t length)
 {
   if (data && length)
@@ -174,3 +163,4 @@ void vtkWin32ProcessOutputWindow::Write(const char* data, size_t length)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

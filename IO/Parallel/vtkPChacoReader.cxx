@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPChacoReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPChacoReader.h"
 #include "vtkCellData.h"
 #include "vtkCharArray.h"
@@ -34,24 +17,24 @@
 #include "vtkPointData.h"
 #include "vtkProcessGroup.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkToolkits.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPChacoReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPChacoReader::vtkPChacoReader()
 {
   this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPChacoReader::~vtkPChacoReader()
 {
   this->SetController(nullptr);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPChacoReader::SetController(vtkMultiProcessController* c)
 {
   if ((c == nullptr) || (c->GetNumberOfProcesses() == 0))
@@ -60,32 +43,16 @@ void vtkPChacoReader::SetController(vtkMultiProcessController* c)
     this->MyId = 0;
   }
 
-  if (this->Controller == c)
+  vtkSetObjectBodyMacro(Controller, vtkMultiProcessController, c);
+
+  if (c)
   {
-    return;
+    this->NumProcesses = c->GetNumberOfProcesses();
+    this->MyId = c->GetLocalProcessId();
   }
-
-  this->Modified();
-
-  if (this->Controller != nullptr)
-  {
-    this->Controller->UnRegister(this);
-    this->Controller = nullptr;
-  }
-
-  if (c == nullptr)
-  {
-    return;
-  }
-
-  this->Controller = c;
-
-  c->Register(this);
-  this->NumProcesses = c->GetNumberOfProcesses();
-  this->MyId = c->GetLocalProcessId();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPChacoReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -157,7 +124,7 @@ int vtkPChacoReader::RequestInformation(
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPChacoReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -271,7 +238,7 @@ int vtkPChacoReader::RequestData(vtkInformation* vtkNotUsed(request),
 
   return retVal;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPChacoReader::SetUpEmptyGrid(vtkUnstructuredGrid* output)
 {
   int i;
@@ -316,7 +283,7 @@ void vtkPChacoReader::SetUpEmptyGrid(vtkUnstructuredGrid* output)
     vtkIntArray* ia = vtkIntArray::New();
     ia->SetNumberOfTuples(0);
     ia->SetNumberOfComponents(1);
-    ia->SetName(this->GetGlobalElementIdArrayName());
+    ia->SetName(vtkPChacoReader::GetGlobalElementIdArrayName());
     output->GetCellData()->AddArray(ia);
   }
 
@@ -325,11 +292,11 @@ void vtkPChacoReader::SetUpEmptyGrid(vtkUnstructuredGrid* output)
     vtkIntArray* ia = vtkIntArray::New();
     ia->SetNumberOfTuples(0);
     ia->SetNumberOfComponents(1);
-    ia->SetName(this->GetGlobalNodeIdArrayName());
+    ia->SetName(vtkPChacoReader::GetGlobalNodeIdArrayName());
     output->GetPointData()->AddArray(ia);
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPChacoReader::DivideCells(
   vtkMultiProcessController* contr, vtkUnstructuredGrid* output, int source)
 {
@@ -552,7 +519,7 @@ vtkUnstructuredGrid* vtkPChacoReader::UnMarshallDataSet(char* buf, vtkIdType siz
 
   return newGrid;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPChacoReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   vtkChacoReader::PrintSelf(os, indent);
@@ -560,3 +527,4 @@ void vtkPChacoReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "NumProcesses: " << this->NumProcesses << endl;
   os << indent << "Controller: " << this->Controller << endl;
 }
+VTK_ABI_NAMESPACE_END

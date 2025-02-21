@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLineWidget2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLineWidget2.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCommand.h"
 #include "vtkEvent.h"
 #include "vtkHandleWidget.h"
 #include "vtkLineRepresentation.h"
+#include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointHandleRepresentation3D.h"
 #include "vtkRenderWindow.h"
@@ -26,9 +15,12 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+#include <algorithm>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLineWidget2);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLineWidget2::vtkLineWidget2()
 {
   this->WidgetState = vtkLineWidget2::Start;
@@ -73,7 +65,7 @@ vtkLineWidget2::vtkLineWidget2()
   this->KeyEventCallbackCommand->SetCallback(vtkLineWidget2::ProcessKeyEvents);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLineWidget2::~vtkLineWidget2()
 {
   this->Point1Widget->Delete();
@@ -82,7 +74,7 @@ vtkLineWidget2::~vtkLineWidget2()
   this->KeyEventCallbackCommand->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::SetEnabled(int enabling)
 {
   int enabled = this->Enabled;
@@ -142,7 +134,7 @@ void vtkLineWidget2::SetEnabled(int enabling)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::SelectAction(vtkAbstractWidget* w)
 {
   vtkLineWidget2* self = reinterpret_cast<vtkLineWidget2*>(w);
@@ -168,7 +160,7 @@ void vtkLineWidget2::SelectAction(vtkAbstractWidget* w)
   self->EventCallbackCommand->SetAbortFlag(1);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::TranslateAction(vtkAbstractWidget* w)
 {
   vtkLineWidget2* self = reinterpret_cast<vtkLineWidget2*>(w);
@@ -212,7 +204,7 @@ void vtkLineWidget2::TranslateAction(vtkAbstractWidget* w)
   self->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::ScaleAction(vtkAbstractWidget* w)
 {
   vtkLineWidget2* self = reinterpret_cast<vtkLineWidget2*>(w);
@@ -243,7 +235,7 @@ void vtkLineWidget2::ScaleAction(vtkAbstractWidget* w)
   self->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::MoveAction(vtkAbstractWidget* w)
 {
   vtkLineWidget2* self = reinterpret_cast<vtkLineWidget2*>(w);
@@ -304,7 +296,7 @@ void vtkLineWidget2::MoveAction(vtkAbstractWidget* w)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkLineWidget2* self = reinterpret_cast<vtkLineWidget2*>(w);
@@ -323,7 +315,7 @@ void vtkLineWidget2::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -332,7 +324,7 @@ void vtkLineWidget2::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::SetProcessEvents(vtkTypeBool pe)
 {
   this->Superclass::SetProcessEvents(pe);
@@ -342,63 +334,78 @@ void vtkLineWidget2::SetProcessEvents(vtkTypeBool pe)
   this->LineHandle->SetProcessEvents(pe);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::ProcessKeyEvents(vtkObject*, unsigned long event, void* clientdata, void*)
 {
   vtkLineWidget2* self = static_cast<vtkLineWidget2*>(clientdata);
-  vtkRenderWindowInteractor* iren = self->GetInteractor();
   vtkLineRepresentation* rep = vtkLineRepresentation::SafeDownCast(self->WidgetRep);
-  switch (event)
+  char* cKeySym = self->Interactor->GetKeySym();
+  std::string keySym = cKeySym != nullptr ? cKeySym : "";
+  std::transform(keySym.begin(), keySym.end(), keySym.begin(), ::toupper);
+  if (event == vtkCommand::KeyPressEvent)
   {
-    case vtkCommand::KeyPressEvent:
-      switch (iren->GetKeyCode())
-      {
-        case 'x':
-        case 'X':
-          rep->GetPoint1Representation()->SetXTranslationAxisOn();
-          rep->GetPoint2Representation()->SetXTranslationAxisOn();
-          rep->GetLineHandleRepresentation()->SetXTranslationAxisOn();
-          break;
-        case 'y':
-        case 'Y':
-          rep->GetPoint1Representation()->SetYTranslationAxisOn();
-          rep->GetPoint2Representation()->SetYTranslationAxisOn();
-          rep->GetLineHandleRepresentation()->SetYTranslationAxisOn();
-          break;
-        case 'z':
-        case 'Z':
-          rep->GetPoint1Representation()->SetZTranslationAxisOn();
-          rep->GetPoint2Representation()->SetZTranslationAxisOn();
-          rep->GetLineHandleRepresentation()->SetZTranslationAxisOn();
-          break;
-        default:
-          break;
-      }
-      break;
-    case vtkCommand::KeyReleaseEvent:
-      switch (iren->GetKeyCode())
-      {
-        case 'x':
-        case 'X':
-        case 'y':
-        case 'Y':
-        case 'z':
-        case 'Z':
-          rep->GetPoint1Representation()->SetTranslationAxisOff();
-          rep->GetPoint2Representation()->SetTranslationAxisOff();
-          rep->GetLineHandleRepresentation()->SetTranslationAxisOff();
-          break;
-        default:
-          break;
-      }
-      break;
-    default:
-      break;
+    if (keySym == "X")
+    {
+      rep->GetPoint1Representation()->SetXTranslationAxisOn();
+      rep->GetPoint2Representation()->SetXTranslationAxisOn();
+      rep->GetLineHandleRepresentation()->SetXTranslationAxisOn();
+      rep->GetPoint1Representation()->SetConstrained(true);
+      rep->GetPoint2Representation()->SetConstrained(true);
+      rep->GetLineHandleRepresentation()->SetConstrained(true);
+    }
+    else if (keySym == "Y")
+    {
+      rep->GetPoint1Representation()->SetYTranslationAxisOn();
+      rep->GetPoint2Representation()->SetYTranslationAxisOn();
+      rep->GetLineHandleRepresentation()->SetYTranslationAxisOn();
+      rep->GetPoint1Representation()->SetConstrained(true);
+      rep->GetPoint2Representation()->SetConstrained(true);
+      rep->GetLineHandleRepresentation()->SetConstrained(true);
+    }
+    else if (keySym == "Z")
+    {
+      rep->GetPoint1Representation()->SetZTranslationAxisOn();
+      rep->GetPoint2Representation()->SetZTranslationAxisOn();
+      rep->GetLineHandleRepresentation()->SetZTranslationAxisOn();
+      rep->GetPoint1Representation()->SetConstrained(true);
+      rep->GetPoint2Representation()->SetConstrained(true);
+      rep->GetLineHandleRepresentation()->SetConstrained(true);
+    }
+    else if (keySym == "L")
+    {
+      double p1[3], p2[3], v[3];
+      rep->GetPoint1WorldPosition(p1);
+      rep->GetPoint2WorldPosition(p2);
+      vtkMath::Subtract(p2, p1, v);
+      vtkMath::Normalize(v);
+      rep->GetPoint1Representation()->SetCustomTranslationAxisOn();
+      rep->GetPoint1Representation()->SetCustomTranslationAxis(v);
+      rep->GetPoint2Representation()->SetCustomTranslationAxisOn();
+      rep->GetPoint2Representation()->SetCustomTranslationAxis(v);
+      rep->GetLineHandleRepresentation()->SetCustomTranslationAxisOn();
+      rep->GetLineHandleRepresentation()->SetCustomTranslationAxis(v);
+      rep->GetPoint1Representation()->SetConstrained(true);
+      rep->GetPoint2Representation()->SetConstrained(true);
+      rep->GetLineHandleRepresentation()->SetConstrained(true);
+    }
+  }
+  else if (event == vtkCommand::KeyReleaseEvent)
+  {
+    if (keySym == "L" || keySym == "X" || keySym == "Y" || keySym == "Z")
+    {
+      rep->GetPoint1Representation()->SetTranslationAxisOff();
+      rep->GetPoint2Representation()->SetTranslationAxisOff();
+      rep->GetLineHandleRepresentation()->SetTranslationAxisOff();
+      rep->GetPoint1Representation()->SetConstrained(false);
+      rep->GetPoint2Representation()->SetConstrained(false);
+      rep->GetLineHandleRepresentation()->SetConstrained(false);
+    }
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget2::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

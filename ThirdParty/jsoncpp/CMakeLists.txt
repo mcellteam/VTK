@@ -4,8 +4,11 @@ unset(CMAKE_VISIBILITY_INLINES_HIDDEN)
 
 vtk_module_third_party(
   INTERNAL
-    LICENSE_FILES "vtkjsoncpp/LICENSE"
-    VERSION       "1.9.2"
+    LICENSE_FILES           "vtkjsoncpp/LICENSE"
+    SPDX_LICENSE_IDENTIFIER "MIT"
+    SPDX_COPYRIGHT_TEXT     "Copyright (c) 2007-2010 Baptiste Lepilleur and The JsonCpp Author"
+    SPDX_DOWNLOAD_LOCATION  "git+https://gitlab.kitware.com/third-party/jsoncpp.git@for/vtk-20241206-1.9.6"
+    VERSION                 "1.9.6"
     STANDARD_INCLUDE_DIRS
   EXTERNAL
     PACKAGE JsonCpp

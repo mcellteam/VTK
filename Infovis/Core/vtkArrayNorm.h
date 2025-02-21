@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArrayNorm.h
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkArrayNorm
@@ -38,9 +21,10 @@
 #define vtkArrayNorm_h
 
 #include "vtkArrayDataAlgorithm.h"
-#include "vtkArrayRange.h"
+#include "vtkArrayRange.h"        // for vtkArrayRange
 #include "vtkInfovisCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKINFOVISCORE_EXPORT vtkArrayNorm : public vtkArrayDataAlgorithm
 {
 public:
@@ -48,39 +32,39 @@ public:
   vtkTypeMacro(vtkArrayNorm, vtkArrayDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Controls the dimension along which norms will be computed.  For input matrices,
    * For input matrices, use "0" (rows) or "1" (columns). Default: 0
    */
   vtkGetMacro(Dimension, int);
   vtkSetMacro(Dimension, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Controls the L-value.  Default: 2
    */
   vtkGetMacro(L, int);
   void SetL(int value);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Controls whether to invert output values.  Default: false
    */
   vtkSetMacro(Invert, int);
   vtkGetMacro(Invert, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Defines an optional "window" used to compute the norm on a subset of the elements
    * in a vector.
    */
   void SetWindow(const vtkArrayRange& window);
   vtkArrayRange GetWindow();
-  //@}
+  ///@}
 
 protected:
   vtkArrayNorm();
@@ -98,6 +82,5 @@ private:
   vtkArrayRange Window;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkArrayNorm.h

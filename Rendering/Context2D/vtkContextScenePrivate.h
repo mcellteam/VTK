@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContextScenePrivate.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkContextScenePrivate
@@ -34,6 +22,7 @@
 // STL headers
 #include <vector> // Needed for STL vector.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkContext2D;
 
 //-----------------------------------------------------------------------------
@@ -44,8 +33,7 @@ public:
    * Default constructor.
    */
   vtkContextScenePrivate(vtkAbstractContextItem* item)
-    : std::vector<vtkAbstractContextItem*>()
-    , Scene(nullptr)
+    : Scene(nullptr)
     , Item(item)
   {
   }
@@ -55,7 +43,17 @@ public:
    */
   ~vtkContextScenePrivate() { this->Clear(); }
 
-  //@{
+  void PrintSelf(ostream& os, vtkIndent indent)
+  {
+    os << indent << "Number of children: " << this->size() << '\n';
+    os << indent << "Scene: " << this->Scene << '\n';
+    for (const_iterator it = this->begin(); it != this->end(); ++it)
+    {
+      (*it)->PrintSelf(os, indent.GetNextIndent());
+    }
+  }
+
+  ///@{
   /**
    * A few standard defines
    */
@@ -63,7 +61,7 @@ public:
   typedef std::vector<vtkAbstractContextItem*>::iterator iterator;
   typedef std::vector<vtkAbstractContextItem*>::const_reverse_iterator const_reverse_iterator;
   typedef std::vector<vtkAbstractContextItem*>::reverse_iterator reverse_iterator;
-  //@}
+  ///@}
 
   /**
    * Paint all items in the list.
@@ -79,7 +77,7 @@ public:
     }
   }
 
-  //@{
+  ///@{
   /**
    * Add an item to the list - ensure it is not already in the list.
    */
@@ -88,13 +86,13 @@ public:
     item->Register(this->Scene);
     item->SetScene(this->Scene);
     item->SetParent(this->Item);
-    //@}
+    ///@}
 
     this->push_back(item);
     return static_cast<unsigned int>(this->size() - 1);
   }
 
-  //@{
+  ///@{
   /**
    * Remove an item from the list.
    */
@@ -113,9 +111,9 @@ public:
     }
     return false;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Remove an item from the list.
    */
@@ -127,9 +125,9 @@ public:
     }
     return false;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Clear all items from the list - unregister.
    */
@@ -139,13 +137,15 @@ public:
     {
       (*it)->SetParent(nullptr);
       (*it)->SetScene(nullptr);
+      // releases cache from 2D, 3D devices
+      (*it)->ReleaseGraphicsResources();
       (*it)->Delete();
     }
     this->clear();
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scene for the instance (and its items).
    */
@@ -161,21 +161,22 @@ public:
       (*it)->SetScene(scene);
     }
   }
-  //@}
+  ///@}
 
   /**
    * Store a reference to the scene.
    */
   vtkContextScene* Scene;
 
-  //@{
+  ///@{
   /**
    * Store a reference to the item that these children are part of.
    * May be NULL for items in the scene itself.
    */
   vtkAbstractContextItem* Item;
-  //@}
+  ///@}
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkContextScenePrivate_h
 // VTK-HeaderTest-Exclude: vtkContextScenePrivate.h

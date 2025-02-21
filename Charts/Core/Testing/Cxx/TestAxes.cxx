@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestAxes.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAxis.h"
 #include "vtkContextScene.h"
@@ -26,7 +14,7 @@
 
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestAxes(int, char*[])
 {
   int status = EXIT_SUCCESS;
@@ -47,7 +35,7 @@ int TestAxes(int, char*[])
   labels->InsertNextValue("99");
 
   // Let's create a few axes, and place them on the scene.
-  std::vector<vtkSmartPointer<vtkAxis> > axesVertical(4);
+  std::vector<vtkSmartPointer<vtkAxis>> axesVertical(4);
 
   for (size_t i = 0; i < axesVertical.size(); ++i)
   {
@@ -89,7 +77,7 @@ int TestAxes(int, char*[])
   }
 
   // Let's create a few axes, and place them on the scene.
-  std::vector<vtkSmartPointer<vtkAxis> > axesHorizontal(6);
+  std::vector<vtkSmartPointer<vtkAxis>> axesHorizontal(6);
 
   for (size_t i = 0; i < axesHorizontal.size(); ++i)
   {
@@ -164,7 +152,7 @@ int TestAxes(int, char*[])
   logAxis->SetScene(view->GetScene());
   logAxis->SetUnscaledRange(plainRange);
   logAxis->LogScaleOn();
-  logAxis->GetUnscaledRange(nullptr); // Insure null pointers are ignored.
+  logAxis->GetUnscaledRange(nullptr); // Ensure null pointers are ignored.
   logAxis->GetUnscaledRange(logRange);
   if ((logRange[0] != plainRange[0]) || (logRange[1] != plainRange[1]))
   {

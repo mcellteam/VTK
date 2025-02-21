@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShepardKernel.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkShepardKernel
  * @brief   a Shepard method interpolation kernel
@@ -38,22 +26,23 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkGeneralizedKernel.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 class vtkDoubleArray;
 
 class VTKFILTERSPOINTS_EXPORT vtkShepardKernel : public vtkGeneralizedKernel
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation, obtaining type information, and printing.
    */
   static vtkShepardKernel* New();
   vtkTypeMacro(vtkShepardKernel, vtkGeneralizedKernel);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  // Re-use any superclass signatures that we don't override.
+  // Reuse any superclass signatures that we don't override.
   using vtkGeneralizedKernel::ComputeWeights;
 
   /**
@@ -73,14 +62,14 @@ public:
   vtkIdType ComputeWeights(
     double x[3], vtkIdList* pIds, vtkDoubleArray* prob, vtkDoubleArray* weights) override;
 
-  //@{
+  ///@{
   /**
    * Set / Get the power parameter p. By default p=2. Values (which must be
    * a positive, real value) != 2 may affect performance significantly.
    */
   vtkSetClampMacro(PowerParameter, double, 0.001, 100);
   vtkGetMacro(PowerParameter, double);
-  //@}
+  ///@}
 
 protected:
   vtkShepardKernel();
@@ -94,4 +83,5 @@ private:
   void operator=(const vtkShepardKernel&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

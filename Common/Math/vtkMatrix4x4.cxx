@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMatrix4x4.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMatrix4x4.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
@@ -19,9 +7,10 @@
 #include <cmath>
 #include <cstdlib>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMatrix4x4);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMatrix4x4::Zero(double elements[16])
 {
   for (int i = 0; i < 16; i++)
@@ -30,7 +19,7 @@ void vtkMatrix4x4::Zero(double elements[16])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMatrix4x4::Identity(double elements[16])
 {
   elements[0] = elements[5] = elements[10] = elements[15] = 1.0;
@@ -38,7 +27,7 @@ void vtkMatrix4x4::Identity(double elements[16])
     elements[9] = elements[11] = elements[12] = elements[13] = elements[14] = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 { // Enclose private helper function in anonymous namespace
 
@@ -58,7 +47,7 @@ void vtkMatrix4x4MultiplyPoint(T1 elem[16], T2 in[4], T3 out[4])
 
 } // End anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Multiply this matrix by a point (in homogeneous coordinates).
 // and return the result in result. The in[4] and result[4]
 // arrays must both be allocated but they can be the same array.
@@ -67,13 +56,78 @@ void vtkMatrix4x4::MultiplyPoint(const double elements[16], const float in[4], f
   vtkMatrix4x4MultiplyPoint(elements, in, result);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMatrix4x4::MultiplyPoint(const double elements[16], const double in[4], double result[4])
 {
   vtkMatrix4x4MultiplyPoint(elements, in, result);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkMatrix4x4::MatrixFromRotation(
+  double angle, double x, double y, double z, vtkMatrix4x4* result)
+{
+  vtkMatrix4x4::MatrixFromRotation(angle, x, y, z, *result->Element);
+}
+
+//------------------------------------------------------------------------------
+void vtkMatrix4x4::MatrixFromRotation(double angle, double x, double y, double z, double matrix[16])
+{
+  vtkMatrix4x4::Identity(matrix);
+
+  if (angle == 0.0 || (x == 0.0 && y == 0.0 && z == 0.0))
+  {
+    return;
+  }
+
+  // convert to radians
+  angle = vtkMath::RadiansFromDegrees(angle);
+
+  // make a normalized quaternion
+  double w = cos(0.5 * angle);
+  double f = sin(0.5 * angle) / sqrt(x * x + y * y + z * z);
+  x *= f;
+  y *= f;
+  z *= f;
+
+  // convert the quaternion to a matrix
+  double ww = w * w;
+  double wx = w * x;
+  double wy = w * y;
+  double wz = w * z;
+
+  double xx = x * x;
+  double yy = y * y;
+  double zz = z * z;
+
+  double xy = x * y;
+  double xz = x * z;
+  double yz = y * z;
+
+  double s = ww - xx - yy - zz;
+
+  matrix[0] = xx * 2 + s;
+  matrix[4] = (xy + wz) * 2;
+  matrix[8] = (xz - wy) * 2;
+
+  matrix[1] = (xy - wz) * 2;
+  matrix[5] = yy * 2 + s;
+  matrix[9] = (yz + wx) * 2;
+
+  matrix[2] = (xz + wy) * 2;
+  matrix[6] = (yz - wx) * 2;
+  matrix[10] = zz * 2 + s;
+}
+
+void vtkMatrix4x4::PoseToMatrix(double pos[3], double ori[4], vtkMatrix4x4* mat)
+{
+  vtkMatrix4x4::MatrixFromRotation(ori[0], ori[1], ori[2], ori[3], mat);
+  double* data = mat->GetData();
+  data[3] = pos[0];
+  data[7] = pos[1];
+  data[11] = pos[2];
+}
+
+//------------------------------------------------------------------------------
 // Matrix Inversion (adapted from Richard Carling in "Graphics Gems,"
 // Academic Press, 1990).
 void vtkMatrix4x4::Invert(const double inElements[16], double outElements[16])
@@ -106,7 +160,7 @@ void vtkMatrix4x4::Invert(const double inElements[16], double outElements[16])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMatrix4x4::Determinant(const double elem[16])
 {
   double a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4, d1, d2, d3, d4;
@@ -137,7 +191,7 @@ double vtkMatrix4x4::Determinant(const double elem[16])
     d1 * vtkMath::Determinant3x3(a2, a3, a4, b2, b3, b4, c2, c3, c4);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMatrix4x4::Adjoint(const double elem[16], double outElem[16])
 {
   //
@@ -202,7 +256,7 @@ void vtkMatrix4x4::Adjoint(const double elem[16], double outElem[16])
   outElem[15] = vtkMath::Determinant3x3(a1, a2, a3, b1, b2, b3, c1, c2, c3);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMatrix4x4::DeepCopy(double destination[16], const double source[16])
 {
   for (int i = 0; i < 16; i++)
@@ -211,7 +265,7 @@ void vtkMatrix4x4::DeepCopy(double destination[16], const double source[16])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Transpose the matrix and put it into out.
 void vtkMatrix4x4::Transpose(const double inElements[16], double outElements[16])
 {
@@ -226,7 +280,7 @@ void vtkMatrix4x4::Transpose(const double inElements[16], double outElements[16]
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMatrix4x4::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -242,3 +296,4 @@ void vtkMatrix4x4::PrintSelf(ostream& os, vtkIndent indent)
     os << "\n";
   }
 }
+VTK_ABI_NAMESPACE_END

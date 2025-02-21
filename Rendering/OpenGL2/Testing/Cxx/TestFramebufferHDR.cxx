@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // The command line arguments are:
 // -I        => run in interactive mode; unless this is used, the program will
 //              not allow interaction and exit
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
-//#include "vtkCellArray.h"
+// #include "vtkCellArray.h"
 #include "vtkFramebufferPass.h"
 #include "vtkNew.h"
 #include "vtkOpenGLRenderer.h"
@@ -31,9 +20,9 @@
 #include "vtkRenderer.h"
 #include "vtkTestUtilities.h"
 #include "vtkTextureObject.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestFramebufferHDR(int argc, char* argv[])
 {
   vtkNew<vtkRenderer> renderer;
@@ -128,7 +117,7 @@ int TestFramebufferHDR(int argc, char* argv[])
     renderWindow->Render();
   }
 
-  int retVal = vtkRegressionTestImageThreshold(renderWindow, 15);
+  int retVal = vtkRegressionTestImageThreshold(renderWindow, 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Start();

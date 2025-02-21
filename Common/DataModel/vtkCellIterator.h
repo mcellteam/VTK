@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCellIterator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkCellIterator
@@ -65,12 +53,16 @@
 #ifndef vtkCellIterator_h
 #define vtkCellIterator_h
 
+#include "vtkCellArray.h"             // For inline methods
 #include "vtkCellType.h"              // For VTK_EMPTY_CELL
 #include "vtkCommonDataModelModule.h" // For export macro
+#include "vtkDeprecation.h"           // For VTK_DEPRECATED_IN_9_4_0
 #include "vtkIdList.h"                // For inline methods
+#include "vtkIdTypeArray.h"           // For inline methods
 #include "vtkNew.h"                   // For vtkNew
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGenericCell;
 class vtkPoints;
 
@@ -129,6 +121,19 @@ public:
    * Get the faces for a polyhedral cell. This is only valid when CellType
    * is VTK_POLYHEDRON.
    */
+  vtkCellArray* GetCellFaces();
+
+  /**
+   * Get a serialized view of the faces for a polyhedral cell.
+   * This is only valid when CellType is VTK_POLYHEDRON.
+   */
+  vtkIdList* GetSerializedCellFaces();
+
+  /**
+   * Get the faces for a polyhedral cell. This is only valid when CellType
+   * is VTK_POLYHEDRON.
+   */
+  VTK_DEPRECATED_IN_9_4_0("Please use GetCellFaces instead.")
   vtkIdList* GetFaces();
 
   /**
@@ -190,7 +195,7 @@ protected:
   int CellType;
   vtkPoints* Points;
   vtkIdList* PointIds;
-  vtkIdList* Faces;
+  vtkCellArray* Faces;
 
 private:
   vtkCellIterator(const vtkCellIterator&) = delete;
@@ -217,7 +222,8 @@ private:
 
   vtkNew<vtkPoints> PointsContainer;
   vtkNew<vtkIdList> PointIdsContainer;
-  vtkNew<vtkIdList> FacesContainer;
+  vtkNew<vtkCellArray> FacesContainer;
+  vtkNew<vtkIdList> LegacyFacesContainer;
   unsigned char CacheFlags;
 };
 
@@ -269,7 +275,7 @@ inline vtkPoints* vtkCellIterator::GetPoints()
 }
 
 //------------------------------------------------------------------------------
-inline vtkIdList* vtkCellIterator::GetFaces()
+inline vtkCellArray* vtkCellIterator::GetCellFaces()
 {
   if (!this->CheckCache(FacesFlag))
   {
@@ -277,6 +283,26 @@ inline vtkIdList* vtkCellIterator::GetFaces()
     this->SetCache(FacesFlag);
   }
   return this->Faces;
+}
+
+//------------------------------------------------------------------------------
+inline vtkIdList* vtkCellIterator::GetSerializedCellFaces()
+{
+  if (!this->CheckCache(FacesFlag))
+  {
+    this->FetchFaces();
+    this->SetCache(FacesFlag);
+  }
+  // Export Legacy Format
+  vtkNew<vtkIdTypeArray> tmp;
+  this->Faces->ExportLegacyFormat(tmp);
+  this->LegacyFacesContainer->Initialize();
+  this->LegacyFacesContainer->InsertNextId(this->Faces->GetNumberOfCells());
+  for (vtkIdType idx = 0; idx < tmp->GetNumberOfValues(); ++idx)
+  {
+    this->LegacyFacesContainer->InsertNextId(tmp->GetValue(idx));
+  }
+  return this->LegacyFacesContainer;
 }
 
 //------------------------------------------------------------------------------
@@ -340,6 +366,7 @@ inline vtkIdType vtkCellIterator::GetNumberOfFaces()
 
     case VTK_PYRAMID:
     case VTK_QUADRATIC_PYRAMID:
+    case VTK_TRIQUADRATIC_PYRAMID:
     case VTK_HIGHER_ORDER_PYRAMID:
     case VTK_WEDGE:
     case VTK_QUADRATIC_WEDGE:
@@ -373,7 +400,7 @@ inline vtkIdType vtkCellIterator::GetNumberOfFaces()
         this->FetchFaces();
         this->SetCache(FacesFlag);
       }
-      return this->Faces->GetNumberOfIds() != 0 ? this->Faces->GetId(0) : 0;
+      return this->Faces->GetNumberOfCells();
 
     default:
       vtkGenericWarningMacro("Unknown cell type: " << this->CellType);
@@ -383,4 +410,5 @@ inline vtkIdType vtkCellIterator::GetNumberOfFaces()
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkCellIterator_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointFillPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPointFillPass.h"
 #include "vtkObjectFactory.h"
@@ -34,9 +22,10 @@
 #include "vtkPointFillPassFS.h"
 #include "vtkTextureObjectVS.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPointFillPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointFillPass::vtkPointFillPass()
 {
   this->FrameBufferObject = nullptr;
@@ -47,7 +36,7 @@ vtkPointFillPass::vtkPointFillPass()
   this->CandidatePointRatio = 0.99;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointFillPass::~vtkPointFillPass()
 {
   if (this->FrameBufferObject != nullptr)
@@ -64,13 +53,13 @@ vtkPointFillPass::~vtkPointFillPass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointFillPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -177,7 +166,7 @@ void vtkPointFillPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -209,3 +198,4 @@ void vtkPointFillPass::ReleaseGraphicsResources(vtkWindow* w)
     this->Pass1Depth = nullptr;
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPProbeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPProbeFilter.h"
 
 #include "vtkCellData.h"
@@ -26,24 +14,25 @@
 #include "vtkPolyData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPProbeFilter);
 
 vtkCxxSetObjectMacro(vtkPProbeFilter, Controller, vtkMultiProcessController);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPProbeFilter::vtkPProbeFilter()
 {
   this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPProbeFilter::~vtkPProbeFilter()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPProbeFilter::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -83,6 +72,11 @@ int vtkPProbeFilter::RequestData(
     vtkIdType i;
     vtkIdType k;
     vtkIdType pointId;
+    bool validFound = false;
+    if (numPoints > 0)
+    {
+      validFound = true;
+    }
     for (i = 1; i < numProcs; i++)
     {
       this->Controller->Receive(&numRemoteValidPoints, 1, i, PROBE_COMMUNICATION_TAG);
@@ -92,6 +86,12 @@ int vtkPProbeFilter::RequestData(
 
         remotePointData = remoteProbeOutput->GetPointData();
 
+        if (!validFound)
+        {
+          validFound = true;
+          pointData->ShallowCopy(remotePointData);
+          continue;
+        }
         vtkCharArray* maskArray =
           vtkArrayDownCast<vtkCharArray>(remotePointData->GetArray(this->ValidPointMaskArrayName));
 
@@ -133,8 +133,10 @@ int vtkPProbeFilter::RequestData(
   return 1;
 }
 
+VTK_ABI_NAMESPACE_END
 #include "vtkInformationIntegerVectorKey.h"
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 int vtkPProbeFilter::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -165,7 +167,7 @@ int vtkPProbeFilter::RequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPProbeFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -180,9 +182,10 @@ int vtkPProbeFilter::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPProbeFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller " << this->Controller << endl;
 }
+VTK_ABI_NAMESPACE_END

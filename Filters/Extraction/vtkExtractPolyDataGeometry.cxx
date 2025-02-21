@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractPolyDataGeometry.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractPolyDataGeometry.h"
 
 #include "vtkCellArray.h"
@@ -24,10 +12,11 @@
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractPolyDataGeometry);
 vtkCxxSetObjectMacro(vtkExtractPolyDataGeometry, ImplicitFunction, vtkImplicitFunction);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with ExtractInside turned on.
 vtkExtractPolyDataGeometry::vtkExtractPolyDataGeometry(vtkImplicitFunction* f)
 {
@@ -42,13 +31,13 @@ vtkExtractPolyDataGeometry::vtkExtractPolyDataGeometry(vtkImplicitFunction* f)
   this->PassPoints = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractPolyDataGeometry::~vtkExtractPolyDataGeometry()
 {
   this->SetImplicitFunction(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If implicit function is modified,
 // then this object is modified as well.
 vtkMTimeType vtkExtractPolyDataGeometry::GetMTime()
@@ -65,7 +54,7 @@ vtkMTimeType vtkExtractPolyDataGeometry::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -82,7 +71,7 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
   vtkPointData* outputPD = output->GetPointData();
   vtkCellData* outputCD = output->GetCellData();
   vtkPoints* inPts = input->GetPoints();
-  vtkIdType numPts, i, cellId = 0, newId, ptId, *pointMap = nullptr;
+  vtkIdType numPts, i, cellId = 0, newId = 0, ptId = 0, *pointMap = nullptr;
   float multiplier;
   vtkCellArray *inVerts = nullptr, *inLines = nullptr, *inPolys = nullptr, *inStrips = nullptr;
   vtkCellArray *newVerts = nullptr, *newLines = nullptr, *newPolys = nullptr, *newStrips = nullptr;
@@ -133,7 +122,7 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
     {
       if (newScalars->GetValue(ptId) <= 0.0)
       {
-        newId = this->InsertPointInMap(ptId, inPts, newPts, pointMap);
+        this->InsertPointInMap(ptId, inPts, newPts, pointMap);
       }
       else
       {
@@ -176,11 +165,19 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
     newStrips->AllocateCopy(inStrips);
   }
 
+  vtkIdType checkAbortInterval = 0;
+  vtkIdType progressCounter = 0;
   // verts
-  if (newVerts && !this->GetAbortExecute())
+  if (newVerts && !this->CheckAbort())
   {
+    checkAbortInterval = std::min(inVerts->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
     for (inVerts->InitTraversal(); inVerts->GetNextCell(npts, pts);)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       for (numIn = 0, i = 0; i < npts; i++)
       {
         if (newScalars->GetValue(pts[i]) <= 0.0)
@@ -192,11 +189,11 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
       {
         if (this->PassPoints)
         {
-          newId = newVerts->InsertNextCell(npts, pts);
+          newVerts->InsertNextCell(npts, pts);
         }
         else
         {
-          newId = newVerts->InsertNextCell(npts);
+          newVerts->InsertNextCell(npts);
           for (i = 0; i < npts; i++)
           {
             if (pointMap[pts[i]] < 0)
@@ -211,6 +208,7 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
           }
         }
         outputCD->CopyData(cd, cellId, newId);
+        newId++;
       }
       cellId++;
     }
@@ -218,10 +216,16 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
   this->UpdateProgress(0.6);
 
   // lines
-  if (newLines && !this->GetAbortExecute())
+  if (newLines && !this->CheckAbort())
   {
+    checkAbortInterval = std::min(inLines->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
     for (inLines->InitTraversal(); inLines->GetNextCell(npts, pts);)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       for (numIn = 0, i = 0; i < npts; i++)
       {
         if (newScalars->GetValue(pts[i]) <= 0.0)
@@ -233,11 +237,11 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
       {
         if (this->PassPoints)
         {
-          newId = newLines->InsertNextCell(npts, pts);
+          newLines->InsertNextCell(npts, pts);
         }
         else
         {
-          newId = newLines->InsertNextCell(npts);
+          newLines->InsertNextCell(npts);
           for (i = 0; i < npts; i++)
           {
             if (pointMap[pts[i]] < 0)
@@ -252,6 +256,7 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
           }
         }
         outputCD->CopyData(cd, cellId, newId);
+        newId++;
       }
       cellId++;
     }
@@ -259,10 +264,15 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
   this->UpdateProgress(0.75);
 
   // polys
-  if (newPolys && !this->GetAbortExecute())
+  if (newPolys && !this->CheckAbort())
   {
+    checkAbortInterval = std::min(inPolys->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
     for (inPolys->InitTraversal(); inPolys->GetNextCell(npts, pts);)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
       for (numIn = 0, i = 0; i < npts; i++)
       {
         if (newScalars->GetValue(pts[i]) <= 0.0)
@@ -274,11 +284,11 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
       {
         if (this->PassPoints)
         {
-          newId = newPolys->InsertNextCell(npts, pts);
+          newPolys->InsertNextCell(npts, pts);
         }
         else
         {
-          newId = newPolys->InsertNextCell(npts);
+          newPolys->InsertNextCell(npts);
           for (i = 0; i < npts; i++)
           {
             if (pointMap[pts[i]] < 0)
@@ -293,6 +303,7 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
           }
         }
         outputCD->CopyData(cd, cellId, newId);
+        newId++;
       }
       cellId++;
     }
@@ -300,10 +311,15 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
   this->UpdateProgress(0.90);
 
   // strips
-  if (newStrips && !this->GetAbortExecute())
+  if (newStrips && !this->CheckAbort())
   {
+    checkAbortInterval = std::min(inStrips->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
     for (inStrips->InitTraversal(); inStrips->GetNextCell(npts, pts);)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
       for (numIn = 0, i = 0; i < npts; i++)
       {
         if (newScalars->GetValue(pts[i]) <= 0.0)
@@ -315,11 +331,11 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
       {
         if (this->PassPoints)
         {
-          newId = newStrips->InsertNextCell(npts, pts);
+          newStrips->InsertNextCell(npts, pts);
         }
         else
         {
-          newId = newStrips->InsertNextCell(npts);
+          newStrips->InsertNextCell(npts);
           for (i = 0; i < npts; i++)
           {
             if (pointMap[pts[i]] < 0)
@@ -334,6 +350,7 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
           }
         }
         outputCD->CopyData(cd, cellId, newId);
+        newId++;
       }
       cellId++;
     }
@@ -379,10 +396,12 @@ int vtkExtractPolyDataGeometry::RequestData(vtkInformation* vtkNotUsed(request),
     newStrips->Delete();
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractPolyDataGeometry::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -399,3 +418,4 @@ void vtkExtractPolyDataGeometry::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Extract Boundary Cells: " << (this->ExtractBoundaryCells ? "On\n" : "Off\n");
   os << indent << "Pass Points: " << (this->PassPoints ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

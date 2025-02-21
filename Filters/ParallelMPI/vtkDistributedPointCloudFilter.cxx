@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkDistributedPointCloudFilter.h,v $
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkDistributedPointCloudFilter.h"
 
@@ -33,33 +21,33 @@
 #include <algorithm>
 
 // Histogram precision to divide space in two
+VTK_ABI_NAMESPACE_BEGIN
 static const int HISTOGRAM_SIZE = 1024;
 
 vtkStandardNewMacro(vtkDistributedPointCloudFilter);
-vtkSetObjectImplementationMacro(
-  vtkDistributedPointCloudFilter, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkDistributedPointCloudFilter, Controller, vtkMultiProcessController);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDistributedPointCloudFilter::vtkDistributedPointCloudFilter()
 {
   this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDistributedPointCloudFilter::~vtkDistributedPointCloudFilter()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDistributedPointCloudFilter::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDistributedPointCloudFilter::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -91,7 +79,7 @@ int vtkDistributedPointCloudFilter::RequestData(
   {
     double bounds[6];
     this->OptimizeBoundingBox(subControllersTree, input, bounds);
-    this->GetPointsInsideBounds(controller, input, output, bounds);
+    vtkDistributedPointCloudFilter::GetPointsInsideBounds(controller, input, output, bounds);
   }
   else
   {
@@ -107,7 +95,7 @@ int vtkDistributedPointCloudFilter::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDistributedPointCloudFilter::InitializeKdTree(std::vector<vtkMPIController*>& kdTreeRounds)
 {
   this->Controller->Register(this);
@@ -136,7 +124,7 @@ bool vtkDistributedPointCloudFilter::InitializeKdTree(std::vector<vtkMPIControll
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDistributedPointCloudFilter::OptimizeBoundingBox(
   std::vector<vtkMPIController*>& kdTreeRounds, vtkPointSet* pointCloud, double regionBounds[6])
 {
@@ -175,7 +163,7 @@ bool vtkDistributedPointCloudFilter::OptimizeBoundingBox(
 
   // ****************************************
   // Main Loop: transfer points between process.
-  // Point cloud is recursively splitted in two, among MPI groups.
+  // Point cloud is recursively split in two, among MPI groups.
   // Algorithm:
   // - 1. choose an axis (the longest)
   // - 2. build the local histogram of number of points along the given axis
@@ -393,7 +381,7 @@ bool vtkDistributedPointCloudFilter::OptimizeBoundingBox(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistributedPointCloudFilter::GetPointsInsideBounds(vtkMPIController* controller,
   vtkPointSet* input, vtkPointSet* output, const double outterBounds[6])
 {
@@ -432,7 +420,7 @@ void vtkDistributedPointCloudFilter::GetPointsInsideBounds(vtkMPIController* con
 
   // array of point ids
   vtkNew<vtkIdTypeArray> idArray;
-  std::vector<vtkSmartPointer<vtkCharArray> > dataToSend;
+  std::vector<vtkSmartPointer<vtkCharArray>> dataToSend;
   dataToSend.resize(np);
 
   // we will need a locator to search points inside each processor assigned regions
@@ -482,7 +470,7 @@ void vtkDistributedPointCloudFilter::GetPointsInsideBounds(vtkMPIController* con
     messagesSize[partner] = dataToSend[partner]->GetNumberOfValues();
   }
 
-  std::vector<vtkSmartPointer<vtkCharArray> > dataToReceive(np);
+  std::vector<vtkSmartPointer<vtkCharArray>> dataToReceive(np);
   std::vector<vtkMPICommunicator::Request> receiveRequests(np);
 
   // Calculate size of messages to receive
@@ -606,8 +594,9 @@ void vtkDistributedPointCloudFilter::GetPointsInsideBounds(vtkMPIController* con
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistributedPointCloudFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

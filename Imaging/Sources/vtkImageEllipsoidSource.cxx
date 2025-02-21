@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageEllipsoidSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageEllipsoidSource.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -20,9 +8,10 @@
 
 #include "vtkImageData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageEllipsoidSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageEllipsoidSource::vtkImageEllipsoidSource()
 {
   this->WholeExtent[0] = 0;
@@ -44,10 +33,10 @@ vtkImageEllipsoidSource::vtkImageEllipsoidSource()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageEllipsoidSource::~vtkImageEllipsoidSource() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageEllipsoidSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -61,7 +50,7 @@ void vtkImageEllipsoidSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "OutValue: " << this->OutValue << "\n";
   os << indent << "OutputScalarType: " << this->OutputScalarType << "\n";
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageEllipsoidSource::SetWholeExtent(int extent[6])
 {
   int idx;
@@ -76,7 +65,7 @@ void vtkImageEllipsoidSource::SetWholeExtent(int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageEllipsoidSource::SetWholeExtent(
   int minX, int maxX, int minY, int maxY, int minZ, int maxZ)
 {
@@ -91,7 +80,7 @@ void vtkImageEllipsoidSource::SetWholeExtent(
   this->SetWholeExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageEllipsoidSource::GetWholeExtent(int extent[6])
 {
   int idx;
@@ -102,7 +91,7 @@ void vtkImageEllipsoidSource::GetWholeExtent(int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageEllipsoidSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -224,7 +213,7 @@ void vtkImageEllipsoidSourceExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageEllipsoidSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -249,3 +238,4 @@ int vtkImageEllipsoidSource::RequestData(vtkInformation* vtkNotUsed(request),
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

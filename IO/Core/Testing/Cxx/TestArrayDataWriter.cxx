@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkArrayData.h"
 #include "vtkArrayDataReader.h"
@@ -5,7 +7,6 @@
 #include "vtkDenseArray.h"
 #include "vtkNew.h"
 #include "vtkSparseArray.h"
-#include "vtkStdString.h"
 
 #include <iostream>
 
@@ -13,10 +14,10 @@ int TestArrayDataWriter(int, char*[])
 {
   std::cerr << "Testing dense first..." << std::endl;
 
-  vtkNew<vtkDenseArray<double> > da;
+  vtkNew<vtkDenseArray<double>> da;
   da->Resize(10, 10);
   da->SetName("dense");
-  vtkNew<vtkSparseArray<double> > sa;
+  vtkNew<vtkSparseArray<double>> sa;
   sa->Resize(10, 10);
   sa->SetName("sparse");
   for (int i = 0; i < 10; ++i)
@@ -36,7 +37,7 @@ int TestArrayDataWriter(int, char*[])
   w->SetInputData(d);
   w->WriteToOutputStringOn();
   w->Write();
-  vtkStdString s = w->GetOutputString();
+  std::string s = w->GetOutputString();
 
   vtkNew<vtkArrayDataReader> r;
   r->ReadFromInputStringOn();

@@ -1,21 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWarpTransform.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWarpTransform.h"
 #include "vtkMath.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 void vtkWarpTransform::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -25,7 +14,7 @@ void vtkWarpTransform::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "InverseIterations: " << this->InverseIterations << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWarpTransform::vtkWarpTransform()
 {
   this->InverseFlag = 0;
@@ -33,10 +22,10 @@ vtkWarpTransform::vtkWarpTransform()
   this->InverseIterations = 500;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWarpTransform::~vtkWarpTransform() = default;
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Check the InverseFlag, and perform a forward or reverse transform
 // as appropriate.
 template <class T>
@@ -62,7 +51,7 @@ void vtkWarpTransform::InternalTransformPoint(const double input[3], double outp
   vtkWarpTransformPoint(this, this->InverseFlag, input, output);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Check the InverseFlag, and set the output point and derivative as
 // appropriate.
 template <class T>
@@ -92,7 +81,7 @@ void vtkWarpTransform::InternalTransformDerivative(
   vtkWarpTransformDerivative(this, this->InverseFlag, input, output, derivative);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // We use Newton's method to iteratively invert the transformation.
 // This is actually quite robust as long as the Jacobian matrix is never
 // singular.
@@ -232,7 +221,7 @@ void vtkWarpTransform::InverseTransformPoint(const double point[3], double outpu
   vtkWarpInverseTransformPoint(this, point, output, derivative);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWarpTransform::InverseTransformDerivative(
   const float point[3], float output[3], float derivative[3][3])
 {
@@ -245,10 +234,11 @@ void vtkWarpTransform::InverseTransformDerivative(
   vtkWarpInverseTransformPoint(this, point, output, derivative);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // To invert the transformation, just set the InverseFlag.
 void vtkWarpTransform::Inverse()
 {
   this->InverseFlag = !this->InverseFlag;
   this->Modified();
 }
+VTK_ABI_NAMESPACE_END

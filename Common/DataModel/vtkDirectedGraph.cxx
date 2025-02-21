@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDirectedGraph.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkDirectedGraph.h"
 
@@ -29,29 +13,30 @@
 
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // class vtkDirectedGraph
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDirectedGraph);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDirectedGraph::vtkDirectedGraph() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDirectedGraph::~vtkDirectedGraph() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDirectedGraph* vtkDirectedGraph::GetData(vtkInformation* info)
 {
   return info ? vtkDirectedGraph::SafeDownCast(info->Get(DATA_OBJECT())) : nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDirectedGraph* vtkDirectedGraph::GetData(vtkInformationVector* v, int i)
 {
   return vtkDirectedGraph::GetData(v->GetInformationObject(i));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDirectedGraph::IsStructureValid(vtkGraph* g)
 {
   if (!g)
@@ -93,7 +78,7 @@ bool vtkDirectedGraph::IsStructureValid(vtkGraph* g)
   }
   for (vtkIdType i = 0; i < g->GetNumberOfEdges(); ++i)
   {
-    if (in[i] == false || out[i] == false)
+    if (!in[i] || !out[i])
     {
       return false;
     }
@@ -102,8 +87,9 @@ bool vtkDirectedGraph::IsStructureValid(vtkGraph* g)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDirectedGraph::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

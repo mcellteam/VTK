@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCameraPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCameraPass
  * @brief   Implement the camera render pass.
@@ -22,7 +10,7 @@
  * It calls its delegate once.
  * After its delegate returns, it restore the modelview matrix stack.
  *
- * Its delegate is usually set to a vtkSequencePass with a vtkLigthsPass and
+ * Its delegate is usually set to a vtkSequencePass with a vtkLightsPass and
  * a list of passes for the geometry.
  *
  * @sa
@@ -34,8 +22,10 @@
 
 #include "vtkRenderPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
-class VTKRENDERINGOPENGL2_EXPORT vtkCameraPass : public vtkRenderPass
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkCameraPass : public vtkRenderPass
 {
 public:
   static vtkCameraPass* New();
@@ -55,19 +45,19 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Delegate for rendering the geometry.
    * If it is NULL, nothing will be rendered and a warning will be emitted.
-   * It is usually set to a vtkSequencePass with a vtkLigthsPass and
+   * It is usually set to a vtkSequencePass with a vtkLightsPass and
    * a list of passes for the geometry.
    * Initial value is a NULL pointer.
    */
   vtkGetObjectMacro(DelegatePass, vtkRenderPass);
   virtual void SetDelegatePass(vtkRenderPass* delegatePass);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to override the aspect ratio used when computing the projection
    * matrix. This is useful when rendering for tile-displays for example.
@@ -76,20 +66,20 @@ public:
   vtkGetMacro(AspectRatioOverride, double);
 
 protected:
-  //@}
+  ///@}
   /**
    * Default constructor. DelegatePass is set to NULL.
    */
   vtkCameraPass();
 
-  //@{
+  ///@{
   /**
    * Destructor.
    */
   ~vtkCameraPass() override;
   virtual void GetTiledSizeAndOrigin(
     const vtkRenderState* render_state, int* width, int* height, int* originX, int* originY);
-  //@}
+  ///@}
 
   vtkRenderPass* DelegatePass;
 
@@ -100,4 +90,5 @@ private:
   void operator=(const vtkCameraPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExecutive.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExecutive.h"
 
 #include "vtkAlgorithm.h"
@@ -33,6 +21,7 @@
 
 #include "vtkCompositeDataPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationKeyMacro(vtkExecutive, ALGORITHM_AFTER_FORWARD, Integer);
 vtkInformationKeyMacro(vtkExecutive, ALGORITHM_BEFORE_FORWARD, Integer);
 vtkInformationKeyMacro(vtkExecutive, ALGORITHM_DIRECTION, Integer);
@@ -42,7 +31,7 @@ vtkInformationKeyMacro(vtkExecutive, FROM_OUTPUT_PORT, Integer);
 vtkInformationKeyMacro(vtkExecutive, KEYS_TO_COPY, KeyVector);
 vtkInformationKeyMacro(vtkExecutive, PRODUCER, ExecutivePort);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkExecutiveInternals
 {
 public:
@@ -52,10 +41,10 @@ public:
   vtkInformationVector** GetInputInformation(int newNumberOfPorts);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutiveInternals::vtkExecutiveInternals() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutiveInternals::~vtkExecutiveInternals()
 {
   // Delete all the input information vectors.
@@ -69,7 +58,7 @@ vtkExecutiveInternals::~vtkExecutiveInternals()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationVector** vtkExecutiveInternals::GetInputInformation(int newNumberOfPorts)
 {
   // Adjust the number of vectors.
@@ -103,7 +92,7 @@ vtkInformationVector** vtkExecutiveInternals::GetInputInformation(int newNumberO
   // Return the array of information vector pointers.
   if (newNumberOfPorts > 0)
   {
-    return &this->InputInformation[0];
+    return this->InputInformation.data();
   }
   else
   {
@@ -111,7 +100,7 @@ vtkInformationVector** vtkExecutiveInternals::GetInputInformation(int newNumberO
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutive::vtkExecutive()
 {
   this->ExecutiveInternal = new vtkExecutiveInternals;
@@ -122,7 +111,7 @@ vtkExecutive::vtkExecutive()
   this->SharedOutputInformation = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutive::~vtkExecutive()
 {
   this->SetAlgorithm(nullptr);
@@ -133,7 +122,7 @@ vtkExecutive::~vtkExecutive()
   delete this->ExecutiveInternal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExecutive::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -147,19 +136,7 @@ void vtkExecutive::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
-void vtkExecutive::Register(vtkObjectBase* o)
-{
-  this->RegisterInternal(o, 1);
-}
-
-//----------------------------------------------------------------------------
-void vtkExecutive::UnRegister(vtkObjectBase* o)
-{
-  this->UnRegisterInternal(o, 1);
-}
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExecutive::SetAlgorithm(vtkAlgorithm* newAlgorithm)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting Algorithm to "
@@ -180,13 +157,13 @@ void vtkExecutive::SetAlgorithm(vtkAlgorithm* newAlgorithm)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAlgorithm* vtkExecutive::GetAlgorithm()
 {
   return this->Algorithm;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationVector** vtkExecutive::GetInputInformation()
 {
   // Use the shared input information vector if any is set.
@@ -207,7 +184,7 @@ vtkInformationVector** vtkExecutive::GetInputInformation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformation* vtkExecutive::GetInputInformation(int port, int connection)
 {
   if (!this->InputPortIndexInRange(port, "get connected input information from"))
@@ -218,7 +195,7 @@ vtkInformation* vtkExecutive::GetInputInformation(int port, int connection)
   return inVector->GetInformationObject(connection);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationVector* vtkExecutive::GetInputInformation(int port)
 {
   if (!this->InputPortIndexInRange(port, "get input information vector from"))
@@ -228,7 +205,7 @@ vtkInformationVector* vtkExecutive::GetInputInformation(int port)
   return this->GetInputInformation()[port];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationVector* vtkExecutive::GetOutputInformation()
 {
   // Use the shared output information vector if any is set.
@@ -246,7 +223,7 @@ vtkInformationVector* vtkExecutive::GetOutputInformation()
   int oldNumberOfPorts = this->OutputInformation->GetNumberOfInformationObjects();
   this->OutputInformation->SetNumberOfInformationObjects(this->GetNumberOfOutputPorts());
 
-  // For any new information obects, set the executive pointer and
+  // For any new information objects, set the executive pointer and
   // port number on the information object to tell it what produces
   // it.
   int nop = this->Algorithm->GetNumberOfOutputPorts();
@@ -259,21 +236,21 @@ vtkInformationVector* vtkExecutive::GetOutputInformation()
   return this->OutputInformation;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformation* vtkExecutive::GetOutputInformation(int port)
 {
   return this->GetOutputInformation()->GetInformationObject(port);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutive* vtkExecutive::GetInputExecutive(int port, int index)
 {
   if (index < 0 || index >= this->GetNumberOfInputConnections(port))
   {
     vtkErrorMacro("Attempt to get executive for connection index "
-      << index << " on input port " << port << " of algorithm " << this->Algorithm->GetClassName()
-      << "(" << this->Algorithm << "), which has " << this->GetNumberOfInputConnections(port)
-      << " connections.");
+      << index << " on input port " << port << " of algorithm "
+      << this->Algorithm->GetObjectDescription() << ", which has "
+      << this->GetNumberOfInputConnections(port) << " connections.");
     return nullptr;
   }
   if (vtkAlgorithmOutput* input = this->Algorithm->GetInputConnection(port, index))
@@ -283,7 +260,7 @@ vtkExecutive* vtkExecutive::GetInputExecutive(int port, int index)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExecutive::ReportReferences(vtkGarbageCollector* collector)
 {
   // Report reference to our algorithm.
@@ -299,7 +276,7 @@ void vtkExecutive::ReportReferences(vtkGarbageCollector* collector)
   this->Superclass::ReportReferences(collector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkExecutive::Update()
 {
   if (this->Algorithm->GetNumberOfOutputPorts())
@@ -309,14 +286,14 @@ vtkTypeBool vtkExecutive::Update()
   return this->Update(-1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkExecutive::Update(int)
 {
   vtkErrorMacro("This class does not implement Update.");
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::GetNumberOfInputPorts()
 {
   if (this->Algorithm)
@@ -326,7 +303,7 @@ int vtkExecutive::GetNumberOfInputPorts()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::GetNumberOfOutputPorts()
 {
   if (this->Algorithm)
@@ -336,7 +313,7 @@ int vtkExecutive::GetNumberOfOutputPorts()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::GetNumberOfInputConnections(int port)
 {
   vtkInformationVector* inputs = this->GetInputInformation(port);
@@ -347,7 +324,7 @@ int vtkExecutive::GetNumberOfInputConnections(int port)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::InputPortIndexInRange(int port, const char* action)
 {
   // Make sure the algorithm is set.
@@ -362,15 +339,15 @@ int vtkExecutive::InputPortIndexInRange(int port, const char* action)
   if (port < 0 || port >= this->Algorithm->GetNumberOfInputPorts())
   {
     vtkErrorMacro("Attempt to " << (action ? action : "access") << " input port index " << port
-                                << " for algorithm " << this->Algorithm->GetClassName() << "("
-                                << this->Algorithm << "), which has "
-                                << this->Algorithm->GetNumberOfInputPorts() << " input ports.");
+                                << " for algorithm " << this->Algorithm->GetObjectDescription()
+                                << ", which has " << this->Algorithm->GetNumberOfInputPorts()
+                                << " input ports.");
     return 0;
   }
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::OutputPortIndexInRange(int port, const char* action)
 {
   // Make sure the algorithm is set.
@@ -385,15 +362,15 @@ int vtkExecutive::OutputPortIndexInRange(int port, const char* action)
   if (port < 0 || port >= this->Algorithm->GetNumberOfOutputPorts())
   {
     vtkErrorMacro("Attempt to " << (action ? action : "access") << " output port index " << port
-                                << " for algorithm " << this->Algorithm->GetClassName() << "("
-                                << this->Algorithm << "), which has "
-                                << this->Algorithm->GetNumberOfOutputPorts() << " output ports.");
+                                << " for algorithm " << this->Algorithm->GetObjectDescription()
+                                << ", which has " << this->Algorithm->GetNumberOfOutputPorts()
+                                << " output ports.");
     return 0;
   }
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkAlgorithmOutput* vtkExecutive::GetProducerPort(vtkDataObject* d)
 // {
 //   if (!this->Algorithm)
@@ -415,19 +392,19 @@ int vtkExecutive::OutputPortIndexInRange(int port, const char* action)
 
 // }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExecutive::SetSharedInputInformation(vtkInformationVector** inInfoVec)
 {
   this->SharedInputInformation = inInfoVec;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExecutive::SetSharedOutputInformation(vtkInformationVector* outInfoVec)
 {
   this->SharedOutputInformation = outInfoVec;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkExecutive::GetOutputData(int port)
 {
   if (!this->OutputPortIndexInRange(port, "get data for"))
@@ -453,14 +430,14 @@ vtkDataObject* vtkExecutive::GetOutputData(int port)
   return info->Get(vtkDataObject::DATA_OBJECT());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExecutive::SetOutputData(int newPort, vtkDataObject* newOutput)
 {
   vtkInformation* info = this->GetOutputInformation(newPort);
   this->SetOutputData(newPort, newOutput, info);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExecutive::SetOutputData(int newPort, vtkDataObject* newOutput, vtkInformation* info)
 {
   if (info)
@@ -480,7 +457,7 @@ void vtkExecutive::SetOutputData(int newPort, vtkDataObject* newOutput, vtkInfor
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkExecutive::GetInputData(int port, int index)
 {
   if (index < 0 || index >= this->GetNumberOfInputConnections(port))
@@ -503,7 +480,7 @@ vtkDataObject* vtkExecutive::GetInputData(int port, int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkExecutive::GetInputData(int port, int index, vtkInformationVector** inInfoVec)
 {
   if (!inInfoVec[port])
@@ -518,7 +495,7 @@ vtkDataObject* vtkExecutive::GetInputData(int port, int index, vtkInformationVec
   return info->Get(vtkDataObject::DATA_OBJECT());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkExecutive::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inInfo, vtkInformationVector* outInfo)
 {
@@ -561,7 +538,7 @@ vtkTypeBool vtkExecutive::ProcessRequest(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::ComputePipelineMTime(
   vtkInformation*, vtkInformationVector**, vtkInformationVector*, int, vtkMTimeType*)
 {
@@ -571,7 +548,7 @@ int vtkExecutive::ComputePipelineMTime(
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::ForwardDownstream(vtkInformation*)
 {
   // Do not forward downstream if the output is shared with another
@@ -586,7 +563,7 @@ int vtkExecutive::ForwardDownstream(vtkInformation*)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::ForwardUpstream(vtkInformation* request)
 {
   // Do not forward upstream if the input is shared with another
@@ -636,7 +613,7 @@ int vtkExecutive::ForwardUpstream(vtkInformation* request)
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExecutive::CopyDefaultInformation(vtkInformation* request, int direction,
   vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -734,7 +711,7 @@ void vtkExecutive::CopyDefaultInformation(vtkInformation* request, int direction
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::CallAlgorithm(vtkInformation* request, int direction,
   vtkInformationVector** inInfo, vtkInformationVector* outInfo)
 {
@@ -749,14 +726,14 @@ int vtkExecutive::CallAlgorithm(vtkInformation* request, int direction,
   // If the algorithm failed report it now.
   if (!result)
   {
-    vtkErrorMacro("Algorithm " << this->Algorithm->GetClassName() << "(" << this->Algorithm
-                               << ") returned failure for request: " << *request);
+    vtkErrorMacro("Algorithm " << this->Algorithm->GetObjectDescription()
+                               << " returned failure for request: " << *request);
   }
 
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExecutive::CheckAlgorithm(const char* method, vtkInformation* request)
 {
   if (this->InAlgorithm)
@@ -768,16 +745,15 @@ int vtkExecutive::CheckAlgorithm(const char* method, vtkInformation* request)
       vtkErrorMacro(<< method
                     << " invoked during another request.  "
                        "Returning failure to algorithm "
-                    << this->Algorithm->GetClassName() << "(" << this->Algorithm
-                    << ") for the recursive request:\n"
-                    << rqmsg.str().c_str());
+                    << this->Algorithm->GetObjectDescription() << " for the recursive request:\n"
+                    << rqmsg.str());
     }
     else
     {
       vtkErrorMacro(<< method
                     << " invoked during another request.  "
                        "Returning failure to algorithm "
-                    << this->Algorithm->GetClassName() << "(" << this->Algorithm << ").");
+                    << this->Algorithm->GetObjectDescription() << ".");
     }
 
     // Tests should fail when this happens because there is a bug in
@@ -790,3 +766,22 @@ int vtkExecutive::CheckAlgorithm(const char* method, vtkInformation* request)
   }
   return 1;
 }
+
+//------------------------------------------------------------------------------
+// Look at all inputs and check ABORTED flag. If it is set, return true.
+// Otherwise return false.
+bool vtkExecutive::CheckAbortedInput(vtkInformationVector** inInfoVec)
+{
+  for (int i = 0; i < this->GetNumberOfInputPorts(); i++)
+  {
+    for (int j = 0; j < inInfoVec[i]->GetNumberOfInformationObjects(); j++)
+    {
+      if (inInfoVec[i]->GetInformationObject(j)->Get(vtkAlgorithm::ABORTED()))
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+VTK_ABI_NAMESPACE_END

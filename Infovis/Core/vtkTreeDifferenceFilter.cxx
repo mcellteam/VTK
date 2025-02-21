@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTreeDifferenceFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkTreeDifferenceFilter.h"
 
@@ -25,9 +13,10 @@
 #include "vtkStringArray.h"
 #include "vtkTree.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTreeDifferenceFilter);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTreeDifferenceFilter::vtkTreeDifferenceFilter()
 {
   this->SetNumberOfInputPorts(2);
@@ -39,7 +28,7 @@ vtkTreeDifferenceFilter::vtkTreeDifferenceFilter()
   this->ComparisonArrayIsVertexData = false;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTreeDifferenceFilter::~vtkTreeDifferenceFilter()
 {
   // release memory
@@ -48,7 +37,7 @@ vtkTreeDifferenceFilter::~vtkTreeDifferenceFilter()
   this->SetOutputArrayName(nullptr);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTreeDifferenceFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -64,7 +53,7 @@ int vtkTreeDifferenceFilter::FillInputPortInformation(int port, vtkInformation* 
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTreeDifferenceFilter::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -126,7 +115,7 @@ int vtkTreeDifferenceFilter::RequestData(
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTreeDifferenceFilter::GenerateMapping(vtkTree* tree1, vtkTree* tree2)
 {
   this->VertexMap.clear();
@@ -165,8 +154,8 @@ bool vtkTreeDifferenceFilter::GenerateMapping(vtkTree* tree1, vtkTree* tree2)
   for (vtkIdType vertexItr = 0; vertexItr < nodeNames1->GetNumberOfTuples(); ++vertexItr)
   {
     vtkIdType vertexId1 = vertexItr;
-    std::string nodeName = nodeNames1->GetValue(vertexId1);
-    if (nodeName.compare("") == 0)
+    vtkStdString nodeName = nodeNames1->GetValue(vertexId1);
+    if (nodeName.empty())
     {
       continue;
     }
@@ -208,7 +197,7 @@ bool vtkTreeDifferenceFilter::GenerateMapping(vtkTree* tree1, vtkTree* tree2)
   return true;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointer<vtkDoubleArray> vtkTreeDifferenceFilter::ComputeDifference(
   vtkTree* tree1, vtkTree* tree2)
 {
@@ -280,7 +269,7 @@ vtkSmartPointer<vtkDoubleArray> vtkTreeDifferenceFilter::ComputeDifference(
   return resultArray;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTreeDifferenceFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -313,3 +302,4 @@ void vtkTreeDifferenceFilter::PrintSelf(ostream& os, vtkIndent indent)
   }
   os << indent << "ComparisonArrayIsVertexData: " << this->ComparisonArrayIsVertexData << std::endl;
 }
+VTK_ABI_NAMESPACE_END

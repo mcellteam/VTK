@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericAttributeCollection.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGenericAttributeCollection.h"
 
@@ -21,6 +9,7 @@
 #include <cassert>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericAttributeCollection);
 
 class vtkGenericAttributeInternalVector
@@ -37,7 +26,7 @@ public:
   VectorType Vector;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Default constructor: empty collection
 vtkGenericAttributeCollection::vtkGenericAttributeCollection()
@@ -53,7 +42,7 @@ vtkGenericAttributeCollection::vtkGenericAttributeCollection()
   this->ActualMemorySize = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericAttributeCollection::~vtkGenericAttributeCollection()
 {
   for (unsigned int i = 0; i < this->AttributeInternalVector->Vector.size(); ++i)
@@ -64,7 +53,7 @@ vtkGenericAttributeCollection::~vtkGenericAttributeCollection()
   delete this->AttributeIndices;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericAttributeCollection::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -95,7 +84,7 @@ void vtkGenericAttributeCollection::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Active Component" << this->ActiveComponent << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Number of attributes.
 int vtkGenericAttributeCollection::GetNumberOfAttributes()
@@ -106,7 +95,7 @@ int vtkGenericAttributeCollection::GetNumberOfAttributes()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericAttributeCollection::GetNumberOfComponents()
 {
   this->ComputeNumbers();
@@ -114,7 +103,7 @@ int vtkGenericAttributeCollection::GetNumberOfComponents()
   return this->NumberOfComponents;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the number of components. This is the sum of all components
 // found in all point centered attributes.
@@ -126,7 +115,7 @@ int vtkGenericAttributeCollection::GetNumberOfPointCenteredComponents()
   return this->NumberOfPointCenteredComponents;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Maximum number of components encountered among all attributes.
 // \post positive_result: result>=0
@@ -140,7 +129,7 @@ int vtkGenericAttributeCollection::GetMaxNumberOfComponents()
   return this->MaxNumberOfComponents;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Actual size of the data in kibibytes (1024 bytes); only valid after the pipeline has
 // updated. It is guaranteed to be greater than or equal to the memory
@@ -151,7 +140,7 @@ unsigned long vtkGenericAttributeCollection::GetActualMemorySize()
   return this->ActualMemorySize;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does `this' have no attribute?
 int vtkGenericAttributeCollection::IsEmpty()
@@ -159,7 +148,7 @@ int vtkGenericAttributeCollection::IsEmpty()
   return this->GetNumberOfAttributes() == 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Attribute `i'.
 vtkGenericAttribute* vtkGenericAttributeCollection::GetAttribute(int i)
@@ -171,7 +160,7 @@ vtkGenericAttribute* vtkGenericAttributeCollection::GetAttribute(int i)
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the index of attribute `name', if found. Return -1 otherwise.
 int vtkGenericAttributeCollection::FindAttribute(const char* name)
@@ -202,7 +191,7 @@ int vtkGenericAttributeCollection::FindAttribute(const char* name)
 
   return result;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the index of the first component of attribute `i' in an array of
 // format attrib0comp0 attrib0comp1 ... attrib4comp0 ...
@@ -216,7 +205,7 @@ int vtkGenericAttributeCollection::GetAttributeIndex(int i)
   return this->AttributeIndices->Vector[i];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Add attribute `a' at the end.
 void vtkGenericAttributeCollection::InsertNextAttribute(vtkGenericAttribute* a)
@@ -235,7 +224,7 @@ void vtkGenericAttributeCollection::InsertNextAttribute(vtkGenericAttribute* a)
   assert("post: a_is_set" && this->GetAttribute(this->GetNumberOfAttributes() - 1) == a);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Replace attribute at index `i' by `a'.
 void vtkGenericAttributeCollection::InsertAttribute(int i, vtkGenericAttribute* a)
@@ -260,7 +249,7 @@ void vtkGenericAttributeCollection::InsertAttribute(int i, vtkGenericAttribute* 
   assert("post: a_is_set" && this->GetAttribute(i) == a);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Remove Attribute at `i'.
 void vtkGenericAttributeCollection::RemoveAttribute(int i)
@@ -282,7 +271,7 @@ void vtkGenericAttributeCollection::RemoveAttribute(int i)
   assert("post: fewer_items" && this->GetNumberOfAttributes() == (oldnumber - 1));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Remove all attributes.
 void vtkGenericAttributeCollection::Reset()
@@ -298,7 +287,7 @@ void vtkGenericAttributeCollection::Reset()
   assert("post: is_empty" && this->IsEmpty());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Recursive duplication of `other' in `this'.
 void vtkGenericAttributeCollection::DeepCopy(vtkGenericAttributeCollection* other)
@@ -327,7 +316,7 @@ void vtkGenericAttributeCollection::DeepCopy(vtkGenericAttributeCollection* othe
   assert("post: same_size" && this->GetNumberOfAttributes() == other->GetNumberOfAttributes());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Update `this' using fields of `other'.
 void vtkGenericAttributeCollection::ShallowCopy(vtkGenericAttributeCollection* other)
@@ -350,7 +339,7 @@ void vtkGenericAttributeCollection::ShallowCopy(vtkGenericAttributeCollection* o
   assert("post: same_size" && this->GetNumberOfAttributes() == other->GetNumberOfAttributes());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Collection is composite object and need to check each part for MTime.
 vtkMTimeType vtkGenericAttributeCollection::GetMTime()
@@ -369,7 +358,7 @@ vtkMTimeType vtkGenericAttributeCollection::GetMTime()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Compute number of components, max number of components and actual memory
 // size.
@@ -415,7 +404,7 @@ void vtkGenericAttributeCollection::ComputeNumbers()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // *** ALL THE FOLLOWING METHODS SHOULD BE REMOVED WHEN vtkInformation
 // will be ready.
 // *** BEGIN
@@ -436,7 +425,7 @@ void vtkGenericAttributeCollection::SetActiveAttribute(int attribute, int compon
     (this->GetActiveComponent() == component));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Indices of attributes to interpolate.
 // \pre not_empty: !IsEmpty()
@@ -450,10 +439,10 @@ int* vtkGenericAttributeCollection::GetAttributesToInterpolate()
   return this->AttributesToInterpolate;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description
 // Does the array `attributes' of size `size' have `attribute'?
-int vtkGenericAttributeCollection::HasAttribute(int size, int* attributes, int attribute)
+vtkTypeBool vtkGenericAttributeCollection::HasAttribute(int size, int* attributes, int attribute)
 {
   assert("pre: positive_size" && size >= 0);
   assert("pre: valid_attributes" &&
@@ -473,7 +462,7 @@ int vtkGenericAttributeCollection::HasAttribute(int size, int* attributes, int a
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set the attributes to interpolate.
 void vtkGenericAttributeCollection::SetAttributesToInterpolate(int size, int* attributes)
@@ -500,7 +489,7 @@ void vtkGenericAttributeCollection::SetAttributesToInterpolate(int size, int* at
   assert("post: is_set" && (this->GetNumberOfAttributesToInterpolate() == size));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set the attributes to interpolate.
 void vtkGenericAttributeCollection::SetAttributesToInterpolateToAll()
@@ -514,7 +503,8 @@ void vtkGenericAttributeCollection::SetAttributesToInterpolateToAll()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // *** ALL THE PREVIOUS METHODS SHOULD BE REMOVED WHEN vtkInformation
 // will be ready.
 // *** END
+VTK_ABI_NAMESPACE_END

@@ -1,21 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCurveRepresentation
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCurveRepresentation
- * @brief   vtkWidgetRepresentation
- * base class for a widget that represents an curve that connects control
+ * @brief   base class for a widget that represents a curve that connects control
  * points.
  *
  * Base class for widgets used to define curves from points, such as
@@ -23,6 +10,9 @@
  * uses handles, the number of which can be changed, to represent the
  * points that define the curve. The handles can be picked can be
  * picked on the curve itself to translate or rotate it in the scene.
+ *
+ * @sa
+ * vtkPolyLineRepresentation vtkSplineRepresentation
  */
 
 #ifndef vtkCurveRepresentation_h
@@ -32,16 +22,16 @@
 #include "vtkPolyDataAlgorithm.h"        // needed for vtkPolyDataAlgorithm
 #include "vtkWidgetRepresentation.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkCellPicker;
-class vtkConeSource;
 class vtkDoubleArray;
+class vtkHandleSource;
 class vtkPlaneSource;
 class vtkPoints;
 class vtkPolyData;
 class vtkProp;
 class vtkProperty;
-class vtkSphereSource;
 class vtkTransform;
 
 #define VTK_PROJECTION_YZ 0
@@ -55,7 +45,7 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   // Used to manage the InteractionState of the widget
-  enum _InteractionState
+  enum InteractionStateType
   {
     Outside = 0,
     OnHandle,
@@ -68,14 +58,14 @@ public:
     Pushing
   };
 
-  //@{
+  ///@{
   /**
    * Set the interaction state
    */
   vtkSetMacro(InteractionState, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Force the widget to be projected onto one of the orthogonal
    * planes.  Remember that when the InteractionState changes, a
@@ -88,7 +78,7 @@ public:
   vtkSetMacro(ProjectToPlane, vtkTypeBool);
   vtkGetMacro(ProjectToPlane, vtkTypeBool);
   vtkBooleanMacro(ProjectToPlane, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Set up a reference to a vtkPlaneSource that could be from another widget
@@ -103,7 +93,7 @@ public:
   void SetProjectionNormalToZAxes() { this->SetProjectionNormal(2); }
   void SetProjectionNormalToOblique() { this->SetProjectionNormal(3); }
 
-  //@{
+  ///@{
   /**
    * Set the position of poly line handles and points in terms of a plane's
    * position. i.e., if ProjectionNormal is 0, all of the x-coordinate
@@ -113,7 +103,7 @@ public:
    */
   void SetProjectionPosition(double position);
   vtkGetMacro(ProjectionPosition, double);
-  //@}
+  ///@}
 
   /**
    * Grab the polydata (including points) that defines the
@@ -124,43 +114,44 @@ public:
    */
   virtual void GetPolyData(vtkPolyData* pd) = 0;
 
-  //@{
+  ///@{
   /**
    * Set/Get the handle properties (the spheres are the handles). The
    * properties of the handles when selected and unselected can be manipulated.
    */
   vtkGetObjectMacro(HandleProperty, vtkProperty);
   vtkGetObjectMacro(SelectedHandleProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the line properties. The properties of the line when selected
    * and unselected can be manipulated.
    */
   vtkGetObjectMacro(LineProperty, vtkProperty);
   vtkGetObjectMacro(SelectedLineProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of handles for this widget.
    */
   virtual void SetNumberOfHandles(int npts) = 0;
   vtkGetMacro(NumberOfHandles, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Sets the representation to be a directional curve with the end represented
-   * as a cone.
+   * Set the representation to be directional or not.
+   * The meaning of being directional depends on the representation and
+   * its handles implementations in the subclasses.
    */
-  void SetDirectionalLine(bool val);
-  vtkGetMacro(DirectionalLine, bool);
-  vtkBooleanMacro(DirectionalLine, bool);
-  //@}
+  virtual void SetDirectional(bool val);
+  vtkGetMacro(Directional, bool);
+  vtkBooleanMacro(Directional, bool);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the position of the handles. Call GetNumberOfHandles
    * to determine the valid range of handle indices.
@@ -170,9 +161,9 @@ public:
   virtual void GetHandlePosition(int handle, double xyz[3]);
   virtual double* GetHandlePosition(int handle);
   virtual vtkDoubleArray* GetHandlePositions() = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control whether the curve is open or closed. A closed forms a
    * continuous loop: the first and last points are the same.  A
@@ -181,7 +172,7 @@ public:
   void SetClosed(vtkTypeBool closed);
   vtkGetMacro(Closed, vtkTypeBool);
   vtkBooleanMacro(Closed, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Convenience method to determine whether the curve is
@@ -205,9 +196,9 @@ public:
    */
   virtual void InitializeHandles(vtkPoints* points) = 0;
 
-  //@{
+  ///@{
   /**
-   * These are methods that satisfy vtkWidgetRepresentation's
+   * These are methods that satisfy vtkWidgetRepresentation
    * API. Note that a version of place widget is available where the
    * center and handle position are specified.
    */
@@ -217,9 +208,9 @@ public:
   void WidgetInteraction(double e[2]) override;
   void EndWidgetInteraction(double e[2]) override;
   double* GetBounds() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods supporting, and required by, the rendering process.
    */
@@ -228,7 +219,7 @@ public:
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
   int RenderOverlay(vtkViewport*) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
   /**
    * Convenience method to set the line color.
@@ -236,12 +227,22 @@ public:
    */
   void SetLineColor(double r, double g, double b);
 
+  ///@{
+  /**
+   * Set the color when unselected and selected.
+   */
+  void SetInteractionColor(double, double, double);
+  void SetInteractionColor(double c[3]) { this->SetInteractionColor(c[0], c[1], c[2]); }
+  void SetForegroundColor(double, double, double);
+  void SetForegroundColor(double c[3]) { this->SetForegroundColor(c[0], c[1], c[2]); }
+  ///@}
+
   /*
    * Register internal Pickers within PickingManager
    */
   void RegisterPickers() override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the current handle index. Setting the current handle index will
    * also result in the handle being highlighted. Set to `-1` to remove the
@@ -249,18 +250,18 @@ public:
    */
   void SetCurrentHandleIndex(int index);
   vtkGetMacro(CurrentHandleIndex, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Gets/Sets the constraint axis for translations. Returns Axis::NONE
    * if none.
    **/
   vtkGetMacro(TranslationAxis, int);
   vtkSetClampMacro(TranslationAxis, int, -1, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Toggles constraint translation axis on/off.
    */
@@ -268,20 +269,27 @@ public:
   void SetYTranslationAxisOn() { this->TranslationAxis = Axis::YAxis; }
   void SetZTranslationAxisOn() { this->TranslationAxis = Axis::ZAxis; }
   void SetTranslationAxisOff() { this->TranslationAxis = Axis::NONE; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Returns true if ContrainedAxis
+   * Returns true if ConstrainedAxis
    **/
   bool IsTranslationConstrained() { return this->TranslationAxis != Axis::NONE; }
-  //@}
+  ///@}
+
+  /**
+   * Methods to make this class behave as a vtkProp. They are repeated here (from the
+   * vtkProp superclass) as a reminder to the widget implementer. Failure to implement
+   * these methods properly may result in the representation not appearing in the scene
+   * (i.e., not implementing the Render() methods properly) or leaking graphics resources
+   * (i.e., not implementing ReleaseGraphicsResources() properly).
+   */
+  void GetActors(vtkPropCollection*) override;
 
 protected:
   vtkCurveRepresentation();
   ~vtkCurveRepresentation() override;
-
-  class HandleSource;
 
   double LastEventPosition[3];
   double Bounds[6];
@@ -297,19 +305,22 @@ protected:
   void ProjectPointsToOrthoPlane();
   void ProjectPointsToObliquePlane();
 
-  int NumberOfHandles;
+  int NumberOfHandles = 0;
   vtkTypeBool Closed;
 
   // The line segments
   vtkActor* LineActor;
   void HighlightLine(int highlight);
-
-  // Glyphs representing hot spots (e.g., handles)
-  vtkActor** Handle;
-  HandleSource** HandleGeometry;
-  void Initialize();
   int HighlightHandle(vtkProp* prop); // returns handle index or -1 on fail
-  int GetHandleIndex(vtkProp* prop);  // returns handle index or -1 on fail
+
+  // accessors to glyphs representing hot spots (e.g., handles)
+  virtual vtkActor* GetHandleActor(int index) = 0;
+  virtual vtkHandleSource* GetHandleSource(int index) = 0;
+
+  /**
+   * returns handle index or -1 on fail
+   */
+  virtual int GetHandleIndex(vtkProp* prop) = 0;
   virtual void SizeHandles();
 
   /**
@@ -318,7 +329,7 @@ protected:
   virtual int InsertHandleOnLine(double* pos) = 0;
 
   virtual void PushHandle(double* pos);
-  void EraseHandle(const int&);
+  virtual void EraseHandle(const int&);
 
   // Do the picking
   vtkCellPicker* HandlePicker;
@@ -338,7 +349,7 @@ protected:
   vtkTransform* Transform;
 
   // Manage how the representation appears
-  bool DirectionalLine;
+  bool Directional = false;
 
   // Properties used to control the appearance of selected objects and
   // the manipulator in general.
@@ -354,41 +365,9 @@ protected:
 
   int TranslationAxis;
 
-  class HandleSource : public vtkPolyDataAlgorithm
-  {
-  public:
-    static HandleSource* New();
-
-    vtkSetMacro(UseSphere, bool);
-    vtkGetMacro(UseSphere, bool);
-    vtkBooleanMacro(UseSphere, bool);
-
-    vtkSetClampMacro(Radius, double, 0.0, VTK_DOUBLE_MAX);
-    vtkGetMacro(Radius, double);
-
-    vtkSetVector3Macro(Center, double);
-    vtkGetVectorMacro(Center, double, 3);
-
-    vtkSetVector3Macro(Direction, double);
-    vtkGetVectorMacro(Direction, double, 3);
-
-  protected:
-    HandleSource();
-    ~HandleSource() override {}
-    int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-
-  private:
-    bool UseSphere;
-    // Used by both
-    double Radius;
-    double Center[3];
-    // Cone only
-    double Direction[3];
-  };
-
 private:
   vtkCurveRepresentation(const vtkCurveRepresentation&) = delete;
   void operator=(const vtkCurveRepresentation&) = delete;
 };
-
+VTK_ABI_NAMESPACE_END
 #endif

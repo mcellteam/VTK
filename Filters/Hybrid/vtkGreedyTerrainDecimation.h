@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGreedyTerrainDecimation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGreedyTerrainDecimation
  * @brief   reduce height field (represented as image) to reduced TIN
@@ -70,6 +58,7 @@
 #include "vtkFiltersHybridModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPriorityQueue;
 class vtkDataArray;
 class vtkPointData;
@@ -97,7 +86,7 @@ public:
    */
   static vtkGreedyTerrainDecimation* New();
 
-  //@{
+  ///@{
   /**
    * Specify how to terminate the algorithm: either as an absolute number of
    * triangles, a relative number of triangles (normalized by the full
@@ -116,9 +105,9 @@ public:
   }
   void SetErrorMeasureToAbsoluteError() { this->SetErrorMeasure(VTK_ERROR_ABSOLUTE); }
   void SetErrorMeasureToRelativeError() { this->SetErrorMeasure(VTK_ERROR_RELATIVE); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the number of triangles to produce on output. (It is a
    * good idea to make sure this is less than a tessellated mesh
@@ -127,9 +116,9 @@ public:
    */
   vtkSetClampMacro(NumberOfTriangles, vtkIdType, 2, VTK_ID_MAX);
   vtkGetMacro(NumberOfTriangles, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the reduction of the mesh (represented as a fraction).  Note
    * that a value of 0.10 means a 10% reduction.  You need to set this value
@@ -137,9 +126,9 @@ public:
    */
   vtkSetClampMacro(Reduction, double, 0.0, 1.0);
   vtkGetMacro(Reduction, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the absolute error of the mesh; that is, the error in height
    * between the decimated mesh and the original height field.  You need to
@@ -147,9 +136,9 @@ public:
    */
   vtkSetClampMacro(AbsoluteError, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(AbsoluteError, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the relative error of the mesh; that is, the error in height
    * between the decimated mesh and the original height field normalized by
@@ -158,9 +147,9 @@ public:
    */
   vtkSetClampMacro(RelativeError, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(RelativeError, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the deletion of vertices on the boundary of a mesh. This
    * may limit the maximum reduction that may be achieved.
@@ -168,16 +157,16 @@ public:
   vtkSetMacro(BoundaryVertexDeletion, vtkTypeBool);
   vtkGetMacro(BoundaryVertexDeletion, vtkTypeBool);
   vtkBooleanMacro(BoundaryVertexDeletion, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Compute normals based on the input image. Off by default.
    */
   vtkSetMacro(ComputeNormals, vtkTypeBool);
   vtkGetMacro(ComputeNormals, vtkTypeBool);
   vtkBooleanMacro(ComputeNormals, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkGreedyTerrainDecimation();
@@ -219,7 +208,7 @@ protected:
   vtkGreedyTerrainDecimationPointInfoType* PointInfo;     // map mesh pt id to input pt id
 
   // Make a guess at initial allocation
-  void EstimateOutputSize(const vtkIdType numInputPts, vtkIdType& numPts, vtkIdType& numTris);
+  void EstimateOutputSize(vtkIdType numInputPts, vtkIdType& numPts, vtkIdType& numTris);
 
   // Returns non-zero if the error measure is satisfied.
   virtual int SatisfiesErrorMeasure(double error);
@@ -243,7 +232,7 @@ protected:
 
   void UpdateTriangles(vtkIdType meshPtId); // update all points connected to this point
   void UpdateTriangle(vtkIdType triId, vtkIdType p1, vtkIdType p2, vtkIdType p3);
-  void UpdateTriangle(vtkIdType triId, int ij1[2], int ij2[2], int ij3[2], double h[4]);
+  void UpdateTriangle(vtkIdType triId, int ij1[2], int ij2[2], int ij3[2], double h[3]);
 
   int CharacterizeTriangle(int ij1[2], int ij2[2], int ij[3], int*& min, int*& max, int*& midL,
     int*& midR, int*& mid, int mid2[2], double h[3], double& hMin, double& hMax, double& hL,
@@ -254,4 +243,5 @@ private:
   void operator=(const vtkGreedyTerrainDecimation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

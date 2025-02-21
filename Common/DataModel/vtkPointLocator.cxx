@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointLocator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPointLocator.h"
 
 #include "vtkBoundingBox.h"
@@ -24,11 +12,12 @@
 
 #include <algorithm> //std::sort
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPointLocator);
 
 static const int VTK_INITIAL_SIZE = 1000;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Utility class to store an array of ijk values
 class vtkNeighborPoints
 {
@@ -90,7 +79,7 @@ protected:
   int MaxSize;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with automatic computation of divisions, averaging
 // 3 points per bucket.
 vtkPointLocator::vtkPointLocator()
@@ -105,7 +94,7 @@ vtkPointLocator::vtkPointLocator()
   this->InsertionLevel = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointLocator::~vtkPointLocator()
 {
   if (this->Points)
@@ -116,7 +105,7 @@ vtkPointLocator::~vtkPointLocator()
   this->FreeSearchStructure();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointLocator::Initialize()
 {
   if (this->Points)
@@ -127,7 +116,7 @@ void vtkPointLocator::Initialize()
   this->FreeSearchStructure();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointLocator::FreeSearchStructure()
 {
   vtkIdList* ptIds;
@@ -145,9 +134,16 @@ void vtkPointLocator::FreeSearchStructure()
     delete[] this->HashTable;
     this->HashTable = nullptr;
   }
+
+  // The hash table has been invalidated.
+  // Reset the variables calculated from the dataset to their original values defined in the
+  // constructor.
+  vtkMath::UninitializeBounds(this->Bounds);
+  this->H[0] = this->H[1] = this->H[2] = 0.0;
+  this->Divisions[0] = this->Divisions[1] = this->Divisions[2] = 50;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize internal performance variables
 void vtkPointLocator::ComputePerformanceFactors()
 {
@@ -166,10 +162,15 @@ void vtkPointLocator::ComputePerformanceFactors()
   this->SliceSize = this->Divisions[0] * this->Divisions[1];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a position x, return the id of the point closest to it.
 vtkIdType vtkPointLocator::FindClosestPoint(const double x[3])
 {
+  this->BuildLocator();
+  if (this->HashTable == nullptr)
+  {
+    return -1;
+  }
   int i, j;
   double minDist2;
   double dist2 = VTK_DOUBLE_MAX;
@@ -180,16 +181,7 @@ vtkIdType vtkPointLocator::FindClosestPoint(const double x[3])
   int ijk[3], *nei;
   vtkNeighborPoints buckets;
 
-  if (!this->DataSet || this->DataSet->GetNumberOfPoints() < 1)
-  {
-    return -1;
-  }
-
-  this->BuildLocator(); // will subdivide if modified; otherwise returns
-
-  //
   //  Find bucket point is in.
-  //
   this->GetBucketIndices(x, ijk);
 
   //
@@ -257,17 +249,22 @@ vtkIdType vtkPointLocator::FindClosestPoint(const double x[3])
   return closest;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPointLocator::FindClosestPointWithinRadius(
   double radius, const double x[3], double& dist2)
 {
   return this->FindClosestPointWithinRadius(radius, x, this->DataSet->GetLength(), dist2);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPointLocator::FindClosestPointWithinRadius(
   double radius, const double x[3], double inputDataLength, double& dist2)
 {
+  this->BuildLocator();
+  if (this->HashTable == nullptr)
+  {
+    return -1;
+  }
   int i, j;
   double pt[3];
   vtkIdType ptId, nids, closest = -1;
@@ -280,8 +277,6 @@ vtkIdType vtkPointLocator::FindClosestPointWithinRadius(
   double distance2ToDataBounds, maxDistance;
   int ii, radiusLevels[3], radiusLevel, prevMinLevel[3], prevMaxLevel[3];
   vtkNeighborPoints buckets;
-
-  this->BuildLocator(); // will subdivide if modified; otherwise returns
 
   dist2 = -1.0;
   radius2 = radius * radius;
@@ -433,7 +428,7 @@ vtkIdType vtkPointLocator::FindClosestPointWithinRadius(
 
 namespace
 {
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Sorting closest points
 class IdTuple
 {
@@ -445,7 +440,7 @@ public:
 };
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointLocator::FindDistributedPoints(
   int N, double x, double y, double z, vtkIdList* result, int M)
 {
@@ -456,7 +451,7 @@ void vtkPointLocator::FindDistributedPoints(
   this->FindDistributedPoints(N, p, result, M);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int GetOctant(const double x[3], const double pt[3])
 {
   double tmp[3];
@@ -482,7 +477,7 @@ static int GetOctant(const double x[3], const double pt[3])
   return res;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int GetMin(const int foo[8])
 {
   int result = foo[0];
@@ -498,7 +493,7 @@ static int GetMin(const int foo[8])
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double GetMax(const double foo[8])
 {
   double result = foo[0];
@@ -514,9 +509,14 @@ static double GetMax(const double foo[8])
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointLocator::FindDistributedPoints(int N, const double x[3], vtkIdList* result, int M)
 {
+  this->BuildLocator();
+  if (this->HashTable == nullptr)
+  {
+    return;
+  }
   int i, j;
   double dist2;
   double pt[3];
@@ -530,8 +530,6 @@ void vtkPointLocator::FindDistributedPoints(int N, const double x[3], vtkIdList*
 
   // clear out the result
   result->Reset();
-
-  this->BuildLocator(); // will subdivide if modified; otherwise returns
   //
   //  Make sure candidate point is in bounds.  If not, it is outside.
   //
@@ -655,9 +653,14 @@ void vtkPointLocator::FindDistributedPoints(int N, const double x[3], vtkIdList*
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointLocator::FindClosestNPoints(int N, const double x[3], vtkIdList* result)
 {
+  this->BuildLocator();
+  if (this->HashTable == nullptr)
+  {
+    return;
+  }
   int i, j;
   double dist2;
   double pt[3];
@@ -670,11 +673,7 @@ void vtkPointLocator::FindClosestNPoints(int N, const double x[3], vtkIdList* re
   // clear out the result
   result->Reset();
 
-  this->BuildLocator(); // will subdivide if modified; otherwise returns
-
-  //
   //  Find bucket point is in.
-  //
   this->GetBucketIndices(x, ijk);
 
   // there are two steps, first a simple expanding wave of buckets until
@@ -769,9 +768,14 @@ void vtkPointLocator::FindClosestNPoints(int N, const double x[3], vtkIdList* re
   delete[] res;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointLocator::FindPointsWithinRadius(double R, const double x[3], vtkIdList* result)
 {
+  this->BuildLocator();
+  if (this->HashTable == nullptr)
+  {
+    return;
+  }
   int i, j;
   double dist2;
   double pt[3];
@@ -781,10 +785,7 @@ void vtkPointLocator::FindPointsWithinRadius(double R, const double x[3], vtkIdL
   double R2 = R * R;
   vtkNeighborPoints buckets;
 
-  this->BuildLocator(); // will subdivide if modified; otherwise returns
-  //
   //  Find bucket point is in.
-  //
   this->GetBucketIndices(x, ijk);
 
   // get all buckets within a distance
@@ -817,12 +818,36 @@ void vtkPointLocator::FindPointsWithinRadius(double R, const double x[3], vtkIdL
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkPointLocator::BuildLocator()
+{
+  // don't rebuild if build time is newer than modified and dataset modified time
+  if (this->HashTable && this->BuildTime > this->MTime &&
+    this->BuildTime > this->DataSet->GetMTime())
+  {
+    return;
+  }
+  // don't rebuild if UseExistingSearchStructure is ON and a search structure already exists
+  if (this->HashTable && this->UseExistingSearchStructure)
+  {
+    this->BuildTime.Modified();
+    vtkDebugMacro(<< "BuildLocator exited - UseExistingSearchStructure");
+    return;
+  }
+  this->BuildLocatorInternal();
+}
+
+//------------------------------------------------------------------------------
+void vtkPointLocator::ForceBuildLocator()
+{
+  this->BuildLocatorInternal();
+}
+
+//------------------------------------------------------------------------------
 //  Method to form subdivision of space based on the points provided and
 //  subject to the constraints of levels and NumberOfPointsPerBucket.
 //  The result is directly addressable and of uniform subdivision.
-//
-void vtkPointLocator::BuildLocator()
+void vtkPointLocator::BuildLocatorInternal()
 {
   int ndivs[3];
   vtkIdType idx;
@@ -831,31 +856,21 @@ void vtkPointLocator::BuildLocator()
   double x[3];
   typedef vtkIdList* vtkIdListPtr;
 
-  if ((this->HashTable != nullptr) && (this->BuildTime > this->MTime) &&
-    (this->BuildTime > this->DataSet->GetMTime()))
-  {
-    return;
-  }
-
   vtkDebugMacro(<< "Hashing points...");
   this->Level = 1; // only single lowest level
 
+  // Delete the current hash table values and reset dataset metrics to their original values.
+  this->FreeSearchStructure();
+
   if (!this->DataSet || (numPts = this->DataSet->GetNumberOfPoints()) < 1)
   {
-    vtkErrorMacro(<< "No points to subdivide");
+    // Missing datasets and datasets with no points are valid inputs and should not log an error.
+    // Searching for the closest point id is always -1 for this data.
     return;
   }
-  //
-  //  Make sure the appropriate data is available
-  //
-  if (this->HashTable)
-  {
-    this->FreeSearchStructure();
-  }
-  //
+
   //  Size the root bucket.  Initialize bucket data structure, compute
   //  level and divisions.
-  //
   const double* bounds = this->DataSet->GetBounds();
   vtkIdType numBuckets = static_cast<vtkIdType>(
     static_cast<double>(numPts) / static_cast<double>(this->NumberOfPointsPerBucket));
@@ -890,7 +905,8 @@ void vtkPointLocator::BuildLocator()
 
   // Allocate the bins/buckets and initialize
   this->HashTable = new vtkIdListPtr[numBuckets];
-  memset(this->HashTable, 0, numBuckets * sizeof(vtkIdListPtr));
+  // NOLINTNEXTLINE(bugprone-sizeof-expression)
+  memset(this->HashTable, 0, numBuckets * sizeof(*this->HashTable));
 
   // Compute local variables (for performance reasons)
   // Setup internal data members for more efficient processing.
@@ -917,7 +933,7 @@ void vtkPointLocator::BuildLocator()
   this->BuildTime.Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //  Internal function to get bucket neighbors at specified level
 //
 void vtkPointLocator::GetBucketNeighbors(
@@ -968,7 +984,7 @@ void vtkPointLocator::GetBucketNeighbors(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Internal method to find those buckets that are within distance specified
 // only those buckets outside of level radiuses of ijk are returned
 void vtkPointLocator::GetOverlappingBuckets(
@@ -1011,7 +1027,7 @@ void vtkPointLocator::GetOverlappingBuckets(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Internal method to find those buckets that are within distance specified
 // only those buckets outside of level radiuses of ijk are returned
 void vtkPointLocator::GetOverlappingBuckets(vtkNeighborPoints* buckets, const double x[3],
@@ -1093,7 +1109,7 @@ void vtkPointLocator::GetOverlappingBuckets(vtkNeighborPoints* buckets, const do
   prevMaxLevel[2] = maxLevel[2];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize the point insertion process. The newPts is an object representing
 // point coordinates into which incremental insertion methods place their
 // data. Bounds are the box that the points lie in.
@@ -1102,7 +1118,7 @@ int vtkPointLocator::InitPointInsertion(vtkPoints* newPts, const double bounds[6
   return this->InitPointInsertion(newPts, bounds, 0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize the point insertion process. The newPts is an object representing
 // point coordinates into which incremental insertion methods place their
 // data. Bounds are the box that the points lie in.
@@ -1159,7 +1175,8 @@ int vtkPointLocator::InitPointInsertion(
 
   // Initialize bins/buckets
   this->HashTable = new vtkIdListPtr[this->NumberOfBuckets];
-  memset(this->HashTable, 0, this->NumberOfBuckets * sizeof(vtkIdListPtr));
+  // NOLINTNEXTLINE(bugprone-sizeof-expression)
+  memset(this->HashTable, 0, this->NumberOfBuckets * sizeof(*this->HashTable));
 
   //  Compute width of bucket in three directions
   //
@@ -1175,7 +1192,7 @@ int vtkPointLocator::InitPointInsertion(
     hmin = (this->H[i] < hmin ? this->H[i] : hmin);
     maxDivs = (maxDivs > this->Divisions[i] ? maxDivs : this->Divisions[i]);
   }
-  this->InsertionLevel = ceil(static_cast<double>(this->Tolerance) / hmin);
+  this->InsertionLevel = ceil(this->Tolerance / hmin);
   this->InsertionLevel = (this->InsertionLevel > maxDivs ? maxDivs : this->InsertionLevel);
 
   // Update internal performance variables
@@ -1184,7 +1201,7 @@ int vtkPointLocator::InitPointInsertion(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Incrementally insert a point into search structure. The method returns
 // the insertion location (i.e., point id). You should use the method
 // IsInsertedPoint() to see whether this point has already been
@@ -1211,7 +1228,7 @@ vtkIdType vtkPointLocator::InsertNextPoint(const double x[3])
   return this->InsertionPointId++;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Incrementally insert a point into search structure with a particular
 // index value. You should use the method IsInsertedPoint() to see whether
 // this point has already been inserted (that is, if you desire to prevent
@@ -1236,7 +1253,7 @@ void vtkPointLocator::InsertPoint(vtkIdType ptId, const double x[3])
   this->Points->InsertPoint(ptId, x);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Determine whether point given by x[3] has been inserted into points list.
 // Return id of previously inserted point if this is true, otherwise return
 // -1.
@@ -1289,7 +1306,7 @@ vtkIdType vtkPointLocator::IsInsertedPoint(const double x[3])
   return -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointLocator::InsertUniquePoint(const double x[3], vtkIdType& id)
 {
   vtkIdType ptId;
@@ -1308,7 +1325,7 @@ int vtkPointLocator::InsertUniquePoint(const double x[3], vtkIdType& id)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a position x, return the id of the point closest to it. This method
 // is used when performing incremental point insertion.
 vtkIdType vtkPointLocator::FindClosestInsertedPoint(const double x[3])
@@ -1344,7 +1361,7 @@ vtkIdType vtkPointLocator::FindClosestInsertedPoint(const double x[3])
   //  points in this bucket, search 1st level neighbors, and so on,
   //  until closest point found.
   //
-  for (closest = 0, minDist2 = VTK_DOUBLE_MAX, level = 0; (closest == 0) &&
+  for (closest = -1, minDist2 = VTK_DOUBLE_MAX, level = 0; (closest == -1) &&
        (level < this->Divisions[0] || level < this->Divisions[1] || level < this->Divisions[2]);
        level++)
   {
@@ -1419,7 +1436,7 @@ vtkIdType vtkPointLocator::FindClosestInsertedPoint(const double x[3])
   return closest;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the list of points in the bucket containing x.
 vtkIdList* vtkPointLocator::GetPointsInBucket(const double x[3], int ijk[3])
 {
@@ -1447,7 +1464,7 @@ vtkIdList* vtkPointLocator::GetPointsInBucket(const double x[3], int ijk[3])
   return nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Build polygonal representation of locator. Create faces that separate
 // inside/outside buckets, or separate inside/boundary of locator.
 void vtkPointLocator::GenerateRepresentation(int vtkNotUsed(level), vtkPolyData* pd)
@@ -1548,7 +1565,7 @@ void vtkPointLocator::GenerateRepresentation(int vtkNotUsed(level), vtkPolyData*
   pd->Squeeze();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointLocator::GenerateFace(
   int face, int i, int j, int k, vtkPoints* pts, vtkCellArray* polys)
 {
@@ -1618,7 +1635,7 @@ void vtkPointLocator::GenerateFace(
   polys->InsertNextCell(4, ids);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Calculate the distance between the point x to the bucket "nei".
 //
 // WARNING!!!!! Be very careful altering this routine.  Simple changes to this
@@ -1638,7 +1655,7 @@ double vtkPointLocator::Distance2ToBucket(const double x[3], const int nei[3])
   return this->Distance2ToBounds(x, bounds);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Calculate the distance between the point x and the specified bounds
 //
 // WARNING!!!!! Be very careful altering this routine.  Simple changes to this
@@ -1694,7 +1711,7 @@ double vtkPointLocator::Distance2ToBounds(const double x[3], const double bounds
   return distance;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointLocator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1712,3 +1729,4 @@ void vtkPointLocator::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Points: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

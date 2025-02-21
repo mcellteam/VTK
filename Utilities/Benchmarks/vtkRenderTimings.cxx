@@ -1,20 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderTimings.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkRenderTimings.h"
-//#include "vtkNew.h"
+// #include "vtkNew.h"
 
 #include <vtksys/FStream.hxx>
 #include <vtksys/RegularExpression.hxx>
@@ -31,6 +19,7 @@
 #include "vtkRenderWindow.h"
 #include "vtkTable.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 void vtkRTTestSequence::GetSequenceNumbers(int& xdim)
 {
   static int linearSequence[] = { 1, 2, 3, 5 };
@@ -255,7 +244,7 @@ int vtkRenderTimings::RunTests()
   // what tests to run?
   bool useRegex = false;
   vtksys::RegularExpression re;
-  if (this->Regex.size())
+  if (!this->Regex.empty())
   {
     useRegex = true;
     re.compile(this->Regex);
@@ -374,7 +363,7 @@ int vtkRenderTimings::ParseCommandLineArguments(int argc, char* argv[])
   {
     bool useRegex = false;
     vtksys::RegularExpression re;
-    if (this->Regex.size())
+    if (!this->Regex.empty())
     {
       useRegex = true;
       re.compile(this->Regex);
@@ -397,3 +386,4 @@ int vtkRenderTimings::ParseCommandLineArguments(int argc, char* argv[])
 
   return 0;
 }
+VTK_ABI_NAMESPACE_END

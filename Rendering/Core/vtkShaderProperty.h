@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShaderProperty.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkShaderProperty
  * @brief   represent GPU shader properties
@@ -33,10 +21,12 @@
 #include "vtkNew.h" // For iVars
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUniforms;
 
-class VTKRENDERINGCORE_EXPORT vtkShaderProperty : public vtkObject
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkShaderProperty : public vtkObject
 {
 public:
   vtkTypeMacro(vtkShaderProperty, vtkObject);
@@ -64,7 +54,7 @@ public:
    */
   vtkMTimeType GetShaderMTime();
 
-  //@{
+  ///@{
   /**
    * Allow the program to set the shader codes used directly
    * instead of using the built in templates. Be aware, if
@@ -74,15 +64,21 @@ public:
   bool HasVertexShaderCode();
   bool HasFragmentShaderCode();
   bool HasGeometryShaderCode();
+  bool HasTessControlShaderCode();
+  bool HasTessEvalShaderCode();
   vtkSetStringMacro(VertexShaderCode);
   vtkGetStringMacro(VertexShaderCode);
   vtkSetStringMacro(FragmentShaderCode);
   vtkGetStringMacro(FragmentShaderCode);
   vtkSetStringMacro(GeometryShaderCode);
   vtkGetStringMacro(GeometryShaderCode);
-  //@}
+  vtkSetStringMacro(TessControlShaderCode);
+  vtkGetStringMacro(TessControlShaderCode);
+  vtkSetStringMacro(TessEvaluationShaderCode);
+  vtkGetStringMacro(TessEvaluationShaderCode);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The Uniforms object allows to set custom uniform variables
    * that are used in replacement shader code.
@@ -90,9 +86,11 @@ public:
   vtkGetObjectMacro(FragmentCustomUniforms, vtkUniforms);
   vtkGetObjectMacro(VertexCustomUniforms, vtkUniforms);
   vtkGetObjectMacro(GeometryCustomUniforms, vtkUniforms);
-  //@}
+  vtkGetObjectMacro(TessControlCustomUniforms, vtkUniforms);
+  vtkGetObjectMacro(TessEvaluationCustomUniforms, vtkUniforms);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This function enables you to apply your own substitutions
    * to the shader creation process. The shader code in this class
@@ -109,6 +107,12 @@ public:
   virtual void AddGeometryShaderReplacement(const std::string& originalValue,
     bool replaceFirst, // do this replacement before the default
     const std::string& replacementValue, bool replaceAll) = 0;
+  virtual void AddTessControlShaderReplacement(const std::string& originalValue,
+    bool replaceFirst, // do this replacement before the default
+    const std::string& replacementValue, bool replaceAll) = 0;
+  virtual void AddTessEvaluationShaderReplacement(const std::string& originalValue,
+    bool replaceFirst, // do this replacement before the default
+    const std::string& replacementValue, bool replaceAll) = 0;
   virtual int GetNumberOfShaderReplacements() = 0;
   virtual std::string GetNthShaderReplacementTypeAsString(vtkIdType index) = 0;
   virtual void GetNthShaderReplacement(vtkIdType index, std::string& name, bool& replaceFirst,
@@ -119,11 +123,17 @@ public:
     const std::string& originalValue, bool replaceFirst) = 0;
   virtual void ClearGeometryShaderReplacement(
     const std::string& originalValue, bool replaceFirst) = 0;
+  virtual void ClearTessControlShaderReplacement(
+    const std::string& originalValue, bool replaceFirst) = 0;
+  virtual void ClearTessEvaluationShaderReplacement(
+    const std::string& originalValue, bool replaceFirst) = 0;
   virtual void ClearAllVertexShaderReplacements() = 0;
   virtual void ClearAllFragmentShaderReplacements() = 0;
   virtual void ClearAllGeometryShaderReplacements() = 0;
+  virtual void ClearAllTessControlShaderReplacements() = 0;
+  virtual void ClearAllTessEvalShaderReplacements() = 0;
   virtual void ClearAllShaderReplacements() = 0;
-  //@}
+  ///@}
 
 protected:
   vtkShaderProperty();
@@ -132,14 +142,19 @@ protected:
   char* VertexShaderCode;
   char* FragmentShaderCode;
   char* GeometryShaderCode;
+  char* TessControlShaderCode;
+  char* TessEvaluationShaderCode;
 
   vtkNew<vtkUniforms> FragmentCustomUniforms;
   vtkNew<vtkUniforms> VertexCustomUniforms;
   vtkNew<vtkUniforms> GeometryCustomUniforms;
+  vtkNew<vtkUniforms> TessControlCustomUniforms;
+  vtkNew<vtkUniforms> TessEvaluationCustomUniforms;
 
 private:
   vtkShaderProperty(const vtkShaderProperty&) = delete;
   void operator=(const vtkShaderProperty&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

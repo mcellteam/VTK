@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractTimeSteps.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractTimeSteps.h"
 
 #include "vtkDataObject.h"
@@ -24,6 +12,7 @@
 #include <cmath>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractTimeSteps);
 
 vtkExtractTimeSteps::vtkExtractTimeSteps()
@@ -35,7 +24,7 @@ vtkExtractTimeSteps::vtkExtractTimeSteps()
   this->Range[1] = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractTimeSteps::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -79,7 +68,7 @@ void vtkExtractTimeSteps::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractTimeSteps::AddTimeStepIndex(int timeStepIndex)
 {
   if (this->TimeStepIndices.insert(timeStepIndex).second)
@@ -149,7 +138,7 @@ void getTimeSteps(vtkInformation* inInfo, const std::set<int>& timeStepIndices, 
 
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractTimeSteps::RequestInformation(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -166,7 +155,7 @@ int vtkExtractTimeSteps::RequestInformation(
 
     if (!outTimes.empty())
     {
-      outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &outTimes[0],
+      outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), outTimes.data(),
         static_cast<int>(outTimes.size()));
 
       double range[2] = { outTimes.front(), outTimes.back() };
@@ -177,7 +166,7 @@ int vtkExtractTimeSteps::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractTimeSteps::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -191,7 +180,7 @@ int vtkExtractTimeSteps::RequestUpdateExtent(vtkInformation* vtkNotUsed(request)
     getTimeSteps(
       inInfo, this->TimeStepIndices, this->UseRange, this->Range, this->TimeStepInterval, outTimes);
 
-    if (outTimes.size() == 0)
+    if (outTimes.empty())
     {
       vtkErrorMacro("Input has no time steps.");
       return 0;
@@ -243,7 +232,7 @@ int vtkExtractTimeSteps::RequestUpdateExtent(vtkInformation* vtkNotUsed(request)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractTimeSteps::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -254,5 +243,8 @@ int vtkExtractTimeSteps::RequestData(
   {
     outData->ShallowCopy(inData);
   }
+
+  this->CheckAbort();
   return 1;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSmartPointer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test of vtkNew.
 // .SECTION Description
 // Tests instantiations of the vtkNew class template.
@@ -123,12 +111,14 @@ int TestNew(int, char*[])
   {
     vtkNew<vtkIntArray> testArray1;
     vtkNew<vtkIntArray> testArray2(std::move(testArray1));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     if (testArray1 || !testArray2)
     {
       std::cerr << "Error, move construction of vtkNew failed.\n";
       error = true;
     }
     vtkNew<vtkDataArray> testArray3(std::move(testArray2));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     if (testArray2 || !testArray3)
     {
       std::cerr << "Error, move construction of vtkNew failed.\n";

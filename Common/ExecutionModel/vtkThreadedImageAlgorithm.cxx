@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkThreadedImageAlgorithm.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkThreadedImageAlgorithm.h"
 
 #include "vtkCellData.h"
@@ -23,6 +11,7 @@
 #include "vtkMultiThreader.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
+#include "vtkSMP.h"
 #include "vtkSMPTools.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
@@ -31,12 +20,17 @@
 // If SMP backend is Sequential then fall back to vtkMultiThreader,
 // else enable the newer vtkSMPTools code path by default.
 #ifdef VTK_SMP_Sequential
+VTK_ABI_NAMESPACE_BEGIN
 bool vtkThreadedImageAlgorithm::GlobalDefaultEnableSMP = false;
+VTK_ABI_NAMESPACE_END
 #else
+VTK_ABI_NAMESPACE_BEGIN
 bool vtkThreadedImageAlgorithm::GlobalDefaultEnableSMP = true;
+VTK_ABI_NAMESPACE_END
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkThreadedImageAlgorithm::vtkThreadedImageAlgorithm()
 {
   this->Threader = vtkMultiThreader::New();
@@ -61,13 +55,13 @@ vtkThreadedImageAlgorithm::vtkThreadedImageAlgorithm()
   this->DesiredBytesPerPiece = 65536;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkThreadedImageAlgorithm::~vtkThreadedImageAlgorithm()
 {
   this->Threader->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThreadedImageAlgorithm::SetGlobalDefaultEnableSMP(bool enable)
 {
   if (enable != vtkThreadedImageAlgorithm::GlobalDefaultEnableSMP)
@@ -76,13 +70,13 @@ void vtkThreadedImageAlgorithm::SetGlobalDefaultEnableSMP(bool enable)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkThreadedImageAlgorithm::GetGlobalDefaultEnableSMP()
 {
   return vtkThreadedImageAlgorithm::GlobalDefaultEnableSMP;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThreadedImageAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -101,7 +95,7 @@ void vtkThreadedImageAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
                                        : (this->SplitMode == BLOCK ? "Block\n" : "Unknown\n")));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct vtkImageThreadStruct
 {
   vtkThreadedImageAlgorithm* Filter;
@@ -113,7 +107,7 @@ struct vtkImageThreadStruct
   int* UpdateExtent;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // For streaming and threads.  Splits output update extent into num pieces.
 // This method needs to be called num times.  Results must not overlap for
 // consistent starting extent.  Subclass can override this method.
@@ -346,7 +340,7 @@ int vtkThreadedImageAlgorithm::SplitExtent(int splitExt[6], int startExt[6], int
   return total;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The old way to thread an image filter, before vtkSMPTools existed:
 // this mess is really a simple function. All it does is call
 // the ThreadedExecute method after setting the correct
@@ -382,7 +376,7 @@ static VTK_THREAD_RETURN_TYPE vtkThreadedImageAlgorithmThreadedExecute(void* arg
   return VTK_THREAD_RETURN_VALUE;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This functor is used with vtkSMPTools to execute the algorithm in pieces
 // split over the extent of the data.
 class vtkThreadedImageAlgorithmFunctor
@@ -427,7 +421,7 @@ private:
   vtkIdType NumberOfPieces;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The execute method created by the subclass.
 void vtkThreadedImageAlgorithm::SMPRequestData(vtkInformation* request,
   vtkInformationVector** inputVector, vtkInformationVector* outputVector, vtkImageData*** inData,
@@ -449,7 +443,7 @@ void vtkThreadedImageAlgorithm::SMPRequestData(vtkInformation* request,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThreadedImageAlgorithm::PrepareImageData(vtkInformationVector** inputVector,
   vtkInformationVector* outputVector, vtkImageData*** inDataObjects, vtkImageData** outDataObjects)
 {
@@ -509,7 +503,7 @@ void vtkThreadedImageAlgorithm::PrepareImageData(vtkInformationVector** inputVec
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is the superclasses style of Execute method.  Convert it into
 // an imaging style Execute method.
 int vtkThreadedImageAlgorithm::RequestData(
@@ -535,7 +529,7 @@ int vtkThreadedImageAlgorithm::RequestData(
   // set pointers to the lists of data objects and input ports
   if (numInputPorts)
   {
-    inputs = &ports[0];
+    inputs = ports.data();
     for (int i = 0; i < numInputPorts; i++)
     {
       inputs[i] = &connections[offset];
@@ -648,7 +642,7 @@ int vtkThreadedImageAlgorithm::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The execute method created by the subclass.
 void vtkThreadedImageAlgorithm::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector),
@@ -657,7 +651,7 @@ void vtkThreadedImageAlgorithm::ThreadedRequestData(vtkInformation* vtkNotUsed(r
   this->ThreadedExecute(inData[0][0], outData[0], extent, threadId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The execute method created by the subclass.
 void vtkThreadedImageAlgorithm::ThreadedExecute(
   vtkImageData* inData, vtkImageData* outData, int extent[6], int threadId)
@@ -668,3 +662,4 @@ void vtkThreadedImageAlgorithm::ThreadedExecute(
   (void)threadId;
   vtkErrorMacro("Subclass should override this method!!!");
 }
+VTK_ABI_NAMESPACE_END

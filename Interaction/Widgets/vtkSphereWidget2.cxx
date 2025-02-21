@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSphereWidget2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSphereWidget2.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCommand.h"
@@ -25,9 +13,12 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+#include <algorithm>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSphereWidget2);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSphereWidget2::vtkSphereWidget2()
 {
   this->WidgetState = vtkSphereWidget2::Start;
@@ -57,13 +48,13 @@ vtkSphereWidget2::vtkSphereWidget2()
   this->KeyEventCallbackCommand->SetCallback(vtkSphereWidget2::ProcessKeyEvents);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSphereWidget2::~vtkSphereWidget2()
 {
   this->KeyEventCallbackCommand->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::SetEnabled(int enabling)
 {
   int enabled = this->Enabled;
@@ -102,7 +93,7 @@ void vtkSphereWidget2::SetEnabled(int enabling)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::SelectAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -160,7 +151,7 @@ void vtkSphereWidget2::SelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::TranslateAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -208,7 +199,7 @@ void vtkSphereWidget2::TranslateAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::ScaleAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -256,7 +247,7 @@ void vtkSphereWidget2::ScaleAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::MoveAction(vtkAbstractWidget* w)
 {
   vtkSphereWidget2* self = reinterpret_cast<vtkSphereWidget2*>(w);
@@ -283,7 +274,7 @@ void vtkSphereWidget2::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkSphereWidget2* self = reinterpret_cast<vtkSphereWidget2*>(w);
@@ -304,7 +295,7 @@ void vtkSphereWidget2::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -313,54 +304,39 @@ void vtkSphereWidget2::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::ProcessKeyEvents(vtkObject*, unsigned long event, void* clientdata, void*)
 {
   vtkSphereWidget2* self = static_cast<vtkSphereWidget2*>(clientdata);
-  vtkRenderWindowInteractor* iren = self->GetInteractor();
   vtkSphereRepresentation* rep = vtkSphereRepresentation::SafeDownCast(self->WidgetRep);
-  switch (event)
+  char* cKeySym = self->Interactor->GetKeySym();
+  std::string keySym = cKeySym != nullptr ? cKeySym : "";
+  std::transform(keySym.begin(), keySym.end(), keySym.begin(), ::toupper);
+  if (event == vtkCommand::KeyPressEvent)
   {
-    case vtkCommand::KeyPressEvent:
-      switch (iren->GetKeyCode())
-      {
-        case 'x':
-        case 'X':
-          rep->SetXTranslationAxisOn();
-          break;
-        case 'y':
-        case 'Y':
-          rep->SetYTranslationAxisOn();
-          break;
-        case 'z':
-        case 'Z':
-          rep->SetZTranslationAxisOn();
-          break;
-        default:
-          break;
-      }
-      break;
-    case vtkCommand::KeyReleaseEvent:
-      switch (iren->GetKeyCode())
-      {
-        case 'x':
-        case 'X':
-        case 'y':
-        case 'Y':
-        case 'z':
-        case 'Z':
-          rep->SetTranslationAxisOff();
-          break;
-        default:
-          break;
-      }
-      break;
-    default:
-      break;
+    if (keySym == "X")
+    {
+      rep->SetXTranslationAxisOn();
+    }
+    else if (keySym == "Y")
+    {
+      rep->SetYTranslationAxisOn();
+    }
+    else if (keySym == "Z")
+    {
+      rep->SetZTranslationAxisOn();
+    }
+  }
+  else if (event == vtkCommand::KeyReleaseEvent)
+  {
+    if (keySym == "X" || keySym == "Y" || keySym == "Z")
+    {
+      rep->SetTranslationAxisOff();
+    }
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereWidget2::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -368,3 +344,4 @@ void vtkSphereWidget2::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Translation Enabled: " << (this->TranslationEnabled ? "On\n" : "Off\n");
   os << indent << "Scaling Enabled: " << (this->ScalingEnabled ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

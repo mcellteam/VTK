@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShepardMethod.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkShepardMethod.h"
 
 #include "vtkFloatArray.h"
@@ -24,9 +12,10 @@
 #include "vtkSMPTools.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkShepardMethod);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Thread the algorithm by processing each z-slice independently as each
 // point is procssed. (As input points are processed, their influence is felt
 // across a cuboid domain - a splat footprint. The slices that make up the
@@ -197,7 +186,7 @@ public:
       {
         if (sum[ptId] >= VTK_DOUBLE_MAX)
         {
-          ; // previously set, precise hit
+          // previously set, precise hit
         }
         else if (sum[ptId] != 0.0)
         {
@@ -212,7 +201,7 @@ public:
   };
 }; // Shepard algorithm
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with sample dimensions=(50,50,50) and so that model bounds are
 // automatically computed from input. Null value for each unvisited output
 // point is 0.0. Maximum distance is 0.25.
@@ -236,7 +225,7 @@ vtkShepardMethod::vtkShepardMethod()
   this->PowerParameter = 2.0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute ModelBounds from input geometry.
 double vtkShepardMethod::ComputeModelBounds(double origin[3], double spacing[3])
 {
@@ -288,7 +277,7 @@ double vtkShepardMethod::ComputeModelBounds(double origin[3], double spacing[3])
   return maxDist;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkShepardMethod::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -321,7 +310,7 @@ int vtkShepardMethod::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkShepardMethod::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -403,10 +392,8 @@ int vtkShepardMethod::RequestData(vtkInformation* vtkNotUsed(request),
 
       for (i = 0; i < 3; i++) // compute dimensional bounds in data set
       {
-        min[i] = static_cast<int>(
-          static_cast<double>((splatF.X[i] - maxDistance) - origin[i]) / spacing[i]);
-        max[i] = static_cast<int>(
-          static_cast<double>((splatF.X[i] + maxDistance) - origin[i]) / spacing[i]);
+        min[i] = static_cast<int>(((splatF.X[i] - maxDistance) - origin[i]) / spacing[i]);
+        max[i] = static_cast<int>(((splatF.X[i] + maxDistance) - origin[i]) / spacing[i]);
         min[i] = (min[i] < 0 ? 0 : min[i]);
         max[i] = (max[i] >= this->SampleDimensions[i] ? this->SampleDimensions[i] - 1 : max[i]);
       }
@@ -436,10 +423,8 @@ int vtkShepardMethod::RequestData(vtkInformation* vtkNotUsed(request),
 
       for (i = 0; i < 3; i++) // compute dimensional bounds in data set
       {
-        min[i] = static_cast<int>(
-          static_cast<double>((splatF.X[i] - maxDistance) - origin[i]) / spacing[i]);
-        max[i] = static_cast<int>(
-          static_cast<double>((splatF.X[i] + maxDistance) - origin[i]) / spacing[i]);
+        min[i] = static_cast<int>(((splatF.X[i] - maxDistance) - origin[i]) / spacing[i]);
+        max[i] = static_cast<int>(((splatF.X[i] + maxDistance) - origin[i]) / spacing[i]);
         min[i] = (min[i] < 0 ? 0 : min[i]);
         max[i] = (max[i] >= this->SampleDimensions[i] ? this->SampleDimensions[i] - 1 : max[i]);
       }
@@ -461,7 +446,7 @@ int vtkShepardMethod::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the i-j-k dimensions on which to sample the distance function.
 void vtkShepardMethod::SetSampleDimensions(int i, int j, int k)
 {
@@ -474,7 +459,7 @@ void vtkShepardMethod::SetSampleDimensions(int i, int j, int k)
   this->SetSampleDimensions(dim);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the i-j-k dimensions on which to sample the distance function.
 void vtkShepardMethod::SetSampleDimensions(int dim[3])
 {
@@ -515,14 +500,14 @@ void vtkShepardMethod::SetSampleDimensions(int dim[3])
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkShepardMethod::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkShepardMethod::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -541,3 +526,4 @@ void vtkShepardMethod::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Power Parameter: " << this->PowerParameter << "\n";
 }
+VTK_ABI_NAMESPACE_END

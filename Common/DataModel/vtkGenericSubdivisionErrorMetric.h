@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericSubdivisionErrorMetric.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericSubdivisionErrorMetric
  * @brief   Objects that compute
@@ -41,6 +29,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGenericAttributeCollection;
 class vtkGenericAdaptorCell;
 class vtkGenericDataSet;
@@ -48,13 +37,13 @@ class vtkGenericDataSet;
 class VTKCOMMONDATAMODEL_EXPORT vtkGenericSubdivisionErrorMetric : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard VTK type and error macros.
    */
   vtkTypeMacro(vtkGenericSubdivisionErrorMetric, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Does the edge need to be subdivided according to the implemented
@@ -93,21 +82,21 @@ public:
   virtual double GetError(
     double* leftPoint, double* midPoint, double* rightPoint, double alpha) = 0;
 
-  //@{
+  ///@{
   /**
    * The cell that the edge belongs to.
    */
   void SetGenericCell(vtkGenericAdaptorCell* cell);
   vtkGetObjectMacro(GenericCell, vtkGenericAdaptorCell);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the dataset to be tessellated.
    */
   void SetDataSet(vtkGenericDataSet* ds);
   vtkGetObjectMacro(DataSet, vtkGenericDataSet);
-  //@}
+  ///@}
 
 protected:
   vtkGenericSubdivisionErrorMetric();
@@ -121,4 +110,5 @@ private:
   void operator=(const vtkGenericSubdivisionErrorMetric&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHigherOrderCurve.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkHigherOrderCurve.h"
 
 #include "vtkCellData.h"
@@ -25,8 +13,8 @@
 #include "vtkPoints.h"
 #include "vtkTriangle.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkHigherOrderCurve::vtkHigherOrderCurve()
 {
   this->Approx = nullptr;
@@ -131,12 +119,21 @@ void vtkHigherOrderCurve::EvaluateLocation(
   subId = 0; // TODO: Should this be -1?
   this->InterpolateFunctions(pcoords, weights);
 
-  double p[3];
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
+  const double* p;
   x[0] = x[1] = x[2] = 0.;
   vtkIdType nPoints = this->GetPoints()->GetNumberOfPoints();
   for (vtkIdType idx = 0; idx < nPoints; ++idx)
   {
-    this->Points->GetPoint(idx, p);
+    p = pts + 3 * idx;
     for (vtkIdType jdx = 0; jdx < 3; ++jdx)
     {
       x[jdx] += p[jdx] * weights[idx];
@@ -214,36 +211,20 @@ int vtkHigherOrderCurve::IntersectWithLine(
   return intersection ? 1 : 0;
 }
 
-int vtkHigherOrderCurve::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+int vtkHigherOrderCurve::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  ptIds->Reset();
-  pts->Reset();
-
-  vtkIdType nseg = vtkHigherOrderInterpolation::NumberOfIntervals<1>(this->GetOrder());
-  vtkVector3i ijk;
-  for (int i = 0; i < nseg; ++i)
+  vtkIdType nhex = vtkHigherOrderInterpolation::NumberOfIntervals<1>(this->GetOrder());
+  int i;
+  ptIds->SetNumberOfIds(nhex * 2);
+  for (int subId = 0; subId < nhex; ++subId)
   {
-    vtkLine* approx = this->GetApproximateLine(i);
-    if (!this->SubCellCoordinatesFromId(ijk, i))
+    if (!this->SubCellCoordinatesFromId(i, subId))
     {
-      continue;
+      vtkErrorMacro("Invalid subId " << subId);
+      return 0;
     }
-    if (approx->Triangulate(
-          (ijk[0] + ijk[1] + ijk[2]) % 2, this->TmpIds.GetPointer(), this->TmpPts.GetPointer()))
-    {
-      // Sigh. Triangulate methods all reset their points/ids
-      // so we must copy them to our output.
-      vtkIdType np = this->TmpPts->GetNumberOfPoints();
-      vtkIdType ni = this->TmpIds->GetNumberOfIds();
-      for (vtkIdType ii = 0; ii < np; ++ii)
-      {
-        pts->InsertNextPoint(this->TmpPts->GetPoint(ii));
-      }
-      for (vtkIdType ii = 0; ii < ni; ++ii)
-      {
-        ptIds->InsertNextId(this->TmpIds->GetId(ii));
-      }
-    }
+    ptIds->SetId(subId * 2, this->PointIndexFromIJK(i, 0, 0));
+    ptIds->SetId(subId * 2 + 1, this->PointIndexFromIJK(i + 1, 0, 0));
   }
   return 1;
 }
@@ -251,7 +232,9 @@ int vtkHigherOrderCurve::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vt
 void vtkHigherOrderCurve::Derivatives(int vtkNotUsed(subId), const double vtkNotUsed(pcoords)[3],
   const double* vtkNotUsed(values), int vtkNotUsed(dim), double* vtkNotUsed(derivs))
 {
-  // TODO: Fill me in?
+  // TODO - if the effort is justified, someone should implement a correct
+  // version of this method
+  vtkErrorMacro("Derivatives() is not implemented for vtkHigherOrderCurve.");
 }
 
 void vtkHigherOrderCurve::SetParametricCoords()
@@ -307,6 +290,11 @@ const int* vtkHigherOrderCurve::GetOrder()
     this->CellScalars->SetNumberOfTuples(pointsPerAxis);
   }
   return this->Order;
+}
+
+bool vtkHigherOrderCurve::PointCountSupportsUniformOrder(vtkIdType pointsPerCell)
+{
+  return pointsPerCell >= 2;
 }
 
 /// Return a linear segment used to approximate a region of the nonlinear curve.
@@ -420,3 +408,4 @@ bool vtkHigherOrderCurve::TransformApproxToCellParams(int subCell, double* pcoor
   }
   return true;
 }
+VTK_ABI_NAMESPACE_END

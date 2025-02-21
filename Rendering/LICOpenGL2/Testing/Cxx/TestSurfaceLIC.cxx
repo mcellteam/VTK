@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSurfaceLIC.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCellData.h"
 #include "vtkCompositeDataPipeline.h"
 #include "vtkCompositeDataSet.h"
@@ -72,7 +60,7 @@ int TestSurfaceLIC(int argc, char* argv[])
   std::string vectors;
 
   vtksys::CommandLineArguments arg;
-  arg.StoreUnusedArguments(1);
+  arg.StoreUnusedArguments(true);
   arg.Initialize(argc, argv);
 
   // Fill up accepted arguments.
@@ -85,7 +73,7 @@ int TestSurfaceLIC(int argc, char* argv[])
   arg.AddArgument(
     "--step-size", argT::EQUAL_ARGUMENT, &step_size, "(optional: default 0.4) Step size in pixels");
   arg.AddArgument("--enhanced-lic", argT::EQUAL_ARGUMENT, &enhanced_lic,
-    "(optional: default 1) Enable enhanced algoruthm");
+    "(optional: default 1) Enable enhanced algorithm");
   arg.AddArgument("--color-by-mag", argT::EQUAL_ARGUMENT, &color_by_mag,
     "(optional: default 0) when set compute the magnitude of the vector and color the lic by this");
   arg.AddArgument("--vectors", argT::EQUAL_ARGUMENT, &vectors,
@@ -115,7 +103,7 @@ int TestSurfaceLIC(int argc, char* argv[])
   arg.AddArgument("--noise-gen-seed", argT::EQUAL_ARGUMENT, &noise_gen_seed,
     "(optional: default 1) set the seed to the random number generator");
   arg.AddArgument("--enhance-contrast", argT::EQUAL_ARGUMENT, &enhance_contrast,
-    "(optional: default 0) Nomralize colors after each pass");
+    "(optional: default 0) Normalize colors after each pass");
   arg.AddArgument("--low-lic-contrast-enhancement-factor", argT::EQUAL_ARGUMENT,
     &low_lic_contrast_enhancement_factor,
     "(optional: default 0) lower normalization factor 0 is the min");
@@ -147,14 +135,14 @@ int TestSurfaceLIC(int argc, char* argv[])
   arg.AddArgument("--camera-config", argT::EQUAL_ARGUMENT, &camera_config,
     "(optional: default 1) use a preset camera configuration");
 
-  if (!arg.Parse() || filename == "")
+  if (!arg.Parse() || filename.empty())
   {
     cerr << "Usage: " << endl;
     cerr << arg.GetHelp() << endl;
     return 1;
   }
 
-  if (mask_color_rgb.size() == 0)
+  if (mask_color_rgb.empty())
   {
     // something bright for the default.
     mask_color_rgb.resize(3);
@@ -210,7 +198,7 @@ int TestSurfaceLIC(int argc, char* argv[])
 
   if (!dataObj) // || dataObj->GetNumberOfElements(vtkDataObject::POINT) == 0)
   {
-    cerr << "Error reading file: '" << filename.c_str() << "'" << endl;
+    cerr << "Error reading file: '" << filename << "'" << endl;
     vtkAlgorithm::SetDefaultExecutivePrototype(nullptr);
     return 1;
   }

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageResample.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageResample.h"
 
 #include "vtkAlgorithmOutput.h"
@@ -21,9 +9,12 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+#include <cmath>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageResample);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor: Sets default filter to be identity.
 vtkImageResample::vtkImageResample()
 {
@@ -37,7 +28,7 @@ vtkImageResample::vtkImageResample()
   this->Dimensionality = 3;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResample::SetOutputSpacing(double sx, double sy, double sz)
 {
   const double spacing[3] = { sx, sy, sz };
@@ -64,7 +55,7 @@ void vtkImageResample::SetOutputSpacing(double sx, double sy, double sz)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResample::SetAxisOutputSpacing(int axis, double s)
 {
   if (axis < 0 || axis > 2)
@@ -80,7 +71,7 @@ void vtkImageResample::SetAxisOutputSpacing(int axis, double s)
   this->SetOutputSpacing(spacing);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResample::SetMagnificationFactors(double fx, double fy, double fz)
 {
   const double factors[3] = { fx, fy, fz };
@@ -103,7 +94,7 @@ void vtkImageResample::SetMagnificationFactors(double fx, double fy, double fz)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResample::SetAxisMagnificationFactor(int axis, double factor)
 {
   if (axis < 0 || axis > 2)
@@ -119,7 +110,7 @@ void vtkImageResample::SetAxisMagnificationFactor(int axis, double factor)
   this->SetMagnificationFactors(factors);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkImageResample::GetAxisMagnificationFactor(int axis, vtkInformation* inInfo)
 {
   if (axis < 0 || axis > 2)
@@ -151,7 +142,7 @@ double vtkImageResample::GetAxisMagnificationFactor(int axis, vtkInformation* in
   return this->MagnificationFactors[axis];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Computes any global image information associated with regions.
 int vtkImageResample::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -197,7 +188,7 @@ int vtkImageResample::RequestInformation(vtkInformation* vtkNotUsed(request),
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), ext, 6);
   outInfo->Set(vtkDataObject::SPACING(), spacing, 3);
 
-  return 1;
+  return this->RequestInformationBase(inputVector, outputVector);
 }
 
 void vtkImageResample::PrintSelf(ostream& os, vtkIndent indent)
@@ -208,3 +199,4 @@ void vtkImageResample::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Dimensionality: " << this->Dimensionality << "\n";
   os << indent << "Interpolate: " << (this->GetInterpolate() ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageThreshold.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageThreshold.h"
 
 #include "vtkDataSetAttributes.h"
@@ -22,9 +10,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageThreshold);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor sets default values
 vtkImageThreshold::vtkImageThreshold()
 {
@@ -38,7 +27,7 @@ vtkImageThreshold::vtkImageThreshold()
   this->OutputScalarType = -1; // invalid; output same as input
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageThreshold::SetInValue(double val)
 {
   if (val != this->InValue || this->ReplaceIn != 1)
@@ -49,7 +38,7 @@ void vtkImageThreshold::SetInValue(double val)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageThreshold::SetOutValue(double val)
 {
   if (val != this->OutValue || this->ReplaceOut != 1)
@@ -60,7 +49,7 @@ void vtkImageThreshold::SetOutValue(double val)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values greater than or equal to the value match.
 void vtkImageThreshold::ThresholdByUpper(double thresh)
 {
@@ -72,7 +61,7 @@ void vtkImageThreshold::ThresholdByUpper(double thresh)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values less than or equal to the value match.
 void vtkImageThreshold::ThresholdByLower(double thresh)
 {
@@ -84,7 +73,7 @@ void vtkImageThreshold::ThresholdByLower(double thresh)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values in a range (inclusive) match
 void vtkImageThreshold::ThresholdBetween(double lower, double upper)
 {
@@ -96,7 +85,7 @@ void vtkImageThreshold::ThresholdBetween(double lower, double upper)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageThreshold::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -123,7 +112,7 @@ int vtkImageThreshold::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class IT, class OT>
 void vtkImageThresholdExecute(vtkImageThreshold* self, vtkImageData* inData, vtkImageData* outData,
@@ -140,13 +129,13 @@ void vtkImageThresholdExecute(vtkImageThreshold* self, vtkImageData* inData, vtk
   IT temp;
 
   // Make sure the thresholds are valid for the input scalar range
-  if (static_cast<double>(self->GetLowerThreshold()) < inData->GetScalarTypeMin())
+  if (self->GetLowerThreshold() < inData->GetScalarTypeMin())
   {
     lowerThreshold = static_cast<IT>(inData->GetScalarTypeMin());
   }
   else
   {
-    if (static_cast<double>(self->GetLowerThreshold()) > inData->GetScalarTypeMax())
+    if (self->GetLowerThreshold() > inData->GetScalarTypeMax())
     {
       lowerThreshold = static_cast<IT>(inData->GetScalarTypeMax());
     }
@@ -155,13 +144,13 @@ void vtkImageThresholdExecute(vtkImageThreshold* self, vtkImageData* inData, vtk
       lowerThreshold = static_cast<IT>(self->GetLowerThreshold());
     }
   }
-  if (static_cast<double>(self->GetUpperThreshold()) > inData->GetScalarTypeMax())
+  if (self->GetUpperThreshold() > inData->GetScalarTypeMax())
   {
     upperThreshold = static_cast<IT>(inData->GetScalarTypeMax());
   }
   else
   {
-    if (static_cast<double>(self->GetUpperThreshold()) < inData->GetScalarTypeMin())
+    if (self->GetUpperThreshold() < inData->GetScalarTypeMin())
     {
       upperThreshold = static_cast<IT>(inData->GetScalarTypeMin());
     }
@@ -172,13 +161,13 @@ void vtkImageThresholdExecute(vtkImageThreshold* self, vtkImageData* inData, vtk
   }
 
   // Make sure the replacement values are within the output scalar range
-  if (static_cast<double>(self->GetInValue()) < outData->GetScalarTypeMin())
+  if (self->GetInValue() < outData->GetScalarTypeMin())
   {
     inValue = static_cast<OT>(outData->GetScalarTypeMin());
   }
   else
   {
-    if (static_cast<double>(self->GetInValue()) > outData->GetScalarTypeMax())
+    if (self->GetInValue() > outData->GetScalarTypeMax())
     {
       inValue = static_cast<OT>(outData->GetScalarTypeMax());
     }
@@ -187,13 +176,13 @@ void vtkImageThresholdExecute(vtkImageThreshold* self, vtkImageData* inData, vtk
       inValue = static_cast<OT>(self->GetInValue());
     }
   }
-  if (static_cast<double>(self->GetOutValue()) > outData->GetScalarTypeMax())
+  if (self->GetOutValue() > outData->GetScalarTypeMax())
   {
     outValue = static_cast<OT>(outData->GetScalarTypeMax());
   }
   else
   {
-    if (static_cast<double>(self->GetOutValue()) < outData->GetScalarTypeMin())
+    if (self->GetOutValue() < outData->GetScalarTypeMin())
     {
       outValue = static_cast<OT>(outData->GetScalarTypeMin());
     }
@@ -245,7 +234,7 @@ void vtkImageThresholdExecute(vtkImageThreshold* self, vtkImageData* inData, vtk
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkImageThresholdExecute1(
   vtkImageThreshold* self, vtkImageData* inData, vtkImageData* outData, int outExt[6], int id, T*)
@@ -260,7 +249,7 @@ void vtkImageThresholdExecute1(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output data, and executes the filter
 // algorithm to fill the output from the input.
 // It just executes a switch statement to call the correct function for
@@ -279,7 +268,7 @@ void vtkImageThreshold::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageThreshold::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -292,3 +281,4 @@ void vtkImageThreshold::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ReplaceIn: " << this->ReplaceIn << "\n";
   os << indent << "ReplaceOut: " << this->ReplaceOut << "\n";
 }
+VTK_ABI_NAMESPACE_END

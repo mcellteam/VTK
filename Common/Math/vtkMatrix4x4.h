@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMatrix4x4.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMatrix4x4
  * @brief   represent and manipulate 4x4 transformation matrices
@@ -31,8 +19,10 @@
 
 #include "vtkCommonMathModule.h" // For export macro
 #include "vtkObject.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
-class VTKCOMMONMATH_EXPORT vtkMatrix4x4 : public vtkObject
+VTK_ABI_NAMESPACE_BEGIN
+class VTKCOMMONMATH_EXPORT VTK_MARSHALAUTO vtkMatrix4x4 : public vtkObject
 {
 public:
   /// The internal data is public for historical reasons. Do not use!
@@ -77,7 +67,7 @@ public:
    */
   void DeepCopy(const double elements[16])
   {
-    this->DeepCopy(*this->Element, elements);
+    vtkMatrix4x4::DeepCopy(*this->Element, elements);
     this->Modified();
   }
 
@@ -129,6 +119,22 @@ public:
   void Transpose() { vtkMatrix4x4::Transpose(this, this); }
   static void Transpose(const double inElements[16], double outElements[16]);
 
+  ///@{
+  /**
+   * Construct a matrix from a rotation
+   */
+  static void MatrixFromRotation(double angle, double x, double y, double z, vtkMatrix4x4* result);
+  static void MatrixFromRotation(double angle, double x, double y, double z, double matrix[16]);
+  ///@}
+
+  /**
+   * Given an orientation and position this function will fill in a matrix
+   * representing the transformation from the pose to whatever space the pose was
+   * defined in. For example if the position and orientation are in world
+   * coordinates then this method would set the matrix to be PoseToWorld
+   */
+  static void PoseToMatrix(double pos[3], double ori[4], vtkMatrix4x4* mat);
+
   /**
    * Multiply a homogeneous coordinate by this matrix, i.e. out = A*in.
    * The in[4] and out[4] can be the same array.
@@ -164,7 +170,7 @@ public:
     return this->DoublePoint;
   }
 
-  //@{
+  ///@{
   /**
    * Multiplies matrices a and b and stores the result in c.
    */
@@ -172,7 +178,7 @@ public:
   static void Multiply4x4(const double a[16], const double b[16], double c[16]);
   static void Multiply4x4(const double a[16], const double b[16], float c[16]);
   static void MultiplyAndTranspose4x4(const double a[16], const double b[16], float c[16]);
-  //@}
+  ///@}
 
   /**
    * Compute adjoint of the matrix and put it into out.
@@ -202,16 +208,21 @@ public:
   /**
    * Returns the raw double array holding the matrix.
    */
-  double* GetData() { return *this->Element; }
+  double* GetData() VTK_SIZEHINT(16) { return *this->Element; }
 
   /**
    * Returns the raw double array holding the matrix.
    */
   const double* GetData() const { return *this->Element; }
 
+  /**
+   * Copies data into the matrix.
+   */
+  void SetData(const double data[16]) { vtkMatrix4x4::DeepCopy(data); }
+
 protected:
   vtkMatrix4x4() { vtkMatrix4x4::Identity(*this->Element); }
-  ~vtkMatrix4x4() override {}
+  ~vtkMatrix4x4() override = default;
 
   float FloatPoint[4];
   double DoublePoint[4];
@@ -297,4 +308,5 @@ inline bool vtkMatrix4x4::IsIdentity()
     M[12] == 0.0 && M[13] == 0.0 && M[14] == 0.0 && M[15] == 1.0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

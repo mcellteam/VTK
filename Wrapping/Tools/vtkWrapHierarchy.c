@@ -1,24 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWrapHierarchy.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright (c) 2010 David Gobbi.
-
-  Contributed to the VisualizationToolkit by the author in June 2010
-  under the terms of the Visualization Toolkit 2008 copyright.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2010 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  The vtkWrapHierarchy program builds a text file that describes the
  class hierarchy.
@@ -42,6 +24,7 @@
 #include "vtkParseExtras.h"
 #include "vtkParseMain.h"
 #include "vtkParsePreprocess.h"
+#include "vtkParseSystem.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,7 +38,7 @@
 /**
  * Helper to append a text line to an array of lines
  */
-static char** append_unique_line(char** lines, char* line, size_t* np)
+static char** append_unique_line(char** lines, const char* line, size_t* np)
 {
   size_t l, n, m;
 
@@ -128,7 +111,7 @@ static char* append_scope_to_line(char* line, size_t* m, size_t* maxlen, const c
 static char* append_template_to_line(
   char* line, size_t* m, size_t* maxlen, TemplateInfo* template_args)
 {
-  ValueInfo* arg;
+  const ValueInfo* arg;
   int j;
 
   line = append_to_line(line, "<", m, maxlen);
@@ -193,7 +176,7 @@ static char* append_class_to_line(char* line, size_t* m, size_t* maxlen, ClassIn
 /**
  * Append enum info
  */
-static char* append_enum_to_line(char* line, size_t* m, size_t* maxlen, EnumInfo* enum_info)
+static char* append_enum_to_line(char* line, size_t* m, size_t* maxlen, const EnumInfo* enum_info)
 {
   line = append_to_line(line, enum_info->Name, m, maxlen);
   line = append_to_line(line, " : enum ", m, maxlen);
@@ -225,7 +208,8 @@ static char* append_trailer(char* line, size_t* m, size_t* maxlen, const char* h
 /**
  * Append typedef info
  */
-static char* append_typedef_to_line(char* line, size_t* m, size_t* maxlen, ValueInfo* typedef_info)
+static char* append_typedef_to_line(
+  char* line, size_t* m, size_t* maxlen, const ValueInfo* typedef_info)
 {
   unsigned int type;
   int ndims;
@@ -364,12 +348,17 @@ static char** append_class_contents(char** lines, size_t* np, ClassInfo* data, c
 
       line = append_scope_to_line(line, &m, &maxlen, scope);
       line = append_class_to_line(line, &m, &maxlen, class_info);
+      /* force exclusion of nested classes, for now */
       tmpflags = "WRAPEXCLUDE";
     }
     else if (data->Items[i].Type == VTK_ENUM_INFO)
     {
       line = append_scope_to_line(line, &m, &maxlen, scope);
       line = append_enum_to_line(line, &m, &maxlen, data->Enums[data->Items[i].Index]);
+      if (data->Enums[data->Items[i].Index]->IsExcluded || new_scope)
+      {
+        tmpflags = "WRAPEXCLUDE";
+      }
     }
     else if (data->Items[i].Type == VTK_TYPEDEF_INFO)
     {
@@ -388,7 +377,7 @@ static char** append_class_contents(char** lines, size_t* np, ClassInfo* data, c
     /* append the line to the file */
     lines = append_unique_line(lines, line, np);
 
-    /* for classes, add all typed defined within the class */
+    /* for classes, add all types defined within the class */
     if ((data->Items[i].Type == VTK_CLASS_INFO || data->Items[i].Type == VTK_STRUCT_INFO) &&
       data->Classes[data->Items[i].Index]->Name)
     {
@@ -457,7 +446,7 @@ static char** append_namespace_contents(char** lines, size_t* np, NamespaceInfo*
     if (data->Items[i].Type == VTK_CLASS_INFO || data->Items[i].Type == VTK_STRUCT_INFO)
     {
       ClassInfo* class_info = data->Classes[data->Items[i].Index];
-      if (class_info->IsExcluded)
+      if (class_info->IsExcluded || scope)
       {
         tmpflags = "WRAPEXCLUDE";
       }
@@ -467,8 +456,8 @@ static char** append_namespace_contents(char** lines, size_t* np, NamespaceInfo*
     }
     else if (data->Items[i].Type == VTK_ENUM_INFO)
     {
-      EnumInfo* enum_info = data->Enums[data->Items[i].Index];
-      if (enum_info->IsExcluded)
+      const EnumInfo* enum_info = data->Enums[data->Items[i].Index];
+      if (enum_info->IsExcluded || new_scope)
       {
         tmpflags = "WRAPEXCLUDE";
       }
@@ -507,8 +496,8 @@ static char** append_namespace_contents(char** lines, size_t* np, NamespaceInfo*
     /* for namespaces, add all types in the namespace */
     if (data->Items[i].Type == VTK_NAMESPACE_INFO && data->Namespaces[data->Items[i].Index]->Name)
     {
-      lines = append_namespace_contents(lines, np, data->Namespaces[data->Items[i].Index], scope,
-        header_file, module_name, "WRAPEXCLUDE");
+      lines = append_namespace_contents(
+        lines, np, data->Namespaces[data->Items[i].Index], scope, header_file, module_name, flags);
     }
   }
 
@@ -659,7 +648,7 @@ static char** vtkWrapHierarchy_ReadHierarchyFile(FILE* fp, char** lines)
 /**
  * Compare a file to "lines", return 0 if they are different
  */
-static int vtkWrapHierarchy_CompareHierarchyFile(FILE* fp, char* lines[])
+static int vtkWrapHierarchy_CompareHierarchyFile(FILE* fp, char* const lines[])
 {
   unsigned char* matched;
   char* line;
@@ -750,7 +739,7 @@ static int vtkWrapHierarchy_CompareHierarchyFile(FILE* fp, char* lines[])
 /**
  * Write "lines" to a hierarchy file
  */
-static int vtkWrapHierarchy_WriteHierarchyFile(FILE* fp, char* lines[])
+static int vtkWrapHierarchy_WriteHierarchyFile(FILE* fp, char* const lines[])
 {
   size_t i;
 
@@ -773,7 +762,7 @@ static char** vtkWrapHierarchy_TryParseHeaderFile(
 {
   FILE* input_file;
 
-  input_file = fopen(file_name, "r");
+  input_file = vtkParse_FileOpen(file_name, "r");
 
   if (!input_file)
   {
@@ -800,7 +789,7 @@ static char** vtkWrapHierarchy_TryReadHierarchyFile(const char* file_name, char*
 {
   FILE* input_file;
 
-  input_file = fopen(file_name, "r");
+  input_file = vtkParse_FileOpen(file_name, "r");
   if (!input_file)
   {
     fprintf(stderr, "vtkWrapHierarchy: couldn't open file %s\n", file_name);
@@ -822,12 +811,12 @@ static char** vtkWrapHierarchy_TryReadHierarchyFile(const char* file_name, char*
 /**
  * Try to write a file, print error and exit if fail
  */
-static int vtkWrapHierarchy_TryWriteHierarchyFile(const char* file_name, char* lines[])
+static int vtkWrapHierarchy_TryWriteHierarchyFile(const char* file_name, char* const lines[])
 {
   FILE* output_file;
   int matched = 0;
 
-  output_file = fopen(file_name, "r");
+  output_file = vtkParse_FileOpenNoDependency(file_name, "r");
   if (output_file && vtkWrapHierarchy_CompareHierarchyFile(output_file, lines))
   {
     matched = 1;
@@ -840,7 +829,7 @@ static int vtkWrapHierarchy_TryWriteHierarchyFile(const char* file_name, char* l
   if (!matched)
   {
     int tries = 1;
-    output_file = fopen(file_name, "w");
+    output_file = vtkParse_FileOpen(file_name, "w");
     while (!output_file && tries < 5)
     {
       /* There are two CMAKE_CUSTOM_COMMANDS for vtkWrapHierarchy,
@@ -851,7 +840,7 @@ static int vtkWrapHierarchy_TryWriteHierarchyFile(const char* file_name, char* l
 #else
       sleep(1);
 #endif
-      output_file = fopen(file_name, "r+");
+      output_file = vtkParse_FileOpenNoDependency(file_name, "r+");
       if (output_file && vtkWrapHierarchy_CompareHierarchyFile(output_file, lines))
       {
         /* if the contents match, no need to write it */
@@ -862,19 +851,19 @@ static int vtkWrapHierarchy_TryWriteHierarchyFile(const char* file_name, char* l
       {
         /* close and open in order to truncate the file */
         fclose(output_file);
-        output_file = fopen(file_name, "w");
+        output_file = vtkParse_FileOpen(file_name, "w");
       }
     }
     if (!output_file)
     {
       fprintf(stderr, "vtkWrapHierarchy: tried %i times to write %s\n", tries, file_name);
-      exit(1);
+      return 1;
     }
     if (!vtkWrapHierarchy_WriteHierarchyFile(output_file, lines))
     {
       fclose(output_file);
       fprintf(stderr, "vtkWrapHierarchy: error writing file %s\n", file_name);
-      exit(1);
+      return 1;
     }
     fclose(output_file);
   }
@@ -887,10 +876,11 @@ static int string_compare(const void* vp1, const void* vp2)
   return strcmp(*(const char**)vp1, *(const char**)vp2);
 }
 
-int main(int argc, char* argv[])
+int VTK_PARSE_MAIN(int argc, char* argv[])
 {
-  OptionInfo* options;
+  const OptionInfo* options;
   int i;
+  int retValue = 0;
   size_t j, n;
   char** lines = 0;
   char** files = 0;
@@ -901,14 +891,14 @@ int main(int argc, char* argv[])
   vtkParse_DefineMacro("__VTK_WRAP_HIERARCHY__", 0);
 
   /* parse command-line options */
-  StringCache* string_cache = vtkParse_MainMulti(argc, argv);
+  vtkParse_MainMulti(argc, argv);
   options = vtkParse_GetCommandLineOptions();
 
   /* make sure than an output file was given on the command line */
   if (options->OutputFileName == NULL)
   {
     fprintf(stderr, "No output file was specified\n");
-    exit(1);
+    return vtkParse_FinalizeMain(1);
   }
 
   /* read the data file */
@@ -955,7 +945,10 @@ int main(int argc, char* argv[])
   qsort(lines, n, sizeof(char*), &string_compare);
 
   /* write the file, if it has changed */
-  vtkWrapHierarchy_TryWriteHierarchyFile(options->OutputFileName, lines);
+  if (vtkWrapHierarchy_TryWriteHierarchyFile(options->OutputFileName, lines))
+  {
+    retValue = 1;
+  }
 
   for (j = 0; j < n; j++)
   {
@@ -967,9 +960,8 @@ int main(int argc, char* argv[])
     free(files[j]);
   }
 
-  vtkParse_FreeStringCache(string_cache);
-  free(string_cache);
   free(files);
   free(lines);
-  return 0;
+
+  return vtkParse_FinalizeMain(retValue);
 }

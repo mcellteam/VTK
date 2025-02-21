@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOSPRayPass
  * @brief   a render pass that uses OSPRay instead of GL
@@ -42,6 +30,7 @@
 
 #include <string> // for std::string
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCameraPass;
 class vtkLightsPass;
 class vtkOSPRayPassInternals;
@@ -61,29 +50,34 @@ public:
   /**
    * Perform rendering according to a render state s.
    */
-  virtual void Render(const vtkRenderState* s) override;
+  void Render(const vtkRenderState* s) override;
 
-  //@{
+  ///@{
   /**
    * Tells the pass what it will render.
    */
   void SetSceneGraph(vtkOSPRayRendererNode*);
   vtkGetObjectMacro(SceneGraph, vtkOSPRayRendererNode);
-  //@}
+  ///@}
 
   /**
    * Called by the internals of this class
    */
   virtual void RenderInternal(const vtkRenderState* s);
 
-  //@{
+  ///@{
   /**
    * Wrapper around ospray's init and shutdown that protect
    * with a reference count.
    */
-  //@}
+  ///@}
   static void RTInit();
   static void RTShutdown();
+
+  /**
+   * A run time query to see if OSPRay can possibly work.
+   */
+  static bool IsSupported();
 
   /**
    * A run time query to see if a particular backend is available.
@@ -119,4 +113,5 @@ private:
   static int RTDeviceRefCount;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

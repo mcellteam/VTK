@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPipelineGraphSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPipelineGraphSource
  * @brief   a graph constructed from a VTK pipeline
@@ -24,8 +12,9 @@
 
 #include "vtkDirectedGraphAlgorithm.h"
 #include "vtkInfovisCoreModule.h" // For export macro
-#include "vtkStdString.h"
+#include "vtkStdString.h"         // for vtkStdString
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCollection;
 
 class VTKINFOVISCORE_EXPORT vtkPipelineGraphSource : public vtkDirectedGraphAlgorithm
@@ -35,8 +24,8 @@ public:
   vtkTypeMacro(vtkPipelineGraphSource, vtkDirectedGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  void AddSink(vtkObject* object);
-  void RemoveSink(vtkObject* object);
+  void AddSink(vtkObject* sink);
+  void RemoveSink(vtkObject* sink);
 
   /**
    * Generates a GraphViz DOT file that describes the VTK pipeline
@@ -64,6 +53,5 @@ private:
   void operator=(const vtkPipelineGraphSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkPipelineGraphSource.h

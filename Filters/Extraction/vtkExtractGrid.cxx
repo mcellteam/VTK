@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractGrid.h"
 
 #include "vtkBoundingBox.h"
@@ -19,11 +7,13 @@
 #include "vtkExtractStructuredGridHelper.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkLogger.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractGrid);
 
 // Construct object to extract all of the input data.
@@ -53,10 +43,8 @@ int vtkExtractGrid::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
-  int wholeExtent[6], outWholeExt[6];
-
+  int wholeExtent[6];
   inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), wholeExtent);
-
   this->Internal->Initialize(
     this->VOI, wholeExtent, this->SampleRate, (this->IncludeBoundary == 1));
 
@@ -66,28 +54,34 @@ int vtkExtractGrid::RequestInformation(vtkInformation* vtkNotUsed(request),
     return 0;
   }
 
+  int outWholeExt[6];
   this->Internal->GetOutputWholeExtent(outWholeExt);
-
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), outWholeExt, 6);
   return 1;
 }
 
+//------------------------------------------------------------------------------
 int vtkExtractGrid::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
+  // get the info objects
+  auto inInfo = inputVector[0]->GetInformationObject(0);
+
+  // Re-init helper to full whole extent. This is needed since `RequestData`
+  // modifies the helper to limit to the input extents rather than whole
+  // extents.
+  int wholeExtent[6];
+  inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), wholeExtent);
+  this->Internal->Initialize(
+    this->VOI, wholeExtent, this->SampleRate, (this->IncludeBoundary == 1));
   if (!this->Internal->IsValid())
   {
     return 0;
   }
 
-  int i;
-
-  // get the info objects
-  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
-
   bool emptyExtent = false;
   int uExt[6];
-  for (i = 0; i < 3; i++)
+  for (int i = 0; i < 3; i++)
   {
     if (this->Internal->GetSize(i) < 1)
     {
@@ -98,6 +92,7 @@ int vtkExtractGrid::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
     }
   }
 
+  vtkLogScopeF(TRACE, "RequestUpdateExtent");
   if (!emptyExtent)
   {
     // Find input update extent based on requested output
@@ -105,26 +100,33 @@ int vtkExtractGrid::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
     int oUExt[6];
     outputVector->GetInformationObject(0)->Get(
       vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), oUExt);
-    int oWExt[6]; // For parallel parititon this will be different.
+    vtkLogF(TRACE, "oUExt: %d,%d   %d,%d  %d,%d", oUExt[0], oUExt[1], oUExt[2], oUExt[3], oUExt[4],
+      oUExt[5]);
+
+    int oWExt[6]; // For parallel partition this will be different.
     this->Internal->GetOutputWholeExtent(oWExt);
-    for (i = 0; i < 3; i++)
+    vtkLogF(TRACE, "oWExt: %d,%d   %d,%d  %d,%d", oWExt[0], oWExt[1], oWExt[2], oWExt[3], oWExt[4],
+      oWExt[5]);
+    for (int i = 0; i < 3; i++)
     {
       int idx = oUExt[2 * i] - oWExt[2 * i]; // Extent value to index
-      if (idx < 0 || idx >= (int)this->Internal->GetSize(i))
+      if (idx < 0 || idx >= this->Internal->GetSize(i))
       {
-        vtkWarningMacro("Requested extent outside whole extent.");
+        vtkErrorMacro("Requested extent outside whole extent.");
         idx = 0;
       }
       uExt[2 * i] = this->Internal->GetMappedExtentValueFromIndex(i, idx);
       int jdx = oUExt[2 * i + 1] - oWExt[2 * i]; // Extent value to index
-      if (jdx < idx || jdx >= (int)this->Internal->GetSize(i))
+      if (jdx < idx || jdx >= this->Internal->GetSize(i))
       {
-        vtkWarningMacro("Requested extent outside whole extent.");
+        vtkErrorMacro("Requested extent outside whole extent.");
         jdx = 0;
       }
       uExt[2 * i + 1] = this->Internal->GetMappedExtentValueFromIndex(i, jdx);
     }
   }
+  vtkLogF(
+    TRACE, "uExt: %d,%d   %d,%d  %d,%d", uExt[0], uExt[1], uExt[2], uExt[3], uExt[4], uExt[5]);
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), uExt, 6);
   // We can handle anything.
   inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 0);
@@ -200,6 +202,8 @@ bool vtkExtractGrid::RequestDataImpl(
 
   this->Internal->CopyCellData(inExt, outExt, cd, outCD);
 
+  this->CheckAbort();
+
   return true;
 }
 
@@ -217,3 +221,4 @@ void vtkExtractGrid::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Include Boundary: " << (this->IncludeBoundary ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

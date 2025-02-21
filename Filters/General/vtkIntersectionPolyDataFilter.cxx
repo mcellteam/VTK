@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkIntersectionPolyDataFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkIntersectionPolyDataFilter.h"
 
 #include "vtkCellArray.h"
@@ -43,8 +31,9 @@
 #include <list>
 #include <map>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper typedefs and data structures.
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -65,7 +54,7 @@ struct simPolygon
 typedef std::multimap<vtkIdType, vtkIdType> IntersectionMapType;
 typedef IntersectionMapType::iterator IntersectionMapIteratorType;
 
-typedef struct _CellEdgeLine
+typedef struct
 {
   vtkIdType CellId;
   vtkIdType EdgeId;
@@ -75,9 +64,9 @@ typedef struct _CellEdgeLine
 typedef std::multimap<vtkIdType, CellEdgeLineType> PointEdgeMapType;
 typedef PointEdgeMapType::iterator PointEdgeMapIteratorType;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Private implementation to hide STL.
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkIntersectionPolyDataFilter::Impl
 {
 public:
@@ -184,7 +173,7 @@ protected:
   void operator=(const Impl&) = delete;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIntersectionPolyDataFilter::Impl::Impl()
   : OBBTree1(nullptr)
   , IntersectionLines(nullptr)
@@ -206,7 +195,7 @@ vtkIntersectionPolyDataFilter::Impl::Impl()
   this->RelativeSubtriangleArea = 1e-4;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIntersectionPolyDataFilter::Impl::~Impl()
 {
   for (int i = 0; i < 2; i++)
@@ -219,7 +208,7 @@ vtkIntersectionPolyDataFilter::Impl::~Impl()
   this->SplittingPD->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkIntersectionPolyDataFilter::Impl ::FindTriangleIntersections(
   vtkOBBNode* node0, vtkOBBNode* node1, vtkMatrix4x4* transform, void* arg)
 {
@@ -462,7 +451,7 @@ int vtkIntersectionPolyDataFilter::Impl ::FindTriangleIntersections(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkIntersectionPolyDataFilter::Impl ::SplitMesh(
   int inputIndex, vtkPolyData* output, vtkPolyData* intersectionLines)
 {
@@ -608,9 +597,8 @@ int vtkIntersectionPolyDataFilter::Impl ::SplitMesh(
 
         vtkIdType npts;
         const vtkIdType* ptIds;
-        vtkIdType subCellId;
         splitCells->InitTraversal();
-        for (subCellId = 0; splitCells->GetNextCell(npts, ptIds); subCellId++)
+        while (splitCells->GetNextCell(npts, ptIds))
         {
           // Check for reversed cells. I'm not sure why, but in some
           // cases, cells are reversed.
@@ -879,7 +867,7 @@ vtkCellArray* vtkIntersectionPolyDataFilter::Impl ::SplitCell(vtkPolyData* input
     // If we have more than one point mapping back to the same point
     // in the input mesh, just use the first one. This will give a
     // preference for using cell points when an intersection line shares
-    // a point with a a cell and prevent introducing accidental holes
+    // a point with a cell and prevent introducing accidental holes
     // in the mesh.
     if (reverseIdMap.find(iter->second) == reverseIdMap.end())
     {
@@ -1050,7 +1038,9 @@ vtkCellArray* vtkIntersectionPolyDataFilter::Impl ::SplitCell(vtkPolyData* input
       int success = boundaryPoly->BoundedTriangulate(idList, this->RelativeSubtriangleArea);
 
       vtkSmartPointer<vtkDelaunay2D> del2D = vtkSmartPointer<vtkDelaunay2D>::New();
+      del2D->SetContainerAlgorithm(this->ParentFilter);
       vtkSmartPointer<vtkTriangleFilter> triangulator = vtkSmartPointer<vtkTriangleFilter>::New();
+      triangulator->SetContainerAlgorithm(this->ParentFilter);
 
       vtkSmartPointer<vtkCellArray> triangulatedPolyCells = vtkSmartPointer<vtkCellArray>::New();
       if (success)
@@ -1223,7 +1213,7 @@ vtkCellArray* vtkIntersectionPolyDataFilter::Impl ::SplitCell(vtkPolyData* input
   return splitCells;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkIntersectionPolyDataFilter::Impl ::AddToPointEdgeMap(int index, vtkIdType ptId, double x[3],
   vtkPolyData* mesh, vtkIdType cellId, vtkIdType edgeId, vtkIdType lineId,
   const vtkIdType triPtIds[3])
@@ -1263,7 +1253,7 @@ int vtkIntersectionPolyDataFilter::Impl ::AddToPointEdgeMap(int index, vtkIdType
   return value;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Add new cells to the mapping data array attached to the intersection lines
 void vtkIntersectionPolyDataFilter::Impl::AddToNewCellMap(
@@ -1346,7 +1336,7 @@ int vtkIntersectionPolyDataFilter::Impl ::GetLoops(vtkPolyData* pd, std::vector<
   for (vtkIdType ptId = 0; ptId < numPoints; ptId++)
   {
     // if the point hasn't already been touch and put in a loop
-    if (ptBool[ptId] == false)
+    if (!ptBool[ptId])
     {
       nextPt.id = ptId;
       pd->GetPoint(nextPt.id, nextPt.pt);
@@ -1370,7 +1360,7 @@ int vtkIntersectionPolyDataFilter::Impl ::GetLoops(vtkPolyData* pd, std::vector<
   // Check now for untouched lines, possible to still have
   for (vtkIdType lineId = 0; lineId < pd->GetNumberOfCells(); lineId++)
   {
-    if (lineBool[lineId] == false)
+    if (!lineBool[lineId])
     {
       vtkDebugWithObjectMacro(this->ParentFilter, << "LINE FALSE: Find extra loop/s");
       pd->GetCellPoints(lineId, cellPoints);
@@ -1395,7 +1385,7 @@ int vtkIntersectionPolyDataFilter::Impl ::GetLoops(vtkPolyData* pd, std::vector<
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkIntersectionPolyDataFilter::Impl ::GetSingleLoop(vtkPolyData* pd, simPolygon* loop,
   vtkIdType nextCell, std::vector<bool>& interPtBool, std::vector<bool>& lineBool)
@@ -1523,7 +1513,7 @@ int vtkIntersectionPolyDataFilter::Impl ::GetSingleLoop(vtkPolyData* pd, simPoly
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkIntersectionPolyDataFilter::Impl ::FollowLoopOrientation(vtkPolyData* pd, simPolygon* loop,
   vtkIdType* nextCell, vtkIdType nextPt, vtkIdType prevPt, vtkIdList* pointCells)
@@ -1602,7 +1592,7 @@ int vtkIntersectionPolyDataFilter::Impl ::FollowLoopOrientation(vtkPolyData* pd,
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkIntersectionPolyDataFilter::Impl ::SetLoopOrientation(vtkPolyData* pd, simPolygon* loop,
   vtkIdType* nextCell, vtkIdType nextPt, vtkIdType prevPt, vtkIdList* pointCells)
@@ -1666,7 +1656,7 @@ void vtkIntersectionPolyDataFilter::Impl ::SetLoopOrientation(vtkPolyData* pd, s
   loop->orientation = this->GetLoopOrientation(pd, *nextCell, prevPt, nextPt);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkIntersectionPolyDataFilter::Impl::GetLoopOrientation(
   vtkPolyData* pd, vtkIdType cell, vtkIdType ptId1, vtkIdType ptId2)
@@ -1758,7 +1748,7 @@ int vtkIntersectionPolyDataFilter::Impl::GetLoopOrientation(
   return orientation;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkIntersectionPolyDataFilter::Impl ::Orient(
   vtkPolyData* pd, vtkTransform* transform, vtkPolyData* boundary, vtkPolygon* boundarypoly)
@@ -1809,7 +1799,7 @@ void vtkIntersectionPolyDataFilter::Impl ::Orient(
   boundary->SetPolys(cellarray);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Check to make sure the line is unique
 int vtkIntersectionPolyDataFilter::Impl::CheckLine(
@@ -1895,10 +1885,10 @@ int vtkIntersectionPolyDataFilter::Impl::GetTransform(vtkTransform* transform, v
   return zaxisdotsign;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkIntersectionPolyDataFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIntersectionPolyDataFilter::vtkIntersectionPolyDataFilter()
   : SplitFirstOutput(1)
   , SplitSecondOutput(1)
@@ -1917,10 +1907,10 @@ vtkIntersectionPolyDataFilter::vtkIntersectionPolyDataFilter()
   this->RelativeSubtriangleArea = 1e-4;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIntersectionPolyDataFilter::~vtkIntersectionPolyDataFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkIntersectionPolyDataFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1937,7 +1927,7 @@ void vtkIntersectionPolyDataFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "RelativeSubtriangleArea: " << this->RelativeSubtriangleArea << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkIntersectionPolyDataFilter::TriangleTriangleIntersection(double p1[3], double q1[3],
   double r1[3], double p2[3], double q2[3], double r2[3], int& coplanar, double pt1[3],
   double pt2[3], double surfaceid[2], double tolerance)
@@ -2235,7 +2225,7 @@ void vtkIntersectionPolyDataFilter::CleanAndCheckInput(vtkPolyData* pd, double t
   normaler->GetOutput()->GetCellData()->GetNormals("Normals")->GetTuple(0, arrayNormal);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -2292,6 +2282,11 @@ int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(reques
   obbTree0->AutomaticOn();
   obbTree0->BuildLocator();
 
+  if (this->CheckAbort())
+  {
+    return 1;
+  }
+
   vtkSmartPointer<vtkOBBTree> obbTree1 = vtkSmartPointer<vtkOBBTree>::New();
   obbTree1->SetDataSet(mesh1);
   obbTree1->SetNumberOfCellsPerNode(10);
@@ -2299,6 +2294,11 @@ int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(reques
   obbTree1->SetTolerance(this->Tolerance);
   obbTree1->AutomaticOn();
   obbTree1->BuildLocator();
+
+  if (this->CheckAbort())
+  {
+    return 1;
+  }
 
   // Set up the structure for determining exact triangle-triangle
   // intersections.
@@ -2359,9 +2359,15 @@ int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(reques
   // Set up the point merger for insertion of points into the intersection
   // lines. Tolerance is set to 1e-6
   vtkSmartPointer<vtkPointLocator> pointMerger = vtkSmartPointer<vtkPointLocator>::New();
-  pointMerger->SetTolerance(sqrt((double)2.0) * this->Tolerance);
+  pointMerger->SetTolerance(sqrt(2.0) * this->Tolerance);
   pointMerger->InitPointInsertion(outputIntersection->GetPoints(), bounds0);
   impl->PointMerger = pointMerger;
+
+  if (this->CheckAbort())
+  {
+    delete impl;
+    return 1;
+  }
 
   // This performs the triangle intersection search
   obbTree0->IntersectWithOBBTree(
@@ -2389,6 +2395,7 @@ int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(reques
   lineCleaner->SetInputData(outputIntersection);
   lineCleaner->ToleranceIsAbsoluteOn();
   lineCleaner->SetAbsoluteTolerance(this->Tolerance);
+  lineCleaner->SetContainerAlgorithm(this);
   lineCleaner->Update();
   outputIntersection->DeepCopy(lineCleaner->GetOutput());
   vtkSmartPointer<vtkPointLocator> linePtMapper = vtkSmartPointer<vtkPointLocator>::New();
@@ -2405,6 +2412,12 @@ int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(reques
   vtkDebugMacro(<< "LINEPTSAFTER " << outputIntersection->GetNumberOfPoints());
   this->NumberOfIntersectionPoints = outputIntersection->GetNumberOfPoints();
   this->NumberOfIntersectionLines = outputIntersection->GetNumberOfLines();
+  if (this->CheckAbort())
+  {
+    delete impl;
+    return 1;
+  }
+
   if (this->NumberOfIntersectionPoints == 0 || this->NumberOfIntersectionLines == 0)
   {
     vtkGenericWarningMacro(<< "No Intersection between objects ");
@@ -2414,6 +2427,12 @@ int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(reques
     impl->PointCellIds[1]->Delete();
     impl->SurfaceId->Delete();
 
+    delete impl;
+    return 1;
+  }
+
+  if (this->CheckAbort())
+  {
     delete impl;
     return 1;
   }
@@ -2458,6 +2477,12 @@ int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(reques
   else
   {
     outputPolyData0->ShallowCopy(mesh0);
+  }
+
+  if (this->CheckAbort())
+  {
+    delete impl;
+    return 1;
   }
 
   // Split the second output if desired
@@ -2519,7 +2544,7 @@ int vtkIntersectionPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkIntersectionPolyDataFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -2538,4 +2563,5 @@ int vtkIntersectionPolyDataFilter::FillInputPortInformation(int port, vtkInforma
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_END

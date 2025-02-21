@@ -1,21 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStripper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStripper.h"
 
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkIdList.h"
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
@@ -24,7 +13,9 @@
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 #include "vtkSmartPointer.h"
+#include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStripper);
 
 // Construct object with MaximumLength set to 1000.
@@ -97,7 +88,9 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
     // pass through verts
     output->CopyStructure(input);
     output->GetPointData()->PassData(input->GetPointData());
-    output->GetCellData()->PassData(input->GetCellData());
+    vtkCellData* outCD = output->GetCellData();
+    outCD->PassData(input->GetCellData());
+    outCD->RemoveArray(vtkDataSetAttributes::GhostArrayName());
     mesh->Delete();
     vtkDebugMacro(<< "No data to strip!");
     return 1;
@@ -128,6 +121,8 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
     // present strips are.
     newfdStrips->Allocate(3 * inNumPolys + 3);
   }
+
+  vtkUnsignedCharArray* ghostCells = input->GetCellData()->GetGhostArray();
 
   vtkIdTypeArray* OriginalCellIds = nullptr;
   vtkIdTypeArray* origPolyIds = nullptr;
@@ -161,6 +156,10 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
     cellId = inNumVerts + inNumLines + inNumPolys;
     for (inStrips->InitTraversal(); inStrips->GetNextCell(numStripPts, stripPts);)
     {
+      if (ghostCells && ghostCells->GetValue(cellId))
+      {
+        continue;
+      }
       newStrips->InsertNextCell(numStripPts, stripPts);
       if (this->PassCellDataAsFieldData)
       {
@@ -192,6 +191,10 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
     cellId = inNumVerts;
     for (inLines->InitTraversal(); inLines->GetNextCell(numLinePts, linePts); cellId++)
     {
+      if (ghostCells && ghostCells->GetValue(cellId))
+      {
+        continue;
+      }
       if (numLinePts > 2)
       {
         newLines->InsertNextCell(numLinePts, linePts);
@@ -211,7 +214,7 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
   visited = new char[numCells];
   for (i = 0; i < numCells; i++)
   {
-    visited[i] = 0;
+    visited[i] = ghostCells && ghostCells->GetValue(i) ? 1 : 0;
   }
 
   // Loop over all cells and find one that hasn't been visited.
@@ -225,14 +228,18 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
   numLines = 0;
 
   int cellType;
-  int abort = 0;
+  bool abort = false;
   vtkIdType progressInterval = numCells / 20 + 1;
   for (cellId = 0; cellId < numCells && !abort; cellId++)
   {
+    if (ghostCells && ghostCells->GetValue(cellId))
+    {
+      continue;
+    }
     if (!(cellId % progressInterval))
     {
       this->UpdateProgress((float)cellId / numCells);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
     }
     if (!visited[cellId])
     {
@@ -476,6 +483,7 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
                   << " triangle strips \n\t(Average " << (float)numCells / numStrips
                   << " triangles per strip, longest strip = "
                   << ((longestStrip - 2) > 0 ? (longestStrip - 2) : 0) << " triangles)");
+    (void)numStrips;
 
     if (newPolys->GetNumberOfCells() > 0)
     {
@@ -503,7 +511,7 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
       bool* used = new bool[newLines->GetNumberOfCells()];
       for (i = 0; i < newLines->GetNumberOfCells(); i++)
       {
-        used[i] = 0;
+        used[i] = false;
       }
 
       bool done = false;
@@ -529,12 +537,12 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
           id++;
         } while (!done && (used[id] == 1));
 
-        if (done == false)
+        if (!done)
         {
           // Write it into our output line
           memcpy(out_p + out_n, p, n * sizeof(vtkIdType));
           out_n += n;
-          used[id] = 1;
+          used[id] = true;
 
           // Now add any unused lines that adjoin this current line
           bool finished_new_line = false;
@@ -594,7 +602,7 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
                     memcpy(add_to, p, n * sizeof(vtkIdType));
                   }
                   out_n += n;
-                  used[id] = 1;
+                  used[id] = true;
                 }
                 else
                 {
@@ -627,6 +635,7 @@ int vtkStripper::RequestData(vtkInformation* vtkNotUsed(request),
                   << " poly-lines \n\t(Average " << (float)numCells / numLines
                   << " lines per poly-line, longest poly-line = "
                   << ((longestLine - 1) > 0 ? (longestLine - 1) : 0) << " lines)");
+    (void)numLines;
   }
 
   // pass through verts
@@ -726,3 +735,4 @@ void vtkStripper::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "PassThroughPointIds: " << this->PassThroughPointIds << endl;
   os << indent << "JoinContiguousSegments: " << this->JoinContiguousSegments << endl;
 }
+VTK_ABI_NAMESPACE_END

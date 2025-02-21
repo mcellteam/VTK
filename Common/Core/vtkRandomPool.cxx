@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRandomPool.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRandomPool.h"
 
 #include "vtkArrayDispatch.h"
@@ -27,10 +16,12 @@
 #include <algorithm>
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRandomPool);
 vtkCxxSetObjectMacro(vtkRandomPool, Sequence, vtkRandomSequence);
+VTK_ABI_NAMESPACE_END
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Static methods to populate a data array.
 namespace
 {
@@ -138,7 +129,9 @@ struct PopulateDAComponentLauncher
 
 } // anonymous namespace
 
-// ----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+
+//------------------------------------------------------------------------------
 vtkRandomPool::vtkRandomPool()
 {
   this->Sequence = vtkMinimalStandardRandomSequence::New();
@@ -154,14 +147,14 @@ vtkRandomPool::vtkRandomPool()
   this->Modified();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRandomPool::~vtkRandomPool()
 {
   this->SetSequence(nullptr);
   delete[] this->Pool;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRandomPool::PopulateDataArray(vtkDataArray* da, double minRange, double maxRange)
 {
   if (da == nullptr)
@@ -193,7 +186,7 @@ void vtkRandomPool::PopulateDataArray(vtkDataArray* da, double minRange, double 
   da->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRandomPool::PopulateDataArray(
   vtkDataArray* da, int compNum, double minRange, double maxRange)
 {
@@ -227,7 +220,7 @@ void vtkRandomPool::PopulateDataArray(
   da->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Support multithreading of sequence generation
 struct vtkRandomPoolInfo
 {
@@ -265,7 +258,7 @@ struct vtkRandomPoolInfo
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is the multithreaded piece of random sequence generation.
 static VTK_THREAD_RETURN_TYPE vtkRandomPool_ThreadedMethod(void* arg)
 {
@@ -290,7 +283,7 @@ static VTK_THREAD_RETURN_TYPE vtkRandomPool_ThreadedMethod(void* arg)
   return VTK_THREAD_RETURN_VALUE;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // May use threaded sequence generation if the length of the sequence is
 // greater than a pre-defined work size.
 const double* vtkRandomPool::GeneratePool()
@@ -310,6 +303,7 @@ const double* vtkRandomPool::GeneratePool()
     this->NumberOfComponents = 1;
   }
   this->ChunkSize = (this->ChunkSize < 1000 ? 1000 : this->ChunkSize);
+  delete[] this->Pool;
   this->Pool = new double[this->TotalSize];
 
   // Control the number of threads spawned.
@@ -351,7 +345,7 @@ const double* vtkRandomPool::GeneratePool()
   return this->Pool;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRandomPool::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -361,3 +355,4 @@ void vtkRandomPool::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Number Of Components: " << this->NumberOfComponents << "\n";
   os << indent << "Chunk Size: " << this->ChunkSize << "\n";
 }
+VTK_ABI_NAMESPACE_END

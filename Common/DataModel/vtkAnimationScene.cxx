@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAnimationScene.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAnimationScene.h"
 
 #include "vtkCollection.h"
@@ -20,9 +8,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkTimerLog.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAnimationScene);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAnimationScene::vtkAnimationScene()
 {
   this->PlayMode = PLAYMODE_SEQUENCE;
@@ -36,7 +25,7 @@ vtkAnimationScene::vtkAnimationScene()
   this->AnimationTimer = vtkTimerLog::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAnimationScene::~vtkAnimationScene()
 {
   if (this->InPlay)
@@ -48,10 +37,10 @@ vtkAnimationScene::~vtkAnimationScene()
   this->AnimationTimer->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::AddCue(vtkAnimationCue* cue)
 {
-  if (this->AnimationCues->IsItemPresent(cue))
+  if (this->AnimationCues->IndexOfFirstOccurence(cue) >= 0)
   {
     vtkErrorMacro("Animation cue already present in the scene");
     return;
@@ -66,23 +55,23 @@ void vtkAnimationScene::AddCue(vtkAnimationCue* cue)
   this->AnimationCues->AddItem(cue);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::RemoveCue(vtkAnimationCue* cue)
 {
   this->AnimationCues->RemoveItem(cue);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::RemoveAllCues()
 {
   this->AnimationCues->RemoveAllItems();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAnimationScene::GetNumberOfCues()
 {
   return this->AnimationCues->GetNumberOfItems();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::SetTimeMode(int mode)
 {
   if (mode == vtkAnimationCue::TIMEMODE_NORMALIZED)
@@ -104,7 +93,7 @@ void vtkAnimationScene::SetTimeMode(int mode)
   this->Superclass::SetTimeMode(mode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::InitializeChildren()
 {
   // run through all the cues and init them.
@@ -119,7 +108,7 @@ void vtkAnimationScene::InitializeChildren()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::FinalizeChildren()
 {
   vtkCollectionIterator* it = this->AnimationCuesIterator;
@@ -133,7 +122,7 @@ void vtkAnimationScene::FinalizeChildren()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::Play()
 {
   if (this->InPlay)
@@ -209,7 +198,7 @@ void vtkAnimationScene::Play()
   this->InvokeEvent(vtkCommand::EndEvent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::Stop()
 {
   if (!this->InPlay)
@@ -219,7 +208,7 @@ void vtkAnimationScene::Stop()
   this->StopPlay = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::TickInternal(double currenttime, double deltatime, double clocktime)
 {
   this->AnimationTime = currenttime;
@@ -231,6 +220,8 @@ void vtkAnimationScene::TickInternal(double currenttime, double deltatime, doubl
     vtkAnimationCue* cue = vtkAnimationCue::SafeDownCast(iter->GetCurrentObject());
     if (cue)
     {
+      const PlayDirection dir = cue->GetDirection(); // back up cue's direction.
+      cue->SetDirection(this->Direction);
       switch (cue->GetTimeMode())
       {
         case vtkAnimationCue::TIMEMODE_RELATIVE:
@@ -245,27 +236,28 @@ void vtkAnimationScene::TickInternal(double currenttime, double deltatime, doubl
         default:
           vtkErrorMacro("Invalid cue time mode");
       }
+      cue->SetDirection(dir); // restore old direction.
     }
   }
 
   this->Superclass::TickInternal(currenttime, deltatime, clocktime);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::StartCueInternal()
 {
   this->Superclass::StartCueInternal();
   this->InitializeChildren();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::EndCueInternal()
 {
   this->FinalizeChildren();
   this->Superclass::EndCueInternal();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::SetAnimationTime(double currenttime)
 {
   if (this->InPlay)
@@ -281,7 +273,7 @@ void vtkAnimationScene::SetAnimationTime(double currenttime)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnimationScene::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -291,3 +283,4 @@ void vtkAnimationScene::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "InPlay: " << this->InPlay << endl;
   os << indent << "StopPlay: " << this->StopPlay << endl;
 }
+VTK_ABI_NAMESPACE_END

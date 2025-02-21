@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangeTetra.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkLagrangeTetra.h"
 
 #include "vtkDoubleArray.h"
@@ -23,14 +12,12 @@
 #include "vtkPoints.h"
 #include "vtkTetra.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLagrangeTetra);
-//----------------------------------------------------------------------------
-vtkLagrangeTetra::vtkLagrangeTetra()
-  : vtkHigherOrderTetra()
-{
-}
+//------------------------------------------------------------------------------
+vtkLagrangeTetra::vtkLagrangeTetra() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLagrangeTetra::~vtkLagrangeTetra() = default;
 
 void vtkLagrangeTetra::PrintSelf(ostream& os, vtkIndent indent)
@@ -41,18 +28,42 @@ void vtkLagrangeTetra::PrintSelf(ostream& os, vtkIndent indent)
 vtkCell* vtkLagrangeTetra::GetEdge(int edgeId)
 {
   vtkLagrangeCurve* result = EdgeCell;
-  this->GetEdgeWithoutRationalWeights(result, edgeId);
+  const auto set_number_of_ids_and_points = [&](const vtkIdType& npts) -> void
+  {
+    result->Points->SetNumberOfPoints(npts);
+    result->PointIds->SetNumberOfIds(npts);
+  };
+  const auto set_ids_and_points = [&](const vtkIdType& face_id, const vtkIdType& vol_id) -> void
+  {
+    result->Points->SetPoint(face_id, this->Points->GetPoint(vol_id));
+    result->PointIds->SetId(face_id, this->PointIds->GetId(vol_id));
+  };
+
+  this->SetEdgeIdsAndPoints(edgeId, set_number_of_ids_and_points, set_ids_and_points);
   return result;
 }
 
 vtkCell* vtkLagrangeTetra::GetFace(int faceId)
 {
   vtkLagrangeTriangle* result = FaceCell;
-  this->GetFaceWithoutRationalWeights(result, faceId);
+  const auto set_number_of_ids_and_points = [&](const vtkIdType& npts) -> void
+  {
+    result->Points->SetNumberOfPoints(npts);
+    result->PointIds->SetNumberOfIds(npts);
+  };
+  const auto set_ids_and_points = [&](const vtkIdType& face_id, const vtkIdType& vol_id) -> void
+  {
+    result->Points->SetPoint(face_id, this->Points->GetPoint(vol_id));
+    result->PointIds->SetId(face_id, this->PointIds->GetId(vol_id));
+  };
+
+  vtkHigherOrderTetra::SetFaceIdsAndPoints(faceId, this->Order, this->Points->GetNumberOfPoints(),
+    set_number_of_ids_and_points, set_ids_and_points);
+  result->Initialize();
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLagrangeTetra::InterpolateFunctions(const double pcoords[3], double* weights)
 {
   // Adapted from P. Silvester, "High-Order Polynomial Triangular Finite
@@ -120,15 +131,15 @@ void vtkLagrangeTetra::InterpolateFunctions(const double pcoords[3], double* wei
       vtkIdType lambda[4];
       this->ToBarycentricIndex(idx, lambda);
 
-      weights[idx] = (vtkLagrangeTriangle::eta(n, lambda[0], tau[0]) *
-        vtkLagrangeTriangle::eta(n, lambda[1], tau[1]) *
-        vtkLagrangeTriangle::eta(n, lambda[2], tau[2]) *
-        vtkLagrangeTriangle::eta(n, lambda[3], tau[3]));
+      weights[idx] = (vtkLagrangeTriangle::Eta(n, lambda[0], tau[0]) *
+        vtkLagrangeTriangle::Eta(n, lambda[1], tau[1]) *
+        vtkLagrangeTriangle::Eta(n, lambda[2], tau[2]) *
+        vtkLagrangeTriangle::Eta(n, lambda[3], tau[3]));
     }
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLagrangeTetra::InterpolateDerivs(const double pcoords[3], double* derivs)
 {
   // Analytic differentiation of the tetra shape functions, as adapted from
@@ -255,15 +266,15 @@ void vtkLagrangeTetra::InterpolateDerivs(const double pcoords[3], double* derivs
       vtkIdType lambda[4];
       this->ToBarycentricIndex(idx, lambda);
 
-      double eta_alpha = vtkLagrangeTriangle::eta(n, lambda[0], tau[0]);
-      double eta_beta = vtkLagrangeTriangle::eta(n, lambda[1], tau[1]);
-      double eta_gamma = vtkLagrangeTriangle::eta(n, lambda[2], tau[2]);
-      double eta_delta = vtkLagrangeTriangle::eta(n, lambda[3], tau[3]);
+      double eta_alpha = vtkLagrangeTriangle::Eta(n, lambda[0], tau[0]);
+      double eta_beta = vtkLagrangeTriangle::Eta(n, lambda[1], tau[1]);
+      double eta_gamma = vtkLagrangeTriangle::Eta(n, lambda[2], tau[2]);
+      double eta_delta = vtkLagrangeTriangle::Eta(n, lambda[3], tau[3]);
 
-      double d_eta_alpha = vtkLagrangeTriangle::d_eta(n, lambda[0], tau[0]);
-      double d_eta_beta = vtkLagrangeTriangle::d_eta(n, lambda[1], tau[1]);
-      double d_eta_gamma = vtkLagrangeTriangle::d_eta(n, lambda[2], tau[2]);
-      double d_eta_delta = vtkLagrangeTriangle::d_eta(n, lambda[3], tau[3]);
+      double d_eta_alpha = vtkLagrangeTriangle::Deta(n, lambda[0], tau[0]);
+      double d_eta_beta = vtkLagrangeTriangle::Deta(n, lambda[1], tau[1]);
+      double d_eta_gamma = vtkLagrangeTriangle::Deta(n, lambda[2], tau[2]);
+      double d_eta_delta = vtkLagrangeTriangle::Deta(n, lambda[3], tau[3]);
 
       double d_f_d_tau1 = (d_eta_alpha * eta_beta * eta_gamma * eta_delta -
         eta_alpha * eta_beta * eta_gamma * d_eta_delta);
@@ -282,11 +293,12 @@ void vtkLagrangeTetra::InterpolateDerivs(const double pcoords[3], double* derivs
     }
   }
 }
-vtkHigherOrderCurve* vtkLagrangeTetra::getEdgeCell()
+vtkHigherOrderCurve* vtkLagrangeTetra::GetEdgeCell()
 {
   return EdgeCell;
 }
-vtkHigherOrderTriangle* vtkLagrangeTetra::getFaceCell()
+vtkHigherOrderTriangle* vtkLagrangeTetra::GetFaceCell()
 {
   return FaceCell;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStatisticalOutlierRemoval.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStatisticalOutlierRemoval.h"
 
 #include "vtkAbstractPointLocator.h"
@@ -24,15 +12,16 @@
 #include "vtkSMPTools.h"
 #include "vtkStaticPointLocator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStatisticalOutlierRemoval);
 vtkCxxSetObjectMacro(vtkStatisticalOutlierRemoval, Locator, vtkAbstractPointLocator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm (first pass)
 template <typename T>
 struct ComputeMeanDistance
@@ -106,7 +95,7 @@ struct ComputeMeanDistance
           y[2] = static_cast<double>(*py);
           sum += sqrt(vtkMath::Distance2BetweenPoints(x, y));
         }
-      } // sum the lengths of all samples exclusing current point
+      } // sum the lengths of all samples excluding current point
 
       // Average the lengths; again exclude ourselves
       if (numPts > 0)
@@ -156,7 +145,7 @@ struct ComputeMeanDistance
 
 }; // ComputeMeanDistance
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Now that the mean is known, compute the standard deviation
 struct ComputeStdDev
 {
@@ -234,7 +223,7 @@ struct ComputeStdDev
 
 }; // ComputeStdDev
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Statistics are computed, now filter the points
 struct RemoveOutliers
 {
@@ -274,7 +263,7 @@ struct RemoveOutliers
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStatisticalOutlierRemoval::vtkStatisticalOutlierRemoval()
 {
   this->SampleSize = 25;
@@ -285,13 +274,13 @@ vtkStatisticalOutlierRemoval::vtkStatisticalOutlierRemoval()
   this->ComputedStandardDeviation = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStatisticalOutlierRemoval::~vtkStatisticalOutlierRemoval()
 {
   this->SetLocator(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Traverse all the input points and gather statistics about average distance
 // between them, and the standard deviation of variation. Then filter points
 // within a specified deviation from the mean.
@@ -337,7 +326,7 @@ int vtkStatisticalOutlierRemoval::FilterPoints(vtkPointSet* input)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStatisticalOutlierRemoval::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -349,3 +338,4 @@ void vtkStatisticalOutlierRemoval::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Computed Mean: " << this->ComputedMean << "\n";
   os << indent << "Computed Standard Deviation: " << this->ComputedStandardDeviation << "\n";
 }
+VTK_ABI_NAMESPACE_END

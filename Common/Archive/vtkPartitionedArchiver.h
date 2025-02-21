@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPartitionedArchiver.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPartitionedArchiver
  * @brief   Writes an archive to several buffers
@@ -31,6 +19,7 @@
 
 #include "vtkArchiver.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONARCHIVE_EXPORT vtkPartitionedArchiver : public vtkArchiver
 {
 public:
@@ -38,69 +27,69 @@ public:
   vtkTypeMacro(vtkPartitionedArchiver, vtkArchiver);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
-   * Open the arhive for writing.
+   * Open the archive for writing.
    */
   void OpenArchive() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Close the arhive.
+   * Close the archive.
    */
   void CloseArchive() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Insert \p data of size \p size into the archive at \p relativePath.
    */
   void InsertIntoArchive(
-    const std::string& relativePath, const char* data, std::streamsize size) override;
-  //@}
+    const std::string& relativePath, const char* data, std::size_t size) override;
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Checks if \p relativePath represents an entry in the archive.
    */
   bool Contains(const std::string& relativePath) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access the buffer.
    */
   const char* GetBuffer(const char* relativePath);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access the address of the buffer.
    */
   const void* GetBufferAddress(const char* relativePath);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the buffer used size.
    */
   std::size_t GetBufferSize(const char* relativePath);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the number of buffers in the archive.
    */
   std::size_t GetNumberOfBuffers();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the name of buffer \p i.
    */
   const char* GetBufferName(std::size_t i);
-  //@}
+  ///@}
 
 protected:
   vtkPartitionedArchiver();
@@ -114,4 +103,5 @@ private:
   void operator=(const vtkPartitionedArchiver&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

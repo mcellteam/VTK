@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #import "CustomLayer.h"
 
 #import "vtkCocoaRenderWindow.h"
@@ -23,10 +25,14 @@
   assert(customView);
 
   // Tell VTK to render.
-  assert([customView renderWindowInteractor] -> GetInitialized());
-  vtkRenderWindow* renderWindow = [customView renderWindow];
+  assert([customView renderWindowInteractor]->GetInitialized());
+  vtkCocoaRenderWindow* renderWindow = [customView renderWindow];
   if (renderWindow && renderWindow->GetMapped())
   {
+    bool contextInitialised = renderWindow->Superclass::InitializeFromCurrentContext();
+    assert(contextInitialised);
+    (void)contextInitialised;
+    renderWindow->SetFrameBlitModeToBlitToCurrent();
     renderWindow->Render();
   }
 
@@ -57,7 +63,7 @@
   assert(renderWindow);
 
   // Get the OpenGL context from VTK.
-  assert([customView renderWindowInteractor] -> GetInitialized());
+  assert([customView renderWindowInteractor]->GetInitialized());
   NSOpenGLContext* openGLContext = (__bridge NSOpenGLContext*)(renderWindow->GetContextId());
   assert(openGLContext);
 

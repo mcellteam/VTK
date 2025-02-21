@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDendrogramItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDendrogramItem
  * @brief   A 2D graphics item for rendering a tree as
@@ -44,6 +32,7 @@
 #include "vtkStdString.h"    // For SetGet ivars
 #include "vtkVector.h"       // For vtkVector2f ivar
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkColorLegend;
 class vtkDoubleArray;
 class vtkGraphLayout;
@@ -90,7 +79,7 @@ public:
    */
   void SetColorArray(const char* arrayName);
 
-  //@{
+  ///@{
   /**
    * Get/set whether or not leaf nodes should be extended so that they all line
    * up vertically.  The default is to NOT extend leaf nodes.  When extending
@@ -100,7 +89,7 @@ public:
   vtkSetMacro(ExtendLeafNodes, bool);
   vtkGetMacro(ExtendLeafNodes, bool);
   vtkBooleanMacro(ExtendLeafNodes, bool);
-  //@}
+  ///@}
 
   /**
    * Set which way the tree should face within the visualization.  The default
@@ -127,7 +116,7 @@ public:
    */
   double GetTextAngleForOrientation(int orientation);
 
-  //@{
+  ///@{
   /**
    * Get/Set whether or not leaf nodes should be labeled by this class.
    * Default is true.
@@ -135,32 +124,32 @@ public:
   vtkSetMacro(DrawLabels, bool);
   vtkGetMacro(DrawLabels, bool);
   vtkBooleanMacro(DrawLabels, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the position of the dendrogram.
    */
   vtkSetVector2Macro(Position, float);
   void SetPosition(const vtkVector2f& pos);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get position of the dendrogram.
    */
   vtkGetVector2Macro(Position, float);
   vtkVector2f GetPositionVector();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the spacing between the leaf nodes in our dendrogram.
    * Default is 18 pixels.
    */
   vtkGetMacro(LeafSpacing, double);
   vtkSetMacro(LeafSpacing, double);
-  //@}
+  ///@}
 
   /**
    * This function calls RebuildBuffers() if necessary.
@@ -198,15 +187,15 @@ public:
    */
   bool Paint(vtkContext2D* painter) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set how wide the edges of this dendrogram should be.  Default is one pixel.
    */
   vtkGetMacro(LineWidth, float);
   vtkSetMacro(LineWidth, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/set whether or not the number of collapsed leaf nodes should be written
    * inside the triangle representing a collapsed subtree.  Default is true.
@@ -214,9 +203,9 @@ public:
   vtkSetMacro(DisplayNumberOfCollapsedLeafNodes, bool);
   vtkGetMacro(DisplayNumberOfCollapsedLeafNodes, bool);
   vtkBooleanMacro(DisplayNumberOfCollapsedLeafNodes, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the name of the array that specifies the distance of each vertex
    * from the root (NOT the vertex's parent).  This array should be a part of
@@ -225,9 +214,9 @@ public:
    */
   vtkGetMacro(DistanceArrayName, vtkStdString);
   vtkSetMacro(DistanceArrayName, vtkStdString);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the name of a vtkStringArray that specifies the names of the
    * vertices of the input tree.  This array should be a part of the input
@@ -236,7 +225,7 @@ public:
    */
   vtkGetMacro(VertexNameArrayName, vtkStdString);
   vtkSetMacro(VertexNameArrayName, vtkStdString);
-  //@}
+  ///@}
 
   // this struct & class allow us to generate a priority queue of vertices.
   struct WeightedVertex
@@ -419,4 +408,5 @@ private:
   vtkStdString VertexNameArrayName;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

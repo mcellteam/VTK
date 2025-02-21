@@ -1,20 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRIBProperty.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRIBProperty.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRIBProperty);
 
 vtkRIBProperty::vtkRIBProperty()
@@ -48,12 +37,8 @@ vtkRIBProperty::~vtkRIBProperty()
 
 void vtkRIBProperty::Render(vtkActor* anActor, vtkRenderer* ren)
 {
-  int ref;
-
   // Copy this property's ivars into the property to be rendered
-  ref = this->Property->GetReferenceCount();
   this->Property->DeepCopy(this);
-  this->Property->SetReferenceCount(ref);
 
   // Render the property
   this->Property->Render(anActor, ren);
@@ -253,3 +238,4 @@ void vtkRIBProperty::PrintSelf(ostream& os, vtkIndent indent)
      << "SurfaceShaderUsesDefaultParameters: " << this->GetSurfaceShaderUsesDefaultParameters()
      << std::endl;
 }
+VTK_ABI_NAMESPACE_END

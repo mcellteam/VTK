@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTextActor.h"
 
 #include "vtkCellArray.h"
@@ -36,9 +24,10 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkTextActor);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextActor::vtkTextActor()
 {
   // To remain compatible with code using vtkActor2D, we must set
@@ -118,7 +107,7 @@ vtkTextActor::vtkTextActor()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextActor::~vtkTextActor()
 {
   this->ImageData->Delete();
@@ -134,7 +123,7 @@ vtkTextActor::~vtkTextActor()
   this->SetTexture(nullptr);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::GetBoundingBox(vtkViewport* vport, double bbox[4])
 {
   if (this->UpdateRectangle(vport) && this->RectanglePoints &&
@@ -168,7 +157,7 @@ void vtkTextActor::GetBoundingBox(vtkViewport* vport, double bbox[4])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::GetSize(vtkViewport* vport, double size[2])
 {
   double bds[4];
@@ -181,13 +170,13 @@ void vtkTextActor::GetSize(vtkViewport* vport, double size[2])
   size[1] = bds[3] - bds[2];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextActor::SetConstrainedFontSize(vtkViewport* viewport, int targetWidth, int targetHeight)
 {
-  return this->SetConstrainedFontSize(this, viewport, targetWidth, targetHeight);
+  return vtkTextActor::SetConstrainedFontSize(this, viewport, targetWidth, targetHeight);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextActor::SetConstrainedFontSize(
   vtkTextActor* tactor, vtkViewport* viewport, int targetWidth, int targetHeight)
 {
@@ -247,7 +236,7 @@ int vtkTextActor::SetConstrainedFontSize(
   return fontSize;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextActor::SetMultipleConstrainedFontSize(vtkViewport* viewport, int targetWidth,
   int targetHeight, vtkTextActor** actors, int nbOfActors, int* maxResultingSize)
 {
@@ -318,7 +307,7 @@ int vtkTextActor::SetMultipleConstrainedFontSize(vtkViewport* viewport, int targ
   return fontSize;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::SetNonLinearFontScale(double exp, int tgt)
 {
   if ((this->FontScaleExponent == exp) && (this->TextProperty->GetFontSize() == tgt))
@@ -330,10 +319,10 @@ void vtkTextActor::SetNonLinearFontScale(double exp, int tgt)
   this->Modified();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextActor::RenderImage(vtkTextProperty* tprop, vtkViewport* vp)
 {
-  vtkStdString text;
+  std::string text;
   if (this->Input && this->Input[0])
   {
     text = this->Input;
@@ -349,10 +338,10 @@ bool vtkTextActor::RenderImage(vtkTextProperty* tprop, vtkViewport* vp)
   return this->TextRenderer->RenderString(tprop, text, this->ImageData, nullptr, win->GetDPI());
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextActor::GetImageBoundingBox(vtkTextProperty* tprop, vtkViewport* vp, int bbox[4])
 {
-  vtkStdString text;
+  std::string text;
   if (this->Input && this->Input[0])
   {
     text = this->Input;
@@ -367,7 +356,7 @@ bool vtkTextActor::GetImageBoundingBox(vtkTextProperty* tprop, vtkViewport* vp, 
   return this->TextRenderer->GetBoundingBox(tprop, text, bbox, win->GetDPI());
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::SetInput(const char* str)
 {
   if (!str)
@@ -388,13 +377,13 @@ void vtkTextActor::SetInput(const char* str)
   this->Modified();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkTextActor::GetInput()
 {
   return this->Input;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::SetTextProperty(vtkTextProperty* p)
 {
   if (this->TextProperty == p)
@@ -415,7 +404,7 @@ void vtkTextActor::SetTextProperty(vtkTextProperty* p)
   this->Modified();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::ShallowCopy(vtkProp* prop)
 {
   vtkTextActor* a = vtkTextActor::SafeDownCast(prop);
@@ -432,7 +421,7 @@ void vtkTextActor::ShallowCopy(vtkProp* prop)
   this->Superclass::ShallowCopy(prop);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -441,7 +430,7 @@ void vtkTextActor::ReleaseGraphicsResources(vtkWindow* win)
   this->Superclass::ReleaseGraphicsResources(win);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextActor::RenderOverlay(vtkViewport* viewport)
 {
   if (!this->Visibility || !this->Input || !this->Input[0])
@@ -454,7 +443,7 @@ int vtkTextActor::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextActor::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   if (!this->Visibility)
@@ -468,7 +457,7 @@ int vtkTextActor::RenderOpaqueGeometry(vtkViewport* viewport)
     return 0;
   }
 
-  int* vSize = viewport->GetSize();
+  const int* vSize = viewport->GetSize();
   // vSize == (0,0) means that we're not ready to render yet
   if (vSize[0] == 0 && vSize[1] == 0)
   {
@@ -491,7 +480,7 @@ int vtkTextActor::RenderOpaqueGeometry(vtkViewport* viewport)
   return 0; // this->Superclass::RenderOpaqueGeometry(viewport);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkTextActor::HasTranslucentPolygonalGeometry()
@@ -499,7 +488,7 @@ vtkTypeBool vtkTextActor::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::SetOrientation(float orientation)
 {
   if (this->Orientation == orientation)
@@ -510,7 +499,7 @@ void vtkTextActor::SetOrientation(float orientation)
   this->Orientation = orientation;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextActor::GetAlignmentPoint()
 {
   int alignmentCode = 0;
@@ -550,7 +539,7 @@ int vtkTextActor::GetAlignmentPoint()
   return alignmentCode;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::SetAlignmentPoint(int val)
 {
   vtkWarningMacro(<< "Alignment point is being deprecated.  You should use "
@@ -597,10 +586,10 @@ void vtkTextActor::SetAlignmentPoint(int val)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float vtkTextActor::GetFontScale(vtkViewport* viewport)
 {
-  int* viewportSize = viewport->GetSize();
+  const int* viewportSize = viewport->GetSize();
 
   // Pretend the long dimension is the "width"
   int viewportWidth = (viewportSize[0] > viewportSize[1]) ? viewportSize[0] : viewportSize[1];
@@ -609,13 +598,18 @@ float vtkTextActor::GetFontScale(vtkViewport* viewport)
   return static_cast<double>(viewportWidth) / (6 * 72);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::ComputeScaledFont(vtkViewport* viewport)
 {
   if (this->ScaledTextProperty->GetMTime() < this->TextProperty->GetMTime())
   {
     this->ScaledTextProperty->ShallowCopy(this->TextProperty);
   }
+
+  vtkWindow* renWin = viewport->GetVTKWindow();
+  int tileScaleXY[2];
+  renWin->GetTileScale(tileScaleXY);
+  int tileScale = std::max(tileScaleXY[0], tileScaleXY[1]);
 
   // Combine this actor's orientation with the set text property's rotation
   double rotAngle = this->TextProperty->GetOrientation() + this->Orientation;
@@ -625,7 +619,7 @@ void vtkTextActor::ComputeScaledFont(vtkViewport* viewport)
   {
     if (this->TextProperty)
     {
-      this->ScaledTextProperty->SetFontSize(this->TextProperty->GetFontSize());
+      this->ScaledTextProperty->SetFontSize(tileScale * this->TextProperty->GetFontSize());
     }
     return;
   }
@@ -642,7 +636,7 @@ void vtkTextActor::ComputeScaledFont(vtkViewport* viewport)
       // Apply non-linear scaling
       int fsize = static_cast<int>(pow(targetSize, this->FontScaleExponent) *
         pow(requestedSize, 1.0 - this->FontScaleExponent));
-      this->ScaledTextProperty->SetFontSize(fsize);
+      this->ScaledTextProperty->SetFontSize(tileScale * fsize);
     }
     return;
   }
@@ -749,7 +743,7 @@ void vtkTextActor::ComputeScaledFont(vtkViewport* viewport)
           pow(
             static_cast<double>(this->TextProperty->GetFontSize()), 1.0 - this->FontScaleExponent));
         // and set the new font size
-        this->ScaledTextProperty->SetFontSize(fsize);
+        this->ScaledTextProperty->SetFontSize(tileScale * fsize);
       }
     }
     return;
@@ -758,7 +752,7 @@ void vtkTextActor::ComputeScaledFont(vtkViewport* viewport)
   vtkWarningMacro(<< "Unknown text scaling mode: " << this->TextScaleMode);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::ComputeRectangle(vtkViewport* viewport)
 {
   int dims[2] = { 0, 0 };
@@ -865,7 +859,7 @@ void vtkTextActor::ComputeRectangle(vtkViewport* viewport)
   this->RectanglePoints->SetPoint(3, xo + dims[0], yo, 0.0);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextActor::UpdateRectangle(vtkViewport* viewport)
 {
   if (this->TextProperty->GetMTime() > this->ScaledTextProperty->GetMTime() ||
@@ -906,7 +900,7 @@ int vtkTextActor::UpdateRectangle(vtkViewport* viewport)
   return 1;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::SpecifiedToDisplay(double* pos, vtkViewport* vport, int specified)
 {
   if (!vport)
@@ -936,7 +930,7 @@ void vtkTextActor::SpecifiedToDisplay(double* pos, vtkViewport* vport, int speci
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::DisplayToSpecified(double* pos, vtkViewport* vport, int specified)
 {
   switch (specified)
@@ -971,7 +965,7 @@ void vtkTextActor::DisplayToSpecified(double* pos, vtkViewport* vport, int speci
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1005,3 +999,4 @@ void vtkTextActor::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "FontScaleExponent: " << this->FontScaleExponent << endl;
   os << indent << "UseBorderAlign: " << this->UseBorderAlign << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderTimerLog.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkRenderTimerLog
@@ -77,6 +65,7 @@
     (void)identifier; /* Prevent set-but-not-used var warnings */                                  \
   } while (false)     /* Do-while loop prevents duplicate semicolon warnings */
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGCORE_EXPORT vtkRenderTimerLog : public vtkObject
 {
 public:
@@ -140,8 +129,8 @@ public:
       : Log(nullptr)
     {
     }
-    ScopedEventLogger(ScopedEventLogger&& other);
-    ScopedEventLogger& operator=(ScopedEventLogger&& other);
+    ScopedEventLogger(ScopedEventLogger&& other) noexcept;
+    ScopedEventLogger& operator=(ScopedEventLogger&& other) noexcept;
     ~ScopedEventLogger() { this->Stop(); }
     void Stop();
     friend class vtkRenderTimerLog;
@@ -166,7 +155,7 @@ public:
    * Returns true if stream timings are implemented for the current graphics
    * backend.
    */
-  virtual bool IsSupported();
+  virtual bool IsSupported() VTK_FUTURE_CONST;
 
   /**
    * Call to mark the start of a new frame, or the end of an old one. Does
@@ -221,7 +210,7 @@ protected:
   vtkRenderTimerLog();
   ~vtkRenderTimerLog() override;
 
-  bool LoggingEnabled;
+  mutable bool LoggingEnabled;
   unsigned int FrameLimit;
 
 private:
@@ -229,4 +218,5 @@ private:
   void operator=(const vtkRenderTimerLog&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkRenderTimerLog_h

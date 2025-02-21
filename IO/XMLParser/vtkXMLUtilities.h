@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLUtilities.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLUtilities
  * @brief   XML utilities.
@@ -27,6 +15,7 @@
 #include "vtkIOXMLParserModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkXMLDataElement;
 
 class VTKIOXMLPARSER_EXPORT vtkXMLUtilities : public vtkObject
@@ -34,6 +23,7 @@ class VTKIOXMLPARSER_EXPORT vtkXMLUtilities : public vtkObject
 public:
   static vtkXMLUtilities* New();
   vtkTypeMacro(vtkXMLUtilities, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Encode a string from one format to another
@@ -72,9 +62,9 @@ public:
    * Return 1 on success, 0 otherwise.
    */
   static int WriteElementToFile(
-    vtkXMLDataElement*, const char* filename, vtkIndent* indent = nullptr);
+    vtkXMLDataElement*, VTK_FILEPATH const char* filename, vtkIndent* indent = nullptr);
 
-  //@{
+  ///@{
   /**
    * Read a vtkXMLDataElement from a stream, string or file.
    * The 'encoding' parameter will be used to set the internal encoding of the
@@ -86,12 +76,15 @@ public:
    * Note that you have to call Delete() on the element returned by that
    * function to ensure it is freed properly.
    */
+  VTK_NEWINSTANCE
   static vtkXMLDataElement* ReadElementFromStream(istream&, int encoding = VTK_ENCODING_NONE);
+  VTK_NEWINSTANCE
   static vtkXMLDataElement* ReadElementFromString(
     const char* str, int encoding = VTK_ENCODING_NONE);
+  VTK_NEWINSTANCE
   static vtkXMLDataElement* ReadElementFromFile(
-    const char* filename, int encoding = VTK_ENCODING_NONE);
-  //@}
+    VTK_FILEPATH const char* filename, int encoding = VTK_ENCODING_NONE);
+  ///@}
 
   /**
    * Sets attributes of an element from an array of encoded attributes.
@@ -115,7 +108,7 @@ public:
   static int FindSimilarElements(
     vtkXMLDataElement* elem, vtkXMLDataElement* tree, vtkXMLDataElement*** results);
 
-  //@{
+  ///@{
   /**
    * Factor and unfactor a tree. This operation looks for duplicate elements
    * in the tree, and replace them with references to a pool of elements.
@@ -123,11 +116,11 @@ public:
    */
   static void FactorElements(vtkXMLDataElement* tree);
   static void UnFactorElements(vtkXMLDataElement* tree);
-  //@}
+  ///@}
 
 protected:
-  vtkXMLUtilities() {}
-  ~vtkXMLUtilities() override {}
+  vtkXMLUtilities() = default;
+  ~vtkXMLUtilities() override = default;
 
   static int FactorElementsInternal(
     vtkXMLDataElement* tree, vtkXMLDataElement* root, vtkXMLDataElement* pool);
@@ -138,6 +131,5 @@ private:
   void operator=(const vtkXMLUtilities&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkXMLUtilities.h

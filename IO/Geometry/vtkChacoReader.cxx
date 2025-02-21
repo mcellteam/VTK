@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkChacoReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkChacoReader.h"
 
 #include "vtkCellArray.h"
@@ -35,9 +18,10 @@
 #include <cstdio>
 #include <vtksys/SystemTools.hxx>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkChacoReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Instantiate object with nullptr filename.
 vtkChacoReader::vtkChacoReader()
@@ -66,8 +50,6 @@ vtkChacoReader::vtkChacoReader()
   this->DataCache = vtkUnstructuredGrid::New();
   this->RemakeDataCacheFlag = 1;
 
-  this->Line_length = 200;
-  this->Line = new char[200];
   this->Offset = 0;
   this->Break_pnt = 200;
   this->Save_pnt = 0;
@@ -75,7 +57,7 @@ vtkChacoReader::vtkChacoReader()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkChacoReader::~vtkChacoReader()
 {
   this->SetBaseName(nullptr);
@@ -85,11 +67,9 @@ vtkChacoReader::~vtkChacoReader()
 
   this->DataCache->Delete();
   this->DataCache = nullptr;
-
-  delete[] this->Line;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkChacoReader::ClearWeightArrayNames()
 {
   int i = 0;
@@ -114,7 +94,7 @@ void vtkChacoReader::ClearWeightArrayNames()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkChacoReader::MakeWeightArrayNames(int nv, int ne)
 {
   int i = 0;
@@ -138,7 +118,7 @@ void vtkChacoReader::MakeWeightArrayNames(int nv, int ne)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkChacoReader::GetVertexWeightArrayName(int weight)
 {
   if (this->GetGenerateVertexWeightArrays() && (weight > 0) &&
@@ -150,7 +130,7 @@ const char* vtkChacoReader::GetVertexWeightArrayName(int weight)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkChacoReader::GetEdgeWeightArrayName(int weight)
 {
   if (this->GetGenerateEdgeWeightArrays() && (weight > 0) && (weight <= this->NumberOfEdgeWeights))
@@ -161,7 +141,7 @@ const char* vtkChacoReader::GetEdgeWeightArrayName(int weight)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkChacoReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -174,7 +154,7 @@ int vtkChacoReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   }
 
   int newFile =
-    ((this->CurrentBaseName == nullptr) || strcmp(this->CurrentBaseName, this->BaseName));
+    ((this->CurrentBaseName == nullptr) || strcmp(this->CurrentBaseName, this->BaseName) != 0);
 
   if (!newFile)
   {
@@ -215,7 +195,7 @@ int vtkChacoReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return rc;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkChacoReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -235,7 +215,7 @@ int vtkChacoReader::RequestData(vtkInformation* vtkNotUsed(request),
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkChacoReader::BuildOutputGrid(vtkUnstructuredGrid* output)
 {
   int i = 0;
@@ -330,7 +310,7 @@ int vtkChacoReader::BuildOutputGrid(vtkUnstructuredGrid* output)
     }
 
     vtkIntArray* ia = vtkArrayDownCast<vtkIntArray>(
-      this->DataCache->GetCellData()->GetArray(this->GetGlobalElementIdArrayName()));
+      this->DataCache->GetCellData()->GetArray(vtkChacoReader::GetGlobalElementIdArrayName()));
 
     if (!ia && this->GenerateGlobalElementIdArray)
     {
@@ -338,11 +318,11 @@ int vtkChacoReader::BuildOutputGrid(vtkUnstructuredGrid* output)
     }
     else if (ia && !this->GenerateGlobalElementIdArray)
     {
-      this->DataCache->GetCellData()->RemoveArray(this->GetGlobalElementIdArrayName());
+      this->DataCache->GetCellData()->RemoveArray(vtkChacoReader::GetGlobalElementIdArrayName());
     }
 
     ia = vtkArrayDownCast<vtkIntArray>(
-      this->DataCache->GetPointData()->GetArray(this->GetGlobalNodeIdArrayName()));
+      this->DataCache->GetPointData()->GetArray(vtkChacoReader::GetGlobalNodeIdArrayName()));
 
     if (!ia && this->GenerateGlobalNodeIdArray)
     {
@@ -350,7 +330,7 @@ int vtkChacoReader::BuildOutputGrid(vtkUnstructuredGrid* output)
     }
     else if (ia && !this->GenerateGlobalNodeIdArray)
     {
-      this->DataCache->GetPointData()->RemoveArray(this->GetGlobalNodeIdArrayName());
+      this->DataCache->GetPointData()->RemoveArray(vtkChacoReader::GetGlobalNodeIdArrayName());
     }
 
     output->ShallowCopy(this->DataCache);
@@ -368,7 +348,7 @@ int vtkChacoReader::BuildOutputGrid(vtkUnstructuredGrid* output)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkChacoReader::ReadFile(vtkUnstructuredGrid* output)
 {
   int i = 0;
@@ -700,7 +680,7 @@ int vtkChacoReader::ReadFile(vtkUnstructuredGrid* output)
 
   return retVal;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkChacoReader::AddElementIds(vtkUnstructuredGrid* output)
 {
   // We arbitrarily assign the element ids, since Chaco files do
@@ -709,7 +689,7 @@ void vtkChacoReader::AddElementIds(vtkUnstructuredGrid* output)
   vtkIdType len = output->GetNumberOfCells();
 
   vtkIntArray* ia = vtkIntArray::New();
-  ia->SetName(this->GetGlobalElementIdArrayName());
+  ia->SetName(vtkChacoReader::GetGlobalElementIdArrayName());
   ia->SetNumberOfValues(len);
 
   for (vtkIdType i = 0; i < len; i++)
@@ -721,7 +701,7 @@ void vtkChacoReader::AddElementIds(vtkUnstructuredGrid* output)
   ia->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkChacoReader::AddNodeIds(vtkUnstructuredGrid* output)
 {
   // The vertex IDs in a Chaco file begin at 1 for the first
@@ -730,7 +710,7 @@ void vtkChacoReader::AddNodeIds(vtkUnstructuredGrid* output)
   vtkIdType len = output->GetNumberOfPoints();
 
   vtkIntArray* ia = vtkIntArray::New();
-  ia->SetName(this->GetGlobalNodeIdArrayName());
+  ia->SetName(vtkChacoReader::GetGlobalNodeIdArrayName());
   ia->SetNumberOfValues(len);
 
   for (vtkIdType i = 0; i < len; i++)
@@ -742,7 +722,7 @@ void vtkChacoReader::AddNodeIds(vtkUnstructuredGrid* output)
   ia->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkChacoReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   int i = 0;
@@ -804,7 +784,7 @@ void vtkChacoReader::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkChacoReader::CloseCurrentFile()
 {
   if (this->CurrentGeometryFP)
@@ -816,7 +796,7 @@ void vtkChacoReader::CloseCurrentFile()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkChacoReader::OpenCurrentFile()
 {
   int result = 0;
@@ -859,36 +839,33 @@ int vtkChacoReader::OpenCurrentFile()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Code to read Chaco files.
 // This software was developed by Bruce Hendrickson and Robert Leland
 // at Sandia National Laboratories under US Department of Energy
-// contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation.
+// contract DE-AC04-76DP00789.
 
 void vtkChacoReader::ResetInputBuffers()
 {
-  this->Line_length = 200;
   this->Offset = 0;
   this->Break_pnt = 200;
   this->Save_pnt = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkChacoReader::InputGeom(vtkIdType nvtxs, // Number of vertices to read in
   int igeom,                                   // Dimension (1, 2 or 3), or 0 if you don't know
   double* x, double* y, double* z)
 {
   double xc = 0.0, yc = 0.0, zc = 0.0;
-  int line_num, end_flag, ndims, i = 0;
+  int end_flag, ndims, i = 0;
 
   rewind(this->CurrentGeometryFP);
 
-  line_num = 0;
   end_flag = 1;
   while (end_flag == 1)
   {
     xc = this->ReadVal(this->CurrentGeometryFP, &end_flag);
-    ++line_num;
   }
 
   if (end_flag == -1)
@@ -949,7 +926,6 @@ int vtkChacoReader::InputGeom(vtkIdType nvtxs, // Number of vertices to read in
 
   for (int nread = 1; nread < nvtxs; nread++)
   {
-    ++line_num;
     if (ndims == 1)
     {
       i = fscanf(this->CurrentGeometryFP, "%lf", x + nread);
@@ -978,7 +954,7 @@ int vtkChacoReader::InputGeom(vtkIdType nvtxs, // Number of vertices to read in
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkChacoReader::InputGraph1()
 {
   /* Read first line of input (= nvtxs, narcs, option). */
@@ -1044,7 +1020,7 @@ int vtkChacoReader::InputGraph1()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkChacoReader::InputGraph2(
   vtkIdType** start,     // start[i]: location of vertex i in adjacency array
   vtkIdType** adjacency, // by vertex by vertex neighbor
@@ -1246,23 +1222,23 @@ done:
   if ((vertex == 0) || (retVal == 0))
   {
     /* Graph was empty */
-    delete[] * start;
+    delete[] *start;
     *start = nullptr;
 
-    delete[] * adjacency;
+    delete[] *adjacency;
     *adjacency = nullptr;
 
-    delete[] * vweights;
+    delete[] *vweights;
     *vweights = nullptr;
 
-    delete[] * eweights;
+    delete[] *eweights;
     *eweights = nullptr;
   }
 
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkChacoReader::ReadVal(FILE* infile, int* end_flag)
 {
   double val;
@@ -1298,10 +1274,10 @@ double vtkChacoReader::ReadVal(FILE* infile, int* end_flag)
     /* Now read next line, or next segment of current one. */
     ptr2 = fgets(&Line[length_left], length, infile);
 
-    if (ptr2 == (char*)nullptr)
+    if (ptr2 == nullptr)
     {
       *end_flag = -1;
-      return ((double)0.0);
+      return 0.0;
     }
 
     if (Line[this->Line_length - 1] == '\0' && this->Line[this->Line_length - 2] != '\0' &&
@@ -1349,7 +1325,7 @@ double vtkChacoReader::ReadVal(FILE* infile, int* end_flag)
     {
       FlushLine(infile);
     }
-    return ((double)0.0);
+    return 0.0;
   }
 
   ptr = &(Line[Offset]);
@@ -1359,7 +1335,7 @@ double vtkChacoReader::ReadVal(FILE* infile, int* end_flag)
   {
     this->Offset = 0;
     *end_flag = 1;
-    return ((double)0.0);
+    return 0.0;
   }
   else
   {
@@ -1369,7 +1345,7 @@ double vtkChacoReader::ReadVal(FILE* infile, int* end_flag)
   return (val);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkChacoReader::ReadInt(FILE* infile, int* end_flag)
 {
   vtkIdType val;
@@ -1405,7 +1381,7 @@ vtkIdType vtkChacoReader::ReadInt(FILE* infile, int* end_flag)
     /* Now read next line, or next segment of current one. */
     ptr2 = fgets(&Line[length_left], length, infile);
 
-    if (ptr2 == (char*)nullptr)
+    if (ptr2 == nullptr)
     {
       *end_flag = -1;
       return (0);
@@ -1476,7 +1452,7 @@ vtkIdType vtkChacoReader::ReadInt(FILE* infile, int* end_flag)
   return (val);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkChacoReader::FlushLine(FILE* infile)
 {
   char c;
@@ -1487,3 +1463,4 @@ void vtkChacoReader::FlushLine(FILE* infile)
     c = getc(infile);
   }
 }
+VTK_ABI_NAMESPACE_END

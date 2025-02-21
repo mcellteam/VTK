@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ArrayCasting.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include <vtkDenseArray.h>
 #include <vtkSmartPointer.h>
@@ -111,31 +94,6 @@ struct IncrementValues
   {
     for(vtkIdType n = 0; n != array->GetNonNullSize(); ++n)
       array->SetValueN(n, array->GetValueN(n) + amount);
-  }
-};
-
-// This functor converts strings in-place to a form suitable for case-insensitive comparison.  It's
-an example of
-// how you can write generic code while still specializing functionality on a case-by-case basis,
-since
-// in this situation we want to use some special functionality provided by vtkUnicodeString.
-struct FoldCase
-{
-  template<typename ValueT>
-  void operator()(vtkTypedArray<ValueT>* array) const
-  {
-    for(vtkIdType n = 0; n != array->GetNonNullSize(); ++n)
-      {
-      ValueT value = array->GetValueN(n);
-      boost::algorithm::to_lower(value);
-      array->SetValueN(n, value);
-      }
-  }
-
-  void operator()(vtkTypedArray<vtkUnicodeString>* array) const
-  {
-    for(vtkIdType n = 0; n != array->GetNonNullSize(); ++n)
-      array->SetValueN(n, array->GetValueN(n).fold_case());
   }
 };
 

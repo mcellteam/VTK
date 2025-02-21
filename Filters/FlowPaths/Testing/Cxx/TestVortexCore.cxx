@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    TestVortexCore.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkCellArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkHexahedron.h"
@@ -75,7 +64,8 @@ vtkSmartPointer<vtkUnstructuredGrid> constructGrid(int nX, int nY, int nZ, GridT
   p[7][2] += dz;
 
   auto addTetra = [](const double* p0, const double* p1, const double* p2, const double* p3,
-                    vtkPointLocator* pl, vtkCellArray* cells) {
+                    vtkPointLocator* pl, vtkCellArray* cells)
+  {
     vtkSmartPointer<vtkTetra> t = vtkSmartPointer<vtkTetra>::New();
     static vtkIdType bIndices[4][4] = { { 0, 0, 0, 1 }, { 1, 0, 0, 0 }, { 0, 1, 0, 0 },
       { 0, 0, 1, 0 } };
@@ -104,7 +94,8 @@ vtkSmartPointer<vtkUnstructuredGrid> constructGrid(int nX, int nY, int nZ, GridT
     cells->InsertNextCell(t);
   };
 
-  auto addHex = [](double pts[8][3], vtkPointLocator* pl, vtkCellArray* cells) {
+  auto addHex = [](double pts[8][3], vtkPointLocator* pl, vtkCellArray* cells)
+  {
     vtkSmartPointer<vtkHexahedron> h = vtkSmartPointer<vtkHexahedron>::New();
 
     vtkIdType nPoints = 8;
@@ -190,7 +181,8 @@ vtkSmartPointer<vtkUnstructuredGrid> constructGrid(int nX, int nY, int nZ, GridT
 
 void constructVelocityProfile(vtkUnstructuredGrid* unstructuredGrid)
 {
-  auto velocity = [](const double p[3]) -> std::array<double, 3> {
+  auto velocity = [](const double p[3]) -> std::array<double, 3>
+  {
     const double s = .5;
     const double r = .5;
     const double k = .1;
@@ -230,6 +222,9 @@ int TestVortexCore(int argc, char* argv[])
     constructVelocityProfile(unstructuredGrid);
 
     vtkNew<vtkVortexCore> vortexCore;
+    vortexCore->FasterApproximationOn();
+    vortexCore->SetInputArrayToProcess(
+      0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "velocity");
     vortexCore->SetInputData(unstructuredGrid);
     vortexCore->Update();
 
@@ -243,14 +238,29 @@ int TestVortexCore(int argc, char* argv[])
     constructVelocityProfile(unstructuredGrid);
 
     vtkNew<vtkVortexCore> vortexCore;
+    vortexCore->SetInputArrayToProcess(
+      0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "velocity");
     vortexCore->SetInputData(unstructuredGrid);
     vortexCore->Update();
 
     output2 = vtkPolyData::SafeDownCast(vortexCore->GetOutput());
   }
 
-  if (output1->GetNumberOfCells() != output2->GetNumberOfCells())
+  if (!output1->GetNumberOfCells() || output1->GetNumberOfCells() != output2->GetNumberOfCells())
   {
+    std::cerr << "Number of output cells in outputs did not match" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  if (output1->CheckAttributes())
+  {
+    std::cerr << "Output 1 attribute check failed" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  if (output2->CheckAttributes())
+  {
+    std::cerr << "Output 2 attribute check failed" << std::endl;
     return EXIT_FAILURE;
   }
 

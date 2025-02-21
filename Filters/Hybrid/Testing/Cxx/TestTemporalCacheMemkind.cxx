@@ -1,22 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestTemporalCacheMemkind.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // This test verifies that the extended memory feature of vtkTemporalDatasetCache,
 // that is that it can manage cache contents in the extended memory space, works.
 
 #include <vtkCommand.h>
+#include <vtkFeatures.h>
 #include <vtkInformation.h>
 #include <vtkInformationVector.h>
 #include <vtkObjectFactory.h>
@@ -28,7 +17,6 @@
 #include <vtkTemporalInterpolator.h>
 
 #include <cassert>
-#include <functional>
 #include <vector>
 
 namespace
@@ -60,10 +48,10 @@ public:
   std::vector<double> TimeStepValues;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkTemporalSphereSource2);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTemporalSphereSource2::vtkTemporalSphereSource2()
 {
   this->TimeStepRange[0] = 0;
@@ -72,7 +60,7 @@ vtkTemporalSphereSource2::vtkTemporalSphereSource2()
   this->ActualTimeStep = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTemporalSphereSource2::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -89,7 +77,7 @@ int vtkTemporalSphereSource2::RequestInformation(
     this->TimeStepValues[i] = i;
   }
 
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &this->TimeStepValues[0],
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), this->TimeStepValues.data(),
     static_cast<int>(this->TimeStepValues.size()));
   double timeRange[2];
   timeRange[0] = this->TimeStepValues.front();
@@ -99,18 +87,13 @@ int vtkTemporalSphereSource2::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
-class vtkTestTemporalCacheSimpleWithinTolerance2 : public std::binary_function<double, double, bool>
+//------------------------------------------------------------------------------
+bool vtkTestTemporalCacheSimpleWithinTolerance2(double a, double b)
 {
-public:
-  result_type operator()(first_argument_type a, second_argument_type b) const
-  {
-    bool result = (fabs(a - b) <= (a * 1E-6));
-    return (result_type)result;
-  }
-};
+  return (fabs(a - b) <= (a * 1E-6));
+}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTemporalSphereSource2::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -121,9 +104,10 @@ int vtkTemporalSphereSource2::RequestData(
   if (this->TimeStep == 0 && outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
   {
     double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    this->ActualTimeStep = std::find_if(this->TimeStepValues.begin(), this->TimeStepValues.end(),
-                             std::bind(vtkTestTemporalCacheSimpleWithinTolerance2(),
-                               std::placeholders::_1, requestedTimeValue)) -
+    this->ActualTimeStep =
+      std::find_if(this->TimeStepValues.begin(), this->TimeStepValues.end(),
+        [requestedTimeValue](double const& v)
+        { return vtkTestTemporalCacheSimpleWithinTolerance2(v, requestedTimeValue); }) -
       this->TimeStepValues.begin();
     this->ActualTimeStep = this->ActualTimeStep + this->TimeStepRange[0];
   }

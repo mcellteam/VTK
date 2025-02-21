@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleTrackballCamera.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInteractorStyleTrackballCamera.h"
 
 #include "vtkCallbackCommand.h"
@@ -23,18 +11,19 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkInteractorStyleTrackballCamera);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleTrackballCamera::vtkInteractorStyleTrackballCamera()
 {
   this->MotionFactor = 10.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleTrackballCamera::~vtkInteractorStyleTrackballCamera() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnMouseMove()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -74,7 +63,7 @@ void vtkInteractorStyleTrackballCamera::OnMouseMove()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnLeftButtonDown()
 {
   this->FindPokedRenderer(
@@ -109,7 +98,7 @@ void vtkInteractorStyleTrackballCamera::OnLeftButtonDown()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnLeftButtonUp()
 {
   switch (this->State)
@@ -137,7 +126,7 @@ void vtkInteractorStyleTrackballCamera::OnLeftButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnMiddleButtonDown()
 {
   this->FindPokedRenderer(
@@ -151,7 +140,7 @@ void vtkInteractorStyleTrackballCamera::OnMiddleButtonDown()
   this->StartPan();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnMiddleButtonUp()
 {
   switch (this->State)
@@ -166,7 +155,7 @@ void vtkInteractorStyleTrackballCamera::OnMiddleButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnRightButtonDown()
 {
   this->FindPokedRenderer(
@@ -188,7 +177,7 @@ void vtkInteractorStyleTrackballCamera::OnRightButtonDown()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnRightButtonUp()
 {
   switch (this->State)
@@ -208,7 +197,7 @@ void vtkInteractorStyleTrackballCamera::OnRightButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnMouseWheelForward()
 {
   this->FindPokedRenderer(
@@ -226,7 +215,7 @@ void vtkInteractorStyleTrackballCamera::OnMouseWheelForward()
   this->ReleaseFocus();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::OnMouseWheelBackward()
 {
   this->FindPokedRenderer(
@@ -244,7 +233,7 @@ void vtkInteractorStyleTrackballCamera::OnMouseWheelBackward()
   this->ReleaseFocus();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::Rotate()
 {
   if (this->CurrentRenderer == nullptr)
@@ -257,7 +246,7 @@ void vtkInteractorStyleTrackballCamera::Rotate()
   int dx = rwi->GetEventPosition()[0] - rwi->GetLastEventPosition()[0];
   int dy = rwi->GetEventPosition()[1] - rwi->GetLastEventPosition()[1];
 
-  int* size = this->CurrentRenderer->GetRenderWindow()->GetSize();
+  const int* size = this->CurrentRenderer->GetRenderWindow()->GetSize();
 
   double delta_elevation = -20.0 / size[1];
   double delta_azimuth = -20.0 / size[0];
@@ -283,7 +272,7 @@ void vtkInteractorStyleTrackballCamera::Rotate()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::Spin()
 {
   if (this->CurrentRenderer == nullptr)
@@ -308,7 +297,7 @@ void vtkInteractorStyleTrackballCamera::Spin()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::Pan()
 {
   if (this->CurrentRenderer == nullptr)
@@ -359,7 +348,7 @@ void vtkInteractorStyleTrackballCamera::Pan()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::Dolly()
 {
   if (this->CurrentRenderer == nullptr)
@@ -374,7 +363,7 @@ void vtkInteractorStyleTrackballCamera::Dolly()
   this->Dolly(pow(1.1, dyf));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::Dolly(double factor)
 {
   if (this->CurrentRenderer == nullptr)
@@ -404,7 +393,7 @@ void vtkInteractorStyleTrackballCamera::Dolly(double factor)
   this->Interactor->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::EnvironmentRotate()
 {
   if (this->CurrentRenderer == nullptr)
@@ -462,9 +451,10 @@ void vtkInteractorStyleTrackballCamera::EnvironmentRotate()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballCamera::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "MotionFactor: " << this->MotionFactor << "\n";
 }
+VTK_ABI_NAMESPACE_END

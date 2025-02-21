@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeDataSetRange.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkCompositeDataSetRange_h
 #define vtkCompositeDataSetRange_h
@@ -25,10 +13,9 @@
 
 #include <cassert>
 
-#ifndef __VTK_WRAP__
-
 namespace vtk
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 // Pass these to vtk::Range(cds, options):
 enum class CompositeDataSetOptions : unsigned int
@@ -37,15 +24,18 @@ enum class CompositeDataSetOptions : unsigned int
   SkipEmptyNodes = 1 << 1 // Skip null datasets.
 };
 
+VTK_ABI_NAMESPACE_END
 } // end namespace vtk (for bitflag op definition)
 
+VTK_ABI_NAMESPACE_BEGIN
 VTK_GENERATE_BITFLAG_OPS(vtk::CompositeDataSetOptions)
+VTK_ABI_NAMESPACE_END
 
 namespace vtk
 {
-
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 struct CompositeDataSetRange;
 struct CompositeDataSetIterator;
@@ -56,21 +46,17 @@ using CompositeDataSetIteratorReference =
 //------------------------------------------------------------------------------
 // vtkCompositeDataSet iterator. Returns vtk::CompositeDataSetNodeReference.
 struct CompositeDataSetIterator
-  : public std::iterator<std::forward_iterator_tag, vtkDataObject*, int,
-      CompositeDataSetIteratorReference, CompositeDataSetIteratorReference>
 {
 private:
-  using Superclass = std::iterator<std::forward_iterator_tag, vtkDataObject*, int,
-    CompositeDataSetIteratorReference, CompositeDataSetIteratorReference>;
   using InternalIterator = vtkCompositeDataIterator;
   using SmartIterator = vtkSmartPointer<InternalIterator>;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = vtkDataObject*;
+  using difference_type = int;
+  using pointer = CompositeDataSetIteratorReference;
+  using reference = CompositeDataSetIteratorReference;
 
   CompositeDataSetIterator(const CompositeDataSetIterator& o)
     : Iterator(o.Iterator ? SmartIterator::Take(o.Iterator->NewInstance()) : nullptr)
@@ -106,7 +92,7 @@ public:
 
   friend bool operator==(const CompositeDataSetIterator& lhs, const CompositeDataSetIterator& rhs)
   {
-    // A null internal iterator means it is an 'end' sentinal.
+    // A null internal iterator means it is an 'end' sentinel.
     InternalIterator* l = lhs.Iterator;
     InternalIterator* r = rhs.Iterator;
 
@@ -144,11 +130,17 @@ public:
 protected:
   // Note: This takes ownership of iter and manages its lifetime.
   // Iter should not be used past this point by the caller.
-  CompositeDataSetIterator(SmartIterator&& iter) noexcept : Iterator(std::move(iter)) {}
+  CompositeDataSetIterator(SmartIterator&& iter) noexcept
+    : Iterator(std::move(iter))
+  {
+  }
 
   // Note: Iterators constructed using this ctor will be considered
-  // 'end' iterators via a sentinal pattern.
-  CompositeDataSetIterator() noexcept : Iterator(nullptr) {}
+  // 'end' iterators via a sentinel pattern.
+  CompositeDataSetIterator() noexcept
+    : Iterator(nullptr)
+  {
+  }
 
 private:
   void CopyState(InternalIterator* source)
@@ -159,6 +151,10 @@ private:
       this->Iterator->SetDataSet(source->GetDataSet());
       this->Iterator->SetSkipEmptyNodes(source->GetSkipEmptyNodes());
       this->Iterator->InitTraversal();
+      // XXX(empty iteration): This assert fires for some iterator
+      // implementations if iterating over an empty dataset (because in this
+      // case, `begin() == end()`. This assert needs work.
+      // assert(!source->IsDoneWithTraversal());
       this->AdvanceTo(source->GetCurrentFlatIndex());
     }
   }
@@ -259,10 +255,9 @@ private:
   CompositeDataSetOptions Options;
 };
 
+VTK_ABI_NAMESPACE_END
 }
 } // end namespace vtk::detail
-
-#endif // __VTK_WRAP__
 
 #endif // vtkCompositeDataSetRange_h
 

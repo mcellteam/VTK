@@ -1,24 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParseString.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright (c) 2012 David Gobbi.
-
-  Contributed to the VisualizationToolkit by the author in April 2012
-  under the terms of the Visualization Toolkit 2008 copyright.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2012 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 /**
   This file provides string handling routines.
 
@@ -54,7 +36,7 @@ extern "C"
   /**
    * Various important char types for tokenization
    */
-  typedef enum _parse_char_type
+  typedef enum parse_char_type_
   {
     CPRE_NONDIGIT = 0x01, /* A-Z a-z and _ */
     CPRE_DIGIT = 0x02,    /* 0-9 */
@@ -81,7 +63,7 @@ extern "C"
    * - WS_PREPROC treats newline as end-of-line, not as whitespace.
    * - WS_COMMENT treats comments as tokens, not as whitespace.
    */
-  typedef enum _parse_space_t
+  typedef enum parse_space_t_
   {
     WS_DEFAULT = CPRE_WHITE,           /* skip all whitespace */
     WS_PREPROC = CPRE_HSPACE,          /* skip horizontal whitespace only */
@@ -91,7 +73,7 @@ extern "C"
   /**
    * Preprocessor tokens for C++.
    */
-  typedef enum _preproc_token_t
+  typedef enum preproc_token_t_
   {
     TOK_OTHER = 257,
     TOK_ID,         /* any id */
@@ -136,7 +118,7 @@ extern "C"
    * a null is encountered, and comments are returned as tokens
    * instead of being skipped as whitespace.
    */
-  typedef struct _StringTokenizer
+  typedef struct StringTokenizer_
   {
     int tok;           /* the current token */
     unsigned int hash; /* the hash of the current token, if it is an id */
@@ -216,7 +198,7 @@ extern "C"
    * It eliminates the need to allocate and free each individual string,
    * which makes the code simpler and more efficient.
    */
-  typedef struct _StringCache
+  typedef struct StringCache_
   {
     unsigned long NumberOfChunks;
     char** Chunks;
@@ -247,11 +229,24 @@ extern "C"
   const char* vtkParse_CacheString(StringCache* cache, const char* cp, size_t n);
 
   /**
+   * Merge the second cache into the first cache, leaving the second
+   * cache empty.
+   */
+  VTKWRAPPINGTOOLS_EXPORT
+  void vtkParse_MergeStringCache(StringCache* cache, StringCache* other);
+
+  /**
    * Free all strings that were created with vtkParse_NewString() or
    * with vtkParse_CacheString().
    */
   VTKWRAPPINGTOOLS_EXPORT
   void vtkParse_FreeStringCache(StringCache* cache);
+
+  /**
+   * Compute a hash for a string, using the first n bytes.
+   */
+  VTKWRAPPINGTOOLS_EXPORT
+  unsigned int vtkParse_HashString(const char* cp, size_t n);
 
 #ifdef __cplusplus
 } /* extern "C" */

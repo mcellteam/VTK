@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLContextDevice2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkOpenGLContextDevice2D
@@ -33,9 +21,11 @@
 #include "vtkContextDevice2D.h"
 #include "vtkRenderingContextOpenGL2Module.h" // For export macro
 
-#include <list>   // for std::list
-#include <vector> // STL Header
+#include <cstdint> // For std::uintptr_t
+#include <list>    // For std::list
+#include <vector>  // For std::vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMatrix4x4;
 class vtkOpenGLExtensionManager;
 class vtkOpenGLHelper;
@@ -45,8 +35,10 @@ class vtkRenderer;
 class vtkShaderProgram;
 class vtkStringToImage;
 class vtkTransform;
+class vtkUnsignedCharArray;
 class vtkViewport;
 class vtkWindow;
+class vtkOpenGLContextDeviceBufferObjectBuilder;
 
 class VTKRENDERINGCONTEXTOPENGL2_EXPORT vtkOpenGLContextDevice2D : public vtkContextDevice2D
 {
@@ -80,6 +72,8 @@ public:
    * which has nc_comps components
    */
   void DrawPoints(float* points, int n, unsigned char* colors = nullptr, int nc_comps = 0) override;
+  void DrawPoints(
+    vtkDataArray* positions, vtkUnsignedCharArray* colors, std::uintptr_t cacheIdentifier) override;
 
   /**
    * Draw a series of point sprites, images centred at the points supplied.
@@ -89,6 +83,8 @@ public:
    */
   void DrawPointSprites(vtkImageData* sprite, float* points, int n, unsigned char* colors = nullptr,
     int nc_comps = 0) override;
+  void DrawPointSprites(vtkImageData* sprite, vtkDataArray* positions, vtkUnsignedCharArray* colors,
+    std::uintptr_t cacheIdentifier) override;
 
   /**
    * Draw a series of markers centered at the points supplied. The \a shape
@@ -98,13 +94,19 @@ public:
    * - VTK_MARKER_SQUARE
    * - VTK_MARKER_CIRCLE
    * - VTK_MARKER_DIAMOND
+   * \param shape the shape of the marker
+   * \param highlight whether to highlight the marker or not
+   * \param points where to draw the sprites
+   * \param n the number of points
    * \param colors is an optional array of colors.
    * \param nc_comps is the number of components for the color.
    */
   void DrawMarkers(int shape, bool highlight, float* points, int n, unsigned char* colors = nullptr,
     int nc_comps = 0) override;
+  void DrawMarkers(int shape, bool highlight, vtkDataArray* positions, vtkUnsignedCharArray* colors,
+    std::uintptr_t cacheIdentifier) override;
 
-  //@{
+  ///@{
   /**
    * Adjust the size of the MarkerCache. This implementation generates point
    * sprites for each mark size/shape and uses DrawPointSprites to render them.
@@ -112,7 +114,7 @@ public:
    */
   vtkSetMacro(MaximumMarkerCacheSize, int);
   vtkGetMacro(MaximumMarkerCacheSize, int);
-  //@}
+  ///@}
 
   /**
    * Draws a rectangle
@@ -168,21 +170,6 @@ public:
    * NOTE: This function does not take account of the text rotation.
    */
   void ComputeStringBounds(const vtkStdString& string, float bounds[4]) override;
-
-  /**
-   * Draw some text to the screen.
-   */
-  void DrawString(float* point, const vtkUnicodeString& string) override;
-
-  /**
-   * Compute the bounds of the supplied string. The bounds will be copied to the
-   * supplied bounds variable, the first two elements are the bottom corner of
-   * the string, and the second two elements are the width and height of the
-   * bounding box. An empty bounding box (0, 0, 0, 0) is returned for an
-   * empty string or string with only characters that cannot be rendered.
-   * NOTE: This function does not take account of the text rotation.
-   */
-  void ComputeStringBounds(const vtkUnicodeString& string, float bounds[4]) override;
 
   /**
    * Compute the bounds of the supplied string while taking into account the
@@ -329,12 +316,12 @@ public:
    */
   bool HasGLSL();
 
-  //@{
+  ///@{
   /**
    * Get the active RenderWindow of the device. Will return null if not active.
    */
   vtkGetObjectMacro(RenderWindow, vtkOpenGLRenderWindow);
-  //@}
+  ///@}
 
   /**
    * Release any graphics resources that are being consumed by this device.
@@ -343,13 +330,13 @@ public:
    */
   virtual void ReleaseGraphicsResources(vtkWindow* window);
 
-  //@{
+  ///@{
   /**
    * Get the projection matrix this is needed
    */
   vtkMatrix4x4* GetProjectionMatrix();
   vtkMatrix4x4* GetModelMatrix();
-  //@}
+  ///@}
 
 protected:
   vtkOpenGLContextDevice2D();
@@ -374,7 +361,7 @@ protected:
    */
   bool InRender;
 
-  //@{
+  ///@{
   /**
    * Private data pointer of the class
    */
@@ -383,7 +370,7 @@ protected:
 
   class CellArrayHelper;
   CellArrayHelper* PolyDataImpl;
-  //@}
+  ///@}
 
   /**
    * The OpenGL render window being used by the device
@@ -413,7 +400,7 @@ protected:
   // used for stipples
   unsigned short LinePattern;
 
-  //@{
+  ///@{
   /**
    * Draw the markers as paths/polydata instead of sprites for detailed GL2PS
    * capture.
@@ -430,24 +417,24 @@ protected:
     bool highlight, float* points, int n, unsigned char* colors, int nc_comps);
   void DrawDiamondMarkersGL2PS(
     bool highlight, float* points, int n, unsigned char* colors, int nc_comps);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Embed an RGBA image in the GL2PS output at the supplied point.
    */
   void DrawImageGL2PS(float p[2], vtkImageData* image);
   void DrawImageGL2PS(float p[2], float scale, vtkImageData* image);
   void DrawImageGL2PS(const vtkRectf& rect, vtkImageData* image);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Inject smooth primitives into the GL2PS stream.
    */
   void DrawCircleGL2PS(float x, float y, float rX, float rY);
   void DrawWedgeGL2PS(float x, float y, float outRx, float outRy, float inRx, float inRy);
-  //@}
+  ///@}
 
   /**
    * Add an ellipse to a vtkPath. Used during GL2PS export.
@@ -469,6 +456,11 @@ protected:
    */
   void TransformSize(float& dx, float& dy) const;
 
+  /**
+   * Ask the buffer object builder to erase cache entry for given identifier.
+   */
+  void ReleaseCache(std::uintptr_t cacheIdentifier) override;
+
 private:
   vtkOpenGLContextDevice2D(const vtkOpenGLContextDevice2D&) = delete;
   void operator=(const vtkOpenGLContextDevice2D&) = delete;
@@ -489,7 +481,7 @@ private:
     bool operator==(vtkTypeUInt64 key) { return this->Key == key; }
   };
 
-  void ComputeStringBoundsInternal(const vtkUnicodeString& string, float bounds[4]);
+  void ComputeStringBoundsInternal(const std::string& string, float bounds[4]);
 
   vtkTransform* ProjectionMatrix;
   vtkTransform* ModelMatrix;
@@ -504,4 +496,5 @@ private:
   vtkImageData* GenerateMarker(int shape, int size, bool highlight);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkOpenGLContextDevice2D_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRSliceFilter.h
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAMRSliceFilter
  *
@@ -29,6 +17,7 @@
 
 #include <vector> // For STL vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformation;
 class vtkInformationVector;
 class vtkOverlappingAMR;
@@ -44,23 +33,23 @@ public:
   vtkTypeMacro(vtkAMRSliceFilter, vtkOverlappingAMRAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  // Inline Gettters & Setters
+  // Inline Getters & Setters
 
-  //@{
+  ///@{
   /**
    * Set/Get the offset-from-origin of the slicing plane.
    */
   vtkSetMacro(OffsetFromOrigin, double);
   vtkGetMacro(OffsetFromOrigin, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the maximum resolution used in this instance.
    */
   vtkSetMacro(MaxResolution, unsigned int);
   vtkGetMacro(MaxResolution, unsigned int);
-  //@}
+  ///@}
 
   /**
    * Tags to identify normals along the X, Y and Z directions.
@@ -72,23 +61,23 @@ public:
     Z_NORMAL = 4
   };
 
-  //@{
+  ///@{
   /**
-   * Set/Get the Axis normal. The accpetable values are defined in the
+   * Set/Get the Axis normal. The acceptable values are defined in the
    * NormalTag enum.
    */
   vtkSetMacro(Normal, int);
   vtkGetMacro(Normal, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Set/Get a multiprocess controller for paralle processing.
+   * Set/Get a multiprocess controller for parallel processing.
    * By default this parameter is set to nullptr by the constructor.
    */
-  vtkSetMacro(Controller, vtkMultiProcessController*);
-  vtkGetMacro(Controller, vtkMultiProcessController*);
-  //@}
+  virtual void SetController(vtkMultiProcessController*);
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  ///@}
 
   // Standard Pipeline methods
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
@@ -109,7 +98,7 @@ public:
 
 protected:
   vtkAMRSliceFilter();
-  ~vtkAMRSliceFilter() override = default;
+  ~vtkAMRSliceFilter() override;
 
   /**
    * Returns the cell index w.r.t. the given input grid which contains
@@ -127,7 +116,7 @@ protected:
    * Computes the cell center of the cell corresponding to the supplied
    * cell index w.r.t. the input uniform grid.
    */
-  void ComputeCellCenter(vtkUniformGrid* ug, const int cellIdx, double centroid[3]);
+  void ComputeCellCenter(vtkUniformGrid* ug, int cellIdx, double centroid[3]);
 
   /**
    * Gets the slice from the given grid given the plane origin & the
@@ -184,4 +173,5 @@ private:
   void operator=(const vtkAMRSliceFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkAMRSliceFilter_h */

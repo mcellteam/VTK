@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParallelCoordinatesActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParallelCoordinatesActor
  * @brief   create parallel coordinate display from input field
@@ -62,7 +50,9 @@
 
 #include "vtkActor2D.h"
 #include "vtkRenderingAnnotationModule.h" // For export macro
+#include "vtkWrappingHints.h"             // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAlgorithmOutput;
 class vtkAxisActor2D;
 class vtkDataObject;
@@ -75,7 +65,7 @@ class vtkParallelCoordinatesActorConnection;
 #define VTK_IV_COLUMN 0
 #define VTK_IV_ROW 1
 
-class VTKRENDERINGANNOTATION_EXPORT vtkParallelCoordinatesActor : public vtkActor2D
+class VTKRENDERINGANNOTATION_EXPORT VTK_MARSHALAUTO vtkParallelCoordinatesActor : public vtkActor2D
 {
 public:
   vtkTypeMacro(vtkParallelCoordinatesActor, vtkActor2D);
@@ -89,7 +79,7 @@ public:
    */
   static vtkParallelCoordinatesActor* New();
 
-  //@{
+  ///@{
   /**
    * Specify whether to use the rows or columns as independent variables.
    * If columns, then each row represents a separate point. If rows, then
@@ -99,17 +89,17 @@ public:
   vtkGetMacro(IndependentVariables, int);
   void SetIndependentVariablesToColumns() { this->SetIndependentVariables(VTK_IV_COLUMN); }
   void SetIndependentVariablesToRows() { this->SetIndependentVariables(VTK_IV_ROW); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the title of the parallel coordinates plot.
    */
   vtkSetStringMacro(Title);
   vtkGetStringMacro(Title);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of annotation labels to show along each axis.
    * This values is a suggestion: the number of labels may vary depending
@@ -117,40 +107,40 @@ public:
    */
   vtkSetClampMacro(NumberOfLabels, int, 0, 50);
   vtkGetMacro(NumberOfLabels, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the format with which to print the labels on the axes.
    */
   vtkSetStringMacro(LabelFormat);
   vtkGetStringMacro(LabelFormat);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the title text property.
    */
   virtual void SetTitleTextProperty(vtkTextProperty* p);
   vtkGetObjectMacro(TitleTextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the labels text property.
    */
   virtual void SetLabelTextProperty(vtkTextProperty* p);
   vtkGetObjectMacro(LabelTextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Draw the parallel coordinates plot.
    */
   int RenderOpaqueGeometry(vtkViewport*) override;
   int RenderOverlay(vtkViewport*) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override { return 0; }
-  //@}
+  ///@}
 
   /**
    * Does this prop have some translucent polygonal geometry?
@@ -216,11 +206,11 @@ private:
   int LastPosition2[2];
 
   void Initialize();
-  int PlaceAxes(vtkViewport* viewport, int* size);
+  int PlaceAxes(vtkViewport* viewport, const int* size);
 
-private:
   vtkParallelCoordinatesActor(const vtkParallelCoordinatesActor&) = delete;
   void operator=(const vtkParallelCoordinatesActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

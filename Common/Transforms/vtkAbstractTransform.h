@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractTransform.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractTransform
  * @brief   superclass for all geometric transformations
@@ -41,13 +29,14 @@
 
 #include "vtkCommonTransformsModule.h" // For export macro
 #include "vtkObject.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkMatrix4x4;
 class vtkPoints;
-class vtkSimpleCriticalSection;
 
-class VTKCOMMONTRANSFORMS_EXPORT vtkAbstractTransform : public vtkObject
+class VTKCOMMONTRANSFORMS_EXPORT VTK_MARSHALAUTO vtkAbstractTransform : public vtkObject
 {
 public:
   vtkTypeMacro(vtkAbstractTransform, vtkObject);
@@ -86,7 +75,7 @@ public:
     return this->TransformPoint(point[0], point[1], point[2]);
   }
 
-  //@{
+  ///@{
   /**
    * Apply the transformation to an (x,y,z) coordinate.
    * Use this if you are programming in Python or Java.
@@ -103,9 +92,9 @@ public:
   {
     return this->TransformFloatPoint(point[0], point[1], point[2]);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Apply the transformation to a double-precision (x,y,z) coordinate.
    * Use this if you are programming in Python or Java.
@@ -122,9 +111,9 @@ public:
   {
     return this->TransformDoublePoint(point[0], point[1], point[2]);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Apply the transformation to a normal at the specified vertex.  If the
    * transformation is a vtkLinearTransform, you can use TransformNormal()
@@ -132,7 +121,7 @@ public:
    */
   void TransformNormalAtPoint(const float point[3], const float in[3], float out[3]);
   void TransformNormalAtPoint(const double point[3], const double in[3], double out[3]);
-  //@}
+  ///@}
 
   double* TransformNormalAtPoint(const double point[3], const double normal[3]) VTK_SIZEHINT(3)
   {
@@ -140,7 +129,7 @@ public:
     return this->InternalDoublePoint;
   }
 
-  //@{
+  ///@{
   /**
    * Apply the transformation to a double-precision normal at the specified
    * vertex.  If the transformation is a vtkLinearTransform, you can use
@@ -152,9 +141,9 @@ public:
     this->TransformNormalAtPoint(point, normal, this->InternalDoublePoint);
     return this->InternalDoublePoint;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Apply the transformation to a single-precision normal at the specified
    * vertex.  If the transformation is a vtkLinearTransform, you can use
@@ -165,9 +154,9 @@ public:
     this->TransformNormalAtPoint(point, normal, this->InternalFloatPoint);
     return this->InternalFloatPoint;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Apply the transformation to a vector at the specified vertex.  If the
    * transformation is a vtkLinearTransform, you can use TransformVector()
@@ -175,7 +164,7 @@ public:
    */
   void TransformVectorAtPoint(const float point[3], const float in[3], float out[3]);
   void TransformVectorAtPoint(const double point[3], const double in[3], double out[3]);
-  //@}
+  ///@}
 
   double* TransformVectorAtPoint(const double point[3], const double vector[3]) VTK_SIZEHINT(3)
   {
@@ -183,7 +172,7 @@ public:
     return this->InternalDoublePoint;
   }
 
-  //@{
+  ///@{
   /**
    * Apply the transformation to a double-precision vector at the specified
    * vertex.  If the transformation is a vtkLinearTransform, you can use
@@ -195,9 +184,9 @@ public:
     this->TransformVectorAtPoint(point, vector, this->InternalDoublePoint);
     return this->InternalDoublePoint;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Apply the transformation to a single-precision vector at the specified
    * vertex.  If the transformation is a vtkLinearTransform, you can use
@@ -208,7 +197,7 @@ public:
     this->TransformVectorAtPoint(point, vector, this->InternalFloatPoint);
     return this->InternalFloatPoint;
   }
-  //@}
+  ///@}
 
   /**
    * Apply the transformation to a series of points, and append the
@@ -232,6 +221,7 @@ public:
    * GetLinearInverse() instead which will type cast the result from
    * vtkAbstractTransform to vtkLinearTransform.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   vtkAbstractTransform* GetInverse();
 
   /**
@@ -239,6 +229,7 @@ public:
    * This transform will automatically update to agree with the
    * inverse transform that you set.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   void SetInverse(vtkAbstractTransform* transform);
 
   /**
@@ -259,16 +250,16 @@ public:
    */
   void Update();
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation without calling Update.
    * Meant for use only within other VTK classes.
    */
   virtual void InternalTransformPoint(const float in[3], float out[3]) = 0;
   virtual void InternalTransformPoint(const double in[3], double out[3]) = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will transform a point and, at the same time, calculate a
    * 3x3 Jacobian matrix that provides the partial derivatives of the
@@ -279,7 +270,7 @@ public:
     const float in[3], float out[3], float derivative[3][3]) = 0;
   virtual void InternalTransformDerivative(
     const double in[3], double out[3], double derivative[3][3]) = 0;
-  //@}
+  ///@}
 
   /**
    * Make another transform of the same type.
@@ -300,6 +291,11 @@ public:
    * Override GetMTime necessary because of inverse transforms.
    */
   vtkMTimeType GetMTime() override;
+
+  /**
+   * Override Modified to avoid ModifiedEvent during update.
+   */
+  void Modified() override;
 
   /**
    * Needs a special UnRegister() implementation to avoid
@@ -325,25 +321,10 @@ protected:
   double InternalDoublePoint[3];
 
 private:
-  // We need to record the time of the last update, and we also need
-  // to do mutex locking so updates don't collide.  These are private
-  // because Update() is not virtual.
-  // If DependsOnInverse is set, then this transform object will
-  // check its inverse on every update, and update itself accordingly
-  // if necessary.
+  class vtkInternals;
 
-  vtkTimeStamp UpdateTime;
-  vtkSimpleCriticalSection* UpdateMutex;
-  vtkSimpleCriticalSection* InverseMutex;
-  int DependsOnInverse;
+  vtkInternals* Internals;
 
-  // MyInverse is a transform which is the inverse of this one.
-
-  vtkAbstractTransform* MyInverse;
-
-  int InUnRegister;
-
-private:
   vtkAbstractTransform(const vtkAbstractTransform&) = delete;
   void operator=(const vtkAbstractTransform&) = delete;
 };
@@ -355,7 +336,7 @@ private:
 class vtkTransformPair
 {
 public:
-  vtkTransformPair() {}
+  vtkTransformPair() = default;
 
   vtkAbstractTransform* ForwardTransform;
   vtkAbstractTransform* InverseTransform;
@@ -388,22 +369,22 @@ public:
    */
   void Concatenate(const double elements[16]);
 
-  //@{
+  ///@{
   /**
    * set/get the PreMultiply flag
    */
-  void SetPreMultiplyFlag(int flag) { this->PreMultiplyFlag = flag; }
-  int GetPreMultiplyFlag() { return this->PreMultiplyFlag; }
-  //@}
+  void SetPreMultiplyFlag(vtkTypeBool flag) { this->PreMultiplyFlag = flag; }
+  vtkTypeBool GetPreMultiplyFlag() { return this->PreMultiplyFlag; }
+  ///@}
 
-  //@{
+  ///@{
   /**
    * the three basic linear transformations
    */
   void Translate(double x, double y, double z);
   void Rotate(double angle, double x, double y, double z);
   void Scale(double x, double y, double z);
-  //@}
+  ///@}
 
   /**
    * invert the concatenation
@@ -413,7 +394,7 @@ public:
   /**
    * get the inverse flag
    */
-  int GetInverseFlag() { return this->InverseFlag; }
+  vtkTypeBool GetInverseFlag() { return this->InverseFlag; }
 
   /**
    * identity simply clears the transform list
@@ -456,8 +437,8 @@ protected:
   vtkTransformConcatenation();
   ~vtkTransformConcatenation();
 
-  int InverseFlag;
-  int PreMultiplyFlag;
+  vtkTypeBool InverseFlag;
+  vtkTypeBool PreMultiplyFlag;
 
   vtkMatrix4x4* PreMatrix;
   vtkMatrix4x4* PostMatrix;
@@ -511,4 +492,5 @@ private:
   void operator=(const vtkTransformConcatenationStack&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

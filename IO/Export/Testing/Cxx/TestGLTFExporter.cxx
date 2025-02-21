@@ -1,16 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkElevationFilter.h"
@@ -75,6 +64,7 @@ int TestGLTFExporter(int argc, char* argv[])
 
   filename += ".gltf";
 
+  mapper->SetInterpolateScalarsBeforeMapping(true); // To generate texture
   vtkNew<vtkGLTFExporter> exporter;
   exporter->SetRenderWindow(window);
   exporter->SetFileName(filename.c_str());
@@ -89,6 +79,19 @@ int TestGLTFExporter(int argc, char* argv[])
   {
     return EXIT_FAILURE;
   }
+  exporter->SetSaveNaNValues(false);
+  exporter->Write();
+  size_t noNaNValueSize = fileSize(filename);
+  // GLTF File size and not texture file size.
+  size_t correctNoNaNValueSize = correctSize - 16;
+  if (noNaNValueSize != correctNoNaNValueSize)
+  {
+    std::cerr
+      << "Error: file should not contain NaN value color in texture, when SaveNaNValues is false"
+      << std::endl;
+    return EXIT_FAILURE;
+  }
+  exporter->SetSaveNaNValues(true);
 
   actor->VisibilityOff();
   exporter->Write();

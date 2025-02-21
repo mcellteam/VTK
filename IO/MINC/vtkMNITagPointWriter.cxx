@@ -1,50 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMNITagPointWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=========================================================================
-
-Copyright (c) 2006 Atamai, Inc.
-
-Use, modification and redistribution of the software, in source or
-binary forms, are permitted provided that the following terms and
-conditions are met:
-
-1) Redistribution of the source code, in verbatim or modified
-   form, must retain the above copyright notice, this license,
-   the following disclaimer, and any notices that refer to this
-   license and/or the following disclaimer.
-
-2) Redistribution in binary form must include the above copyright
-   notice, a copy of this license and the following disclaimer
-   in the documentation or with other materials provided with the
-   distribution.
-
-3) Modified copies of the source code must be clearly marked as such,
-   and must not be misrepresented as verbatim copies of the source code.
-
-THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE SOFTWARE "AS IS"
-WITHOUT EXPRESSED OR IMPLIED WARRANTY INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  IN NO EVENT SHALL ANY COPYRIGHT HOLDER OR OTHER PARTY WHO MAY
-MODIFY AND/OR REDISTRIBUTE THE SOFTWARE UNDER THE TERMS OF THIS LICENSE
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, LOSS OF DATA OR DATA BECOMING INACCURATE
-OR LOSS OF PROFIT OR BUSINESS INTERRUPTION) ARISING IN ANY WAY OUT OF
-THE USE OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGES.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2006 Atamai, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMNITagPointWriter.h"
 
@@ -72,7 +28,8 @@ POSSIBILITY OF SUCH DAMAGES.
 #include <io.h> /* unlink */
 #endif
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMNITagPointWriter);
 
 vtkCxxSetObjectMacro(vtkMNITagPointWriter, LabelText, vtkStringArray);
@@ -80,7 +37,7 @@ vtkCxxSetObjectMacro(vtkMNITagPointWriter, Weights, vtkDoubleArray);
 vtkCxxSetObjectMacro(vtkMNITagPointWriter, StructureIds, vtkIntArray);
 vtkCxxSetObjectMacro(vtkMNITagPointWriter, PatientIds, vtkIntArray);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMNITagPointWriter::vtkMNITagPointWriter()
 {
   this->Points[0] = nullptr;
@@ -99,7 +56,7 @@ vtkMNITagPointWriter::vtkMNITagPointWriter()
   this->FileName = nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMNITagPointWriter::~vtkMNITagPointWriter()
 {
   vtkObject* objects[6];
@@ -123,7 +80,7 @@ vtkMNITagPointWriter::~vtkMNITagPointWriter()
   delete[] this->FileName;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITagPointWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -137,7 +94,7 @@ void vtkMNITagPointWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Comments: " << (this->Comments ? this->Comments : "none") << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITagPointWriter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPointSet");
@@ -145,7 +102,7 @@ int vtkMNITagPointWriter::FillInputPortInformation(int, vtkInformation* info)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkMNITagPointWriter::GetMTime()
 {
   vtkMTimeType mtime = this->Superclass::GetMTime();
@@ -173,7 +130,7 @@ vtkMTimeType vtkMNITagPointWriter::GetMTime()
   return mtime;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITagPointWriter::SetPoints(int port, vtkPoints* points)
 {
   if (port < 0 || port > 1)
@@ -196,7 +153,7 @@ void vtkMNITagPointWriter::SetPoints(int port, vtkPoints* points)
   this->Modified();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPoints* vtkMNITagPointWriter::GetPoints(int port)
 {
   if (port < 0 || port > 1)
@@ -206,7 +163,7 @@ vtkPoints* vtkMNITagPointWriter::GetPoints(int port)
   return this->Points[port];
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITagPointWriter::WriteData(vtkPointSet* inputs[2])
 {
   static const char* arrayNames[3] = { "Weights", "StructureIds", "PatientIds" };
@@ -401,7 +358,7 @@ void vtkMNITagPointWriter::WriteData(vtkPointSet* inputs[2])
 
     if (labels)
     {
-      vtkStdString l = labels->GetValue(i);
+      std::string l = labels->GetValue(i);
       outfile << " \"";
       for (std::string::iterator si = l.begin(); si != l.end(); ++si)
       {
@@ -429,7 +386,7 @@ void vtkMNITagPointWriter::WriteData(vtkPointSet* inputs[2])
           }
           else
           {
-            snprintf(text, sizeof(text), "x%2.2x", (static_cast<int>(*si) & 0x00ff));
+            snprintf(text, sizeof(text), "x%2.2x", (static_cast<unsigned int>(*si) & 0x00ff));
             outfile << text;
           }
         }
@@ -458,7 +415,7 @@ void vtkMNITagPointWriter::WriteData(vtkPointSet* inputs[2])
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITagPointWriter::Write()
 {
   // Allow writer to work when no inputs are provided
@@ -467,7 +424,7 @@ int vtkMNITagPointWriter::Write()
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITagPointWriter::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector*)
 {
@@ -513,7 +470,7 @@ int vtkMNITagPointWriter::RequestData(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 ostream* vtkMNITagPointWriter::OpenFile()
 {
   ostream* fptr;
@@ -540,10 +497,11 @@ ostream* vtkMNITagPointWriter::OpenFile()
   return fptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITagPointWriter::CloseFile(ostream* fp)
 {
   vtkDebugMacro(<< "Closing file\n");
 
   delete fp;
 }
+VTK_ABI_NAMESPACE_END

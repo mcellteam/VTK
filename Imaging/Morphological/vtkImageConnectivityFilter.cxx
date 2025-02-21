@@ -1,49 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageConnectivityFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=========================================================================
-  Copyright (c) 2014 David Gobbi
-  All rights reserved.
-
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions
-  are met:
-
-  * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
-  * Neither the name of David Gobbi nor the names of any contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-  HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-=========================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2014 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageConnectivityFilter.h"
 
 #include "vtkDataSet.h"
@@ -69,9 +26,10 @@
 #include <stack>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageConnectivityFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor sets default values
 vtkImageConnectivityFilter::vtkImageConnectivityFilter()
 {
@@ -101,7 +59,7 @@ vtkImageConnectivityFilter::vtkImageConnectivityFilter()
   this->SetNumberOfInputPorts(3);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageConnectivityFilter::~vtkImageConnectivityFilter()
 {
   if (this->ExtractedRegionSizes)
@@ -122,7 +80,7 @@ vtkImageConnectivityFilter::~vtkImageConnectivityFilter()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageConnectivityFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 2)
@@ -142,43 +100,43 @@ int vtkImageConnectivityFilter::FillInputPortInformation(int port, vtkInformatio
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageConnectivityFilter::SetStencilConnection(vtkAlgorithmOutput* stencil)
 {
   this->SetInputConnection(1, stencil);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAlgorithmOutput* vtkImageConnectivityFilter::GetStencilConnection()
 {
   return this->GetInputConnection(1, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageConnectivityFilter::SetStencilData(vtkImageStencilData* stencil)
 {
   this->SetInputData(1, stencil);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageConnectivityFilter::SetSeedConnection(vtkAlgorithmOutput* seeds)
 {
   this->SetInputConnection(2, seeds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAlgorithmOutput* vtkImageConnectivityFilter::GetSeedConnection()
 {
   return this->GetInputConnection(2, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageConnectivityFilter::SetSeedData(vtkDataSet* seeds)
 {
   this->SetInputData(2, seeds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkImageConnectivityFilter::GetLabelScalarTypeAsString()
 {
   const char* result = "Unknown";
@@ -200,7 +158,7 @@ const char* vtkImageConnectivityFilter::GetLabelScalarTypeAsString()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkImageConnectivityFilter::GetLabelModeAsString()
 {
   const char* result = "Unknown";
@@ -219,7 +177,7 @@ const char* vtkImageConnectivityFilter::GetLabelModeAsString()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkImageConnectivityFilter::GetExtractionModeAsString()
 {
   const char* result = "Unknown";
@@ -238,13 +196,13 @@ const char* vtkImageConnectivityFilter::GetExtractionModeAsString()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkImageConnectivityFilter::GetNumberOfExtractedRegions()
 {
   return this->ExtractedRegionLabels->GetNumberOfTuples();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 
@@ -345,7 +303,7 @@ public:
   static bool IntersectExtents(const int extent1[6], const int extent2[6], int output[6]);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // seed struct: structured coordinates and a value,
 // the coords can be accessed with [] and the value with *
 class vtkICF::Seed
@@ -373,6 +331,11 @@ public:
 
   vtkICF::Seed& operator=(const vtkICF::Seed& seed)
   {
+    if (this == &seed)
+    {
+      return *this;
+    }
+
     pos[0] = seed.pos[0];
     pos[1] = seed.pos[1];
     pos[2] = seed.pos[2];
@@ -385,7 +348,7 @@ private:
   int value;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // region struct: size and id
 struct vtkICF::Region
 {
@@ -413,7 +376,7 @@ struct vtkICF::Region
   int extent[6];
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkICF::RegionVector : public std::vector<vtkICF::Region>
 {
 public:
@@ -456,7 +419,7 @@ public:
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkICF::IntersectExtents(const int extent1[6], const int extent2[6], int output[6])
 {
   bool rval = true;
@@ -474,7 +437,7 @@ bool vtkICF::IntersectExtents(const int extent1[6], const int extent2[6], int ou
   return rval;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class IT>
 void vtkICF::ExecuteInput(vtkImageConnectivityFilter* self, vtkImageData* inData, IT*,
   unsigned char* maskPtr, vtkImageStencilData* stencil, int extent[6])
@@ -564,7 +527,7 @@ void vtkICF::ExecuteInput(vtkImageConnectivityFilter* self, vtkImageData* inData
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class OT>
 void vtkICF::PruneAllButLargest(vtkImageData* outData, OT* outPtr, vtkImageStencilData* stencil,
   int extent[6], const OT& value, vtkICF::RegionVector& regionInfo)
@@ -611,7 +574,7 @@ void vtkICF::PruneAllButLargest(vtkImageData* outData, OT* outPtr, vtkImageStenc
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class OT>
 void vtkICF::PruneSmallestRegion(vtkImageData* outData, OT* outPtr, vtkImageStencilData* stencil,
   int extent[6], vtkICF::RegionVector& regionInfo)
@@ -657,7 +620,7 @@ void vtkICF::PruneSmallestRegion(vtkImageData* outData, OT* outPtr, vtkImageSten
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class OT>
 void vtkICF::PruneBySize(vtkImageData* outData, OT* outPtr, vtkImageStencilData* stencil,
   int extent[6], vtkIdType sizeRange[2], vtkICF::RegionVector& regionInfo)
@@ -717,7 +680,7 @@ void vtkICF::PruneBySize(vtkImageData* outData, OT* outPtr, vtkImageStencilData*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Perform a flood fill for each given seed.
 template <class OT>
 vtkIdType vtkICF::Fill(OT* outPtr, vtkIdType outInc[3], int outLimits[6], unsigned char* maskPtr,
@@ -820,7 +783,7 @@ vtkIdType vtkICF::Fill(OT* outPtr, vtkIdType outInc[3], int outLimits[6], unsign
   return counter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class OT>
 void vtkICF::AddRegion(vtkImageData* outData, OT* outPtr, vtkImageStencilData* stencil,
   int extent[6], vtkIdType sizeRange[2], vtkICF::RegionVector& regionInfo, vtkIdType voxelCount,
@@ -849,7 +812,7 @@ void vtkICF::AddRegion(vtkImageData* outData, OT* outPtr, vtkImageStencilData* s
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // a functor to sort region indices by region size
 struct vtkICF::CompareSize
 {
@@ -863,7 +826,7 @@ struct vtkICF::CompareSize
   bool operator()(vtkIdType x, vtkIdType y) { return ((*Regions)[x].size > (*Regions)[y].size); }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkICF::GenerateRegionArrays(vtkImageConnectivityFilter* self,
   vtkICF::RegionVector& regionInfo, vtkDataArray* seedScalars, int extent[6], int minLabel,
   int maxLabel)
@@ -1013,7 +976,7 @@ void vtkICF::GenerateRegionArrays(vtkImageConnectivityFilter* self,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // generate the output image
 template <class OT>
 void vtkICF::Relabel(vtkImageData* outData, OT* outPtr, vtkImageStencilData* stencil, int extent[6],
@@ -1050,7 +1013,7 @@ void vtkICF::Relabel(vtkImageData* outData, OT* outPtr, vtkImageStencilData* ste
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkICF::SortRegionArrays(vtkImageConnectivityFilter* self)
 {
   vtkIdTypeArray* sizes = self->GetExtractedRegionSizes();
@@ -1085,7 +1048,7 @@ void vtkICF::SortRegionArrays(vtkImageConnectivityFilter* self)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class OT>
 void vtkICF::Finish(vtkImageConnectivityFilter* self, vtkImageData* outData, OT* outPtr,
   vtkImageStencilData* stencil, int extent[6], vtkDataArray* seedScalars,
@@ -1124,7 +1087,7 @@ void vtkICF::Finish(vtkImageConnectivityFilter* self, vtkImageData* outData, OT*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int* vtkICF::ZeroBaseExtent(const int wholeExtent[6], int extent[6], int maxIdx[3])
 {
   // Indexing goes from 0 to maxIdX
@@ -1146,7 +1109,7 @@ int* vtkICF::ZeroBaseExtent(const int wholeExtent[6], int extent[6], int maxIdx[
   return (useLimits ? extent : nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class OT>
 void vtkICF::SeededExecute(vtkImageConnectivityFilter* self, vtkImageData* outData,
   vtkDataSet* seedData, vtkImageStencilData* stencil, OT* outPtr, unsigned char* maskPtr,
@@ -1232,7 +1195,7 @@ void vtkICF::SeededExecute(vtkImageConnectivityFilter* self, vtkImageData* outDa
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class OT>
 void vtkICF::SeedlessExecute(vtkImageConnectivityFilter* self, vtkImageData* outData,
   vtkImageStencilData* stencil, OT* outPtr, unsigned char* maskPtr, int extent[6],
@@ -1318,7 +1281,7 @@ void vtkICF::SeedlessExecute(vtkImageConnectivityFilter* self, vtkImageData* out
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class OT>
 void vtkICF::ExecuteOutput(vtkImageConnectivityFilter* self, vtkImageData* outData,
@@ -1350,7 +1313,7 @@ void vtkICF::ExecuteOutput(vtkImageConnectivityFilter* self, vtkImageData* outDa
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageConnectivityFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -1360,7 +1323,7 @@ int vtkImageConnectivityFilter::RequestInformation(vtkInformation* vtkNotUsed(re
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageConnectivityFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -1378,7 +1341,7 @@ int vtkImageConnectivityFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(r
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageConnectivityFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -1492,7 +1455,7 @@ int vtkImageConnectivityFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return rval;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageConnectivityFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1527,3 +1490,4 @@ void vtkImageConnectivityFilter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "StencilConnection: " << this->GetStencilConnection() << "\n";
 }
+VTK_ABI_NAMESPACE_END

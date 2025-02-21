@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSeedRepresentationTest1.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSeedRepresentation.h"
 
 #include <cstdlib>
@@ -50,6 +38,10 @@ int vtkSeedRepresentationTest1(int, char*[])
   status += errorObserver->CheckErrorMessage("Trying to access non-existent handle");
   node1->GetSeedDisplayPosition(s, pos);
   status += errorObserver->CheckErrorMessage("Trying to access non-existent handle");
+  if (status != 0)
+  {
+    return EXIT_FAILURE;
+  }
 
   // set/get display and world position will fail without seeds having been
   // created, so add some and then do the testing of return values.

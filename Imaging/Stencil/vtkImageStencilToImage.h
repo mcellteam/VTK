@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageStencilToImage.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageStencilToImage
  * @brief   Convert an image stencil into an image
@@ -31,6 +19,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingStencilModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGSTENCIL_EXPORT vtkImageStencilToImage : public vtkImageAlgorithm
 {
 public:
@@ -38,23 +27,23 @@ public:
   vtkTypeMacro(vtkImageStencilToImage, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The value to use outside the stencil.  The default is 0.
    */
   vtkSetMacro(OutsideValue, double);
   vtkGetMacro(OutsideValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The value to use inside the stencil.  The default is 1.
    */
   vtkSetMacro(InsideValue, double);
   vtkGetMacro(InsideValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The desired output scalar type.  The default is unsigned char.
    */
@@ -70,7 +59,7 @@ public:
   void SetOutputScalarTypeToUnsignedShort() { this->SetOutputScalarType(VTK_UNSIGNED_SHORT); }
   void SetOutputScalarTypeToUnsignedChar() { this->SetOutputScalarType(VTK_UNSIGNED_CHAR); }
   void SetOutputScalarTypeToChar() { this->SetOutputScalarType(VTK_CHAR); }
-  //@}
+  ///@}
 
 protected:
   vtkImageStencilToImage();
@@ -91,4 +80,5 @@ private:
   void operator=(const vtkImageStencilToImage&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLineSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLineSource.h"
 
 #include "vtkCellArray.h"
@@ -24,14 +12,14 @@
 #include "vtkPolyData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLineSource);
 vtkCxxSetObjectMacro(vtkLineSource, Points, vtkPoints);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLineSource::vtkLineSource(int res)
 {
   this->Point1[0] = -.5;
@@ -50,13 +38,13 @@ vtkLineSource::vtkLineSource(int res)
   this->SetNumberOfInputPorts(0);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLineSource::~vtkLineSource()
 {
   this->SetPoints(nullptr);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineSource::SetNumberOfRefinementRatios(int val)
 {
   if (val < 0)
@@ -70,7 +58,7 @@ void vtkLineSource::SetNumberOfRefinementRatios(int val)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineSource::SetRefinementRatio(int index, double value)
 {
   if (index >= 0 && index < static_cast<int>(this->RefinementRatios.size()))
@@ -87,13 +75,13 @@ void vtkLineSource::SetRefinementRatio(int index, double value)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLineSource::GetNumberOfRefinementRatios()
 {
   return static_cast<int>(this->RefinementRatios.size());
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkLineSource::GetRefinementRatio(int index)
 {
   if (index >= 0 && index < static_cast<int>(this->RefinementRatios.size()))
@@ -104,7 +92,7 @@ double vtkLineSource::GetRefinementRatio(int index)
   return 0.0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLineSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -114,7 +102,7 @@ int vtkLineSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLineSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -265,7 +253,7 @@ int vtkLineSource::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineSource::SetPoint1(float point1f[3])
 {
   double point1d[3];
@@ -275,7 +263,7 @@ void vtkLineSource::SetPoint1(float point1f[3])
   SetPoint1(point1d);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineSource::SetPoint2(float point2f[3])
 {
   double point2d[3];
@@ -285,7 +273,7 @@ void vtkLineSource::SetPoint2(float point2f[3])
   SetPoint2(point2d);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -317,3 +305,4 @@ void vtkLineSource::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLabeledContourMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkLabeledContourMapper.h"
 
@@ -37,7 +25,6 @@
 #include "vtkTimerLog.h"
 #include "vtkTransform.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 #include "vtkWindow.h"
 
 #include <algorithm>
@@ -49,6 +36,7 @@
 #include <vector>
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 struct LabelMetric
 {
   bool Valid;
@@ -136,7 +124,7 @@ struct vtkLabeledContourMapper::Private
   std::vector<LabelMetric> LabelMetrics;
 
   // One LabelInfo per label groups by isoline.
-  std::vector<std::vector<LabelInfo> > LabelInfos;
+  std::vector<std::vector<LabelInfo>> LabelInfos;
 
   // Info for calculating display coordinates:
   vtkTuple<double, 16> AMVP;               // actor-model-view-projection matrix
@@ -201,17 +189,6 @@ vtkObjectFactoryNewMacro(vtkLabeledContourMapper);
 //------------------------------------------------------------------------------
 vtkLabeledContourMapper::vtkLabeledContourMapper()
 {
-  this->SkipDistance = 0.;
-  this->LabelVisibility = true;
-  this->TextActors = nullptr;
-  this->NumberOfTextActors = 0;
-  this->NumberOfUsedTextActors = 0;
-
-  this->StencilQuads = nullptr;
-  this->StencilQuadsSize = 0;
-  this->StencilQuadIndices = nullptr;
-  this->StencilQuadIndicesSize = 0;
-
   this->TextProperties = vtkSmartPointer<vtkTextPropertyCollection>::New();
   vtkNew<vtkTextProperty> defaultTProp;
   this->TextProperties->AddItem(defaultTProp);
@@ -351,7 +328,7 @@ double* vtkLabeledContourMapper::GetBounds()
 }
 
 //------------------------------------------------------------------------------
-void vtkLabeledContourMapper::GetBounds(double bounds[])
+void vtkLabeledContourMapper::GetBounds(double bounds[6])
 {
   this->Superclass::GetBounds(bounds);
 }
@@ -413,7 +390,7 @@ void vtkLabeledContourMapper::ReleaseGraphicsResources(vtkWindow* win)
 //------------------------------------------------------------------------------
 void vtkLabeledContourMapper::ComputeBounds()
 {
-  this->GetInput()->GetBounds(this->Bounds);
+  this->GetInput()->GetCellsBounds(this->Bounds);
 }
 
 //------------------------------------------------------------------------------
@@ -597,7 +574,7 @@ bool vtkLabeledContourMapper::PrepareRender(vtkRenderer* ren, vtkActor* act)
   const vtkIdType* ids;
   for (lines->InitTraversal(); lines->GetNextCell(numPts, ids);)
   {
-    this->Internal->LabelMetrics.push_back(LabelMetric());
+    this->Internal->LabelMetrics.emplace_back();
     LabelMetric& metric = this->Internal->LabelMetrics.back();
     if (!(metric.Valid = (numPts > 0)))
     {
@@ -692,7 +669,7 @@ bool vtkLabeledContourMapper::PlaceLabels()
   {
     assert(metric != this->Internal->LabelMetrics.end());
 
-    this->Internal->LabelInfos.push_back(std::vector<LabelInfo>());
+    this->Internal->LabelInfos.emplace_back();
 
     // Test if it is possible to place a label (e.g. the line is big enough
     // to not be completely obscured)
@@ -721,7 +698,7 @@ bool vtkLabeledContourMapper::PlaceLabels()
 bool vtkLabeledContourMapper::ResolveLabels()
 {
   typedef std::vector<LabelInfo>::iterator InnerIterator;
-  typedef std::vector<std::vector<LabelInfo> >::iterator OuterIterator;
+  typedef std::vector<std::vector<LabelInfo>>::iterator OuterIterator;
 
   bool removedA = false;
   bool removedB = false;
@@ -849,7 +826,7 @@ bool vtkLabeledContourMapper::ApplyStencil(vtkRenderer*, vtkActor*)
 //------------------------------------------------------------------------------
 bool vtkLabeledContourMapper::RenderPolyData(vtkRenderer* ren, vtkActor* act)
 {
-  this->PolyDataMapper->SetInputConnection(this->GetInputConnection(0, 0));
+  this->PolyDataMapper->SetInputData(this->GetInput());
   this->PolyDataMapper->Render(ren, act);
   return true;
 }
@@ -948,7 +925,7 @@ bool vtkLabeledContourMapper::BuildStencilQuads()
   unsigned int eIndex = 0; // index array element
 
   typedef std::vector<LabelInfo>::const_iterator InnerIterator;
-  typedef std::vector<std::vector<LabelInfo> >::const_iterator OuterIterator;
+  typedef std::vector<std::vector<LabelInfo>>::const_iterator OuterIterator;
 
   for (OuterIterator out = this->Internal->LabelInfos.begin(),
                      outEnd = this->Internal->LabelInfos.end();
@@ -1093,7 +1070,7 @@ bool vtkLabeledContourMapper::Private::SetViewInfo(vtkRenderer* ren, vtkActor* a
 
   if (vtkWindow* win = ren->GetVTKWindow())
   {
-    int* size = win->GetSize();
+    const int* size = win->GetSize();
     this->WindowSize[0] = size[0];
     this->WindowSize[1] = size[1];
 
@@ -1181,35 +1158,46 @@ bool vtkLabeledContourMapper::Private::PixelIsVisible(const vtkVector2<ScalarTyp
 }
 
 //------------------------------------------------------------------------------
-bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& numIds,
-  const vtkIdType*& ids, const LabelMetric& metrics, LabelInfo& info, double targetSmoothness,
+bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& numPts,
+  const vtkIdType*& ptIds, const LabelMetric& metrics, LabelInfo& info, double targetSmoothness,
   double skipDistance)
 {
-  if (numIds < 3)
+  if (numPts < 3)
   {
     return false;
   }
 
   // First point in this call to NextLabel (index into ids).
-  vtkIdType firstIdx = 0;
   vtkVector3d firstPoint;
+  points->GetPoint(ptIds[0], firstPoint.GetData());
   vtkVector2d firstPointDisplay;
-  points->GetPoint(ids[firstIdx], firstPoint.GetData());
   this->ActorToDisplay(firstPoint, firstPointDisplay);
 
   // Start of current smooth run (index into ids).
+  vtkVector3d startPoint = firstPoint;
+  vtkVector2d startPointDisplay = firstPointDisplay;
+
+  // Vector of segment prev --> current
+  vtkVector2d segment(0, 0);
+
+  // Account for skip distance:
   vtkIdType startIdx = 0;
-  vtkVector3d startPoint;
-  vtkVector2d startPointDisplay;
-  points->GetPoint(ids[startIdx], startPoint.GetData());
-  this->ActorToDisplay(startPoint, startPointDisplay);
-
-  // Accumulated length of segments since startId
-  std::vector<double> segmentLengths;
-  double rAccum = 0.;
-
-  // Straight-line distance from start --> previous
-  double rPrevStraight = 0.;
+  while (segment.SquaredNorm() < (skipDistance * skipDistance) && (++startIdx) < numPts)
+  {
+    points->GetPoint(ptIds[startIdx], startPoint.GetData());
+    this->ActorToDisplay(startPoint, startPointDisplay);
+    segment = startPointDisplay - firstPointDisplay;
+  }
+  // Find the first visible point
+  while ((++startIdx) < numPts && !this->PixelIsVisible(startPointDisplay))
+  {
+    points->GetPoint(ptIds[startIdx], startPoint.GetData());
+    this->ActorToDisplay(startPoint, startPointDisplay);
+  }
+  if (startIdx >= numPts)
+  {
+    return false;
+  }
 
   // Straight-line distance from start --> current
   double rStraight = 0.;
@@ -1220,33 +1208,12 @@ bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& n
   // Minimum length of a smooth segment in display space
   const double minLength = 1.2 * metrics.Dimensions[0];
 
-  // Vector of segment prev --> current
-  vtkVector2d segment(0, 0);
-
   // Vector of segment start --> current
   vtkVector2d prevStraight(0, 0);
   vtkVector2d straight(0, 0);
 
   // Smoothness of start --> current
   double smoothness = 0;
-
-  // Account for skip distance:
-  while (segment.Norm() < skipDistance)
-  {
-    ++startIdx;
-    points->GetPoint(ids[startIdx], startPoint.GetData());
-    this->ActorToDisplay(startPoint, startPointDisplay);
-
-    segment = startPointDisplay - firstPointDisplay;
-  }
-
-  // Find the first visible point
-  while (startIdx + 1 < numIds && !this->PixelIsVisible(startPointDisplay))
-  {
-    ++startIdx;
-    points->GetPoint(ids[startIdx], startPoint.GetData());
-    this->ActorToDisplay(startPoint, startPointDisplay);
-  }
 
   // Start point in current segment.
   vtkVector3d prevPoint = startPoint;
@@ -1257,7 +1224,13 @@ bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& n
   vtkVector3d curPoint = prevPoint;
   vtkVector2d curPointDisplay = prevPointDisplay;
 
-  while (curIdx < numIds)
+  // Accumulated length of segments since startId
+  std::vector<double> segmentLengths;
+  double rAccum = 0.;
+  // Straight-line distance from start --> previous
+  double rPrevStraight = 0.;
+
+  while (curIdx < numPts)
   {
     // Copy cur --> prev
     prevPoint = curPoint;
@@ -1266,7 +1239,7 @@ bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& n
     rPrevStraight = rStraight;
 
     // Update current:
-    points->GetPoint(ids[curIdx], curPoint.GetData());
+    points->GetPoint(ptIds[curIdx], curPoint.GetData());
     this->ActorToDisplay(curPoint, curPointDisplay);
 
     // Calculate lengths and smoothness.
@@ -1304,12 +1277,19 @@ bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& n
       else
       {
         // This startIdx won't work. On to the next visible startIdx.
-        do
+        while ((++startIdx) < numPts)
         {
-          ++startIdx;
-          points->GetPoint(ids[startIdx], startPoint.GetData());
+          points->GetPoint(ptIds[startIdx], startPoint.GetData());
           this->ActorToDisplay(startPoint, startPointDisplay);
-        } while (startIdx < numIds && !this->PixelIsVisible(startPointDisplay));
+          if (this->PixelIsVisible(startPointDisplay))
+          {
+            break;
+          }
+        }
+        if (startIdx >= numPts)
+        {
+          return false;
+        }
 
         prevPoint = startPoint;
         prevPointDisplay = startPointDisplay;
@@ -1327,9 +1307,6 @@ bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& n
   // Was the last segment ok?
   if (rPrevStraight >= minLength)
   {
-    // The final index of the segment:
-    vtkIdType endIdx = curIdx - 1;
-
     // The direction of the text.
     vtkVector3d prevPointWorld;
     vtkVector3d startPointWorld;
@@ -1368,8 +1345,8 @@ bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& n
       rAccum = tmp;
     }
     targetLength -= rAccum;
-    points->GetPoint(ids[startIdx + endIdxOffset - 1], prevPoint.GetData());
-    points->GetPoint(ids[startIdx + endIdxOffset], curPoint.GetData());
+    points->GetPoint(ptIds[startIdx + endIdxOffset - 1], prevPoint.GetData());
+    points->GetPoint(ptIds[startIdx + endIdxOffset], curPoint.GetData());
     vtkVector3d offset = curPoint - prevPoint;
     double rSegmentActor = offset.Normalize();
     offset = offset * (targetLength * rSegmentActor / rSegment);
@@ -1378,8 +1355,9 @@ bool vtkLabeledContourMapper::Private::NextLabel(vtkPoints* points, vtkIdType& n
     this->ComputeLabelInfo(info, metrics);
 
     // Update the cell array:
-    ids += endIdx;
-    numIds -= endIdx;
+    const vtkIdType endIdx = curIdx - 1;
+    ptIds += endIdx;
+    numPts -= endIdx;
 
     return true;
   }
@@ -1513,12 +1491,7 @@ bool allOutside(const vtkVector2i& point, const vtkVector2i& direction, const La
   }
 
   testVector = other.BLd - point;
-  if (direction.Dot(testVector) <= 0)
-  {
-    return false;
-  }
-
-  return true;
+  return direction.Dot(testVector) > 0;
 }
 
 // Generate a vector pointing out from each edge of the rectangle. Do this
@@ -1549,3 +1522,4 @@ bool vtkLabeledContourMapper::Private::TestOverlap(const LabelInfo& a, const Lab
     testAxis(a, b.TRd, b.TLd) || testAxis(b, a.TLd, a.BLd) || testAxis(b, a.BLd, a.BRd) ||
     testAxis(b, a.BRd, a.TRd) || testAxis(b, a.TRd, a.TLd));
 }
+VTK_ABI_NAMESPACE_END

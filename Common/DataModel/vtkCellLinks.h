@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCellLinks.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCellLinks
  * @brief   object represents upward pointers from points to list of cells using each point
@@ -39,6 +27,9 @@
 #include "vtkAbstractCellLinks.h"
 #include "vtkCommonDataModelModule.h" // For export macro
 
+#include <memory> // For shared_ptr
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkCellArray;
 
@@ -48,24 +39,29 @@ public:
   class Link
   {
   public:
+    Link()
+      : ncells(0)
+      , cells(nullptr)
+    {
+    }
+    ~Link() = default;
     vtkIdType ncells;
     vtkIdType* cells;
   };
 
-  //@{
+  ///@{
   /**
    * Standard methods to instantiate, print, and obtain type information.
    */
   static vtkCellLinks* New();
   vtkTypeMacro(vtkCellLinks, vtkAbstractCellLinks);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
-   * Build the link list array. All subclasses of vtkAbstractCellLinks
-   * must support this method.
+   * Build the link list array from the input dataset.
    */
-  void BuildLinks(vtkDataSet* data) override;
+  void BuildLinks() override;
 
   /**
    * Allocate the specified number of links (i.e., number of points) that
@@ -92,6 +88,17 @@ public:
    * Return a list of cell ids using the point.
    */
   vtkIdType* GetCells(vtkIdType ptId) { return this->Array[ptId].cells; }
+
+  ///@{
+  /**
+   * Select all cells with a point degree in the range [minDegree,maxDegree).
+   * The degree is the number of cells using a point. The selection is
+   * indicated through the provided unsigned char array, with a non-zero
+   * value indicates selection. The memory allocated for cellSelection must
+   * be the maximum cell id referenced in the links.
+   */
+  void SelectCells(vtkIdType minMaxDegree[2], unsigned char* cellSelection) override;
+  ///@}
 
   /**
    * Insert a new point into the cell-links data structure. The size parameter
@@ -152,19 +159,21 @@ public:
   unsigned long GetActualMemorySize() override;
 
   /**
-   * Standard DeepCopy method.  Since this object contains no reference
-   * to other objects, there is no ShallowCopy.
+   * Standard DeepCopy method.
+   *
+   * Before you shallow copy, make sure to call SetDataSet()
    */
   void DeepCopy(vtkAbstractCellLinks* src) override;
 
+  /**
+   * Standard ShallowCopy method.
+   *
+   * Before you shallow copy, make sure to call SetDataSet()
+   */
+  void ShallowCopy(vtkAbstractCellLinks* src) override;
+
 protected:
-  vtkCellLinks()
-    : Array(nullptr)
-    , Size(0)
-    , MaxId(-1)
-    , Extend(1000)
-  {
-  }
+  vtkCellLinks();
   ~vtkCellLinks() override;
 
   /**
@@ -179,11 +188,16 @@ protected:
    */
   void InsertCellReference(vtkIdType ptId, vtkIdType pos, vtkIdType cellId);
 
-  Link* Array;                // pointer to data
-  vtkIdType Size;             // allocated size of data
-  vtkIdType MaxId;            // maximum index inserted thus far
-  vtkIdType Extend;           // grow array by this point
-  Link* Resize(vtkIdType sz); // function to resize data
+  std::shared_ptr<Link> ArraySharedPtr; // Shared Ptr to Array
+  Link* Array;                          // pointer to data
+  vtkIdType Size;                       // allocated size of data
+  vtkIdType MaxId;                      // maximum index inserted thus far
+  vtkIdType Extend;                     // grow array by this point
+  Link* Resize(vtkIdType sz);           // function to resize data
+
+  // Some information recorded at build time
+  vtkIdType NumberOfPoints;
+  vtkIdType NumberOfCells;
 
 private:
   vtkCellLinks(const vtkCellLinks&) = delete;
@@ -247,4 +261,5 @@ inline void vtkCellLinks::ResizeCellList(vtkIdType ptId, int size)
   this->Array[ptId].cells = cells;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    UnitTestGenericGeometryFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkSmartPointer.h"
 
 #include "vtkBridgeDataSet.h"
@@ -29,7 +18,7 @@
 
 #include <sstream>
 
-static vtkSmartPointer<vtkBridgeDataSet> CreatePolyData(const int xres, const int yres);
+static vtkSmartPointer<vtkBridgeDataSet> CreatePolyData(int xres, int yres);
 static vtkSmartPointer<vtkBridgeDataSet> CreateVertexData();
 static vtkSmartPointer<vtkBridgeDataSet> CreateTetraData();
 
@@ -213,7 +202,7 @@ int UnitTestGenericGeometryFilter(int, char*[])
   return status;
 }
 
-vtkSmartPointer<vtkBridgeDataSet> CreatePolyData(const int xres, const int yres)
+vtkSmartPointer<vtkBridgeDataSet> CreatePolyData(int xres, int yres)
 {
   vtkSmartPointer<vtkPlaneSource> plane = vtkSmartPointer<vtkPlaneSource>::New();
   plane->SetXResolution(xres);

@@ -1,18 +1,7 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    TestStaticCellLocatorEdgeCases.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
+#include "vtkTestUtilities.h"
 #include <vtkCell.h>
 #include <vtkGenericCell.h>
 #include <vtkIdList.h>
@@ -21,7 +10,7 @@
 #include <vtkStaticCellLocator.h>
 #include <vtkXMLPolyDataReader.h>
 
-int TestCell(vtkDataSet* ds, int cellId, double x1[3], double x2[3], double tol)
+static int TestCell(vtkDataSet* ds, int cellId, double x1[3], double x2[3], double tol)
 {
   double t = 0.0;
   double x[3] = { 0.0, 0.0, 0.0 };
@@ -34,11 +23,6 @@ int TestCell(vtkDataSet* ds, int cellId, double x1[3], double x2[3], double tol)
 
 int TestStaticCellLocatorEdgeCases(int argc, char* argv[])
 {
-  if (argc < 2)
-  {
-    cout << "Not enough arguments.";
-    return EXIT_FAILURE;
-  }
 
   //===========
   // Test Setup
@@ -47,7 +31,7 @@ int TestStaticCellLocatorEdgeCases(int argc, char* argv[])
   double tol = 1E-15; // tolerance only used in TestCell
 
   vtkNew<vtkXMLPolyDataReader> reader;
-  char* fname = argv[1];
+  char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/test_surface.vtp");
   reader->SetFileName(fname);
   reader->Update();
   vtkDataSet* data = reader->GetOutput();

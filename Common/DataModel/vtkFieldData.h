@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFieldData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFieldData
  * @brief   represent and manipulate fields of data
@@ -32,7 +20,7 @@
  * exchange, or you can do it by grabbing the arrays and manipulating them
  * directly. The former is simpler but performs type conversion, which is bad
  * if your data has non-castable types like (void) pointers, or you lose
- * information as a result of the cast. The, more efficient method means
+ * information as a result of the cast. The more efficient method means
  * managing each array in the field.  Using this method you can create
  * faster, more efficient algorithms that do not lose information.
  *
@@ -45,12 +33,20 @@
 
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
 #include "vtkAbstractArray.h" // Needed for inline methods.
 
-class vtkIdList;
+#include <array>  // For CachedGhostRangeType
+#include <tuple>  // For CachedGhostRangeType
+#include <vector> // For list indices
 
-class VTKCOMMONDATAMODEL_EXPORT vtkFieldData : public vtkObject
+VTK_ABI_NAMESPACE_BEGIN
+class vtkIdList;
+class vtkDoubleArray;
+class vtkUnsignedCharArray;
+
+class VTKCOMMONDATAMODEL_EXPORT VTK_MARSHALAUTO vtkFieldData : public vtkObject
 {
 public:
   static vtkFieldData* New();
@@ -79,7 +75,7 @@ public:
   void CopyStructure(vtkFieldData*);
 
   /**
-   * AllocateOfArrays actually sets the number of
+   * AllocateArrays actually sets the number of
    * vtkAbstractArray pointers in the vtkFieldData object, not the
    * number of used pointers (arrays). Adding more arrays will
    * cause the object to dynamically adjust the number of pointers
@@ -92,7 +88,7 @@ public:
   /**
    * Get the number of arrays of data available.
    * This does not include nullptr array pointers therefore after
-   * fd->AllocateArray(n); nArrays = GetNumberOfArrays()
+   * fd->AllocateArray(n); nArrays = GetNumberOfArrays();
    * nArrays is not necessarily equal to n.
    */
   int GetNumberOfArrays() { return this->NumberOfActiveArrays; }
@@ -100,7 +96,8 @@ public:
   /**
    * Add an array to the array list. If an array with the same name
    * already exists - then the added array will replace it.
-   * Return the index of the added array.
+   * Return the index of the added array. If the given array is nullptr,
+   * does nothing and returns -1.
    */
   int AddArray(vtkAbstractArray* array);
 
@@ -109,13 +106,17 @@ public:
    */
   void NullData(vtkIdType id);
 
-  //@{
+  ///@{
   /**
-   * Remove an array (with the given name or index) from the list of arrays.
+   * Remove an array (with the given name) from the list of arrays.
    */
   virtual void RemoveArray(const char* name);
+
+  /**
+   * Remove an array (with the given index) from the list of arrays.
+   */
   virtual void RemoveArray(int index);
-  //@}
+  ///@}
 
   /**
    * Not recommended for use. Use GetAbstractArray(int i) instead.
@@ -123,7 +124,7 @@ public:
    * Return the ith array in the field. A nullptr is returned if the
    * index i is out of range, or if the array at the given
    * index is not a vtkDataArray. To access vtkStringArray,
-   * vtkUnicodeStringArray, or vtkVariantArray, use GetAbstractArray(int i).
+   * or vtkVariantArray, use GetAbstractArray(int i).
    */
   vtkDataArray* GetArray(int i);
 
@@ -133,20 +134,20 @@ public:
    *
    * Return the array with the name given. Returns nullptr if array not found.
    * A nullptr is also returned if the array with the given name is not a
-   * vtkDataArray. To access vtkStringArray, vtkUnicodeStringArray, or
+   * vtkDataArray. To access vtkStringArray, or
    * vtkVariantArray, use GetAbstractArray(const char* arrayName, int &index).
    * Also returns the index of the array if found, -1 otherwise.
    */
   vtkDataArray* GetArray(const char* arrayName, int& index);
 
-  //@{
+  ///@{
   /**
    * Not recommended for use. Use GetAbstractArray(const char *arrayName)
    * instead.
    *
    * Return the array with the name given. Returns nullptr if array not found.
    * A nullptr is also returned if the array with the given name is not a
-   * vtkDataArray. To access vtkStringArray, vtkUnicodeStringArray, or
+   * vtkDataArray. To access vtkStringArray, or
    * vtkVariantArray, use GetAbstractArray(const char *arrayName).
    */
   vtkDataArray* GetArray(const char* arrayName)
@@ -154,7 +155,7 @@ public:
     int i;
     return this->GetArray(arrayName, i);
   }
-  //@}
+  ///@}
 
   /**
    * Returns the ith array in the field. Unlike GetArray(), this method returns
@@ -171,7 +172,7 @@ public:
    */
   vtkAbstractArray* GetAbstractArray(const char* arrayName, int& index);
 
-  //@{
+  ///@{
   /**
    * Return the array with the name given. Returns nullptr if array not found.
    * Unlike GetArray(), this method returns a vtkAbstractArray and can be used
@@ -182,22 +183,21 @@ public:
     int i;
     return this->GetAbstractArray(arrayName, i);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return 1 if an array with the given name could be found. 0 otherwise.
    */
-  int HasArray(const char* name)
+  vtkTypeBool HasArray(const char* name)
   {
     int i;
     vtkAbstractArray* array = this->GetAbstractArray(name, i);
-    // assert( i == -1);
     return array ? 1 : 0;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the name of ith array.
    * Note that this is equivalent to:
@@ -208,7 +208,7 @@ public:
     vtkAbstractArray* da = this->GetAbstractArray(i);
     return da ? da->GetName() : nullptr;
   }
-  //@}
+  ///@}
 
   /**
    * Pass entire arrays of input data through to output. Obey the "copy"
@@ -220,10 +220,10 @@ public:
    * Turn on/off the copying of the field specified by name.
    * During the copying/passing, the following rules are followed for each
    * array:
-   * 1. If the copy flag for an array is set (on or off), it is applied
+   * 1. If the copy flag for an array is set (on or off), it is applied.
    * This overrides rule 2.
    * 2. If CopyAllOn is set, copy the array.
-   * If CopyAllOff is set, do not copy the array
+   * If CopyAllOff is set, do not copy the array.
    */
   void CopyFieldOn(const char* name) { this->CopyFieldOnOff(name, 1); }
   void CopyFieldOff(const char* name) { this->CopyFieldOnOff(name, 0); }
@@ -232,10 +232,10 @@ public:
    * Turn on copying of all data.
    * During the copying/passing, the following rules are followed for each
    * array:
-   * 1. If the copy flag for an array is set (on or off), it is applied
+   * 1. If the copy flag for an array is set (on or off), it is applied.
    * This overrides rule 2.
    * 2. If CopyAllOn is set, copy the array.
-   * If CopyAllOff is set, do not copy the array
+   * If CopyAllOff is set, do not copy the array.
    */
   virtual void CopyAllOn(int unused = 0);
 
@@ -243,10 +243,10 @@ public:
    * Turn off copying of all data.
    * During the copying/passing, the following rules are followed for each
    * array:
-   * 1. If the copy flag for an array is set (on or off), it is applied
+   * 1. If the copy flag for an array is set (on or off), it is applied.
    * This overrides rule 2.
    * 2. If CopyAllOn is set, copy the array.
-   * If CopyAllOff is set, do not copy the array
+   * If CopyAllOff is set, do not copy the array.
    */
   virtual void CopyAllOff(int unused = 0);
 
@@ -335,27 +335,85 @@ public:
    * stored with the other fields and will cause the method
    * to behave in an unexpected way.
    */
-  void SetNumberOfTuples(const vtkIdType number);
+  void SetNumberOfTuples(vtkIdType number);
 
   /**
    * Set the jth tuple in source field data at the ith location.
    * Set operations mean that no range checking is performed, so
    * they're faster.
    */
-  void SetTuple(const vtkIdType i, const vtkIdType j, vtkFieldData* source);
+  void SetTuple(vtkIdType i, vtkIdType j, vtkFieldData* source);
 
   /**
    * Insert the jth tuple in source field data at the ith location.
    * Range checking is performed and memory allocates as necessary.
    */
-  void InsertTuple(const vtkIdType i, const vtkIdType j, vtkFieldData* source);
+  void InsertTuple(vtkIdType i, vtkIdType j, vtkFieldData* source);
 
   /**
    * Insert the jth tuple in source field data at the end of the
    * tuple matrix. Range checking is performed and memory is allocated
    * as necessary.
    */
-  vtkIdType InsertNextTuple(const vtkIdType j, vtkFieldData* source);
+  vtkIdType InsertNextTuple(vtkIdType j, vtkFieldData* source);
+
+  ///@{
+  /**
+   * Computes the range of the input data array (specified through its `name` or the `index`
+   * in this field data). If the targeted array is not polymorphic
+   * with a `vtkDataArray`, or if no array match the input `name` or `index`, or
+   * if `comp` is out of bounds, then the returned range is `[NaN, NaN]`.
+   *
+   * The computed range is cached to avoid recomputing it. The range is recomputed
+   * if the held array has been modified, if `GhostsToSkip` has been changed, or if
+   * the ghost array has been changed / modified.
+   *
+   * If a ghost array is present in the field data, then the binary mask `GhostsToSkip`
+   * is used to skip values associated with a ghost that intersects this mask.
+   *
+   * `comp` targets which component of the array the range is to be computed on.
+   * Setting it to -1 results in computing the range of the magnitude of the array.
+   *
+   * The `Finite` version of this method skips infinite values in the array in addition
+   * to ghosts matching with `GhostsToSkip`.
+   */
+  bool GetRange(const char* name, double range[2], int comp = 0);
+  bool GetRange(int index, double range[2], int comp = 0);
+  bool GetFiniteRange(const char* name, double range[2], int comp = 0);
+  bool GetFiniteRange(int index, double range[2], int comp = 0);
+  ///@}
+
+  ///@{
+  /**
+   * Set / Get the binary mask filtering out certain types of ghosts when calling `GetRange`.
+   * By default, it is set to 0xff for pure `vtkFieldData`. In `vtkCellData`, it is set to
+   * `HIDDENCELL` and in `vtkPointData`, it is set to `HIDDENPOINT` by default.
+   * See `vtkDataSetAttributes` for more context on ghost types definitions.
+   *
+   * @sa
+   * vtkDataSetAttributes
+   * vtkPointData
+   * vtkCellData
+   */
+  vtkGetMacro(GhostsToSkip, unsigned char);
+  virtual void SetGhostsToSkip(unsigned char);
+  ///@}
+
+  /**
+   * Helper function that tests if any of the values in ghost array has been set.
+   * The test performed is (value & bitFlag).
+   */
+  bool HasAnyGhostBitSet(int bitFlag);
+
+  /**
+   * Get the ghost array, if present in this field data. If no ghost array is set,
+   * returns `nullptr`. A ghost array is a `vtkUnsignedCharArray` called `vtkGhostType`.
+   * See `vtkDataSetAttributes` for more context on ghost types.
+   *
+   * @sa
+   * vtkDataSetAttributes
+   */
+  vtkGetObjectMacro(GhostArray, vtkUnsignedCharArray);
 
 protected:
   vtkFieldData();
@@ -391,6 +449,29 @@ protected:
   int DoCopyAllOn;
   int DoCopyAllOff;
 
+  /*
+   * This tuple holds: [array time stamp, ghost array time stamp, cached ranges].
+   * Those time stamps are used to decide whether the cached range should be recomputed or not.
+   * when requesting the range of an array.
+   *
+   * When there is no ghost array, the ghost array time stamp is defined as equal to 0.
+   */
+  using CachedGhostRangeType = std::tuple<vtkMTimeType, vtkMTimeType, std::vector<double>>;
+  unsigned char GhostsToSkip;
+  vtkUnsignedCharArray* GhostArray;
+
+  ///@{
+  /**
+   * `Ranges` and `FiniteRanges` store cached ranges for arrays stored in this field data.
+   * Given the array at index `idx`, 2 ranges are stored: the magnitude range at `Ranges[idx][0]`,
+   * and all the component ranges at `Ranges[idx][1]`. The ranges are stored in the third
+   * component of the tuple `CachedGhostRangeType`. For the component ranges, they are stored
+   * in an array of size 2 times the number of components, storing `[min0, max0, ..., minn, maxn]`.
+   */
+  std::vector<std::array<CachedGhostRangeType, 2>> Ranges;
+  std::vector<std::array<CachedGhostRangeType, 2>> FiniteRanges;
+  ///@}
+
 private:
   vtkFieldData(const vtkFieldData&) = delete;
   void operator=(const vtkFieldData&) = delete;
@@ -399,30 +480,34 @@ public:
   class VTKCOMMONDATAMODEL_EXPORT BasicIterator
   {
   public:
-    BasicIterator();
+    BasicIterator() = default;
     BasicIterator(const BasicIterator& source);
     BasicIterator(const int* list, unsigned int listSize);
     BasicIterator& operator=(const BasicIterator& source);
-    virtual ~BasicIterator();
+    virtual ~BasicIterator() = default;
     void PrintSelf(ostream& os, vtkIndent indent);
 
-    int GetListSize() const { return this->ListSize; }
+    int GetListSize() const { return static_cast<int>(this->List.size()); }
     int GetCurrentIndex() { return this->List[this->Position]; }
     int BeginIndex()
     {
       this->Position = -1;
       return this->NextIndex();
     }
-    int End() const { return (this->Position >= this->ListSize); }
+    int End() const { return (this->Position >= static_cast<int>(this->List.size())); }
     int NextIndex()
     {
       this->Position++;
       return (this->End() ? -1 : this->List[this->Position]);
     }
 
+    // Support C++ range-for loops; e.g, code like
+    // "for (const auto& i : basicIterator)".
+    std::vector<int>::const_iterator begin() { return this->List.begin(); }
+    std::vector<int>::const_iterator end() { return this->List.end(); }
+
   protected:
-    int* List;
-    int ListSize;
+    std::vector<int> List;
     int Position;
   };
 
@@ -463,4 +548,5 @@ public:
   };
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

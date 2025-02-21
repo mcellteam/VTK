@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSmartPointer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test of Observers.
 // .SECTION Description
 // Tests vtkObject::AddObserver templated API
@@ -26,12 +14,14 @@ public:
   static std::map<int, int> EventCounts;
   static int VoidEventCounts;
 
-public:
   static vtkHandler* New();
   vtkTypeMacro(vtkHandler, vtkObject);
 
-  void VoidCallback() { this->VoidEventCounts++; }
-  void CallbackWithArguments(vtkObject*, unsigned long event, void*) { this->EventCounts[event]++; }
+  void VoidCallback() { vtkHandler::VoidEventCounts++; }
+  void CallbackWithArguments(vtkObject*, unsigned long event, void*)
+  {
+    vtkHandler::EventCounts[event]++;
+  }
 };
 vtkStandardNewMacro(vtkHandler);
 
@@ -44,13 +34,26 @@ public:
   static std::map<int, int> EventCounts;
   static int VoidEventCounts;
 
-public:
-  void VoidCallback() { this->VoidEventCounts++; }
-  void CallbackWithArguments(vtkObject*, unsigned long event, void*) { this->EventCounts[event]++; }
+  void VoidCallback() { OtherHandler::VoidEventCounts++; }
+  void CallbackWithArguments(vtkObject*, unsigned long event, void*)
+  {
+    OtherHandler::EventCounts[event]++;
+  }
 };
 
 int OtherHandler::VoidEventCounts = 0;
 std::map<int, int> OtherHandler::EventCounts;
+
+class NestedHandler1
+{
+public:
+  void CallbackWithArguments(vtkObject* self, unsigned long, void*) { self->InvokeEvent(1001); }
+};
+class NestedHandler2
+{
+public:
+  void CallbackWithArguments(vtkObject* self, unsigned long, void*) { self->RemoveAllObservers(); }
+};
 
 int TestObservers(int, char*[])
 {
@@ -60,7 +63,17 @@ int TestObservers(int, char*[])
 
   vtkObject* volcano = vtkObject::New();
 
-  // First the base test, with a vtkObject pointer
+  // Test nested callbacks invalidating iteration of observers
+  // This will seg fault if the iterators are not handled properly
+  NestedHandler1* handlerNested1 = new NestedHandler1();
+  event0 = volcano->AddObserver(1000, handlerNested1, &NestedHandler1::CallbackWithArguments);
+  NestedHandler2* handlerNested2 = new NestedHandler2();
+  event1 = volcano->AddObserver(1001, handlerNested2, &NestedHandler2::CallbackWithArguments);
+  volcano->InvokeEvent(1000);
+  delete handlerNested1;
+  delete handlerNested2;
+
+  // Handle the base test, with a vtkObject pointer
   vtkHandler* handler = vtkHandler::New();
 
   event0 = volcano->AddObserver(1000, handler, &vtkHandler::VoidCallback);

@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraph.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkGraph
  * @brief   Base class for graph data types.
@@ -42,7 +26,7 @@
  * in a graph, create an instance of vtkEdgeListIterator and call graph->GetEdges(it).
  * it->Next() returns lightweight vtkEdgeType structures, which contain the public
  * fields Id, Source and Target. Id is the identifier for the edge, which may
- * be used to look up values in assiciated edge data arrays. Source and Target
+ * be used to look up values in associated edge data arrays. Source and Target
  * store the ids of the source and target vertices of the edge. Note that the
  * edge list iterator DOES NOT necessarily iterate over edges in order of ascending
  * id. To traverse edges from wrapper code (Python, Java), use
@@ -213,6 +197,16 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkDataObject.h"
 
+// Forward declare some boost stuff even if boost wrappers
+// are turned off.
+namespace boost
+{
+class vtk_edge_iterator;
+class vtk_out_edge_pointer_iterator;
+class vtk_in_edge_pointer_iterator;
+}
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAdjacentVertexIterator;
 class vtkCellArray;
 class vtkEdgeListIterator;
@@ -231,19 +225,10 @@ class vtkVertexListIterator;
 class vtkVariant;
 class vtkVariantArray;
 
-// Forward declare some boost stuff even if boost wrappers
-// are turned off.
-namespace boost
-{
-class vtk_edge_iterator;
-class vtk_out_edge_pointer_iterator;
-class vtk_in_edge_pointer_iterator;
-}
-
 // Edge structures.
 struct vtkEdgeBase
 {
-  vtkEdgeBase() {}
+  vtkEdgeBase() = default;
   vtkEdgeBase(vtkIdType id)
     : Id(id)
   {
@@ -253,7 +238,7 @@ struct vtkEdgeBase
 
 struct vtkOutEdgeType : vtkEdgeBase
 {
-  vtkOutEdgeType() {}
+  vtkOutEdgeType() = default;
   vtkOutEdgeType(vtkIdType t, vtkIdType id)
     : vtkEdgeBase(id)
     , Target(t)
@@ -264,7 +249,7 @@ struct vtkOutEdgeType : vtkEdgeBase
 
 struct vtkInEdgeType : vtkEdgeBase
 {
-  vtkInEdgeType() {}
+  vtkInEdgeType() = default;
   vtkInEdgeType(vtkIdType s, vtkIdType id)
     : vtkEdgeBase(id)
     , Source(s)
@@ -275,7 +260,7 @@ struct vtkInEdgeType : vtkEdgeBase
 
 struct vtkEdgeType : vtkEdgeBase
 {
-  vtkEdgeType() {}
+  vtkEdgeType() = default;
   vtkEdgeType(vtkIdType s, vtkIdType t, vtkIdType id)
     : vtkEdgeBase(id)
     , Source(s)
@@ -292,13 +277,13 @@ public:
   vtkTypeMacro(vtkGraph, vtkDataObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the vertex or edge data.
    */
   vtkGetObjectMacro(VertexData, vtkDataSetAttributes);
   vtkGetObjectMacro(EdgeData, vtkDataSetAttributes);
-  //@}
+  ///@}
 
   /**
    * Return what type of dataset this is.
@@ -310,7 +295,7 @@ public:
    */
   void Initialize() override;
 
-  //@{
+  ///@{
   /**
    * These methods return the point (0,0,0) until the points structure
    * is created, when it returns the actual point position. In a
@@ -319,9 +304,9 @@ public:
    */
   double* GetPoint(vtkIdType ptId);
   void GetPoint(vtkIdType ptId, double x[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the points array for this graph.
    * If points is not yet constructed, generates and returns
@@ -331,7 +316,7 @@ public:
    */
   vtkPoints* GetPoints();
   virtual void SetPoints(vtkPoints* points);
-  //@}
+  ///@}
 
   /**
    * Compute the bounds of the graph. In a distributed graph, this
@@ -339,7 +324,7 @@ public:
    */
   void ComputeBounds();
 
-  //@{
+  ///@{
   /**
    * Return a pointer to the geometry bounding box in the form
    * (xmin,xmax, ymin,ymax, zmin,zmax). In a distributed graph, this
@@ -347,7 +332,7 @@ public:
    */
   double* GetBounds();
   void GetBounds(double bounds[6]);
-  //@}
+  ///@}
 
   /**
    * The modified time of the graph.
@@ -521,13 +506,13 @@ public:
    */
   unsigned long GetActualMemorySize() override;
 
-  //@{
+  ///@{
   /**
    * Retrieve a graph from an information vector.
    */
   static vtkGraph* GetData(vtkInformation* info);
   static vtkGraph* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
   /**
    * Reorder the outgoing vertices of a vertex.
@@ -544,7 +529,7 @@ public:
    */
   bool IsSameStructure(vtkGraph* other);
 
-  //@{
+  ///@{
   /**
    * Retrieve the source and target vertices for an edge id.
    * NOTE: The first time this is called, the graph will build
@@ -556,9 +541,9 @@ public:
    */
   vtkIdType GetSourceVertex(vtkIdType e);
   vtkIdType GetTargetVertex(vtkIdType e);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the internal edge control points associated with each edge.
    * The size of the pts array is 3*npts, and holds the x,y,z
@@ -566,7 +551,7 @@ public:
    */
   void SetEdgePoints(vtkIdType e, vtkIdType npts, const double pts[]) VTK_SIZEHINT(pts, 3 * npts);
   void GetEdgePoints(vtkIdType e, vtkIdType& npts, double*& pts) VTK_SIZEHINT(pts, 3 * npts);
-  //@}
+  ///@}
 
   /**
    * Get the number of edge points associated with an edge.
@@ -605,14 +590,14 @@ public:
     this->AddEdgePoint(e, p);
   }
 
-  //@{
+  ///@{
   /**
    * Copy the internal edge point data from another graph into this graph.
    * Both graphs must have the same number of edges.
    */
   void ShallowCopyEdgePoints(vtkGraph* g);
   void DeepCopyEdgePoints(vtkGraph* g);
-  //@}
+  ///@}
 
   /**
    * Returns the internal representation of the graph. If modifying is
@@ -686,7 +671,7 @@ protected:
    */
   void AddVertexInternal(const vtkVariant& pedigree, vtkIdType* vertex);
 
-  //@{
+  ///@{
   /**
    * Protected method for adding edges of a certain directedness used
    * by mutable subclasses. If propertyArr is non-null, it specifies
@@ -701,7 +686,7 @@ protected:
     vtkVariantArray* propertyArr, vtkEdgeType* edge);
   void AddEdgeInternal(const vtkVariant& uPedigree, const vtkVariant& vPedigree, bool directed,
     vtkVariantArray* propertyArr, vtkEdgeType* edge);
-  //@}
+  ///@}
 
   /**
    * Removes a vertex from the graph, along with any adjacent edges.
@@ -767,20 +752,20 @@ protected:
    */
   void ForceOwnership();
 
-  //@{
+  ///@{
   /**
    * Fast access functions for iterators.
    */
   virtual void GetOutEdges(vtkIdType v, const vtkOutEdgeType*& edges, vtkIdType& nedges);
   virtual void GetInEdges(vtkIdType v, const vtkInEdgeType*& edges, vtkIdType& nedges);
-  //@}
+  ///@}
 
   /**
    * Builds a mapping from edge id to source/target vertex id.
    */
   void BuildEdgeList();
 
-  //@{
+  ///@{
   /**
    * Friend iterator classes.
    */
@@ -791,15 +776,15 @@ protected:
   friend class boost::vtk_edge_iterator;
   friend class boost::vtk_in_edge_pointer_iterator;
   friend class boost::vtk_out_edge_pointer_iterator;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The vertex and edge data.
    */
   vtkDataSetAttributes* VertexData;
   vtkDataSetAttributes* EdgeData;
-  //@}
+  ///@}
 
   /**
    * (xmin,xmax, ymin,ymax, zmin,zmax) geometric bounds.
@@ -811,22 +796,22 @@ protected:
    */
   vtkTimeStamp ComputeTime;
 
-  //@{
+  ///@{
   /**
    * The vertex locations.
    */
   vtkPoints* Points;
   static double DefaultPoint[3];
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The optional mapping from edge id to source/target ids.
    */
   vtkGetObjectMacro(EdgeList, vtkIdTypeArray);
   virtual void SetEdgeList(vtkIdTypeArray* list);
   vtkIdTypeArray* EdgeList;
-  //@}
+  ///@}
 
 private:
   vtkGraph(const vtkGraph&) = delete;
@@ -837,4 +822,5 @@ bool VTKCOMMONDATAMODEL_EXPORT operator==(vtkEdgeBase e1, vtkEdgeBase e2);
 bool VTKCOMMONDATAMODEL_EXPORT operator!=(vtkEdgeBase e1, vtkEdgeBase e2);
 VTKCOMMONDATAMODEL_EXPORT ostream& operator<<(ostream& out, vtkEdgeBase e);
 
+VTK_ABI_NAMESPACE_END
 #endif

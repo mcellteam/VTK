@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkXMLUniformGridAMRReader.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLUniformGridAMRReader
  * @brief   Reader for amr datasets (vtkOverlappingAMR
@@ -35,6 +24,7 @@
 #include "vtkSmartPointer.h" // needed for vtkSmartPointer.
 #include "vtkXMLCompositeDataReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOverlappingAMR;
 class vtkUniformGridAMR;
 
@@ -45,7 +35,7 @@ public:
   vtkTypeMacro(vtkXMLUniformGridAMRReader, vtkXMLCompositeDataReader);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * This reader supports demand-driven heavy data reading i.e. downstream
    * pipeline can request specific blocks from the AMR using
@@ -57,7 +47,7 @@ public:
    */
   vtkSetMacro(MaximumLevelsToReadByDefault, unsigned int);
   vtkGetMacro(MaximumLevelsToReadByDefault, unsigned int);
-  //@}
+  ///@}
 
 protected:
   vtkXMLUniformGridAMRReader();
@@ -120,8 +110,12 @@ private:
   vtkXMLUniformGridAMRReader(const vtkXMLUniformGridAMRReader&) = delete;
   void operator=(const vtkXMLUniformGridAMRReader&) = delete;
 
+  void SynchronizeDataArraySelectionRecursively(
+    vtkXMLDataElement* element, const std::string& filePath);
+
   char* OutputDataType;
   vtkSetStringMacro(OutputDataType);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

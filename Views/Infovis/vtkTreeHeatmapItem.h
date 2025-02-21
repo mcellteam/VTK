@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTreeHeatmapItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTreeHeatmapItem
  * @brief   A 2D graphics item for rendering a tree and
@@ -44,6 +32,7 @@
 #include <map>               // For string lookup tables
 #include <vector>            // For lookup tables
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDendrogramItem;
 class vtkHeatmapItem;
 class vtkTable;
@@ -95,21 +84,21 @@ public:
    */
   vtkTable* GetTable();
 
-  //@{
+  ///@{
   /**
    * Get/Set the dendrogram contained by this item.
    */
   vtkDendrogramItem* GetDendrogram();
   void SetDendrogram(vtkDendrogramItem* dendrogram);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the heatmap contained by this item.
    */
   vtkHeatmapItem* GetHeatmap();
   void SetHeatmap(vtkHeatmapItem* heatmap);
-  //@}
+  ///@}
 
   /**
    * Reorder the rows in the table so they match the order of the leaf
@@ -168,13 +157,13 @@ public:
    */
   void CollapseToNumberOfLeafNodes(unsigned int n);
 
-  //@{
+  ///@{
   /**
    * Get/Set how wide the edges of the trees should be.  Default is one pixel.
    */
   float GetTreeLineWidth();
   void SetTreeLineWidth(float width);
-  //@}
+  ///@}
 
   /**
    * Deprecated.  Use this->GetDendrogram()->GetPrunedTree() instead.
@@ -229,4 +218,5 @@ private:
   vtkMTimeType TreeHeatmapBuildTime;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

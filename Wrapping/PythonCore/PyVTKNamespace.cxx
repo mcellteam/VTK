@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    PyVTKNamespace.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /*-----------------------------------------------------------------------
   The PyVTKNamespace was created in Nov 2014 by David Gobbi.
 
@@ -19,6 +7,7 @@
 -----------------------------------------------------------------------*/
 
 #include "PyVTKNamespace.h"
+#include "vtkABINamespace.h"
 #include "vtkPythonUtil.h"
 
 // Silence warning like
@@ -28,20 +17,34 @@
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static const char* PyVTKNamespace_Doc = "A python module that wraps a C++ namespace.\n";
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void PyVTKNamespace_Delete(PyObject* op)
 {
   // remove from the map so that there is no dangling reference
   vtkPythonUtil::RemoveNamespaceFromMap(op);
   // call the superclass destructor
+#if PY_VERSION_HEX >= 0x030A0000
+  PyTypeObject* type = Py_TYPE(op);
+  PyTypeObject* base = (PyTypeObject*)PyType_GetSlot(type, Py_tp_base);
+  if (base)
+  {
+    destructor dtor = (destructor)PyType_GetSlot(base, Py_tp_dealloc);
+    dtor(op);
+  }
+#else
   PyVTKNamespace_Type.tp_base->tp_dealloc(op);
+#endif
 }
 
-//--------------------------------------------------------------------
+#ifdef VTK_PYTHON_NEEDS_DEPRECATION_WARNING_SUPPRESSION
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+//------------------------------------------------------------------------------
 // clang-format off
 PyTypeObject PyVTKNamespace_Type = {
   PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -96,7 +99,7 @@ PyTypeObject PyVTKNamespace_Type = {
   VTK_WRAP_PYTHON_SUPPRESS_UNINITIALIZED };
 // clang-format on
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyObject* PyVTKNamespace_New(const char* name)
 {
   // first check to see if this namespace exists
@@ -109,11 +112,14 @@ PyObject* PyVTKNamespace_New(const char* name)
   {
     // make sure python has readied the type object
     PyType_Ready(&PyVTKNamespace_Type);
-    // call the allocator provided by python for this type
-    self = PyVTKNamespace_Type.tp_alloc(&PyVTKNamespace_Type, 0);
+    // call the superclass new function
+    PyObject* empty = PyTuple_New(0);
+    self = PyVTKNamespace_Type.tp_base->tp_new(&PyVTKNamespace_Type, empty, nullptr);
+    Py_DECREF(empty);
     // call the superclass init function
-    PyObject* args = PyTuple_New(1);
-    PyTuple_SET_ITEM(args, 0, PyString_FromString(name));
+    PyObject* pyname = PyUnicode_FromString(name);
+    PyObject* args = PyTuple_Pack(1, pyname);
+    Py_DECREF(pyname);
     PyVTKNamespace_Type.tp_base->tp_init(self, args, nullptr);
     Py_DECREF(args);
     // remember the object for later reference
@@ -122,13 +128,13 @@ PyObject* PyVTKNamespace_New(const char* name)
   return self;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyObject* PyVTKNamespace_GetDict(PyObject* self)
 {
   return PyModule_GetDict(self);
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* PyVTKNamespace_GetName(PyObject* self)
 {
   return PyModule_GetName(self);

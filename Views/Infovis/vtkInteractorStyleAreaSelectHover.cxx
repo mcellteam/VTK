@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleAreaSelectHover.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkInteractorStyleAreaSelectHover.h"
 
@@ -38,7 +22,6 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRendererCollection.h"
 #include "vtkSectorSource.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkVariant.h"
 #include "vtkWorldPointPicker.h"
@@ -46,11 +29,12 @@
 #include "vtkSmartPointer.h"
 #define VTK_CREATE(type, name) vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkInteractorStyleAreaSelectHover);
 
 vtkCxxSetObjectMacro(vtkInteractorStyleAreaSelectHover, Layout, vtkAreaLayout);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleAreaSelectHover::vtkInteractorStyleAreaSelectHover()
 {
   this->Picker = vtkWorldPointPicker::New();
@@ -72,7 +56,7 @@ vtkInteractorStyleAreaSelectHover::vtkInteractorStyleAreaSelectHover()
   highMap->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleAreaSelectHover::~vtkInteractorStyleAreaSelectHover()
 {
   this->HighlightData->Delete();
@@ -87,7 +71,7 @@ vtkInteractorStyleAreaSelectHover::~vtkInteractorStyleAreaSelectHover()
   this->SetLabelField(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleAreaSelectHover::SetInteractor(vtkRenderWindowInteractor* rwi)
 {
   // See if we already had one
@@ -114,7 +98,7 @@ void vtkInteractorStyleAreaSelectHover::SetInteractor(vtkRenderWindowInteractor*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleAreaSelectHover::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -127,7 +111,7 @@ void vtkInteractorStyleAreaSelectHover::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "UseRectangularCoordinates: " << this->UseRectangularCoordinates << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkInteractorStyleAreaSelectHover::GetIdAtPos(int x, int y)
 {
   vtkIdType id = -1;
@@ -156,7 +140,7 @@ vtkIdType vtkInteractorStyleAreaSelectHover::GetIdAtPos(int x, int y)
   return id;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleAreaSelectHover::GetBoundingAreaForItem(vtkIdType id, float* sinfo)
 {
   if (this->Layout)
@@ -165,7 +149,7 @@ void vtkInteractorStyleAreaSelectHover::GetBoundingAreaForItem(vtkIdType id, flo
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleAreaSelectHover::OnMouseMove()
 {
   if (this->Interaction == vtkInteractorStyleRubberBand2D::SELECTING)
@@ -211,7 +195,7 @@ void vtkInteractorStyleAreaSelectHover::OnMouseMove()
     //  unless there isn't a sector or it is the root node
     if (absArray != nullptr && id > -1)
     {
-      vtkStdString str;
+      std::string str;
       if (vtkArrayDownCast<vtkStringArray>(absArray))
       {
         str = vtkArrayDownCast<vtkStringArray>(absArray)->GetValue(id);
@@ -220,7 +204,7 @@ void vtkInteractorStyleAreaSelectHover::OnMouseMove()
       {
         str = vtkVariant(vtkArrayDownCast<vtkDataArray>(absArray)->GetTuple(id)[0]).ToString();
       }
-      this->Balloon->SetBalloonText(str);
+      this->Balloon->SetBalloonText(str.c_str());
       double z = 0.02;
       if (this->UseRectangularCoordinates)
       {
@@ -323,20 +307,21 @@ void vtkInteractorStyleAreaSelectHover::OnMouseMove()
   this->Superclass::OnMouseMove();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleAreaSelectHover::SetHighLightColor(double r, double g, double b)
 {
   this->HighlightActor->GetProperty()->SetColor(r, g, b);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleAreaSelectHover::SetHighLightWidth(double lw)
 {
   this->HighlightActor->GetProperty()->SetLineWidth(lw);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkInteractorStyleAreaSelectHover::GetHighLightWidth()
 {
   return this->HighlightActor->GetProperty()->GetLineWidth();
 }
+VTK_ABI_NAMESPACE_END

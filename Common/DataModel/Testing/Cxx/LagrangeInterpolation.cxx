@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLagrangeInterpolation.h"
 
 #include "vtkMultiBaselineRegressionTest.h"
@@ -12,7 +14,6 @@
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 #include "vtkXMLPolyDataWriter.h"
 
 #include "vtkAxis.h"

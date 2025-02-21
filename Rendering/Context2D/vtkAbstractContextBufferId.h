@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractContextBufferId.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkAbstractContextBufferId
@@ -41,6 +29,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingContext2DModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderWindow;
 
 class VTKRENDERINGCONTEXT2D_EXPORT vtkAbstractContextBufferId : public vtkObject
@@ -51,41 +40,41 @@ public:
 
   static vtkAbstractContextBufferId* New();
 
-  //@{
+  ///@{
   /**
    * Number of columns. Initial value is 0.
    */
   vtkGetMacro(Width, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of columns. Initial value is 0.
    */
   vtkSetMacro(Width, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Number of rows. Initial value is 0.
    */
   vtkGetMacro(Height, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of rows. Initial value is 0.
    */
   vtkSetMacro(Height, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the OpenGL context owning the texture object resource.
    */
   virtual void SetContext(vtkRenderWindow* context) = 0;
   virtual vtkRenderWindow* GetContext() = 0;
-  //@}
+  ///@}
 
   /**
    * Returns if the context supports the required extensions.
@@ -140,4 +129,5 @@ private:
   void operator=(const vtkAbstractContextBufferId&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // #ifndef vtkAbstractContextBufferId_h

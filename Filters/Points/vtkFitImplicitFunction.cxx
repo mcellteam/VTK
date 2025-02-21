@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFitImplicitFunction.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkFitImplicitFunction.h"
 
 #include "vtkImplicitFunction.h"
@@ -20,15 +8,16 @@
 #include "vtkPoints.h"
 #include "vtkSMPTools.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkFitImplicitFunction);
 vtkCxxSetObjectMacro(vtkFitImplicitFunction, ImplicitFunction, vtkImplicitFunction);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm
 template <typename T>
 struct ExtractPoints
@@ -77,20 +66,20 @@ struct ExtractPoints
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFitImplicitFunction::vtkFitImplicitFunction()
 {
   this->ImplicitFunction = nullptr;
   this->Threshold = 0.01;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFitImplicitFunction::~vtkFitImplicitFunction()
 {
   this->SetImplicitFunction(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If implicit function is modified,
 // then this object is modified as well.
 vtkMTimeType vtkFitImplicitFunction::GetMTime()
@@ -107,7 +96,7 @@ vtkMTimeType vtkFitImplicitFunction::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Traverse all the input points and extract those that lie near the surface
 // of an implicit function.
 int vtkFitImplicitFunction::FilterPoints(vtkPointSet* input)
@@ -131,7 +120,7 @@ int vtkFitImplicitFunction::FilterPoints(vtkPointSet* input)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFitImplicitFunction::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -139,3 +128,4 @@ void vtkFitImplicitFunction::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Implicit Function: " << static_cast<void*>(this->ImplicitFunction) << "\n";
   os << indent << "Threshold: " << this->Threshold << "\n";
 }
+VTK_ABI_NAMESPACE_END

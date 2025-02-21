@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParallelopipedRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParallelopipedRepresentation
  * @brief   Default representation for vtkParallelopipedWidget
@@ -33,7 +21,9 @@
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkWidgetRepresentation.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkPlane;
 class vtkPoints;
@@ -47,7 +37,8 @@ class vtkClosedSurfacePointPlacer;
 class vtkPlaneCollection;
 class vtkParallelopipedTopology;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkParallelopipedRepresentation : public vtkWidgetRepresentation
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkParallelopipedRepresentation
+  : public vtkWidgetRepresentation
 {
 public:
   /**
@@ -55,20 +46,20 @@ public:
    */
   static vtkParallelopipedRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkParallelopipedRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Methods to satisfy the superclass.
    */
   void GetActors(vtkPropCollection* pc) override;
 
-  //@{
+  ///@{
   /**
    * Place the widget in the scene. You can use either of the two APIs :
    * 1) PlaceWidget( double bounds[6] )
@@ -85,16 +76,16 @@ public:
    */
   virtual void PlaceWidget(double corners[8][3]);
   void PlaceWidget(double bounds[6]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The interaction state may be set from a widget (e.g., PointWidget)
    * or other object. This controls how the interaction with the
    * widget proceeds.
    */
   vtkSetMacro(InteractionState, int);
-  //@}
+  ///@}
 
   /**
    * Get the bounding planes of the object. The first 6 planes will
@@ -114,7 +105,7 @@ public:
    */
   double* GetBounds() VTK_SIZEHINT(6) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the handle properties.
    */
@@ -124,37 +115,37 @@ public:
   vtkGetObjectMacro(HandleProperty, vtkProperty);
   vtkGetObjectMacro(HoveredHandleProperty, vtkProperty);
   vtkGetObjectMacro(SelectedHandleProperty, vtkProperty);
-  //@}
+  ///@}
 
   void SetHandleRepresentation(vtkHandleRepresentation* handle);
   vtkHandleRepresentation* GetHandleRepresentation(int index);
 
-  //@{
+  ///@{
   /**
    * Turns the visibility of the handles on/off. Sometimes they may get in
    * the way of visualization.
    */
   void HandlesOn();
   void HandlesOff();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the face properties. When a face is being translated, the face gets
    * highlighted with the SelectedFaceProperty.
    */
   vtkGetObjectMacro(FaceProperty, vtkProperty);
   vtkGetObjectMacro(SelectedFaceProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the outline properties. These are the properties with which the
    * parallelopiped wireframe is rendered.
    */
   vtkGetObjectMacro(OutlineProperty, vtkProperty);
   vtkGetObjectMacro(SelectedOutlineProperty, vtkProperty);
-  //@}
+  ///@}
 
   /**
    * This actually constructs the geometry of the widget from the various
@@ -162,14 +153,14 @@ public:
    */
   void BuildRepresentation() override;
 
-  //@{
+  ///@{
   /**
    * Methods required by vtkProp superclass.
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
   int RenderOverlay(vtkViewport* viewport) override;
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Given and x-y display coordinate, compute the interaction state of
@@ -178,7 +169,7 @@ public:
   int ComputeInteractionState(int X, int Y, int modify = 0) override;
 
   // Manage the state of the widget
-  enum _InteractionState
+  enum InteractionStateType
   {
     Outside = 0,
     Inside,
@@ -207,7 +198,7 @@ public:
    */
   virtual void PositionHandles();
 
-  //@{
+  ///@{
   /**
    * Minimum thickness for the parallelopiped. User interactions cannot make
    * any individual axis of the parallopiped thinner than this value.
@@ -216,7 +207,7 @@ public:
    */
   vtkSetMacro(MinimumThickness, double);
   vtkGetMacro(MinimumThickness, double);
-  //@}
+  ///@}
 
 protected:
   vtkParallelopipedRepresentation();
@@ -233,17 +224,17 @@ protected:
    */
   void SetHandleHighlight(int handleIdx, vtkProperty* property);
 
-  //@{
+  ///@{
   /**
    * Highlight face defined by the supplied ptids with the specified property.
    */
   void SetFaceHighlight(vtkCellArray* face, vtkProperty*);
   void HighlightAllFaces();
   void UnHighlightAllFaces();
-  //@}
+  ///@}
 
   // Node can be a value within [0,7]. This will create a chair one one of
-  // the handle corners. '0 < InitialChairDepth < 1' value dicates the starting
+  // the handle corners. '0 < InitialChairDepth < 1' value dictates the starting
   // depth of the cavity.
   void UpdateChairAtNode(int node);
 
@@ -305,4 +296,5 @@ private:
   void operator=(const vtkParallelopipedRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

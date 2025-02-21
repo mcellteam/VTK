@@ -1,29 +1,17 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCompositer.h"
 #include "vtkDataArray.h"
 #include "vtkFloatArray.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkToolkits.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositer);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositer::vtkCompositer()
 {
   this->Controller = vtkMultiProcessController::GetGlobalController();
@@ -35,32 +23,24 @@ vtkCompositer::vtkCompositer()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositer::~vtkCompositer()
 {
   this->SetController(nullptr);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositer::SetController(vtkMultiProcessController* mpc)
 {
-  if (this->Controller == mpc)
-  {
-    return;
-  }
+  vtkSetObjectBodyMacro(Controller, vtkMultiProcessController, mpc);
+
   if (mpc)
   {
-    mpc->Register(this);
     this->NumberOfProcesses = mpc->GetNumberOfProcesses();
   }
-  if (this->Controller)
-  {
-    this->Controller->UnRegister(this);
-  }
-  this->Controller = mpc;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositer::CompositeBuffer(
   vtkDataArray* pBuf, vtkFloatArray* zBuf, vtkDataArray* pTmp, vtkFloatArray* zTmp)
 {
@@ -70,7 +50,7 @@ void vtkCompositer::CompositeBuffer(
   (void)zTmp;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositer::ResizeFloatArray(vtkFloatArray* fa, int numComp, vtkIdType size)
 {
   fa->SetNumberOfComponents(numComp);
@@ -133,10 +113,11 @@ void vtkCompositer::DeleteArray(vtkDataArray* da)
   da->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: (" << this->Controller << ")\n";
   os << indent << "NumberOfProcesses: " << this->NumberOfProcesses << endl;
 }
+VTK_ABI_NAMESPACE_END

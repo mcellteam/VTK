@@ -1,11 +1,13 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCompositeDataIterator.h"
 #include "vtkCompositeDataSet.h"
 #include "vtkFieldData.h"
-#include "vtkHierarchicalBoxDataSet.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkNew.h"
+#include "vtkOverlappingAMR.h"
 #include "vtkPassInputTypeAlgorithm.h"
 #include "vtkPolyData.h"
 #include "vtkSphereSource.h"
@@ -28,11 +30,7 @@ public:
   vtkTypeMacro(vtkTestAlgorithm, vtkPassInputTypeAlgorithm);
 
 protected:
-  vtkTestAlgorithm()
-    : Superclass()
-  {
-    this->SetNumberOfOutputPorts(2);
-  }
+  vtkTestAlgorithm() { this->SetNumberOfOutputPorts(2); }
 
   int FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info) override
   {
@@ -112,7 +110,7 @@ void AddPerBlockFieldData(vtkCompositeDataSet* data)
       array->SetValue(0, iter->GetCurrentFlatIndex());
       array->SetName("compositeIndexBasedData");
       fd->AddArray(array);
-      std::cout << "Assinging field data " << iter->GetCurrentFlatIndex() << std::endl;
+      std::cout << "Assigning field data " << iter->GetCurrentFlatIndex() << std::endl;
     }
   }
 }
@@ -198,7 +196,7 @@ int TestComposite(std::string& inputDataFile, bool isAMR)
   }
   else
   {
-    if (!vtkHierarchicalBoxDataSet::SafeDownCast(data1))
+    if (!vtkOverlappingAMR::SafeDownCast(data1))
     {
       std::cout << "Error: output 1 is not an AMR dataset after composite data pipeline run"
                 << std::endl;

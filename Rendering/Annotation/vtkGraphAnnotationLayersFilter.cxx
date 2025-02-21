@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkGraphAnnotationLayersFilter.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGraphAnnotationLayersFilter.h"
 
@@ -34,9 +22,10 @@
 #include "vtkStringArray.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGraphAnnotationLayersFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGraphAnnotationLayersFilter::vtkGraphAnnotationLayersFilter()
 {
   this->SetNumberOfInputPorts(2);
@@ -47,13 +36,10 @@ vtkGraphAnnotationLayersFilter::vtkGraphAnnotationLayersFilter()
   this->ConvexHullFilter = vtkSmartPointer<vtkConvexHull2D>::New();
 }
 
-//-----------------------------------------------------------------------------
-vtkGraphAnnotationLayersFilter::~vtkGraphAnnotationLayersFilter()
-{
-  //
-}
+//------------------------------------------------------------------------------
+vtkGraphAnnotationLayersFilter::~vtkGraphAnnotationLayersFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGraphAnnotationLayersFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -69,7 +55,7 @@ int vtkGraphAnnotationLayersFilter::FillInputPortInformation(int port, vtkInform
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphAnnotationLayersFilter::OutlineOn()
 {
   this->ConvexHullFilter->OutlineOn();
@@ -85,43 +71,43 @@ void vtkGraphAnnotationLayersFilter::SetOutline(bool b)
   this->ConvexHullFilter->SetOutline(b);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphAnnotationLayersFilter::SetScaleFactor(double scale)
 {
   this->ConvexHullFilter->SetScaleFactor(scale);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphAnnotationLayersFilter::SetHullShapeToBoundingRectangle()
 {
   this->ConvexHullFilter->SetHullShape(vtkConvexHull2D::BoundingRectangle);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphAnnotationLayersFilter::SetHullShapeToConvexHull()
 {
   this->ConvexHullFilter->SetHullShape(vtkConvexHull2D::ConvexHull);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphAnnotationLayersFilter::SetMinHullSizeInWorld(double size)
 {
   this->ConvexHullFilter->SetMinHullSizeInWorld(size);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphAnnotationLayersFilter::SetMinHullSizeInDisplay(int size)
 {
   this->ConvexHullFilter->SetMinHullSizeInDisplay(size);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphAnnotationLayersFilter::SetRenderer(vtkRenderer* renderer)
 {
   this->ConvexHullFilter->SetRenderer(renderer);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkGraphAnnotationLayersFilter::GetMTime()
 {
   if (this->ConvexHullFilter)
@@ -134,7 +120,7 @@ vtkMTimeType vtkGraphAnnotationLayersFilter::GetMTime()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGraphAnnotationLayersFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -275,7 +261,7 @@ int vtkGraphAnnotationLayersFilter::RequestData(vtkInformation* vtkNotUsed(reque
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphAnnotationLayersFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -290,3 +276,4 @@ void vtkGraphAnnotationLayersFilter::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)" << endl;
   }
 }
+VTK_ABI_NAMESPACE_END

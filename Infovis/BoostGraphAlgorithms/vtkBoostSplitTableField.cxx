@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostSplitTableField.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkBoostSplitTableField.h"
 
@@ -26,6 +14,7 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/tokenizer.hpp>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostSplitTableField);
 
 /// Ecapsulates private implementation details of vtkBoostSplitTableField
@@ -140,14 +129,14 @@ int vtkBoostSplitTableField::RequestData(
   implementation::tokenizers_t tokenizers;
   for (vtkIdType column = 0; column < input->GetNumberOfColumns(); ++column)
   {
-    tokenizers.push_back(static_cast<implementation::tokenizer_t*>(0));
+    tokenizers.push_back(static_cast<implementation::tokenizer_t*>(nullptr));
 
     for (vtkIdType field = 0; field < this->Fields->GetNumberOfValues(); ++field)
     {
       if (this->Fields->GetValue(field) == input->GetColumn(column)->GetName())
       {
         tokenizers[column] = new implementation::tokenizer_t(
-          std::string(), implementation::delimiter_t(this->Delimiters->GetValue(field)));
+          std::string(), implementation::delimiter_t(this->Delimiters->GetValue(field).c_str()));
         break;
       }
     }
@@ -175,3 +164,4 @@ int vtkBoostSplitTableField::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

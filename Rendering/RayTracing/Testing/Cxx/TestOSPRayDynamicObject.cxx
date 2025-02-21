@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestOSPRayDynamicObject.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test verifies that we can render dynamic objects (changing mesh)
 // and that changing vtk state changes the resulting image accordingly.
 //
@@ -49,11 +37,14 @@ int TestOSPRayDynamicObject(int argc, char* argv[])
   vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
   renderer->AddActor(actor);
   actor->SetMapper(mapper);
-  renderer->SetBackground(0.1, 0.1, 1.0);
-  renderer->SetEnvironmentalBG(0.1, 0.1, 1.0);
+  renderer->SetBackground(0.0, 0.0, 1.0);
+  renderer->SetEnvironmentalBG(0.0, 0.5, 0.5);
+  vtkOSPRayRendererNode::SetBackgroundMode(
+    vtkOSPRayRendererNode::Both, renderer); // test use ENV with BP
   renWin->SetSize(400, 400);
   renWin->Render();
 
+  vtkOSPRayRendererNode::SetRendererType("OSPRay pathtracer", renderer);
   for (int i = 0; i < argc; ++i)
   {
     if (!strcmp(argv[i], "--OptiX"))
@@ -105,7 +96,6 @@ int TestOSPRayDynamicObject(int argc, char* argv[])
     camera->SetPosition(position);
 
     renderer->SetBackground(0.0, I, 1 - I);
-    renderer->SetEnvironmentalBG(0.0, I, 1 - I);
     renWin->Render();
   }
 

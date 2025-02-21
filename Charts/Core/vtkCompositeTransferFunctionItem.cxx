@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeTransferFunctionItem.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCompositeTransferFunctionItem.h"
 #include "vtkAxis.h"
@@ -30,17 +18,18 @@
 #include <cassert>
 #include <vector>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositeTransferFunctionItem);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeTransferFunctionItem::vtkCompositeTransferFunctionItem()
 {
   this->PolyLinePen->SetLineType(vtkPen::SOLID_LINE);
   this->OpacityFunction = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeTransferFunctionItem::~vtkCompositeTransferFunctionItem()
 {
   if (this->OpacityFunction)
@@ -51,7 +40,7 @@ vtkCompositeTransferFunctionItem::~vtkCompositeTransferFunctionItem()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeTransferFunctionItem::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -67,7 +56,7 @@ void vtkCompositeTransferFunctionItem::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeTransferFunctionItem::ComputeBounds(double* bounds)
 {
   this->Superclass::ComputeBounds(bounds);
@@ -81,7 +70,7 @@ void vtkCompositeTransferFunctionItem::ComputeBounds(double* bounds)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeTransferFunctionItem::SetOpacityFunction(vtkPiecewiseFunction* opacity)
 {
   if (opacity == this->OpacityFunction)
@@ -100,7 +89,7 @@ void vtkCompositeTransferFunctionItem::SetOpacityFunction(vtkPiecewiseFunction* 
   this->ScalarsToColorsModified(this->OpacityFunction, vtkCommand::ModifiedEvent, nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeTransferFunctionItem::ComputeTexture()
 {
   this->Superclass::ComputeTexture();
@@ -163,3 +152,4 @@ void vtkCompositeTransferFunctionItem::ComputeTexture()
     }
   }
 }
+VTK_ABI_NAMESPACE_END

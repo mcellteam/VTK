@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageClip.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageClip
  * @brief   Reduces the image extent of the input.
@@ -34,6 +22,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImageClip : public vtkImageAlgorithm
 {
 public:
@@ -41,7 +30,7 @@ public:
   vtkTypeMacro(vtkImageClip, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The whole extent of the output has to be set explicitly.
    */
@@ -49,11 +38,11 @@ public:
   void SetOutputWholeExtent(int minX, int maxX, int minY, int maxY, int minZ, int maxZ);
   void GetOutputWholeExtent(int extent[6]);
   int* GetOutputWholeExtent() VTK_SIZEHINT(6) { return this->OutputWholeExtent; }
-  //@}
+  ///@}
 
   void ResetOutputWholeExtent();
 
-  //@{
+  ///@{
   /**
    * By default, ClipData is off, and only the WholeExtent is modified.
    * the data's extent may actually be larger.  When this flag is on,
@@ -62,11 +51,11 @@ public:
   vtkSetMacro(ClipData, vtkTypeBool);
   vtkGetMacro(ClipData, vtkTypeBool);
   vtkBooleanMacro(ClipData, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageClip();
-  ~vtkImageClip() override {}
+  ~vtkImageClip() override = default;
 
   // Time when OutputImageExtent was computed.
   vtkTimeStamp CTime;
@@ -86,4 +75,5 @@ private:
   void operator=(const vtkImageClip&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

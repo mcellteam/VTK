@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStructuredGridClip.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStructuredGridClip.h"
 
 #include "vtkAlgorithmOutput.h"
@@ -24,9 +12,10 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStructuredGridClip);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGridClip::vtkStructuredGridClip()
 {
   this->ClipData = 0;
@@ -39,7 +28,7 @@ vtkStructuredGridClip::vtkStructuredGridClip()
     VTK_INT_MAX;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStructuredGridClip::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -64,7 +53,7 @@ void vtkStructuredGridClip::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStructuredGridClip::SetOutputWholeExtent(int extent[6], vtkInformation* outInfo)
 {
   int idx;
@@ -90,7 +79,7 @@ void vtkStructuredGridClip::SetOutputWholeExtent(int extent[6], vtkInformation* 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStructuredGridClip::SetOutputWholeExtent(
   int minX, int maxX, int minY, int maxY, int minZ, int maxZ)
 {
@@ -105,7 +94,7 @@ void vtkStructuredGridClip::SetOutputWholeExtent(
   this->SetOutputWholeExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStructuredGridClip::GetOutputWholeExtent(int extent[6])
 {
   int idx;
@@ -116,7 +105,7 @@ void vtkStructuredGridClip::GetOutputWholeExtent(int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Change the WholeExtent
 int vtkStructuredGridClip::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -146,7 +135,7 @@ int vtkStructuredGridClip::RequestInformation(vtkInformation* vtkNotUsed(request
     {
       extent[idx * 2 + 1] = this->OutputWholeExtent[idx * 2 + 1];
     }
-    // make usre the order is correct
+    // make sure the order is correct
     if (extent[idx * 2] > extent[idx * 2 + 1])
     {
       extent[idx * 2] = extent[idx * 2 + 1];
@@ -158,7 +147,7 @@ int vtkStructuredGridClip::RequestInformation(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Sets the output whole extent to be the input whole extent.
 void vtkStructuredGridClip::ResetOutputWholeExtent()
 {
@@ -173,7 +162,7 @@ void vtkStructuredGridClip::ResetOutputWholeExtent()
   this->SetOutputWholeExtent(inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT()));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method simply copies by reference the input data to the output.
 int vtkStructuredGridClip::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -199,5 +188,8 @@ int vtkStructuredGridClip::RequestData(vtkInformation* vtkNotUsed(request),
     outData->Crop(outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()));
   }
 
+  this->CheckAbort();
+
   return 1;
 }
+VTK_ABI_NAMESPACE_END

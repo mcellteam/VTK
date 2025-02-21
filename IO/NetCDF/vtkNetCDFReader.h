@@ -1,24 +1,6 @@
-// -*- c++ -*-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNetCDFReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-LANL-California-USGov
 
 /**
  * @class   vtkNetCDFReader
@@ -36,10 +18,12 @@
 
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkIONetCDFModule.h" // For export macro
+#include "vtkNetCDFAccessor.h" // For netcdf/xarray accessor
 
 #include "vtkSmartPointer.h" // For ivars
 #include <string>            //For std::string
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArraySelection;
 class vtkDataSet;
 class vtkDoubleArray;
@@ -55,8 +39,12 @@ public:
   static vtkNetCDFReader* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  virtual void SetFileName(const char* filename);
-  vtkGetStringMacro(FileName);
+  virtual void SetFileName(VTK_FILEPATH const char* filename);
+  vtkGetFilePathMacro(FileName);
+  ///@{
+  vtkSetObjectMacro(Accessor, vtkNetCDFAccessor);
+  vtkGetObjectMacro(Accessor, vtkNetCDFAccessor);
+  ///@}
 
   /**
    * Update the meta data from the current file.  Automatically called
@@ -69,15 +57,15 @@ public:
   //   // load.
   //   vtkGetObjectMacro(VariableArraySelection, vtkDataArraySelection);
 
-  //@{
+  ///@{
   /**
    * Variable array selection.
    */
   virtual int GetNumberOfVariableArrays();
-  virtual const char* GetVariableArrayName(int idx);
+  virtual const char* GetVariableArrayName(int index);
   virtual int GetVariableArrayStatus(const char* name);
   virtual void SetVariableArrayStatus(const char* name, int status);
-  //@}
+  ///@}
 
   /**
    * Convenience method to get a list of variable arrays.  The length of the
@@ -86,7 +74,7 @@ public:
    */
   virtual vtkStringArray* GetAllVariableArrayNames();
 
-  //@{
+  ///@{
   /**
    * Returns an array with string encodings for the dimensions used in each of
    * the variables.  The indices in the returned array correspond to those used
@@ -94,7 +82,7 @@ public:
    * will have the same encoded string returned by this method.
    */
   vtkGetObjectMacro(VariableDimensions, vtkStringArray);
-  //@}
+  ///@}
 
   /**
    * Loads the grid with the given dimensions.  The dimensions are encoded in a
@@ -111,7 +99,7 @@ public:
    */
   bool ComputeArraySelection();
 
-  //@{
+  ///@{
   /**
    * Returns an array with string encodings for the dimension combinations used
    * in the variables.  The result is the same as GetVariableDimensions except
@@ -120,9 +108,9 @@ public:
    * meaningless.
    */
   vtkGetObjectMacro(AllDimensions, vtkStringArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If on, any float or double variable read that has a _FillValue attribute
    * will have that fill value replaced with a not-a-number (NaN) value.  The
@@ -135,9 +123,9 @@ public:
   vtkGetMacro(ReplaceFillValueWithNan, vtkTypeBool);
   vtkSetMacro(ReplaceFillValueWithNan, vtkTypeBool);
   vtkBooleanMacro(ReplaceFillValueWithNan, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access to the time dimensions units.
    * Can be used by the udunits library to convert raw numerical time values
@@ -145,7 +133,7 @@ public:
    */
   vtkGetStringMacro(TimeUnits);
   vtkGetStringMacro(Calendar);
-  //@}
+  ///@}
 
   /**
    * Get units attached to a particular array in the netcdf file.
@@ -256,6 +244,8 @@ protected:
    */
   virtual int LoadVariable(int ncFD, const char* varName, double time, vtkDataSet* output);
 
+  vtkNetCDFAccessor* Accessor;
+
 private:
   vtkNetCDFReader(const vtkNetCDFReader&) = delete;
   void operator=(const vtkNetCDFReader&) = delete;
@@ -266,4 +256,5 @@ private:
   vtkNetCDFReaderPrivate* Private;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkNetCDFReader_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestLinePlot3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkChartXYZ.h"
 #include "vtkContextScene.h"
@@ -41,7 +29,7 @@ void lorenz(const float* varX, float* varXDerivative)
 }
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestLinePlot3D(int, char*[])
 {
   // Create the data.
@@ -84,6 +72,7 @@ int TestLinePlot3D(int, char*[])
   // Add a line plot.
   vtkNew<vtkPlotLine3D> plot;
   plot->SetInputData(varXSolution);
+  plot->GetPen()->SetWidth(1);
   plot->GetPen()->SetColorF(0.1, 0.2, 0.8, 1.0);
   chart->AddPlot(plot);
 

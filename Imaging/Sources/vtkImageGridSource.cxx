@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageGridSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageGridSource.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageGridSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageGridSource::vtkImageGridSource()
 {
   this->DataExtent[0] = 0;
@@ -52,7 +41,7 @@ vtkImageGridSource::vtkImageGridSource()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageGridSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -66,7 +55,7 @@ int vtkImageGridSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkImageGridSourceExecute(
   vtkImageGridSource* self, vtkImageData* data, T* outPtr, int outExt[6], int id)
@@ -144,7 +133,7 @@ void vtkImageGridSourceExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageGridSource::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
 {
   vtkImageData* data = this->AllocateOutputData(output, outInfo);
@@ -161,7 +150,7 @@ void vtkImageGridSource::ExecuteDataWithInformation(vtkDataObject* output, vtkIn
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageGridSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -181,3 +170,4 @@ void vtkImageGridSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "DataOrigin: (" << this->DataOrigin[0] << ", " << this->DataOrigin[1] << ", "
      << this->DataOrigin[2] << ")\n";
 }
+VTK_ABI_NAMESPACE_END

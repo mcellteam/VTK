@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostBrandesCentrality.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkBoostBrandesCentrality.h"
 
 #include "vtkCellArray.h"
@@ -41,9 +25,10 @@
 
 using namespace boost;
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostBrandesCentrality);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoostBrandesCentrality::vtkBoostBrandesCentrality()
   : UseEdgeWeightArray(false)
   , InvertEdgeWeightArray(false)
@@ -51,13 +36,13 @@ vtkBoostBrandesCentrality::vtkBoostBrandesCentrality()
 {
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoostBrandesCentrality::~vtkBoostBrandesCentrality()
 {
   this->SetEdgeWeightArrayName(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoostBrandesCentrality::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -70,7 +55,7 @@ void vtkBoostBrandesCentrality::PrintSelf(ostream& os, vtkIndent indent)
      << (this->EdgeWeightArrayName ? this->EdgeWeightArrayName : "nullptr") << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostBrandesCentrality::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -97,7 +82,7 @@ int vtkBoostBrandesCentrality::RequestData(vtkInformation* vtkNotUsed(request),
   edgeCMap->SetName("centrality");
   vtkGraphEdgePropertyMapHelper<vtkFloatArray*> helper(edgeCMap);
 
-  vtkSmartPointer<vtkDataArray> edgeWeight(0);
+  vtkSmartPointer<vtkDataArray> edgeWeight(nullptr);
   if (this->UseEdgeWeightArray && this->EdgeWeightArrayName)
   {
     if (!this->InvertEdgeWeightArray)
@@ -185,3 +170,4 @@ int vtkBoostBrandesCentrality::RequestData(vtkInformation* vtkNotUsed(request),
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

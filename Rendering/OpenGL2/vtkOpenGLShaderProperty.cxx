@@ -1,23 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShaderProperty.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLShaderProperty.h"
 
 #include "vtkObjectFactory.h"
-#include "vtkOpenGLUniforms.h"
-#include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLShaderProperty);
 
 vtkOpenGLShaderProperty::vtkOpenGLShaderProperty() = default;
@@ -54,6 +41,22 @@ void vtkOpenGLShaderProperty::AddGeometryShaderReplacement(const std::string& or
     vtkShader::Geometry, originalValue, replaceFirst, replacementValue, replaceAll);
 }
 
+void vtkOpenGLShaderProperty::AddTessControlShaderReplacement(const std::string& originalValue,
+  bool replaceFirst, // do this replacement before the default
+  const std::string& replacementValue, bool replaceAll)
+{
+  this->AddShaderReplacement(
+    vtkShader::TessControl, originalValue, replaceFirst, replacementValue, replaceAll);
+}
+
+void vtkOpenGLShaderProperty::AddTessEvaluationShaderReplacement(const std::string& originalValue,
+  bool replaceFirst, // do this replacement before the default
+  const std::string& replacementValue, bool replaceAll)
+{
+  this->AddShaderReplacement(
+    vtkShader::TessEvaluation, originalValue, replaceFirst, replacementValue, replaceAll);
+}
+
 int vtkOpenGLShaderProperty::GetNumberOfShaderReplacements()
 {
   return static_cast<int>(UserShaderReplacements.size());
@@ -79,6 +82,14 @@ std::string vtkOpenGLShaderProperty::GetNthShaderReplacementTypeAsString(vtkIdTy
   else if (it->first.ShaderType == vtkShader::Geometry)
   {
     return std::string("Geometry");
+  }
+  else if (it->first.ShaderType == vtkShader::TessControl)
+  {
+    return std::string("TessControl");
+  }
+  else if (it->first.ShaderType == vtkShader::TessEvaluation)
+  {
+    return std::string("TessEvaluation");
   }
   return std::string("Unknown");
 }
@@ -116,6 +127,18 @@ void vtkOpenGLShaderProperty::ClearGeometryShaderReplacement(
   this->ClearShaderReplacement(vtkShader::Geometry, originalValue, replaceFirst);
 }
 
+void vtkOpenGLShaderProperty::ClearTessControlShaderReplacement(
+  const std::string& originalValue, bool replaceFirst)
+{
+  this->ClearShaderReplacement(vtkShader::TessControl, originalValue, replaceFirst);
+}
+
+void vtkOpenGLShaderProperty::ClearTessEvaluationShaderReplacement(
+  const std::string& originalValue, bool replaceFirst)
+{
+  this->ClearShaderReplacement(vtkShader::TessEvaluation, originalValue, replaceFirst);
+}
+
 void vtkOpenGLShaderProperty::ClearAllVertexShaderReplacements()
 {
   this->ClearAllShaderReplacements(vtkShader::Vertex);
@@ -131,17 +154,29 @@ void vtkOpenGLShaderProperty::ClearAllGeometryShaderReplacements()
   this->ClearAllShaderReplacements(vtkShader::Geometry);
 }
 
-//-----------------------------------------------------------------------------
+void vtkOpenGLShaderProperty::ClearAllTessControlShaderReplacements()
+{
+  this->ClearAllShaderReplacements(vtkShader::TessControl);
+}
+
+void vtkOpenGLShaderProperty::ClearAllTessEvalShaderReplacements()
+{
+  this->ClearAllShaderReplacements(vtkShader::TessEvaluation);
+}
+
+//------------------------------------------------------------------------------
 void vtkOpenGLShaderProperty::ClearAllShaderReplacements()
 {
   this->SetVertexShaderCode(nullptr);
   this->SetFragmentShaderCode(nullptr);
   this->SetGeometryShaderCode(nullptr);
+  this->SetTessControlShaderCode(nullptr);
+  this->SetTessEvaluationShaderCode(nullptr);
   this->UserShaderReplacements.clear();
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLShaderProperty::AddShaderReplacement(
   vtkShader::Type shaderType, // vertex, fragment, etc
   const std::string& originalValue,
@@ -161,7 +196,7 @@ void vtkOpenGLShaderProperty::AddShaderReplacement(
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLShaderProperty::ClearShaderReplacement(
   vtkShader::Type shaderType, // vertex, fragment, etc
   const std::string& originalValue, bool replaceFirst)
@@ -180,7 +215,7 @@ void vtkOpenGLShaderProperty::ClearShaderReplacement(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLShaderProperty::ClearAllShaderReplacements(vtkShader::Type shaderType)
 {
   bool modified = false;
@@ -193,6 +228,21 @@ void vtkOpenGLShaderProperty::ClearAllShaderReplacements(vtkShader::Type shaderT
   else if ((shaderType == vtkShader::Fragment) && this->FragmentShaderCode)
   {
     this->SetFragmentShaderCode(nullptr);
+    modified = true;
+  }
+  else if ((shaderType == vtkShader::Geometry) && this->GeometryShaderCode)
+  {
+    this->SetGeometryShaderCode(nullptr);
+    modified = true;
+  }
+  else if ((shaderType == vtkShader::TessControl) && this->TessControlShaderCode)
+  {
+    this->SetTessControlShaderCode(nullptr);
+    modified = true;
+  }
+  else if ((shaderType == vtkShader::TessEvaluation) && this->TessEvaluationShaderCode)
+  {
+    this->SetTessEvaluationShaderCode(nullptr);
     modified = true;
   }
 
@@ -216,8 +266,9 @@ void vtkOpenGLShaderProperty::ClearAllShaderReplacements(vtkShader::Type shaderT
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLShaderProperty::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericImageInterpolator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGenericImageInterpolator.h"
 #include "vtkArrayDispatch.h"
@@ -30,32 +18,30 @@
 #undef VTK_USE_UINT64
 #define VTK_USE_UINT64 0
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericImageInterpolator);
 
-//----------------------------------------------------------------------------
-vtkGenericImageInterpolator::vtkGenericImageInterpolator()
-  : vtkImageInterpolator()
-{
-}
+//------------------------------------------------------------------------------
+vtkGenericImageInterpolator::vtkGenericImageInterpolator() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericImageInterpolator::~vtkGenericImageInterpolator() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericImageInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //  Interpolation subroutines and associated code
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class F, class T>
 struct vtkImageNLCInterpolate
 {
@@ -66,7 +52,7 @@ struct vtkImageNLCInterpolate
   static void Tricubic(vtkInterpolationInfo* info, const F point[3], F* outPtr);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class F, class T>
 void vtkImageNLCInterpolate<F, T>::Nearest(vtkInterpolationInfo* info, const F point[3], F* outPtr)
 {
@@ -111,7 +97,7 @@ void vtkImageNLCInterpolate<F, T>::Nearest(vtkInterpolationInfo* info, const F p
   } while (--numscalars);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class F, class T>
 void vtkImageNLCInterpolate<F, T>::Trilinear(
   vtkInterpolationInfo* info, const F point[3], F* outPtr)
@@ -201,7 +187,7 @@ void vtkImageNLCInterpolate<F, T>::Trilinear(
   } while (--numscalars);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // cubic helper function: set up the lookup indices and the interpolation
 // coefficients
 
@@ -220,7 +206,7 @@ inline void vtkTricubicInterpWeights(T F[4], T f)
   F[3] = f * fd2 * fm1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // tricubic interpolation
 template <class F, class T>
 void vtkImageNLCInterpolate<F, T>::Tricubic(vtkInterpolationInfo* info, const F point[3], F* outPtr)
@@ -400,7 +386,7 @@ struct GetTricubicFuncWorker
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the interpolation function for the specified data types
 template <class F>
 void vtkGenericImageInterpolatorGetInterpolationFunc(
@@ -443,7 +429,7 @@ void vtkGenericImageInterpolatorGetInterpolationFunc(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Interpolation for precomputed weights
 
 template <class F, class T>
@@ -459,7 +445,7 @@ struct vtkImageNLCRowInterpolate
     vtkInterpolationWeights* weights, int idX, int idY, int idZ, F* outPtr, int n);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // helper function for nearest neighbor interpolation
 template <class F, class T>
 void vtkImageNLCRowInterpolate<F, T>::Nearest(
@@ -488,7 +474,7 @@ void vtkImageNLCRowInterpolate<F, T>::Nearest(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // helper function for linear interpolation
 template <class F, class T>
 void vtkImageNLCRowInterpolate<F, T>::Trilinear(
@@ -649,7 +635,7 @@ void vtkImageNLCRowInterpolate<F, T>::Trilinear(
   }
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // helper function for tricubic interpolation
 template <class F, class T>
 void vtkImageNLCRowInterpolate<F, T>::Tricubic(
@@ -734,7 +720,6 @@ void vtkImageNLCRowInterpolate<F, T>::Tricubic(
 
       *outPtr++ = result;
       cc++;
-      ;
     } while (--c);
   }
 }
@@ -775,7 +760,7 @@ struct GetTricubicRowFuncWorker
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // get row interpolation function for different interpolation modes
 // and different scalar types
 template <class F>
@@ -819,10 +804,10 @@ void vtkGenericImageInterpolatorGetRowInterpolationFunc(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 } // ends anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericImageInterpolator::GetInterpolationFunc(
   void (**func)(vtkInterpolationInfo*, const double[3], double*))
 {
@@ -830,7 +815,7 @@ void vtkGenericImageInterpolator::GetInterpolationFunc(
     func, this->InterpolationInfo->Array, this->InterpolationMode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericImageInterpolator::GetInterpolationFunc(
   void (**func)(vtkInterpolationInfo*, const float[3], float*))
 {
@@ -838,7 +823,7 @@ void vtkGenericImageInterpolator::GetInterpolationFunc(
     func, this->InterpolationInfo->Array, this->InterpolationMode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericImageInterpolator::GetRowInterpolationFunc(
   void (**func)(vtkInterpolationWeights*, int, int, int, double*, int))
 {
@@ -846,7 +831,7 @@ void vtkGenericImageInterpolator::GetRowInterpolationFunc(
     func, this->InterpolationInfo->Array, this->InterpolationMode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericImageInterpolator::GetRowInterpolationFunc(
   void (**func)(vtkInterpolationWeights*, int, int, int, float*, int))
 {
@@ -854,7 +839,7 @@ void vtkGenericImageInterpolator::GetRowInterpolationFunc(
     func, this->InterpolationInfo->Array, this->InterpolationMode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // default do-nothing interpolation functions
 namespace
 {
@@ -880,7 +865,7 @@ void vtkInterpolateNOP<F>::RowInterpolationFunc(vtkInterpolationWeights*, int, i
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // This is a copy/paste from vtkAbstractInterpolator::Update() with the
 // assignment of the data array's pointer removed.
@@ -982,3 +967,4 @@ void vtkGenericImageInterpolator::Update()
   this->GetRowInterpolationFunc(&this->RowInterpolationFuncDouble);
   this->GetRowInterpolationFunc(&this->RowInterpolationFuncFloat);
 }
+VTK_ABI_NAMESPACE_END

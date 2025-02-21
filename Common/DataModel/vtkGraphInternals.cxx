@@ -1,29 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphInternals.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGraphInternals.h"
 
 #include "vtkDistributedGraphHelper.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGraphInternals);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGraphInternals::vtkGraphInternals()
 {
   this->NumberOfEdges = 0;
@@ -31,10 +17,21 @@ vtkGraphInternals::vtkGraphInternals()
   this->UsingPedigreeIds = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGraphInternals::~vtkGraphInternals() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkGraphInternals::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+  os << indent << "NumberOfEdges: " << this->NumberOfEdges << endl;
+  os << indent << "LastRemoteEdgeId: " << this->LastRemoteEdgeId << endl;
+  os << indent << "LastRemoteEdgeSource: " << this->LastRemoteEdgeSource << endl;
+  os << indent << "LastRemoteEdgeTarget: " << this->LastRemoteEdgeTarget << endl;
+  os << indent << "UsingPedigreeIds: " << this->UsingPedigreeIds << endl;
+}
+
+//------------------------------------------------------------------------------
 void vtkGraphInternals::RemoveEdgeFromOutList(vtkIdType e, std::vector<vtkOutEdgeType>& outEdges)
 {
   size_t outSize = outEdges.size();
@@ -55,7 +52,7 @@ void vtkGraphInternals::RemoveEdgeFromOutList(vtkIdType e, std::vector<vtkOutEdg
   outEdges.pop_back();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphInternals::RemoveEdgeFromInList(vtkIdType e, std::vector<vtkInEdgeType>& inEdges)
 {
   size_t inSize = inEdges.size();
@@ -76,7 +73,7 @@ void vtkGraphInternals::RemoveEdgeFromInList(vtkIdType e, std::vector<vtkInEdgeT
   inEdges.pop_back();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphInternals::ReplaceEdgeFromOutList(
   vtkIdType from, vtkIdType to, std::vector<vtkOutEdgeType>& outEdges)
 {
@@ -90,7 +87,7 @@ void vtkGraphInternals::ReplaceEdgeFromOutList(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphInternals::ReplaceEdgeFromInList(
   vtkIdType from, vtkIdType to, std::vector<vtkInEdgeType>& inEdges)
 {
@@ -103,3 +100,4 @@ void vtkGraphInternals::ReplaceEdgeFromInList(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

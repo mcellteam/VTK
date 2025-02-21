@@ -1,24 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPContingencyStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
-
-#include "vtkToolkits.h"
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkPContingencyStatistics.h"
 
@@ -44,42 +26,42 @@
 #include "vtkTimerLog.h"
 #endif // DEBUG_PARALLEL_CONTINGENCY_STATISTICS
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPContingencyStatistics);
 vtkCxxSetObjectMacro(vtkPContingencyStatistics, Controller, vtkMultiProcessController);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPContingencyStatistics::vtkPContingencyStatistics()
 {
-  this->Controller = 0;
+  this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPContingencyStatistics::~vtkPContingencyStatistics()
 {
-  this->SetController(0);
+  this->SetController(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPContingencyStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-//-----------------------------------------------------------------------------
-static void StringVectorToStringBuffer(
-  const std::vector<vtkStdString>& strings, vtkStdString& buffer)
+//------------------------------------------------------------------------------
+static void StringVectorToStringBuffer(const std::vector<std::string>& strings, std::string& buffer)
 {
   buffer.clear();
 
-  for (std::vector<vtkStdString>::const_iterator it = strings.begin(); it != strings.end(); ++it)
+  for (std::vector<std::string>::const_iterator it = strings.begin(); it != strings.end(); ++it)
   {
     buffer.append(*it);
     buffer.push_back(0);
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static bool StringArrayToStringBuffer(
   vtkTable* contingencyTab, vtkStdString& xyPacked, std::vector<vtkIdType>& kcValues)
 {
@@ -94,7 +76,7 @@ static bool StringArrayToStringBuffer(
     return true;
   }
 
-  std::vector<vtkStdString> xyValues; // consecutive (x,y) pairs
+  std::vector<std::string> xyValues; // consecutive (x,y) pairs
 
   vtkIdType nRowCont = contingencyTab->GetNumberOfRows();
   for (vtkIdType r = 1; r < nRowCont;
@@ -115,21 +97,21 @@ static bool StringArrayToStringBuffer(
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void StringBufferToStringVector(
   const vtkStdString& buffer, std::vector<vtkStdString>& strings)
 {
   strings.clear();
 
-  const char* const bufferEnd = &buffer[0] + buffer.size();
+  const char* const bufferEnd = buffer.data() + buffer.size();
 
-  for (const char* start = &buffer[0]; start != bufferEnd; ++start)
+  for (const char* start = buffer.data(); start != bufferEnd; ++start)
   {
     for (const char* finish = start; finish != bufferEnd; ++finish)
     {
       if (!*finish)
       {
-        strings.push_back(vtkStdString(start));
+        strings.emplace_back(start);
         start = finish;
         break;
       }
@@ -137,7 +119,7 @@ static void StringBufferToStringVector(
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPContingencyStatistics::Learn(
   vtkTable* inData, vtkTable* inParameters, vtkMultiBlockDataSet* outMeta)
 {
@@ -279,8 +261,8 @@ void vtkPContingencyStatistics::Learn(
   }
 
   // Allocate receive buffers on reducer process, based on the global sizes obtained above
-  char* xyPacked_g = 0;
-  vtkIdType* kcValues_g = 0;
+  char* xyPacked_g = nullptr;
+  vtkIdType* kcValues_g = nullptr;
   if (myRank == rProc)
   {
     xyPacked_g = new char[xySizeTotal];
@@ -402,14 +384,14 @@ void vtkPContingencyStatistics::Learn(
 #endif // DEBUG_PARALLEL_CONTINGENCY_STATISTICS
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPContingencyStatistics::Reduce(vtkIdType& xySizeTotal, char* xyPacked_g,
   vtkStdString& xyPacked_l, vtkIdType& kcSizeTotal, vtkIdType* kcValues_g,
   std::vector<vtkIdType>& kcValues_l)
 {
   // First, unpack the packet of strings
   std::vector<vtkStdString> xyValues_g;
-  StringBufferToStringVector(vtkStdString(xyPacked_g, xySizeTotal), xyValues_g);
+  StringBufferToStringVector(std::string(xyPacked_g, xySizeTotal), xyValues_g);
 
   // Second, check consistency: we must have the same number of xy and kc entries
   if (vtkIdType(xyValues_g.size()) != kcSizeTotal)
@@ -423,8 +405,8 @@ bool vtkPContingencyStatistics::Reduce(vtkIdType& xySizeTotal, char* xyPacked_g,
   }
 
   // Third, reduce to the global contingency table
-  typedef std::map<vtkStdString, vtkIdType> Distribution;
-  typedef std::map<vtkStdString, Distribution> Bidistribution;
+  typedef std::map<std::string, vtkIdType> Distribution;
+  typedef std::map<std::string, Distribution> Bidistribution;
   std::map<vtkIdType, Bidistribution> contingencyTable;
   vtkIdType i = 0;
   for (std::vector<vtkStdString>::iterator vit = xyValues_g.begin(); vit != xyValues_g.end();
@@ -434,7 +416,7 @@ bool vtkPContingencyStatistics::Reduce(vtkIdType& xySizeTotal, char* xyPacked_g,
   }
 
   // Fourth, prepare send buffers of (global) xy and kc values
-  std::vector<vtkStdString> xyValues_l;
+  std::vector<std::string> xyValues_l;
   kcValues_l.clear();
   for (std::map<vtkIdType, Bidistribution>::iterator ait = contingencyTable.begin();
        ait != contingencyTable.end(); ++ait)
@@ -464,7 +446,7 @@ bool vtkPContingencyStatistics::Reduce(vtkIdType& xySizeTotal, char* xyPacked_g,
   return false;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPContingencyStatistics::Broadcast(vtkIdType xySizeTotal, vtkStdString& xyPacked,
   std::vector<vtkStdString>& xyValues, vtkIdType kcSizeTotal, std::vector<vtkIdType>& kcValues,
   vtkIdType rProc)
@@ -512,3 +494,4 @@ bool vtkPContingencyStatistics::Broadcast(vtkIdType xySizeTotal, vtkStdString& x
 
   return false;
 }
+VTK_ABI_NAMESPACE_END

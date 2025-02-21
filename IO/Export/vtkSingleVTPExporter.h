@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSingleVTPExporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSingleVTPExporter
  * @brief   export a scene into a single vtp file and png texture
@@ -34,6 +22,7 @@
 #include "vtkIOExportModule.h" // For export macro
 #include <vector>              // for method args
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkPolyData;
 class vtkTexture;
@@ -45,19 +34,19 @@ public:
   vtkTypeMacro(vtkSingleVTPExporter, vtkExporter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the prefix of the files to write out. The resulting filenames
    * will have .vtp and .png appended to them.
    */
-  vtkSetStringMacro(FilePrefix);
-  vtkGetStringMacro(FilePrefix);
-  //@}
+  vtkSetFilePathMacro(FilePrefix);
+  vtkGetFilePathMacro(FilePrefix);
+  ///@}
 
   // computes the file prefix from a filename by removing
   // the .vtp extension if present. Useful for APIs that
   // are filename centric.
-  void SetFileName(const char*);
+  void SetFileName(VTK_FILEPATH const char*);
 
 protected:
   vtkSingleVTPExporter();
@@ -93,4 +82,5 @@ private:
   void operator=(const vtkSingleVTPExporter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkViewNode.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkViewNode
  * @brief   a node within a VTK scene graph
@@ -32,6 +20,7 @@
 #include <list>                           // for ivar
 #include <map>                            // for ivar
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCollection;
 class vtkViewNodeFactory;
 
@@ -41,12 +30,12 @@ public:
   vtkTypeMacro(vtkViewNode, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * This is the VTK class that this node stands in for.
    */
   vtkGetObjectMacro(Renderable, vtkObject);
-  //@}
+  ///@}
 
   /**
    * Builds myself.
@@ -68,29 +57,29 @@ public:
    */
   virtual void Invalidate(bool /*prepass*/) {}
 
-  //@{
+  ///@{
   /**
    * Access the node that owns this one.
    */
   virtual void SetParent(vtkViewNode*);
   virtual vtkViewNode* GetParent();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access nodes that this one owns.
    */
   virtual std::list<vtkViewNode*> const& GetChildren() { return this->Children; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * A factory that creates particular subclasses for different
    * rendering back ends.
    */
   virtual void SetMyFactory(vtkViewNodeFactory*);
   vtkGetObjectMacro(MyFactory, vtkViewNodeFactory);
-  //@}
+  ///@}
 
   /**
    * Returns the view node that corresponding to the provided object
@@ -143,24 +132,24 @@ protected:
 
   static const char* operation_type_strings[];
 
-  void Apply(int operation, bool prepass);
+  virtual void Apply(int operation, bool prepass);
 
-  //@{
+  ///@{
   /**
    * convenience method to add node or nodes
    * if missing from our current list
    */
   void AddMissingNode(vtkObject* obj);
   void AddMissingNodes(vtkCollection* col);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Called first before adding missing nodes.
    * Keeps track of the nodes that should be in the collection
    */
   void PrepareNodes();
-  //@}
+  ///@}
 
   /**
    * Called after PrepareNodes and AddMissingNodes
@@ -180,7 +169,7 @@ protected:
   std::map<vtkObject*, vtkViewNode*> Renderables;
   friend class vtkViewNodeFactory;
 
-  // used in the prepare/add/remove opertions
+  // used in the prepare/add/remove operations
   bool Used;
 
 private:
@@ -188,4 +177,5 @@ private:
   void operator=(const vtkViewNode&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

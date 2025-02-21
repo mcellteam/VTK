@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestImageIterator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // .NAME Test FindCell methods for image data
 // .SECTION Description
@@ -143,6 +131,20 @@ inline int DoTest(int extent[6], double origin[3], double spacing[3], double dir
       if (dist * dist > 1e-29)
       {
         cerr << "pcoords[" << i << "] = " << pcoords[i] << ", should be " << pcoords2[i] << "\n";
+        return 1;
+      }
+
+      // Test with bigger tolerance
+      double y[3];
+      y[0] = x[0] + 1e-5;
+      y[1] = x[1];
+      y[2] = x[2];
+      if (image->ComputeStructuredCoordinates(y, idx, pcoords2, 1e-8) == 0)
+      {
+        cerr << "ComputeStructuredCoordinates with tolerance failed for "
+             << "point (" << y[0] << ", " << y[1] << ", " << y[2] << ")"
+             << " and bounds (" << bounds[0] << ", " << bounds[1] << ", " << bounds[2] << ", "
+             << bounds[3] << ", " << bounds[4] << ", " << bounds[5] << ")\n";
         return 1;
       }
     }

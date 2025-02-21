@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVortexCore.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVortexCore
  * @brief   Compute vortex core lines using the parallel vectors method
@@ -32,21 +20,24 @@
  * fluid feature extraction.” (1999).
  *
  * To further discriminate against spurious vortex cores, at each potential point
- * value the Q-criterion, delta-criterion, and lambda_2-criterion as defined in
+ * value the Q-criterion, delta-criterion, and lambda_2-criterion are checked as
+ * defined in
  *
  * Haller, G. (2005). An objective definition of a vortex. Journal of Fluid
  * Mechanics, 525, 1-26.
  *
- * are checked. Addtitionally, the lambda_ci criterion as defined in
+ * Additionally, the lambda_ci criterion is computed as defined in
  *
  * Chakraborty, P., Balachandar, S., & Adran, R. (2005). On the relationships
  * between local vortex identification schemes. Journal of Fluid Mechanics, 535,
  * 189-214.
  *
- * is computed. The Q-criterion and delta-criterion are used to prefilter cells
+ * The Q-criterion and delta-criterion are used to prefilter cells
  * prior to the execution of the parallel lines algorithm, and all criteria
- * values are stored as point values on the output
- * polylines.
+ * values are stored as point values on the output polylines.
+ *
+ * The FasterApproximation option uses a faster approximate gradient calculation
+ * to accelerate the vortex core calculation.
  *
  * @sa
  * vtkParallelVectors
@@ -58,6 +49,7 @@
 #include "vtkFiltersFlowPathsModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSFLOWPATHS_EXPORT vtkVortexCore : public vtkPolyDataAlgorithm
 {
 public:
@@ -65,15 +57,26 @@ public:
   vtkTypeMacro(vtkVortexCore, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
-   * Use the flow field's jerk instead of acceleration as the second vector field
-   * during the parallel vector operation. Disabled by default.
+   * When this flag is on, the flow field's jerk is used instead of acceleration as the
+   * second vector field during the parallel vector operation. The default is off.
    */
   vtkSetMacro(HigherOrderMethod, vtkTypeBool);
   vtkGetMacro(HigherOrderMethod, vtkTypeBool);
   vtkBooleanMacro(HigherOrderMethod, vtkTypeBool);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * When this flag is on, the gradient filter will provide a less accurate (but close)
+   * algorithm that performs fewer derivative calculations (and is therefore faster).
+   * The default is off.
+   */
+  vtkGetMacro(FasterApproximation, bool);
+  vtkSetMacro(FasterApproximation, bool);
+  vtkBooleanMacro(FasterApproximation, bool);
+  ///@}
 
 protected:
   vtkVortexCore();
@@ -84,9 +87,12 @@ protected:
 
   vtkTypeBool HigherOrderMethod;
 
+  bool FasterApproximation;
+
 private:
   vtkVortexCore(const vtkVortexCore&) = delete;
   void operator=(const vtkVortexCore&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

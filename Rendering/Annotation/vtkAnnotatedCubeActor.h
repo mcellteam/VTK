@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAnnotatedCubeActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAnnotatedCubeActor
  * @brief   a 3D cube with face labels
@@ -41,7 +29,9 @@
 
 #include "vtkProp3D.h"
 #include "vtkRenderingAnnotationModule.h" // For export macro
+#include "vtkWrappingHints.h"             // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkAppendPolyData;
 class vtkAssembly;
@@ -54,7 +44,7 @@ class vtkTransform;
 class vtkTransformFilter;
 class vtkVectorText;
 
-class VTKRENDERINGANNOTATION_EXPORT vtkAnnotatedCubeActor : public vtkProp3D
+class VTKRENDERINGANNOTATION_EXPORT VTK_MARSHALAUTO vtkAnnotatedCubeActor : public vtkProp3D
 {
 public:
   static vtkAnnotatedCubeActor* New();
@@ -68,13 +58,13 @@ public:
    */
   void GetActors(vtkPropCollection*) override;
 
-  //@{
+  ///@{
   /**
    * Support the standard render methods.
    */
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Does this prop have some translucent polygonal geometry?
@@ -93,29 +83,29 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow*) override;
 
-  //@{
+  ///@{
   /**
    * Get the bounds for this Actor as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax). (The
    * method GetBounds(double bounds[6]) is available from the superclass.)
    */
   void GetBounds(double bounds[6]);
   double* GetBounds() VTK_SIZEHINT(6) override;
-  //@}
+  ///@}
 
   /**
    * Get the actors mtime plus consider its properties and texture if set.
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale factor for the face text
    */
   void SetFaceTextScale(double);
   vtkGetMacro(FaceTextScale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the individual face text properties.
    */
@@ -125,7 +115,7 @@ public:
   vtkProperty* GetYMinusFaceProperty();
   vtkProperty* GetZPlusFaceProperty();
   vtkProperty* GetZMinusFaceProperty();
-  //@}
+  ///@}
 
   /**
    * Get the cube properties.
@@ -137,7 +127,7 @@ public:
    */
   vtkProperty* GetTextEdgesProperty();
 
-  //@{
+  ///@{
   /**
    * Set/get the face text.
    */
@@ -153,33 +143,33 @@ public:
   vtkGetStringMacro(ZPlusFaceText);
   vtkSetStringMacro(ZMinusFaceText);
   vtkGetStringMacro(ZMinusFaceText);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable drawing the vector text edges.
    */
   void SetTextEdgesVisibility(int);
   int GetTextEdgesVisibility();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable drawing the cube.
    */
   void SetCubeVisibility(int);
   int GetCubeVisibility();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable drawing the vector text.
    */
   void SetFaceTextVisibility(int);
   int GetFaceTextVisibility();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Augment individual face text orientations.
    */
@@ -189,7 +179,7 @@ public:
   vtkGetMacro(YFaceTextRotation, double);
   vtkSetMacro(ZFaceTextRotation, double);
   vtkGetMacro(ZFaceTextRotation, double);
-  //@}
+  ///@}
 
   /**
    * Get the assembly so that user supplied transforms can be applied
@@ -246,4 +236,5 @@ private:
   void operator=(const vtkAnnotatedCubeActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

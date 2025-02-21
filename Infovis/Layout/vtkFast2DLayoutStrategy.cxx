@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFast2DLayoutStrategy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkFast2DLayoutStrategy.h"
 
@@ -34,6 +18,7 @@
 #include "vtkImageData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkLogger.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
@@ -41,6 +26,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkTree.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkFast2DLayoutStrategy);
 
 // Cool-down function.
@@ -49,7 +35,7 @@ static inline float CoolDown(float t, float r)
   return t - (t / r);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkFast2DLayoutStrategy::vtkFast2DLayoutStrategy()
 {
@@ -73,7 +59,7 @@ vtkFast2DLayoutStrategy::vtkFast2DLayoutStrategy()
   this->EdgeArray = nullptr;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkFast2DLayoutStrategy::~vtkFast2DLayoutStrategy()
 {
@@ -145,7 +131,7 @@ void vtkFast2DLayoutStrategy::GenerateGaussianSplat(vtkImageData* splat, int x, 
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the graph that will be laid out
 void vtkFast2DLayoutStrategy::Initialize()
 {
@@ -258,7 +244,7 @@ void vtkFast2DLayoutStrategy::Initialize()
   this->DensityGrid->SetOutputDimensions(100, 100, 1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Simple graph layout method
 void vtkFast2DLayoutStrategy::Layout()
@@ -550,7 +536,7 @@ void vtkFast2DLayoutStrategy::ResolveCoincidentVertices()
   giantGrid->Delete();
 
   // Report number of collision operations just for sanity check
-  // vtkWarningMacro("Collision Ops: " << totalCollisionOps);
+  vtkLog(TRACE, "Collision Ops: " << totalCollisionOps);
 }
 
 void vtkFast2DLayoutStrategy::PrintSelf(ostream& os, vtkIndent indent)
@@ -565,3 +551,4 @@ void vtkFast2DLayoutStrategy::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "EdgeWeightField: " << (this->EdgeWeightField ? this->EdgeWeightField : "(none)")
      << endl;
 }
+VTK_ABI_NAMESPACE_END

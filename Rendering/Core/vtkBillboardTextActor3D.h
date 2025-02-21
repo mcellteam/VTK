@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBillboardTextActor3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkBillboardTextActor3D
  * @brief Renders pixel-aligned text, facing the camera, anchored at a 3D point.
@@ -25,6 +13,7 @@
 #include "vtkRenderingCoreModule.h" // For export macro
 #include "vtkSmartPointer.h"        // For.... vtkSmartPointer!
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkImageData;
 class vtkPolyData;
@@ -40,6 +29,22 @@ public:
   static vtkBillboardTextActor3D* New();
   vtkTypeMacro(vtkBillboardTextActor3D, vtkProp3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+
+  /**
+   * For some exporters and other other operations we must be
+   * able to collect all the actors or volumes. These methods
+   * are used in that process.
+   * In case the viewport is not a consumer of this prop:
+   * call UpdateGeometry() first for updated viewport-specific
+   * billboard geometry.
+   */
+  void GetActors(vtkPropCollection*) override;
+
+  /**
+   * Updates the billboard geometry without performing any rendering,
+   * to assist GetActors().
+   */
+  void UpdateGeometry(vtkViewport* vp);
 
   /**
    * The UTF-8 encoded string to display.
@@ -158,4 +163,5 @@ private:
   void operator=(const vtkBillboardTextActor3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkBillboardTextActor3D_h

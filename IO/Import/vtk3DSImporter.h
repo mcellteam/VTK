@@ -1,22 +1,14 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtk3DSImporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtk3DSImporter
  * @brief   imports 3D Studio files.
  *
  * vtk3DSImporter imports 3D Studio files into vtk.
+ *
+ * This importer doesn't support scene hierarchy API
+ *
+ * This importer supports the collection API
  *
  * @sa
  * vtkImporter
@@ -29,6 +21,7 @@
 #include "vtkIOImportModule.h" // For export macro
 #include "vtkImporter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 
 class VTKIOIMPORT_EXPORT vtk3DSImporter : public vtkImporter
@@ -39,15 +32,15 @@ public:
   vtkTypeMacro(vtk3DSImporter, vtkImporter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the name of the file to read.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of normals. If on, imported geometry will
    * be run through vtkPolyDataNormals.
@@ -55,7 +48,7 @@ public:
   vtkSetMacro(ComputeNormals, vtkTypeBool);
   vtkGetMacro(ComputeNormals, vtkTypeBool);
   vtkBooleanMacro(ComputeNormals, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Get a printable string describing the outputs
@@ -96,4 +89,5 @@ private:
   void operator=(const vtk3DSImporter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

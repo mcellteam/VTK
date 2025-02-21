@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReduceTable.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkReduceTable.h"
 
@@ -24,8 +12,9 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkReduceTable);
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReduceTable::vtkReduceTable()
 {
   this->SetNumberOfInputPorts(1);
@@ -35,10 +24,10 @@ vtkReduceTable::vtkReduceTable()
   this->NonNumericalReductionMethod = vtkReduceTable::MODE;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReduceTable::~vtkReduceTable() = default;
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReduceTable::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -95,7 +84,7 @@ int vtkReduceTable::RequestData(
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::InitializeOutputTable(vtkTable* input, vtkTable* output)
 {
   output->DeepCopy(input);
@@ -105,14 +94,14 @@ void vtkReduceTable::InitializeOutputTable(vtkTable* input, vtkTable* output)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::AccumulateIndexValues(vtkTable* input)
 {
   for (vtkIdType row = 0; row < input->GetNumberOfRows(); ++row)
   {
     vtkVariant value = input->GetValue(row, this->IndexColumn);
     this->IndexValues.insert(value);
-    std::map<vtkVariant, std::vector<vtkIdType> >::iterator itr =
+    std::map<vtkVariant, std::vector<vtkIdType>>::iterator itr =
       this->NewRowToOldRowsMap.find(value);
     if (itr == this->NewRowToOldRowsMap.end())
     {
@@ -127,7 +116,7 @@ void vtkReduceTable::AccumulateIndexValues(vtkTable* input)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::PopulateIndexColumn(vtkTable* output)
 {
   vtkIdType row = 0;
@@ -139,7 +128,7 @@ void vtkReduceTable::PopulateIndexColumn(vtkTable* output)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::PopulateDataColumn(vtkTable* input, vtkTable* output, vtkIdType col)
 {
   int reductionMethod = 0;
@@ -196,7 +185,7 @@ void vtkReduceTable::PopulateDataColumn(vtkTable* input, vtkTable* output, vtkId
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::ReduceValuesToMean(
   vtkTable* input, vtkTable* output, vtkIdType row, vtkIdType col, std::vector<vtkIdType> oldRows)
 {
@@ -215,7 +204,7 @@ void vtkReduceTable::ReduceValuesToMean(
   output->SetValue(row, col, vtkVariant(mean));
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::ReduceValuesToMedian(
   vtkTable* input, vtkTable* output, vtkIdType row, vtkIdType col, std::vector<vtkIdType> oldRows)
 {
@@ -248,7 +237,7 @@ void vtkReduceTable::ReduceValuesToMedian(
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::ReduceValuesToMode(
   vtkTable* input, vtkTable* output, vtkIdType row, vtkIdType col, std::vector<vtkIdType> oldRows)
 {
@@ -284,7 +273,7 @@ void vtkReduceTable::ReduceValuesToMode(
   output->SetValue(row, col, mode);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReduceTable::GetReductionMethodForColumn(vtkIdType col)
 {
   std::map<vtkIdType, int>::iterator itr = this->ColumnReductionMethods.find(col);
@@ -295,13 +284,13 @@ int vtkReduceTable::GetReductionMethodForColumn(vtkIdType col)
   return -1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::SetReductionMethodForColumn(vtkIdType col, int method)
 {
   this->ColumnReductionMethods[col] = method;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReduceTable::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -309,3 +298,4 @@ void vtkReduceTable::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "NumericalReductionMethod: " << this->NumericalReductionMethod << endl;
   os << indent << "NonNumericalReductionMethod: " << this->NonNumericalReductionMethod << endl;
 }
+VTK_ABI_NAMESPACE_END

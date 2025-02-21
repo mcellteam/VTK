@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataObjectWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataObjectWriter
  * @brief   write vtk field data
@@ -35,6 +23,7 @@
 #include "vtkStdString.h"      // For string used in api
 #include "vtkWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOLEGACY_EXPORT vtkDataObjectWriter : public vtkWriter
 {
 public:
@@ -42,12 +31,15 @@ public:
   vtkTypeMacro(vtkDataObjectWriter, vtkWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Methods delegated to vtkDataWriter, see vtkDataWriter.
    */
-  void SetFileName(const char* filename) { this->Writer->SetFileName(filename); }
-  char* GetFileName() { return this->Writer->GetFileName(); }
+  void SetFileName(VTK_FILEPATH const char* filename) { this->Writer->SetFileName(filename); }
+  VTK_FILEPATH VTK_FUTURE_CONST char* GetFileName() VTK_FUTURE_CONST
+  {
+    return this->Writer->GetFileName();
+  }
   void SetHeader(const char* header) { this->Writer->SetHeader(header); }
   char* GetHeader() { return this->Writer->GetHeader(); }
   void SetFileType(int type) { this->Writer->SetFileType(type); }
@@ -64,7 +56,7 @@ public:
   unsigned char* GetBinaryOutputString() { return this->Writer->GetBinaryOutputString(); }
   void SetFieldDataName(const char* fieldname) { this->Writer->SetFieldDataName(fieldname); }
   char* GetFieldDataName() { return this->Writer->GetFieldDataName(); }
-  //@}
+  ///@}
 
 protected:
   vtkDataObjectWriter();
@@ -80,4 +72,5 @@ private:
   void operator=(const vtkDataObjectWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

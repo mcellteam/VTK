@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDistributedDataFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkDistributedDataFilter.h"
 
@@ -31,9 +16,10 @@
 #include "vtkUnstructuredGrid.h"
 
 // Needed to let vtkPDistributedDataFilter be instantiated when available
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkDistributedDataFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDistributedDataFilter::vtkDistributedDataFilter()
 {
   this->Kdtree = nullptr;
@@ -61,7 +47,7 @@ vtkDistributedDataFilter::vtkDistributedDataFilter()
   this->UserCuts = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDistributedDataFilter::~vtkDistributedDataFilter()
 {
   if (this->Kdtree)
@@ -88,7 +74,7 @@ vtkDistributedDataFilter::~vtkDistributedDataFilter()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistributedDataFilter::SetController(vtkMultiProcessController* c)
 {
   if (this->Kdtree)
@@ -102,32 +88,16 @@ void vtkDistributedDataFilter::SetController(vtkMultiProcessController* c)
     this->MyId = 0;
   }
 
-  if (this->Controller == c)
+  vtkSetObjectBodyMacro(Controller, vtkMultiProcessController, c);
+
+  if (c)
   {
-    return;
+    this->NumProcesses = c->GetNumberOfProcesses();
+    this->MyId = c->GetLocalProcessId();
   }
-
-  this->Modified();
-
-  if (this->Controller != nullptr)
-  {
-    this->Controller->UnRegister(this);
-    this->Controller = nullptr;
-  }
-
-  if (c == nullptr)
-  {
-    return;
-  }
-
-  this->Controller = c;
-
-  c->Register(this);
-  this->NumProcesses = c->GetNumberOfProcesses();
-  this->MyId = c->GetLocalProcessId();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPKdTree* vtkDistributedDataFilter::GetKdtree()
 {
   if (this->Kdtree == nullptr)
@@ -140,7 +110,7 @@ vtkPKdTree* vtkDistributedDataFilter::GetKdtree()
   return this->Kdtree;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistributedDataFilter::SetBoundaryMode(int mode)
 {
   int include_all, clip_cells;
@@ -169,7 +139,7 @@ void vtkDistributedDataFilter::SetBoundaryMode(int mode)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDistributedDataFilter::GetBoundaryMode()
 {
   if (!this->IncludeAllIntersectingCells && !this->ClipCells)
@@ -188,7 +158,7 @@ int vtkDistributedDataFilter::GetBoundaryMode()
   return -1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkDistributedDataFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -213,7 +183,7 @@ int vtkDistributedDataFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(req
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistributedDataFilter::SetCuts(vtkBSPCuts* cuts)
 {
   if (cuts == this->UserCuts)
@@ -238,7 +208,7 @@ void vtkDistributedDataFilter::SetCuts(vtkBSPCuts* cuts)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistributedDataFilter::SetUserRegionAssignments(const int* map, int numRegions)
 {
   std::vector<int> copy(this->UserRegionAssignments);
@@ -253,7 +223,7 @@ void vtkDistributedDataFilter::SetUserRegionAssignments(const int* map, int numR
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDistributedDataFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -267,7 +237,7 @@ int vtkDistributedDataFilter::RequestInformation(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDistributedDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -290,7 +260,7 @@ int vtkDistributedDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
 
   if (outputCD)
   {
-    outputCD->ShallowCopy(input);
+    outputCD->CompositeShallowCopy(vtkCompositeDataSet::SafeDownCast(input));
   }
   else
   {
@@ -306,7 +276,7 @@ int vtkDistributedDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDistributedDataFilter::RequestDataObject(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -345,7 +315,7 @@ int vtkDistributedDataFilter::RequestDataObject(
   return 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDistributedDataFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Remove(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE());
@@ -354,8 +324,9 @@ int vtkDistributedDataFilter::FillInputPortInformation(int, vtkInformation* info
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistributedDataFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

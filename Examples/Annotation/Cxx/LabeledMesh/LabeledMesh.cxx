@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    LabeledMesh.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // This example was translated into C++ from its TCL counterpart
 // (VTK/Examples/Annotation/Tcl/labeledMesh.tcl) by Jake Nickel from
@@ -25,7 +13,7 @@
 #include "vtkActor2D.h"
 #include "vtkCellArray.h"
 #include "vtkCellCenters.h"
-#include "vtkIdFilter.h"
+#include "vtkGenerateIds.h"
 #include "vtkLabeledDataMapper.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
@@ -124,7 +112,7 @@ int main(int, char*[])
   sphereActor->SetMapper(sphereMapper);
 
   // Generate data arrays containing point and cell ids
-  vtkSmartPointer<vtkIdFilter> ids = vtkSmartPointer<vtkIdFilter>::New();
+  vtkSmartPointer<vtkGenerateIds> ids = vtkSmartPointer<vtkGenerateIds>::New();
   ids->SetInputConnection(sphere->GetOutputPort());
   ids->PointIdsOn();
   ids->CellIdsOn();
@@ -145,6 +133,7 @@ int main(int, char*[])
   vtkSmartPointer<vtkLabeledDataMapper> ldm = vtkSmartPointer<vtkLabeledDataMapper>::New();
   ldm->SetInputConnection(visPts->GetOutputPort());
   ldm->SetLabelModeToLabelFieldData();
+  ldm->SetFieldDataName("vtkPointIds");
 
   vtkSmartPointer<vtkActor2D> pointLabels = vtkSmartPointer<vtkActor2D>::New();
   pointLabels->SetMapper(ldm);
@@ -164,6 +153,7 @@ int main(int, char*[])
   vtkSmartPointer<vtkLabeledDataMapper> cellMapper = vtkSmartPointer<vtkLabeledDataMapper>::New();
   cellMapper->SetInputConnection(visCells->GetOutputPort());
   cellMapper->SetLabelModeToLabelFieldData();
+  cellMapper->SetFieldDataName("vtkCellIds");
   cellMapper->GetLabelTextProperty()->SetColor(0, 1, 0);
 
   vtkSmartPointer<vtkActor2D> cellLabels = vtkSmartPointer<vtkActor2D>::New();

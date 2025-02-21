@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLFluidMapper.h"
 #include "vtkOpenGLHelper.h"
@@ -51,15 +40,16 @@
 #include "vtkFluidMapperThicknessAndVolumeColorFilterFS.h"
 #include "vtkFluidMapperVS.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include <cassert>
 #include <sstream>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLFluidMapper);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLFluidMapper::vtkOpenGLFluidMapper()
   : VBOs(vtkOpenGLVertexBufferObjectGroup::New())
   , TempMatrix4(vtkMatrix4x4::New())
@@ -76,7 +66,7 @@ vtkOpenGLFluidMapper::vtkOpenGLFluidMapper()
   this->CamInvertedNorms = vtkMatrix3x3::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLFluidMapper::~vtkOpenGLFluidMapper()
 {
   this->TempMatrix4->Delete();
@@ -93,27 +83,27 @@ vtkOpenGLFluidMapper::~vtkOpenGLFluidMapper()
   this->CamInvertedNorms->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFluidMapper::SetInputData(vtkPolyData* input)
 {
   this->SetInputDataInternal(0, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the input data or filter.
 vtkPolyData* vtkOpenGLFluidMapper::GetInput()
 {
   return vtkPolyData::SafeDownCast(this->GetExecutive()->GetInputData(0, 0));
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFluidMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Particle radius: " << this->ParticleRadius << "\n";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFluidMapper::UpdateDepthThicknessColorShaders(
   vtkOpenGLHelper& glHelper, vtkRenderer* renderer, vtkVolume* actor)
 {
@@ -173,7 +163,7 @@ void vtkOpenGLFluidMapper::UpdateDepthThicknessColorShaders(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFluidMapper::SetDepthThicknessColorShaderParameters(
   vtkOpenGLHelper& glHelper, vtkRenderer* ren, vtkVolume* actor)
 {
@@ -230,7 +220,7 @@ void vtkOpenGLFluidMapper::SetDepthThicknessColorShaderParameters(
   }
 }
 
-void vtkOpenGLFluidMapper::SetupBuffers(vtkOpenGLRenderWindow* const renderWindow)
+void vtkOpenGLFluidMapper::SetupBuffers(vtkOpenGLRenderWindow* renderWindow)
 {
   // create textures we need if not done already
   if (this->TexBuffer[0]->GetHandle() == 0)
@@ -281,7 +271,7 @@ void vtkOpenGLFluidMapper::SetupBuffers(vtkOpenGLRenderWindow* const renderWindo
     }
   }
 
-  // Allocate additional 2 texture bufferes for color data
+  // Allocate additional 2 texture buffers for color data
   if (this->HasVertexColor)
   {
     if (this->OptionalTexBuffer[0]->GetHandle() == 0)
@@ -350,7 +340,7 @@ void vtkOpenGLFluidMapper::SetupBuffers(vtkOpenGLRenderWindow* const renderWindo
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
 {
   // make sure we have data
@@ -362,7 +352,7 @@ void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
 
   // check to see if we are using vertex coloring
   int cellFlag = 0;
-  vtkDataArray* scalars = this->GetScalars(
+  vtkDataArray* scalars = vtkOpenGLFluidMapper::GetScalars(
     input, this->ScalarMode, this->ArrayAccessMode, this->ArrayId, this->ArrayName, cellFlag);
 
   this->HasVertexColor = false;
@@ -430,7 +420,7 @@ void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
 
   // Generate thickness and color (if applicable)
   {
-    // Attache texture every time, since it will be swapped out during smoothing
+    // Attach texture every time, since it will be swapped out during smoothing
     this->FBThickness->SetContext(renderWindow);
     glState->PushFramebufferBindings();
     this->FBThickness->Bind();
@@ -468,7 +458,6 @@ void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
   }
 
   // Filter fluid thickness and color (if applicable)
-  if (1)
   {
     if (!this->QuadThicknessFilter)
     {
@@ -482,7 +471,7 @@ void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
     const auto program = this->QuadThicknessFilter->Program;
     assert(program);
 
-    // Attache texture every time, since it will be swapped out during smoothing
+    // Attach texture every time, since it will be swapped out during smoothing
     this->FBFilterThickness->SetContext(renderWindow);
     glState->PushFramebufferBindings();
 
@@ -529,7 +518,6 @@ void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
     glState->PopFramebufferBindings();
   }
 
-  if (1)
   {
     // Filter depth surface
     if (DisplayMode != UnfilteredOpaqueSurface && DisplayMode != UnfilteredSurfaceNormal)
@@ -572,7 +560,7 @@ void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
       {
         this->FBFilterDepth->Bind();
         this->FBFilterDepth->AddColorAttachment(
-          0U, this->TexBuffer[SmoothedFluidEyeZ]); // Replace color attachement
+          0U, this->TexBuffer[SmoothedFluidEyeZ]); // Replace color attachment
         this->FBFilterDepth->ActivateDrawBuffers(1);
         this->FBFilterDepth->CheckFrameBufferStatus(GL_FRAMEBUFFER);
         glState->vtkglClearDepth(1.0);
@@ -612,7 +600,6 @@ void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
   }
 
   // Compute normal for the filtered depth surface
-  if (1)
   {
     if (!this->QuadFluidNormal)
     {
@@ -873,7 +860,7 @@ void vtkOpenGLFluidMapper::Render(vtkRenderer* renderer, vtkVolume* vol)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFluidMapper::RenderParticles(vtkRenderer* renderer, vtkVolume* vol)
 {
   vtkPolyData* input = vtkPolyData::SafeDownCast(GetInputDataObject(0, 0));
@@ -889,7 +876,7 @@ void vtkOpenGLFluidMapper::RenderParticles(vtkRenderer* renderer, vtkVolume* vol
     if (this->HasVertexColor)
     {
       int cellFlag = 0;
-      vtkDataArray* scalars = this->GetScalars(
+      vtkDataArray* scalars = vtkOpenGLFluidMapper::GetScalars(
         input, this->ScalarMode, this->ArrayAccessMode, this->ArrayId, this->ArrayName, cellFlag);
       this->VBOs->CacheDataArray("vertexColor", scalars, renderer, VTK_FLOAT);
     }
@@ -910,7 +897,7 @@ void vtkOpenGLFluidMapper::RenderParticles(vtkRenderer* renderer, vtkVolume* vol
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Destructor. Delete SourceCode if any.
 void vtkOpenGLFluidMapper::ReleaseGraphicsResources(vtkWindow* w)
@@ -985,3 +972,4 @@ void vtkOpenGLFluidMapper::ReleaseGraphicsResources(vtkWindow* w)
 
   this->Modified();
 }
+VTK_ABI_NAMESPACE_END

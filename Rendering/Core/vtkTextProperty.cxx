@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextProperty.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTextProperty.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTextProperty);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextProperty::vtkTextProperty()
 {
   this->Color[0] = 1.0;
@@ -54,19 +43,20 @@ vtkTextProperty::vtkTextProperty()
   this->UseTightBoundingBox = 0;
 
   this->LineOffset = 0.0;
-  this->LineSpacing = 1.1; // why not 1.0 ?
+  this->LineSpacing = 1.0;
+  this->CellOffset = 0.0;
 
   this->Orientation = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextProperty::~vtkTextProperty()
 {
   this->SetFontFamilyAsString(nullptr);
   this->SetFontFile(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextProperty::ShallowCopy(vtkTextProperty* tprop)
 {
   if (!tprop)
@@ -101,11 +91,16 @@ void vtkTextProperty::ShallowCopy(vtkTextProperty* tprop)
 
   this->SetLineOffset(tprop->GetLineOffset());
   this->SetLineSpacing(tprop->GetLineSpacing());
+  this->SetCellOffset(tprop->GetCellOffset());
 
   this->SetShadowOffset(tprop->GetShadowOffset());
+
+  this->SetInteriorLinesVisibility(tprop->GetInteriorLinesVisibility());
+  this->SetInteriorLinesWidth(tprop->GetInteriorLinesWidth());
+  this->SetInteriorLinesColor(tprop->GetInteriorLinesColor());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextProperty::GetShadowColor(double color[3])
 {
 #if 1
@@ -117,7 +112,7 @@ void vtkTextProperty::GetShadowColor(double color[3])
   color[0] = color[1] = color[2] = shadow_i;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextProperty::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -157,4 +152,37 @@ void vtkTextProperty::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Orientation: " << this->Orientation << "\n";
   os << indent << "Line Offset: " << this->LineOffset << "\n";
   os << indent << "Line Spacing: " << this->LineSpacing << "\n";
+  os << indent << "Cell Offset: " << this->CellOffset << "\n";
+  os << indent
+     << "Interior Lines Visibility: " << (this->InteriorLinesVisibility ? "On\n" : "Off\n");
+  os << indent << "Interior Lines Width: " << (this->InteriorLinesWidth ? "On\n" : "Off\n");
+  os << indent << "Interior Lines Color: (" << this->InteriorLinesColor[0] << ", "
+     << this->InteriorLinesColor[1] << ", " << this->InteriorLinesColor[2] << ")\n";
 }
+
+//------------------------------------------------------------------------------
+void vtkTextProperty::SetBackgroundRGBA(double rgba[4])
+{
+  this->SetBackgroundRGBA(rgba[0], rgba[1], rgba[2], rgba[3]);
+}
+
+//------------------------------------------------------------------------------
+void vtkTextProperty::SetBackgroundRGBA(double r, double g, double b, double a)
+{
+  this->SetBackgroundColor(r, g, b);
+  this->SetBackgroundOpacity(a);
+}
+
+//------------------------------------------------------------------------------
+void vtkTextProperty::GetBackgroundRGBA(double rgba[4])
+{
+  this->GetBackgroundRGBA(rgba[0], rgba[1], rgba[2], rgba[3]);
+}
+
+//------------------------------------------------------------------------------
+void vtkTextProperty::GetBackgroundRGBA(double& r, double& g, double& b, double& a)
+{
+  this->GetBackgroundColor(r, g, b);
+  a = this->GetBackgroundOpacity();
+}
+VTK_ABI_NAMESPACE_END

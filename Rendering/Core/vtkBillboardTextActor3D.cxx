@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBillboardTextActor3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkBillboardTextActor3D.h"
 
@@ -37,8 +25,9 @@
 #include <cmath>
 
 // Define to print debugging info:
-//#define DEBUG_BTA3D
+// #define DEBUG_BTA3D
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -98,7 +87,7 @@ FastDepthAwareCoordinateConverter::FastDepthAwareCoordinateConverter(vtkRenderer
   vtkMatrix4x4::Invert(this->MVP, this->InvMVP);
 
   // Various other bits needed for conversion
-  int* size = ren->GetSize();
+  const int* size = ren->GetSize();
   this->ViewportSize[0] = size[0];
   this->ViewportSize[1] = size[1];
 
@@ -333,6 +322,21 @@ int vtkBillboardTextActor3D::RenderOpaqueGeometry(vtkViewport* vp)
 }
 
 //------------------------------------------------------------------------------
+void vtkBillboardTextActor3D::UpdateGeometry(vtkViewport* vp)
+{
+  vtkRenderer* ren = vtkRenderer::SafeDownCast(vp);
+  if (!ren || ren->GetActiveCamera() == nullptr)
+  {
+    return;
+  }
+
+  // Cache for updating bounds between renders (#17233):
+  this->RenderedRenderer = ren;
+
+  this->UpdateInternals(ren);
+}
+
+//------------------------------------------------------------------------------
 int vtkBillboardTextActor3D::RenderTranslucentPolygonalGeometry(vtkViewport* vp)
 {
   if (!this->InputIsValid() || !this->IsValid())
@@ -420,6 +424,24 @@ vtkBillboardTextActor3D::~vtkBillboardTextActor3D()
   this->SetInput(nullptr);
   this->SetTextProperty(nullptr);
   this->RenderedRenderer = nullptr;
+}
+
+void vtkBillboardTextActor3D::GetActors(vtkPropCollection* props)
+{
+  if (this->GetVisibility())
+  {
+    vtkViewport* vp = nullptr;
+    if (this->NumberOfConsumers)
+    {
+      vp = vtkViewport::SafeDownCast(this->Consumers[0]);
+      if (vp)
+      {
+        this->UpdateGeometry(vp);
+      }
+    }
+    // only add the sub actor if we are visible
+    props->AddItem(this->QuadActor.Get());
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -633,3 +655,4 @@ void vtkBillboardTextActor3D::PreRender()
   // etc to work.
   this->QuadActor->SetPropertyKeys(this->GetPropertyKeys());
 }
+VTK_ABI_NAMESPACE_END

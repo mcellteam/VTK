@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRotationFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRotationFilter
  * @brief   Duplicates a data set by rotation about an axis
@@ -32,6 +20,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkRotationFilter : public vtkUnstructuredGridAlgorithm
 {
 public:
@@ -46,7 +35,7 @@ public:
     USE_Z = 2
   };
 
-  //@{
+  ///@{
   /**
    * Set the axis of rotation to use. It is set by default to Z.
    */
@@ -55,25 +44,25 @@ public:
   void SetAxisToX() { this->SetAxis(USE_X); }
   void SetAxisToY() { this->SetAxis(USE_Y); }
   void SetAxisToZ() { this->SetAxis(USE_Z); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the rotation angle to use.
    */
   vtkSetMacro(Angle, double);
   vtkGetMacro(Angle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the rotation center coordinates.
    */
   vtkSetVector3Macro(Center, double);
   vtkGetVector3Macro(Center, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of copies to create. The source will be rotated N times
    * and a new polydata copy of the original created at each angular position
@@ -81,9 +70,9 @@ public:
    */
   vtkSetMacro(NumberOfCopies, int);
   vtkGetMacro(NumberOfCopies, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If on (the default), copy the input geometry to the output. If off,
    * the output will only contain the rotation.
@@ -91,7 +80,7 @@ public:
   vtkSetMacro(CopyInput, vtkTypeBool);
   vtkGetMacro(CopyInput, vtkTypeBool);
   vtkBooleanMacro(CopyInput, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkRotationFilter();
@@ -111,4 +100,5 @@ private:
   void operator=(const vtkRotationFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

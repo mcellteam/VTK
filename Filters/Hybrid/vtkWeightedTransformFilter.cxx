@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWeightedTransformFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWeightedTransformFilter.h"
 
 #include "vtkCellData.h"
@@ -29,6 +17,7 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkWeightedTransformFilter);
 
 // helper functions.  Can't easily get to these in Matrix4x4 as written.
@@ -47,7 +36,7 @@ static inline void LinearTransformPoint(double mtx[4][4], double in[3], double o
   out[2] = mtx[2][0] * in[0] + mtx[2][1] * in[1] + mtx[2][2] * in[2] + mtx[2][3];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWeightedTransformFilter::vtkWeightedTransformFilter()
 {
   this->AddInputValues = 0;
@@ -60,7 +49,7 @@ vtkWeightedTransformFilter::vtkWeightedTransformFilter()
   this->TransformIndexArray = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWeightedTransformFilter::~vtkWeightedTransformFilter()
 {
   int i;
@@ -84,7 +73,7 @@ vtkWeightedTransformFilter::~vtkWeightedTransformFilter()
   this->SetTransformIndexArray(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWeightedTransformFilter::SetNumberOfTransforms(int num)
 {
   int i;
@@ -154,7 +143,7 @@ void vtkWeightedTransformFilter::SetNumberOfTransforms(int num)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWeightedTransformFilter::SetTransform(vtkAbstractTransform* trans, int num)
 {
   if (num < 0)
@@ -180,7 +169,7 @@ void vtkWeightedTransformFilter::SetTransform(vtkAbstractTransform* trans, int n
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractTransform* vtkWeightedTransformFilter::GetTransform(int num)
 {
   if (num < 0)
@@ -198,7 +187,7 @@ vtkAbstractTransform* vtkWeightedTransformFilter::GetTransform(int num)
   return this->Transforms[num];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWeightedTransformFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -263,8 +252,8 @@ int vtkWeightedTransformFilter::RequestData(vtkInformation* vtkNotUsed(request),
     return 1;
   }
 
-  std::vector<double*> linearPtMtx(this->NumberOfTransforms, nullptr);       // non-owning ptr
-  std::vector<std::vector<double> > linearNormMtx(this->NumberOfTransforms); // owns data
+  std::vector<double*> linearPtMtx(this->NumberOfTransforms, nullptr);      // non-owning ptr
+  std::vector<std::vector<double>> linearNormMtx(this->NumberOfTransforms); // owns data
   allLinear = 1;
   for (c = 0; c < this->NumberOfTransforms; c++)
   {
@@ -471,6 +460,10 @@ int vtkWeightedTransformFilter::RequestData(vtkInformation* vtkNotUsed(request),
     // do points
     for (p = 0; p < numPts; p++)
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       // -------- points init ---------------
       inPts->GetPoint(p, inPt);
       if (this->AddInputValues)
@@ -524,8 +517,7 @@ int vtkWeightedTransformFilter::RequestData(vtkInformation* vtkNotUsed(request),
 
       if (tiArray != nullptr)
       {
-        transformIndices =
-          reinterpret_cast<vtkUnsignedShortArray*>(tiArray)->GetPointer(p * pdComponents);
+        transformIndices = tiArray->GetPointer(p * pdComponents);
       }
 
       // for each transform...
@@ -643,6 +635,10 @@ int vtkWeightedTransformFilter::RequestData(vtkInformation* vtkNotUsed(request),
     transformIndices = nullptr;
     for (p = 0; p < numCells; p++)
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       // -------- normals init ---------------
       if (inCellNormals)
       {
@@ -685,8 +681,7 @@ int vtkWeightedTransformFilter::RequestData(vtkInformation* vtkNotUsed(request),
       weights = reinterpret_cast<vtkFloatArray*>(cdArray)->GetPointer(p * cdComponents);
       if (cdtiArray != nullptr)
       {
-        transformIndices =
-          reinterpret_cast<vtkUnsignedShortArray*>(cdtiArray)->GetPointer(p * cdComponents);
+        transformIndices = cdtiArray->GetPointer(p * cdComponents);
       }
 
       // for each transform...
@@ -785,7 +780,7 @@ int vtkWeightedTransformFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkWeightedTransformFilter::GetMTime()
 {
   int i;
@@ -807,7 +802,7 @@ vtkMTimeType vtkWeightedTransformFilter::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWeightedTransformFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   int i;
@@ -827,3 +822,4 @@ void vtkWeightedTransformFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "CellDataTransformIndexArray: "
      << (this->CellDataTransformIndexArray ? this->CellDataTransformIndexArray : "(none)") << "\n";
 }
+VTK_ABI_NAMESPACE_END

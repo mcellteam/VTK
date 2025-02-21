@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEnsembleSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkEnsembleSource
  * @brief   source that manages dataset ensembles
@@ -30,6 +18,7 @@
 #include "vtkAlgorithm.h"
 #include "vtkCommonExecutionModelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 struct vtkEnsembleSourceInternal;
 class vtkTable;
 class vtkInformationDataObjectMetaDataKey;
@@ -60,7 +49,7 @@ public:
    */
   unsigned int GetNumberOfMembers();
 
-  //@{
+  ///@{
   /**
    * Set/Get the current ensemble member to process. Note that this data member
    * will not be used if the UPDATE_MEMBER key is present in the pipeline. Also,
@@ -69,7 +58,7 @@ public:
    */
   vtkSetMacro(CurrentMember, unsigned int);
   vtkGetMacro(CurrentMember, unsigned int);
-  //@}
+  ///@}
 
   /**
    * Set the meta-data that will be propagated downstream. Make sure that this table
@@ -112,4 +101,5 @@ private:
   void operator=(const vtkEnsembleSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageAnisotropicDiffusion2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageAnisotropicDiffusion2D.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageAnisotropicDiffusion2D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageAnisotropicDiffusion2D filter.
 vtkImageAnisotropicDiffusion2D::vtkImageAnisotropicDiffusion2D()
 {
@@ -43,7 +32,7 @@ vtkImageAnisotropicDiffusion2D::vtkImageAnisotropicDiffusion2D()
   this->GradientMagnitudeThresholdOff();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageAnisotropicDiffusion2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -81,7 +70,7 @@ void vtkImageAnisotropicDiffusion2D::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method sets the number of inputs which also affects the
 // input neighborhood needed to compute one output pixel.
 void vtkImageAnisotropicDiffusion2D::SetNumberOfIterations(int num)
@@ -104,7 +93,7 @@ void vtkImageAnisotropicDiffusion2D::SetNumberOfIterations(int num)
   this->NumberOfIterations = num;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains a switch statement that calls the correct
 // templated function for the input data type.  The input and output datas
 // must have the same data type.
@@ -164,7 +153,7 @@ void vtkImageAnisotropicDiffusion2D::ThreadedRequestData(vtkInformation* vtkNotU
   out->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method performs one pass of the diffusion filter.
 // The inData and outData are assumed to have data type double,
 // and have the same extent.
@@ -374,3 +363,4 @@ void vtkImageAnisotropicDiffusion2D::Iterate(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

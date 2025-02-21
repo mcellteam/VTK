@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStdString.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkStdString
  * @brief   Wrapper around std::string to keep symbols short.
@@ -27,7 +15,9 @@
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkSystemIncludes.h"   // For VTKCOMMONCORE_EXPORT.
 #include <string>                // For the superclass.
+#include <utility>               // For std::move
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkStdString;
 VTKCOMMONCORE_EXPORT ostream& operator<<(ostream&, const vtkStdString&);
 
@@ -46,25 +36,29 @@ public:
   typedef StdString::reverse_iterator reverse_iterator;
   typedef StdString::const_reverse_iterator const_reverse_iterator;
 
-  vtkStdString()
-    : StdString()
-  {
-  }
+  vtkStdString() = default;
   vtkStdString(const value_type* s)
-    : StdString(s)
+    : std::string(s)
   {
   }
   vtkStdString(const value_type* s, size_type n)
-    : StdString(s, n)
+    : std::string(s, n)
   {
   }
-  vtkStdString(const StdString& s, size_type pos = 0, size_type n = npos)
-    : StdString(s, pos, n)
+  vtkStdString(const std::string& s)
+    : std::string(s)
   {
   }
-
-  operator const char*() { return this->c_str(); }
+  vtkStdString(std::string&& s)
+    : std::string(std::move(s))
+  {
+  }
+  vtkStdString(const std::string& s, size_type pos, size_type n = std::string::npos)
+    : std::string(s, pos, n)
+  {
+  }
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkStdString.h

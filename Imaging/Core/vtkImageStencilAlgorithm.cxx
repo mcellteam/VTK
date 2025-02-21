@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageStencilAlgorithm.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageStencilAlgorithm.h"
 
 #include "vtkImageStencilData.h"
@@ -20,9 +8,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageStencilAlgorithm);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilAlgorithm::vtkImageStencilAlgorithm()
 {
   this->SetNumberOfInputPorts(1);
@@ -31,28 +20,28 @@ vtkImageStencilAlgorithm::vtkImageStencilAlgorithm()
   vtkImageStencilData* output = vtkImageStencilData::New();
   this->GetExecutive()->SetOutputData(0, output);
 
-  // Releasing data for pipeline parallism.
+  // Releasing data for pipeline parallelism.
   // Filters will know it is empty.
   output->ReleaseData();
   output->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilAlgorithm::~vtkImageStencilAlgorithm() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilAlgorithm::SetOutput(vtkImageStencilData* output)
 {
   this->GetExecutive()->SetOutputData(0, output);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilData* vtkImageStencilAlgorithm::GetOutput()
 {
   if (this->GetNumberOfOutputPorts() < 1)
@@ -63,7 +52,7 @@ vtkImageStencilData* vtkImageStencilAlgorithm::GetOutput()
   return vtkImageStencilData::SafeDownCast(this->GetExecutive()->GetOutputData(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilData* vtkImageStencilAlgorithm::AllocateOutputData(vtkDataObject* out, int* uExt)
 {
   vtkImageStencilData* res = vtkImageStencilData::SafeDownCast(out);
@@ -79,7 +68,7 @@ vtkImageStencilData* vtkImageStencilAlgorithm::AllocateOutputData(vtkDataObject*
   return res;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStencilAlgorithm::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -90,28 +79,28 @@ int vtkImageStencilAlgorithm::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStencilAlgorithm::RequestInformation(
   vtkInformation*, vtkInformationVector**, vtkInformationVector*)
 {
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStencilAlgorithm::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector**, vtkInformationVector*)
 {
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStencilAlgorithm::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkImageStencilData");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkImageStencilAlgorithm::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -137,3 +126,4 @@ vtkTypeBool vtkImageStencilAlgorithm::ProcessRequest(
 
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
+VTK_ABI_NAMESPACE_END

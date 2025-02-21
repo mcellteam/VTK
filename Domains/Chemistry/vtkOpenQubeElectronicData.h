@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenQubeElectronicData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenQubeElectronicData
  * @brief   Provides access to and storage of
@@ -31,6 +19,8 @@ class BasisSet;
 class Cube;
 }
 
+VTK_ABI_NAMESPACE_BEGIN
+
 class vtkImageData;
 class vtkDataSetCollection;
 
@@ -40,6 +30,11 @@ public:
   static vtkOpenQubeElectronicData* New();
   vtkTypeMacro(vtkOpenQubeElectronicData, vtkAbstractElectronicData);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  /**
+   * Returns `VTK_OPEN_QUBE_ELECTRONIC_DATA`.
+   */
+  int GetDataObjectType() override { return VTK_OPEN_QUBE_ELECTRONIC_DATA; }
 
   /**
    * Returns the number of molecular orbitals in the OpenQube::BasisSet.
@@ -63,37 +58,37 @@ public:
    */
   vtkImageData* GetElectronDensity();
 
-  //@{
+  ///@{
   /**
    * Set/Get the OpenQube::BasisSet object used to generate the image data
    */
   vtkSetMacro(BasisSet, OpenQube::BasisSet*);
   vtkGetMacro(BasisSet, OpenQube::BasisSet*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the padding around the molecule used in determining the image
    * limits. Default: 2.0
    */
   vtkSetMacro(Padding, double);
   vtkGetMacro(Padding, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the interval distance between grid points. Default: 0.1
    */
   vtkSetMacro(Spacing, double);
   vtkGetMacro(Spacing, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the collection of cached images
    */
   vtkGetNewMacro(Images, vtkDataSetCollection);
-  //@}
+  ///@}
 
   /**
    * Deep copies the data object into this.
@@ -104,14 +99,14 @@ protected:
   vtkOpenQubeElectronicData();
   ~vtkOpenQubeElectronicData() override;
 
-  //@{
+  ///@{
   /**
    * Calculates and returns the requested vtkImageData. The data is added to
    * the cache, but the cache is not searched in this function.
    */
   vtkImageData* CalculateMO(vtkIdType orbitalNumber);
   vtkImageData* CalculateElectronDensity();
-  //@}
+  ///@}
 
   /**
    * Converts an OpenQube::Cube object into vtkImageData.
@@ -138,4 +133,5 @@ private:
   void operator=(const vtkOpenQubeElectronicData&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,20 +1,7 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridGeometryEntry.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridGeometryEntry
-JB
  * @brief   GeometryEntry is a cache data for cursors requiring coordinates
  *
  * cf. vtkHyperTreeGridEntry
@@ -38,10 +25,9 @@ JB
 #ifndef vtkHyperTreeGridGeometryEntry_h
 #define vtkHyperTreeGridGeometryEntry_h
 
-#ifndef __VTK_WRAP__
-
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHyperTree;
 class vtkHyperTreeGrid;
 
@@ -57,6 +43,9 @@ public:
    * Constructor
    */
   vtkHyperTreeGridGeometryEntry();
+
+  vtkHyperTreeGridGeometryEntry(vtkHyperTreeGridGeometryEntry const&) = default;
+  vtkHyperTreeGridGeometryEntry& operator=(vtkHyperTreeGridGeometryEntry const&) = default;
 
   /**
    * Constructor
@@ -162,7 +151,7 @@ public:
   void SubdivideLeaf(const vtkHyperTreeGrid* grid, vtkHyperTree* tree, unsigned int level);
 
   /**
-   * Is the cursor pointing to a coarse with all childrens leaves ?
+   * Is the cursor pointing to a coarse with all children leaves ?
    * \pre not_tree: tree
    */
   bool IsTerminalNode(
@@ -222,12 +211,11 @@ private:
   vtkIdType Index;
 
   /**
-   * origin coiordinates of the current cell
+   * origin coordinates of the current cell
    */
   double Origin[3];
 };
 
-#endif // __VTK_WRAP__
-
+VTK_ABI_NAMESPACE_END
 #endif // vtkHyperTreeGridGeometryEntry_h
 // VTK-HeaderTest-Exclude: vtkHyperTreeGridGeometryEntry.h

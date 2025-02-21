@@ -1,20 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFortran.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
- * The whole pupose of this header file is to allow us to 'wrap' a c library
+ * The whole purpose of this header file is to allow us to 'wrap' a c library
  * into Fortran. Here are the basic goals we should reach:
  *
  * 1. The symbol mangling in fortran is different than is C. For example if
@@ -26,9 +14,9 @@
  *    - void FOO_()
  *    - void foo_()
  *
- *  2. Passing array, Fortran start at 1 instead of 0.
+ * 2. Passing array, Fortran start at 1 instead of 0.
  *
- *  3. Passing STRING array from fortran to C is a bit more tricky.
+ * 3. Passing STRING array from fortran to C is a bit more tricky
  *
  *  For more information refer to:
  *  [ FORTRAN/C INTEROPERABILITY  ]

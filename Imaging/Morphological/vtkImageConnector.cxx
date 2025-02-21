@@ -1,25 +1,14 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageConnector.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageConnector.h"
 
 #include "vtkImageData.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageConnector);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageConnector::vtkImageConnector()
 {
   this->Seeds = nullptr;
@@ -28,13 +17,13 @@ vtkImageConnector::vtkImageConnector()
   this->UnconnectedValue = 128;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageConnector::~vtkImageConnector()
 {
   this->RemoveAllSeeds();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageConnector::RemoveAllSeeds()
 {
   vtkImageConnectorSeed* temp;
@@ -48,7 +37,7 @@ void vtkImageConnector::RemoveAllSeeds()
   this->LastSeed = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageConnectorSeed* vtkImageConnector::NewSeed(int index[3], void* ptr)
 {
   vtkImageConnectorSeed* seed = vtkImageConnectorSeed::New();
@@ -64,7 +53,7 @@ vtkImageConnectorSeed* vtkImageConnector::NewSeed(int index[3], void* ptr)
   return seed;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Add a new seed to the end of the seed list.
 void vtkImageConnector::AddSeedToEnd(vtkImageConnectorSeed* seed)
 {
@@ -80,7 +69,7 @@ void vtkImageConnector::AddSeedToEnd(vtkImageConnectorSeed* seed)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Add a new seed to the start of the seed list.
 void vtkImageConnector::AddSeed(vtkImageConnectorSeed* seed)
 {
@@ -92,7 +81,7 @@ void vtkImageConnector::AddSeed(vtkImageConnectorSeed* seed)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Removes a seed from the start of the seed list, and returns the seed.
 vtkImageConnectorSeed* vtkImageConnector::PopSeed()
 {
@@ -107,7 +96,7 @@ vtkImageConnectorSeed* vtkImageConnector::PopSeed()
   return seed;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Input a data of 0's and "UnconnectedValue"s. Seeds of this object are
 // used to find connected pixels.
 // All pixels connected to seeds are set to ConnectedValue.
@@ -172,6 +161,7 @@ void vtkImageConnector::MarkData(vtkImageData* data, int numberOfAxes, int exten
     delete seed;
   }
   vtkDebugMacro("Marked " << count << " pixels");
+  (void)count;
 }
 
 void vtkImageConnector::PrintSelf(ostream& os, vtkIndent indent)
@@ -181,3 +171,4 @@ void vtkImageConnector::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ConnectedValue: " << this->ConnectedValue << "\n";
   os << indent << "UnconnectedValue: " << this->UnconnectedValue << "\n";
 }
+VTK_ABI_NAMESPACE_END

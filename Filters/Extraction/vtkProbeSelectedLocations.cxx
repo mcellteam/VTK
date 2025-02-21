@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProbeSelectedLocations.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkProbeSelectedLocations.h"
 
 #include "vtkDataArray.h"
@@ -26,14 +14,15 @@
 #include "vtkTrivialProducer.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkProbeSelectedLocations);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProbeSelectedLocations::vtkProbeSelectedLocations() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProbeSelectedLocations::~vtkProbeSelectedLocations() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkProbeSelectedLocations::RequestDataObject(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -45,7 +34,7 @@ int vtkProbeSelectedLocations::RequestDataObject(
   return this->Superclass::RequestDataObject(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkProbeSelectedLocations::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -115,12 +104,14 @@ int vtkProbeSelectedLocations::RequestData(vtkInformation* vtkNotUsed(request),
 
   vtkProbeFilter* subFilter = vtkProbeFilter::New();
   vtkTrivialProducer* tp = vtkTrivialProducer::New();
+  tp->SetContainerAlgorithm(this);
   tp->SetOutput(inputClone);
   subFilter->SetInputConnection(1, tp->GetOutputPort());
   inputClone->Delete();
   tp->Delete();
 
   tp = vtkTrivialProducer::New();
+  tp->SetContainerAlgorithm(this);
   tp->SetOutput(tempInput);
   subFilter->SetInputConnection(0, tp->GetOutputPort());
   tempInput->Delete();
@@ -142,6 +133,7 @@ int vtkProbeSelectedLocations::RequestData(vtkInformation* vtkNotUsed(request),
     uExtent = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT());
   }
 
+  subFilter->SetContainerAlgorithm(this);
   subFilter->UpdatePiece(piece, npieces, 0, uExtent);
   output->ShallowCopy(subFilter->GetOutput());
   subFilter->Delete();
@@ -149,8 +141,9 @@ int vtkProbeSelectedLocations::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProbeSelectedLocations::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

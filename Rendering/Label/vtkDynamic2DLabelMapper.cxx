@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDynamic2DLabelMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkDynamic2DLabelMapper.h"
 
@@ -43,15 +27,16 @@
 #include "vtkTextProperty.h"
 #include "vtkTimerLog.h"
 #include "vtkTypeTraits.h"
-#include "vtkUnicodeStringArray.h"
 #include "vtkViewport.h"
 #include "vtksys/FStream.hxx"
 
+#include <cmath>
 #include <fstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDynamic2DLabelMapper);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Creates a new label mapper
 
 vtkDynamic2DLabelMapper::vtkDynamic2DLabelMapper()
@@ -80,7 +65,7 @@ vtkDynamic2DLabelMapper::vtkDynamic2DLabelMapper()
   prop->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDynamic2DLabelMapper::~vtkDynamic2DLabelMapper()
 {
   delete[] this->LabelWidth;
@@ -88,13 +73,13 @@ vtkDynamic2DLabelMapper::~vtkDynamic2DLabelMapper()
   delete[] this->Cutoff;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDynamic2DLabelMapper::SetPriorityArrayName(const char* name)
 {
   this->SetInputArrayToProcess(1, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T>
 void vtkDynamic2DLabelMapper_PrintComponent(
   char* output, size_t outputSize, const char* format, int index, const T* array)
@@ -102,7 +87,7 @@ void vtkDynamic2DLabelMapper_PrintComponent(
   snprintf(output, outputSize, format, array[index]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkActor2D* actor)
 {
   int i, j, numComp = 0, pointIdLabels, activeComp = 0;
@@ -110,7 +95,6 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
   vtkAbstractArray* abstractData;
   vtkDataArray* numericData;
   vtkStringArray* stringData;
-  vtkUnicodeStringArray* uStringData;
   vtkDataObject* input = this->GetExecutive()->GetInputData(0, 0);
 
   if (!input)
@@ -160,7 +144,6 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
     abstractData = nullptr;
     numericData = nullptr;
     stringData = nullptr;
-    uStringData = nullptr;
     switch (this->LabelMode)
     {
       case VTK_LABEL_IDS:
@@ -211,15 +194,13 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
         }
         numericData = vtkArrayDownCast<vtkDataArray>(abstractData);
         stringData = vtkArrayDownCast<vtkStringArray>(abstractData);
-        uStringData = vtkArrayDownCast<vtkUnicodeStringArray>(abstractData);
-      };
+      }
       break;
     }
 
     // determine number of components and check input
     if (pointIdLabels)
     {
-      ;
     }
     else if (numericData)
     {
@@ -230,12 +211,6 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
         activeComp = (this->LabeledComponent < numComp ? this->LabeledComponent : numComp - 1);
         numComp = 1;
       }
-    }
-    else if (uStringData)
-    {
-      vtkWarningMacro(
-        "Unicode string arrays are not adequately supported by the vtkDynamic2DLabelMapper.  "
-        "Unicode strings will be converted to vtkStdStrings for rendering.");
     }
     else if (!stringData)
     {
@@ -254,7 +229,7 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
       return;
     }
 
-    vtkStdString FormatString;
+    std::string FormatString;
     if (this->LabelFormat)
     {
       // The user has specified a format string.
@@ -327,16 +302,12 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
       {
         FormatString = "";
       }
-      else if (uStringData)
-      {
-        FormatString = "unicode";
-      }
       else
       {
         FormatString = "BUG - COULDN'T DETECT DATA TYPE";
       }
 
-      vtkDebugMacro(<< "Using default format string " << FormatString.c_str());
+      vtkDebugMacro(<< "Using default format string " << FormatString);
     } // Done building default format string
 
     this->NumberOfLabels = dsInput ? dsInput->GetNumberOfPoints() : gInput->GetNumberOfVertices();
@@ -366,7 +337,7 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
 
     for (i = 0; i < this->NumberOfLabels; i++)
     {
-      vtkStdString ResultString;
+      std::string ResultString;
 
       if (pointIdLabels)
       {
@@ -419,14 +390,7 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
           // we'll sidestep a lot of snprintf nonsense.
           if (this->LabelFormat == nullptr)
           {
-            if (uStringData)
-            {
-              ResultString = uStringData->GetValue(i).utf8_str();
-            }
-            else
-            {
-              ResultString = stringData->GetValue(i);
-            }
+            ResultString = stringData->GetValue(i);
           }
           else // the user specified a label format
           {
@@ -560,8 +524,8 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
       {
         vtkIdType indexJ = index->GetValue(j);
         float* ptj = reinterpret_cast<float*>(pts->GetVoidPointer(3 * indexJ));
-        float absX = (pti[0] - ptj[0]) > 0 ? (pti[0] - ptj[0]) : -(pti[0] - ptj[0]);
-        float absY = (pti[1] - ptj[1]) > 0 ? (pti[1] - ptj[1]) : -(pti[1] - ptj[1]);
+        float absX = std::abs(pti[0] - ptj[0]);
+        float absY = std::abs(pti[1] - ptj[1]);
         float xScale = 2 * absX / (this->LabelWidth[indexI] + this->LabelWidth[indexJ]);
         float yScale = 2 * absY / (this->LabelHeight[indexI] + this->LabelHeight[indexJ]);
         float maxScale = xScale < yScale ? yScale : xScale;
@@ -622,7 +586,7 @@ void vtkDynamic2DLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAct
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkDynamic2DLabelMapper::GetCurrentScale(vtkViewport* viewport)
 {
   // The current scale is the size on the screen of 1 unit in the xy plane
@@ -652,7 +616,7 @@ double vtkDynamic2DLabelMapper::GetCurrentScale(vtkViewport* viewport)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDynamic2DLabelMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* actor)
 {
   int i;
@@ -712,7 +676,7 @@ void vtkDynamic2DLabelMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* a
   timer->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDynamic2DLabelMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -720,3 +684,4 @@ void vtkDynamic2DLabelMapper::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "LabelHeightPadding: " << (this->LabelHeightPadding ? "on" : "off") << endl;
   os << indent << "LabelWidthPadding: " << (this->LabelWidthPadding ? "on" : "off") << endl;
 }
+VTK_ABI_NAMESPACE_END

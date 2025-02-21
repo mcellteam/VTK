@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEquirectangularToCubeMapTexture.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkEquirectangularToCubeMapTexture.h"
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLFramebufferObject.h"
@@ -23,10 +11,11 @@
 #include "vtkShaderProgram.h"
 #include "vtkTextureObject.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkEquirectangularToCubeMapTexture);
 vtkCxxSetObjectMacro(vtkEquirectangularToCubeMapTexture, InputTexture, vtkOpenGLTexture);
 
@@ -45,7 +34,7 @@ vtkEquirectangularToCubeMapTexture::~vtkEquirectangularToCubeMapTexture()
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release the graphics resources used by this texture.
 void vtkEquirectangularToCubeMapTexture::ReleaseGraphicsResources(vtkWindow* win)
 {
@@ -170,3 +159,4 @@ void vtkEquirectangularToCubeMapTexture::Load(vtkRenderer* ren)
 
   this->TextureObject->Activate();
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTemporalPathLineFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTemporalPathLineFilter
  * @brief   Generate a Polydata Pointset from any Dataset.
@@ -38,14 +26,22 @@
 
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
+#include "vtkTemporalAlgorithm.h" // For temporal algorithm
 
+#ifndef __VTK_WRAP__
+#define vtkPolyDataAlgorithm vtkTemporalAlgorithm<vtkPolyDataAlgorithm>
+#endif
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 class vtkCellArray;
 class vtkMergePoints;
 class vtkFloatArray;
 
+VTK_ABI_NAMESPACE_END
 #include "vtkSmartPointer.h" // for memory safety
 #include <set>               // Because we want to use it
+VTK_ABI_NAMESPACE_BEGIN
 class ParticleTrail;
 class vtkTemporalPathLineFilterInternals;
 typedef vtkSmartPointer<ParticleTrail> TrailPointer;
@@ -53,25 +49,32 @@ typedef vtkSmartPointer<ParticleTrail> TrailPointer;
 class VTKFILTERSGENERAL_EXPORT vtkTemporalPathLineFilter : public vtkPolyDataAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard Type-Macro
    */
-  static vtkTemporalPathLineFilter* New();
   vtkTypeMacro(vtkTemporalPathLineFilter, vtkPolyDataAlgorithm);
+#ifndef __VTK_WRAP__
+#undef vtkPassInputTypeAlgorithm
+#endif
+  static vtkTemporalPathLineFilter* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+#if defined(__VTK_WRAP__) || defined(__WRAP_GCCXML)
+  vtkCreateWrappedTemporalAlgorithmInterface();
+#endif
+
+  ///@{
   /**
    * Set the number of particles to track as a ratio of the input
    * example: setting MaskPoints to 10 will track every 10th point
    */
   vtkSetMacro(MaskPoints, int);
   vtkGetMacro(MaskPoints, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the Particles being traced animate for a long time, the
    * trails or traces will become long and stringy. Setting
@@ -82,9 +85,9 @@ public:
    */
   vtkSetMacro(MaxTrackLength, unsigned int);
   vtkGetMacro(MaxTrackLength, unsigned int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the name of a scalar array which will be used to fetch
    * the index of each point. This is necessary only if the particles
@@ -95,9 +98,9 @@ public:
    */
   vtkSetStringMacro(IdChannelArray);
   vtkGetStringMacro(IdChannelArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If a particle disappears from one end of a simulation and reappears
    * on the other side, the track left will be unrepresentative.
@@ -108,18 +111,18 @@ public:
    */
   vtkSetVector3Macro(MaxStepDistance, double);
   vtkGetVector3Macro(MaxStepDistance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When a particle 'disappears', the trail belonging to it is removed from
    * the list. When this flag is enabled, dead trails will persist
    * until the next time the list is cleared. Use carefully as it may cause
    * excessive memory consumption if left on by mistake.
    */
-  vtkSetMacro(KeepDeadTrails, int);
-  vtkGetMacro(KeepDeadTrails, int);
-  //@}
+  vtkSetMacro(KeepDeadTrails, bool);
+  vtkGetMacro(KeepDeadTrails, bool);
+  ///@}
 
   /**
    * Flush will wipe any existing data so that traces can be restarted from
@@ -151,30 +154,29 @@ protected:
   int FillInputPortInformation(int port, vtkInformation* info) override;
   int FillOutputPortInformation(int port, vtkInformation* info) override;
 
-  //@{
-  /**
-   * The necessary parts of the standard pipeline update mechanism
-   */
-  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-  //
-  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+  int Initialize(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
-  //@}
-
-  TrailPointer GetTrail(vtkIdType i);
+  int Execute(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) override;
+  int Finalize(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) override;
   void IncrementTrail(TrailPointer trail, vtkDataSet* input, vtkIdType i);
 
+  TrailPointer GetTrail(vtkIdType i);
+
+  // void Initialize(vtkDataSet* input, vtkDataSet* selection,
+  //  vtkPolyData* pathLines, vtkPolyData* particles);
+
   // internal data variables
-  int NumberOfTimeSteps;
-  int MaskPoints;
-  unsigned int MaxTrackLength;
-  unsigned int LastTrackLength;
-  int FirstTime;
-  char* IdChannelArray;
-  double MaxStepDistance[3];
+  int NumberOfTimeSteps = 0;
+  int MaskPoints = 200;
+  unsigned int MaxTrackLength = 10;
+  unsigned int LastTrackLength = 10;
+  char* IdChannelArray = nullptr;
+  double MaxStepDistance[3] = { 1, 1, 1 };
   double LatestTime;
-  int KeepDeadTrails;
-  int UsingSelection;
+  bool KeepDeadTrails = false;
+  bool BackwardTime = false;
   //
 
   vtkSmartPointer<vtkCellArray> PolyLines;
@@ -183,12 +185,16 @@ protected:
   vtkSmartPointer<vtkPoints> VertexCoordinates;
   vtkSmartPointer<vtkFloatArray> TrailId;
   vtkSmartPointer<vtkTemporalPathLineFilterInternals> Internals;
-  std::set<vtkIdType> SelectionIds;
 
   //
 private:
+  void AccumulateTrails(vtkDataSet* input, vtkDataSet* selection);
+  void PostExecute(vtkDataSet* input, vtkPolyData* pathLines, vtkPolyData* particles);
+  void InitializeExecute(vtkDataSet* input, vtkPolyData* pathLines);
+
   vtkTemporalPathLineFilter(const vtkTemporalPathLineFilter&) = delete;
   void operator=(const vtkTemporalPathLineFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

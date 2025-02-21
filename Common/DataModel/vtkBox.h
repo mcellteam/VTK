@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBox.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBox
  * @brief   implicit function for a bounding box
@@ -25,7 +13,7 @@
  * vtkBox is a concrete implementation of vtkImplicitFunction.
  *
  * @sa
- * vtkCubeSource vtkImplicitFunction
+ * vtkCubeSource vtkImplicitFunction vtkBoundingBox
  */
 
 #ifndef vtkBox_h
@@ -33,6 +21,7 @@
 
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkImplicitFunction.h"
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBoundingBox;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkBox : public vtkImplicitFunction
@@ -57,7 +46,7 @@ public:
    */
   void EvaluateGradient(double x[3], double n[3]) override;
 
-  //@{
+  ///@{
   /**
    * Set / get the bounding box using various methods.
    */
@@ -65,7 +54,7 @@ public:
   void SetXMin(double x, double y, double z);
   void GetXMin(double p[3]);
   void GetXMin(double& x, double& y, double& z);
-  //@}
+  ///@}
 
   void SetXMax(double p[3]);
   void SetXMax(double x, double y, double z);
@@ -97,11 +86,11 @@ public:
    * 0<=t<=1.)
    */
   static char IntersectBox(const double bounds[6], const double origin[3], const double dir[3],
-    double coord[3], double& t);
+    double coord[3], double& t, double tolerance = 0.0);
 
   /**
    * Intersect a line with the box.  Give the endpoints of the line in
-   * p1 and p2.  The parameteric distances from p1 to the entry and exit
+   * p1 and p2.  The parametric distances from p1 to the entry and exit
    * points are returned in t1 and t2, where t1 and t2 are clamped to the
    * range [0,1].  The entry and exit planes are returned in plane1 and
    * plane2 where integers (0, 1, 2, 3, 4, 5) stand for the
@@ -143,12 +132,21 @@ public:
    * are provided (i.e., the points are ordered and form a valid polygon).
    * Thus the function returns non-zero if the plane and box intersect; zero
    * otherwise. Note that if there is an intersection, the number of
-   * intersections ranges from [3,6]. xints memory layout is consistent with
+   * intersections ranges from [3,6]. xout memory layout is consistent with
    * vtkPoints array layout and is organized as (xyz, xyz, xyz, xyz, xyz,
    * xyz).
    */
   static vtkTypeBool IntersectWithPlane(
-    double bounds[6], double origin[3], double normal[3], double xints[18]);
+    double bounds[6], double origin[3], double normal[3], double xout[18]);
+
+  /**
+   * Is a box in a frustum. Returns true if the box is in the frustum
+   * even partially. The frustum is defined as 6 planes. This method
+   * is not exact may and return true for cases where there is no
+   * intersection. It should never return false when there is an
+   * intersection though.
+   */
+  static vtkTypeBool IsBoxInFrustum(double planes[24], double bounds[6]);
 
 protected:
   vtkBox();
@@ -172,4 +170,5 @@ inline void vtkBox::SetXMax(double p[3])
   this->SetXMax(p[0], p[1], p[2]);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

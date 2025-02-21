@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphInternals.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGraphInternals
  * @brief   Internal representation of vtkGraph
@@ -29,7 +14,8 @@
 #define vtkGraphInternals_h
 
 #include "vtkCommonDataModelModule.h" // For export macro
-#include "vtkGraph.h"
+#include "vtkGraph.h"                 // For edge types
+#include "vtkObject.h"
 
 #include <map>    // STL Header
 #include <vector> // STL Header
@@ -38,6 +24,7 @@
 // class vtkVertexAdjacencyList
 //----------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkVertexAdjacencyList
 {
 public:
@@ -54,6 +41,8 @@ public:
   static vtkGraphInternals* New();
 
   vtkTypeMacro(vtkGraphInternals, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
+
   std::vector<vtkVertexAdjacencyList> Adjacency;
 
   vtkIdType NumberOfEdges;
@@ -98,6 +87,5 @@ private:
   void operator=(const vtkGraphInternals&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkGraphInternals_h
-
-// VTK-HeaderTest-Exclude: vtkGraphInternals.h

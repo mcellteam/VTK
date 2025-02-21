@@ -1,22 +1,6 @@
-// -*- c++ -*-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPNrrdReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPNrrdReader.h"
 
@@ -68,10 +52,14 @@
 #include "vtkTransform.h"
 #include "vtkType.h"
 
+#include <algorithm>
+#include <cmath>
+
 // This macro can be wrapped around MPI function calls to easily report errors.
 // Reporting errors is more important with file I/O because, unlike network I/O,
 // they usually don't terminate the program.
 #define MPICall(funcall)                                                                           \
+  do                                                                                               \
   {                                                                                                \
     int __my_result = funcall;                                                                     \
     if (__my_result != MPI_SUCCESS)                                                                \
@@ -84,16 +72,17 @@
                     << endl                                                                        \
                     << errormsg);                                                                  \
     }                                                                                              \
-  }
+  } while (false)
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPNrrdReader);
 vtkCxxSetObjectMacro(vtkPNrrdReader, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkPNrrdReader, GroupedController, vtkMultiProcessController);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 template <class T>
 inline void vtkPNrrdReaderMaskBits(T* data, vtkIdType length, vtkTypeUInt64 _mask)
@@ -114,34 +103,14 @@ inline void vtkPNrrdReaderMaskBits(T* data, vtkIdType length, vtkTypeUInt64 _mas
 template <>
 void vtkPNrrdReaderMaskBits(float*, vtkIdType, vtkTypeUInt64)
 {
-  return;
 }
 template <>
 void vtkPNrrdReaderMaskBits(double*, vtkIdType, vtkTypeUInt64)
 {
-  return;
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
-#ifdef VTK_USE_MPI_IO
-namespace
-{
-template <class T>
-inline T MY_ABS(T x)
-{
-  return (x < 0) ? -x : x;
-}
-
-template <class T>
-inline T MY_MIN(T x, T y)
-{
-  return (x < y) ? x : y;
-}
-};
-#endif // VTK_USE_MPI_IO
-
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPNrrdReader::vtkPNrrdReader()
 {
   this->Controller = nullptr;
@@ -161,7 +130,7 @@ void vtkPNrrdReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPNrrdReader::GetDataScalarTypeSize()
 {
   switch (this->GetDataScalarType())
@@ -173,7 +142,7 @@ int vtkPNrrdReader::GetDataScalarTypeSize()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 void vtkPNrrdReader::PartitionController(const int extent[6])
 {
@@ -212,7 +181,7 @@ void vtkPNrrdReader::PartitionController(const int*)
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Technically we should be returning a 64 bit number, but I doubt any header
 // will be bigger than the value stored in an unsigned int.  Thus, we just
 // follow the convention of the superclass.
@@ -241,7 +210,7 @@ unsigned long vtkPNrrdReader::GetHeaderSize(vtkMPIOpaqueFileHandle&)
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 void vtkPNrrdReader::SetupFileView(vtkMPIOpaqueFileHandle& file, const int extent[6])
 {
@@ -278,7 +247,7 @@ void vtkPNrrdReader::SetupFileView(vtkMPIOpaqueFileHandle&, const int[6])
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 void vtkPNrrdReader::ReadSlice(int slice, const int extent[6], void* buffer)
 {
@@ -337,7 +306,7 @@ void vtkPNrrdReader::ReadSlice(int, const int[6], void*)
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 // This method could be made a lot more efficient.
 void vtkPNrrdReader::TransformData(vtkImageData* data)
@@ -363,10 +332,10 @@ void vtkPNrrdReader::TransformData(vtkImageData* data)
   vtkIdType fileExtentSize[3];
   for (int i = 0; i < 3; i++)
   {
-    dataMinExtent[i] = MY_MIN(dataExtent[2 * i], dataExtent[2 * i + 1]);
-    fileMinExtent[i] = MY_MIN(fileExtent[2 * i], fileExtent[2 * i + 1]);
-    dataExtentSize[i] = MY_ABS(dataExtent[2 * i + 1] - dataExtent[2 * i]) + 1;
-    fileExtentSize[i] = MY_ABS(fileExtent[2 * i + 1] - fileExtent[2 * i]) + 1;
+    dataMinExtent[i] = std::min(dataExtent[2 * i], dataExtent[2 * i + 1]);
+    fileMinExtent[i] = std::min(fileExtent[2 * i], fileExtent[2 * i + 1]);
+    dataExtentSize[i] = std::abs(dataExtent[2 * i + 1] - dataExtent[2 * i]) + 1;
+    fileExtentSize[i] = std::abs(fileExtent[2 * i + 1] - fileExtent[2 * i]) + 1;
   }
 
   for (vtkIdType file_k = 0; file_k < fileExtentSize[2]; file_k++)
@@ -404,7 +373,7 @@ void vtkPNrrdReader::TransformData(vtkImageData*)
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPNrrdReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
 {
 #ifdef VTK_USE_MPI_IO
@@ -470,8 +439,8 @@ void vtkPNrrdReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInform
   // Instead, we just recompute them.
   // this->ComputeInverseTransformedIncrements(inIncrements, outIncrements);
   outIncrements[0] = inIncrements[0];
-  outIncrements[1] = outIncrements[0] * (MY_ABS(outExtent[1] - outExtent[0]) + 1);
-  outIncrements[2] = outIncrements[1] * (MY_ABS(outExtent[3] - outExtent[2]) + 1);
+  outIncrements[1] = outIncrements[0] * (std::abs(outExtent[1] - outExtent[0]) + 1);
+  outIncrements[2] = outIncrements[1] * (std::abs(outExtent[3] - outExtent[2]) + 1);
 
   this->ComputeDataIncrements();
 
@@ -533,7 +502,7 @@ void vtkPNrrdReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInform
 #endif // VTK_USE_MPI_IO
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPNrrdReader::ReadHeader()
 {
   if (!this->Controller)
@@ -557,8 +526,9 @@ int vtkPNrrdReader::ReadHeader()
   return this->Superclass::ReadHeader(headerBuffer);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPNrrdReader::ReadHeader(vtkCharArray* headerBuffer)
 {
   return this->Superclass::ReadHeader(headerBuffer);
 }
+VTK_ABI_NAMESPACE_END

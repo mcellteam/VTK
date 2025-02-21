@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLUnstructuredDataReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLUnstructuredDataReader
  * @brief   Superclass for unstructured data XML readers.
@@ -29,6 +17,7 @@
 #include "vtkIOXMLModule.h" // For export macro
 #include "vtkXMLDataReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkIdTypeArray;
 class vtkPointSet;
@@ -99,8 +88,13 @@ protected:
     vtkXMLDataElement* eCells, vtkCellArray* outCells);
 
   // Read faces and faceoffsets arrays for unstructured grid with polyhedon cells
+  int ReadPolyhedronCellArray(vtkIdType numberOfCells, vtkXMLDataElement* eCells,
+    vtkCellArray* outFaces, vtkCellArray* outFaceOffsets);
+  // Backward compatibility layer to read unstructured grid with polyhedron cells.
   int ReadFaceArray(vtkIdType numberOfCells, vtkXMLDataElement* eCells, vtkIdTypeArray* outFaces,
     vtkIdTypeArray* outFaceOffsets);
+  int ReadFaceCellArray(vtkIdType numberOfCells, vtkXMLDataElement* eCells, vtkCellArray* outFaces,
+    vtkCellArray* outFaceOffsets);
 
   // Read a data array whose tuples coorrespond to points.
   int ReadArrayForPoints(vtkXMLDataElement* da, vtkAbstractArray* outArray) override;
@@ -132,9 +126,15 @@ protected:
   int CellsNeedToReadTimeStep(
     vtkXMLDataElement* eNested, int& cellstimestep, unsigned long& cellsoffset);
 
+  int CellArrayTimeStepRead;
+  bool CanReadCellArray;
+  const char* CellArrayCachedInputString;
+  const char* CellArrayCachedFileName;
+
 private:
   vtkXMLUnstructuredDataReader(const vtkXMLUnstructuredDataReader&) = delete;
   void operator=(const vtkXMLUnstructuredDataReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

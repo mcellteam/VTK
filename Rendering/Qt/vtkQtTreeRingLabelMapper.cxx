@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkQtTreeRingLabelMapper.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkQtTreeRingLabelMapper.h"
 #include "vtkCamera.h"
@@ -39,8 +23,6 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkTextureMapToPlane.h"
 #include "vtkTexturedActor2D.h"
 #include "vtkTree.h"
-#include "vtkUnicodeString.h"
-#include "vtkUnicodeStringArray.h"
 
 #include <QApplication>
 #include <QFont>
@@ -56,6 +38,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkSmartPointer.h"
 #define VTK_CREATE(type, name) vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkQtTreeRingLabelMapper);
 
 vtkCxxSetObjectMacro(vtkQtTreeRingLabelMapper, LabelTextProperty, vtkTextProperty);
@@ -133,7 +116,7 @@ vtkQtTreeRingLabelMapper::~vtkQtTreeRingLabelMapper()
   delete this->QtImage;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTreeRingLabelMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* actor)
 {
   vtkRenderer* ren = vtkRenderer::SafeDownCast(viewport);
@@ -144,7 +127,7 @@ void vtkQtTreeRingLabelMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* 
   this->polyDataMapper->RenderOverlay(viewport, actor);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTreeRingLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkActor2D* actor)
 {
   if (!QApplication::instance())
@@ -164,7 +147,6 @@ void vtkQtTreeRingLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAc
   vtkAbstractArray* abstractData;
   vtkDataArray *numericData, *sectorInfo;
   vtkStringArray* stringData;
-  vtkUnicodeStringArray* uStringData;
   vtkTree* input = this->GetInputTree();
   if (!input)
   {
@@ -193,7 +175,7 @@ void vtkQtTreeRingLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAc
   {
     vtkDebugMacro(<< "Rebuilding labels");
 
-    int* size = renderer->GetSize();
+    const int* size = renderer->GetSize();
     this->WindowSize[0] = size[0];
     this->WindowSize[1] = size[1];
 
@@ -207,7 +189,6 @@ void vtkQtTreeRingLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAc
     abstractData = nullptr;
     numericData = nullptr;
     stringData = nullptr;
-    uStringData = nullptr;
     switch (this->LabelMode)
     {
       case VTK_LABEL_SCALARS:
@@ -255,7 +236,6 @@ void vtkQtTreeRingLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAc
         }
         numericData = vtkArrayDownCast<vtkDataArray>(abstractData);
         stringData = vtkArrayDownCast<vtkStringArray>(abstractData);
-        uStringData = vtkArrayDownCast<vtkUnicodeStringArray>(abstractData);
       };
       break;
     }
@@ -271,14 +251,13 @@ void vtkQtTreeRingLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAc
         numComp = 1;
       }
     }
-    else if (!stringData && !uStringData)
+    else if (!stringData)
     {
       vtkErrorMacro(<< "Need input data to render labels (3)");
       return;
     }
 
-    this->LabelTree(
-      input, sectorInfo, numericData, stringData, uStringData, activeComp, numComp, viewport);
+    this->LabelTree(input, sectorInfo, numericData, stringData, activeComp, numComp, viewport);
   }
 
   VTK_CREATE(vtkQImageToImageSource, qis);
@@ -294,8 +273,8 @@ void vtkQtTreeRingLabelMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkAc
 }
 
 void vtkQtTreeRingLabelMapper::LabelTree(vtkTree* tree, vtkDataArray* sectorInfo,
-  vtkDataArray* numericData, vtkStringArray* stringData, vtkUnicodeStringArray* uStringData,
-  int activeComp, int numComps, vtkViewport* viewport)
+  vtkDataArray* numericData, vtkStringArray* stringData, int activeComp, int numComps,
+  vtkViewport* viewport)
 {
   delete this->QtImage;
   this->QtImage = new QImage(this->WindowSize[0], this->WindowSize[1], QImage::Format_ARGB32);
@@ -340,8 +319,7 @@ void vtkQtTreeRingLabelMapper::LabelTree(vtkTree* tree, vtkDataArray* sectorInfo
     }
 
     // check to see if the text will fit in the sector
-    this->GetVertexLabel(
-      i, numericData, stringData, uStringData, activeComp, numComps, string, sizeof(string));
+    this->GetVertexLabel(i, numericData, stringData, activeComp, numComps, string, sizeof(string));
     QString ResultString(string);
 
     double x[3];
@@ -360,10 +338,15 @@ void vtkQtTreeRingLabelMapper::LabelTree(vtkTree* tree, vtkDataArray* sectorInfo
     // set ellipsis bounds for this piece of text
     // Note, don't use ellipsis unless at least 5 characters (w's) can be displayed...
     QString minString("wwwww");
+#if (QT_VERSION <= QT_VERSION_CHECK(5, 11, 0))
+    int minStringWidth = fontMetric.width(minString);
+#else
+    int minStringWidth = fontMetric.horizontalAdvance(minString);
+#endif
     double allowedTextWidth = 0;
     if (sdimDC[0] > sdimDC[1])
     {
-      if (sdimDC[0] < fontMetric.width(minString))
+      if (sdimDC[0] < minStringWidth)
       {
         continue;
       }
@@ -371,7 +354,7 @@ void vtkQtTreeRingLabelMapper::LabelTree(vtkTree* tree, vtkDataArray* sectorInfo
     }
     else
     {
-      if (sdimDC[1] < fontMetric.width(minString))
+      if (sdimDC[1] < minStringWidth)
       {
         continue;
       }
@@ -408,11 +391,19 @@ void vtkQtTreeRingLabelMapper::LabelTree(vtkTree* tree, vtkDataArray* sectorInfo
         break;
       case VTK_TEXT_CENTERED:
         // FIXME - The width is not correct for html encodings...
+#if (QT_VERSION <= QT_VERSION_CHECK(5, 11, 0))
         delta_x = -(fontMetric.width(testString)) / 2.;
+#else
+        delta_x = -(fontMetric.horizontalAdvance(testString)) / 2.;
+#endif
         break;
       case VTK_TEXT_RIGHT:
         // FIXME - The width is not correct for html encodings...
+#if (QT_VERSION <= QT_VERSION_CHECK(5, 11, 0))
         delta_x = -fontMetric.width(testString);
+#else
+        delta_x = -fontMetric.horizontalAdvance(testString);
+#endif
         break;
     }
 
@@ -518,7 +509,7 @@ bool vtkQtTreeRingLabelMapper::PointInWindow(
 
   // Get the window extents
   vtkWindow* win = viewport->GetVTKWindow();
-  int* winSize = win->GetSize();
+  const int* winSize = win->GetSize();
 
   bool return_value = true;
   if (dc[0] < 0 || dc[0] > winSize[0])
@@ -551,7 +542,7 @@ bool vtkQtTreeRingLabelMapper::PointInWindow(
   return return_value;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTreeRingLabelMapper::SetSectorsArrayName(const char* name)
 {
   this->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_VERTICES, name);
@@ -580,15 +571,14 @@ void vtkQtTreeRingLabelMapper::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 void vtkQtTreeRingLabelMapper::GetVertexLabel(vtkIdType vertex, vtkDataArray* numericData,
-  vtkStringArray* stringData, vtkUnicodeStringArray* uStringData, int activeComp, int numComp,
-  char* string, size_t stringSize)
+  vtkStringArray* stringData, int activeComp, int numComps, char* string, size_t stringSize)
 {
   char format[1024];
   double val;
   int j;
   if (numericData)
   {
-    if (numComp == 1)
+    if (numComps == 1)
     {
       if (numericData->GetDataType() == VTK_CHAR)
       {
@@ -611,14 +601,14 @@ void vtkQtTreeRingLabelMapper::GetVertexLabel(vtkIdType vertex, vtkDataArray* nu
     {
       strcpy(format, "(");
       strcat(format, this->LabelFormat);
-      for (j = 0; j < (numComp - 1); j++)
+      for (j = 0; j < (numComps - 1); j++)
       {
         snprintf(string, stringSize, format, numericData->GetComponent(vertex, j));
         strcpy(format, string);
         strcat(format, ", ");
         strcat(format, this->LabelFormat);
       }
-      snprintf(string, stringSize, format, numericData->GetComponent(vertex, numComp - 1));
+      snprintf(string, stringSize, format, numericData->GetComponent(vertex, numComps - 1));
       strcat(string, ")");
     }
   }
@@ -631,16 +621,6 @@ void vtkQtTreeRingLabelMapper::GetVertexLabel(vtkIdType vertex, vtkDataArray* nu
       return;
     }
     snprintf(string, stringSize, this->LabelFormat, stringData->GetValue(vertex).c_str());
-  }
-  else if (uStringData) // rendering unicode string data
-  {
-    if (strcmp(this->LabelFormat, "%s") != 0)
-    {
-      vtkErrorMacro(<< "Label format must be %s to use with strings");
-      string[0] = '\0';
-      return;
-    }
-    snprintf(string, stringSize, this->LabelFormat, uStringData->GetValue(vertex).utf8_str());
   }
   else // Use the vertex id
   {
@@ -660,7 +640,7 @@ vtkMTimeType vtkQtTreeRingLabelMapper::GetMTime()
       vtkMTimeType renWindMTime = rw->GetMTime();
       if (renWindMTime > filterMTime)
       {
-        int* rwSize = rw->GetSize();
+        const int* rwSize = rw->GetSize();
         if (rwSize[0] != this->WindowSize[0] || rwSize[1] != this->WindowSize[1])
         {
           return renWindMTime;
@@ -670,3 +650,4 @@ vtkMTimeType vtkQtTreeRingLabelMapper::GetMTime()
   }
   return filterMTime;
 }
+VTK_ABI_NAMESPACE_END

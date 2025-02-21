@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSmartPointerBase.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSmartPointerBase
  * @brief   Non-templated superclass for vtkSmartPointer.
@@ -29,6 +17,7 @@
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkObjectBase.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCORE_EXPORT vtkSmartPointerBase
 {
 public:
@@ -51,21 +40,25 @@ public:
   /**
    * Move the pointee from @a r into @a this and reset @ r.
    */
-  vtkSmartPointerBase(vtkSmartPointerBase&& r) noexcept : Object(r.Object) { r.Object = nullptr; }
+  vtkSmartPointerBase(vtkSmartPointerBase&& r) noexcept
+    : Object(r.Object)
+  {
+    r.Object = nullptr;
+  }
 
   /**
    * Destroy smart pointer and remove the reference to its object.
    */
   ~vtkSmartPointerBase();
 
-  //@{
+  ///@{
   /**
    * Assign object to reference.  This removes any reference to an old
    * object.
    */
   vtkSmartPointerBase& operator=(vtkObjectBase* r);
   vtkSmartPointerBase& operator=(const vtkSmartPointerBase& r);
-  //@}
+  ///@}
 
   /**
    * Get the contained pointer.
@@ -131,5 +124,6 @@ VTK_SMART_POINTER_BASE_DEFINE_OPERATOR(>=)
  */
 VTKCOMMONCORE_EXPORT ostream& operator<<(ostream& os, const vtkSmartPointerBase& p);
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkSmartPointerBase.h

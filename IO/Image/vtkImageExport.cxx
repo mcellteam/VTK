@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageExport.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageExport.h"
 
 #include "vtkAlgorithmOutput.h"
@@ -25,9 +13,10 @@
 #include <cctype>
 #include <cstring>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageExport);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageExport::vtkImageExport()
 {
   this->ImageLowerLeft = 1;
@@ -38,22 +27,22 @@ vtkImageExport::vtkImageExport()
   this->SetNumberOfOutputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageExport::~vtkImageExport() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAlgorithm* vtkImageExport::GetInputAlgorithm()
 {
   return this->GetInputConnection(0, 0) ? this->GetInputConnection(0, 0)->GetProducer() : nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformation* vtkImageExport::GetInputInformation()
 {
   return this->GetExecutive()->GetInputInformation(0, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageExport::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -70,7 +59,7 @@ vtkImageData* vtkImageExport::GetInput()
   return vtkImageData::SafeDownCast(this->GetExecutive()->GetInputData(0, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkImageExport::GetDataMemorySize()
 {
   vtkImageData* input = this->GetInput();
@@ -91,7 +80,7 @@ vtkIdType vtkImageExport::GetDataMemorySize()
   return size;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageExport::GetDataDimensions(int* dims)
 {
   vtkImageData* input = this->GetInput();
@@ -109,7 +98,7 @@ void vtkImageExport::GetDataDimensions(int* dims)
   dims[2] = extent[5] - extent[4] + 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageExport::SetExportVoidPointer(void* ptr)
 {
   if (this->ExportVoidPointer == ptr)
@@ -120,7 +109,7 @@ void vtkImageExport::SetExportVoidPointer(void* ptr)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is the superclasses style of Execute method.  Convert it into
 // an imaging style Execute method.
 int vtkImageExport::RequestData(vtkInformation* vtkNotUsed(request),
@@ -130,7 +119,7 @@ int vtkImageExport::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Exports all the data from the input.
 void vtkImageExport::Export(void* output)
 {
@@ -168,7 +157,7 @@ void vtkImageExport::Export(void* output)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Provides a valid pointer to the data (only valid until the next
 // update, though)
 
@@ -193,7 +182,7 @@ void* vtkImageExport::GetPointerToData()
   return input->GetScalarPointer();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void* vtkImageExport::GetCallbackUserData()
 {
   return this;
@@ -260,7 +249,7 @@ vtkImageExport::BufferPointerCallbackType vtkImageExport::GetBufferPointerCallba
   return &vtkImageExport::BufferPointerCallbackFunction;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageExport::UpdateInformationCallbackFunction(void* userData)
 {
   static_cast<vtkImageExport*>(userData)->UpdateInformationCallback();
@@ -321,7 +310,7 @@ void* vtkImageExport::BufferPointerCallbackFunction(void* userData)
   return static_cast<vtkImageExport*>(userData)->BufferPointerCallback();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageExport::UpdateInformationCallback()
 {
   if (this->GetInputAlgorithm())
@@ -660,3 +649,4 @@ void vtkImageExport::GetDataDirection(double* ptr)
   this->GetInputAlgorithm()->UpdateInformation();
   this->GetInputInformation()->Get(vtkDataObject::DIRECTION(), ptr);
 }
+VTK_ABI_NAMESPACE_END

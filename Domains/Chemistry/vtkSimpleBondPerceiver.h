@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSimpleBondPerceiver.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSimpleBondPerceiver
  * @brief   Create a simple guess of a molecule's
@@ -37,6 +25,7 @@
 #include "vtkDomainsChemistryModule.h" // For export macro
 #include "vtkMoleculeAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkMolecule;
 class vtkPeriodicTable;
@@ -48,22 +37,22 @@ public:
   vtkTypeMacro(vtkSimpleBondPerceiver, vtkMoleculeAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the tolerance used in the comparisons. (Default: 0.45)
    */
   vtkSetMacro(Tolerance, float);
   vtkGetMacro(Tolerance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get if the tolerance is absolute (i.e. added to radius)
    * or not (i.e. multiplied with radius). Default is true.
    */
   vtkGetMacro(IsToleranceAbsolute, bool);
   vtkSetMacro(IsToleranceAbsolute, bool);
-  //@}
+  ///@}
 
 protected:
   vtkSimpleBondPerceiver();
@@ -92,4 +81,5 @@ private:
   void operator=(const vtkSimpleBondPerceiver&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

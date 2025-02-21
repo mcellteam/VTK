@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVectorDot.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkVectorDot.h"
 
 #include "vtkArrayDispatch.h"
@@ -28,35 +16,35 @@
 #include <algorithm>
 #include <limits>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkVectorDot);
 
-namespace {
+namespace
+{
 
 template <typename NormArrayT, typename VecArrayT>
 struct DotWorker
 {
-  NormArrayT *Normals;
-  VecArrayT *Vectors;
-  vtkFloatArray *Scalars;
+  NormArrayT* Normals;
+  VecArrayT* Vectors;
+  vtkFloatArray* Scalars;
 
   vtkSMPThreadLocal<float> LocalMin;
   vtkSMPThreadLocal<float> LocalMax;
 
-  DotWorker(NormArrayT *normals,
-            VecArrayT *vectors,
-            vtkFloatArray *scalars)
-    : Normals{normals}
-    , Vectors{vectors}
-    , Scalars{scalars}
-    , LocalMin{std::numeric_limits<float>::max()}
-    , LocalMax{std::numeric_limits<float>::lowest()}
+  DotWorker(NormArrayT* normals, VecArrayT* vectors, vtkFloatArray* scalars)
+    : Normals{ normals }
+    , Vectors{ vectors }
+    , Scalars{ scalars }
+    , LocalMin{ std::numeric_limits<float>::max() }
+    , LocalMax{ std::numeric_limits<float>::lowest() }
   {
   }
 
   void operator()(vtkIdType begin, vtkIdType end)
   {
-    float &min = this->LocalMin.Local();
-    float &max = this->LocalMax.Local();
+    float& min = this->LocalMin.Local();
+    float& max = this->LocalMax.Local();
 
     // Restrict the iterator ranges to [begin,end)
     const auto normals = vtk::DataArrayTupleRange<3>(this->Normals, begin, end);
@@ -68,7 +56,7 @@ struct DotWorker
 
     auto computeScalars = [&](NormalConstRef n, VectorConstRef v) -> float
     {
-      const float s = static_cast<float>(n[0]*v[0] + n[1]*v[1] + n[2]*v[2]);
+      const float s = static_cast<float>(n[0] * v[0] + n[1] * v[1] + n[2] * v[2]);
 
       min = std::min(min, s);
       max = std::max(max, s);
@@ -76,10 +64,8 @@ struct DotWorker
       return s;
     };
 
-    std::transform(normals.cbegin(), normals.cend(),
-                   vectors.cbegin(),
-                   scalars.begin(),
-                   computeScalars);
+    std::transform(
+      normals.cbegin(), normals.cend(), vectors.cbegin(), scalars.begin(), computeScalars);
   }
 };
 
@@ -87,21 +73,19 @@ struct DotWorker
 struct LaunchDotWorker
 {
   template <typename NormArrayT, typename VecArrayT>
-  void operator()(NormArrayT *normals, VecArrayT *vectors,
-                  vtkFloatArray *scalars, float scalarRange[2])
+  void operator()(
+    NormArrayT* normals, VecArrayT* vectors, vtkFloatArray* scalars, float scalarRange[2])
   {
     const vtkIdType numPts = normals->GetNumberOfTuples();
 
     using Worker = DotWorker<NormArrayT, VecArrayT>;
-    Worker worker{normals, vectors, scalars};
+    Worker worker{ normals, vectors, scalars };
 
     vtkSMPTools::For(0, numPts, worker);
 
     // Reduce the scalar ranges:
-    auto minElem = std::min_element(worker.LocalMin.begin(),
-                                    worker.LocalMin.end());
-    auto maxElem = std::max_element(worker.LocalMax.begin(),
-                                    worker.LocalMax.end());
+    auto minElem = std::min_element(worker.LocalMin.begin(), worker.LocalMin.end());
+    auto maxElem = std::max_element(worker.LocalMax.begin(), worker.LocalMax.end());
 
     // There should be at least one element in the range from worker
     // initialization:
@@ -115,11 +99,12 @@ struct LaunchDotWorker
 
 struct MapWorker
 {
-  vtkFloatArray *Scalars;
+  vtkFloatArray* Scalars;
   float InMin;
   float InRange;
   float OutMin;
   float OutRange;
+  vtkVectorDot* Filter;
 
   void operator()(vtkIdType begin, vtkIdType end)
   {
@@ -127,9 +112,24 @@ struct MapWorker
     auto scalars = vtk::DataArrayValueRange<1>(this->Scalars, begin, end);
 
     using ScalarRef = typename decltype(scalars)::ReferenceType;
+    bool isFirst = vtkSMPTools::GetSingleThread();
+    vtkIdType checkAbortInterval = std::min((end - begin) / 10 + 1, (vtkIdType)1000);
 
     for (ScalarRef s : scalars)
     {
+      if (begin % checkAbortInterval == 0)
+      {
+        if (isFirst)
+        {
+          this->Filter->CheckAbort();
+        }
+        if (this->Filter->GetAbortOutput())
+        {
+          break;
+        }
+      }
+      begin++;
+
       // Map from inRange to outRange:
       s = this->OutMin + ((s - this->InMin) / this->InRange) * this->OutRange;
     }
@@ -139,7 +139,7 @@ struct MapWorker
 } // end anon namespace
 
 //=================================Begin class proper=========================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with scalar range (-1,1).
 vtkVectorDot::vtkVectorDot()
 {
@@ -152,7 +152,7 @@ vtkVectorDot::vtkVectorDot()
   this->ActualRange[1] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute dot product.
 //
 int vtkVectorDot::RequestData(vtkInformation* vtkNotUsed(request),
@@ -216,6 +216,8 @@ int vtkVectorDot::RequestData(vtkInformation* vtkNotUsed(request),
     dotWorker(inNormals, inVectors, newScalars, aRange);
   }
 
+  this->CheckAbort();
+
   // Update ivars:
   this->ActualRange[0] = static_cast<double>(aRange[0]);
   this->ActualRange[1] = static_cast<double>(aRange[1]);
@@ -223,12 +225,9 @@ int vtkVectorDot::RequestData(vtkInformation* vtkNotUsed(request),
   // Map if requested:
   if (this->GetMapScalars())
   {
-    MapWorker mapWorker{newScalars,
-                        aRange[1] - aRange[0],
-                        aRange[0],
-                        static_cast<float>(this->ScalarRange[1] -
-                                           this->ScalarRange[0]),
-                        static_cast<float>(this->ScalarRange[0])};
+    MapWorker mapWorker{ newScalars, aRange[1] - aRange[0], aRange[0],
+      static_cast<float>(this->ScalarRange[1] - this->ScalarRange[0]),
+      static_cast<float>(this->ScalarRange[0]), this };
 
     vtkSMPTools::For(0, newScalars->GetNumberOfValues(), mapWorker);
   }
@@ -244,7 +243,7 @@ int vtkVectorDot::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVectorDot::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -257,3 +256,4 @@ void vtkVectorDot::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Actual Range: (" << this->ActualRange[0] << ", " << this->ActualRange[1]
      << ")\n";
 }
+VTK_ABI_NAMESPACE_END

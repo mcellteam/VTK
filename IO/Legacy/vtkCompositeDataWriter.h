@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeDataWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCompositeDataWriter
  * @brief   legacy VTK file writer for vtkCompositeDataSet
@@ -31,6 +19,7 @@
 #include "vtkDataWriter.h"
 #include "vtkIOLegacyModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCompositeDataSet;
 class vtkHierarchicalBoxDataSet;
 class vtkMultiBlockDataSet;
@@ -47,28 +36,29 @@ public:
   vtkTypeMacro(vtkCompositeDataWriter, vtkDataWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkCompositeDataSet* GetInput();
   vtkCompositeDataSet* GetInput(int port);
-  //@}
+  ///@}
 
 protected:
   vtkCompositeDataWriter();
   ~vtkCompositeDataWriter() override;
 
-  //@{
+  ///@{
   /**
    * Performs the actual writing.
    */
   void WriteData() override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
-  //@}
+  ///@}
 
   bool WriteCompositeData(ostream*, vtkMultiBlockDataSet*);
   bool WriteCompositeData(ostream*, vtkMultiPieceDataSet*);
+  VTK_DEPRECATED_IN_9_5_0("Please use `vtkOverlappingAMR` version instead.")
   bool WriteCompositeData(ostream*, vtkHierarchicalBoxDataSet*);
   bool WriteCompositeData(ostream*, vtkOverlappingAMR*);
   bool WriteCompositeData(ostream*, vtkNonOverlappingAMR*);
@@ -81,4 +71,5 @@ private:
   void operator=(const vtkCompositeDataWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

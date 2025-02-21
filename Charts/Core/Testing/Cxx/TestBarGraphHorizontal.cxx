@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestBarGraphHorizontal.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkChartXY.h"
 #include "vtkContextScene.h"
@@ -33,7 +21,7 @@ static int data_2009[] = { 9058, 9474, 9979, 9408, 8900, 11569, 14688, 12231, 10
 static int data_2010[] = { 9058, 10941, 9979, 10270, 8900, 11228, 14688, 12231, 10160, 9585, 9384,
   8590 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestBarGraphHorizontal(int, char*[])
 {
   // Set up a 2D scene, add an XY chart to it

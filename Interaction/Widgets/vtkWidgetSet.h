@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWidgetSet.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWidgetSet
  * @brief   Synchronize a collection on vtkWidgets drawn on different renderwindows using the
@@ -99,6 +87,7 @@
 #include "vtkObject.h"
 #include <vector> // Required for vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractWidget;
 
 // Pointer to a member function that takes a vtkAbstractWidget (the active
@@ -118,21 +107,21 @@ public:
    */
   static vtkWidgetSet* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for a VTK class.
    */
   vtkTypeMacro(vtkWidgetSet, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Method for activating and deactivating all widgets in the group.
    */
   virtual void SetEnabled(vtkTypeBool);
   vtkBooleanMacro(Enabled, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Add a widget to the set.
@@ -161,7 +150,7 @@ public:
   typedef WidgetContainerType::const_iterator WidgetConstIteratorType;
   WidgetContainerType Widget;
 
-  //@{
+  ///@{
   /**
    * Dispatch an "Action" to every widget in this set. This is meant to be
    * invoked from a "Callback" in a widget.
@@ -180,7 +169,7 @@ public:
         break;
       }
     }
-    //@}
+    ///@}
 
     // Dispatch action to all other widgets
     for (WidgetIteratorType it = this->Widget.begin(); it != this->Widget.end(); ++it)
@@ -200,4 +189,5 @@ private:
   void operator=(const vtkWidgetSet&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

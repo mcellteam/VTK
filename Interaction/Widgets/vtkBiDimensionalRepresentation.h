@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBiDimensionalRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBiDimensionalRepresentation
  * @brief   represent the vtkBiDimensionalWidget
@@ -24,7 +12,7 @@
  * the four points are referred to as Point1, Point2, Point3 and
  * Point4. Point1 and Point2 define the first line; and Point3 and Point4
  * define the second orthogonal line.) This particular class is an abstract
- * class, contrete subclasses (e.g., vtkBiDimensionalRepresentation2D) actual
+ * class, concrete subclasses (e.g., vtkBiDimensionalRepresentation2D) actual
  * implement the widget.
  *
  * To create this widget, you click to place the first two points. The third
@@ -45,21 +33,24 @@
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkWidgetRepresentation.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHandleRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkBiDimensionalRepresentation : public vtkWidgetRepresentation
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkBiDimensionalRepresentation
+  : public vtkWidgetRepresentation
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard VTK methods.
    */
   vtkTypeMacro(vtkBiDimensionalRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to Set/Get the coordinates of the four points defining
    * this representation. Note that methods are available for both
@@ -81,9 +72,9 @@ public:
   virtual void GetPoint2DisplayPosition(double pos[3]);
   virtual void GetPoint3DisplayPosition(double pos[3]);
   virtual void GetPoint4DisplayPosition(double pos[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the handle representations used within the
    * vtkBiDimensionalRepresentation2D. (Note: properties can be set by
@@ -94,9 +85,9 @@ public:
   vtkGetObjectMacro(Point2Representation, vtkHandleRepresentation);
   vtkGetObjectMacro(Point3Representation, vtkHandleRepresentation);
   vtkGetObjectMacro(Point4Representation, vtkHandleRepresentation);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Special methods for turning off the lines that define the bi-dimensional
    * measure. Generally these methods are used by the vtkBiDimensionalWidget to
@@ -109,9 +100,9 @@ public:
   vtkSetMacro(Line2Visibility, vtkTypeBool);
   vtkGetMacro(Line2Visibility, vtkTypeBool);
   vtkBooleanMacro(Line2Visibility, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This method is used to specify the type of handle representation to use
    * for the four internal vtkHandleRepresentations within
@@ -125,9 +116,9 @@ public:
    */
   void SetHandleRepresentation(vtkHandleRepresentation* handle);
   virtual void InstantiateHandleRepresentation();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The tolerance representing the distance to the representation (in
    * pixels) in which the cursor is considered near enough to the
@@ -135,7 +126,7 @@ public:
    */
   vtkSetClampMacro(Tolerance, int, 1, 100);
   vtkGetMacro(Tolerance, int);
-  //@}
+  ///@}
 
   /**
    * Return the length of the line defined by (Point1,Point2). This is the
@@ -149,7 +140,7 @@ public:
    */
   virtual double GetLength2();
 
-  //@{
+  ///@{
   /**
    * Specify the format to use for labelling the distance. Note that an empty
    * string results in no label, or a format string without a "%" character
@@ -157,7 +148,7 @@ public:
    */
   vtkSetStringMacro(LabelFormat);
   vtkGetStringMacro(LabelFormat);
-  //@}
+  ///@}
 
   // Used to communicate about the state of the representation
   enum
@@ -174,7 +165,7 @@ public:
     OnCenter
   };
 
-  //@{
+  ///@{
   /**
    * Toggle whether to display the label above or below the widget.
    * Defaults to 1.
@@ -182,31 +173,31 @@ public:
   vtkSetMacro(ShowLabelAboveWidget, vtkTypeBool);
   vtkGetMacro(ShowLabelAboveWidget, vtkTypeBool);
   vtkBooleanMacro(ShowLabelAboveWidget, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the id to display in the label.
    */
   void SetID(vtkIdType id);
   vtkGetMacro(ID, vtkIdType);
-  //@}
+  ///@}
 
   /**
    * Get the text shown in the widget's label.
    */
   virtual char* GetLabelText() = 0;
 
-  //@{
+  ///@{
   /**
    * Get the position of the widget's label in display coordinates.
    */
   virtual double* GetLabelPosition() = 0;
   virtual void GetLabelPosition(double pos[3]) = 0;
   virtual void GetWorldLabelPosition(double pos[3]) = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These are methods that satisfy vtkWidgetRepresentation's API.
    */
@@ -214,7 +205,7 @@ public:
   virtual void Point2WidgetInteraction(double e[2]) = 0;
   virtual void Point3WidgetInteraction(double e[2]) = 0;
   virtual void StartWidgetManipulation(double e[2]) = 0;
-  //@}
+  ///@}
 
 protected:
   vtkBiDimensionalRepresentation();
@@ -263,4 +254,5 @@ private:
   void operator=(const vtkBiDimensionalRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

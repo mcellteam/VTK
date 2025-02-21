@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointSetToLabelHierarchy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkPointSetToLabelHierarchy.h"
 
@@ -35,11 +19,10 @@
 #include "vtkStringArray.h"
 #include "vtkTextProperty.h"
 #include "vtkTimerLog.h"
-#include "vtkUnicodeString.h"
-#include "vtkUnicodeStringArray.h"
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPointSetToLabelHierarchy);
 vtkCxxSetObjectMacro(vtkPointSetToLabelHierarchy, TextProperty, vtkTextProperty);
 
@@ -47,7 +30,6 @@ vtkPointSetToLabelHierarchy::vtkPointSetToLabelHierarchy()
 {
   this->MaximumDepth = 5;
   this->TargetLabelCount = 32;
-  this->UseUnicodeStrings = false;
   this->TextProperty = vtkTextProperty::New();
   this->SetInputArrayToProcess(0, 0, 0, vtkDataObject::POINT, "Priority");
   this->SetInputArrayToProcess(1, 0, 0, vtkDataObject::POINT, "LabelSize");
@@ -240,29 +222,9 @@ int vtkPointSetToLabelHierarchy::RequestData(vtkInformation* vtkNotUsed(request)
   ouData->SetPriorities(priorities);
   if (labels)
   {
-    if ((this->UseUnicodeStrings && vtkArrayDownCast<vtkUnicodeStringArray>(labels)) ||
-      (!this->UseUnicodeStrings && vtkArrayDownCast<vtkStringArray>(labels)))
+    if (vtkArrayDownCast<vtkStringArray>(labels))
     {
       ouData->SetLabels(labels);
-    }
-    else if (this->UseUnicodeStrings)
-    {
-      vtkSmartPointer<vtkUnicodeStringArray> arr = vtkSmartPointer<vtkUnicodeStringArray>::New();
-      vtkIdType numComps = labels->GetNumberOfComponents();
-      vtkIdType numTuples = labels->GetNumberOfTuples();
-      arr->SetNumberOfComponents(numComps);
-      arr->SetNumberOfTuples(numTuples);
-      for (vtkIdType i = 0; i < numTuples; ++i)
-      {
-        for (vtkIdType j = 0; j < numComps; ++j)
-        {
-          vtkIdType ind = i * numComps + j;
-          arr->SetValue(ind, labels->GetVariantValue(ind).ToUnicodeString());
-        }
-      }
-      arr->SetName(labels->GetName());
-      ouData->GetPointData()->AddArray(arr);
-      ouData->SetLabels(arr);
     }
     else
     {
@@ -301,7 +263,7 @@ void vtkPointSetToLabelHierarchy::PrintSelf(ostream& os, vtkIndent indent)
 {
   os << indent << "MaximumDepth: " << this->MaximumDepth << "\n";
   os << indent << "TargetLabelCount: " << this->TargetLabelCount << "\n";
-  os << indent << "UseUnicodeStrings: " << this->UseUnicodeStrings << "\n";
   os << indent << "TextProperty: " << this->TextProperty << "\n";
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

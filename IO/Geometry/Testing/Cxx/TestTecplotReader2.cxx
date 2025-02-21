@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestTecPlotReader2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test of vtkTecplotReader
 // .SECTION Description
 //
@@ -39,8 +27,6 @@
 #include <string>
 #include <vtksys/SystemTools.hxx>
 
-using namespace std;
-
 class vtkErrorObserver
 {
 
@@ -63,16 +49,16 @@ public:
   }
 
   static bool HasError;
-  static string ErrorMessage;
+  static std::string ErrorMessage;
 };
 
 bool vtkErrorObserver::HasError = false;
-string vtkErrorObserver::ErrorMessage = string();
+std::string vtkErrorObserver::ErrorMessage = std::string();
 
 int TestTecplotReader2(int argc, char* argv[])
 {
   char* dataRoot = vtkTestUtilities::GetDataRoot(argc, argv);
-  const string tecplotDir = string(dataRoot) + "/Data/TecPlot/";
+  const std::string tecplotDir = std::string(dataRoot) + "/Data/TecPlot/";
 
   if (argc < 2)
   {
@@ -84,7 +70,7 @@ int TestTecplotReader2(int argc, char* argv[])
   vtkNew<vtkCallbackCommand> cmd;
   cmd->SetCallback(&(vtkErrorObserver::OnError));
 
-  const string ext = vtksys::SystemTools::GetFilenameLastExtension(filename);
+  const std::string ext = vtksys::SystemTools::GetFilenameLastExtension(filename);
   if (ext != ".dat")
   {
     return EXIT_FAILURE;

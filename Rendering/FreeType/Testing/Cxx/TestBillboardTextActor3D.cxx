@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestBillboardTextActor3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkBillboardTextActor3D.h"
 
@@ -93,7 +81,7 @@ void setupGrid(vtkPolyData* grid)
   }
 }
 
-// Test for bug #17233: https://gitlab.kitware.com/vtk/vtk/issues/17233
+// Test for bug #17233: https://gitlab.kitware.com/vtk/vtk/-/issues/17233
 // The Bounds were not updated when the position changed. Ensure that we aren't
 // returning stale bounds after modifying the actor.
 bool RegressionTest_17233(vtkBillboardTextActor3D* actor)
@@ -119,7 +107,7 @@ bool RegressionTest_17233(vtkBillboardTextActor3D* actor)
 
 } // end namespace vtkTestBillboardTextActor3D
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestBillboardTextActor3D(int, char*[])
 {
   using namespace vtkTestBillboardTextActor3D;

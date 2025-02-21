@@ -1,27 +1,18 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWindowsTestUtilities.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // on msvc add in stack trace info as systeminformation
 // does not seem to include it.
 //
 #ifndef VTK_WINDOWS_TEST_UTILITIES
 #define VTK_WINDOWS_TEST_UTILITIES
 
-#if defined(VTK_COMPILER_MSVC) && defined(WIN32)
+#include "vtkCompiler.h"
+
+#if defined(VTK_COMPILER_MSVC) && defined(_WIN32)
 #include <sstream>
 #include <windows.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 inline LONG WINAPI vtkWindowsTestUlititiesExceptionHandler(EXCEPTION_POINTERS* ExceptionInfo)
 {
   switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
@@ -98,15 +89,15 @@ inline LONG WINAPI vtkWindowsTestUlititiesExceptionHandler(EXCEPTION_POINTERS* E
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-inline void vtkWindowsTestUtilitiesSetupForTesting(void)
+inline void vtkWindowsTestUtilitiesSetupForTesting()
 {
   SetUnhandledExceptionFilter(vtkWindowsTestUlititiesExceptionHandler);
 }
+VTK_ABI_NAMESPACE_END
 #else
-inline void vtkWindowsTestUtilitiesSetupForTesting(void)
-{
-  return;
-}
+VTK_ABI_NAMESPACE_BEGIN
+inline void vtkWindowsTestUtilitiesSetupForTesting() {}
+VTK_ABI_NAMESPACE_END
 #endif
 #endif
 // VTK-HeaderTest-Exclude: vtkWindowsTestUtilities.h

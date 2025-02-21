@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSplitByCellScalarFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSplitByCellScalarFilter
  * @brief   splits input dataset according an integer cell scalar array.
@@ -23,8 +11,12 @@
  * input is of type vtkPolyData. In that case output blocks are of type
  * vtkPolyData.
  *
+ * As vtkMultiBlockDataSets tends to be replaced by vtkPartitionedDataSetCollection,
+ * vtkExplodeDataSet should be used in place. Also vtkExplodeDataSet benefits from
+ * SMPTools threading acceleration.
+ *
  * @sa
- * vtkThreshold
+ * vtkThreshold, vtkExplodeDataSet
  *
  * @par Thanks:
  * This class was written by Joachim Pouderoux, Kitware 2016.
@@ -36,6 +28,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkSplitByCellScalarFilter : public vtkMultiBlockDataSetAlgorithm
 {
 public:
@@ -43,7 +36,7 @@ public:
   vtkTypeMacro(vtkSplitByCellScalarFilter, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify if input points array must be passed to output blocks. If so,
    * filter processing is faster but outblocks will contains more points than
@@ -55,7 +48,7 @@ public:
   vtkGetMacro(PassAllPoints, bool);
   vtkSetMacro(PassAllPoints, bool);
   vtkBooleanMacro(PassAllPoints, bool);
-  //@}
+  ///@}
 
 protected:
   vtkSplitByCellScalarFilter();
@@ -73,4 +66,5 @@ private:
   void operator=(const vtkSplitByCellScalarFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

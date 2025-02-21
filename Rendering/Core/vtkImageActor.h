@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageActor
  * @brief   draw an image in a rendered 3D scene
@@ -33,13 +21,15 @@
 
 #include "vtkImageSlice.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAlgorithm;
 class vtkPropCollection;
 class vtkRenderer;
 class vtkImageData;
 
-class VTKRENDERINGCORE_EXPORT vtkImageActor : public vtkImageSlice
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkImageActor : public vtkImageSlice
 {
 public:
   vtkTypeMacro(vtkImageActor, vtkImageSlice);
@@ -50,7 +40,7 @@ public:
    */
   static vtkImageActor* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the image data input for the image actor.  This is for
    * backwards compatibility, for a proper pipeline connection you
@@ -58,9 +48,9 @@ public:
    */
   virtual void SetInputData(vtkImageData*);
   virtual vtkImageData* GetInput();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off linear interpolation of the image when rendering.
    * More options are available in the Property of the image actor.
@@ -68,9 +58,9 @@ public:
   virtual void SetInterpolate(vtkTypeBool);
   virtual vtkTypeBool GetInterpolate();
   vtkBooleanMacro(Interpolate, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the object's opacity. 1.0 is totally opaque and 0.0 is completely
    * transparent. The default is 1.0.
@@ -79,9 +69,9 @@ public:
   virtual double GetOpacity();
   double GetOpacityMinValue() { return 0.0; }
   double GetOpacityMaxValue() { return 1.0; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The image extent is generally set explicitly, but if not set
    * it will be determined from the input image data.
@@ -90,9 +80,9 @@ public:
   void SetDisplayExtent(int minX, int maxX, int minY, int maxY, int minZ, int maxZ);
   void GetDisplayExtent(int extent[6]);
   int* GetDisplayExtent() VTK_SIZEHINT(6) { return this->DisplayExtent; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the bounds of this image actor. Either copy the bounds
    * into a user provided array or return a pointer to an array.
@@ -101,20 +91,20 @@ public:
    */
   double* GetBounds() VTK_SIZEHINT(6) override;
   void GetBounds(double bounds[6]) { this->Superclass::GetBounds(bounds); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the bounds of the data that is displayed by this image
    * actor.  If the transformation matrix for this actor is the
    * identity matrix, this will return the same value as
    * GetBounds.
    */
-  double* GetDisplayBounds();
+  double* GetDisplayBounds() VTK_SIZEHINT(6);
   void GetDisplayBounds(double bounds[6]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return the slice number (& min/max slice number) computed from the display
    * extent.
@@ -122,9 +112,9 @@ public:
   int GetSliceNumber();
   int GetSliceNumberMax();
   int GetSliceNumberMin();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the current slice number. The axis Z in ZSlice does not
    * necessarily have any relation to the z axis of the data on disk.
@@ -142,7 +132,7 @@ public:
   int GetZSlice() { return this->DisplayExtent[4]; }
   int GetWholeZMin();
   int GetWholeZMax();
-  //@}
+  ///@}
 
   /**
    * Internal method, should only be used by rendering.
@@ -153,7 +143,7 @@ public:
    */
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
 
-  //@{
+  ///@{
   /**
    * Force the actor to be rendered during the opaque rendering pass.
    * Default is false.
@@ -162,7 +152,7 @@ public:
   vtkGetMacro(ForceOpaque, bool);
   vtkSetMacro(ForceOpaque, bool);
   vtkBooleanMacro(ForceOpaque, bool);
-  //@}
+  ///@}
 
 protected:
   vtkImageActor();
@@ -190,4 +180,5 @@ private:
   void operator=(const vtkImageActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

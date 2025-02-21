@@ -1,38 +1,27 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationIntegerKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationIntegerKey.h"
 
 #include "vtkInformation.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationIntegerKey::vtkInformationIntegerKey(const char* name, const char* location)
   : vtkInformationKey(name, location)
 {
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationIntegerKey::~vtkInformationIntegerKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkInformationIntegerValue : public vtkObjectBase
 {
 public:
@@ -40,7 +29,7 @@ public:
   int Value;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerKey::Set(vtkInformation* info, int value)
 {
   if (vtkInformationIntegerValue* oldv =
@@ -67,7 +56,7 @@ void vtkInformationIntegerKey::Set(vtkInformation* info, int value)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationIntegerKey::Get(vtkInformation* info)
 {
   vtkInformationIntegerValue* v =
@@ -75,7 +64,7 @@ int vtkInformationIntegerKey::Get(vtkInformation* info)
   return v ? v->Value : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerKey::ShallowCopy(vtkInformation* from, vtkInformation* to)
 {
   if (this->Has(from))
@@ -88,7 +77,7 @@ void vtkInformationIntegerKey::ShallowCopy(vtkInformation* from, vtkInformation*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerKey::Print(ostream& os, vtkInformation* info)
 {
   // Print the value.
@@ -98,7 +87,7 @@ void vtkInformationIntegerKey::Print(ostream& os, vtkInformation* info)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int* vtkInformationIntegerKey::GetWatchAddress(vtkInformation* info)
 {
   if (vtkInformationIntegerValue* v =
@@ -108,3 +97,4 @@ int* vtkInformationIntegerKey::GetWatchAddress(vtkInformation* info)
   }
   return nullptr;
 }
+VTK_ABI_NAMESPACE_END

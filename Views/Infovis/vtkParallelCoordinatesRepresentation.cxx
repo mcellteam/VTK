@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkParallelCoordinatesRepresentation.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkParallelCoordinatesRepresentation.h"
 
@@ -40,7 +24,6 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkDataObject.h"
 #include "vtkDataSetMapper.h"
 #include "vtkDoubleArray.h"
-#include "vtkExtractSelectedPolyDataIds.h"
 #include "vtkFieldData.h"
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
@@ -69,7 +52,6 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkSelection.h"
 #include "vtkSelectionNode.h"
 #include "vtkSortDataArray.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
 #include "vtkTextMapper.h"
@@ -83,6 +65,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include <sstream>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkParallelCoordinatesRepresentation);
 
 //------------------------------------------------------------------------------
@@ -163,9 +146,9 @@ void vtkParallelCoordinatesRepresentationBuildLinePoints(iterT* it, vtkIdTypeArr
 class vtkParallelCoordinatesRepresentation::Internals
 {
 public:
-  std::vector<vtkSmartPointer<vtkPolyData> > SelectionData;
-  std::vector<vtkSmartPointer<vtkPolyDataMapper2D> > SelectionMappers;
-  std::vector<vtkSmartPointer<vtkActor2D> > SelectionActors;
+  std::vector<vtkSmartPointer<vtkPolyData>> SelectionData;
+  std::vector<vtkSmartPointer<vtkPolyDataMapper2D>> SelectionMappers;
+  std::vector<vtkSmartPointer<vtkActor2D>> SelectionActors;
   static const double Colors[10][3];
   static const unsigned int NumberOfColors = 10;
   double* GetColor(unsigned int idx)
@@ -288,13 +271,14 @@ vtkParallelCoordinatesRepresentation::~vtkParallelCoordinatesRepresentation()
 }
 
 //------------------------------------------------------------------------------
-// I should fill this out.
-const char* vtkParallelCoordinatesRepresentation::GetHoverText(vtkView* view, int x, int y)
+std::string vtkParallelCoordinatesRepresentation::GetHoverString(vtkView* view, int x, int y)
 {
+  std::string result;
+
   vtkRenderView* rv = vtkRenderView::SafeDownCast(view);
   if (rv && this->NumberOfAxes > 0)
   {
-    int* s = rv->GetRenderer()->GetSize();
+    const int* s = rv->GetRenderer()->GetSize();
 
     double p[2] = { 0.0, 0.0 };
     p[0] = static_cast<double>(x) / s[0];
@@ -312,17 +296,22 @@ const char* vtkParallelCoordinatesRepresentation::GetHoverText(vtkView* view, in
       double v = pct * (r[1] - r[0]) + r[0];
       vtkVariant var(v);
 
-      this->SetInternalHoverText(vtkVariant(v).ToString());
-      return this->GetInternalHoverText();
+      this->SetInternalHoverText(vtkVariant(v).ToString().c_str());
     }
     else if (p[0] > this->Xs[0] && p[1] < this->Xs[this->NumberOfAxes - 1] && p[1] <= this->YMax &&
       p[1] >= this->YMin)
     {
       this->UpdateHoverHighlight(view, x, y);
-      return this->GetInternalHoverText();
+    }
+
+    char* text = this->GetInternalHoverText();
+    if (text != nullptr)
+    {
+      result = text;
     }
   }
-  return nullptr;
+
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -348,7 +337,7 @@ void vtkParallelCoordinatesRepresentation::UpdateHoverHighlight(vtkView* view, i
   if (x > 0 && y > 0)
   {
     std::ostringstream str;
-    int* size = win->GetSize();
+    const int* size = win->GetSize();
     int linesFound = 0;
     vtkCellArray* lines = this->PlotData->GetLines();
 
@@ -788,7 +777,7 @@ int vtkParallelCoordinatesRepresentation::UpdatePlotProperties(vtkStringArray* i
   // set everything on the axes
   for (int i = 0; i < this->NumberOfAxes; i++)
   {
-    this->Axes[i]->SetTitle(this->AxisTitles->GetValue(i));
+    this->Axes[i]->SetTitle(this->AxisTitles->GetValue(i).c_str());
     this->Axes[i]->SetRange(
       this->Mins[i] + this->MinOffsets[i], this->Maxs[i] + this->MaxOffsets[i]);
     this->Axes[i]->GetProperty()->SetColor(this->AxisColor);
@@ -799,8 +788,7 @@ int vtkParallelCoordinatesRepresentation::UpdatePlotProperties(vtkStringArray* i
     this->Axes[i]->SetLabelFactor(0.5);
     this->Axes[i]->TickVisibilityOff();
     this->Axes[i]->SetNumberOfLabels(this->NumberOfAxisLabels);
-    this->Axes[i]->SetTitlePosition(-.05);
-    this->Axes[i]->GetTitleTextProperty()->SetJustificationToRight();
+    this->Axes[i]->SetTitlePosition(0);
     this->Axes[i]->GetTitleTextProperty()->ItalicOff();
     this->Axes[i]->GetTitleTextProperty()->BoldOff();
     this->Axes[i]->GetLabelTextProperty()->ItalicOff();
@@ -976,7 +964,7 @@ int vtkParallelCoordinatesRepresentation::AllocatePolyData(vtkPolyData* polyData
 
       // prepare the cell array. might as well initialize it now and only
       // recompute it when something actually changes.
-      vtkIdType* ptIds = new vtkIdType[4];
+      vtkIdType ptIds[4];
 
       quads->InitTraversal();
       for (int i = 0; i < numQuads; i++)
@@ -987,7 +975,6 @@ int vtkParallelCoordinatesRepresentation::AllocatePolyData(vtkPolyData* polyData
         }
         quads->InsertNextCell(4, ptIds);
       }
-      delete[] ptIds;
     }
   }
   else
@@ -1330,7 +1317,7 @@ int vtkParallelCoordinatesRepresentation::SwapAxisPositions(int position1, int p
   this->Axes[position1] = this->Axes[position2];
   this->Axes[position2] = axtmp;
 
-  vtkStdString tmpStr = this->AxisTitles->GetValue(position1);
+  std::string tmpStr = this->AxisTitles->GetValue(position1);
   this->AxisTitles->SetValue(position1, this->AxisTitles->GetValue(position2));
   this->AxisTitles->SetValue(position2, tmpStr);
 
@@ -1983,3 +1970,4 @@ int vtkParallelCoordinatesRepresentation::GetNumberOfSelections()
 {
   return (int)this->I->SelectionActors.size();
 }
+VTK_ABI_NAMESPACE_END

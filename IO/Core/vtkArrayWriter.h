@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArrayWriter.h
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkArrayWriter
@@ -56,6 +39,7 @@
 #include "vtkStdString.h"    // For string API
 #include "vtkWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkArray;
 
 class VTKIOCORE_EXPORT vtkArrayWriter : public vtkWriter
@@ -65,36 +49,36 @@ public:
   vtkTypeMacro(vtkArrayWriter, vtkWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get / set the filename where data will be stored (when used as a filter).
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get / set whether data will be written in binary format (when used as a filter).
    */
   vtkSetMacro(Binary, vtkTypeBool);
   vtkGetMacro(Binary, vtkTypeBool);
   vtkBooleanMacro(Binary, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * The output string. This is only set when WriteToOutputString is set.
    */
   virtual vtkStdString GetOutputString() { return this->OutputString; }
 
-  //@{
+  ///@{
   /**
    * Whether to output to a string instead of to a file, which is the default.
    */
   vtkSetMacro(WriteToOutputString, bool);
   vtkGetMacro(WriteToOutputString, bool);
   vtkBooleanMacro(WriteToOutputString, bool);
-  //@}
+  ///@}
 
   int Write() override; // This is necessary to get Write() wrapped for scripting languages.
 
@@ -148,4 +132,5 @@ private:
   void operator=(const vtkArrayWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNetCDFPOPReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkNetCDFPOPReader
  * @brief   read NetCDF files
@@ -34,6 +22,7 @@
 #include "vtkIONetCDFModule.h" // For export macro
 #include "vtkRectilinearGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArraySelection;
 class vtkCallbackCommand;
 class vtkNetCDFPOPReaderInternal;
@@ -45,31 +34,31 @@ public:
   static vtkNetCDFPOPReader* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The file to open
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable subsampling in i,j and k dimensions in the vtkRectilinearGrid
    */
   vtkSetVector3Macro(Stride, int);
   vtkGetVector3Macro(Stride, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Variable array selection.
    */
   virtual int GetNumberOfVariableArrays();
-  virtual const char* GetVariableArrayName(int idx);
+  virtual const char* GetVariableArrayName(int index);
   virtual int GetVariableArrayStatus(const char* name);
   virtual void SetVariableArrayStatus(const char* name, int status);
-  //@}
+  ///@}
 
 protected:
   vtkNetCDFPOPReader();
@@ -98,7 +87,7 @@ protected:
    */
   char* OpenedFileName;
 
-  vtkSetStringMacro(OpenedFileName);
+  vtkSetFilePathMacro(OpenedFileName);
 
   int Stride[3];
 
@@ -108,4 +97,5 @@ private:
 
   vtkNetCDFPOPReaderInternal* Internals;
 };
+VTK_ABI_NAMESPACE_END
 #endif

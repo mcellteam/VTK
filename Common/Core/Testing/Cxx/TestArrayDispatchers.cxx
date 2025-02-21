@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestArrayDispatchers.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // We define our own set of arrays for the dispatch list. This allows the test
 // to run regardless of the compiled dispatch configuration. Note that this is
@@ -40,7 +28,8 @@ typedef vtkTypeList::Unique<                //
     vtkSOADataArrayTemplate<int>,           //
     vtkSOADataArrayTemplate<unsigned char>, //
     vtkSOADataArrayTemplate<vtkIdType>      //
-    > >::Result Arrays;
+    >>::Result Arrays;
+typedef Arrays AllArrays;
 } // end namespace vtkArrayDispatch
 
 #include "vtkArrayDispatch.h"
@@ -219,10 +208,6 @@ inline bool isIntegral(int vtkType)
     case VTK_ID_TYPE:
     case VTK_LONG_LONG:
     case VTK_UNSIGNED_LONG_LONG:
-#if !defined(VTK_LEGACY_REMOVE)
-    case VTK___INT64:
-    case VTK_UNSIGNED___INT64:
-#endif
       return true;
   }
   return false;
@@ -268,6 +253,7 @@ int TestDispatch()
 
     int lval{ 42 };
     int rval{ 20 };
+    // NOLINTNEXTLINE(performance-move-const-arg)
     testAssert(Dispatcher::Execute(array, paramTester, lval, std::move(rval)),
       "Parameter forwarding dispatch failed.");
     testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -300,6 +286,7 @@ int TestDispatchByArray()
 
     int lval{ 42 };
     int rval{ 20 };
+    // NOLINTNEXTLINE(performance-move-const-arg)
     testAssert(Dispatcher::Execute(array, paramTester, lval, std::move(rval)),
       "Parameter forwarding dispatch failed.");
     testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -345,6 +332,7 @@ int TestDispatchByValueType()
 
       int lval{ 42 };
       int rval{ 20 };
+      // NOLINTNEXTLINE(performance-move-const-arg)
       testAssert(Dispatcher::Execute(array, paramTester, lval, std::move(rval)),
         "Parameter forwarding dispatch failed.");
       testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -395,6 +383,7 @@ int TestDispatch2ByArray()
 
         int lval{ 42 };
         int rval{ 20 };
+        // NOLINTNEXTLINE(performance-move-const-arg)
         testAssert(Dispatcher::Execute(array1, array2, paramTester, lval, std::move(rval)),
           "Parameter forwarding dispatch failed.");
         testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -448,6 +437,7 @@ int TestDispatch2ByValueType()
 
         int lval{ 42 };
         int rval{ 20 };
+        // NOLINTNEXTLINE(performance-move-const-arg)
         testAssert(Dispatcher::Execute(array1, array2, paramTester, lval, std::move(rval)),
           "Parameter forwarding dispatch failed.");
         testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -501,6 +491,7 @@ int TestDispatch2ByArrayWithSameValueType()
 
         int lval{ 42 };
         int rval{ 20 };
+        // NOLINTNEXTLINE(performance-move-const-arg)
         testAssert(Dispatcher::Execute(array1, array2, paramTester, lval, std::move(rval)),
           "Parameter forwarding dispatch failed.");
         testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -553,6 +544,7 @@ int TestDispatch2BySameValueType()
 
         int lval{ 42 };
         int rval{ 20 };
+        // NOLINTNEXTLINE(performance-move-const-arg)
         testAssert(Dispatcher::Execute(array1, array2, paramTester, lval, std::move(rval)),
           "Parameter forwarding dispatch failed.");
         testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -586,7 +578,7 @@ int TestDispatch3ByArray()
   // Array2: AoS
   // Array3: AoS/SoA float arrays
   using Dispatcher = vtkArrayDispatch::Dispatch3ByArray<SoAArrayList, AoSArrayList,
-    vtkTypeList::Create<vtkAOSDataArrayTemplate<float>, vtkSOADataArrayTemplate<float> > >;
+    vtkTypeList::Create<vtkAOSDataArrayTemplate<float>, vtkSOADataArrayTemplate<float>>>;
   TestWorker worker;
   ForwardedParams paramTester;
 
@@ -613,6 +605,7 @@ int TestDispatch3ByArray()
           int lval{ 42 };
           int rval{ 20 };
           testAssert(
+            // NOLINTNEXTLINE(performance-move-const-arg)
             Dispatcher::Execute(array1, array2, array3, paramTester, lval, std::move(rval)),
             "Parameter forwarding dispatch failed.");
           testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -649,7 +642,7 @@ int TestDispatch3ByValueType()
   // Array2: Must be integer type.
   // Array3: Must be unsigned char type.
   using Dispatcher = vtkArrayDispatch::Dispatch3ByValueType<vtkArrayDispatch::Reals,
-    vtkArrayDispatch::Integrals, vtkTypeList::Create<unsigned char> >;
+    vtkArrayDispatch::Integrals, vtkTypeList::Create<unsigned char>>;
   TestWorker worker;
   ForwardedParams paramTester;
 
@@ -676,6 +669,7 @@ int TestDispatch3ByValueType()
           int lval{ 42 };
           int rval{ 20 };
           testAssert(
+            // NOLINTNEXTLINE(performance-move-const-arg)
             Dispatcher::Execute(array1, array2, array3, paramTester, lval, std::move(rval)),
             "Parameter forwarding dispatch failed.");
           testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -741,6 +735,7 @@ int TestDispatch3ByArrayWithSameValueType()
           int lval{ 42 };
           int rval{ 20 };
           testAssert(
+            // NOLINTNEXTLINE(performance-move-const-arg)
             Dispatcher::Execute(array1, array2, array3, paramTester, lval, std::move(rval)),
             "Parameter forwarding dispatch failed.");
           testAssert(paramTester.Success, "Parameter forwarding failed.");
@@ -804,6 +799,7 @@ int TestDispatch3BySameValueType()
           int lval{ 42 };
           int rval{ 20 };
           testAssert(
+            // NOLINTNEXTLINE(performance-move-const-arg)
             Dispatcher::Execute(array1, array2, array3, paramTester, lval, std::move(rval)),
             "Parameter forwarding dispatch failed.");
           testAssert(paramTester.Success, "Parameter forwarding failed.");

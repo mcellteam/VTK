@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractHyperTreeGridMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractHyperTreeGridMapper
  * @brief   Abstract class for a HyperTreeGrid mapper
@@ -36,6 +24,7 @@
 #include "vtkAbstractVolumeMapper.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 class vtkDataArray;
 class vtkMatrix4x4;
@@ -49,7 +38,7 @@ public:
   vtkTypeMacro(vtkAbstractHyperTreeGridMapper, vtkAbstractVolumeMapper);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the input data or connection
    */
@@ -60,31 +49,31 @@ public:
     this->SetInputConnection(0, input);
   }
   vtkUniformHyperTreeGrid* GetInput();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the renderer attached to this HyperTreeGrid mapper
    */
   void SetRenderer(vtkRenderer*);
   vtkGetObjectMacro(Renderer, vtkRenderer);
-  //@}
+  ///@}
 
   /**
    * Set the scale factor
    */
   vtkSetMacro(Scale, double);
 
-  //@{
+  ///@{
   /**
    * Set/Get the color map attached to this HyperTreeGrid mapper
    * A linear lookup table is provided by default
    */
   void SetColorMap(vtkScalarsToColors*);
   vtkGetObjectMacro(ColorMap, vtkScalarsToColors);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify range in terms of scalar minimum and maximum.
    * These values are used to map scalars into lookup table
@@ -94,7 +83,7 @@ public:
   void SetScalarRange(double, double);
   void SetScalarRange(double*);
   vtkGetVectorMacro(ScalarRange, double, 2);
-  //@}
+  ///@}
 
   /**
    * Get image size
@@ -135,13 +124,13 @@ protected:
    */
   vtkDataArray* Scalars;
 
-  //@{
+  ///@{
   /**
    * Keep track of coordinate conversion matrices
    */
   vtkMatrix4x4* WorldToViewMatrix;
   vtkMatrix4x4* ViewToWorldMatrix;
-  //@}
+  ///@}
 
   /**
    * Keep track of whether pixelize grid is current
@@ -238,4 +227,5 @@ private:
   void operator=(const vtkAbstractHyperTreeGridMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

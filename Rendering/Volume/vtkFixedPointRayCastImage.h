@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFixedPointRayCastImage.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkFixedPointRayCastImage
@@ -36,6 +24,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingVolumeModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGVOLUME_EXPORT vtkFixedPointRayCastImage : public vtkObject
 {
 public:
@@ -50,16 +39,16 @@ public:
    */
   unsigned short* GetImage() { return this->Image; }
 
-  //@{
+  ///@{
   /**
    * Set / Get the ImageViewportSize. This is the size of the
    * whole viewport in pixels.
    */
   vtkSetVector2Macro(ImageViewportSize, int);
   vtkGetVectorMacro(ImageViewportSize, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / Get the ImageMemorySize. This is the size in pixels
    * of the Image ivar. This will be a power of two in order
@@ -68,9 +57,9 @@ public:
    */
   vtkSetVector2Macro(ImageMemorySize, int);
   vtkGetVectorMacro(ImageMemorySize, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / Get the size of the image we are actually using. As
    * long as the memory size is big enough, but not too big,
@@ -80,9 +69,9 @@ public:
    */
   vtkSetVector2Macro(ImageInUseSize, int);
   vtkGetVectorMacro(ImageInUseSize, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / Get the origin of the image. This is the starting
    * pixel within the whole viewport that our Image starts on.
@@ -93,9 +82,9 @@ public:
    */
   vtkSetVector2Macro(ImageOrigin, int);
   vtkGetVectorMacro(ImageOrigin, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / Get the ImageSampleDistance that will be used for
    * rendering. This is a copy of the value stored in the
@@ -104,7 +93,7 @@ public:
    */
   vtkSetMacro(ImageSampleDistance, float);
   vtkGetMacro(ImageSampleDistance, float);
-  //@}
+  ///@}
 
   /**
    * Call this method once the ImageMemorySize has been set
@@ -118,7 +107,7 @@ public:
    */
   void ClearImage();
 
-  //@{
+  ///@{
   /**
    * Set / Get the size of the ZBuffer in pixels. The zbuffer will
    * be captured for the region of the screen covered by the
@@ -128,9 +117,9 @@ public:
    */
   vtkSetVector2Macro(ZBufferSize, int);
   vtkGetVectorMacro(ZBufferSize, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / Get the origin of the ZBuffer. This is the distance
    * from the lower left corner of the viewport where the ZBuffer
@@ -142,9 +131,9 @@ public:
    */
   vtkSetVector2Macro(ZBufferOrigin, int);
   vtkGetVectorMacro(ZBufferOrigin, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The UseZBuffer flag indicates whether the ZBuffer is in use.
    * The ZBuffer is captured and used when IntermixIntersectingGeometry
@@ -154,7 +143,7 @@ public:
   vtkSetClampMacro(UseZBuffer, vtkTypeBool, 0, 1);
   vtkGetMacro(UseZBuffer, vtkTypeBool);
   vtkBooleanMacro(UseZBuffer, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Get the ZBuffer value corresponding to location (x,y) where (x,y)
@@ -228,4 +217,5 @@ private:
   void operator=(const vtkFixedPointRayCastImage&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

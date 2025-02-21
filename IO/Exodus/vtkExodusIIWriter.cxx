@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExodusIIWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExodusIIWriter.h"
 #include "vtkArrayIteratorIncludes.h"
 #include "vtkCellArray.h"
@@ -37,12 +20,11 @@
 #include "vtkMultiBlockDataSet.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
+#include "vtkPlatform.h" // for VTK_MAXPATH
 #include "vtkPointData.h"
-#include "vtkStdString.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringArray.h"
 #include "vtkThreshold.h"
-#include "vtkToolkits.h" // for VTK_USE_PARALLEL
 #include "vtkUnstructuredGrid.h"
 
 #include "vtk_exodusII.h"
@@ -51,6 +33,7 @@
 #include <map>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkExodusIIWriter);
 vtkCxxSetObjectMacro(vtkExodusIIWriter, ModelMetadata, vtkModelMetadata);
 
@@ -66,7 +49,7 @@ unsigned int GetNumberOfDigits(unsigned int i)
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkExodusIIWriter::vtkExodusIIWriter()
 {
@@ -99,7 +82,7 @@ vtkExodusIIWriter::vtkExodusIIWriter()
   this->LocalNodeIdMap = nullptr;
   this->LocalElementIdMap = nullptr;
   this->TopologyChanged = false;
-  this->IgnoreMetaDataWarning = 0;
+  this->IgnoreMetaDataWarning = false;
 }
 
 vtkExodusIIWriter::~vtkExodusIIWriter()
@@ -137,7 +120,7 @@ void vtkExodusIIWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "IgnoreMetaDataWarning " << this->IgnoreMetaDataWarning << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkExodusIIWriter::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -158,7 +141,7 @@ vtkTypeBool vtkExodusIIWriter::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -175,7 +158,7 @@ int vtkExodusIIWriter::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -190,7 +173,7 @@ int vtkExodusIIWriter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Remove(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE());
@@ -199,7 +182,7 @@ int vtkExodusIIWriter::FillInputPortInformation(int vtkNotUsed(port), vtkInforma
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::RequestData(vtkInformation* request, vtkInformationVector** inputVector,
   vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -247,13 +230,13 @@ int vtkExodusIIWriter::RequestData(vtkInformation* request, vtkInformationVector
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::GlobalContinueExecuting(int localContinueExecution)
 {
   return localContinueExecution;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIWriter::WriteData()
 {
   this->NewFlattenedInput.clear();
@@ -389,7 +372,7 @@ void vtkExodusIIWriter::WriteData()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkExodusIIWriter::StrDupWithNew(const char* s)
 {
   char* newstr = nullptr;
@@ -404,7 +387,7 @@ char* vtkExodusIIWriter::StrDupWithNew(const char* s)
   return newstr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIWriter::StringUppercase(std::string& str)
 {
   for (size_t i = 0; i < str.size(); i++)
@@ -413,7 +396,7 @@ void vtkExodusIIWriter::StringUppercase(std::string& str)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::FlattenHierarchy(vtkDataObject* input, const char* name, bool& changed)
 {
   if (input->IsA("vtkMultiBlockDataSet"))
@@ -520,7 +503,7 @@ int vtkExodusIIWriter::FlattenHierarchy(vtkDataObject* input, const char* name, 
       // Setting an arbitrary name for datasets that have not been assigned one.
       name = "block";
     }
-    this->NewFlattenedNames.push_back(name);
+    this->NewFlattenedNames.emplace_back(name);
   }
   else
   {
@@ -530,7 +513,7 @@ int vtkExodusIIWriter::FlattenHierarchy(vtkDataObject* input, const char* name, 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::CreateNewExodusFile()
 {
   int compWordSize = (this->PassDoubles ? sizeof(double) : sizeof(float));
@@ -538,7 +521,7 @@ int vtkExodusIIWriter::CreateNewExodusFile()
 
   if (this->NumberOfProcesses == 1)
   {
-    if (this->WriteAllTimeSteps == false || this->CurrentTimeIndex == 0)
+    if (!this->WriteAllTimeSteps || this->CurrentTimeIndex == 0)
     {
       this->fid = ex_create(this->FileName, EX_CLOBBER, &compWordSize, &IOWordSize);
       if (fid <= 0)
@@ -562,7 +545,7 @@ int vtkExodusIIWriter::CreateNewExodusFile()
   {
     std::ostringstream myFileName;
     myFileName << this->FileName;
-    if (this->WriteAllTimeSteps == false || this->CurrentTimeIndex == 0)
+    if (!this->WriteAllTimeSteps || this->CurrentTimeIndex == 0)
     {
       myFileName << ".";
     }
@@ -601,7 +584,7 @@ void vtkExodusIIWriter::CloseExodusFile()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::IsDouble()
 {
   // Determine whether we should pass single or double precision
@@ -655,7 +638,7 @@ int vtkExodusIIWriter::IsDouble()
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIWriter::RemoveGhostCells()
 {
   for (size_t i = 0; i < this->FlattenedInput.size(); i++)
@@ -666,7 +649,8 @@ void vtkExodusIIWriter::RemoveGhostCells()
     {
       vtkThreshold* t = vtkThreshold::New();
       t->SetInputData(this->FlattenedInput[i]);
-      t->ThresholdByLower(0);
+      t->SetThresholdFunction(vtkThreshold::THRESHOLD_LOWER);
+      t->SetLowerThreshold(0.0);
       t->SetInputArrayToProcess(
         0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::GhostArrayName());
 
@@ -687,8 +671,8 @@ void vtkExodusIIWriter::RemoveGhostCells()
   }
 }
 
-//----------------------------------------------------------------------------
-int vtkExodusIIWriter::CheckParametersInternal(int _NumberOfProcesses, int _MyRank)
+//------------------------------------------------------------------------------
+int vtkExodusIIWriter::CheckParametersInternal(int numberOfProcesses, int myRank)
 {
   if (!this->FileName)
   {
@@ -711,8 +695,8 @@ int vtkExodusIIWriter::CheckParametersInternal(int _NumberOfProcesses, int _MyRa
     this->StoreDoubles = this->PassDoubles;
   }
 
-  this->NumberOfProcesses = _NumberOfProcesses;
-  this->MyRank = _MyRank;
+  this->NumberOfProcesses = numberOfProcesses;
+  this->MyRank = myRank;
 
   if (!this->CheckInputArrays())
   {
@@ -744,7 +728,7 @@ int vtkExodusIIWriter::CheckParametersInternal(int _NumberOfProcesses, int _MyRa
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::CheckParameters()
 {
   return this->CheckParametersInternal(1, 0);
@@ -903,7 +887,7 @@ int vtkExodusIIWriter::ConstructBlockInfoMap()
             break;
           default:
             b.NodesPerElement = this->FlattenedInput[i]->GetCell(j)->GetNumberOfPoints();
-        };
+        }
 
         // TODO this could be a push if i is different.
         b.GridIndex = i;
@@ -969,7 +953,7 @@ int vtkExodusIIWriter::ConstructVariableInfoMaps()
     vtkFieldData* fd = this->FlattenedInput[i]->GetFieldData();
     for (int j = 0; j < fd->GetNumberOfArrays(); j++)
     {
-      char* name = nullptr;
+      const char* name = nullptr;
       if (fd->GetAbstractArray(j))
       {
         name = fd->GetAbstractArray(j)->GetName();
@@ -1017,7 +1001,7 @@ int vtkExodusIIWriter::ConstructVariableInfoMaps()
     vtkCellData* cd = this->FlattenedInput[i]->GetCellData();
     for (int j = 0; j < cd->GetNumberOfArrays(); j++)
     {
-      char* name = nullptr;
+      const char* name = nullptr;
       if (cd->GetArray(j))
       {
         name = cd->GetArray(j)->GetName();
@@ -1065,7 +1049,7 @@ int vtkExodusIIWriter::ConstructVariableInfoMaps()
     vtkPointData* pd = this->FlattenedInput[i]->GetPointData();
     for (int j = 0; j < pd->GetNumberOfArrays(); j++)
     {
-      char* name = nullptr;
+      const char* name = nullptr;
       if (pd->GetArray(j))
       {
         name = pd->GetArray(j)->GetName();
@@ -1148,7 +1132,7 @@ int vtkExodusIIWriter::ConstructVariableInfoMaps()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::CreateDefaultMetadata()
 {
   // There is no metadata associated with this input.  If we have enough
@@ -1189,7 +1173,7 @@ int vtkExodusIIWriter::CreateDefaultMetadata()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkExodusIIWriter::GetCellTypeName(int t)
 {
   if (MAX_STR_LENGTH < 32)
@@ -1302,7 +1286,7 @@ char* vtkExodusIIWriter::GetCellTypeName(int t)
   return nm;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::CreateBlockIdMetadata(vtkModelMetadata* em)
 {
   // vtkModelMetadata frees the memory when its done so we need to create a copy
@@ -1335,7 +1319,7 @@ int vtkExodusIIWriter::CreateBlockIdMetadata(vtkModelMetadata* em)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::CreateBlockVariableMetadata(vtkModelMetadata* em)
 {
   size_t narrays = this->GlobalVariableMap.size();
@@ -1486,10 +1470,6 @@ int vtkExodusIIWriter::CreateSetsMetadata(vtkModelMetadata* em)
       }
       else if (isASideSet)
       {
-        int hexSides = 0;
-        int wedgeSides = 0;
-        int otherSides = 0;
-        int badSides = 0;
         numSideSets++;
         const char* id_str = name != nullptr ? strstr(name, "ID:") : nullptr;
         if (id_str != nullptr)
@@ -1520,7 +1500,6 @@ int vtkExodusIIWriter::CreateSetsMetadata(vtkModelMetadata* em)
             {
               case -1:
               {
-                badSides++;
                 break;
               }
               case VTK_WEDGE:
@@ -1528,20 +1507,17 @@ int vtkExodusIIWriter::CreateSetsMetadata(vtkModelMetadata* em)
                 int wedgeMapping[5] = { 3, 4, 0, 1, 2 };
                 int side = wedgeMapping[sourceSide->GetValue(c)] + 1;
                 sideSetSideList->InsertNextTuple1(side);
-                wedgeSides++;
                 break;
               }
               case VTK_HEXAHEDRON:
               {
                 int hexMapping[6] = { 3, 1, 0, 2, 4, 5 };
                 sideSetSideList->InsertNextTuple1(hexMapping[sourceSide->GetValue(c)] + 1);
-                hexSides++;
                 break;
               }
               default:
               {
                 sideSetSideList->InsertNextTuple1(sourceSide->GetValue(c) + 1);
-                otherSides++;
                 break;
               }
             }
@@ -1641,7 +1617,7 @@ int vtkExodusIIWriter::CreateSetsMetadata(vtkModelMetadata* em)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::ParseMetadata()
 {
   vtkModelMetadata* em = this->GetModelMetadata();
@@ -1669,7 +1645,7 @@ int vtkExodusIIWriter::ParseMetadata()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteInitializationParameters()
 {
   vtkModelMetadata* em = this->GetModelMetadata();
@@ -1684,7 +1660,7 @@ int vtkExodusIIWriter::WriteInitializationParameters()
   return rc >= 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteInformationRecords()
 {
 
@@ -1706,7 +1682,7 @@ int vtkExodusIIWriter::WriteInformationRecords()
 
 template <typename T>
 int vtkExodusIIWriterWritePoints(
-  std::vector<vtkSmartPointer<vtkUnstructuredGrid> > input, int numPoints, int fid)
+  std::vector<vtkSmartPointer<vtkUnstructuredGrid>> input, int numPoints, int fid)
 {
   T* px = new T[numPoints];
   T* py = new T[numPoints];
@@ -1739,7 +1715,7 @@ int vtkExodusIIWriterWritePoints(
   return rc >= 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WritePoints()
 {
   if (this->PassDoubles)
@@ -1764,7 +1740,7 @@ int vtkExodusIIWriter::WriteCoordinateNames()
   return rc >= 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteGlobalPointIds()
 {
   if (!this->AtLeastOneGlobalNodeIdList)
@@ -1799,7 +1775,7 @@ int vtkExodusIIWriter::WriteGlobalPointIds()
   return rc >= 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteBlockInformation()
 {
   int rc;
@@ -1990,7 +1966,7 @@ int vtkExodusIIWriter::WriteBlockInformation()
       if (blockIter->second.NodesPerElement == 0)
       {
         rc = ex_put_entity_count_per_polyhedra(
-          this->fid, EX_ELEM_BLOCK, blockIter->first, &(blockIter->second.EntityCounts[0]));
+          this->fid, EX_ELEM_BLOCK, blockIter->first, blockIter->second.EntityCounts.data());
       }
     }
   }
@@ -2006,7 +1982,7 @@ int vtkExodusIIWriter::WriteBlockInformation()
   return !fail;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteGlobalElementIds()
 {
   int rc = 0;
@@ -2043,7 +2019,7 @@ int vtkExodusIIWriter::WriteGlobalElementIds()
   return rc >= 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteVariableArrayNames()
 {
   int rc = 0;
@@ -2198,7 +2174,7 @@ int vtkExodusIIWriter::WriteVariableArrayNames()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIWriter::ConvertVariableNames(std::map<std::string, VariableInfo>& variableMap)
 {
   std::map<std::string, VariableInfo>::iterator varIter;
@@ -2241,7 +2217,7 @@ char** vtkExodusIIWriter::FlattenOutVariableNames(
   return newNames;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkExodusIIWriter::CreateNameForScalarArray(
   const char* root, int component, int numComponents)
 {
@@ -2316,14 +2292,14 @@ std::string vtkExodusIIWriter::CreateNameForScalarArray(
   {
     std::string s(root);
     // assume largest for 32 bit decimal representation
-    char n[11];
+    char n[12];
     snprintf(n, sizeof(n), "%10d", component);
     s.append(n);
     return s;
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkExodusIIWriter::GetNodeLocalId(vtkIdType id)
 {
   if (!this->LocalNodeIdMap)
@@ -2361,9 +2337,9 @@ vtkIdType vtkExodusIIWriter::GetNodeLocalId(vtkIdType id)
   }
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Side sets and node sets
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteNodeSetInformation()
 {
   int rc = 0;
@@ -2476,7 +2452,7 @@ int vtkExodusIIWriter::WriteNodeSetInformation()
 
   for (i = 0; i < nnsets; i++)
   {
-    vtkStdString name = em->GetNodeSetNames()->GetValue(node_ids[i]);
+    std::string name = em->GetNodeSetNames()->GetValue(node_ids[i]);
     ex_put_name(this->fid, EX_NODE_SET, node_ids[i], name.c_str());
   }
 
@@ -2491,7 +2467,7 @@ int vtkExodusIIWriter::WriteNodeSetInformation()
   return (rc >= 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkExodusIIWriter::GetElementLocalId(vtkIdType id)
 {
   if (!this->LocalElementIdMap)
@@ -2558,7 +2534,7 @@ int vtkExodusIIWriter::GetElementType(vtkIdType id)
   return -1;
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteSideSetInformation()
 {
   int i, j, k;
@@ -2703,7 +2679,7 @@ int vtkExodusIIWriter::WriteSideSetInformation()
 
   for (i = 0; i < nssets; i++)
   {
-    vtkStdString name = em->GetSideSetNames()->GetValue(sids[i]);
+    std::string name = em->GetSideSetNames()->GetValue(sids[i]);
     ex_put_name(this->fid, EX_SIDE_SET, sids[i], name.c_str());
   }
 
@@ -2719,7 +2695,7 @@ int vtkExodusIIWriter::WriteSideSetInformation()
   return rc >= 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::BlockVariableTruthValue(int blockIdx, int varIdx)
 {
   int tt = 0;
@@ -2738,9 +2714,9 @@ int vtkExodusIIWriter::BlockVariableTruthValue(int blockIdx, int varIdx)
   return tt;
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Properties
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteProperties()
 {
   int rc = 0;
@@ -2844,7 +2820,7 @@ double vtkExodusIIWriterGetComponent(iterT* it, vtkIdType ind)
   return v.ToDouble();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkExodusIIWriter::ExtractGlobalData(const char* name, int comp, int ts)
 {
   double ret = 0.0;
@@ -2873,7 +2849,7 @@ double vtkExodusIIWriter::ExtractGlobalData(const char* name, int comp, int ts)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIWriter::ExtractCellData(const char* name, int comp, vtkDataArray* buffer)
 {
   buffer->SetNumberOfTuples(this->NumCells);
@@ -2921,7 +2897,7 @@ void vtkExodusIIWriter::ExtractCellData(const char* name, int comp, vtkDataArray
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIWriter::ExtractPointData(const char* name, int comp, vtkDataArray* buffer)
 {
   buffer->SetNumberOfTuples(this->NumPoints);
@@ -2955,7 +2931,7 @@ void vtkExodusIIWriter::ExtractPointData(const char* name, int comp, vtkDataArra
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteGlobalData(int timestep, vtkDataArray* buffer)
 {
   std::map<std::string, VariableInfo>::const_iterator varIter;
@@ -2995,7 +2971,7 @@ int vtkExodusIIWriter::WriteGlobalData(int timestep, vtkDataArray* buffer)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteCellData(int timestep, vtkDataArray* buffer)
 {
   std::map<std::string, VariableInfo>::const_iterator varIter;
@@ -3050,7 +3026,7 @@ int vtkExodusIIWriter::WriteCellData(int timestep, vtkDataArray* buffer)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WritePointData(int timestep, vtkDataArray* buffer)
 {
   if (this->NumPoints == 0)
@@ -3129,7 +3105,7 @@ unsigned int GetLongestDataSetName(vtkDataSet* ds)
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkExodusIIWriter::GetMaxNameLength()
 {
   unsigned int maxName = 32;
@@ -3168,7 +3144,7 @@ unsigned int vtkExodusIIWriter::GetMaxNameLength()
   return maxName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExodusIIWriter::WriteNextTimeStep()
 {
   int rc = 0;
@@ -3293,3 +3269,4 @@ vtkIntArray* vtkExodusIIWriter::GetBlockIdArray(const char* name, vtkUnstructure
   }
   return nullptr;
 }
+VTK_ABI_NAMESPACE_END

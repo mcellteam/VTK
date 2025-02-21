@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCameraActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCameraActor.h"
 
@@ -24,10 +12,11 @@
 #include "vtkPolyDataMapper.h"
 #include "vtkProperty.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCameraActor);
 vtkCxxSetObjectMacro(vtkCameraActor, Camera, vtkCamera);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCameraActor::vtkCameraActor()
 {
   this->Camera = nullptr;
@@ -37,7 +26,7 @@ vtkCameraActor::vtkCameraActor()
   this->FrustumActor = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCameraActor::~vtkCameraActor()
 {
   this->SetCamera(nullptr);
@@ -57,7 +46,7 @@ vtkCameraActor::~vtkCameraActor()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Support the standard render methods.
 int vtkCameraActor::RenderOpaqueGeometry(vtkViewport* viewport)
@@ -65,14 +54,15 @@ int vtkCameraActor::RenderOpaqueGeometry(vtkViewport* viewport)
   this->UpdateViewProps();
 
   int result = 0;
-  if (this->FrustumActor != nullptr && this->FrustumActor->GetMapper() != nullptr)
+  if (this->GetVisibility() && this->FrustumActor != nullptr &&
+    this->FrustumActor->GetMapper() != nullptr)
   {
     result = this->FrustumActor->RenderOpaqueGeometry(viewport);
   }
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry? No.
 vtkTypeBool vtkCameraActor::HasTranslucentPolygonalGeometry()
@@ -80,7 +70,7 @@ vtkTypeBool vtkCameraActor::HasTranslucentPolygonalGeometry()
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraActor::ReleaseGraphicsResources(vtkWindow* window)
 {
   if (this->FrustumActor != nullptr)
@@ -89,7 +79,7 @@ void vtkCameraActor::ReleaseGraphicsResources(vtkWindow* window)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the bounds for this Actor as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
 double* vtkCameraActor::GetBounds()
 {
@@ -97,7 +87,7 @@ double* vtkCameraActor::GetBounds()
   // vtkProp3D::GetLength() does not check if the Bounds are initialized or
   // not and makes a call to sqrt(). This call to sqrt with invalid values
   // would raise a floating-point overflow exception (notably on BCC).
-  // As vtkMath::UninitializeBounds initialized finite unvalid bounds, it
+  // As vtkMath::UninitializeBounds initialized finite invalid bounds, it
   // passes silently and GetLength() returns 0.
   vtkMath::UninitializeBounds(this->Bounds);
 
@@ -109,7 +99,7 @@ double* vtkCameraActor::GetBounds()
   return this->Bounds;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkCameraActor::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -125,7 +115,7 @@ vtkMTimeType vtkCameraActor::GetMTime()
   return mTime;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Get property of the internal actor.
 vtkProperty* vtkCameraActor::GetProperty()
@@ -138,7 +128,7 @@ vtkProperty* vtkCameraActor::GetProperty()
   return this->FrustumActor->GetProperty();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set property of the internal actor.
 void vtkCameraActor::SetProperty(vtkProperty* p)
@@ -151,7 +141,7 @@ void vtkCameraActor::SetProperty(vtkProperty* p)
   this->FrustumActor->SetProperty(p);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraActor::UpdateViewProps()
 {
   if (this->Camera == nullptr)
@@ -198,7 +188,7 @@ void vtkCameraActor::UpdateViewProps()
   this->FrustumActor->SetVisibility(1);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -215,3 +205,4 @@ void vtkCameraActor::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "WidthByHeightRatio: " << this->WidthByHeightRatio << endl;
 }
+VTK_ABI_NAMESPACE_END

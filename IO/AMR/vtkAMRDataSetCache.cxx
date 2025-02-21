@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRDataSetCache.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAMRDataSetCache.h"
 #include "vtkCellData.h"
@@ -22,6 +10,7 @@
 #include "vtkUniformGrid.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAMRDataSetCache);
 
 vtkAMRDataSetCache::vtkAMRDataSetCache() = default;
@@ -150,7 +139,7 @@ vtkDataArray* vtkAMRDataSetCache::GetAMRBlockPointData(int compositeIdx, const c
 }
 
 //------------------------------------------------------------------------------
-vtkUniformGrid* vtkAMRDataSetCache::GetAMRBlock(const int compositeIdx)
+vtkUniformGrid* vtkAMRDataSetCache::GetAMRBlock(int compositeIdx)
 {
   if (this->HasAMRBlock(compositeIdx))
   {
@@ -172,14 +161,7 @@ bool vtkAMRDataSetCache::HasAMRBlockCellData(int compositeIdx, const char* name)
     vtkCellData* CD = gridPtr->GetCellData();
     assert("pre: cell data is nullptr" && (CD != nullptr));
 
-    if (CD->HasArray(name))
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return CD->HasArray(name) != 0;
   }
   return false;
 }
@@ -197,14 +179,7 @@ bool vtkAMRDataSetCache::HasAMRBlockPointData(int compositeIdx, const char* name
     vtkPointData* PD = gridPtr->GetPointData();
     assert("pre: point data is nullptr" && (PD != nullptr));
 
-    if (PD->HasArray(name))
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return PD->HasArray(name) != 0;
   }
   return false;
 }
@@ -229,3 +204,4 @@ bool vtkAMRDataSetCache::HasAMRBlock(int compositeIdx)
   vtkTimerLog::MarkEndEvent("AMRCache::CheckIfBlockExists");
   return false;
 }
+VTK_ABI_NAMESPACE_END

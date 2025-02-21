@@ -1,30 +1,19 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageDecomposeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageDecomposeFilter.h"
 
 #include <cmath>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageDecomposeFilter filter.
+VTK_ABI_NAMESPACE_BEGIN
 vtkImageDecomposeFilter::vtkImageDecomposeFilter()
 {
   this->Dimensionality = 3;
   this->SetNumberOfIterations(3);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageDecomposeFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -32,7 +21,7 @@ void vtkImageDecomposeFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Dimensionality: " << this->Dimensionality << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageDecomposeFilter::SetDimensionality(int dim)
 {
   if (this->Dimensionality == dim)
@@ -51,7 +40,7 @@ void vtkImageDecomposeFilter::SetDimensionality(int dim)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageDecomposeFilter::PermuteIncrements(
   vtkIdType* increments, vtkIdType& inc0, vtkIdType& inc1, vtkIdType& inc2)
 {
@@ -75,7 +64,7 @@ void vtkImageDecomposeFilter::PermuteIncrements(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageDecomposeFilter::PermuteExtent(
   int* extent, int& min0, int& max0, int& min1, int& max1, int& min2, int& max2)
 {
@@ -107,3 +96,4 @@ void vtkImageDecomposeFilter::PermuteExtent(
       break;
   }
 }
+VTK_ABI_NAMESPACE_END

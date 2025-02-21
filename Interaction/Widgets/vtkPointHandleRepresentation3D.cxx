@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointHandleRepresentation3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPointHandleRepresentation3D.h"
 #include "vtkActor.h"
 #include "vtkAssemblyPath.h"
@@ -24,6 +12,7 @@
 #include "vtkInteractorObserver.h"
 #include "vtkLine.h"
 #include "vtkMath.h"
+#include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
 #include "vtkPickingManager.h"
 #include "vtkPolyDataMapper.h"
@@ -32,14 +21,59 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
 
-#include <assert.h>
+#include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPointHandleRepresentation3D);
 
 vtkCxxSetObjectMacro(vtkPointHandleRepresentation3D, Property, vtkProperty);
 vtkCxxSetObjectMacro(vtkPointHandleRepresentation3D, SelectedProperty, vtkProperty);
 
-//----------------------------------------------------------------------
+namespace
+{
+constexpr double epsilon = 1e-9;
+
+/**
+ * Checks if any component of the given point is close to zero but not exactly zero.
+ *
+ * @sa ProjectPointOntoCameraOrientationAxis()
+ */
+bool HasNearZeroValues(const double point[3])
+{
+  for (unsigned int idx = 0; idx < 3; ++idx)
+  {
+    if (point[idx] != 0.0 && std::abs(point[idx]) < epsilon)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * This function projects a point onto a plane that is defined by the camera's
+ * orientation axis and a reference point within that plane.
+ * This is used to rectify a matrix calculation uncertainty given by ComputeDisplayToWorld
+ * where the computed result is very close to zero (approximately on the order of 1e-12)
+ * but not exactly zero, as it should be.
+ */
+void ProjectPointOntoCameraOrientationAxis(
+  double projectedPoint[3], const double referencePoint[3], vtkCamera* camera)
+{
+  vtkVector3d referenceVector(referencePoint);
+  vtkVector3d projectedVector(projectedPoint);
+  vtkMatrix4x4* viewMatrix = camera->GetViewTransformMatrix();
+  vtkVector3d cameraAxis(
+    viewMatrix->GetElement(2, 0), viewMatrix->GetElement(2, 1), viewMatrix->GetElement(2, 2));
+  double projection = (projectedVector - referenceVector).Dot(cameraAxis);
+  vtkVector3d adjustedResult = projectedVector - (cameraAxis * projection);
+  projectedPoint[0] = adjustedResult[0];
+  projectedPoint[1] = adjustedResult[1];
+  projectedPoint[2] = adjustedResult[2];
+}
+}
+
+//------------------------------------------------------------------------------
 vtkPointHandleRepresentation3D::vtkPointHandleRepresentation3D()
 {
   // Initialize state
@@ -90,7 +124,7 @@ vtkPointHandleRepresentation3D::vtkPointHandleRepresentation3D()
   this->SmoothMotion = 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointHandleRepresentation3D::~vtkPointHandleRepresentation3D()
 {
   this->Cursor3D->Delete();
@@ -101,7 +135,7 @@ vtkPointHandleRepresentation3D::~vtkPointHandleRepresentation3D()
   this->SelectedProperty->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::RegisterPickers()
 {
   vtkPickingManager* pm = this->GetPickingManager();
@@ -112,7 +146,7 @@ void vtkPointHandleRepresentation3D::RegisterPickers()
   pm->AddPicker(this->CursorPicker, this);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::PlaceWidget(double bds[6])
 {
   int i;
@@ -132,13 +166,13 @@ void vtkPointHandleRepresentation3D::PlaceWidget(double bds[6])
     (bounds[5] - bounds[4]) * (bounds[5] - bounds[4]));
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkPointHandleRepresentation3D::GetBounds()
 {
   return this->Cursor3D->GetModelBounds();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::SetWorldPosition(double p[3])
 {
   if (this->Renderer && this->PointPlacer)
@@ -158,7 +192,7 @@ void vtkPointHandleRepresentation3D::SetWorldPosition(double p[3])
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::SetDisplayPosition(double p[3])
 {
   if (this->Renderer && this->PointPlacer)
@@ -182,14 +216,14 @@ void vtkPointHandleRepresentation3D::SetDisplayPosition(double p[3])
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::SetHandleSize(double size)
 {
   this->Superclass::SetHandleSize(size);
   this->CurrentHandleSize = this->HandleSize;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointHandleRepresentation3D ::ComputeInteractionState(int X, int Y, int vtkNotUsed(modify))
 {
   this->VisibilityOn(); // actor must be on to be picked
@@ -225,7 +259,7 @@ int vtkPointHandleRepresentation3D ::ComputeInteractionState(int X, int Y, int v
   return this->InteractionState;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointHandleRepresentation3D::ComputeComplexInteractionState(
   vtkRenderWindowInteractor*, vtkAbstractWidget*, unsigned long, void* calldata, int)
 {
@@ -260,7 +294,7 @@ int vtkPointHandleRepresentation3D::ComputeComplexInteractionState(
   return this->InteractionState;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointHandleRepresentation3D::DetermineConstraintAxis(
   int constraint, double* x, double* startPickPoint)
 {
@@ -309,7 +343,7 @@ int vtkPointHandleRepresentation3D::DetermineConstraintAxis(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Record the current event position, and the translation state
 void vtkPointHandleRepresentation3D::StartWidgetInteraction(double startEventPos[2])
 {
@@ -342,7 +376,7 @@ void vtkPointHandleRepresentation3D::StartWidgetInteraction(double startEventPos
   this->WaitCount = 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::StartComplexInteraction(
   vtkRenderWindowInteractor*, vtkAbstractWidget*, unsigned long, void* calldata)
 {
@@ -378,7 +412,7 @@ void vtkPointHandleRepresentation3D::StartComplexInteraction(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Based on the displacement vector (computed in display coordinates) and
 // the cursor state (which corresponds to which part of the widget has been
 // selected), the widget points are modified.
@@ -506,22 +540,11 @@ void vtkPointHandleRepresentation3D::WidgetInteraction(double eventPos[2])
           if (this->PointPlacer->ComputeWorldPosition(
                 this->Renderer, newCenterPointRequested, newCenterPoint, worldOrient))
           {
-
-            // Once the placer has validated us, update the handle
-            // position and its bounds.
-            double* p = this->GetWorldPosition();
-
-            // Get the motion vector
-            double v[3] = { newCenterPoint[0] - p[0], newCenterPoint[1] - p[1],
-              newCenterPoint[2] - p[2] };
-            double *bounds = this->Cursor3D->GetModelBounds(), newBounds[6];
-            for (int i = 0; i < 3; i++)
+            if (::HasNearZeroValues(newCenterPoint))
             {
-              newBounds[2 * i] = bounds[2 * i] + v[i];
-              newBounds[2 * i + 1] = bounds[2 * i + 1] + v[i];
+              ::ProjectPointOntoCameraOrientationAxis(
+                newCenterPoint, this->LastPickPosition, this->Renderer->GetActiveCamera());
             }
-
-            this->Cursor3D->SetModelBounds(newBounds);
             this->SetWorldPosition(newCenterPoint);
           }
         }
@@ -586,7 +609,7 @@ void vtkPointHandleRepresentation3D::ComplexInteraction(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D ::MoveFocusRequest(
   const double* p1, const double* p2, const double eventPos[2], double center[3])
 {
@@ -615,13 +638,13 @@ void vtkPointHandleRepresentation3D ::MoveFocusRequest(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::MoveFocus(const double* p1, const double* p2)
 {
   this->Translate(p1, p2);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::SetTranslationMode(vtkTypeBool mode)
 {
   if (this->TranslationMode != mode)
@@ -634,22 +657,21 @@ void vtkPointHandleRepresentation3D::SetTranslationMode(vtkTypeBool mode)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Translate everything
 void vtkPointHandleRepresentation3D::Translate(const double* p1, const double* p2)
 {
   double v[3] = { 0, 0, 0 };
-  vtkHandleRepresentation::Translate(p1, p2);
   this->GetTranslationVector(p1, p2, v);
+  this->vtkHandleRepresentation::Translate(v);
 
   double* bounds = this->Cursor3D->GetModelBounds();
   double* pos = this->Cursor3D->GetFocalPoint();
   double newBounds[6], newFocus[3];
-  int i;
 
   if (this->ConstraintAxis >= 0)
-  { // move along axis
-    for (i = 0; i < 3; i++)
+  {
+    for (int i = 0; i < 3; i++)
     {
       if (i != this->ConstraintAxis)
       {
@@ -658,7 +680,7 @@ void vtkPointHandleRepresentation3D::Translate(const double* p1, const double* p
     }
   }
 
-  for (i = 0; i < 3; i++)
+  for (int i = 0; i < 3; i++)
   {
     newBounds[2 * i] = bounds[2 * i] + v[i];
     newBounds[2 * i + 1] = bounds[2 * i + 1] + v[i];
@@ -669,7 +691,7 @@ void vtkPointHandleRepresentation3D::Translate(const double* p1, const double* p
   this->Cursor3D->SetFocalPoint(newFocus);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::SizeBounds()
 {
   // Only change the size of the bounding box if translation mode is on.
@@ -689,7 +711,7 @@ void vtkPointHandleRepresentation3D::SizeBounds()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::Scale(
   const double* p1, const double* p2, const double eventPos[2])
 {
@@ -722,7 +744,7 @@ void vtkPointHandleRepresentation3D::Scale(
   this->SizeBounds();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::Highlight(int highlight)
 {
   if (highlight)
@@ -735,21 +757,33 @@ void vtkPointHandleRepresentation3D::Highlight(int highlight)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::CreateDefaultProperties()
 {
   this->Property = vtkProperty::New();
   this->Property->SetAmbient(1.0);
-  this->Property->SetAmbientColor(1.0, 1.0, 1.0);
+  this->Property->SetColor(1.0, 1.0, 1.0);
   this->Property->SetLineWidth(0.5);
 
   this->SelectedProperty = vtkProperty::New();
   this->SelectedProperty->SetAmbient(1.0);
-  this->SelectedProperty->SetAmbientColor(0.0, 1.0, 0.0);
+  this->SelectedProperty->SetColor(0.0, 1.0, 0.0);
   this->SelectedProperty->SetLineWidth(2.0);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkPointHandleRepresentation3D::SetInteractionColor(double r, double g, double b)
+{
+  this->SelectedProperty->SetColor(r, g, b);
+}
+
+//------------------------------------------------------------------------------
+void vtkPointHandleRepresentation3D::SetForegroundColor(double r, double g, double b)
+{
+  this->Property->SetColor(r, g, b);
+}
+
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::SetVisibility(vtkTypeBool visible)
 {
   this->Actor->SetVisibility(visible);
@@ -757,7 +791,7 @@ void vtkPointHandleRepresentation3D::SetVisibility(vtkTypeBool visible)
   this->Superclass::SetVisibility(visible);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::BuildRepresentation()
 {
   // The net effect is to resize the handle
@@ -777,7 +811,7 @@ void vtkPointHandleRepresentation3D::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::ShallowCopy(vtkProp* prop)
 {
   vtkPointHandleRepresentation3D* rep = vtkPointHandleRepresentation3D::SafeDownCast(prop);
@@ -796,7 +830,7 @@ void vtkPointHandleRepresentation3D::ShallowCopy(vtkProp* prop)
   this->Superclass::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::DeepCopy(vtkProp* prop)
 {
   vtkPointHandleRepresentation3D* rep = vtkPointHandleRepresentation3D::SafeDownCast(prop);
@@ -815,19 +849,24 @@ void vtkPointHandleRepresentation3D::DeepCopy(vtkProp* prop)
   this->Superclass::DeepCopy(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::GetActors(vtkPropCollection* pc)
 {
-  this->Actor->GetActors(pc);
+  if (!pc)
+  {
+    return;
+  }
+  pc->AddItem(this->Actor);
+  this->Superclass::GetActors(pc);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::ReleaseGraphicsResources(vtkWindow* win)
 {
   this->Actor->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointHandleRepresentation3D::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   this->BuildRepresentation();
@@ -843,7 +882,7 @@ int vtkPointHandleRepresentation3D::RenderOpaqueGeometry(vtkViewport* viewport)
   return this->Actor->RenderOpaqueGeometry(viewport);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointHandleRepresentation3D::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
 {
   this->BuildRepresentation();
@@ -858,14 +897,14 @@ int vtkPointHandleRepresentation3D::RenderTranslucentPolygonalGeometry(vtkViewpo
 
   return this->Actor->RenderTranslucentPolygonalGeometry(viewport);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkPointHandleRepresentation3D::HasTranslucentPolygonalGeometry()
 {
   this->BuildRepresentation();
   return this->Actor->HasTranslucentPolygonalGeometry();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointHandleRepresentation3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -897,3 +936,4 @@ void vtkPointHandleRepresentation3D::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Translation Mode: " << (this->TranslationMode ? "On\n" : "Off\n");
   os << indent << "SmoothMotion: " << this->SmoothMotion << endl;
 }
+VTK_ABI_NAMESPACE_END

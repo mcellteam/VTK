@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperStreamline.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperStreamline
  * @brief   generate hyperstreamline in arbitrary dataset
@@ -59,6 +47,7 @@
 #define VTK_INTEGRATE_MEDIUM_EIGENVECTOR 1
 #define VTK_INTEGRATE_MINOR_EIGENVECTOR 2
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHyperArray;
 
 class VTKFILTERSGENERAL_EXPORT vtkHyperStreamline : public vtkPolyDataAlgorithm
@@ -112,16 +101,16 @@ public:
    */
   double* GetStartPosition() VTK_SIZEHINT(3);
 
-  //@{
+  ///@{
   /**
    * Set / get the maximum length of the hyperstreamline expressed as absolute
    * distance (i.e., arc length) value.
    */
   vtkSetClampMacro(MaximumPropagationDistance, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(MaximumPropagationDistance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get the eigenvector field through which to ingrate. It is
    * possible to integrate using the major, medium or minor
@@ -147,7 +136,7 @@ public:
   {
     this->SetIntegrationEigenvector(VTK_INTEGRATE_MINOR_EIGENVECTOR);
   }
-  //@}
+  ///@}
 
   /**
    * Use the major eigenvector field as the vector field through which
@@ -171,16 +160,16 @@ public:
    */
   void IntegrateMinorEigenvector() { this->SetIntegrationEigenvectorToMinor(); }
 
-  //@{
+  ///@{
   /**
    * Set / get a nominal integration step size (expressed as a fraction of
    * the size of each cell).
    */
   vtkSetClampMacro(IntegrationStepLength, double, 0.001, 0.5);
   vtkGetMacro(IntegrationStepLength, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get the length of a tube segment composing the
    * hyperstreamline. The length is specified as a fraction of the
@@ -188,9 +177,9 @@ public:
    */
   vtkSetClampMacro(StepLength, double, 0.000001, 1.0);
   vtkGetMacro(StepLength, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the direction in which to integrate the hyperstreamline.
    */
@@ -205,27 +194,27 @@ public:
   {
     this->SetIntegrationDirection(VTK_INTEGRATE_BOTH_DIRECTIONS);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get terminal eigenvalue.  If major eigenvalue falls below this
    * value, hyperstreamline terminates propagation.
    */
   vtkSetClampMacro(TerminalEigenvalue, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(TerminalEigenvalue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get the number of sides for the hyperstreamlines. At a minimum,
    * number of sides is 3.
    */
   vtkSetClampMacro(NumberOfSides, int, 3, VTK_INT_MAX);
   vtkGetMacro(NumberOfSides, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get the initial tube radius. This is the maximum "elliptical"
    * radius at the beginning of the tube. Radius varies based on ratio of
@@ -234,9 +223,9 @@ public:
    */
   vtkSetClampMacro(Radius, double, 0.0001, VTK_DOUBLE_MAX);
   vtkGetMacro(Radius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off logarithmic scaling. If scaling is on, the log base 10
    * of the computed eigenvalues are used to scale the cross section radii.
@@ -244,7 +233,7 @@ public:
   vtkSetMacro(LogScaling, vtkTypeBool);
   vtkGetMacro(LogScaling, vtkTypeBool);
   vtkBooleanMacro(LogScaling, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkHyperStreamline();
@@ -303,4 +292,5 @@ private:
   void operator=(const vtkHyperStreamline&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

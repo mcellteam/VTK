@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TreeLayout.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 //
 // This example shows how to create a simple tree view from an XML file.
 // You may specify the label array and color array from the command line.
@@ -114,9 +102,7 @@ int main(int argc, char* argv[])
   double colorRange[2] = { 0, 1 };
   if (colorArray)
   {
-    vtkDataArray* color =
-      vtkArrayDownCast<vtkDataArray>(tree->GetVertexData()->GetAbstractArray(colorArray));
-    color->GetRange(colorRange);
+    tree->GetVertexData()->GetRange(colorArray, colorRange);
   }
 
   // Layout the tree using vtkGraphLayout.

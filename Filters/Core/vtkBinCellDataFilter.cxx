@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBinCellDataFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBinCellDataFilter.h"
 
 #include "vtkAbstractCellLocator.h"
@@ -33,16 +21,17 @@
 #include <map>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBinCellDataFilter);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for speeding the search process. By
 // default an instance of vtkStaticCellLocator is used.
 vtkCxxSetObjectMacro(vtkBinCellDataFilter, CellLocator, vtkAbstractCellLocator);
 
 #define CELL_TOLERANCE_FACTOR_SQR 1e-6
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 typedef std::map<vtkIdType, vtkIdType> IdMap;
@@ -75,7 +64,7 @@ int GetBinId(double value, double* binValues, int nBins)
 }
 } // namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBinCellDataFilter::vtkBinCellDataFilter()
 {
   this->BinValues = vtkBinValues::New();
@@ -100,7 +89,7 @@ vtkBinCellDataFilter::vtkBinCellDataFilter()
     0, 1, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBinCellDataFilter::~vtkBinCellDataFilter()
 {
   this->BinValues->Delete();
@@ -108,19 +97,19 @@ vtkBinCellDataFilter::~vtkBinCellDataFilter()
   this->SetNumberOfNonzeroBinsArrayName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBinCellDataFilter::SetSourceConnection(vtkAlgorithmOutput* algOutput)
 {
   this->SetInputConnection(1, algOutput);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBinCellDataFilter::SetSourceData(vtkDataObject* input)
 {
   this->SetInputData(1, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkBinCellDataFilter::GetSource()
 {
   if (this->GetNumberOfInputConnections(1) < 1)
@@ -131,7 +120,7 @@ vtkDataObject* vtkBinCellDataFilter::GetSource()
   return this->GetExecutive()->GetInputData(1, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBinCellDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -199,9 +188,16 @@ int vtkBinCellDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkCellIterator* srcIt = source->NewCellIterator();
   double pcoords[3], coords[3];
   int subId;
+  vtkIdType checkAbortCounter = 0;
+  vtkIdType checkAbortInterval = std::min(source->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
   // iterate over each cell in the source mesh
   for (srcIt->InitTraversal(); !srcIt->IsDoneWithTraversal(); srcIt->GoToNextCell())
   {
+    if (checkAbortCounter % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
+    checkAbortCounter++;
     if (this->CellOverlapMethod == vtkBinCellDataFilter::CELL_CENTROID)
     {
       // identify the centroid of the source cell
@@ -276,7 +272,7 @@ int vtkBinCellDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBinCellDataFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -307,7 +303,7 @@ int vtkBinCellDataFilter::RequestInformation(vtkInformation* vtkNotUsed(request)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBinCellDataFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -380,10 +376,13 @@ int vtkBinCellDataFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request
       outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()), 6);
   }
 
+#if !VTK_USE_FUTURE_BOOL
   // Use the whole input in all processes, and use the requested update
   // extent of the output to divide up the source.
   if (this->SpatialMatch == 2)
   {
+    vtkErrorMacro("SpatialMatch should be boolean, don't pass other than 0 or 1.");
+
     inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), 0);
     inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(), 1);
     inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(), 0);
@@ -394,10 +393,12 @@ int vtkBinCellDataFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request
     sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
       outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
   }
+#endif
+
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Method manages creation of locators.
 void vtkBinCellDataFilter::CreateDefaultLocator()
 {
@@ -405,7 +406,7 @@ void vtkBinCellDataFilter::CreateDefaultLocator()
   this->CellLocator = vtkStaticCellLocator::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBinCellDataFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   vtkDataObject* source = this->GetSource();
@@ -427,3 +428,4 @@ void vtkBinCellDataFilter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Cell Locator: " << this->CellLocator << "\n";
 }
+VTK_ABI_NAMESPACE_END

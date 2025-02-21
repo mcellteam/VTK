@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGenericDataSetTessellator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This example demonstrates how to implement a vtkGenericDataSet
 // (here vtkBridgeDataSet) and to use vtkGenericDataSetTessellator filter on
 // it.
@@ -60,8 +48,8 @@
 #endif // #ifdef WRITE_GENERIC_RESULT
 
 // debugging when clipping on n=(1,1,1) c=(0.5,0,0)
-//#include "vtkExtractGeometry.h"
-//#include "vtkSphere.h"
+// #include "vtkExtractGeometry.h"
+// #include "vtkSphere.h"
 
 // Remark about the lookup tables that seem different between the
 // GenericGeometryFilter and GenericDataSetTessellator:

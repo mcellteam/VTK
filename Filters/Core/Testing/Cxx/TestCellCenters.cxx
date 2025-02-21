@@ -1,18 +1,10 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    TestCellCenters.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
+#include "vtkCellData.h"
+#include "vtkDataSetAttributes.h"
+#include "vtkPointData.h"
+#include "vtkUnsignedCharArray.h"
 #include <vtkCellCenters.h>
 #include <vtkCellTypeSource.h>
 #include <vtkEmptyCell.h>
@@ -121,28 +113,46 @@ int TestCellCenters(int, char*[])
   points->InsertNextPoint(3, 2, 1);
   points->InsertNextPoint(1, 3, 1);
 
+  vtkNew<vtkUnsignedCharArray> ghostCells;
+  ghostCells->SetName(vtkDataSetAttributes::GhostArrayName());
+
   vtkNew<vtkUnstructuredGrid> ugrid;
   ugrid->Allocate(20);
   ugrid->SetPoints(points);
   ugrid->InsertNextCell(
     emptyCell->GetCellType(), emptyCell->GetNumberOfPoints(), emptyCell->GetPointIds()->begin());
+  ghostCells->InsertNextValue(0);
   ugrid->InsertNextCell(
     emptyCell->GetCellType(), emptyCell->GetNumberOfPoints(), emptyCell->GetPointIds()->begin());
+  ghostCells->InsertNextValue(0);
   ugrid->InsertNextCell(
     tetra->GetCellType(), tetra->GetNumberOfPoints(), tetra->GetPointIds()->begin());
+  ghostCells->InsertNextValue(0);
   ugrid->InsertNextCell(
     emptyCell->GetCellType(), emptyCell->GetNumberOfPoints(), emptyCell->GetPointIds()->begin());
+  ghostCells->InsertNextValue(0);
   ugrid->InsertNextCell(
     pyramid->GetCellType(), pyramid->GetNumberOfPoints(), pyramid->GetPointIds()->begin());
+  ghostCells->InsertNextValue(0);
   ugrid->InsertNextCell(
     emptyCell->GetCellType(), emptyCell->GetNumberOfPoints(), emptyCell->GetPointIds()->begin());
+  ghostCells->InsertNextValue(0);
+  ugrid->InsertNextCell(
+    pyramid->GetCellType(), pyramid->GetNumberOfPoints(), pyramid->GetPointIds()->begin());
+  ghostCells->InsertNextValue(
+    vtkDataSetAttributes::DUPLICATECELL | vtkDataSetAttributes::REFINEDCELL);
+  ugrid->InsertNextCell(
+    pyramid->GetCellType(), pyramid->GetNumberOfPoints(), pyramid->GetPointIds()->begin());
+  ghostCells->InsertNextValue(vtkDataSetAttributes::HIDDENCELL);
+
+  ugrid->GetCellData()->AddArray(ghostCells);
 
   cellCenters->SetInputData(ugrid);
   cellCenters->Update();
 
   vtkPointSet* pointSet = cellCenters->GetOutput();
 
-  if (pointSet->GetNumberOfPoints() != 2)
+  if (pointSet->GetNumberOfPoints() != 4)
   {
     std::cerr << "Empty cells were not ignored in the output" << std::endl;
     return EXIT_FAILURE;
@@ -158,6 +168,22 @@ int TestCellCenters(int, char*[])
       std::cerr << "Non-empty cells should not have coordinates of 0.0" << std::endl;
       return EXIT_FAILURE;
     }
+  }
+
+  vtkUnsignedCharArray* outputGhostPoints = pointSet->GetPointData()->GetGhostArray();
+  if (!outputGhostPoints)
+  {
+    std::cerr << "There should be a ghost point array in the output" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  if (outputGhostPoints->GetValue(0) || outputGhostPoints->GetValue(1) ||
+    outputGhostPoints->GetValue(2) !=
+      (vtkDataSetAttributes::DUPLICATEPOINT | vtkDataSetAttributes::HIDDENPOINT) ||
+    outputGhostPoints->GetValue(3) != vtkDataSetAttributes::HIDDENPOINT)
+  {
+    std::cerr << "Ghost point tagging wrong in the output" << std::endl;
+    return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;

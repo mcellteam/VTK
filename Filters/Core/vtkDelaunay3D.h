@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDelaunay3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDelaunay3D
  * @brief   create 3D Delaunay triangulation of input points
@@ -97,6 +85,7 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 class vtkPointLocator;
 class vtkPointSet;
@@ -116,7 +105,7 @@ public:
    */
   static vtkDelaunay3D* New();
 
-  //@{
+  ///@{
   /**
    * Specify alpha (or distance) value to control output of this filter.  For
    * a non-zero alpha value, only verts, edges, faces, or tetra contained
@@ -128,45 +117,45 @@ public:
    */
   vtkSetClampMacro(Alpha, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Alpha, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether tetrahedra are output for non-zero alpha values.
    */
   vtkSetMacro(AlphaTets, vtkTypeBool);
   vtkGetMacro(AlphaTets, vtkTypeBool);
   vtkBooleanMacro(AlphaTets, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether triangles are output for non-zero alpha values.
    */
   vtkSetMacro(AlphaTris, vtkTypeBool);
   vtkGetMacro(AlphaTris, vtkTypeBool);
   vtkBooleanMacro(AlphaTris, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether lines are output for non-zero alpha values.
    */
   vtkSetMacro(AlphaLines, vtkTypeBool);
   vtkGetMacro(AlphaLines, vtkTypeBool);
   vtkBooleanMacro(AlphaLines, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether vertices are output for non-zero alpha values.
    */
   vtkSetMacro(AlphaVerts, vtkTypeBool);
   vtkGetMacro(AlphaVerts, vtkTypeBool);
   vtkBooleanMacro(AlphaVerts, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a tolerance to control discarding of closely spaced points.
    * This tolerance is specified as a fraction of the diagonal length of
@@ -174,18 +163,18 @@ public:
    */
   vtkSetClampMacro(Tolerance, double, 0.0, 1.0);
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a multiplier to control the size of the initial, bounding
    * Delaunay triangulation.
    */
   vtkSetClampMacro(Offset, double, 2.5, VTK_DOUBLE_MAX);
   vtkGetMacro(Offset, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether bounding triangulation points (and associated
    * triangles) are included in the output. (These are introduced as an
@@ -195,16 +184,16 @@ public:
   vtkSetMacro(BoundingTriangulation, vtkTypeBool);
   vtkGetMacro(BoundingTriangulation, vtkTypeBool);
   vtkBooleanMacro(BoundingTriangulation, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get a spatial locator for merging points. By default,
    * an instance of vtkPointLocator is used.
    */
   void SetLocator(vtkIncrementalPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
-  //@}
+  ///@}
 
   /**
    * Create default locator. Used to create one when none is specified. The
@@ -253,7 +242,7 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -261,7 +250,7 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkDelaunay3D();
@@ -302,9 +291,9 @@ private:                    // members added for performance
   vtkIdList* Faces;         // used in InsertPoint
   vtkIdList* CheckedTetras; // used by InsertPoint
 
-private:
   vtkDelaunay3D(const vtkDelaunay3D&) = delete;
   void operator=(const vtkDelaunay3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

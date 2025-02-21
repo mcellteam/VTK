@@ -1,24 +1,19 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBitArray.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBitArray.h"
 
 #include "vtkBitArrayIterator.h"
 #include "vtkIdList.h"
 #include "vtkObjectFactory.h"
 
-//----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+namespace
+{
+constexpr unsigned char InitializationMaskForUnusedBitsOfLastByte[8] = { 0x80, 0xc0, 0xe0, 0xf0,
+  0xf8, 0xfc, 0xfe, 0xff };
+} // anonymous namespace
+
+//------------------------------------------------------------------------------
 class vtkBitArrayLookup
 {
 public:
@@ -48,7 +43,7 @@ public:
 
 vtkStandardNewMacro(vtkBitArray);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object.
 vtkBitArray::vtkBitArray()
 {
@@ -59,7 +54,7 @@ vtkBitArray::vtkBitArray()
   this->Lookup = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBitArray::~vtkBitArray()
 {
   if (this->DeleteFunction)
@@ -70,7 +65,15 @@ vtkBitArray::~vtkBitArray()
   delete this->Lookup;
 }
 
-//----------------------------------------------------------------------------
+void vtkBitArray::InitializeUnusedBitsInLastByte()
+{
+  if (this->MaxId > -1)
+  {
+    this->Array[this->MaxId / 8] &= InitializationMaskForUnusedBitsOfLastByte[this->MaxId % 8];
+  }
+}
+
+//------------------------------------------------------------------------------
 unsigned char* vtkBitArray::WritePointer(vtkIdType id, vtkIdType number)
 {
   vtkIdType newSize = id + number;
@@ -81,12 +84,13 @@ unsigned char* vtkBitArray::WritePointer(vtkIdType id, vtkIdType number)
   if ((--newSize) > this->MaxId)
   {
     this->MaxId = newSize;
+    this->InitializeUnusedBitsInLastByte();
   }
   this->DataChanged();
   return this->Array + id / 8;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method lets the user specify data to be held by the array.  The
 // array argument is a pointer to the data.  size is the size of
 // the array supplied by the user.  Set save to 1 to keep the class
@@ -95,7 +99,6 @@ unsigned char* vtkBitArray::WritePointer(vtkIdType id, vtkIdType number)
 // from the supplied array.
 void vtkBitArray::SetArray(unsigned char* array, vtkIdType size, int save, int deleteMethod)
 {
-
   if ((this->Array) && (this->DeleteFunction))
   {
     vtkDebugMacro(<< "Deleting the array...");
@@ -111,6 +114,7 @@ void vtkBitArray::SetArray(unsigned char* array, vtkIdType size, int save, int d
   this->Array = array;
   this->Size = size;
   this->MaxId = size - 1;
+  this->InitializeUnusedBitsInLastByte();
 
   if (save != 0)
   {
@@ -136,24 +140,20 @@ void vtkBitArray::SetArray(unsigned char* array, vtkIdType size, int save, int d
   this->DataChanged();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::SetArrayFreeFunction(void (*callback)(void*))
 {
   this->DeleteFunction = callback;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the data at a particular index.
 int vtkBitArray::GetValue(vtkIdType id) const
 {
-  if (this->Array[id / 8] & (0x80 >> (id % 8)))
-  {
-    return 1;
-  }
-  return 0;
+  return (this->Array[id / 8] & (0x80 >> (id % 8))) != 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Allocate memory for this array. Delete old storage only if necessary.
 vtkTypeBool vtkBitArray::Allocate(vtkIdType sz, vtkIdType vtkNotUsed(ext))
 {
@@ -177,7 +177,7 @@ vtkTypeBool vtkBitArray::Allocate(vtkIdType sz, vtkIdType vtkNotUsed(ext))
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release storage and reset array to initial state.
 void vtkBitArray::Initialize()
 {
@@ -192,7 +192,7 @@ void vtkBitArray::Initialize()
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Deep copy of another bit array.
 void vtkBitArray::DeepCopy(vtkDataArray* ia)
 {
@@ -235,7 +235,7 @@ void vtkBitArray::DeepCopy(vtkDataArray* ia)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -250,7 +250,7 @@ void vtkBitArray::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Private function does "reallocate". Sz is the number of "bits", and we
 // can allocate only 8-bit bytes.
 unsigned char* vtkBitArray::ResizeAndExtend(vtkIdType sz)
@@ -294,19 +294,20 @@ unsigned char* vtkBitArray::ResizeAndExtend(vtkIdType sz)
     }
   }
 
+  this->Array = newArray;
   if (newSize < this->Size)
   {
     this->MaxId = newSize - 1;
+    this->InitializeUnusedBitsInLastByte();
   }
   this->Size = newSize;
-  this->Array = newArray;
   this->DeleteFunction = ::operator delete[];
   this->DataChanged();
 
   return this->Array;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkBitArray::Resize(vtkIdType sz)
 {
   unsigned char* newArray;
@@ -340,26 +341,38 @@ vtkTypeBool vtkBitArray::Resize(vtkIdType sz)
     }
   }
 
+  this->Array = newArray;
   if (newSize < this->Size)
   {
     this->MaxId = newSize - 1;
+    this->InitializeUnusedBitsInLastByte();
   }
   this->Size = newSize;
-  this->Array = newArray;
   this->DeleteFunction = ::operator delete[];
   this->DataChanged();
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the number of n-tuples in the array.
 void vtkBitArray::SetNumberOfTuples(vtkIdType number)
 {
   this->SetNumberOfValues(number * this->NumberOfComponents);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+bool vtkBitArray::SetNumberOfValues(vtkIdType number)
+{
+  if (!this->Superclass::SetNumberOfValues(number))
+  {
+    return false;
+  }
+  this->InitializeUnusedBitsInLastByte();
+  return true;
+}
+
+//------------------------------------------------------------------------------
 // Description:
 // Set the tuple at the ith location using the jth tuple in the source array.
 // This method assumes that the two arrays have the same type
@@ -383,7 +396,7 @@ void vtkBitArray::SetTuple(vtkIdType i, vtkIdType j, vtkAbstractArray* source)
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Insert the jth tuple in the source array, at ith location in this array.
 // Note that memory allocation is performed as necessary to hold the data.
@@ -398,14 +411,54 @@ void vtkBitArray::InsertTuple(vtkIdType i, vtkIdType j, vtkAbstractArray* source
 
   vtkIdType loci = i * this->NumberOfComponents;
   vtkIdType locj = j * ba->GetNumberOfComponents();
+  vtkIdType previousMaxId = this->MaxId;
   for (vtkIdType cur = 0; cur < this->NumberOfComponents; cur++)
   {
     this->InsertValue(loci + cur, ba->GetValue(locj + cur));
   }
+  if (previousMaxId / 8 != this->MaxId / 8)
+  {
+    this->InitializeUnusedBitsInLastByte();
+  }
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkBitArray::InsertTuplesStartingAt(
+  vtkIdType dstStart, vtkIdList* srcIds, vtkAbstractArray* source)
+{
+  vtkBitArray* ba = vtkArrayDownCast<vtkBitArray>(source);
+  if (!ba)
+  {
+    vtkWarningMacro("Input and output arrays types do not match.");
+    return;
+  }
+
+  if (ba->NumberOfComponents != this->NumberOfComponents)
+  {
+    vtkWarningMacro("Number of components do not match.");
+    return;
+  }
+
+  vtkIdType previousMaxId = this->MaxId;
+  for (vtkIdType idIndex = 0; idIndex < srcIds->GetNumberOfIds(); ++idIndex)
+  {
+    vtkIdType numComp = this->NumberOfComponents;
+    vtkIdType srcLoc = srcIds->GetId(idIndex) * this->NumberOfComponents;
+    vtkIdType dstLoc = (dstStart + idIndex) * this->NumberOfComponents;
+    while (numComp-- > 0)
+    {
+      this->InsertValue(dstLoc++, ba->GetValue(srcLoc++));
+    }
+  }
+  if (previousMaxId / 8 != this->MaxId / 8)
+  {
+    this->InitializeUnusedBitsInLastByte();
+  }
+  this->DataChanged();
+}
+
+//------------------------------------------------------------------------------
 void vtkBitArray::InsertTuples(vtkIdList* dstIds, vtkIdList* srcIds, vtkAbstractArray* source)
 {
   vtkBitArray* ba = vtkArrayDownCast<vtkBitArray>(source);
@@ -428,6 +481,7 @@ void vtkBitArray::InsertTuples(vtkIdList* dstIds, vtkIdList* srcIds, vtkAbstract
     return;
   }
 
+  vtkIdType previousMaxId = this->MaxId;
   for (vtkIdType idIndex = 0; idIndex < numIds; ++idIndex)
   {
     vtkIdType numComp = this->NumberOfComponents;
@@ -437,6 +491,10 @@ void vtkBitArray::InsertTuples(vtkIdList* dstIds, vtkIdList* srcIds, vtkAbstract
     {
       this->InsertValue(dstLoc++, ba->GetValue(srcLoc++));
     }
+  }
+  if (previousMaxId / 8 != this->MaxId / 8)
+  {
+    this->InitializeUnusedBitsInLastByte();
   }
   this->DataChanged();
 }
@@ -466,6 +524,7 @@ void vtkBitArray::InsertTuples(
     return;
   }
 
+  vtkIdType previousMaxId = this->MaxId;
   for (vtkIdType i = 0; i < n; ++i)
   {
     vtkIdType numComp = this->NumberOfComponents;
@@ -476,11 +535,14 @@ void vtkBitArray::InsertTuples(
       this->InsertValue(dstLoc++, sa->GetValue(srcLoc++));
     }
   }
-
+  if (previousMaxId / 8 != this->MaxId / 8)
+  {
+    this->InitializeUnusedBitsInLastByte();
+  }
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Insert the jth tuple in the source array, at the end in this array.
 // Note that memory allocation is performed as necessary to hold the data.
@@ -503,7 +565,7 @@ vtkIdType vtkBitArray::InsertNextTuple(vtkIdType j, vtkAbstractArray* source)
   return (this->GetNumberOfTuples() - 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get a pointer to a tuple at the ith location. This is a dangerous method
 // (it is not thread safe since a pointer is returned).
 double* vtkBitArray::GetTuple(vtkIdType i)
@@ -524,7 +586,7 @@ double* vtkBitArray::GetTuple(vtkIdType i)
   return this->Tuple;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Copy the tuple value into a user-provided array.
 void vtkBitArray::GetTuple(vtkIdType i, double* tuple)
 {
@@ -536,7 +598,7 @@ void vtkBitArray::GetTuple(vtkIdType i, double* tuple)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the tuple value at the ith location in the array.
 void vtkBitArray::SetTuple(vtkIdType i, const float* tuple)
 {
@@ -549,7 +611,7 @@ void vtkBitArray::SetTuple(vtkIdType i, const float* tuple)
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::SetTuple(vtkIdType i, const double* tuple)
 {
   vtkIdType loc = i * this->NumberOfComponents;
@@ -561,7 +623,7 @@ void vtkBitArray::SetTuple(vtkIdType i, const double* tuple)
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Insert (memory allocation performed) the tuple into the ith location
 // in the array.
 void vtkBitArray::InsertTuple(vtkIdType i, const float* tuple)
@@ -575,7 +637,7 @@ void vtkBitArray::InsertTuple(vtkIdType i, const float* tuple)
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::InsertTuple(vtkIdType i, const double* tuple)
 {
   vtkIdType loc = this->NumberOfComponents * i;
@@ -587,7 +649,7 @@ void vtkBitArray::InsertTuple(vtkIdType i, const double* tuple)
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Insert (memory allocation performed) the tuple onto the end of the array.
 vtkIdType vtkBitArray::InsertNextTuple(const float* tuple)
 {
@@ -600,7 +662,7 @@ vtkIdType vtkBitArray::InsertNextTuple(const float* tuple)
   return this->MaxId / this->NumberOfComponents;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkBitArray::InsertNextTuple(const double* tuple)
 {
   for (int i = 0; i < this->NumberOfComponents; i++)
@@ -612,14 +674,14 @@ vtkIdType vtkBitArray::InsertNextTuple(const double* tuple)
   return this->MaxId / this->NumberOfComponents;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::InsertComponent(vtkIdType i, int j, double c)
 {
   this->InsertValue(i * this->NumberOfComponents + j, static_cast<int>(c));
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the data component at the ith tuple and jth component location.
 // Note that i<NumberOfTuples and j<NumberOfComponents. Make sure enough
 // memory has been allocated (use SetNumberOfTuples() and
@@ -630,7 +692,7 @@ void vtkBitArray::SetComponent(vtkIdType i, int j, double c)
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::RemoveTuple(vtkIdType id)
 {
   if (id < 0 || id >= this->GetNumberOfTuples())
@@ -648,7 +710,7 @@ void vtkBitArray::RemoveTuple(vtkIdType id)
   vtkErrorMacro("Not yet implemented...");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::RemoveFirstTuple()
 {
   vtkErrorMacro("Not yet implemented...");
@@ -656,14 +718,14 @@ void vtkBitArray::RemoveFirstTuple()
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::RemoveLastTuple()
 {
   this->Resize(this->GetNumberOfTuples() - 1);
   this->DataChanged();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkArrayIterator* vtkBitArray::NewIterator()
 {
   vtkArrayIterator* iter = vtkBitArrayIterator::New();
@@ -671,7 +733,7 @@ vtkArrayIterator* vtkBitArray::NewIterator()
   return iter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::UpdateLookup()
 {
   if (!this->Lookup)
@@ -701,19 +763,19 @@ void vtkBitArray::UpdateLookup()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkBitArray::LookupValue(vtkVariant var)
 {
   return this->LookupValue(var.ToInt());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::LookupValue(vtkVariant var, vtkIdList* ids)
 {
   this->LookupValue(var.ToInt(), ids);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkBitArray::LookupValue(int value)
 {
   this->UpdateLookup();
@@ -729,7 +791,7 @@ vtkIdType vtkBitArray::LookupValue(int value)
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::LookupValue(int value, vtkIdList* ids)
 {
   this->UpdateLookup();
@@ -748,7 +810,7 @@ void vtkBitArray::LookupValue(int value, vtkIdList* ids)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::DataChanged()
 {
   if (this->Lookup)
@@ -757,9 +819,10 @@ void vtkBitArray::DataChanged()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBitArray::ClearLookup()
 {
   delete this->Lookup;
   this->Lookup = nullptr;
 }
+VTK_ABI_NAMESPACE_END

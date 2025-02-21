@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadratureSchemeDefinition.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkQuadratureSchemeDefinition
  *
@@ -27,7 +15,7 @@
  *
  * 2)
  * The number of quadrature points and cell nodes. These parameters
- * size the matrix, and allow for convinent evaluation by users
+ * size the matrix, and allow for convenient evaluation by users
  * of the definition.
  * </pre>
  */
@@ -38,6 +26,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformationQuadratureSchemeDefinitionVectorKey;
 class vtkInformationStringKey;
 class vtkXMLDataElement;
@@ -52,8 +41,8 @@ public:
   static vtkInformationStringKey* QUADRATURE_OFFSET_ARRAY_NAME();
 
   /**
-   * New object in an unsuable state. You'll have to call
-   * "Initilaize" to get the definition in to a usable state.
+   * New object in an unusable state. You'll have to call
+   * "Initialize" to get the definition in to a usable state.
    */
   static vtkQuadratureSchemeDefinition* New();
 
@@ -111,7 +100,7 @@ public:
    * "NumberOfNodes" weights for each quadrature point.
    */
   const double* GetShapeFunctionWeights() const { return this->ShapeFunctionWeights; }
-  //@{
+  ///@{
   /**
    * Get the array of shape function weights associated with a
    * single quadrature point.
@@ -121,7 +110,7 @@ public:
     int idx = quadraturePointId * this->NumberOfNodes;
     return this->ShapeFunctionWeights + idx;
   }
-  //@}
+  ///@}
   /**
    * Access to the quadrature weights.
    */
@@ -167,4 +156,5 @@ private:
   double* QuadratureWeights;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

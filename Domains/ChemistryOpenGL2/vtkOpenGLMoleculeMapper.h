@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLMoleculeMapper
  * @brief   An accelerated class for rendering molecules
@@ -26,6 +15,7 @@
 #include "vtkMoleculeMapper.h"
 #include "vtkNew.h" // For vtkNew
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLSphereMapper;
 class vtkOpenGLStickMapper;
 
@@ -34,14 +24,15 @@ class VTKDOMAINSCHEMISTRYOPENGL2_EXPORT vtkOpenGLMoleculeMapper : public vtkMole
 public:
   static vtkOpenGLMoleculeMapper* New();
   vtkTypeMacro(vtkOpenGLMoleculeMapper, vtkMoleculeMapper);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Reimplemented from base class
    */
   void Render(vtkRenderer*, vtkActor*) override;
   void ReleaseGraphicsResources(vtkWindow*) override;
-  //@}
+  ///@}
 
   /**
    * provide access to the underlying mappers
@@ -67,17 +58,18 @@ protected:
   void UpdateAtomGlyphPolyData() override;
   void UpdateBondGlyphPolyData() override;
 
-  //@{
+  ///@{
   /**
    * Internal mappers
    */
   vtkNew<vtkOpenGLSphereMapper> FastAtomMapper;
   vtkNew<vtkOpenGLStickMapper> FastBondMapper;
-  //@}
+  ///@}
 
 private:
   vtkOpenGLMoleculeMapper(const vtkOpenGLMoleculeMapper&) = delete;
   void operator=(const vtkOpenGLMoleculeMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

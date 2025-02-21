@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOBJExporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOBJExporter
  * @brief   export a scene into Wavefront format.
@@ -34,6 +22,7 @@
 #include <map>                 // For map
 #include <vector>              // For string
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkTexture;
 
@@ -44,30 +33,30 @@ public:
   vtkTypeMacro(vtkOBJExporter, vtkExporter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the prefix of the files to write out. The resulting filenames
    * will have .obj and .mtl appended to them.
    */
-  vtkSetStringMacro(FilePrefix);
-  vtkGetStringMacro(FilePrefix);
-  //@}
+  vtkSetFilePathMacro(FilePrefix);
+  vtkGetFilePathMacro(FilePrefix);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify comment string that will be written to the obj file header.
    */
   vtkSetStringMacro(OBJFileComment);
   vtkGetStringMacro(OBJFileComment);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify comment string that will be written to the mtl file header.
    */
   vtkSetStringMacro(MTLFileComment);
   vtkGetStringMacro(MTLFileComment);
-  //@}
+  ///@}
 
 
   // MCell - Specify names of objects to be exported
@@ -98,4 +87,5 @@ private:
   void operator=(const vtkOBJExporter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

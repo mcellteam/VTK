@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSplitByCellScalarFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCellData.h"
 #include "vtkDataSetAttributes.h"
@@ -128,6 +117,7 @@ int TestSplitByCellScalarFilter(int argc, char* argv[])
   // Test with polydata input and pass all points option turned on
   vtkNew<vtkGeometryFilter> geom;
   geom->SetInputData(grid);
+  geom->MergingOff();
   geom->Update();
 
   vtkPolyData* mesh = geom->GetOutput();

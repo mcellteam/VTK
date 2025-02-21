@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHedgeHog.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHedgeHog
  * @brief   create oriented lines from vector data
@@ -31,6 +19,7 @@
 #define VTK_USE_VECTOR 0
 #define VTK_USE_NORMAL 1
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkHedgeHog : public vtkPolyDataAlgorithm
 {
 public:
@@ -38,15 +27,15 @@ public:
   vtkTypeMacro(vtkHedgeHog, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set scale factor to control size of oriented lines.
    */
   vtkSetMacro(ScaleFactor, double);
   vtkGetMacro(ScaleFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether to use vector or normal to perform vector operations.
    */
@@ -55,9 +44,9 @@ public:
   void SetVectorModeToUseVector() { this->SetVectorMode(VTK_USE_VECTOR); }
   void SetVectorModeToUseNormal() { this->SetVectorMode(VTK_USE_NORMAL); }
   const char* GetVectorModeAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -65,11 +54,11 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkHedgeHog();
-  ~vtkHedgeHog() override {}
+  ~vtkHedgeHog() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
@@ -82,11 +71,10 @@ private:
   void operator=(const vtkHedgeHog&) = delete;
 };
 
-//@{
 /**
  * Return the vector mode as a character string.
  */
-inline const char* vtkHedgeHog::GetVectorModeAsString(void)
+inline const char* vtkHedgeHog::GetVectorModeAsString()
 {
   if (this->VectorMode == VTK_USE_VECTOR)
   {
@@ -101,5 +89,5 @@ inline const char* vtkHedgeHog::GetVectorModeAsString(void)
     return "Unknown";
   }
 }
+VTK_ABI_NAMESPACE_END
 #endif
-//@}

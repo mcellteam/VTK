@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageExtractComponents.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageExtractComponents.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageExtractComponents);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageExtractComponents::vtkImageExtractComponents()
 {
   this->SetNumberOfInputPorts(1);
@@ -35,7 +24,7 @@ vtkImageExtractComponents::vtkImageExtractComponents()
   this->NumberOfComponents = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageExtractComponents::SetComponents(int c1, int c2, int c3)
 {
   int modified = 0;
@@ -63,7 +52,7 @@ void vtkImageExtractComponents::SetComponents(int c1, int c2, int c3)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageExtractComponents::SetComponents(int c1, int c2)
 {
   int modified = 0;
@@ -86,7 +75,7 @@ void vtkImageExtractComponents::SetComponents(int c1, int c2)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageExtractComponents::SetComponents(int c1)
 {
   int modified = 0;
@@ -104,7 +93,7 @@ void vtkImageExtractComponents::SetComponents(int c1)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method tells the superclass that only one component will remain.
 int vtkImageExtractComponents::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
@@ -114,7 +103,7 @@ int vtkImageExtractComponents::RequestInformation(vtkInformation* vtkNotUsed(req
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkImageExtractComponentsExecute(vtkImageExtractComponents* self, vtkImageData* inData,
   T* inPtr, vtkImageData* outData, T* outPtr, int outExt[6], int id)
@@ -203,7 +192,7 @@ void vtkImageExtractComponentsExecute(vtkImageExtractComponents* self, vtkImageD
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed input and output datas, and executes the
 // ExtractComponents function on each line.
 void vtkImageExtractComponents::ThreadedExecute(
@@ -251,3 +240,4 @@ void vtkImageExtractComponents::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Components: ( " << this->Components[0] << ", " << this->Components[1] << ", "
      << this->Components[2] << " )\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtk3DLinearGridCrinkleExtractor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtk3DLinearGridCrinkleExtractor
  * @brief   fast extraction of cells intersected by a plane
@@ -20,7 +8,7 @@
  * specified implicit function, extracts unstructured grid cells that
  * intersect the implicit function. (Since the surface of these cells roughly
  * follows the implicit function but is "bumpy", it is referred to as a
- * "crinkle" suface.) This filter operates on vtkUnstructuredGrids consisting
+ * "crinkle" surface.) This filter operates on vtkUnstructuredGrids consisting
  * of 3D linear cells: tetrahedra, hexahedra, voxels, pyramids, and/or
  * wedges. (The cells are linear in the sense that each cell edge is a
  * straight line.)  The filter is designed for high-speed, specialized
@@ -73,22 +61,23 @@
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUnstructuredGrid;
 class vtkImplicitFunction;
 
 class VTKFILTERSCORE_EXPORT vtk3DLinearGridCrinkleExtractor : public vtkDataObjectAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for construction, type info, and printing.
    */
   static vtk3DLinearGridCrinkleExtractor* New();
   vtkTypeMacro(vtk3DLinearGridCrinkleExtractor, vtkDataObjectAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the implicit function which is used to select the output cell
    * faces. Note that the implicit function invocation must be thread
@@ -96,9 +85,9 @@ public:
    */
   virtual void SetImplicitFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(ImplicitFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether to copy input point data/attributes onto the output
    * points. By default this option is on.
@@ -106,9 +95,9 @@ public:
   vtkSetMacro(CopyPointData, bool);
   vtkGetMacro(CopyPointData, bool);
   vtkBooleanMacro(CopyPointData, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether to copy input cell data/attributes onto the output
    * cells. By default this option is off.
@@ -116,9 +105,9 @@ public:
   vtkSetMacro(CopyCellData, bool);
   vtkGetMacro(CopyCellData, bool);
   vtkBooleanMacro(CopyCellData, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether to eliminate unused output points. When this flag is
    * disabled, the input points and associated point data are simply shallow
@@ -130,7 +119,7 @@ public:
   vtkSetMacro(RemoveUnusedPoints, bool);
   vtkGetMacro(RemoveUnusedPoints, bool);
   vtkBooleanMacro(RemoveUnusedPoints, bool);
-  //@}
+  ///@}
 
   /**
    * Overloaded GetMTime() because of delegation to the helper
@@ -138,7 +127,7 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output points. See the
    * documentation for the vtkAlgorithm::Precision enum for an explanation of
@@ -146,9 +135,9 @@ public:
    */
   void SetOutputPointsPrecision(int precision);
   int GetOutputPointsPrecision() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Force sequential processing (i.e. single thread) of the crinkle cut
    * process. By default, sequential processing is off. Note this flag only
@@ -160,7 +149,7 @@ public:
   vtkSetMacro(SequentialProcessing, bool);
   vtkGetMacro(SequentialProcessing, bool);
   vtkBooleanMacro(SequentialProcessing, bool);
-  //@}
+  ///@}
 
   /**
    *  Return the number of threads actually used during execution. This is
@@ -202,4 +191,5 @@ private:
   void operator=(const vtk3DLinearGridCrinkleExtractor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

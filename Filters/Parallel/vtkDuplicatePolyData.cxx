@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDuplicatePolyData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDuplicatePolyData.h"
 
 #include "vtkAppendPolyData.h"
@@ -25,12 +13,13 @@
 #include "vtkSocketController.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDuplicatePolyData);
 
 vtkCxxSetObjectMacro(vtkDuplicatePolyData, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkDuplicatePolyData, SocketController, vtkSocketController);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDuplicatePolyData::vtkDuplicatePolyData()
 {
   // Controller keeps a reference to this object as well.
@@ -47,7 +36,7 @@ vtkDuplicatePolyData::vtkDuplicatePolyData()
   this->MemorySize = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDuplicatePolyData::~vtkDuplicatePolyData()
 {
   this->SetController(nullptr);
@@ -72,7 +61,7 @@ static inline int vtkDPDLog2(int j, int& exact)
   return counter - 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDuplicatePolyData::InitializeSchedule(int numProcs)
 {
   int i, j, k, exact;
@@ -166,7 +155,7 @@ void vtkDuplicatePolyData::InitializeSchedule(int numProcs)
   procFlags = nullptr;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDuplicatePolyData::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -184,7 +173,7 @@ int vtkDuplicatePolyData::RequestUpdateExtent(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDuplicatePolyData::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -279,7 +268,7 @@ int vtkDuplicatePolyData::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDuplicatePolyData::ClientExecute(vtkPolyData* output)
 {
   vtkPolyData* tmp = vtkPolyData::New();
@@ -292,7 +281,7 @@ void vtkDuplicatePolyData::ClientExecute(vtkPolyData* output)
   output->GetCellData()->PassData(tmp->GetCellData());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDuplicatePolyData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -336,3 +325,4 @@ void vtkDuplicatePolyData::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "MemorySize: " << this->MemorySize << endl;
 }
+VTK_ABI_NAMESPACE_END

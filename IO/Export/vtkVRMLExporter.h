@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVRMLExporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVRMLExporter
  * @brief   export a scene into VRML 2.0 format.
@@ -30,6 +18,7 @@
 #include "vtkExporter.h"
 #include "vtkIOExportModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLight;
 class vtkActor;
 class vtkPoints;
@@ -45,21 +34,21 @@ public:
   vtkTypeMacro(vtkVRMLExporter, vtkExporter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the name of the VRML file to write.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the Speed of navigation. Default is 4.
    */
   vtkSetMacro(Speed, double);
   vtkGetMacro(Speed, double);
-  //@}
+  ///@}
 
   /**
    * Set the file pointer to write to. This will override
@@ -88,4 +77,5 @@ private:
   void operator=(const vtkVRMLExporter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

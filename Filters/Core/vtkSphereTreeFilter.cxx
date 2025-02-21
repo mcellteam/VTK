@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSphereTreeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSphereTreeFilter.h"
 #include "vtkAbstractArray.h"
 #include "vtkCellData.h"
@@ -19,6 +7,7 @@
 #include "vtkDataObject.h"
 #include "vtkDataSet.h"
 #include "vtkDoubleArray.h"
+#include "vtkGarbageCollector.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
@@ -26,11 +15,12 @@
 #include "vtkSphereTree.h"
 #include "vtkStructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSphereTreeFilter);
 vtkCxxSetObjectMacro(vtkSphereTreeFilter, SphereTree, vtkSphereTree);
 
 // Construct object.
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSphereTreeFilter::vtkSphereTreeFilter()
 {
   this->SphereTree = nullptr;
@@ -45,13 +35,13 @@ vtkSphereTreeFilter::vtkSphereTreeFilter()
   this->Normal[2] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSphereTreeFilter::~vtkSphereTreeFilter()
 {
   this->SetSphereTree(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If the sphere tree is modified,
 // then this object is modified as well.
 vtkMTimeType vtkSphereTreeFilter::GetMTime()
@@ -68,7 +58,7 @@ vtkMTimeType vtkSphereTreeFilter::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Produce the sphere tree as requested
 int vtkSphereTreeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -215,10 +205,12 @@ int vtkSphereTreeFilter::RequestData(vtkInformation* vtkNotUsed(request),
     levels->Delete();
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSphereTreeFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -227,7 +219,7 @@ int vtkSphereTreeFilter::FillInputPortInformation(int, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkSphereTreeFilter::GetExtractionModeAsString()
 {
   if (this->ExtractionMode == VTK_SPHERE_TREE_LEVELS)
@@ -248,7 +240,7 @@ const char* vtkSphereTreeFilter::GetExtractionModeAsString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSphereTreeFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -268,3 +260,11 @@ void vtkSphereTreeFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Normal: (" << this->Normal[0] << ", " << this->Normal[1] << ", "
      << this->Normal[2] << ")\n";
 }
+
+//------------------------------------------------------------------------------
+void vtkSphereTreeFilter::ReportReferences(vtkGarbageCollector* collector)
+{
+  this->Superclass::ReportReferences(collector);
+  vtkGarbageCollectorReport(collector, this->SphereTree, "SphereTree");
+}
+VTK_ABI_NAMESPACE_END

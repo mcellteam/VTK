@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAreaContourSpectrumFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAreaContourSpectrumFilter
  * @brief   compute an approximation of the area
@@ -47,6 +35,7 @@
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkFiltersGeneralModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTable;
 
 class VTKFILTERSGENERAL_EXPORT vtkAreaContourSpectrumFilter : public vtkDataObjectAlgorithm
@@ -56,32 +45,32 @@ public:
   vtkTypeMacro(vtkAreaContourSpectrumFilter, vtkDataObjectAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the arc Id for which the contour signature has to be computed.
    * Default value: 0
    */
   vtkSetMacro(ArcId, vtkIdType);
   vtkGetMacro(ArcId, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of samples in the output signature
    * Default value: 100
    */
   vtkSetMacro(NumberOfSamples, int);
   vtkGetMacro(NumberOfSamples, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scalar field Id
    * Default value: 0
    */
   vtkSetMacro(FieldId, vtkIdType);
   vtkGetMacro(FieldId, vtkIdType);
-  //@}
+  ///@}
 
   vtkTable* GetOutput();
 
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkAreaContourSpectrumFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

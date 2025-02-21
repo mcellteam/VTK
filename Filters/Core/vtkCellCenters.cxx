@@ -1,35 +1,31 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCellCenters.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCellCenters.h"
 
 #include "vtkCell.h"
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
+#include "vtkDataArrayRange.h"
 #include "vtkDataSet.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkDoubleArray.h"
 #include "vtkGenericCell.h"
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkLogger.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
+#include "vtkSMPThreadLocalObject.h"
 #include "vtkSMPTools.h"
+#include "vtkUnsignedCharArray.h"
 
+#include <atomic>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCellCenters);
 
 namespace
@@ -37,7 +33,20 @@ namespace
 
 class CellCenterFunctor
 {
+  vtkSMPThreadLocalObject<vtkGenericCell> TLCell;
+  vtkSMPThreadLocal<std::vector<double>> TLWeigths;
+  vtkDataSet* DataSet;
+  vtkDoubleArray* CellCenters;
+  vtkIdType MaxCellSize;
+
 public:
+  CellCenterFunctor(vtkDataSet* ds, vtkDoubleArray* cellCenters)
+    : DataSet(ds)
+    , CellCenters(cellCenters)
+    , MaxCellSize(ds->GetMaxCellSize())
+  {
+  }
+
   void operator()(vtkIdType begin, vtkIdType end)
   {
     if (this->DataSet == nullptr)
@@ -50,8 +59,9 @@ public:
       return;
     }
 
-    std::vector<double> weights(this->DataSet->GetMaxCellSize());
-    vtkNew<vtkGenericCell> cell;
+    auto& weights = this->TLWeigths.Local();
+    weights.resize(this->MaxCellSize);
+    auto cell = this->TLCell.Local();
     for (vtkIdType cellId = begin; cellId < end; ++cellId)
     {
       this->DataSet->GetCell(cellId, cell);
@@ -71,19 +81,82 @@ public:
       this->CellCenters->SetTypedTuple(cellId, x);
     }
   }
+};
 
-  vtkDataSet* DataSet;
-  vtkDoubleArray* CellCenters;
+//==============================================================================
+struct InputGhostCellFinder
+{
+  InputGhostCellFinder(vtkUnsignedCharArray* ghostCells, vtkIdList* cellIdList)
+    : GhostCells(ghostCells)
+    , CellIdList(cellIdList)
+    , HasInputGhostCells(false)
+  {
+  }
+
+  void operator()(vtkIdType startId, vtkIdType endId)
+  {
+    auto ghosts = vtk::DataArrayValueRange<1>(this->GhostCells);
+    for (vtkIdType id = startId; id < endId; ++id)
+    {
+      if (this->HasInputGhostCells)
+      {
+        return;
+      }
+      if (ghosts[this->CellIdList->GetId(id)] &
+        (vtkDataSetAttributes::DUPLICATECELL | vtkDataSetAttributes::HIDDENCELL |
+          vtkDataSetAttributes::REFINEDCELL))
+      {
+        this->HasInputGhostCells = true;
+      }
+    }
+  }
+
+  vtkUnsignedCharArray* GhostCells;
+  vtkIdList* CellIdList;
+  std::atomic<bool> HasInputGhostCells;
+};
+
+//==============================================================================
+struct GhostCellsToGhostPointsConverter
+{
+  GhostCellsToGhostPointsConverter(
+    vtkUnsignedCharArray* ghostCells, vtkUnsignedCharArray* ghostPoints, vtkIdList* cellIdList)
+    : GhostCells(ghostCells)
+    , GhostPoints(ghostPoints)
+    , CellIdList(cellIdList)
+  {
+  }
+
+  void operator()(vtkIdType startId, vtkIdType endId)
+  {
+    auto ghostPoints = vtk::DataArrayValueRange<1>(this->GhostPoints);
+    auto ghostCells = vtk::DataArrayValueRange<1>(this->GhostCells);
+    for (vtkIdType id = startId; id < endId; ++id)
+    {
+      unsigned char ghost = ghostCells[this->CellIdList->GetId(id)];
+      ghostPoints[id] = 0;
+      if (ghost & vtkDataSetAttributes::DUPLICATECELL)
+      {
+        ghostPoints[id] |= vtkDataSetAttributes::DUPLICATEPOINT;
+      }
+      if (ghost & (vtkDataSetAttributes::HIDDENCELL | vtkDataSetAttributes::REFINEDCELL))
+      {
+        ghostPoints[id] |= vtkDataSetAttributes::HIDDENPOINT;
+      }
+    }
+  }
+
+  vtkUnsignedCharArray* GhostCells;
+  vtkUnsignedCharArray* GhostPoints;
+  vtkIdList* CellIdList;
 };
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellCenters::ComputeCellCenters(vtkDataSet* dataset, vtkDoubleArray* centers)
 {
-  CellCenterFunctor functor;
-  functor.DataSet = dataset;
-  functor.CellCenters = centers;
+  CellCenterFunctor functor(dataset, centers);
 
   // Call this once one the main thread before calling on multiple threads.
   // According to the documentation for vtkDataSet::GetCell(vtkIdType, vtkGenericCell*),
@@ -98,7 +171,7 @@ void vtkCellCenters::ComputeCellCenters(vtkDataSet* dataset, vtkDoubleArray* cen
   vtkSMPTools::For(0, dataset->GetNumberOfCells(), functor);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Generate points
 int vtkCellCenters::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -143,7 +216,7 @@ int vtkCellCenters::RequestData(vtkInformation* vtkNotUsed(request),
     {
       vtkDebugMacro(<< "Processing #" << cellId);
       this->UpdateProgress((0.5 * cellId / numCells) + 0.5);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
     }
 
     if (input->GetCellType(cellId) != VTK_EMPTY_CELL)
@@ -161,7 +234,7 @@ int vtkCellCenters::RequestData(vtkInformation* vtkNotUsed(request),
 
   if (abort)
   {
-    return 0;
+    return 1;
   }
 
   newPts->Resize(numPoints);
@@ -179,6 +252,29 @@ int vtkCellCenters::RequestData(vtkInformation* vtkNotUsed(request),
     else
     {
       outPD->PassData(inCD); // because number of points == number of cells
+    }
+  }
+
+  if (vtkUnsignedCharArray* inputGhostCells = input->GetCellData()->GetGhostArray())
+  {
+    ::InputGhostCellFinder finder(inputGhostCells, cellIdList);
+    vtkSMPTools::For(0, numPoints, finder);
+    if (finder.HasInputGhostCells)
+    {
+      if (this->ConvertGhostCellsToGhostPoints)
+      {
+        vtkNew<vtkUnsignedCharArray> ghostPoints;
+        ghostPoints->SetNumberOfValues(numPoints);
+        ghostPoints->SetName(vtkDataSetAttributes::GhostArrayName());
+
+        ::GhostCellsToGhostPointsConverter worker(inputGhostCells, ghostPoints, cellIdList);
+        vtkSMPTools::For(0, numPoints, worker);
+        outPD->AddArray(ghostPoints);
+      }
+      else
+      {
+        outPD->SetGhostsToSkip(inCD->GetGhostsToSkip());
+      }
     }
   }
 
@@ -205,17 +301,18 @@ int vtkCellCenters::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCellCenters::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellCenters::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Vertex Cells: " << (this->VertexCells ? "On\n" : "Off\n");
   os << indent << "CopyArrays: " << (this->CopyArrays ? "On" : "Off") << endl;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFixedSizeHandleRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFixedSizeHandleRepresentation
  * @brief   A marker that has the same size in pixels.
@@ -39,6 +27,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPolygonalHandleRepresentation3D.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSphereSource;
 
 class VTKINTERACTIONWIDGETS_EXPORT vtkFixedSizeHandleRepresentation3D
@@ -50,31 +39,31 @@ public:
    */
   static vtkFixedSizeHandleRepresentation3D* New();
 
-  //@{
+  ///@{
   /**
    * Standard vtk methods
    */
   vtkTypeMacro(vtkFixedSizeHandleRepresentation3D, vtkPolygonalHandleRepresentation3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the object used to render the spherical handle marker
    */
   vtkGetObjectMacro(SphereSource, vtkSphereSource);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the required handle size in pixels. Defaults to a width of
    * 10 pixels.
    */
   vtkSetMacro(HandleSizeInPixels, double);
   vtkGetMacro(HandleSizeInPixels, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the acceptable handle size tolerance. During each render, the
    * handle 3D source will be updated to automatically match a display size
@@ -84,7 +73,7 @@ public:
    */
   vtkSetMacro(HandleSizeToleranceInPixels, double);
   vtkGetMacro(HandleSizeToleranceInPixels, double);
-  //@}
+  ///@}
 
 protected:
   vtkFixedSizeHandleRepresentation3D();
@@ -114,4 +103,5 @@ private:
   void operator=(const vtkFixedSizeHandleRepresentation3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

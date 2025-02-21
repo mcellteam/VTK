@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageRange3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageRange3D.h"
 
 #include "vtkImageData.h"
@@ -21,9 +9,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageRange3D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageRange3D filter.
 // By default zero values are dilated.
 vtkImageRange3D::vtkImageRange3D()
@@ -38,7 +27,7 @@ vtkImageRange3D::vtkImageRange3D()
   this->SetKernelSize(1, 1, 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageRange3D::~vtkImageRange3D()
 {
   if (this->Ellipse)
@@ -48,15 +37,15 @@ vtkImageRange3D::~vtkImageRange3D()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageRange3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method sets the size of the neighborhood.  It also sets the
-// default middle of the neighborhood and computes the eliptical foot print.
+// default middle of the neighborhood and computes the elliptical foot print.
 void vtkImageRange3D::SetKernelSize(int size0, int size1, int size2)
 {
   int modified = 0;
@@ -85,11 +74,10 @@ void vtkImageRange3D::SetKernelSize(int size0, int size1, int size2)
     this->Modified();
     this->Ellipse->SetWholeExtent(
       0, this->KernelSize[0] - 1, 0, this->KernelSize[1] - 1, 0, this->KernelSize[2] - 1);
-    this->Ellipse->SetCenter(static_cast<float>(this->KernelSize[0] - 1) * 0.5,
-      static_cast<float>(this->KernelSize[1] - 1) * 0.5,
-      static_cast<float>(this->KernelSize[2] - 1) * 0.5);
-    this->Ellipse->SetRadius(static_cast<float>(this->KernelSize[0]) * 0.5,
-      static_cast<float>(this->KernelSize[1]) * 0.5, static_cast<float>(this->KernelSize[2]) * 0.5);
+    this->Ellipse->SetCenter((this->KernelSize[0] - 1) * 0.5, (this->KernelSize[1] - 1) * 0.5,
+      (this->KernelSize[2] - 1) * 0.5);
+    this->Ellipse->SetRadius(
+      this->KernelSize[0] * 0.5, this->KernelSize[1] * 0.5, this->KernelSize[2] * 0.5);
     // make sure scalars have been allocated (needed if multithreaded is used)
     vtkInformation* ellipseOutInfo = this->Ellipse->GetExecutive()->GetOutputInformation(0);
     ellipseOutInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), 0,
@@ -98,7 +86,7 @@ void vtkImageRange3D::SetKernelSize(int size0, int size1, int size2)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Output is always float
 int vtkImageRange3D::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -109,7 +97,7 @@ int vtkImageRange3D::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter on any region,
 // whether it needs boundary checking or not.
 // If the filter needs to be faster, the function could be duplicated
@@ -268,7 +256,7 @@ void vtkImageRange3DExecute(vtkImageRange3D* self, vtkImageData* mask, vtkImageD
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains the first switch statement that calls the correct
 // templated function for the input and output Data types.
 // It handles image boundaries, so the image does not shrink.
@@ -310,10 +298,11 @@ void vtkImageRange3D::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageRange3D::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   this->Ellipse->Update();
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
  *
@@ -50,7 +23,7 @@
  *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex__comp_ws, etc
+#include "exodusII_int.h" // for EX_FATAL, exi_comp_ws, etc
 
 /*!
  * writes the set ID's, set entry count array, set entry pointers array,
@@ -69,26 +42,28 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
   const void_int *num_dist_per_set    = set_specs->num_dist_per_set;
   const void_int *sets_entry_index    = set_specs->sets_entry_index;
   const void_int *sets_dist_index     = set_specs->sets_dist_index;
-  const void *    sets_dist_fact      = set_specs->sets_dist_fact;
+  const void     *sets_dist_fact      = set_specs->sets_dist_fact;
   size_t          num_df, num_entry;
   int             i, cur_num_sets, num_sets;
   int             dimid, varid, set_id_ndx, dims[1];
-  int *           set_stat = NULL;
+  int            *set_stat = NULL;
   int             set_int_type, int_size;
 
-  const float * flt_dist_fact = NULL;
+  const float  *flt_dist_fact = NULL;
   const double *dbl_dist_fact = NULL;
   char          errmsg[MAX_ERR_LENGTH];
-  char *        idsptr   = NULL;
-  char *        statptr  = NULL;
-  char *        numdfptr = NULL;
-  char *        factptr  = NULL;
-  char *        elemptr  = NULL;
-  char *        extraptr = NULL;
+  char         *idsptr   = NULL;
+  char         *statptr  = NULL;
+  char         *numdfptr = NULL;
+  char         *factptr  = NULL;
+  char         *elemptr  = NULL;
+  char         *extraptr = NULL;
   ex_inquiry    ex_inq_val;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   int_size = sizeof(int);
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -130,7 +105,7 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
   }
 
   /* first check if any sets are specified */
-  if ((status = nc_inq_dimid(exoid, ex__dim_num_objects(set_type), &temp)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &temp)) != NC_NOERR) {
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss defined for file id %d",
                ex_name_of_object(set_type), exoid);
@@ -215,10 +190,10 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
 
     /* Keep track of the total number of sets defined using a counter stored
        in a linked list keyed by exoid.
-       NOTE: ex__get_file_item  is used to find the number of sets of type
+       NOTE: exi_get_file_item  is used to find the number of sets of type
        for a specific file and returns that value.
     */
-    cur_num_sets = ex__get_file_item(exoid, ex__get_counter_list(set_type));
+    cur_num_sets = exi_get_file_item(exoid, exi_get_counter_list(set_type));
     if (cur_num_sets >= num_sets) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: exceeded number of %ss (%d) defined in file id %d",
                ex_name_of_object(set_type), num_sets, exoid);
@@ -226,10 +201,10 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
       goto error_ret;
     }
 
-    /*   NOTE: ex__inc_file_item  is used to find the number of sets
+    /*   NOTE: exi_inc_file_item  is used to find the number of sets
          for a specific file and returns that value incremented. */
 
-    cur_num_sets = ex__inc_file_item(exoid, ex__get_counter_list(set_type));
+    cur_num_sets = exi_inc_file_item(exoid, exi_get_counter_list(set_type));
     set_id_ndx   = cur_num_sets + 1;
 
     /* setup more pointers based on set_type */
@@ -271,11 +246,11 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
     }
 
     if (int_size == sizeof(int)) {
-      status = nc_def_dim(exoid, ex__dim_num_entries_in_object(set_type, set_id_ndx),
+      status = nc_def_dim(exoid, exi_dim_num_entries_in_object(set_type, set_id_ndx),
                           ((int *)num_entries_per_set)[i], &dimid);
     }
     else {
-      status = nc_def_dim(exoid, ex__dim_num_entries_in_object(set_type, set_id_ndx),
+      status = nc_def_dim(exoid, exi_dim_num_entries_in_object(set_type, set_id_ndx),
                           ((int64_t *)num_entries_per_set)[i], &dimid);
     }
 
@@ -317,7 +292,7 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
       }
       goto error_ret; /* exit define mode and return */
     }
-    ex__compress_variable(exoid, temp, 1);
+    exi_compress_variable(exoid, temp, 1);
 
     /* create extra list variable for set  (only for edge, face and side sets)
      */
@@ -337,7 +312,7 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
         }
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, temp, 1);
+      exi_compress_variable(exoid, temp, 1);
     }
 
     /*  define dimension for number of dist factors per set */
@@ -400,12 +375,14 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
         }
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, temp, 2);
+      exi_compress_variable(exoid, temp, 2);
     } /* end define dist factors */
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+    ex_err_fn(exoid, __func__, errmsg, status);
     free(set_stat);
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -498,7 +475,7 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
       df_ndx = ((int64_t *)sets_dist_index)[i];
     }
 
-    if (ex__comp_ws(exoid) == sizeof(float)) {
+    if (exi_comp_ws(exoid) == sizeof(float)) {
       flt_dist_fact = sets_dist_fact;
       if (num_df > 0) { /* store dist factors if required */
         if (ex_put_set_dist_fact(exoid, set_type, set_id, &(flt_dist_fact[df_ndx])) == -1) {
@@ -512,7 +489,7 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
         }
       }
     }
-    else if (ex__comp_ws(exoid) == sizeof(double)) {
+    else if (exi_comp_ws(exoid) == sizeof(double)) {
       dbl_dist_fact = sets_dist_fact;
       if (num_df) { /* only store if they exist */
         if (ex_put_set_dist_fact(exoid, set_type, set_id, &(dbl_dist_fact[df_ndx])) == -1) {
@@ -529,7 +506,7 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
     else {
       /* unknown floating point word size */
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: unsupported floating point word size %d for file id %d", ex__comp_ws(exoid),
+               "ERROR: unsupported floating point word size %d for file id %d", exi_comp_ws(exoid),
                exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
       free(set_stat);
@@ -543,6 +520,6 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
 error_ret:
   free(set_stat);
 
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRadiusOutlierRemoval.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRadiusOutlierRemoval
  * @brief   remove isolated points
@@ -52,13 +40,14 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkPointCloudFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractPointLocator;
 class vtkPointSet;
 
 class VTKFILTERSPOINTS_EXPORT vtkRadiusOutlierRemoval : public vtkPointCloudFilter
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiating, obtaining type information, and
    * printing information.
@@ -66,26 +55,26 @@ public:
   static vtkRadiusOutlierRemoval* New();
   vtkTypeMacro(vtkRadiusOutlierRemoval, vtkPointCloudFilter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the local search radius.
    */
   vtkSetClampMacro(Radius, double, 0.0, VTK_FLOAT_MAX);
   vtkGetMacro(Radius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the number of neighbors that a point must have, within
    * the specified radius, for the point to not be considered isolated.
    */
   vtkSetClampMacro(NumberOfNeighbors, int, 1, VTK_INT_MAX);
   vtkGetMacro(NumberOfNeighbors, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a point locator. By default a vtkStaticPointLocator is
    * used. The locator performs efficient searches to locate near a
@@ -93,7 +82,7 @@ public:
    */
   void SetLocator(vtkAbstractPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkAbstractPointLocator);
-  //@}
+  ///@}
 
 protected:
   vtkRadiusOutlierRemoval();
@@ -112,4 +101,5 @@ private:
   void operator=(const vtkRadiusOutlierRemoval&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

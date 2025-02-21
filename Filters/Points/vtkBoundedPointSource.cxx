@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoundedPointSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBoundedPointSource.h"
 
 #include "vtkCellArray.h"
@@ -24,9 +12,10 @@
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoundedPointSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoundedPointSource::vtkBoundedPointSource()
 {
   this->NumberOfPoints = 100;
@@ -45,7 +34,7 @@ vtkBoundedPointSource::vtkBoundedPointSource()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundedPointSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -78,12 +67,11 @@ int vtkBoundedPointSource::RequestData(vtkInformation* vtkNotUsed(request),
   double zmin = (this->Bounds[4] < this->Bounds[5] ? this->Bounds[4] : this->Bounds[5]);
   double zmax = (this->Bounds[4] < this->Bounds[5] ? this->Bounds[5] : this->Bounds[4]);
 
-  vtkMath* math = vtkMath::New();
   for (ptId = 0; ptId < this->NumberOfPoints; ptId++)
   {
-    x[0] = math->Random(xmin, xmax);
-    x[1] = math->Random(ymin, ymax);
-    x[2] = math->Random(zmin, zmax);
+    x[0] = vtkMath::Random(xmin, xmax);
+    x[1] = vtkMath::Random(ymin, ymax);
+    x[2] = vtkMath::Random(zmin, zmax);
     newPoints->SetPoint(ptId, x);
   }
   output->SetPoints(newPoints);
@@ -102,7 +90,7 @@ int vtkBoundedPointSource::RequestData(vtkInformation* vtkNotUsed(request),
       (this->ScalarRange[0] < this->ScalarRange[1] ? this->ScalarRange[1] : this->ScalarRange[0]);
     for (ptId = 0; ptId < this->NumberOfPoints; ptId++)
     {
-      *s++ = math->Random(sMin, sMax);
+      *s++ = vtkMath::Random(sMin, sMax);
     }
     output->GetPointData()->SetScalars(scalars);
     scalars->Delete();
@@ -122,11 +110,10 @@ int vtkBoundedPointSource::RequestData(vtkInformation* vtkNotUsed(request),
     newVerts->Delete();
   }
 
-  math->Delete();
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPointSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -145,3 +132,4 @@ void vtkBoundedPointSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Produce Random Scalars: " << (this->ProduceRandomScalars ? "On\n" : "Off\n");
   os << indent << "Scalar Range (" << this->ScalarRange[0] << "," << this->ScalarRange[1] << ")\n";
 }
+VTK_ABI_NAMESPACE_END

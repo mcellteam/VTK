@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkUnstructuredGridReader.h"
 
 #include "vtkByteSwap.h"
@@ -22,40 +10,42 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkUnstructuredGrid.h"
+#include "vtkUpdateCellsV8toV9.h"
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkUnstructuredGridReader);
 
 #ifdef read
 #undef read
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGridReader::vtkUnstructuredGridReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGridReader::~vtkUnstructuredGridReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGrid* vtkUnstructuredGridReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGrid* vtkUnstructuredGridReader::GetOutput(int idx)
 {
   return vtkUnstructuredGrid::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridReader::SetOutput(vtkUnstructuredGrid* output)
 {
   this->GetExecutive()->SetOutputData(0, output);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkUnstructuredGridReader::ReadMeshSimple(const std::string& fname, vtkDataObject* doOutput)
 {
   vtkIdType i, numPts = 0, numCells = 0;
@@ -82,7 +72,7 @@ int vtkUnstructuredGridReader::ReadMeshSimple(const std::string& fname, vtkDataO
     return 1;
   }
 
-  if (!strncmp(this->LowerCase(line), "dataset", (unsigned long)7))
+  if (!strncmp(this->LowerCase(line), "dataset", 7))
   {
     // Make sure we're reading right type of geometry
     //
@@ -93,7 +83,7 @@ int vtkUnstructuredGridReader::ReadMeshSimple(const std::string& fname, vtkDataO
       return 1;
     }
 
-    if (strncmp(this->LowerCase(line), "unstructured_grid", 17))
+    if (strncmp(this->LowerCase(line), "unstructured_grid", 17) != 0)
     {
       vtkErrorMacro(<< "Cannot read dataset type: " << line);
       this->CloseVTKFile();
@@ -344,6 +334,13 @@ int vtkUnstructuredGridReader::ReadMeshSimple(const std::string& fname, vtkDataO
     vtkErrorMacro(<< "Unrecognized keyword: " << line);
   }
 
+  // Permute node numbering on higher order hexahedra for legacy files (see
+  // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6678 )
+  if (this->FileMajorVersion < 5 || (this->FileMajorVersion == 5 && this->FileMinorVersion < 1))
+  {
+    vtkUpdateCellsV8toV9(output);
+  }
+
   // Clean-up and get out
   //
   delete[] types;
@@ -359,15 +356,16 @@ int vtkUnstructuredGridReader::ReadMeshSimple(const std::string& fname, vtkDataO
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkUnstructuredGridReader::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkUnstructuredGrid");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

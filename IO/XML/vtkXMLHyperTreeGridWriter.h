@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLHyperTreeGridWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLHyperTreeGridWriter
  * @brief   Write VTK XML HyperTreeGrid files.
@@ -49,13 +37,13 @@
  *   accelerate the obtaining of a result which will be less precise and to
  *   allow the loading of a part of a mesh which would not hold in memory:
  *      - loading by limiting the maximum level to load;
- *      - loading by selecting (differentes description possibilities are
+ *      - loading by selecting (different description possibilities are
  *        offered) the HTs to take into account.
  *
  * The default version of the VTK XML HyperTreeGrid file format is the latest
  * version, now version 1.0.
  *
- * For developpers:
+ * For developers:
  * To ensure the durability of this storage format over time, at least, the drive
  * must continue to support playback of previous format.
  */
@@ -63,18 +51,22 @@
 #ifndef vtkXMLHyperTreeGridWriter_h
 #define vtkXMLHyperTreeGridWriter_h
 
-#include "vtkBitArray.h"    // For ivar
-#include "vtkIOXMLModule.h" // For export macro
+#include "vtkIOXMLModule.h"  // For export macro
+#include "vtkSmartPointer.h" // For internal attributes
 #include "vtkXMLWriter.h"
 
 #include <vector> // std::vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class OffsetsManagerGroup;
 class OffsetsManagerArray;
+class vtkBitArray;
+class vtkIdList;
 class vtkHyperTree;
 class vtkHyperTreeGrid;
 class vtkHyperTreeGridNonOrientedCursor;
 class vtkTypeInt64Array;
+class vtkTypeUInt32Array;
 
 class VTKIOXML_EXPORT vtkXMLHyperTreeGridWriter : public vtkXMLWriter
 {
@@ -137,43 +129,58 @@ protected:
   // Tree Descriptor and  CellData
   int WriteTrees_0(vtkIndent);
   int WriteTrees_1(vtkIndent);
+  int WriteTrees_2(vtkIndent);
 
   // </HyperTreeGrid>
   int FinishPrimaryElement(vtkIndent);
 
   // Descriptors for individual hypertrees
-  std::vector<vtkBitArray*> Descriptors;
+  std::vector<vtkSmartPointer<vtkBitArray>> Descriptors;
 
   // Descriptors for individual hypertrees
-  std::vector<vtkTypeInt64Array*> NbVerticesByLevels;
+  std::vector<vtkSmartPointer<vtkTypeInt64Array>> NbVerticesByLevels;
 
   // Masks for individual hypertrees
-  std::vector<vtkBitArray*> Masks;
+  std::vector<vtkSmartPointer<vtkBitArray>> Masks;
 
   // Ids (index selection) for individual hypertrees
-  std::vector<vtkIdList*> Ids;
+  std::vector<vtkSmartPointer<vtkIdList>> Ids;
 
   // Helper to simplify writing appended array data
   void WriteAppendedArrayDataHelper(vtkAbstractArray* array, OffsetsManager& offsets);
 
-  void WriteCellDataAppendedArrayDataHelper(
-    vtkAbstractArray* array, vtkIdType treeCount, OffsetsManager& offsets, vtkHyperTree* tree);
+  void WriteCellDataAppendedArrayDataHelper(vtkAbstractArray* array, vtkIdType numberOfVertices,
+    OffsetsManager& offsets, vtkHyperTree* tree);
+
+  struct HyperTreeGridMetaDataForVersion2
+  {
+    void Initialize();
+
+    vtkSmartPointer<vtkBitArray> Descriptors;
+    vtkSmartPointer<vtkTypeInt64Array> TreeIds;
+    vtkSmartPointer<vtkTypeInt64Array> NumberOfVerticesPerDepth;
+    vtkSmartPointer<vtkIdList> BreadthFirstIdMap;
+    vtkSmartPointer<vtkTypeUInt32Array> DepthPerTree;
+  } MetaDataForVersion2;
 
   OffsetsManagerGroup* CoordsOMG;
   OffsetsManagerGroup* DescriptorOMG;
   OffsetsManagerGroup* NbVerticesByLevelOMG;
   OffsetsManagerGroup* MaskOMG;
   OffsetsManagerGroup* CellDataOMG;
+  OffsetsManagerGroup* TreeIdsOMG;
+  OffsetsManagerGroup* DepthPerTreeOMG;
 
   int NumberOfTrees;
 
   // Default choice
-  int DataSetMajorVersion = 1;
-  int DataSetMinorVersion = 0;
+  int DataSetMajorVersion;
+  int DataSetMinorVersion;
 
 private:
   vtkXMLHyperTreeGridWriter(const vtkXMLHyperTreeGridWriter&) = delete;
   void operator=(const vtkXMLHyperTreeGridWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

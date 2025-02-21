@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWindowNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWindowNode.h"
 
 #include "vtkCollectionIterator.h"
@@ -24,9 +12,10 @@
 #include "vtkUnsignedCharArray.h"
 
 //============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkWindowNode);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWindowNode::vtkWindowNode()
 {
   this->Size[0] = 0;
@@ -35,22 +24,22 @@ vtkWindowNode::vtkWindowNode()
   this->ZBuffer = vtkFloatArray::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWindowNode::~vtkWindowNode()
 {
   this->ColorBuffer->Delete();
-  this->ColorBuffer = 0;
+  this->ColorBuffer = nullptr;
   this->ZBuffer->Delete();
-  this->ZBuffer = 0;
+  this->ZBuffer = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWindowNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWindowNode::Build(bool prepass)
 {
   if (prepass)
@@ -67,7 +56,7 @@ void vtkWindowNode::Build(bool prepass)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWindowNode::Synchronize(bool prepass)
 {
   if (prepass)
@@ -97,7 +86,7 @@ void vtkWindowNode::Synchronize(bool prepass)
       GetPosition()   vtkWindow       virtual
       GetScreenSize()=0       vtkWindow       pure virtual
     */
-    int* sz = mine->GetSize();
+    const int* sz = mine->GetSize();
     this->Size[0] = sz[0];
     this->Size[1] = sz[1];
     /*
@@ -117,3 +106,4 @@ void vtkWindowNode::Synchronize(bool prepass)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

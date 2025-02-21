@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReebGraph.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkReebGraph
@@ -121,6 +106,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkMutableDirectedGraph.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkDataSet;
 class vtkIdList;
@@ -260,8 +246,8 @@ public:
    * vertex1Id, scalar1
    * vertex2Id, scalar2
 
-   * where vertex<i>Id is the Id of the vertex in the vtkPolyData structure
-   * and scalar<i> is the corresponding scalar field value.
+   * where vertexNId is the Id of the vertex in the vtkPolyData structure
+   * and scalarN is the corresponding scalar field value.
 
    * IMPORTANT: The stream _must_ be finalized with the "CloseStream" call.
    */
@@ -276,10 +262,10 @@ public:
    * vertex1Id, scalar1
    * vertex2Id, scalar2
    * vertex3Id, scalar3
-
-   * where vertex<i>Id is the Id of the vertex in the vtkUnstructuredGrid
-   * structure and scalar<i> is the corresponding scalar field value.
-
+   *
+   * where vertexNId is the Id of the vertex in the vtkUnstructuredGrid
+   * structure and scalarN is the corresponding scalar field value.
+   *
    * IMPORTANT: The stream _must_ be finalized with the "CloseStream" call.
    */
   int StreamTetrahedron(vtkIdType vertex0Id, double scalar0, vtkIdType vertex1Id, double scalar1,
@@ -363,4 +349,5 @@ private:
   void operator=(const vtkReebGraph&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

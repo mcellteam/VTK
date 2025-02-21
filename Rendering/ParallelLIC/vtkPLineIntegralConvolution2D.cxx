@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPLineIntegralConvolution2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPLineIntegralConvolution2D.h"
 
 #include "vtkMPI.h"
@@ -20,31 +8,32 @@
 #include "vtkPainterCommunicator.h"
 #include "vtkParallelTimer.h"
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPLineIntegralConvolution2D);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPLineIntegralConvolution2D::vtkPLineIntegralConvolution2D()
 {
   this->Comm = new vtkPPainterCommunicator;
 }
 
-// ----------------------------------------------------------------------------
-vtkPLineIntegralConvolution2D::~vtkPLineIntegralConvolution2D() {}
+//------------------------------------------------------------------------------
+vtkPLineIntegralConvolution2D::~vtkPLineIntegralConvolution2D() = default;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLineIntegralConvolution2D::SetCommunicator(vtkPainterCommunicator* comm)
 {
   this->Comm->Copy(comm, false);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPainterCommunicator* vtkPLineIntegralConvolution2D::GetCommunicator()
 {
   return this->Comm;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLineIntegralConvolution2D::GetGlobalMinMax(
   vtkPainterCommunicator* painterComm, float& min, float& max)
 {
@@ -60,7 +49,7 @@ void vtkPLineIntegralConvolution2D::GetGlobalMinMax(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLineIntegralConvolution2D::StartTimerEvent(const char* event)
 {
 #if defined(vtkLineIntegralConvolution2DTIME) || defined(vtkSurfaceLICPainterTIME)
@@ -71,7 +60,7 @@ void vtkPLineIntegralConvolution2D::StartTimerEvent(const char* event)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLineIntegralConvolution2D::EndTimerEvent(const char* event)
 {
 #if defined(vtkLineIntegralConvolution2DTIME) || defined(vtkSurfaceLICPainterTIME)
@@ -82,7 +71,7 @@ void vtkPLineIntegralConvolution2D::EndTimerEvent(const char* event)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLineIntegralConvolution2D::WriteTimerLog(const char* fileName)
 {
 #ifdef vtkLineIntegralConvolution2DTIME
@@ -104,9 +93,10 @@ void vtkPLineIntegralConvolution2D::WriteTimerLog(const char* fileName)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLineIntegralConvolution2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "LogFileName=" << this->LogFileName << endl;
 }
+VTK_ABI_NAMESPACE_END

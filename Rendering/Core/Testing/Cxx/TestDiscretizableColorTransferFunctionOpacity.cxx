@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestDiscretizableColorTransferFunction.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkDiscretizableColorTransferFunction.h"
 #include "vtkDoubleArray.h"
@@ -21,7 +9,7 @@
 
 #include <cstring>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestDiscretizableColorTransferFunctionOpacity(int, char*[])
 {
   // Discretizable color transfer function
@@ -94,7 +82,7 @@ int TestDiscretizableColorTransferFunctionOpacity(int, char*[])
   mapScalarsOutput.TakeReference(dctf->MapScalars(da, VTK_COLOR_MODE_MAP_SCALARS, -1));
 
   if (std::memcmp(mapScalarsThroughTableOutput, mapScalarsOutput->GetVoidPointer(0),
-        3 * 4 * sizeof(unsigned char)))
+        3 * 4 * sizeof(unsigned char)) != 0)
   {
     return EXIT_FAILURE;
   }

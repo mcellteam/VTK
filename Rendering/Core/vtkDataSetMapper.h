@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSetMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataSetMapper
  * @brief   map vtkDataSet and derived classes to graphics primitives
@@ -29,11 +17,13 @@
 
 #include "vtkMapper.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALMANUAL
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyDataMapper;
 class vtkDataSetSurfaceFilter;
 
-class VTKRENDERINGCORE_EXPORT vtkDataSetMapper : public vtkMapper
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALMANUAL vtkDataSetMapper : public vtkMapper
 {
 public:
   static vtkDataSetMapper* New();
@@ -41,12 +31,12 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   void Render(vtkRenderer* ren, vtkActor* act) override;
 
-  //@{
+  ///@{
   /**
    * Get the internal poly data mapper used to map data set to graphics system.
    */
   vtkGetObjectMacro(PolyDataMapper, vtkPolyDataMapper);
-  //@}
+  ///@}
 
   /**
    * Release any graphics resources that are being consumed by this mapper.
@@ -60,13 +50,13 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set the Input of this mapper.
    */
   void SetInputData(vtkDataSet* input);
   vtkDataSet* GetInput();
-  //@}
+  ///@}
 
 protected:
   vtkDataSetMapper();
@@ -85,4 +75,5 @@ private:
   void operator=(const vtkDataSetMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

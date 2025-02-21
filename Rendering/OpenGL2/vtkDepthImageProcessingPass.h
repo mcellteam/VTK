@@ -1,17 +1,6 @@
-/*=========================================================================
-
-   Program: ParaView
-   Module:    vtkDepthImageProcessingPass.h
-
-  Copyright (c) Sandia Corporation, Kitware Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation, Kitware Inc
+// SPDX-License-Identifier: BSD-3-Clause
 /*----------------------------------------------------------------------
 Acknowledgement:
 This algorithm is the result of joint work by Electricité de France,
@@ -36,13 +25,16 @@ Ph.D. thesis of Christian BOUCHENY.
 
 #include "vtkImageProcessingPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLRenderWindow;
 class vtkDepthPeelingPassLayerList; // Pimpl
 class vtkOpenGLFramebufferObject;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkDepthImageProcessingPass : public vtkImageProcessingPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkDepthImageProcessingPass
+  : public vtkImageProcessingPass
 {
 public:
   vtkTypeMacro(vtkDepthImageProcessingPass, vtkImageProcessingPass);
@@ -91,4 +83,5 @@ private:
   void operator=(const vtkDepthImageProcessingPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

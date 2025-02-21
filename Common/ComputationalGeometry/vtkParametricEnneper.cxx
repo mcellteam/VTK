@@ -1,24 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParametricEnneper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParametricEnneper.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkParametricEnneper);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParametricEnneper::vtkParametricEnneper()
 {
   // Preset triangulation parameters
@@ -35,10 +24,10 @@ vtkParametricEnneper::vtkParametricEnneper()
   this->DerivativesAvailable = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParametricEnneper::~vtkParametricEnneper() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParametricEnneper::Evaluate(double uvw[3], double Pt[3], double Duvw[9])
 {
 
@@ -61,14 +50,15 @@ void vtkParametricEnneper::Evaluate(double uvw[3], double Pt[3], double Duvw[9])
   Dv[2] = -2 * v;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkParametricEnneper::EvaluateScalar(double*, double*, double*)
 {
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParametricEnneper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

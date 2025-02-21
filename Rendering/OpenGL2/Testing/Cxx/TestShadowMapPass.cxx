@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // test baking shadow maps
 //
 // The command line arguments are:
@@ -41,7 +30,7 @@
 #include "vtkTestUtilities.h"
 #include "vtkTimerLog.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestShadowMapPass(int argc, char* argv[])
 {
   vtkNew<vtkRenderer> renderer;
@@ -52,19 +41,28 @@ int TestShadowMapPass(int argc, char* argv[])
   vtkNew<vtkRenderWindowInteractor> iren;
   iren->SetRenderWindow(renderWindow);
 
+  // Add a couple of additional lights
   vtkNew<vtkLight> light1;
-  light1->SetFocalPoint(0, 0, 0);
+  light1->SetFocalPoint(1, 0, 1);
   light1->SetPosition(0, 1, 0.2);
   light1->SetColor(0.95, 0.97, 1.0);
   light1->SetIntensity(0.8);
   renderer->AddLight(light1);
 
   vtkNew<vtkLight> light2;
-  light2->SetFocalPoint(0, 0, 0);
-  light2->SetPosition(1.0, 1.0, 1.0);
+  light2->SetFocalPoint(0, 0, 1);
+  light2->SetPosition(0.2, 0.5, 0.5);
   light2->SetColor(1.0, 0.8, 0.7);
-  light2->SetIntensity(0.3);
+  light2->SetIntensity(0.5);
   renderer->AddLight(light2);
+
+  vtkNew<vtkLight> light3;
+  light3->SetFocalPoint(-0.1, -0.5, -0.5);
+  light3->SetPosition(0.2, 0.5, 0.5);
+  light3->SetColor(1.0, 0.8, 0.7);
+  light3->SetPositional(true);
+  light3->SetIntensity(0.3);
+  renderer->AddLight(light3);
 
   const char* fileName = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/dragon.ply");
   vtkNew<vtkPLYReader> reader;

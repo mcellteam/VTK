@@ -6,6 +6,12 @@ KIT
   VTK::Parallel
 IMPLEMENTS
   VTK::FiltersFlowPaths
+DESCRIPTION
+  Filters that trace particles in a distributed-memory parallel environment.
+SPDX_LICENSE_IDENTIFIER
+  BSD-3-Clause
+SPDX_COPYRIGHT_TEXT
+  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
 DEPENDS
   VTK::CommonCore
   VTK::FiltersFlowPaths
@@ -28,5 +34,6 @@ TEST_DEPENDS
   VTK::IOParallel
   VTK::ImagingCore
   VTK::ParallelMPI
+  VTK::FiltersParallelDIY2
   VTK::RenderingParallel
   VTK::TestingRendering

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastDepthPeelingTransVol.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  *  Tests depth peeling pass with volume rendering.
  */
@@ -56,9 +44,9 @@ int TestGPURayCastDepthPeelingTransVol(int argc, char* argv[])
   vtkOpenGLRenderer* oglRen = vtkOpenGLRenderer::SafeDownCast(ren);
   assert(oglRen); // This test should only be enabled for OGL2 backend.
   // This will print details about why depth peeling is unsupported:
-  oglRen->SetDebug(1);
+  oglRen->SetDebug(true);
   bool supported = oglRen->IsDualDepthPeelingSupported();
-  oglRen->SetDebug(0);
+  oglRen->SetDebug(false);
   if (!supported)
   {
     std::cerr << "Skipping test; volume peeling not supported.\n";
@@ -163,7 +151,7 @@ int TestGPURayCastDepthPeelingTransVol(int argc, char* argv[])
   ren->SetMaximumNumberOfPeels(17);
   ren->SetUseDepthPeelingForVolumes(true);
 
-  // Fully trasnparent sphere
+  // Fully transparent sphere
   vtkNew<vtkRenderer> ren2;
   ren2->SetBackground(1.0, 1.0, 1.0);
   ren2->SetViewport(0.5, 0.0, 1.0, 1.0);

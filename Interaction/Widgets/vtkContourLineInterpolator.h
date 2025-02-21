@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContourLineInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkContourLineInterpolator
  * @brief   Defines API for interpolating/modifying nodes from a vtkContourRepresentation
@@ -35,6 +23,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkContourRepresentation;
 class vtkIntArray;
@@ -42,13 +31,13 @@ class vtkIntArray;
 class VTKINTERACTIONWIDGETS_EXPORT vtkContourLineInterpolator : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkContourLineInterpolator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Subclasses that wish to interpolate a line segment must implement this.
@@ -94,4 +83,5 @@ private:
   void operator=(const vtkContourLineInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkViewNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkViewNode.h"
 
 #include "vtkCollection.h"
@@ -19,14 +7,15 @@
 #include "vtkObjectFactory.h"
 #include "vtkViewNodeFactory.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 const char* vtkViewNode::operation_type_strings[] = { "noop", "build", "synchronize", "render",
   nullptr };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkViewNode, MyFactory, vtkViewNodeFactory);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode::vtkViewNode()
 {
   this->Renderable = nullptr;
@@ -36,10 +25,10 @@ vtkViewNode::vtkViewNode()
   this->RenderTime = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode::~vtkViewNode()
 {
-  this->Parent = 0;
+  this->Parent = nullptr;
   for (auto val : this->Children)
   {
     val->Delete();
@@ -48,29 +37,29 @@ vtkViewNode::~vtkViewNode()
   if (this->MyFactory)
   {
     this->MyFactory->Delete();
-    this->MyFactory = 0;
+    this->MyFactory = nullptr;
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::SetParent(vtkViewNode* p)
 {
   this->Parent = p;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode* vtkViewNode::GetParent()
 {
   return this->Parent;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::PrepareNodes()
 {
   for (auto child : this->Children)
@@ -79,7 +68,7 @@ void vtkViewNode::PrepareNodes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::RemoveUnusedNodes()
 {
   for (auto it = this->Children.begin(); it != this->Children.end();)
@@ -101,7 +90,7 @@ void vtkViewNode::RemoveUnusedNodes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::AddMissingNodes(vtkCollection* col)
 {
   vtkCollectionSimpleIterator rit;
@@ -109,28 +98,11 @@ void vtkViewNode::AddMissingNodes(vtkCollection* col)
   while (rit)
   {
     vtkObject* obj = col->GetNextItemAsObject(rit);
-    if (obj)
-    {
-      auto nit = this->Renderables.find(obj);
-      if (nit == this->Renderables.end())
-      {
-        vtkViewNode* node = this->CreateViewNode(obj);
-        if (node)
-        {
-          this->Children.push_back(node);
-          node->SetParent(this);
-          node->Used = true;
-        }
-      }
-      else
-      {
-        nit->second->Used = true;
-      }
-    }
+    this->AddMissingNode(obj);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::AddMissingNode(vtkObject* obj)
 {
   if (!obj)
@@ -156,7 +128,7 @@ void vtkViewNode::AddMissingNode(vtkObject* obj)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::TraverseAllPasses()
 {
   this->Traverse(build);
@@ -164,7 +136,7 @@ void vtkViewNode::TraverseAllPasses()
   this->Traverse(render);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::Traverse(int operation)
 {
   this->Apply(operation, true);
@@ -177,7 +149,7 @@ void vtkViewNode::Traverse(int operation)
   this->Apply(operation, false);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode* vtkViewNode::CreateViewNode(vtkObject* obj)
 {
   vtkViewNode* ret = nullptr;
@@ -196,7 +168,7 @@ vtkViewNode* vtkViewNode::CreateViewNode(vtkObject* obj)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode* vtkViewNode::GetFirstAncestorOfType(const char* type)
 {
   if (!this->Parent)
@@ -210,13 +182,13 @@ vtkViewNode* vtkViewNode::GetFirstAncestorOfType(const char* type)
   return this->Parent->GetFirstAncestorOfType(type);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::SetRenderable(vtkObject* obj)
 {
   this->Renderable = obj;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNode::Apply(int operation, bool prepass)
 {
   // cerr << this->GetClassName() << "(" << this << ") Apply("
@@ -237,12 +209,10 @@ void vtkViewNode::Apply(int operation, bool prepass)
     case invalidate:
       this->Invalidate(prepass);
       break;
-    default:
-      cerr << "UNKNOWN OPERATION" << operation << endl;
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode* vtkViewNode::GetViewNodeFor(vtkObject* obj)
 {
   if (this->Renderable == obj)
@@ -261,7 +231,7 @@ vtkViewNode* vtkViewNode::GetViewNodeFor(vtkObject* obj)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode* vtkViewNode::GetFirstChildOfType(const char* type)
 {
   if (this->IsA(type))
@@ -278,3 +248,4 @@ vtkViewNode* vtkViewNode::GetFirstChildOfType(const char* type)
   }
   return nullptr;
 }
+VTK_ABI_NAMESPACE_END

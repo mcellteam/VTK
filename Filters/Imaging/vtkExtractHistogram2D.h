@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractHistogram2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkExtractHistogram2D
  * @brief   compute a 2D histogram between two columns
@@ -51,6 +35,8 @@
 #include "vtkFiltersImagingModule.h" // For export macro
 #include "vtkStatisticsAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
+class vtkDataSetAttributes;
 class vtkImageData;
 class vtkIdTypeArray;
 class vtkMultiBlockDataSet;
@@ -67,33 +53,33 @@ public:
     HISTOGRAM_IMAGE = 3
   };
 
-  //@{
+  ///@{
   /**
    * Set/get the number of bins to be used per dimension (x,y)
    */
   vtkSetVector2Macro(NumberOfBins, int);
   vtkGetVector2Macro(NumberOfBins, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the components of the arrays in the two input columns
    * to be used during histogram computation.  Defaults to component 0.
    */
   vtkSetVector2Macro(ComponentsToProcess, int);
   vtkGetVector2Macro(ComponentsToProcess, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get a custom domain for histogram computation.  UseCustomHistogramExtents
    * must be called for these to actually be used.
    */
   vtkSetVector4Macro(CustomHistogramExtents, double);
   vtkGetVector4Macro(CustomHistogramExtents, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use the extents in CustomHistogramExtents when computing the
    * histogram, rather than the simple range of the input columns.
@@ -101,9 +87,9 @@ public:
   vtkSetMacro(UseCustomHistogramExtents, vtkTypeBool);
   vtkGetMacro(UseCustomHistogramExtents, vtkTypeBool);
   vtkBooleanMacro(UseCustomHistogramExtents, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the scalar type of the output histogram.  If the input
    * is relatively small, you can save space by using a smaller
@@ -117,15 +103,15 @@ public:
   void SetScalarTypeToFloat() { this->SetScalarType(VTK_FLOAT); }
   void SetScalarTypeToDouble() { this->SetScalarType(VTK_DOUBLE); }
   vtkGetMacro(ScalarType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access the count of the histogram bin containing the largest number
    * of input rows.
    */
   vtkGetMacro(MaximumBinCount, double);
-  //@}
+  ///@}
 
   /**
    * Compute the range of the bin located at position (binX,binY) in
@@ -161,13 +147,13 @@ public:
   vtkGetMacro(SwapColumns, vtkTypeBool);
   vtkBooleanMacro(SwapColumns, vtkTypeBool);
 
-  //@{
+  ///@{
   /**
    * Get/Set an optional mask that can ignore rows of the table
    */
   virtual void SetRowMask(vtkDataArray*);
   vtkGetObjectMacro(RowMask, vtkDataArray);
-  //@}
+  ///@}
 
   /**
    * Given a collection of models, calculate aggregate model. Not used.
@@ -188,7 +174,7 @@ protected:
   int ScalarType;
   vtkDataArray* RowMask;
 
-  virtual int ComputeBinExtents(vtkDataArray* col1, vtkDataArray* col2);
+  virtual int ComputeBinExtents(vtkDataSetAttributes* dsa, vtkDataArray* col1, vtkDataArray* col2);
 
   /**
    * Execute the calculations required by the Learn option.
@@ -204,12 +190,12 @@ protected:
   /**
    * Execute the calculations required by the Test option.
    */
-  void Test(vtkTable*, vtkMultiBlockDataSet*, vtkTable*) override { return; }
+  void Test(vtkTable*, vtkMultiBlockDataSet*, vtkTable*) override {}
 
   /**
    * Execute the calculations required by the Assess option.
    */
-  void Assess(vtkTable*, vtkMultiBlockDataSet*, vtkTable*) override { return; }
+  void Assess(vtkTable*, vtkMultiBlockDataSet*, vtkTable*) override {}
 
   /**
    * Provide the appropriate assessment functor. Not used.
@@ -237,4 +223,5 @@ private:
   void operator=(const vtkExtractHistogram2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

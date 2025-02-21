@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVoxelContoursToSurfaceFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVoxelContoursToSurfaceFilter
  * @brief   create surface from contours
@@ -46,6 +34,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkVoxelContoursToSurfaceFilter : public vtkPolyDataAlgorithm
 {
 public:
@@ -53,7 +42,7 @@ public:
   vtkTypeMacro(vtkVoxelContoursToSurfaceFilter, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set / Get the memory limit in bytes for this filter. This is the limit
    * of the size of the structured points data set that is created for
@@ -62,7 +51,7 @@ public:
    */
   vtkSetMacro(MemoryLimitInBytes, int);
   vtkGetMacro(MemoryLimitInBytes, int);
-  //@}
+  ///@}
 
   vtkSetVector3Macro(Spacing, double);
   vtkGetVectorMacro(Spacing, double, 3);
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkVoxelContoursToSurfaceFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

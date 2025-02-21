@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCPExodusIIResultsArrayTemplate.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkCPExodusIIResultsArrayTemplate
@@ -27,23 +15,28 @@
 #ifndef vtkCPExodusIIResultsArrayTemplate_h
 #define vtkCPExodusIIResultsArrayTemplate_h
 
+#include "vtkDeprecation.h" // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkMappedDataArray.h"
 
 #include "vtkObjectFactory.h" // for vtkStandardNewMacro
 
+VTK_ABI_NAMESPACE_BEGIN
 template <class Scalar>
-class vtkCPExodusIIResultsArrayTemplate : public vtkMappedDataArray<Scalar>
+class VTK_DEPRECATED_IN_9_5_0("Please use the SetArray functionality of `vtkAOSDataArrayTemplate` "
+                              "for 1 component or `vtkSOADataArrayTemplate` for more "
+                              "instead.") vtkCPExodusIIResultsArrayTemplate
+  : public vtkMappedDataArray<Scalar>
 {
 public:
   vtkAbstractTemplateTypeMacro(
     vtkCPExodusIIResultsArrayTemplate<Scalar>, vtkMappedDataArray<Scalar>)
-    vtkMappedDataArrayNewInstanceMacro(
-      vtkCPExodusIIResultsArrayTemplate<Scalar>) static vtkCPExodusIIResultsArrayTemplate* New();
+  vtkMappedDataArrayNewInstanceMacro(
+    vtkCPExodusIIResultsArrayTemplate<Scalar>) static vtkCPExodusIIResultsArrayTemplate* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   typedef typename Superclass::ValueType ValueType;
 
-  //@{
+  ///@{
   /**
    * Set the arrays to be used and the number of tuples in each array.
    * The save option can be set to true to indicate that this class
@@ -52,7 +45,7 @@ public:
    */
   void SetExodusScalarArrays(std::vector<Scalar*> arrays, vtkIdType numTuples);
   void SetExodusScalarArrays(std::vector<Scalar*> arrays, vtkIdType numTuples, bool save);
-  //@}
+  ///@}
 
   // Reimplemented virtuals -- see superclasses for descriptions:
   void Initialize() override;
@@ -72,7 +65,7 @@ public:
   ValueType& GetValueReference(vtkIdType idx) override;
   void GetTypedTuple(vtkIdType idx, Scalar* t) const override;
 
-  //@{
+  ///@{
   /**
    * This container is read only -- this method does nothing but print a
    * warning.
@@ -87,6 +80,8 @@ public:
   void InsertTuple(vtkIdType i, const float* source) override;
   void InsertTuple(vtkIdType i, const double* source) override;
   void InsertTuples(vtkIdList* dstIds, vtkIdList* srcIds, vtkAbstractArray* source) override;
+  void InsertTuplesStartingAt(
+    vtkIdType dstStart, vtkIdList* srcIds, vtkAbstractArray* source) override;
   void InsertTuples(
     vtkIdType dstStart, vtkIdType n, vtkIdType srcStart, vtkAbstractArray* source) override;
   vtkIdType InsertNextTuple(vtkIdType j, vtkAbstractArray* source) override;
@@ -109,7 +104,7 @@ public:
   void SetValue(vtkIdType idx, Scalar value) override;
   vtkIdType InsertNextValue(Scalar v) override;
   void InsertValue(vtkIdType idx, Scalar v) override;
-  //@}
+  ///@}
 
 protected:
   vtkCPExodusIIResultsArrayTemplate();
@@ -123,14 +118,15 @@ private:
 
   vtkIdType Lookup(const Scalar& val, vtkIdType startIndex);
   double* TempDoubleArray;
-  //@{
+  ///@{
   /**
    * By default Save is false.
    */
   bool Save;
-  //@}
+  ///@}
 };
 
+VTK_ABI_NAMESPACE_END
 #include "vtkCPExodusIIResultsArrayTemplate.txx"
 
 #endif // vtkCPExodusIIResultsArrayTemplate_h

@@ -1,22 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridToExplicitStructuredGrid.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkUnstructuredGridToExplicitStructuredGrid
  * @brief   Filter which converts an unstructured grid data into an explicit structured grid.
  *          The input grid must have a structured coordinates int cell array.
- *          Moreover, its cell must be listed in the i-j-k order (k varying more ofter)
+ *          Moreover, its cell must be listed in the i-j-k order (k varying more often)
  */
 
 #ifndef vtkUnstructuredGridToExplicitStructuredGrid_h
@@ -25,21 +13,23 @@
 #include "vtkExplicitStructuredGridAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkUnstructuredGridToExplicitStructuredGrid
   : public vtkExplicitStructuredGridAlgorithm
 {
 public:
   static vtkUnstructuredGridToExplicitStructuredGrid* New();
   vtkTypeMacro(vtkUnstructuredGridToExplicitStructuredGrid, vtkExplicitStructuredGridAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the whole extents for the grid to produce. The size of the grid
    * must match the number of cells in the input.
    */
   vtkSetVector6Macro(WholeExtent, int);
   vtkGetVector6Macro(WholeExtent, int);
-  //@}
+  ///@}
 
 protected:
   vtkUnstructuredGridToExplicitStructuredGrid();
@@ -57,4 +47,5 @@ private:
   void operator=(const vtkUnstructuredGridToExplicitStructuredGrid&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

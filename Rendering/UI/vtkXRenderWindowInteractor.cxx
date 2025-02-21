@@ -1,28 +1,18 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkXRenderWindowInteractor.cxx
+// Must be included first to avoid conflicts with X11's `Status` define.
+#include <vtksys/SystemTools.hxx>
 
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkXRenderWindowInteractor.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <poll.h>
 #include <sys/time.h>
 
-// We have to define XTSTRINGDEFINES (used in X11/StringDefs.h and X11/Shell.h)
-// otherwise the string are define as char * instead of const char which can
-// cause warnings.
-// #define XTSTRINGDEFINES
 #include "vtkActor.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCommand.h"
@@ -31,9 +21,6 @@
 #include "vtkRenderWindow.h"
 #include "vtkStringArray.h"
 
-#include <vtksys/SystemTools.hxx>
-
-#include <X11/Shell.h>
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
@@ -41,9 +28,13 @@
 
 #include <climits>
 #include <cmath>
+#include <cstdint>
 #include <map>
+#include <set>
 #include <sstream>
+#include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXRenderWindowInteractor);
 
 template <int EventType>
@@ -58,6 +49,8 @@ struct vtkXRenderWindowInteractorTimer
   timeval lastFire;
 };
 
+constexpr unsigned char XDND_VERSION = 5;
+
 // Map between the X native id to our own integer count id.  Note this
 // is separate from the TimerMap in the vtkRenderWindowInteractor
 // superclass.  This is used to avoid passing 64-bit values back
@@ -65,8 +58,12 @@ struct vtkXRenderWindowInteractorTimer
 class vtkXRenderWindowInteractorInternals
 {
 public:
-  vtkXRenderWindowInteractorInternals() { this->TimerIdCount = 1; }
-  ~vtkXRenderWindowInteractorInternals() {}
+  vtkXRenderWindowInteractorInternals()
+  {
+    this->DisplayConnection = -1;
+    this->TimerIdCount = 1;
+  }
+  ~vtkXRenderWindowInteractorInternals() = default;
 
   // duration is in milliseconds
   int CreateLocalTimer(unsigned long duration)
@@ -79,71 +76,92 @@ public:
 
   void DestroyLocalTimer(int id) { this->LocalToTimer.erase(id); }
 
-  void GetTimeToNextTimer(timeval& tv)
+  /**
+   * This interactor uses `poll()` to coordinate timers.
+   * Returns true if `poll()` needs to block until some time elapses or a user interaction event
+   * occurs. Returns false if `poll()` needs to block indefinitely until a user interaction event
+   * occurs. The `timeout` arg is populated with a time interval (in milliseconds) that can be
+   * used by `poll()` when it needs to use a timeout.
+   */
+  bool GetTimeToNextTimer(int& timeout)
   {
-    uint64_t lowestDelta = 1000000;
-    if (this->LocalToTimer.size())
+    bool useTimeout = false; // whether `poll()` must block for some time.
+    uint64_t delta = 0;      // in microseconds
+    if (!this->LocalToTimer.empty())
     {
       timeval ctv;
       gettimeofday(&ctv, nullptr);
+      delta = VTK_UNSIGNED_INT_MAX; // arbitrary high value for time interval
       for (auto& timer : this->LocalToTimer)
       {
-        uint64_t delta = (ctv.tv_sec - timer.second.lastFire.tv_sec) * 1000000 + ctv.tv_usec -
-          timer.second.lastFire.tv_usec;
-        if (delta < lowestDelta)
-        {
-          lowestDelta = delta;
-        }
+        uint64_t duration = timer.second.duration * 1000; // in microsecs
+        uint64_t elapsed = (ctv.tv_sec - timer.second.lastFire.tv_sec) * 1000000 + ctv.tv_usec -
+          timer.second.lastFire.tv_usec; // in microsecs
+        // 0 lets the timer fire immediately.
+        delta = duration > elapsed ? std::min<uint64_t>(duration - elapsed, delta) : 0;
+        useTimeout = true;
       }
     }
-    tv.tv_sec = lowestDelta / 1000000;
-    tv.tv_usec = lowestDelta % 1000000;
+    // max timeout will be VTK_UNSIGNED_INT_MAX/1000, or 4.3e6 milliseconds
+    timeout = static_cast<int>(delta / 1000);
+    return useTimeout;
   }
 
   void FireTimers(vtkXRenderWindowInteractor* rwi)
   {
-    if (this->LocalToTimer.size())
+    if (!this->LocalToTimer.empty())
     {
       timeval ctv;
       gettimeofday(&ctv, nullptr);
-      std::vector<unsigned long> expired;
-      for (auto& timer : this->LocalToTimer)
+      std::vector<LocalToTimerType::value_type> timers(
+        this->LocalToTimer.begin(), this->LocalToTimer.end());
+      for (auto& timer : timers)
       {
         int64_t delta = (ctv.tv_sec - timer.second.lastFire.tv_sec) * 1000000 + ctv.tv_usec -
           timer.second.lastFire.tv_usec;
         if (delta / 1000 >= static_cast<int64_t>(timer.second.duration))
         {
           int timerId = rwi->GetVTKTimerId(timer.first);
-          rwi->InvokeEvent(vtkCommand::TimerEvent, &timerId);
-          if (rwi->IsOneShotTimer(timerId))
+          if (timerId != 0)
           {
-            expired.push_back(timer.first);
-          }
-          else
-          {
-            timer.second.lastFire.tv_sec = ctv.tv_sec;
-            timer.second.lastFire.tv_usec = ctv.tv_usec;
+            rwi->InvokeEvent(vtkCommand::TimerEvent, &timerId);
+            if (rwi->IsOneShotTimer(timerId))
+            {
+              this->DestroyLocalTimer(timer.first);
+            }
+            else
+            {
+              auto it = this->LocalToTimer.find(timer.first);
+              if (it != this->LocalToTimer.end())
+              {
+                it->second.lastFire.tv_sec = ctv.tv_sec;
+                it->second.lastFire.tv_usec = ctv.tv_usec;
+              }
+            }
           }
         }
-      }
-      for (auto exp : expired)
-      {
-        this->DestroyLocalTimer(exp);
       }
     }
   }
 
+  static std::set<vtkXRenderWindowInteractor*> Instances;
+
+  // whether application was terminated
+  bool LoopDone = false;
+  int DisplayConnection;
+
 private:
   int TimerIdCount;
-  std::map<int, vtkXRenderWindowInteractorTimer> LocalToTimer;
+  typedef std::map<int, vtkXRenderWindowInteractorTimer> LocalToTimerType;
+  LocalToTimerType LocalToTimer;
 };
 
-int vtkXRenderWindowInteractor::BreakLoopFlag = 1;
+std::set<vtkXRenderWindowInteractor*> vtkXRenderWindowInteractorInternals::Instances;
 
 // for some reason the X11 def of KeySym is getting messed up
 typedef XID vtkKeySym;
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXRenderWindowInteractor::vtkXRenderWindowInteractor()
 {
   this->Internal = new vtkXRenderWindowInteractorInternals;
@@ -151,6 +169,10 @@ vtkXRenderWindowInteractor::vtkXRenderWindowInteractor()
   this->WindowId = 0;
   this->KillAtom = 0;
   this->XdndSource = 0;
+  this->XdndFormatAtom = 0;
+  this->XdndURIListAtom = 0;
+  this->XdndTypeListAtom = 0;
+  this->XdndEnterAtom = 0;
   this->XdndPositionAtom = 0;
   this->XdndDropAtom = 0;
   this->XdndActionCopyAtom = 0;
@@ -158,26 +180,33 @@ vtkXRenderWindowInteractor::vtkXRenderWindowInteractor()
   this->XdndFinishedAtom = 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXRenderWindowInteractor::~vtkXRenderWindowInteractor()
 {
+  this->Finalize();
+
   this->Disable();
 
   delete this->Internal;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // TerminateApp() notifies the event loop to exit.
 // The event loop is started by Start() or by one own's method.
 // This results in Start() returning to its caller.
 void vtkXRenderWindowInteractor::TerminateApp()
 {
-  if (this->BreakLoopFlag)
+  if (this->Done)
   {
     return;
   }
 
-  this->BreakLoopFlag = 1;
+  this->Done = true;
+
+  if (this->RenderWindow == nullptr || this->RenderWindow->GetGenericDisplayId() == nullptr)
+  {
+    return;
+  }
 
   // Send a VTK_BreakXtLoop ClientMessage event to be sure we pop out of the
   // event loop.  This "wakes up" the event loop.  Otherwise, it might sit idle
@@ -198,79 +227,146 @@ void vtkXRenderWindowInteractor::TerminateApp()
   XFlush(client.display);
 }
 
-void vtkXRenderWindowInteractor::SetBreakLoopFlag(int f)
-{
-  if (f)
-  {
-    this->BreakLoopFlagOn();
-  }
-  else
-  {
-    this->BreakLoopFlagOff();
-  }
-}
-
-void vtkXRenderWindowInteractor::BreakLoopFlagOff()
-{
-  this->BreakLoopFlag = 0;
-  this->Modified();
-}
-
-void vtkXRenderWindowInteractor::BreakLoopFlagOn()
-{
-  this->TerminateApp();
-  this->Modified();
-}
-
 void vtkXRenderWindowInteractor::ProcessEvents()
 {
-  XEvent event;
-  while (XPending(this->DisplayId) && this->BreakLoopFlag == 0)
+  auto& internals = (*this->Internal);
+  auto& done = internals.LoopDone;
+
+  std::map<Window, vtkXRenderWindowInteractor*> windowmap;
+  std::set<Display*> dpys;
+  // Make a copy of Instances, the original set might change during loop
+  std::vector<vtkXRenderWindowInteractor*> instances(
+    vtkXRenderWindowInteractorInternals::Instances.begin(),
+    vtkXRenderWindowInteractorInternals::Instances.end());
+  for (auto rwi : instances)
   {
-    XNextEvent(this->DisplayId, &event);
-    this->DispatchEvent(&event);
+    if (rwi->RenderWindow->GetGenericDisplayId() == nullptr)
+    {
+      // The window has closed the display connection
+      rwi->Finalize();
+      continue;
+    }
+    windowmap.insert({ rwi->WindowId, rwi });
+    dpys.insert(rwi->DisplayId);
+  }
+
+  for (Display* dpy : dpys)
+  {
+    XEvent event;
+    while (this->CheckDisplayId(dpy) && XPending(dpy) != 0)
+    {
+      // If events are pending, dispatch them to the right RenderWindowInteractor
+      XNextEvent(dpy, &event);
+      Window w = event.xany.window;
+      auto iter = windowmap.find(w);
+      if (iter != windowmap.end() && !iter->second->Done)
+      {
+        iter->second->DispatchEvent(&event);
+      }
+    }
+  }
+
+  // Set event loop to terminate if there were no displays to check for events
+  done = dpys.empty();
+
+  for (auto rwi : vtkXRenderWindowInteractorInternals::Instances)
+  {
+    if (!rwi->Done)
+    {
+      rwi->FireTimers();
+    }
+    // Set event loop to terminate if SetDone(true) or TerminateApp() was
+    // called on any of the interactors
+    done = done || rwi->Done;
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkXRenderWindowInteractor::WaitForEvents()
+{
+  bool useTimeout = false;
+  int soonestTimer = 0;
+
+  // check to see how long we wait for the next timer
+  for (auto rwi : vtkXRenderWindowInteractorInternals::Instances)
+  {
+    if (rwi->Done)
+    {
+      continue;
+    }
+
+    int t;
+    bool haveTimer = rwi->Internal->GetTimeToNextTimer(t);
+    if (haveTimer)
+    {
+      if (!useTimeout)
+      {
+        useTimeout = true;
+        soonestTimer = t;
+      }
+      else
+      {
+        soonestTimer = std::min(soonestTimer, t);
+      }
+    }
+  }
+
+  // build the list of unique display connection fds to poll
+  std::vector<pollfd> in_fds;
+  for (auto rwi : vtkXRenderWindowInteractorInternals::Instances)
+  {
+    if (!rwi->Done && rwi->RenderWindow->GetGenericDisplayId() != nullptr)
+    {
+      int rwi_fd = rwi->Internal->DisplayConnection;
+      auto iter = std::lower_bound(in_fds.begin(), in_fds.end(), rwi_fd,
+        [](const pollfd& pfd, const int& fd) { return pfd.fd < fd; });
+
+      if (iter == in_fds.end() || iter->fd != rwi_fd)
+      {
+        in_fds.insert(iter, { rwi_fd, POLLIN, 0 });
+      }
+    }
+  }
+
+  if (!in_fds.empty())
+  {
+    // poll() will wait until timeout elapses or something else wakes us
+    int timeout = useTimeout ? soonestTimer : -1;
+    vtkDebugMacro(<< "X event wait, timeout=" << timeout << "ms");
+    poll(in_fds.data(), static_cast<nfds_t>(in_fds.size()), timeout);
+  }
+}
+
+//------------------------------------------------------------------------------
 // This will start up the X event loop. If you
 // call this method it will loop processing X events until the
 // loop is exited.
 void vtkXRenderWindowInteractor::StartEventLoop()
 {
-  int X11fd = ConnectionNumber(this->DisplayId);
-  fd_set in_fds;
-  struct timeval tv;
+  // cannot process events without an X display or window.
+  if (!this->DisplayId || !this->WindowId)
+  {
+    return;
+  }
+  for (auto rwi : vtkXRenderWindowInteractorInternals::Instances)
+  {
+    rwi->Done = false;
+  }
 
-  this->BreakLoopFlag = 0;
+  auto& loopDone = this->Internal->LoopDone;
   do
   {
-    if (XPending(this->DisplayId) == 0)
+    // process pending events.
+    this->ProcessEvents();
+    // wait for events if application is not yet terminated.
+    if (!loopDone)
     {
-      // get how long to wait for the next timer
-      this->Internal->GetTimeToNextTimer(tv);
-      // do a select
-      FD_ZERO(&in_fds);
-      FD_SET(X11fd, &in_fds);
-      int num_ready_fds = select(X11fd + 1, &in_fds, nullptr, nullptr, &tv);
-      if (num_ready_fds > 0)
-      {
-        XEvent event;
-        XNextEvent(this->DisplayId, &event);
-        this->DispatchEvent(&event);
-      }
+      this->WaitForEvents();
     }
-    else
-    {
-      XEvent event;
-      XNextEvent(this->DisplayId, &event);
-      this->DispatchEvent(&event);
-    }
-    this->FireTimers();
-  } while (this->BreakLoopFlag == 0);
+  } while (!loopDone);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initializes the event handlers without an XtAppContext.  This is
 // good for when you don't have a user interface, but you still
 // want to have mouse interaction.
@@ -294,31 +390,42 @@ void vtkXRenderWindowInteractor::Initialize()
   this->Initialized = 1;
   ren = this->RenderWindow;
 
+  ren->EnsureDisplay();
   this->DisplayId = static_cast<Display*>(ren->GetGenericDisplayId());
-  if (!this->DisplayId)
-  {
-    vtkDebugMacro("opening display");
-    this->DisplayId = XOpenDisplay(nullptr);
-    vtkDebugMacro("opened display");
-    ren->SetDisplayId(this->DisplayId);
-  }
+
+  vtkXRenderWindowInteractorInternals::Instances.insert(this);
 
   size = ren->GetActualSize();
   size[0] = ((size[0] > 0) ? size[0] : 300);
   size[1] = ((size[1] > 0) ? size[1] : 300);
-  XSync(this->DisplayId, False);
+  if (this->DisplayId)
+  {
+    this->Internal->DisplayConnection = ConnectionNumber(this->DisplayId);
+    XSync(this->DisplayId, False);
+  }
 
   ren->Start();
   ren->End();
 
   this->WindowId = reinterpret_cast<Window>(ren->GetGenericWindowId());
 
-  XWindowAttributes attribs;
-  //  Find the current window size
-  XGetWindowAttributes(this->DisplayId, this->WindowId, &attribs);
-
-  size[0] = attribs.width;
-  size[1] = attribs.height;
+  if (this->DisplayId && this->WindowId)
+  {
+    XWindowAttributes attribs;
+    //  Find the current window size
+    auto* previousHandler = XSetErrorHandler([](Display*, XErrorEvent*) { return 0; });
+    if (XGetWindowAttributes(this->DisplayId, this->WindowId, &attribs))
+    {
+      size[0] = attribs.width;
+      size[1] = attribs.height;
+    }
+    else
+    {
+      // window does not exist. `ren` is not an X11 render window.
+      this->WindowId = 0;
+    }
+    XSetErrorHandler(previousHandler);
+  }
   ren->SetSize(size[0], size[1]);
 
   this->Enable();
@@ -326,12 +433,60 @@ void vtkXRenderWindowInteractor::Initialize()
   this->Size[1] = size[1];
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+bool vtkXRenderWindowInteractor::CheckDisplayId(Display* dpy)
+{
+  bool good = false;
+  for (auto rwi : vtkXRenderWindowInteractorInternals::Instances)
+  {
+    if (rwi->DisplayId == dpy)
+    {
+      if (rwi->RenderWindow->GetGenericDisplayId() != nullptr)
+      {
+        good = true;
+        continue;
+      }
+      vtkDebugMacro(<< "RenderWindow->DisplayId is null for " << rwi->GetObjectDescription());
+    }
+  }
+
+  return good;
+}
+
+//------------------------------------------------------------------------------
+void vtkXRenderWindowInteractor::Finalize()
+{
+  vtkXRenderWindowInteractorInternals::Instances.erase(this);
+
+  if (this->RenderWindow)
+  {
+    // Finalize the window
+    this->RenderWindow->Finalize();
+  }
+
+  // disconnect from the display, even if we didn't own it
+  this->DisplayId = nullptr;
+  this->Internal->DisplayConnection = -1;
+
+  // revert to uninitialized state
+  this->Initialized = false;
+  this->Enabled = false;
+}
+
+//------------------------------------------------------------------------------
 void vtkXRenderWindowInteractor::Enable()
 {
   // avoid cycles of calling Initialize() and Enable()
   if (this->Enabled)
   {
+    return;
+  }
+  // When we're attached to an offscreen render window,
+  // there is no real X Display or X Window.
+  if (!this->WindowId || !this->DisplayId)
+  {
+    this->Enabled = 1;
+    this->Modified();
     return;
   }
 
@@ -352,9 +507,11 @@ void vtkXRenderWindowInteractor::Enable()
 
   // Enable drag and drop
   Atom xdndAwareAtom = XInternAtom(this->DisplayId, "XdndAware", False);
-  char xdndVersion = 5;
-  XChangeProperty(this->DisplayId, this->WindowId, xdndAwareAtom, XA_ATOM, 32, PropModeReplace,
-    (unsigned char*)&xdndVersion, 1);
+  XChangeProperty(
+    this->DisplayId, this->WindowId, xdndAwareAtom, XA_ATOM, 32, PropModeReplace, &XDND_VERSION, 1);
+  this->XdndURIListAtom = XInternAtom(this->DisplayId, "text/uri-list", False);
+  this->XdndTypeListAtom = XInternAtom(this->DisplayId, "XdndTypeList", False);
+  this->XdndEnterAtom = XInternAtom(this->DisplayId, "XdndEnter", False);
   this->XdndPositionAtom = XInternAtom(this->DisplayId, "XdndPosition", False);
   this->XdndDropAtom = XInternAtom(this->DisplayId, "XdndDrop", False);
   this->XdndActionCopyAtom = XInternAtom(this->DisplayId, "XdndActionCopy", False);
@@ -366,7 +523,7 @@ void vtkXRenderWindowInteractor::Enable()
   this->Modified();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXRenderWindowInteractor::Disable()
 {
   if (!this->Enabled)
@@ -379,15 +536,13 @@ void vtkXRenderWindowInteractor::Disable()
   this->Modified();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXRenderWindowInteractor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-
-  os << indent << "BreakLoopFlag: " << (this->BreakLoopFlag ? "On\n" : "Off\n");
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXRenderWindowInteractor::UpdateSize(int x, int y)
 {
   // if the size changed send this on to the RenderWindow
@@ -399,7 +554,7 @@ void vtkXRenderWindowInteractor::UpdateSize(int x, int y)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXRenderWindowInteractor::UpdateSizeNoXResize(int x, int y)
 {
   // if the size changed send this on to the RenderWindow
@@ -407,12 +562,12 @@ void vtkXRenderWindowInteractor::UpdateSizeNoXResize(int x, int y)
   {
     this->Size[0] = x;
     this->Size[1] = y;
-    // static_cast<vtkXOpenGLRenderWindow*>(this->RenderWindow)->SetSizeNoXResize(x, y);
-    this->RenderWindow->SetSize(x, y);
+    // change the ivars but don't resize the X window
+    this->RenderWindow->vtkRenderWindow::SetSize(x, y);
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXRenderWindowInteractor::FireTimers()
 {
   if (this->GetEnabled())
@@ -421,7 +576,7 @@ void vtkXRenderWindowInteractor::FireTimers()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // X always creates one shot timers
 int vtkXRenderWindowInteractor::InternalCreateTimer(
   int vtkNotUsed(timerId), int vtkNotUsed(timerType), unsigned long duration)
@@ -431,14 +586,14 @@ int vtkXRenderWindowInteractor::InternalCreateTimer(
   return platformTimerId;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXRenderWindowInteractor::InternalDestroyTimer(int platformTimerId)
 {
   this->Internal->DestroyLocalTimer(platformTimerId);
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
 {
   int xp, yp;
@@ -491,14 +646,15 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
         // just getting the last configure event
         event = &result;
       }
-      int width = (reinterpret_cast<XConfigureEvent*>(event))->width;
-      int height = (reinterpret_cast<XConfigureEvent*>(event))->height;
+      XConfigureEvent* configureEvent = reinterpret_cast<XConfigureEvent*>(event);
+      int width = configureEvent->width;
+      int height = configureEvent->height;
       if (width != this->Size[0] || height != this->Size[1])
       {
         bool resizeSmaller = width <= this->Size[0] && height <= this->Size[1];
         this->UpdateSizeNoXResize(width, height);
-        xp = (reinterpret_cast<XButtonEvent*>(event))->x;
-        yp = (reinterpret_cast<XButtonEvent*>(event))->y;
+        xp = configureEvent->x;
+        yp = configureEvent->y;
         this->SetEventPosition(xp, this->Size[1] - yp - 1);
         // only render if we are currently accepting events
         if (this->Enabled)
@@ -528,17 +684,18 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
       {
         return;
       }
-      int ctrl = ((reinterpret_cast<XButtonEvent*>(event))->state & ControlMask) ? 1 : 0;
-      int shift = ((reinterpret_cast<XButtonEvent*>(event))->state & ShiftMask) ? 1 : 0;
-      int alt = ((reinterpret_cast<XButtonEvent*>(event))->state & Mod1Mask) ? 1 : 0;
-      xp = (reinterpret_cast<XButtonEvent*>(event))->x;
-      yp = (reinterpret_cast<XButtonEvent*>(event))->y;
+      XButtonEvent* buttonEvent = reinterpret_cast<XButtonEvent*>(event);
+      int ctrl = (buttonEvent->state & ControlMask) ? 1 : 0;
+      int shift = (buttonEvent->state & ShiftMask) ? 1 : 0;
+      int alt = (buttonEvent->state & Mod1Mask) ? 1 : 0;
+      xp = buttonEvent->x;
+      yp = buttonEvent->y;
 
       // check for double click
       static int MousePressTime = 0;
       int repeat = 0;
       // 400 ms threshold by default is probably good to start
-      int eventTime = static_cast<int>(reinterpret_cast<XButtonEvent*>(event)->time);
+      int eventTime = static_cast<int>(buttonEvent->time);
       if ((eventTime - MousePressTime) < 400)
       {
         MousePressTime -= 2000; // no double click next time
@@ -551,7 +708,7 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
 
       this->SetEventInformationFlipY(xp, yp, ctrl, shift, 0, repeat);
       this->SetAltKey(alt);
-      switch ((reinterpret_cast<XButtonEvent*>(event))->button)
+      switch (buttonEvent->button)
       {
         case Button1:
           this->InvokeEvent(vtkCommand::LeftButtonPressEvent, nullptr);
@@ -578,14 +735,15 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
       {
         return;
       }
-      int ctrl = ((reinterpret_cast<XButtonEvent*>(event))->state & ControlMask) ? 1 : 0;
-      int shift = ((reinterpret_cast<XButtonEvent*>(event))->state & ShiftMask) ? 1 : 0;
-      int alt = ((reinterpret_cast<XButtonEvent*>(event))->state & Mod1Mask) ? 1 : 0;
-      xp = (reinterpret_cast<XButtonEvent*>(event))->x;
-      yp = (reinterpret_cast<XButtonEvent*>(event))->y;
+      XButtonEvent* buttonEvent = reinterpret_cast<XButtonEvent*>(event);
+      int ctrl = (buttonEvent->state & ControlMask) ? 1 : 0;
+      int shift = (buttonEvent->state & ShiftMask) ? 1 : 0;
+      int alt = (buttonEvent->state & Mod1Mask) ? 1 : 0;
+      xp = buttonEvent->x;
+      yp = buttonEvent->y;
       this->SetEventInformationFlipY(xp, yp, ctrl, shift);
       this->SetAltKey(alt);
-      switch ((reinterpret_cast<XButtonEvent*>(event))->button)
+      switch (buttonEvent->button)
       {
         case Button1:
           this->InvokeEvent(vtkCommand::LeftButtonReleaseEvent, nullptr);
@@ -609,7 +767,7 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
         XEnterWindowEvent* e = reinterpret_cast<XEnterWindowEvent*>(event);
         this->SetEventInformationFlipY(
           e->x, e->y, (e->state & ControlMask) != 0, (e->state & ShiftMask) != 0);
-        this->SetAltKey(((reinterpret_cast<XButtonEvent*>(event))->state & Mod1Mask) ? 1 : 0);
+        this->SetAltKey((e->state & Mod1Mask) ? 1 : 0);
         this->InvokeEvent(vtkCommand::EnterEvent, nullptr);
       }
     }
@@ -622,7 +780,7 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
         XLeaveWindowEvent* e = reinterpret_cast<XLeaveWindowEvent*>(event);
         this->SetEventInformationFlipY(
           e->x, e->y, (e->state & ControlMask) != 0, (e->state & ShiftMask) != 0);
-        this->SetAltKey(((reinterpret_cast<XButtonEvent*>(event))->state & Mod1Mask) ? 1 : 0);
+        this->SetAltKey((e->state & Mod1Mask) ? 1 : 0);
         this->InvokeEvent(vtkCommand::LeaveEvent, nullptr);
       }
     }
@@ -634,16 +792,20 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
       {
         return;
       }
-      int ctrl = ((reinterpret_cast<XButtonEvent*>(event))->state & ControlMask) ? 1 : 0;
-      int shift = ((reinterpret_cast<XButtonEvent*>(event))->state & ShiftMask) ? 1 : 0;
-      int alt = ((reinterpret_cast<XButtonEvent*>(event))->state & Mod1Mask) ? 1 : 0;
-      vtkKeySym ks;
-      static char buffer[20];
-      buffer[0] = '\0';
-      XLookupString(reinterpret_cast<XKeyEvent*>(event), buffer, 20, &ks, nullptr);
-      xp = (reinterpret_cast<XKeyEvent*>(event))->x;
-      yp = (reinterpret_cast<XKeyEvent*>(event))->y;
-      this->SetEventInformationFlipY(xp, yp, ctrl, shift, buffer[0], 1, XKeysymToString(ks));
+      XKeyEvent* keyEvent = reinterpret_cast<XKeyEvent*>(event);
+      int ctrl = (keyEvent->state & ControlMask) ? 1 : 0;
+      int shift = (keyEvent->state & ShiftMask) ? 1 : 0;
+      int alt = (keyEvent->state & Mod1Mask) ? 1 : 0;
+
+      // XLookupString provide a keycode as a char in Basic Latin and Latin1
+      // unicode blocks. We care only for the first char of the keycode.
+      char keyCode;
+      vtkKeySym keySym;
+      XLookupString(keyEvent, &keyCode, 1, &keySym, nullptr);
+
+      xp = keyEvent->x;
+      yp = keyEvent->y;
+      this->SetEventInformationFlipY(xp, yp, ctrl, shift, keyCode, 1, XKeysymToString(keySym));
       this->SetAltKey(alt);
       this->InvokeEvent(vtkCommand::KeyPressEvent, nullptr);
       this->InvokeEvent(vtkCommand::CharEvent, nullptr);
@@ -656,16 +818,20 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
       {
         return;
       }
-      int ctrl = ((reinterpret_cast<XButtonEvent*>(event))->state & ControlMask) ? 1 : 0;
-      int shift = ((reinterpret_cast<XButtonEvent*>(event))->state & ShiftMask) ? 1 : 0;
-      int alt = ((reinterpret_cast<XButtonEvent*>(event))->state & Mod1Mask) ? 1 : 0;
-      vtkKeySym ks;
-      static char buffer[20];
-      buffer[0] = '\0';
-      XLookupString(reinterpret_cast<XKeyEvent*>(event), buffer, 20, &ks, nullptr);
-      xp = (reinterpret_cast<XKeyEvent*>(event))->x;
-      yp = (reinterpret_cast<XKeyEvent*>(event))->y;
-      this->SetEventInformationFlipY(xp, yp, ctrl, shift, buffer[0], 1, XKeysymToString(ks));
+      XKeyEvent* keyEvent = reinterpret_cast<XKeyEvent*>(event);
+      int ctrl = (keyEvent->state & ControlMask) ? 1 : 0;
+      int shift = (keyEvent->state & ShiftMask) ? 1 : 0;
+      int alt = (keyEvent->state & Mod1Mask) ? 1 : 0;
+
+      // XLookupString provide a keycode as a char in Basic Latin and Latin1
+      // unicode blocks. We care only for the first char of the keycode.
+      char keyCode;
+      vtkKeySym keySym;
+      XLookupString(keyEvent, &keyCode, 1, &keySym, nullptr);
+
+      xp = keyEvent->x;
+      yp = keyEvent->y;
+      this->SetEventInformationFlipY(xp, yp, ctrl, shift, keyCode, 1, XKeysymToString(keySym));
       this->SetAltKey(alt);
       this->InvokeEvent(vtkCommand::KeyReleaseEvent, nullptr);
     }
@@ -677,9 +843,10 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
       {
         return;
       }
-      int ctrl = ((reinterpret_cast<XButtonEvent*>(event))->state & ControlMask) ? 1 : 0;
-      int shift = ((reinterpret_cast<XButtonEvent*>(event))->state & ShiftMask) ? 1 : 0;
-      int alt = ((reinterpret_cast<XButtonEvent*>(event))->state & Mod1Mask) ? 1 : 0;
+      XMotionEvent* motionEvent = reinterpret_cast<XMotionEvent*>(event);
+      int ctrl = (motionEvent->state & ControlMask) ? 1 : 0;
+      int shift = (motionEvent->state & ShiftMask) ? 1 : 0;
+      int alt = (motionEvent->state & Mod1Mask) ? 1 : 0;
 
       // Note that even though the (x,y) location of the pointer is event structure,
       // we must call XQueryPointer for the hints (motion event compression) to
@@ -707,7 +874,7 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
       unsigned long itemCount, bytesAfter;
       XGetWindowProperty(this->DisplayId, event->xselection.requestor, event->xselection.property,
         0, LONG_MAX, False, event->xselection.target, &actualType, &actualFormat, &itemCount,
-        &bytesAfter, (unsigned char**)&data);
+        &bytesAfter, reinterpret_cast<unsigned char**>(&data));
 
       // Conversion checks
       if ((event->xselection.target != AnyPropertyType && actualType != event->xselection.target) ||
@@ -719,7 +886,7 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
       // Recover filepaths from uris and invoke DropFilesEvent
       std::stringstream uris(data);
       std::string uri, protocol, hostname, filePath;
-      std::string unused0, unused1, unused2, unused3;
+      std::string unused0, unused1, unused3;
       vtkNew<vtkStringArray> filePaths;
       while (std::getline(uris, uri, '\n'))
       {
@@ -744,17 +911,21 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
       this->InvokeEvent(vtkCommand::DropFilesEvent, filePaths);
       XFree(data);
 
-      // Inform the source the the drag and drop operation was sucessfull
+      // Inform the source the the drag and drop operation was successful
       XEvent reply;
       memset(&reply, 0, sizeof(reply));
 
       reply.type = ClientMessage;
-      reply.xclient.window = event->xclient.data.l[0];
+      reply.xclient.window = this->XdndSource;
       reply.xclient.message_type = this->XdndFinishedAtom;
       reply.xclient.format = 32;
       reply.xclient.data.l[0] = this->WindowId;
-      reply.xclient.data.l[1] = itemCount;
-      reply.xclient.data.l[2] = this->XdndActionCopyAtom;
+      reply.xclient.data.l[1] = 1;
+
+      if (this->XdndSourceVersion >= 2)
+      {
+        reply.xclient.data.l[2] = this->XdndActionCopyAtom;
+      }
 
       XSendEvent(this->DisplayId, this->XdndSource, False, NoEventMask, &reply);
       XFlush(this->DisplayId);
@@ -764,23 +935,72 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
 
     case ClientMessage:
     {
+      if (event->xclient.message_type == this->XdndEnterAtom)
+      {
+        // Drag and drop event enter the window
+        this->XdndSource = event->xclient.data.l[0];
+
+        // Check version
+        this->XdndSourceVersion = event->xclient.data.l[1] >> 24;
+        if (this->XdndSourceVersion > XDND_VERSION)
+        {
+          return;
+        }
+
+        // Recover the formats provided by the dnd source
+        Atom* formats = nullptr;
+        unsigned long count;
+        bool list = event->xclient.data.l[1] & 1;
+        if (list)
+        {
+          Atom actualType;
+          int actualFormat;
+          unsigned long bytesAfter;
+          XGetWindowProperty(this->DisplayId, this->XdndSource, this->XdndTypeListAtom, 0, LONG_MAX,
+            False, XA_ATOM, &actualType, &actualFormat, &count, &bytesAfter,
+            reinterpret_cast<unsigned char**>(&formats));
+        }
+        else
+        {
+          count = 3;
+          formats = reinterpret_cast<Atom*>(event->xclient.data.l + 2);
+        }
+
+        // Check one of these format is an URI list
+        // Which is the only supported format
+        for (unsigned long i = 0; i < count; i++)
+        {
+          if (formats[i] == this->XdndURIListAtom)
+          {
+            this->XdndFormatAtom = XdndURIListAtom;
+            break;
+          }
+        }
+
+        // Free the allocated formats
+        if (list && formats)
+        {
+          XFree(formats);
+        }
+      }
       if (event->xclient.message_type == this->XdndPositionAtom)
       {
         // Drag and drop event inside the window
+        if (this->XdndSource != static_cast<Window>(event->xclient.data.l[0]))
+        {
+          vtkWarningMacro("Only one dnd action at a time is supported");
+          return;
+        }
 
         // Recover the position
-        int xWindow, yWindow;
-        int xRoot = event->xclient.data.l[2] >> 16;
-        int yRoot = event->xclient.data.l[2] & 0xffff;
-        Window root = DefaultRootWindow(this->DisplayId);
-        Window child;
-        XTranslateCoordinates(
-          this->DisplayId, root, this->WindowId, xRoot, yRoot, &xWindow, &yWindow, &child);
-
-        // Convert it to VTK compatible location
-        double location[2];
-        location[0] = static_cast<double>(xWindow);
-        location[1] = static_cast<double>(this->Size[1] - yWindow - 1);
+        int location[2];
+        unsigned int keys;
+        this->GetMousePositionAndModifierKeysState(&location[0], &location[1], &keys);
+        int ctrl = keys & ControlMask ? 1 : 0;
+        int shift = keys & ShiftMask ? 1 : 0;
+        int alt = keys & Mod1Mask ? 1 : 0;
+        this->SetEventInformationFlipY(location[0], location[1], ctrl, shift);
+        this->SetAltKey(alt);
         this->InvokeEvent(vtkCommand::UpdateDropLocationEvent, location);
 
         // Reply that we are ready to copy the dragged data
@@ -788,7 +1008,7 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
         memset(&reply, 0, sizeof(reply));
 
         reply.type = ClientMessage;
-        reply.xclient.window = event->xclient.data.l[0];
+        reply.xclient.window = this->XdndSource;
         reply.xclient.message_type = this->XdndStatusAtom;
         reply.xclient.format = 32;
         reply.xclient.data.l[0] = this->WindowId;
@@ -797,20 +1017,41 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
         reply.xclient.data.l[3] = 0;
         reply.xclient.data.l[4] = this->XdndActionCopyAtom;
 
-        XSendEvent(this->DisplayId, event->xclient.data.l[0], False, NoEventMask, &reply);
+        XSendEvent(this->DisplayId, this->XdndSource, False, NoEventMask, &reply);
         XFlush(this->DisplayId);
       }
       else if (event->xclient.message_type == this->XdndDropAtom)
       {
         // Item dropped in the window
-        // Store the source of the drag and drop
-        this->XdndSource = event->xclient.data.l[0];
+        if (this->XdndSource != static_cast<Window>(event->xclient.data.l[0]))
+        {
+          vtkWarningMacro("Only one dnd action at a time is supported");
+          return;
+        }
 
-        // Ask for a conversion of the selection. This will trigger a SelectioNotify event later.
-        Atom xdndSelectionAtom = XInternAtom(this->DisplayId, "XdndSelection", False);
-        XConvertSelection(this->DisplayId, xdndSelectionAtom,
-          XInternAtom(this->DisplayId, "UTF8_STRING", False), xdndSelectionAtom, this->WindowId,
-          CurrentTime);
+        if (this->XdndFormatAtom)
+        {
+          // Ask for a conversion of the selection. This will trigger a SelectionNotify event later.
+          Atom xdndSelectionAtom = XInternAtom(this->DisplayId, "XdndSelection", False);
+          XConvertSelection(this->DisplayId, xdndSelectionAtom, this->XdndFormatAtom,
+            xdndSelectionAtom, this->WindowId, CurrentTime);
+        }
+        else if (this->XdndSourceVersion >= 2)
+        {
+          XEvent reply;
+          memset(&reply, 0, sizeof(reply));
+
+          reply.type = ClientMessage;
+          reply.xclient.window = this->XdndSource;
+          reply.xclient.message_type = this->XdndFinishedAtom;
+          reply.xclient.format = 32;
+          reply.xclient.data.l[0] = this->WindowId;
+          reply.xclient.data.l[1] = 0; // The drag was rejected
+          reply.xclient.data.l[2] = None;
+
+          XSendEvent(this->DisplayId, this->XdndSource, False, NoEventMask, &reply);
+          XFlush(this->DisplayId);
+        }
       }
       else if (static_cast<Atom>(event->xclient.data.l[0]) == this->KillAtom)
       {
@@ -821,27 +1062,33 @@ void vtkXRenderWindowInteractor::DispatchEvent(XEvent* event)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXRenderWindowInteractor::GetMousePosition(int* x, int* y)
+{
+  unsigned int keys;
+  this->GetMousePositionAndModifierKeysState(x, y, &keys);
+}
+
+//------------------------------------------------------------------------------
+void vtkXRenderWindowInteractor::GetMousePositionAndModifierKeysState(
+  int* x, int* y, unsigned int* keys)
 {
   Window root, child;
   int root_x, root_y;
-  unsigned int keys;
-
-  XQueryPointer(this->DisplayId, this->WindowId, &root, &child, &root_x, &root_y, x, y, &keys);
-
+  XQueryPointer(this->DisplayId, this->WindowId, &root, &child, &root_x, &root_y, x, y, keys);
   *y = this->Size[1] - *y - 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // void vtkXRenderWindowInteractor::Timer(XtPointer client_data, XtIntervalId* id)
 // {
 //   vtkXRenderWindowInteractorTimer(client_data, id);
 // }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // void vtkXRenderWindowInteractor::Callback(
 //   Widget w, XtPointer client_data, XEvent* event, Boolean* ctd)
 // {
 //   vtkXRenderWindowInteractorCallback(w, client_data, event, ctd);
 // }
+VTK_ABI_NAMESPACE_END

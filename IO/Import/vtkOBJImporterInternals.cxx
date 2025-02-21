@@ -1,26 +1,14 @@
-/*=========================================================================
-  Program:   Visualization Toolkit
-  Module:    vtkOBJImporterInternals.cxx
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOBJImporterInternals.h"
-#include "vtkBMPReader.h"
-#include "vtkJPEGReader.h"
+#include "vtkImageReader2.h"
+#include "vtkImageReader2Factory.h"
 #include "vtkOBJImporter.h"
-#include "vtkPNGReader.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkProperty.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderer.h"
 #include "vtkSmartPointer.h"
-#include "vtkTIFFReader.h"
 #include "vtkTexture.h"
 #include "vtkTransform.h"
 #include "vtksys/FStream.hxx"
@@ -36,6 +24,7 @@
 #pragma warning(disable : 4800)
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 int localVerbosity = 0;
@@ -43,15 +32,15 @@ int localVerbosity = 0;
 
 void obj_set_material_defaults(vtkOBJImportedMaterial* mtl)
 {
-  mtl->amb[0] = 0.2;
-  mtl->amb[1] = 0.2;
-  mtl->amb[2] = 0.2;
-  mtl->diff[0] = 0.8;
-  mtl->diff[1] = 0.8;
-  mtl->diff[2] = 0.8;
-  mtl->spec[0] = 1.0;
-  mtl->spec[1] = 1.0;
-  mtl->spec[2] = 1.0;
+  mtl->amb[0] = 0.0;
+  mtl->amb[1] = 0.0;
+  mtl->amb[2] = 0.0;
+  mtl->diff[0] = 1.0;
+  mtl->diff[1] = 1.0;
+  mtl->diff[2] = 1.0;
+  mtl->spec[0] = 0.0;
+  mtl->spec[1] = 0.0;
+  mtl->spec[2] = 0.0;
   mtl->map_Kd_scale[0] = 1.0;
   mtl->map_Kd_scale[1] = 1.0;
   mtl->map_Kd_scale[2] = 1.0;
@@ -127,7 +116,7 @@ public:
 
   TokenType Type;
   double NumberValue = 0.0;
-  std::string StringValue = "";
+  std::string StringValue;
 };
 
 bool tokenGetString(size_t& t, std::vector<Token>& tokens, std::string& result)
@@ -231,7 +220,7 @@ bool tokenGetTexture(size_t& t, std::vector<Token>& tokens, vtkOBJImportedMateri
     // with spaces in them
     current_mtl->texture_filename += tokens[tt].StringValue;
     ++tt;
-    while (tokens[tt].Type != Token::LineEnd)
+    while (tt < tokens.size() && tokens[tt].Type != Token::LineEnd)
     {
       current_mtl->texture_filename += tokens[tt].StringValue;
       ++tt;
@@ -245,7 +234,11 @@ bool tokenGetTexture(size_t& t, std::vector<Token>& tokens, vtkOBJImportedMateri
 }
 }
 
-#include "mtlsyntax.cxx"
+VTK_ABI_NAMESPACE_END
+
+#include "mtlsyntax.inl"
+
+VTK_ABI_NAMESPACE_BEGIN
 std::vector<vtkOBJImportedMaterial*> vtkOBJPolyDataProcessor::ParseOBJandMTL(
   std::string Filename, int& result_code)
 {
@@ -268,6 +261,7 @@ std::vector<vtkOBJImportedMaterial*> vtkOBJPolyDataProcessor::ParseOBJandMTL(
   in.seekg(0, std::ios::end);
   contents.resize(in.tellg());
   in.seekg(0, std::ios::beg);
+  // NOLINTNEXTLINE(readability-container-data-pointer): needs C++17
   in.read(&contents[0], contents.size());
   in.close();
 
@@ -359,32 +353,33 @@ std::vector<vtkOBJImportedMaterial*> vtkOBJPolyDataProcessor::ParseOBJandMTL(
   return listOfMaterials;
 }
 
-void bindTexturedPolydataToRenderWindow(
-  vtkRenderWindow* renderWindow, vtkRenderer* renderer, vtkOBJPolyDataProcessor* reader)
+bool bindTexturedPolydataToRenderWindow(vtkRenderWindow* renderWindow, vtkRenderer* renderer,
+  vtkOBJPolyDataProcessor* reader, vtkActorCollection* actorCollection)
 {
   if (nullptr == (renderWindow))
   {
     vtkErrorWithObjectMacro(reader, "RenderWindow is null, failure!");
-    return;
+    return false;
   }
   if (nullptr == (renderer))
   {
     vtkErrorWithObjectMacro(reader, "Renderer is null, failure!");
-    return;
+    return false;
   }
   if (nullptr == (reader))
   {
     vtkErrorWithObjectMacro(reader, "vtkOBJPolyDataProcessor is null, failure!");
-    return;
+    return false;
   }
 
   reader->actor_list.clear();
   reader->actor_list.reserve(reader->GetNumberOfOutputPorts());
+  actorCollection->RemoveAllItems();
 
   // keep track of textures used and if multiple parts use the same
   // texture, then have the actors use the same texture. This saves memory
   // etc and makes exporting more efficient.
-  std::map<std::string, vtkSmartPointer<vtkTexture> > knownTextures;
+  std::map<std::string, vtkSmartPointer<vtkTexture>> knownTextures;
 
   for (int port_idx = 0; port_idx < reader->GetNumberOfOutputPorts(); port_idx++)
   {
@@ -392,6 +387,7 @@ void bindTexturedPolydataToRenderWindow(
 
     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputData(objPoly);
+    mapper->SetColorModeToDirectScalars();
 
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
@@ -404,71 +400,34 @@ void bindTexturedPolydataToRenderWindow(
     // For each named material, load and bind the texture, add it to the renderer
 
     std::string textureFilename = reader->GetTextureFilename(port_idx);
-
-    auto kti = knownTextures.find(textureFilename);
-    if (kti == knownTextures.end())
+    if (!textureFilename.empty())
     {
-      vtkSmartPointer<vtkTIFFReader> tex_tiff_Loader = vtkSmartPointer<vtkTIFFReader>::New();
-      vtkSmartPointer<vtkBMPReader> tex_bmp_Loader = vtkSmartPointer<vtkBMPReader>::New();
-      vtkSmartPointer<vtkJPEGReader> tex_jpg_Loader = vtkSmartPointer<vtkJPEGReader>::New();
-      vtkSmartPointer<vtkPNGReader> tex_png_Loader = vtkSmartPointer<vtkPNGReader>::New();
-      int bIsReadableBMP = tex_bmp_Loader->CanReadFile(textureFilename.c_str());
-      int bIsReadableJPEG = tex_jpg_Loader->CanReadFile(textureFilename.c_str());
-      int bIsReadablePNG = tex_png_Loader->CanReadFile(textureFilename.c_str());
-      int bIsReadableTIFF = tex_tiff_Loader->CanReadFile(textureFilename.c_str());
-
-      if (!textureFilename.empty())
+      auto kti = knownTextures.find(textureFilename);
+      if (kti == knownTextures.end())
       {
-        if (bIsReadableJPEG)
+        vtkSmartPointer<vtkImageReader2> imgReader;
+        imgReader.TakeReference(
+          vtkImageReader2Factory::CreateImageReader2(textureFilename.c_str()));
+
+        if (!imgReader)
         {
-          tex_jpg_Loader->SetFileName(textureFilename.c_str());
-          tex_jpg_Loader->Update();
-          vtkSmartPointer<vtkTexture> vtk_texture = vtkSmartPointer<vtkTexture>::New();
-          vtk_texture->AddInputConnection(tex_jpg_Loader->GetOutputPort());
-          actor->SetTexture(vtk_texture);
-          knownTextures[textureFilename] = vtk_texture;
-        }
-        else if (bIsReadablePNG)
-        {
-          tex_png_Loader->SetFileName(textureFilename.c_str());
-          tex_png_Loader->Update();
-          vtkSmartPointer<vtkTexture> vtk_texture = vtkSmartPointer<vtkTexture>::New();
-          vtk_texture->AddInputConnection(tex_png_Loader->GetOutputPort());
-          actor->SetTexture(vtk_texture);
-          knownTextures[textureFilename] = vtk_texture;
-        }
-        else if (bIsReadableBMP)
-        {
-          tex_bmp_Loader->SetFileName(textureFilename.c_str());
-          tex_bmp_Loader->Update();
-          vtkSmartPointer<vtkTexture> vtk_texture = vtkSmartPointer<vtkTexture>::New();
-          vtk_texture->AddInputConnection(tex_bmp_Loader->GetOutputPort());
-          actor->SetTexture(vtk_texture);
-          knownTextures[textureFilename] = vtk_texture;
-        }
-        else if (bIsReadableTIFF)
-        {
-          tex_tiff_Loader->SetFileName(textureFilename.c_str());
-          tex_tiff_Loader->Update();
-          vtkSmartPointer<vtkTexture> vtk_texture = vtkSmartPointer<vtkTexture>::New();
-          vtk_texture->AddInputConnection(tex_tiff_Loader->GetOutputPort());
-          actor->SetTexture(vtk_texture);
-          knownTextures[textureFilename] = vtk_texture;
+          vtkErrorWithObjectMacro(
+            reader, "Cannot instantiate image reader for texture: " << textureFilename);
         }
         else
         {
-          if (!textureFilename
-                 .empty()) // OK to have no texture image, but if its not empty it ought to exist.
-          {
-            vtkErrorWithObjectMacro(
-              reader, "Nonexistent texture image type!? imagefile: " << textureFilename);
-          }
+          imgReader->SetFileName(textureFilename.c_str());
+
+          vtkSmartPointer<vtkTexture> vTexture = vtkSmartPointer<vtkTexture>::New();
+          vTexture->SetInputConnection(imgReader->GetOutputPort());
+          actor->SetTexture(vTexture);
+          knownTextures[textureFilename] = vTexture;
         }
       }
-    }
-    else // this is a texture we already have seen
-    {
-      actor->SetTexture(kti->second);
+      else // this is a texture we already have seen
+      {
+        actor->SetTexture(kti->second);
+      }
     }
 
     vtkSmartPointer<vtkProperty> properties = vtkSmartPointer<vtkProperty>::New();
@@ -485,6 +444,14 @@ void bindTexturedPolydataToRenderWindow(
         tf->Scale(raw_mtl_data->map_Kd_scale[0], raw_mtl_data->map_Kd_scale[1],
           raw_mtl_data->map_Kd_scale[2]);
         actor->GetTexture()->SetTransform(tf);
+      }
+
+      // When the material is created from a MTL file,
+      // the name is different than the default "x" name.
+      // in this case, we disable vertex coloring
+      if (raw_mtl_data->name != "x")
+      {
+        mapper->ScalarVisibilityOff();
       }
 
       properties->SetDiffuseColor(raw_mtl_data->diff);
@@ -518,6 +485,7 @@ void bindTexturedPolydataToRenderWindow(
       actor->SetProperty(properties);
     }
     renderer->AddActor(actor);
+    actorCollection->AddItem(actor);
 
     // properties->ShadingOn(); // use ShadingOn() if loading vtkMaterial from xml
     // available in mtl parser are:
@@ -533,6 +501,7 @@ void bindTexturedPolydataToRenderWindow(
 
     reader->actor_list.push_back(actor); // keep a handle on actors to animate later
   }
+  return true;
   /** post-condition of this function: the renderer has had a bunch of actors added to it */
 }
 
@@ -541,3 +510,4 @@ vtkOBJImportedMaterial::vtkOBJImportedMaterial()
   this->name = "x";
   obj_set_material_defaults(this);
 }
+VTK_ABI_NAMESPACE_END

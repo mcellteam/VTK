@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridVolumeZSweepMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkUnstructuredGridVolumeZSweepMapper.h"
 
 #include "vtkCamera.h"
@@ -39,7 +27,7 @@
 
 #include "vtkCellArray.h"
 #include "vtkPolyData.h"
-//#include "vtkXMLPolyDataWriter.h"
+// #include "vtkXMLPolyDataWriter.h"
 #include "vtkPointData.h"
 
 #include <cassert>
@@ -48,11 +36,12 @@
 #include <vector>
 
 // do not remove the following line:
-//#define BACK_TO_FRONT
+// #define BACK_TO_FRONT
 
 // Put the internal classes in a namespace to avoid potential naming conflicts.
 namespace vtkUnstructuredGridVolumeZSweepMapperNamespace
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 enum
 {
@@ -64,7 +53,7 @@ enum
 };
 
 // Internal classes
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Store the result of the scan conversion at some pixel.
 class vtkPixelListEntry
 {
@@ -84,11 +73,11 @@ public:
   }
 
   // Return the interpolated values at this pixel.
-  inline double* GetValues() { return this->Values; }
+  double* GetValues() { return this->Values; }
   // Return the interpolated z coordinate in view space at this pixel.
-  inline double GetZview() const { return this->Zview; }
+  double GetZview() const { return this->Zview; }
   // Return whether the fragment comes from an external face.
-  inline bool GetExitFace() const { return this->ExitFace; }
+  bool GetExitFace() const { return this->ExitFace; }
 
   vtkPixelListEntry* GetPrevious() { return this->Previous; }
   vtkPixelListEntry* GetNext() { return this->Next; }
@@ -112,7 +101,7 @@ private:
   vtkPixelListEntry& operator=(const vtkPixelListEntry& other) = delete;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Cache the projection of a vertex
 class vtkVertexEntry
 {
@@ -153,6 +142,11 @@ public:
 
   vtkVertexEntry& operator=(const vtkVertexEntry& other)
   {
+    if (this == &other)
+    {
+      return *this;
+    }
+
     ScreenX = other.ScreenX;
     ScreenY = other.ScreenY;
     memcpy(Values, other.Values, sizeof(double) * VTK_VALUES_SIZE);
@@ -176,7 +170,7 @@ protected:
   double InvW;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Abstract interface for an edge of a triangle in the screen space.
 // Used during scan-conversion.
 class vtkScreenEdge
@@ -212,7 +206,7 @@ protected:
   virtual ~vtkScreenEdge() = default;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Do an incremental traversing of an edge based on an Y increment.
 enum
 {
@@ -247,7 +241,7 @@ enum
 #define MOST_SIGNIFICANT
 #define EDGE_EQUATION
 #define HORI_EDGE_EQUATION
-//#define STRICTLY_INSIDE
+// #define STRICTLY_INSIDE
 
 class vtkSimpleScreenEdge : public vtkScreenEdge
 {
@@ -1444,7 +1438,7 @@ protected:
   int Dx;  // VTK_VERTICAL_LEFT/RIGHT
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // During rasterization of a triangle, there is always one side with two
 // edges and the other side with a single edge.
 // This class manages the side with the two edges called top and bottom edges.
@@ -1494,7 +1488,7 @@ protected:
   vtkScreenEdge* Current;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Horizontal span between two points of two edges.
 // Used during scan-conversion.
 // It interpolates the values along the span.
@@ -1843,7 +1837,7 @@ protected:
   vtkPixelListEntry* Last;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Store the pixel lists for all the frame.
 class vtkPixelListFrame
 {
@@ -1920,23 +1914,7 @@ public:
   }
 
   // Destructor.
-  ~vtkPixelListFrame()
-  {
-#if 0
-      vtkIdType i=0;
-      vtkIdType c=this->Vector.size();
-      while(i<c)
-      {
-        vtkPixelList *l=&(Vector[i]);
-        while(!l->empty())
-        {
-          delete l->front();
-          l->pop_front();
-        }
-        ++i;
-      }
-#endif
-  }
+  ~vtkPixelListFrame() = default;
 
   vtkPixelList* GetList(int i)
   {
@@ -1956,7 +1934,7 @@ protected:
   //  std::list<vtkPixelListEntry *>::iterator ItEnd;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Store a triangle face. Ids are in increasing order. Orientation does not
 // matter for the algorithm.
 class vtkFace
@@ -1982,10 +1960,10 @@ public:
   }
 
   // Return the 3 face ids.
-  inline vtkIdType* GetFaceIds() { return this->FaceIds; }
+  vtkIdType* GetFaceIds() { return this->FaceIds; }
 
   // Return whether this face is external.
-  inline int GetExternalSide() { return this->ExternalSide; }
+  int GetExternalSide() { return this->ExternalSide; }
 
   // Are `this' and faceIds equal?
   int IsEqual(vtkIdType faceIds[3])
@@ -2035,7 +2013,7 @@ private:
   vtkFace& operator=(const vtkFace& other) = delete;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // For each vertex, store the list of faces incident on this vertex.
 // It is view independent.
 class vtkUseSet
@@ -2294,11 +2272,13 @@ public:
   }
 };
 
-};
+VTK_ABI_NAMESPACE_END
+}
 
 using namespace vtkUnstructuredGridVolumeZSweepMapperNamespace;
 
-//-----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 // Implementation of the public class.
 
 vtkStandardNewMacro(vtkUnstructuredGridVolumeZSweepMapper);
@@ -2306,7 +2286,7 @@ vtkStandardNewMacro(vtkUnstructuredGridVolumeZSweepMapper);
 vtkCxxSetObjectMacro(
   vtkUnstructuredGridVolumeZSweepMapper, RayIntegrator, vtkUnstructuredGridVolumeRayIntegrator);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set MaxPixelListSize to 32.
 vtkUnstructuredGridVolumeZSweepMapper::vtkUnstructuredGridVolumeZSweepMapper()
@@ -2370,7 +2350,7 @@ vtkUnstructuredGridVolumeZSweepMapper::vtkUnstructuredGridVolumeZSweepMapper()
   this->MemoryManager = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGridVolumeZSweepMapper::~vtkUnstructuredGridVolumeZSweepMapper()
 {
   delete this->MemoryManager;
@@ -2414,7 +2394,7 @@ vtkUnstructuredGridVolumeZSweepMapper::~vtkUnstructuredGridVolumeZSweepMapper()
   this->FarIntersections->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float vtkUnstructuredGridVolumeZSweepMapper::RetrieveRenderTime(vtkRenderer* ren, vtkVolume* vol)
 {
   int i;
@@ -2430,7 +2410,7 @@ float vtkUnstructuredGridVolumeZSweepMapper::RetrieveRenderTime(vtkRenderer* ren
   return 0.0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::StoreRenderTime(
   vtkRenderer* ren, vtkVolume* vol, float time)
 {
@@ -2483,7 +2463,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::StoreRenderTime(
   this->RenderTableEntries++;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -2511,7 +2491,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::PrintSelf(ostream& os, vtkIndent ind
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Maximum size allowed for a pixel list. Default is 32.
 // During the rendering, if a list of pixel is full, incremental compositing
@@ -2522,7 +2502,7 @@ int vtkUnstructuredGridVolumeZSweepMapper::GetMaxPixelListSize()
   return this->MaxPixelListSize;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Change the maximum size allowed for a pixel list. It is an advanced
 // parameter.
@@ -2532,18 +2512,21 @@ void vtkUnstructuredGridVolumeZSweepMapper::SetMaxPixelListSize(int size)
   this->MaxPixelListSize = size;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #define ESTABLISH_INTEGRATOR(classname)                                                            \
-  if (!this->RealRayIntegrator || (!this->RealRayIntegrator->IsA(#classname)))                     \
+  do                                                                                               \
   {                                                                                                \
-    if (this->RealRayIntegrator)                                                                   \
-      this->RealRayIntegrator->UnRegister(this);                                                   \
-    this->RealRayIntegrator = classname::New();                                                    \
-    this->RealRayIntegrator->Register(this);                                                       \
-    this->RealRayIntegrator->Delete();                                                             \
-  }
+    if (!this->RealRayIntegrator || (!this->RealRayIntegrator->IsA(#classname)))                   \
+    {                                                                                              \
+      if (this->RealRayIntegrator)                                                                 \
+        this->RealRayIntegrator->UnRegister(this);                                                 \
+      this->RealRayIntegrator = classname::New();                                                  \
+      this->RealRayIntegrator->Register(this);                                                     \
+      this->RealRayIntegrator->Delete();                                                           \
+    }                                                                                              \
+  } while (false)
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
 // DO NOT USE THIS METHOD OUTSIDE OF THE RENDERING PROCESS
@@ -2563,8 +2546,8 @@ void vtkUnstructuredGridVolumeZSweepMapper::Render(vtkRenderer* ren, vtkVolume* 
   vtkAlgorithm* inputAlg = this->GetInputAlgorithm(0, 0, inputAlgPort);
   inputAlg->UpdateWholeExtent();
 
-  this->Scalars = this->GetScalars(this->GetInput(), this->ScalarMode, this->ArrayAccessMode,
-    this->ArrayId, this->ArrayName, this->CellScalars);
+  this->Scalars = vtkUnstructuredGridVolumeZSweepMapper::GetScalars(this->GetInput(),
+    this->ScalarMode, this->ArrayAccessMode, this->ArrayId, this->ArrayName, this->CellScalars);
 
   if (this->Scalars == nullptr)
   {
@@ -2709,7 +2692,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::Render(vtkRenderer* ren, vtkVolume* 
   {
     int x1, x2, y1, y2;
     double* viewport = ren->GetViewport();
-    int* renWinSize = ren->GetRenderWindow()->GetSize();
+    const int* renWinSize = ren->GetRenderWindow()->GetSize();
 
     // turn this->ImageOrigin into (x1,y1) in window (not viewport!)
     // coordinates.
@@ -2826,7 +2809,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::Render(vtkRenderer* ren, vtkVolume* 
   this->UpdateProgress(1.0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::AllocateUseSet(vtkIdType size)
 {
   if (this->UseSet != nullptr)
@@ -2847,7 +2830,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::AllocateUseSet(vtkIdType size)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::AllocateVertices(vtkIdType size)
 {
   if (this->Vertices != nullptr)
@@ -2864,7 +2847,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::AllocateVertices(vtkIdType size)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::BuildUseSets()
 {
   int needsUpdate = 0;
@@ -2941,7 +2924,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::BuildUseSets()
   this->SavedTriangleListMTime.Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Reorder vertices `v' in increasing order in `w'. Return if the orientation
 // has changed.
@@ -2994,7 +2977,7 @@ int vtkUnstructuredGridVolumeZSweepMapper::ReorderTriangle(vtkIdType v[3], vtkId
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::ProjectAndSortVertices(vtkRenderer* ren, vtkVolume* vol)
 {
   assert("pre: empty list" && this->EventList->GetNumberOfItems() == 0);
@@ -3016,7 +2999,9 @@ void vtkUnstructuredGridVolumeZSweepMapper::ProjectAndSortVertices(vtkRenderer* 
   this->PerspectiveTransform->Concatenate(
     cam->GetProjectionTransformMatrix(aspect[0] / aspect[1], 0.0, 1.0));
   this->PerspectiveTransform->Concatenate(cam->GetViewTransformMatrix());
-  this->PerspectiveTransform->Concatenate(vol->GetMatrix());
+  vtkNew<vtkMatrix4x4> modelToWorld;
+  vol->GetModelToWorldMatrix(modelToWorld);
+  this->PerspectiveTransform->Concatenate(modelToWorld);
   this->PerspectiveMatrix->DeepCopy(this->PerspectiveTransform->GetMatrix());
 
   this->AllocateVertices(numberOfPoints);
@@ -3045,7 +3030,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::ProjectAndSortVertices(vtkRenderer* 
 
     double outWorldPoint[4];
 
-    vol->GetMatrix()->MultiplyPoint(inPoint, outWorldPoint);
+    modelToWorld->MultiplyPoint(inPoint, outWorldPoint);
 
     assert("check: vol no projection" && outWorldPoint[3] == 1);
 
@@ -3092,7 +3077,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::ProjectAndSortVertices(vtkRenderer* 
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::CreateAndCleanPixelList()
 {
   // paper: a "pixel list" is a double linked list. We put that in a queue.
@@ -3112,7 +3097,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::CreateAndCleanPixelList()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::MainLoop(vtkRenderWindow* renWin)
 {
   // used to know if the next vertex is on the same plane
@@ -3159,14 +3144,14 @@ void vtkUnstructuredGridVolumeZSweepMapper::MainLoop(vtkRenderWindow* renWin)
 
   this->UseSet->SetNotRendered();
 
-  int aborded = 0;
+  int aborted = 0;
   // for each vertex of the "event list"
   while (this->EventList->GetNumberOfItems() > 0)
   {
     this->UpdateProgress(static_cast<double>(progressCount) / sum);
 
-    aborded = renWin->CheckAbortStatus();
-    if (aborded)
+    aborted = renWin->CheckAbortStatus();
+    if (aborted)
     {
       break;
     }
@@ -3318,7 +3303,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::MainLoop(vtkRenderWindow* renWin)
     } // if useset of vertex is not null
   }   // while(eventList->GetNumberOfItems()>0)
 
-  if (!aborded)
+  if (!aborted)
   {
     // Here a final compositing
     vtkDebugMacro(<< "Flush Compositing");
@@ -3339,7 +3324,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::MainLoop(vtkRenderWindow* renWin)
   assert("post: empty_list" && this->EventList->GetNumberOfItems() == 0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::SavePixelListFrame()
 {
   vtkPolyData* dataset = vtkPolyData::New();
@@ -3404,7 +3389,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::SavePixelListFrame()
   */
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform a scan conversion of a triangle, interpolating z and the scalar.
 void vtkUnstructuredGridVolumeZSweepMapper::RasterizeFace(vtkIdType faceIds[3], int externalSide)
@@ -3472,7 +3457,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::RasterizeFace(vtkIdType faceIds[3], 
   this->RasterizeTriangle(v0, v1, v2, exitFace);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform a scan conversion of a triangle, interpolating z and the scalar.
 void vtkUnstructuredGridVolumeZSweepMapper::RasterizeTriangle(
@@ -3768,7 +3753,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::RasterizeTriangle(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::RasterizeSpan(
   int y, vtkScreenEdge* left, vtkScreenEdge* right, bool exitFace)
 {
@@ -3818,7 +3803,7 @@ enum
   VTK_LINE_DIAGONAL
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::RasterizeLine(
   vtkVertexEntry* v0, vtkVertexEntry* v1, bool exitFace)
 {
@@ -4076,7 +4061,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::RasterizeLine(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridVolumeZSweepMapper::CompositeFunction(double zTarget)
 {
   int y = this->YBounds[0];
@@ -4257,7 +4242,7 @@ void vtkUnstructuredGridVolumeZSweepMapper::CompositeFunction(double zTarget)
   this->MaxPixelListSizeReached = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Convert and clamp a float color component into an unsigned char.
 unsigned char vtkUnstructuredGridVolumeZSweepMapper::ColorComponentRealToByte(float color)
@@ -4277,7 +4262,7 @@ unsigned char vtkUnstructuredGridVolumeZSweepMapper::ColorComponentRealToByte(fl
   return static_cast<unsigned char>(val);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkUnstructuredGridVolumeZSweepMapper::GetZBufferValue(int x, int y)
 {
   int xPos, yPos;
@@ -4291,7 +4276,7 @@ double vtkUnstructuredGridVolumeZSweepMapper::GetZBufferValue(int x, int y)
   return *(this->ZBuffer + yPos * this->ZBufferSize[0] + xPos);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkUnstructuredGridVolumeZSweepMapper::GetMinimumBoundsDepth(
   vtkRenderer* ren, vtkVolume* vol)
 {
@@ -4334,3 +4319,4 @@ double vtkUnstructuredGridVolumeZSweepMapper::GetMinimumBoundsDepth(
 
   return minZ;
 }
+VTK_ABI_NAMESPACE_END

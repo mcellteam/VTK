@@ -1,17 +1,12 @@
-/*=========================================================================
-  Program:   Visualization Toolkit
-  Module:    vtkOBJImporter.h
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOBJImporter
  * @brief   import from .obj wavefront files
+ *
+ * This importer doesn't support scene hierarchy API
+ *
+ * This importer supports the collection API
  *
  *                        from Wavefront .obj & associated .mtl files.
  * @par Thanks - Peter Karasev (Georgia Tech / Keysight Technologies Inc),:
@@ -28,6 +23,7 @@
 #include "vtkSmartPointer.h" // for ivars
 #include <string>            // for string
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderWindow;
 class vtkRenderer;
 class vtkPolydata;
@@ -64,17 +60,23 @@ public:
   vtkTypeMacro(vtkOBJImporter, vtkImporter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the name of the file to read.
+   * FileName must be provided.
+   * FileNameMTL can be provided, if not provided, we will do, in order:
+   *  - Use mtllib is provided in the .obj file
+   *  - Check for a FileName.mtl and use it if it exists
+   *  - Check for a FileStem.mtl and use it if it exists
+   * TexturePath can be provided, it not provided, the folder containing FileName will be used
    */
-  void SetFileName(const char* arg);
-  void SetFileNameMTL(const char* arg);
-  void SetTexturePath(const char* path);
-  const char* GetFileName() const;
-  const char* GetFileNameMTL() const;
-  const char* GetTexturePath() const;
-  //@}
+  void SetFileName(VTK_FILEPATH const char* arg);
+  void SetFileNameMTL(VTK_FILEPATH const char* arg);
+  void SetTexturePath(VTK_FILEPATH const char* path);
+  VTK_FILEPATH const char* GetFileName() const;
+  VTK_FILEPATH const char* GetFileNameMTL() const;
+  VTK_FILEPATH const char* GetTexturePath() const;
+  ///@}
 
   /**
    * Get a printable string describing all outputs
@@ -101,5 +103,5 @@ private:
   void operator=(const vtkOBJImporter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-// VTK-HeaderTest-Exclude: vtkOBJImporter.h

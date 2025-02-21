@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSliderRepresentation2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSliderRepresentation2D.h"
 #include "vtkActor2D.h"
 #include "vtkCellArray.h"
@@ -33,9 +21,10 @@
 #include "vtkTransformPolyDataFilter.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSliderRepresentation2D);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSliderRepresentation2D::vtkSliderRepresentation2D()
 {
   // The coordinates defining the slider
@@ -177,7 +166,7 @@ vtkSliderRepresentation2D::vtkSliderRepresentation2D()
   this->TitleActor->SetMapper(this->TitleMapper);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSliderRepresentation2D::~vtkSliderRepresentation2D()
 {
   this->Point1Coordinate->Delete();
@@ -218,7 +207,7 @@ vtkSliderRepresentation2D::~vtkSliderRepresentation2D()
   this->TitleActor->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation2D::SetTitleText(const char* label)
 {
   this->TitleMapper->SetInput(label);
@@ -228,19 +217,19 @@ void vtkSliderRepresentation2D::SetTitleText(const char* label)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkSliderRepresentation2D::GetTitleText()
 {
   return this->TitleMapper->GetInput();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCoordinate* vtkSliderRepresentation2D::GetPoint1Coordinate()
 {
   return this->Point1Coordinate;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation2D::StartWidgetInteraction(double eventPos[2])
 {
   // Compute which polygon the pick is in (if any).
@@ -284,7 +273,7 @@ void vtkSliderRepresentation2D::StartWidgetInteraction(double eventPos[2])
   this->InteractionState = vtkSliderRepresentation::Outside;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation2D::WidgetInteraction(double eventPos[2])
 {
   double t = this->ComputePickPosition(eventPos);
@@ -292,20 +281,20 @@ void vtkSliderRepresentation2D::WidgetInteraction(double eventPos[2])
   this->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCoordinate* vtkSliderRepresentation2D::GetPoint2Coordinate()
 {
   return this->Point2Coordinate;
 }
 
-//----------------------------------------------------------------------
-void vtkSliderRepresentation2D::PlaceWidget(double* vtkNotUsed(bds[6]))
+//------------------------------------------------------------------------------
+void vtkSliderRepresentation2D::PlaceWidget(double* vtkNotUsed(bounds[6]))
 {
   // Position the handles at the end of the lines
   this->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkSliderRepresentation2D::ComputePickPosition(double eventPos[2])
 {
   double p4[3], p5[3], p6[3], p7[3];
@@ -342,7 +331,7 @@ double vtkSliderRepresentation2D::ComputePickPosition(double eventPos[2])
   return this->PickedT;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation2D::Highlight(int highlight)
 {
   if (highlight)
@@ -355,14 +344,19 @@ void vtkSliderRepresentation2D::Highlight(int highlight)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation2D::BuildRepresentation()
 {
+  if (!this->Renderer || !this->Visibility)
+  {
+    return;
+  }
+
   if (this->GetMTime() > this->BuildTime ||
     (this->Renderer && this->Renderer->GetVTKWindow() &&
       this->Renderer->GetVTKWindow()->GetMTime() > this->BuildTime))
   {
-    int* size = this->Renderer->GetSize();
+    const int* size = this->Renderer->GetSize();
     if (0 == size[0] || 0 == size[1])
     {
       // Renderer has no size yet: wait until the next
@@ -476,27 +470,31 @@ void vtkSliderRepresentation2D::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
-void vtkSliderRepresentation2D::GetActors2D(vtkPropCollection* pc)
+//------------------------------------------------------------------------------
+void vtkSliderRepresentation2D::GetActors2D(vtkPropCollection* propCollection)
 {
-  pc->AddItem(this->SliderActor);
-  pc->AddItem(this->TubeActor);
-  pc->AddItem(this->CapActor);
-  pc->AddItem(this->LabelActor);
-  pc->AddItem(this->TitleActor);
+  if (propCollection != nullptr && this->GetVisibility())
+  {
+    propCollection->AddItem(this->SliderActor);
+    propCollection->AddItem(this->TubeActor);
+    propCollection->AddItem(this->CapActor);
+    propCollection->AddItem(this->LabelActor);
+    propCollection->AddItem(this->TitleActor);
+  }
+  this->Superclass::GetActors2D(propCollection);
 }
 
-//----------------------------------------------------------------------
-void vtkSliderRepresentation2D::ReleaseGraphicsResources(vtkWindow* w)
+//------------------------------------------------------------------------------
+void vtkSliderRepresentation2D::ReleaseGraphicsResources(vtkWindow* window)
 {
-  this->SliderActor->ReleaseGraphicsResources(w);
-  this->TubeActor->ReleaseGraphicsResources(w);
-  this->CapActor->ReleaseGraphicsResources(w);
-  this->LabelActor->ReleaseGraphicsResources(w);
-  this->TitleActor->ReleaseGraphicsResources(w);
+  this->SliderActor->ReleaseGraphicsResources(window);
+  this->TubeActor->ReleaseGraphicsResources(window);
+  this->CapActor->ReleaseGraphicsResources(window);
+  this->LabelActor->ReleaseGraphicsResources(window);
+  this->TitleActor->ReleaseGraphicsResources(window);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSliderRepresentation2D::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   this->BuildRepresentation();
@@ -508,7 +506,7 @@ int vtkSliderRepresentation2D::RenderOpaqueGeometry(vtkViewport* viewport)
   return count;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSliderRepresentation2D::RenderOverlay(vtkViewport* viewport)
 {
   this->BuildRepresentation();
@@ -520,7 +518,7 @@ int vtkSliderRepresentation2D::RenderOverlay(vtkViewport* viewport)
   return count;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -609,3 +607,4 @@ void vtkSliderRepresentation2D::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "TitleProperty: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

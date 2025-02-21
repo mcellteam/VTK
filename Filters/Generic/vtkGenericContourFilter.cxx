@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericContourFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericContourFilter.h"
 #include "vtkCell.h"
 #include "vtkCellArray.h"
@@ -36,6 +24,7 @@
 #include "vtkTimerLog.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericContourFilter);
 
 vtkCxxSetObjectMacro(vtkGenericContourFilter, Locator, vtkIncrementalPointLocator);
@@ -59,7 +48,7 @@ vtkGenericContourFilter::vtkGenericContourFilter()
   this->SecondaryCD = vtkCellData::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericContourFilter::~vtkGenericContourFilter()
 {
   this->ContourValues->Delete();
@@ -74,7 +63,7 @@ vtkGenericContourFilter::~vtkGenericContourFilter()
   this->SecondaryCD->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If contour values are modified,
 // then this object is modified as well.
 vtkMTimeType vtkGenericContourFilter::GetMTime()
@@ -99,7 +88,7 @@ vtkMTimeType vtkGenericContourFilter::GetMTime()
   return mTime;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // General contouring filter.  Handles arbitrary input.
 int vtkGenericContourFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -219,7 +208,7 @@ int vtkGenericContourFilter::RequestData(vtkInformation* vtkNotUsed(request),
 
   vtkIdType updateCount = numCells / 20 + 1; // update roughly every 5%
   vtkIdType count = 0;
-  int abortExecute = 0;
+  bool abortExecute = false;
 
   input->GetTessellator()->InitErrorMetrics(input);
 
@@ -228,7 +217,7 @@ int vtkGenericContourFilter::RequestData(vtkInformation* vtkNotUsed(request),
     if (!(count % updateCount))
     {
       this->UpdateProgress(static_cast<double>(count) / numCells);
-      abortExecute = this->GetAbortExecute();
+      abortExecute = this->CheckAbort();
     }
 
     cell = cellIt->GetCell();
@@ -274,7 +263,7 @@ int vtkGenericContourFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By default,
 // an instance of vtkMergePoints is used.
 void vtkGenericContourFilter::CreateDefaultLocator()
@@ -287,13 +276,13 @@ void vtkGenericContourFilter::CreateDefaultLocator()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericContourFilter::SelectInputScalars(const char* fieldName)
 {
   this->SetInputScalarsSelection(fieldName);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericContourFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -319,7 +308,7 @@ void vtkGenericContourFilter::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set a particular contour value at contour number i. The index i ranges
 // between 0<=i<NumberOfContours.
@@ -328,7 +317,7 @@ void vtkGenericContourFilter::SetValue(int i, float value)
   this->ContourValues->SetValue(i, value);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Get the ith contour value.
 double vtkGenericContourFilter::GetValue(int i)
@@ -336,7 +325,7 @@ double vtkGenericContourFilter::GetValue(int i)
   return this->ContourValues->GetValue(i);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Get a pointer to an array of contour values. There will be
 // GetNumberOfContours() values in the list.
@@ -345,7 +334,7 @@ double* vtkGenericContourFilter::GetValues()
   return this->ContourValues->GetValues();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Fill a supplied list with contour values. There will be
 // GetNumberOfContours() values in the list. Make sure you allocate
@@ -355,7 +344,7 @@ void vtkGenericContourFilter::GetValues(double* contourValues)
   this->ContourValues->GetValues(contourValues);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set the number of contours to place into the list. You only really
 // need to use this method to reduce list size. The method SetValue()
@@ -365,7 +354,7 @@ void vtkGenericContourFilter::SetNumberOfContours(int number)
   this->ContourValues->SetNumberOfContours(number);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Get the number of contours in the list of contour values.
 vtkIdType vtkGenericContourFilter::GetNumberOfContours()
@@ -373,7 +362,7 @@ vtkIdType vtkGenericContourFilter::GetNumberOfContours()
   return this->ContourValues->GetNumberOfContours();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Generate numContours equally spaced contour values between specified
 // range. Contour values will include min/max range values.
@@ -382,7 +371,7 @@ void vtkGenericContourFilter::GenerateValues(int numContours, double range[2])
   this->ContourValues->GenerateValues(numContours, range);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Generate numContours equally spaced contour values between specified
 // range. Contour values will include min/max range values.
@@ -391,7 +380,7 @@ void vtkGenericContourFilter::GenerateValues(int numContours, double rangeStart,
   this->ContourValues->GenerateValues(numContours, rangeStart, rangeEnd);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericContourFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -401,3 +390,4 @@ int vtkGenericContourFilter::FillInputPortInformation(int port, vtkInformation* 
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkGenericDataSet");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

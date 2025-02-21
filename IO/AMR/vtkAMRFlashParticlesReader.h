@@ -1,22 +1,8 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRFlashParticlesReader.h
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAMRFlashParticlesReader
- *
- *
- *  A concrete instance of vtkAMRBaseParticlesReader that implements
+ * @brief   A concrete instance of vtkAMRBaseParticlesReader that implements
  *  functionality for reading flash particle datasets.
  */
 
@@ -26,6 +12,7 @@
 #include "vtkAMRBaseParticlesReader.h"
 #include "vtkIOAMRModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIndent;
 class vtkPolyData;
 class vtkPointData;
@@ -61,12 +48,12 @@ protected:
   /**
    * See vtkAMRBaseParticlesReader::ReadParticles
    */
-  vtkPolyData* ReadParticles(const int blkidx) override;
+  vtkPolyData* ReadParticles(int blkidx) override;
 
   /**
    * Reads the particlles of the given block from the given file.
    */
-  vtkPolyData* GetParticles(const char* file, const int blkidx);
+  vtkPolyData* GetParticles(const char* file, int blkidx);
 
   vtkFlashReaderInternal* Internal;
 
@@ -75,4 +62,5 @@ private:
   void operator=(const vtkAMRFlashParticlesReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkAMRFlashParticlesReader_h */

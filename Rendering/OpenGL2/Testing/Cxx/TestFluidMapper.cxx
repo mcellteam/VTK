@@ -1,16 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkCallbackCommand.h"
@@ -57,14 +46,14 @@ constexpr static double g_DragonPos[3]{ 2, -0.5, 3 };
 
 constexpr static float g_ParticleRadius = 0.03f;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Enable this for interactive demonstration
-//#define INTERACTIVE_DEMO
+// #define INTERACTIVE_DEMO
 #ifdef INTERACTIVE_DEMO
 #include "TestFluidDemo.cxx"
 #endif
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestFluidMapper(int argc, char* argv[])
 {
   vtkNew<vtkOpenGLRenderer> renderer;
@@ -101,9 +90,6 @@ int TestFluidMapper(int argc, char* argv[])
   //------------------------------------------------------------
   vtkSmartPointer<vtkPBRIrradianceTexture> irradiance = renderer->GetEnvMapIrradiance();
   irradiance->SetIrradianceStep(0.3);
-  vtkSmartPointer<vtkPBRPrefilterTexture> prefilter = renderer->GetEnvMapPrefiltered();
-  prefilter->SetPrefilterSamples(64);
-  prefilter->SetPrefilterSize(64);
 
   vtkNew<vtkOpenGLTexture> textureCubemap;
   textureCubemap->CubeMapOn();
@@ -258,7 +244,7 @@ int TestFluidMapper(int argc, char* argv[])
   // Default value is 1.33
   fluidMapper->SetRefractiveIndex(1.33f);
 
-  // Set the refraction scale, this will explicity change the amount of
+  // Set the refraction scale, this will explicitly change the amount of
   // refraction Default value is 1
   fluidMapper->SetRefractionScale(0.07f);
 

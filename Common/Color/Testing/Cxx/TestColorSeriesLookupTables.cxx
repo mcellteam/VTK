@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestColorSeriesLookupTables.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkColorSeries.h"
 #include "vtkDoubleArray.h"
@@ -27,7 +15,7 @@
 
 #include <cstdio> // For EXIT_SUCCESS
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! Get a string of [R, G, B, A] as double.
 std::string RGBAToDoubleString(double* rgba)
 {
@@ -52,7 +40,7 @@ std::string RGBAToDoubleString(double* rgba)
   return os.str();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! Get a string of [R, G, B, A] as unsigned char.
 std::string RGBAToCharString(double* rgba)
 {
@@ -77,7 +65,7 @@ std::string RGBAToCharString(double* rgba)
   return os.str();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! Get a hexadecimal string of the RGB colors.
 std::string RGBToHexString(const double* rgba)
 {
@@ -89,7 +77,7 @@ std::string RGBToHexString(const double* rgba)
   return os.str();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! Get a hexadecimal string of the RGBA colors.
 std::string RGBAToHexString(const double* rgba)
 {
@@ -101,7 +89,7 @@ std::string RGBAToHexString(const double* rgba)
   return os.str();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! Display the contents of the lookup table.
 std::string DisplayOrdinalLUTAsString(vtkLookupTable* lut)
 {
@@ -133,7 +121,7 @@ std::string DisplayOrdinalLUTAsString(vtkLookupTable* lut)
   return os.str();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! Display the contents of the lookup table.
 std::string DisplayCategoricalLUTAsString(vtkLookupTable* lut)
 {
@@ -162,7 +150,7 @@ std::string DisplayCategoricalLUTAsString(vtkLookupTable* lut)
   return os.str();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! Compare two ordinal lookup tables.
 std::pair<bool, std::string> CompareOrdinalLUTs(vtkLookupTable* lut1, vtkLookupTable* lut2)
 {
@@ -223,7 +211,7 @@ std::pair<bool, std::string> CompareOrdinalLUTs(vtkLookupTable* lut1, vtkLookupT
   return res;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //! Compare two categorical lookup tables.
 std::pair<bool, std::string> CompareCategoricalLUTs(vtkLookupTable* lut1, vtkLookupTable* lut2)
 {

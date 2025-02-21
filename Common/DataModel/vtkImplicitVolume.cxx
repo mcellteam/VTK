@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitVolume.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkImplicitVolume.h"
 
 #include "vtkDoubleArray.h"
@@ -20,10 +9,11 @@
 #include "vtkPointData.h"
 #include "vtkVoxel.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImplicitVolume);
 vtkCxxSetObjectMacro(vtkImplicitVolume, Volume, vtkImageData);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an vtkImplicitVolume with no initial volume; the OutValue
 // set to a large negative number; and the OutGradient set to (0,0,1).
 vtkImplicitVolume::vtkImplicitVolume()
@@ -39,7 +29,7 @@ vtkImplicitVolume::vtkImplicitVolume()
   this->PointIds->Allocate(8);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImplicitVolume::~vtkImplicitVolume()
 {
   if (this->Volume)
@@ -50,7 +40,7 @@ vtkImplicitVolume::~vtkImplicitVolume()
   this->PointIds->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate the ImplicitVolume. This returns the interpolated scalar value
 // at x[3].
 double vtkImplicitVolume::EvaluateFunction(double x[3])
@@ -87,7 +77,7 @@ double vtkImplicitVolume::EvaluateFunction(double x[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImplicitVolume::GetMTime()
 {
   vtkMTimeType mTime = this->vtkImplicitFunction::GetMTime();
@@ -102,7 +92,7 @@ vtkMTimeType vtkImplicitVolume::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate ImplicitVolume gradient.
 void vtkImplicitVolume::EvaluateGradient(double x[3], double n[3])
 {
@@ -153,7 +143,7 @@ void vtkImplicitVolume::EvaluateGradient(double x[3], double n[3])
   gradient->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitVolume::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -171,3 +161,4 @@ void vtkImplicitVolume::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Volume: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

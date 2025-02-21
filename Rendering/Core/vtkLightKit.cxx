@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLightKit.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLightKit.h"
 
 #include "vtkLight.h"
@@ -19,6 +7,7 @@
 #include "vtkPiecewiseFunction.h"
 #include "vtkRenderer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLightKit);
 
 static const char* vtkLightKitTypeStrings[] = { "KeyLight", "FillLight", "BackLight", "HeadLight",
@@ -32,7 +21,7 @@ static const char* vtkLightKitSubTypeStrings[] = { "Warmth", "Intensity", "Eleva
 static const char* vtkLightKitSubTypeShortStrings[] = { "War.", "Int. ", "Ele.", "Azi.", "K:F",
   "K:B", "K:H", nullptr };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLightKit::vtkLightKit()
 {
   // create members
@@ -74,7 +63,7 @@ vtkLightKit::vtkLightKit()
   this->Update();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLightKit::~vtkLightKit()
 {
   this->KeyLight->Delete();
@@ -89,7 +78,7 @@ vtkLightKit::~vtkLightKit()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::SetKeyLightAngle(double elevation, double azimuth)
 {
   this->KeyLightAngle[0] = elevation;
@@ -98,7 +87,7 @@ void vtkLightKit::SetKeyLightAngle(double elevation, double azimuth)
   this->KeyLight->SetDirectionAngle(elevation, azimuth);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::SetFillLightAngle(double elevation, double azimuth)
 {
   this->FillLightAngle[0] = elevation;
@@ -107,7 +96,7 @@ void vtkLightKit::SetFillLightAngle(double elevation, double azimuth)
   this->FillLight->SetDirectionAngle(elevation, azimuth);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::SetBackLightAngle(double elevation, double azimuth)
 {
   this->BackLightAngle[0] = elevation;
@@ -117,7 +106,7 @@ void vtkLightKit::SetBackLightAngle(double elevation, double azimuth)
   this->BackLight1->SetDirectionAngle(elevation, -azimuth);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::WarmthToRGB(double w, double rgb[3])
 {
   rgb[0] = this->WarmthFunction[0]->GetValue(w);
@@ -125,13 +114,13 @@ void vtkLightKit::WarmthToRGB(double w, double rgb[3])
   rgb[2] = this->WarmthFunction[2]->GetValue(w);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkLightKit::WarmthToIntensity(double w)
 {
   return this->WarmthFunction[3]->GetValue(w);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::WarmthToRGBI(double w, double rgb[3], double& i)
 {
   rgb[0] = this->WarmthFunction[0]->GetValue(w);
@@ -140,7 +129,7 @@ void vtkLightKit::WarmthToRGBI(double w, double rgb[3], double& i)
   i = this->WarmthFunction[3]->GetValue(w);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::AddLightsToRenderer(vtkRenderer* renderer)
 {
   if (renderer != nullptr)
@@ -153,7 +142,7 @@ void vtkLightKit::AddLightsToRenderer(vtkRenderer* renderer)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::RemoveLightsFromRenderer(vtkRenderer* renderer)
 {
   if (renderer != nullptr)
@@ -166,14 +155,14 @@ void vtkLightKit::RemoveLightsFromRenderer(vtkRenderer* renderer)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::Modified()
 {
   this->Update();
   this->Superclass::Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::Update()
 {
   double* fillLightColor = this->FillLightColor;
@@ -234,7 +223,7 @@ void vtkLightKit::Update()
   this->BackLight1->SetIntensity(backLightIntensity);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -282,7 +271,7 @@ void vtkLightKit::PrintSelf(ostream& os, vtkIndent indent)
   //    << this->BackLightColor[2] << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::DeepCopy(vtkLightKit* k)
 {
   this->KeyLightIntensity = k->KeyLightIntensity;
@@ -313,7 +302,7 @@ void vtkLightKit::DeepCopy(vtkLightKit* k)
   this->BackLight1->DeepCopy(k->BackLight1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // r, g, b, sqrt(color length)
 static double warmthTable[] = {
   0.1674, 0.3065, 1.0000, 0.5865, //
@@ -382,7 +371,7 @@ static double warmthTable[] = {
   1.0000, 0.0396, 0.0000, 0.5677  //
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLightKit::InitializeWarmthFunctions()
 {
   const int len = sizeof(warmthTable) / sizeof(double) / 4;
@@ -393,7 +382,7 @@ void vtkLightKit::InitializeWarmthFunctions()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkLightKit::GetStringFromType(int type)
 {
   static const int n = sizeof(vtkLightKitTypeStrings) / sizeof(char*);
@@ -407,7 +396,7 @@ const char* vtkLightKit::GetStringFromType(int type)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkLightKit::GetStringFromSubType(int subtype)
 {
   static const int n = sizeof(vtkLightKitSubTypeStrings) / sizeof(char*);
@@ -421,7 +410,7 @@ const char* vtkLightKit::GetStringFromSubType(int subtype)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkLightKit::GetShortStringFromSubType(int subtype)
 {
   static const int n = sizeof(vtkLightKitSubTypeShortStrings) / sizeof(char*);
@@ -434,7 +423,7 @@ const char* vtkLightKit::GetShortStringFromSubType(int subtype)
     return nullptr;
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLightKit::LightKitSubType vtkLightKit::GetSubType(vtkLightKit::LightKitType type, int i)
 {
   // return subtype
@@ -462,3 +451,4 @@ vtkLightKit::LightKitSubType vtkLightKit::GetSubType(vtkLightKit::LightKitType t
 
   return subtype;
 }
+VTK_ABI_NAMESPACE_END

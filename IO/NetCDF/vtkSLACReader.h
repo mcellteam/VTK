@@ -1,24 +1,6 @@
-// -*- c++ -*-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSLACReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-LANL-California-USGov
 
 /**
  * @class   vtkSLACReader
@@ -40,6 +22,7 @@
 
 #include "vtkSmartPointer.h" // For internal method.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArraySelection;
 class vtkDoubleArray;
 class vtkIdTypeArray;
@@ -53,40 +36,40 @@ public:
   static vtkSLACReader* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  vtkGetStringMacro(MeshFileName);
-  vtkSetStringMacro(MeshFileName);
+  vtkGetFilePathMacro(MeshFileName);
+  vtkSetFilePathMacro(MeshFileName);
 
-  //@{
+  ///@{
   /**
    * There may be one mode file (usually for actual modes) or multiple mode
    * files (which usually actually represent time series).  These methods
    * set and clear the list of mode files (which can be a single mode file).
    */
-  virtual void AddModeFileName(const char* fname);
+  virtual void AddModeFileName(VTK_FILEPATH const char* fname);
   virtual void RemoveAllModeFileNames();
   virtual unsigned int GetNumberOfModeFileNames();
-  virtual const char* GetModeFileName(unsigned int idx);
-  //@}
+  virtual VTK_FILEPATH const char* GetModeFileName(unsigned int idx);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If on, reads the internal volume of the data set.  Set to off by default.
    */
   vtkGetMacro(ReadInternalVolume, vtkTypeBool);
   vtkSetMacro(ReadInternalVolume, vtkTypeBool);
   vtkBooleanMacro(ReadInternalVolume, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If on, reads the external surfaces of the data set.  Set to on by default.
    */
   vtkGetMacro(ReadExternalSurface, vtkTypeBool);
   vtkSetMacro(ReadExternalSurface, vtkTypeBool);
   vtkBooleanMacro(ReadExternalSurface, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If on, reads midpoint information for external surfaces and builds
    * quadratic surface triangles.  Set to on by default.
@@ -94,71 +77,74 @@ public:
   vtkGetMacro(ReadMidpoints, vtkTypeBool);
   vtkSetMacro(ReadMidpoints, vtkTypeBool);
   vtkBooleanMacro(ReadMidpoints, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Variable array selection.
    */
   virtual int GetNumberOfVariableArrays();
-  virtual const char* GetVariableArrayName(int idx);
+  virtual const char* GetVariableArrayName(int index);
   virtual int GetVariableArrayStatus(const char* name);
   virtual void SetVariableArrayStatus(const char* name, int status);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Sets the scale factor for each mode. Each scale factor is reset to 1.
    */
   virtual void ResetFrequencyScales();
   virtual void SetFrequencyScale(int index, double scale);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Sets the phase offset for each mode. Each shift is reset to 0.
    */
   virtual void ResetPhaseShifts();
   virtual void SetPhaseShift(int index, double shift);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * NOTE: This is not thread-safe.
    */
   virtual vtkDoubleArray* GetFrequencyScales();
   virtual vtkDoubleArray* GetPhaseShifts();
-  //@}
+  ///@}
 
   /**
    * Returns true if the given file can be read by this reader.
    */
-  static int CanReadFile(const char* filename);
+  static int CanReadFile(VTK_FILEPATH const char* filename);
 
   /**
    * This key is attached to the metadata information of all data sets in the
    * output that are part of the internal volume.
+   * \ingroup InformationKeys
    */
   static vtkInformationIntegerKey* IS_INTERNAL_VOLUME();
 
   /**
    * This key is attached to the metadata information of all data sets in the
    * output that are part of the external surface.
+   * \ingroup InformationKeys
    */
   static vtkInformationIntegerKey* IS_EXTERNAL_SURFACE();
 
-  //@{
+  ///@{
   /**
    * All the data sets stored in the multiblock output share the same point
    * data.  For convenience, the point coordinates (vtkPoints) and point data
    * (vtkPointData) are saved under these keys in the vtkInformation of the
    * output data set.
+   * \ingroup InformationKeys
    */
   static vtkInformationObjectBaseKey* POINTS();
   static vtkInformationObjectBaseKey* POINT_DATA();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Simple class used internally to define an edge based on the endpoints.  The
    * endpoints are canonically identified by the lower and higher values.
@@ -184,9 +170,9 @@ public:
         this->MaxEndPoint = endpointA;
       }
     }
-    inline vtkIdType GetMinEndPoint() const { return this->MinEndPoint; }
-    inline vtkIdType GetMaxEndPoint() const { return this->MaxEndPoint; }
-    inline bool operator==(const EdgeEndpoints& other) const
+    vtkIdType GetMinEndPoint() const { return this->MinEndPoint; }
+    vtkIdType GetMaxEndPoint() const { return this->MaxEndPoint; }
+    bool operator==(const EdgeEndpoints& other) const
     {
       return ((this->GetMinEndPoint() == other.GetMinEndPoint()) &&
         (this->GetMaxEndPoint() == other.GetMaxEndPoint()));
@@ -196,16 +182,16 @@ public:
     vtkIdType MinEndPoint;
     vtkIdType MaxEndPoint;
   };
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Simple class used internally for holding midpoint information.
    */
   class VTKIONETCDF_EXPORT MidpointCoordinates
   {
   public:
-    MidpointCoordinates() {}
+    MidpointCoordinates() = default;
     MidpointCoordinates(const double coord[3], vtkIdType id)
     {
       this->Coordinate[0] = coord[0];
@@ -216,7 +202,7 @@ public:
     double Coordinate[3];
     vtkIdType ID;
   };
-  //@}
+  ///@}
 
   enum
   {
@@ -291,13 +277,13 @@ protected:
   virtual int ReadConnectivity(
     int meshFD, vtkMultiBlockDataSet* surfaceOutput, vtkMultiBlockDataSet* volumeOutput);
 
-  //@{
+  ///@{
   /**
    * Reads tetrahedron connectivity arrays.  Called by ReadConnectivity.
    */
   virtual int ReadTetrahedronInteriorArray(int meshFD, vtkIdTypeArray* connectivity);
   virtual int ReadTetrahedronExteriorArray(int meshFD, vtkIdTypeArray* connectivity);
-  //@}
+  ///@}
 
   /**
    * Reads point data arrays.  Called by ReadCoordinates and ReadFieldData.
@@ -313,7 +299,7 @@ protected:
     NumPerTetExt = 9
   };
 
-  //@{
+  ///@{
   /**
    * Manages a map from edges to midpoint coordinates.
    */
@@ -322,7 +308,7 @@ protected:
   public:
     MidpointCoordinateMap();
     ~MidpointCoordinateMap();
-    //@}
+    ///@}
 
     void AddMidpoint(const EdgeEndpoints& edge, const MidpointCoordinates& midpoint);
     void RemoveMidpoint(const EdgeEndpoints& edge);
@@ -341,11 +327,11 @@ protected:
 
   private:
     // Too lazy to implement these.
-    MidpointCoordinateMap(const MidpointCoordinateMap&);
-    void operator=(const MidpointCoordinateMap&);
+    MidpointCoordinateMap(const MidpointCoordinateMap&) = delete;
+    void operator=(const MidpointCoordinateMap&) = delete;
   };
 
-  //@{
+  ///@{
   /**
    * Manages a map from edges to the point id of the midpoint.
    */
@@ -354,7 +340,7 @@ protected:
   public:
     MidpointIdMap();
     ~MidpointIdMap();
-    //@}
+    ///@}
 
     void AddMidpoint(const EdgeEndpoints& edge, vtkIdType midpoint);
     void RemoveMidpoint(const EdgeEndpoints& edge);
@@ -381,8 +367,8 @@ protected:
 
   private:
     // Too lazy to implement these.
-    MidpointIdMap(const MidpointIdMap&);
-    void operator=(const MidpointIdMap&);
+    MidpointIdMap(const MidpointIdMap&) = delete;
+    void operator=(const MidpointIdMap&) = delete;
   };
 
   /**
@@ -404,7 +390,8 @@ protected:
    * 0 on failure.  Also fills a midpoint id map that will be passed into
    * InterpolateMidpointFieldData.
    */
-  virtual int ReadMidpointData(int meshFD, vtkMultiBlockDataSet* output, MidpointIdMap& map);
+  virtual int ReadMidpointData(
+    int meshFD, vtkMultiBlockDataSet* output, MidpointIdMap& midpointIds);
 
   /**
    * Instead of reading data from the mesh file, restore the data from the
@@ -443,4 +430,5 @@ private:
   void operator=(const vtkSLACReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkSLACReader_h

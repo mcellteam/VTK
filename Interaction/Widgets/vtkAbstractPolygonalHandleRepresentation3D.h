@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractPolygonalHandleRepresentation3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractPolygonalHandleRepresentation3D
  * @brief   represent a user defined handle geometry in 3D while maintaining a fixed orientation
@@ -35,6 +23,7 @@
 #include "vtkHandleRepresentation.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkProperty;
 class vtkPolyDataMapper;
 class vtkCellPicker;
@@ -51,33 +40,33 @@ class VTKINTERACTIONWIDGETS_EXPORT vtkAbstractPolygonalHandleRepresentation3D
   : public vtkHandleRepresentation
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkAbstractPolygonalHandleRepresentation3D, vtkHandleRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   using vtkHandleRepresentation::Translate;
 
-  //@{
+  ///@{
   /**
    * Set the position of the point in world and display coordinates.
    */
   void SetWorldPosition(double p[3]) override;
   void SetDisplayPosition(double p[3]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the handle polydata.
    */
   void SetHandle(vtkPolyData*);
   vtkPolyData* GetHandle();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the handle properties when unselected and selected.
    */
@@ -85,7 +74,7 @@ public:
   void SetSelectedProperty(vtkProperty*);
   vtkGetObjectMacro(Property, vtkProperty);
   vtkGetObjectMacro(SelectedProperty, vtkProperty);
-  //@}
+  ///@}
 
   /**
    * Get the transform used to transform the generic handle polydata before
@@ -93,7 +82,7 @@ public:
    */
   virtual vtkAbstractTransform* GetTransform();
 
-  //@{
+  ///@{
   /**
    * Methods to make this class properly act like a vtkWidgetRepresentation.
    */
@@ -101,9 +90,9 @@ public:
   void StartWidgetInteraction(double eventPos[2]) override;
   void WidgetInteraction(double eventPos[2]) override;
   int ComputeInteractionState(int X, int Y, int modify = 0) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to make this class behave as a vtkProp.
    */
@@ -115,9 +104,9 @@ public:
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
   double* GetBounds() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * A label may be associated with the seed. The string can be set via
    * SetLabelText. The visibility of the label can be turned on / off.
@@ -127,9 +116,9 @@ public:
   vtkBooleanMacro(LabelVisibility, vtkTypeBool);
   virtual void SetLabelText(const char* label);
   virtual char* GetLabelText();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Scale text (font size along each dimension).
    */
@@ -140,14 +129,14 @@ public:
     this->SetLabelTextScale(scale);
   }
   virtual double* GetLabelTextScale();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the label text actor
    */
   vtkGetObjectMacro(LabelTextActor, vtkFollower);
-  //@}
+  ///@}
 
   /**
    * The handle may be scaled uniformly in all three dimensions using this
@@ -156,18 +145,18 @@ public:
    */
   virtual void SetUniformScale(double scale);
 
-  //@{
+  ///@{
   /**
    * Toggle the visibility of the handle on and off
    */
   vtkSetMacro(HandleVisibility, vtkTypeBool);
   vtkGetMacro(HandleVisibility, vtkTypeBool);
   vtkBooleanMacro(HandleVisibility, vtkTypeBool);
-  //@}
+  ///@}
 
   void Highlight(int highlight) override;
 
-  //@{
+  ///@{
   /**
    * Turn on/off smooth motion of the handle. See the documentation of
    * MoveFocusRequest for details. By default, SmoothMotion is ON. However,
@@ -182,7 +171,7 @@ public:
   vtkSetMacro(SmoothMotion, vtkTypeBool);
   vtkGetMacro(SmoothMotion, vtkTypeBool);
   vtkBooleanMacro(SmoothMotion, vtkTypeBool);
-  //@}
+  ///@}
 
   /*
    * Register internal Pickers within PickingManager
@@ -209,7 +198,7 @@ protected:
   vtkTypeBool HandleVisibility;
 
   // Methods to manipulate the cursor
-  virtual void Translate(const double* p1, const double* p2) override;
+  void Translate(const double* p1, const double* p2) override;
   virtual void Scale(const double* p1, const double* p2, const double eventPos[2]);
   virtual void MoveFocus(const double* p1, const double* p2);
 
@@ -219,7 +208,7 @@ protected:
   // world coordinates), the new display position of the handle center is
   // populated into requestedDisplayPos. This is again only a request for the
   // new display position. It is up to the point placer to deduce the
-  // appropriate world co-ordinates that this display position will map into.
+  // appropriate world coordinates that this display position will map into.
   // The placer may even disallow such a movement.
   // If "SmoothMotion" is OFF, the returned requestedDisplayPos is the same
   // as the event position, ie the location of the mouse cursor. If its OFF,
@@ -259,4 +248,5 @@ private:
   void operator=(const vtkAbstractPolygonalHandleRepresentation3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

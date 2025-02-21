@@ -58,9 +58,7 @@
 #define T_uint   NC_UINT
 #define T_longlong  NC_INT64
 #define T_ulonglong  NC_UINT64
-#ifdef USE_NETCDF4
 #define T_string NC_STRING
-#endif
 
 /* Synthetic type to handle special memtypes */
 #define T_uchar  NC_UBYTE
@@ -84,9 +82,6 @@
 #define ATOMICTYPEMAX4 NC_STRING
 #define ATOMICTYPEMAX3 NC_DOUBLE
 #define ATOMICTYPEMAX5 NC_UINT64
-
-/* Define an alias for int to indicate an error return */
-typedef int NCerror;
 
 #if !defined H5_HAVE_PARALLEL && !defined HDF5_PARALLEL && !defined USE_PNETCDF
 typedef int MPI_Comm;
@@ -146,6 +141,12 @@ extern int HDF4_initialize(void);
 extern int HDF4_finalize(void);
 #endif
 
+#ifdef ENABLE_NCZARR
+extern const NC_Dispatch* NCZ_dispatch_table;
+extern int NCZ_initialize(void);
+extern int NCZ_finalize(void);
+#endif
+
 /* User-defined formats.*/
 extern NC_Dispatch* UDF0_dispatch_table;
 extern char UDF0_magic_number[NC_MAX_MAGIC_NUMBER_LEN + 1];
@@ -167,7 +168,6 @@ struct nc_vlen_t;
 #endif /*!USE_NETCDF4*/
 
 struct NC;
-
 
 int NC_create(const char *path, int cmode,
 	      size_t initialsz, int basepe, size_t *chunksizehintp,

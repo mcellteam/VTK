@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractRectilinearGrid.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractRectilinearGrid
  * @brief   Extract a sub grid (VOI) from the structured rectilinear dataset.
@@ -33,6 +21,7 @@
 #include "vtkRectilinearGridAlgorithm.h"
 
 // Forward Declarations
+VTK_ABI_NAMESPACE_BEGIN
 class vtkExtractStructuredGridHelper;
 
 class VTKFILTERSEXTRACTION_EXPORT vtkExtractRectilinearGrid : public vtkRectilinearGridAlgorithm
@@ -42,7 +31,7 @@ public:
   vtkTypeMacro(vtkExtractRectilinearGrid, vtkRectilinearGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify i-j-k (min,max) pairs to extract. The resulting structured grid
    * dataset can be of any topological dimension (i.e., point, line, plane,
@@ -50,9 +39,9 @@ public:
    */
   vtkSetVector6Macro(VOI, int);
   vtkGetVectorMacro(VOI, int, 6);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the sampling rate in the i, j, and k directions. If the rate is > 1,
    * then the resulting VOI will be subsampled representation of the input.
@@ -62,9 +51,9 @@ public:
    */
   vtkSetVector3Macro(SampleRate, int);
   vtkGetVectorMacro(SampleRate, int, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control whether to enforce that the "boundary" of the grid is output in
    * the subsampling process. (This ivar only has effect when the SampleRate
@@ -76,7 +65,7 @@ public:
   vtkSetMacro(IncludeBoundary, vtkTypeBool);
   vtkGetMacro(IncludeBoundary, vtkTypeBool);
   vtkBooleanMacro(IncludeBoundary, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkExtractRectilinearGrid();
@@ -105,4 +94,5 @@ private:
   void operator=(const vtkExtractRectilinearGrid&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLGL2PSExporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLGL2PSExporter.h"
 
@@ -31,6 +19,7 @@
 #include <sstream>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLGL2PSExporter);
 
 //------------------------------------------------------------------------------
@@ -73,7 +62,7 @@ void vtkOpenGLGL2PSExporter::WriteData()
   GLint options = static_cast<GLint>(this->GetGL2PSOptions());
   GLint sort = static_cast<GLint>(this->GetGL2PSSort());
   GLint format = static_cast<GLint>(this->GetGL2PSFormat());
-  int* winsize = this->RenderWindow->GetSize();
+  const int* winsize = this->RenderWindow->GetSize();
   GLint viewport[4] = { 0, 0, static_cast<GLint>(winsize[0]), static_cast<GLint>(winsize[1]) };
 
   // Setup helper class:
@@ -194,3 +183,4 @@ bool vtkOpenGLGL2PSExporter::CaptureVectorProps()
 
   return true;
 }
+VTK_ABI_NAMESPACE_END

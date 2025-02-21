@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageIslandRemoval2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageIslandRemoval2D.h"
 
 #include "vtkImageData.h"
@@ -20,9 +8,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageIslandRemoval2D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor: Sets default filter to be identity.
 vtkImageIslandRemoval2D::vtkImageIslandRemoval2D()
 {
@@ -36,7 +25,7 @@ vtkImageIslandRemoval2D::vtkImageIslandRemoval2D()
   this->SetIslandValue(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageIslandRemoval2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -53,7 +42,7 @@ void vtkImageIslandRemoval2D::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ReplaceValue: " << this->ReplaceValue;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The templated execute function handles all the data types.
 // Codes:  0 => unvisited. 1 => visited don't know.
 //         2 => visited keep.  3 => visited replace.
@@ -462,7 +451,7 @@ void vtkImageIslandRemoval2DExecute(vtkImageIslandRemoval2D* self, vtkImageData*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method uses the input data to fill the output data.
 // It can handle any type data, but the two datas must have the same
 // data type.  Assumes that in and out have the same lower extent.
@@ -515,3 +504,4 @@ int vtkImageIslandRemoval2D::RequestData(vtkInformation* vtkNotUsed(request),
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

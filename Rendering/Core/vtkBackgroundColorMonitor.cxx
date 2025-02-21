@@ -1,27 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBackgroundColorMonitor
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBackgroundColorMonitor.h"
 #include "vtkObjectFactory.h"
 #include "vtkRenderer.h"
 #include <cmath>
 #include <cstring>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBackgroundColorMonitor);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBackgroundColorMonitor::vtkBackgroundColorMonitor()
   : UpTime(0)
   , Gradient(false)
@@ -30,19 +19,15 @@ vtkBackgroundColorMonitor::vtkBackgroundColorMonitor()
   memset(this->Color2, 0, 3 * sizeof(double));
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkBackgroundColorMonitor::StateChanged(vtkRenderer* ren)
 {
   unsigned int oldUpTime = this->UpTime;
   this->Update(ren);
-  if (oldUpTime != this->UpTime)
-  {
-    return true;
-  }
-  return false;
+  return oldUpTime != this->UpTime;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBackgroundColorMonitor::Update(vtkRenderer* ren)
 {
   // update colors
@@ -72,7 +57,7 @@ void vtkBackgroundColorMonitor::Update(vtkRenderer* ren)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBackgroundColorMonitor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -91,3 +76,4 @@ void vtkBackgroundColorMonitor::PrintSelf(ostream& os, vtkIndent indent)
   os << endl;
   os << indent << "UpTime=" << this->UpTime << endl;
 }
+VTK_ABI_NAMESPACE_END

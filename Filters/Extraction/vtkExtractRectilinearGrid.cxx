@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractRectilinearGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractRectilinearGrid.h"
 
 #include "vtkCellData.h"
@@ -25,6 +13,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractRectilinearGrid);
 
 // Construct object to extract all of the input data.
@@ -39,7 +28,7 @@ vtkExtractRectilinearGrid::vtkExtractRectilinearGrid()
   this->Internal = vtkExtractStructuredGridHelper::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractRectilinearGrid::~vtkExtractRectilinearGrid()
 {
   if (this->Internal != nullptr)
@@ -48,7 +37,7 @@ vtkExtractRectilinearGrid::~vtkExtractRectilinearGrid()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractRectilinearGrid::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -81,19 +70,19 @@ int vtkExtractRectilinearGrid::RequestUpdateExtent(
     int oUExt[6];
     outputVector->GetInformationObject(0)->Get(
       vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), oUExt);
-    int oWExt[6]; // For parallel parititon this will be different.
+    int oWExt[6]; // For parallel partition this will be different.
     this->Internal->GetOutputWholeExtent(oWExt);
     for (i = 0; i < 3; i++)
     {
       int idx = oUExt[2 * i] - oWExt[2 * i]; // Extent value to index
-      if (idx < 0 || idx >= (int)this->Internal->GetSize(i))
+      if (idx < 0 || idx >= this->Internal->GetSize(i))
       {
         vtkWarningMacro("Requested extent outside whole extent.");
         idx = 0;
       }
       uExt[2 * i] = this->Internal->GetMappedExtentValueFromIndex(i, idx);
       int jdx = oUExt[2 * i + 1] - oWExt[2 * i]; // Extent value to index
-      if (jdx < idx || jdx >= (int)this->Internal->GetSize(i))
+      if (jdx < idx || jdx >= this->Internal->GetSize(i))
       {
         vtkWarningMacro("Requested extent outside whole extent.");
         jdx = 0;
@@ -108,7 +97,7 @@ int vtkExtractRectilinearGrid::RequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractRectilinearGrid::RequestInformation(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -126,7 +115,7 @@ int vtkExtractRectilinearGrid::RequestInformation(
 
   if (!this->Internal->IsValid())
   {
-    vtkWarningMacro("Error while initializing filter.");
+    vtkDebugMacro("Error while initializing filter.");
     return 0;
   }
 
@@ -134,7 +123,7 @@ int vtkExtractRectilinearGrid::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractRectilinearGrid::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -158,7 +147,7 @@ int vtkExtractRectilinearGrid::RequestData(
   return this->RequestDataImpl(inputVector, outputVector) ? 1 : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkExtractRectilinearGrid::RequestDataImpl(
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -206,14 +195,24 @@ bool vtkExtractRectilinearGrid::RequestDataImpl(
 
   vtkDataArray* out_coords[3];
 
-  for (int dim = 0; dim < 3; ++dim)
+  bool abort = false;
+  int checkAbortInterval = 0;
+
+  for (int dim = 0; dim < 3 && !abort; ++dim)
   {
     // Allocate coordinates array for this dimension
     out_coords[dim] = vtkDataArray::CreateDataArray(in_coords[dim]->GetDataType());
     out_coords[dim]->SetNumberOfTuples(outDims[dim]);
 
+    checkAbortInterval = std::min((outExt[2 * dim + 1] - outExt[2 * dim]) / 10 + 1, 1000);
+
     for (int oExtVal = outExt[2 * dim]; oExtVal <= outExt[2 * dim + 1]; ++oExtVal)
     {
+      if (oExtVal % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        abort = true;
+        break;
+      }
       int outExtIdx = oExtVal - outExt[2 * dim];
       int inExtIdx = this->Internal->GetMappedIndex(dim, outExtIdx);
       out_coords[dim]->SetTuple(outExtIdx, inExtIdx, in_coords[dim]);
@@ -227,10 +226,11 @@ bool vtkExtractRectilinearGrid::RequestDataImpl(
   out_coords[1]->Delete();
   out_coords[2]->Delete();
 
+  this->CheckAbort();
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractRectilinearGrid::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -245,3 +245,4 @@ void vtkExtractRectilinearGrid::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Include Boundary: " << (this->IncludeBoundary ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

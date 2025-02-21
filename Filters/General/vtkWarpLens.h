@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWarpLens.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWarpLens
  * @brief   deform geometry by applying lens distortion
@@ -26,6 +14,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPointSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkWarpLens : public vtkPointSetAlgorithm
 {
 public:
@@ -33,33 +22,33 @@ public:
   vtkTypeMacro(vtkWarpLens, vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify second order symmetric radial lens distortion parameter.
    * This is obsoleted by newer instance variables.
    */
   void SetKappa(double kappa);
   double GetKappa();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the center of radial distortion in pixels.
    * This is obsoleted by newer instance variables.
    */
   void SetCenter(double centerX, double centerY);
   double* GetCenter() VTK_SIZEHINT(2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the calibrated principal point of the camera/lens
    */
   vtkSetVector2Macro(PrincipalPoint, double);
   vtkGetVectorMacro(PrincipalPoint, double, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the symmetric radial distortion parameters for the lens
    */
@@ -67,9 +56,9 @@ public:
   vtkGetMacro(K1, double);
   vtkSetMacro(K2, double);
   vtkGetMacro(K2, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the decentering distortion parameters for the lens
    */
@@ -77,9 +66,9 @@ public:
   vtkGetMacro(P1, double);
   vtkSetMacro(P2, double);
   vtkGetMacro(P2, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the imager format width / height in mm
    */
@@ -87,9 +76,9 @@ public:
   vtkGetMacro(FormatWidth, double);
   vtkSetMacro(FormatHeight, double);
   vtkGetMacro(FormatHeight, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the image width / height in pixels
    */
@@ -97,13 +86,13 @@ public:
   vtkGetMacro(ImageWidth, int);
   vtkSetMacro(ImageHeight, int);
   vtkGetMacro(ImageHeight, int);
-  //@}
+  ///@}
 
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
 protected:
   vtkWarpLens();
-  ~vtkWarpLens() override {}
+  ~vtkWarpLens() override = default;
 
   int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
@@ -123,4 +112,5 @@ private:
   void operator=(const vtkWarpLens&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

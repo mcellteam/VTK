@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayPolyDataMapperNode.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOSPRayPolyDataMapperNode
  * @brief   links vtkActor and vtkMapper to OSPRay
@@ -26,6 +14,7 @@
 #include "vtkPolyDataMapperNode.h"
 #include "vtkRenderingRayTracingModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOSPRayActorNode;
 class vtkPolyData;
 
@@ -39,12 +28,12 @@ public:
   /**
    * Make ospray calls to render me.
    */
-  virtual void Render(bool prepass) override;
+  void Render(bool prepass) override;
 
   /**
    * Invalidates cached rendering data.
    */
-  virtual void Invalidate(bool prepass) override;
+  void Invalidate(bool prepass) override;
 
 protected:
   vtkOSPRayPolyDataMapperNode();
@@ -53,43 +42,19 @@ protected:
   void ORenderPoly(void* renderer, vtkOSPRayActorNode* aNode, vtkPolyData* poly,
     double* ambientColor, double* diffuseColor, double opacity, std::string material);
 
-  class vtkOSPRayCacheItemGeometries
-  {
-  public:
-    vtkOSPRayCacheItemGeometries() = default;
-    vtkOSPRayCacheItemGeometries(const std::vector<OSPGeometry>& geometries_)
-      : GeometriesAtTime(geometries_)
-    {
-    }
-
-    ~vtkOSPRayCacheItemGeometries() = default;
-
-    std::vector<OSPGeometry> GeometriesAtTime;
-  };
-
-  std::vector<OSPGeometry> Geometries;
-  void ClearGeometries();
-
-  vtkOSPRayCache<vtkOSPRayCacheItemGeometries>* GeometryCache{ nullptr };
-  vtkOSPRayCache<vtkOSPRayCacheItemObject>* InstanceCache{ nullptr };
+  std::vector<OSPGeometricModel> GeometricModels;
+  std::vector<OSPInstance> Instances;
+  void ClearGeometricModels();
 
   /**
-   * @brief adds geometries to ospray cache
+   * @brief add precomputed ospray geometries to renderer model.
    */
-  void PopulateCache();
-
-  /**
-   * @brief add computed ospray geometries to renderer model.
-   * Will grab from cache if cached.
-   */
-  void RenderGeometries();
-
-  bool UseInstanceCache;
-  bool UseGeometryCache;
+  void RenderGeometricModels();
 
 private:
   vtkOSPRayPolyDataMapperNode(const vtkOSPRayPolyDataMapperNode&) = delete;
   void operator=(const vtkOSPRayPolyDataMapperNode&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

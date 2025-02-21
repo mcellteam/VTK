@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTupleInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTupleInterpolator
  * @brief   interpolate a tuple of arbitrary size
@@ -47,6 +35,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSpline;
 class vtkPiecewiseFunction;
 
@@ -61,14 +50,14 @@ public:
    */
   static vtkTupleInterpolator* New();
 
-  //@{
+  ///@{
   /**
    * Specify the number of tuple components to interpolate. Note that setting
    * this value discards any previously inserted data.
    */
   void SetNumberOfComponents(int numComp);
   vtkGetMacro(NumberOfComponents, int);
-  //@}
+  ///@}
 
   /**
    * Return the number of tuples in the list of tuples to be
@@ -76,7 +65,7 @@ public:
    */
   int GetNumberOfTuples();
 
-  //@{
+  ///@{
   /**
    * Obtain some information about the interpolation range. The numbers
    * returned (corresponding to parameter t, usually thought of as time)
@@ -85,12 +74,21 @@ public:
    */
   double GetMinimumT();
   double GetMaximumT();
-  //@}
+  ///@}
 
   /**
    * Reset the class so that it contains no (t,tuple) information.
    */
   void Initialize();
+
+  /**
+   * Add all the tuples to the list of tuples in one time,
+   * and then sort them only once. Much faster than using
+   * AddTuple for each tuple.
+   * t is the time values array, nb is the size of time values array,
+   * data is the array containing tuples to add (by default AOS ordering)
+   */
+  void FillFromData(int nb, double* t, double** data, bool isSOADataArray = false);
 
   /**
    * Add another tuple to the list of tuples to be interpolated.  Note that
@@ -123,14 +121,14 @@ public:
     INTERPOLATION_TYPE_SPLINE
   };
 
-  //@{
+  ///@{
   /**
    * Specify which type of function to use for interpolation. By default
-   * spline interpolation (SetInterpolationFunctionToSpline()) is used
+   * spline interpolation (SetInterpolationTypeToSpline()) is used
    * (i.e., a Kochanek spline) and the InterpolatingSpline instance variable
    * is used to birth the actual interpolation splines via a combination of
    * NewInstance() and DeepCopy(). You may also choose to use linear
-   * interpolation by invoking SetInterpolationFunctionToLinear(). Note that
+   * interpolation by invoking SetInterpolationTypeToLinear(). Note that
    * changing the type of interpolation causes previously inserted data
    * to be discarded.
    */
@@ -138,9 +136,9 @@ public:
   vtkGetMacro(InterpolationType, int);
   void SetInterpolationTypeToLinear() { this->SetInterpolationType(INTERPOLATION_TYPE_LINEAR); }
   void SetInterpolationTypeToSpline() { this->SetInterpolationType(INTERPOLATION_TYPE_SPLINE); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the InterpolationType is set to spline, then this method applies. By
    * default Kochanek interpolation is used, but you can specify any instance
@@ -151,7 +149,7 @@ public:
    */
   void SetInterpolatingSpline(vtkSpline*);
   vtkGetObjectMacro(InterpolatingSpline, vtkSpline);
-  //@}
+  ///@}
 
 protected:
   vtkTupleInterpolator();
@@ -176,4 +174,5 @@ private:
   void operator=(const vtkTupleInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

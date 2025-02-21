@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // test baking shadow maps
 //
 // The command line arguments are:
@@ -38,7 +27,7 @@
 #include "vtkTextureObject.h"
 #include "vtkTimerLog.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestShadowMapBakerPass(int argc, char* argv[])
 {
   vtkNew<vtkActor> actor;
@@ -62,7 +51,6 @@ int TestShadowMapBakerPass(int argc, char* argv[])
   delete[] fileName;
 
   mapper->SetInputConnection(reader->GetOutputPort());
-  // mapper->SetInputConnection(norms->GetOutputPort());
   actor->SetMapper(mapper);
   actor->GetProperty()->SetAmbientColor(0.2, 0.2, 1.0);
   actor->GetProperty()->SetDiffuseColor(1.0, 0.65, 0.7);

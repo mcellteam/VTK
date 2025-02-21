@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkResliceCursorWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkResliceCursorWidget
  * @brief   represent a reslice cursor
@@ -38,10 +26,12 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkResliceCursorRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkResliceCursorWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkResliceCursorWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -49,13 +39,13 @@ public:
    */
   static vtkResliceCursorWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK class macros.
    */
   vtkTypeMacro(vtkResliceCursorWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -81,20 +71,20 @@ public:
   void CreateDefaultRepresentation() override;
 
   /**
-   * Methods for activiating this widget. This implementation extends the
+   * Methods for activating this widget. This implementation extends the
    * superclasses' in order to resize the widget handles due to a render
    * start event.
    */
   void SetEnabled(int) override;
 
-  //@{
+  ///@{
   /**
    * Also perform window level ?
    */
   vtkSetMacro(ManageWindowLevel, vtkTypeBool);
   vtkGetMacro(ManageWindowLevel, vtkTypeBool);
   vtkBooleanMacro(ManageWindowLevel, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Events
@@ -119,6 +109,7 @@ protected:
   // These are the callbacks for this widget
   static void SelectAction(vtkAbstractWidget*);
   static void RotateAction(vtkAbstractWidget*);
+  static void TranslateAction(vtkAbstractWidget*);
   static void EndSelectAction(vtkAbstractWidget*);
   static void ResizeThicknessAction(vtkAbstractWidget*);
   static void EndResizeThicknessAction(vtkAbstractWidget*);
@@ -136,7 +127,7 @@ protected:
 
   // Manage the state of the widget
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Active
@@ -151,4 +142,5 @@ private:
   void operator=(const vtkResliceCursorWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

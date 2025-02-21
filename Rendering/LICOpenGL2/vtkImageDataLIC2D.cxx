@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageDataLIC2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageDataLIC2D.h"
 
 #include "vtkCellData.h"
@@ -41,6 +29,7 @@
 #include "vtkTextureObject.h"
 #include "vtkUnsignedCharArray.h"
 
+#include <cmath>
 #include <deque>
 using std::deque;
 
@@ -55,10 +44,11 @@ using std::deque;
 #define PRINTEXTENT(ext)                                                                           \
   ext[0] << ", " << ext[1] << ", " << ext[2] << ", " << ext[3] << ", " << ext[4] << ", " << ext[5]
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageDataLIC2D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageDataLIC2D::vtkImageDataLIC2D()
 {
   this->Context = nullptr;
@@ -85,7 +75,7 @@ vtkImageDataLIC2D::vtkImageDataLIC2D()
     0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::VECTORS);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageDataLIC2D::~vtkImageDataLIC2D()
 {
   this->NoiseSource->Delete();
@@ -93,7 +83,7 @@ vtkImageDataLIC2D::~vtkImageDataLIC2D()
   this->SetContext(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataLIC2D::SetContext(vtkRenderWindow* renWin)
 {
   vtkOpenGLRenderWindow* rw = vtkOpenGLRenderWindow::SafeDownCast(renWin);
@@ -136,13 +126,13 @@ int vtkImageDataLIC2D::SetContext(vtkRenderWindow* renWin)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderWindow* vtkImageDataLIC2D::GetContext()
 {
   return this->Context;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataLIC2D::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -158,7 +148,7 @@ int vtkImageDataLIC2D::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageDataLIC2D::TranslateInputExtent(
   const int* inExt, const int* inWholeExt, int* resultExt)
 {
@@ -184,7 +174,7 @@ void vtkImageDataLIC2D::TranslateInputExtent(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataLIC2D::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -213,7 +203,7 @@ int vtkImageDataLIC2D::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataLIC2D::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -253,7 +243,7 @@ int vtkImageDataLIC2D::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataLIC2D::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -326,8 +316,9 @@ int vtkImageDataLIC2D::RequestData(vtkInformation* vtkNotUsed(request),
     }
 
     double noiseRange[2];
+    vtkPointData* pd = noise->GetPointData();
     vtkDataArray* inVals = noise->GetPointData()->GetScalars();
-    inVals->GetRange(noiseRange);
+    pd->GetRange(inVals->GetName(), noiseRange);
     if ((noiseRange[0] < 0.0) || (noiseRange[1] > 1.0))
     {
       vtkErrorMacro("Noise dataset has values out of range 0.0 to 1.0."
@@ -607,7 +598,7 @@ int vtkImageDataLIC2D::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageDataLIC2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -617,3 +608,4 @@ void vtkImageDataLIC2D::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Magnification: " << this->Magnification << "\n";
   os << indent << "OpenGLExtensionsSupported: " << this->OpenGLExtensionsSupported << "\n";
 }
+VTK_ABI_NAMESPACE_END

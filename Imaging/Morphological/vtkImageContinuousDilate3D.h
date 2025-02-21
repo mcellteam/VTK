@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageContinuousDilate3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageContinuousDilate3D
  * @brief   Dilate implemented as a maximum.
@@ -27,12 +15,13 @@
 #include "vtkImageSpatialAlgorithm.h"
 #include "vtkImagingMorphologicalModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageEllipsoidSource;
 
 class VTKIMAGINGMORPHOLOGICAL_EXPORT vtkImageContinuousDilate3D : public vtkImageSpatialAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Construct an instance of vtkImageContinuousDilate3D filter.
    * By default zero values are dilated.
@@ -40,7 +29,7 @@ public:
   static vtkImageContinuousDilate3D* New();
   vtkTypeMacro(vtkImageContinuousDilate3D, vtkImageSpatialAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * This method sets the size of the neighborhood.  It also sets the
@@ -65,4 +54,5 @@ private:
   void operator=(const vtkImageContinuousDilate3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

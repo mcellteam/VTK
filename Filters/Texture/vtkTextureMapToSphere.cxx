@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextureMapToSphere.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTextureMapToSphere.h"
 
 #include "vtkCellData.h"
@@ -23,6 +11,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTextureMapToSphere);
 
 // Create object with Center (0,0,0) and the PreventSeam ivar is set to true. The
@@ -81,7 +70,7 @@ int vtkTextureMapToSphere::RequestData(vtkInformation* vtkNotUsed(request),
   for (ptId = 0; ptId < numPts; ptId++)
   {
     input->GetPoint(ptId, x);
-    rho = sqrt((double)vtkMath::Distance2BetweenPoints(x, this->Center));
+    rho = sqrt(vtkMath::Distance2BetweenPoints(x, this->Center));
     if (rho != 0.0)
     {
       // watch for truncation problems
@@ -99,7 +88,7 @@ int vtkTextureMapToSphere::RequestData(vtkInformation* vtkNotUsed(request),
       }
       else
       {
-        phi = acos((double)(diff / rho));
+        phi = acos((diff / rho));
         tc[1] = phi / vtkMath::Pi();
       }
     }
@@ -108,7 +97,7 @@ int vtkTextureMapToSphere::RequestData(vtkInformation* vtkNotUsed(request),
       tc[1] = 0.0;
     }
 
-    r = rho * sin((double)phi);
+    r = rho * sin(phi);
     if (r != 0.0)
     {
       // watch for truncation problems
@@ -125,7 +114,7 @@ int vtkTextureMapToSphere::RequestData(vtkInformation* vtkNotUsed(request),
       }
       else
       {
-        thetaX = acos((double)diff / r);
+        thetaX = acos(diff / r);
       }
 
       if (fabs((diff = x[1] - this->Center[1])) > r)
@@ -141,7 +130,7 @@ int vtkTextureMapToSphere::RequestData(vtkInformation* vtkNotUsed(request),
       }
       else
       {
-        thetaY = asin((double)diff / r);
+        thetaY = asin(diff / r);
       }
     }
     else
@@ -209,3 +198,4 @@ void vtkTextureMapToSphere::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Center: (" << this->Center[0] << ", " << this->Center[1] << ", "
      << this->Center[2] << ")\n";
 }
+VTK_ABI_NAMESPACE_END

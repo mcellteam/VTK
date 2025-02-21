@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestIOADIOS2VTX_VTI3D.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /*
  * TestIOADIOS2VTX_VTI3D.cxx : pipeline tests for image data reader 1D and 3D
@@ -134,7 +117,7 @@ public:
   TesterVTI3D()
   {
     this->SetNumberOfInputPorts(1);
-    this->SetNumberOfOutputPorts(0);
+    this->SetNumberOfOutputPorts(1);
   }
 
   void Init(const std::string& streamName, const size_t steps)
@@ -144,7 +127,7 @@ public:
   }
 
   int ProcessRequest(
-    vtkInformation* request, vtkInformationVector** input, vtkInformationVector* output)
+    vtkInformation* request, vtkInformationVector** input, vtkInformationVector* output) override
   {
     if (request->Has(vtkStreamingDemandDrivenPipeline::REQUEST_UPDATE_EXTENT()))
     {
@@ -179,6 +162,12 @@ private:
   int FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info) final
   {
     info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkImageData");
+    return 1;
+  }
+
+  int FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info) final
+  {
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkUnstructuredGrid");
     return 1;
   }
 
@@ -226,7 +215,8 @@ vtkStandardNewMacro(TesterVTI3D);
 
 int TestIOADIOS2VTX_VTI3D(int argc, char* argv[])
 {
-  auto lf_DoTest = [&](const std::string& fileName, const size_t steps) {
+  auto lf_DoTest = [&](const std::string& fileName, const size_t steps)
+  {
     vtkNew<vtkADIOS2VTXReader> adios2Reader;
     adios2Reader->SetFileName(fileName.c_str());
     // check FileName

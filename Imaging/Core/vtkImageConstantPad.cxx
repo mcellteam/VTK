@@ -1,35 +1,35 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageConstantPad.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageConstantPad.h"
 
+#include "vtkDoubleArray.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkImageConstantPad);
 
+//------------------------------------------------------------------------------
+vtkCxxSetObjectMacro(vtkImageConstantPad, ComponentConstants, vtkDoubleArray);
+
 //----------------------------------------------------------------------------
-// Constructor sets default values
 vtkImageConstantPad::vtkImageConstantPad()
 {
   this->Constant = 0.0;
+  this->ComponentConstants = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkImageConstantPad::~vtkImageConstantPad()
+{
+  this->SetComponentConstants(nullptr);
+}
+
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class T>
 void vtkImageConstantPadExecute(vtkImageConstantPad* self, vtkImageData* inData, T* inPtr,
@@ -39,9 +39,9 @@ void vtkImageConstantPadExecute(vtkImageConstantPad* self, vtkImageData* inData,
   int maxC, maxX, maxY, maxZ;
   vtkIdType inIncX, inIncY, inIncZ;
   vtkIdType outIncX, outIncY, outIncZ;
-  T constant;
+  const T constant = static_cast<T>(self->GetConstant());
+  vtkDoubleArray* componentConstants = self->GetComponentConstants();
   int inMinX, inMaxX, inMaxC;
-  constant = static_cast<T>(self->GetConstant());
   int state0, state1, state2, state3;
   unsigned long count = 0;
   unsigned long target;
@@ -56,6 +56,9 @@ void vtkImageConstantPadExecute(vtkImageConstantPad* self, vtkImageData* inData,
   inMaxX = inExt[1] - outExt[0];
   target = static_cast<unsigned long>((maxZ + 1) * (maxY + 1) / 50.0);
   target++;
+
+  const bool useComponentConstants =
+    componentConstants && componentConstants->GetNumberOfValues() == maxC;
 
   // Get increments to march through data
   inData->GetContinuousIncrements(inExt, inIncX, inIncY, inIncZ);
@@ -105,7 +108,7 @@ void vtkImageConstantPadExecute(vtkImageConstantPad* self, vtkImageData* inData,
             state0 = (state1 || idxC >= inMaxC);
             if (state0)
             {
-              *outPtr = constant;
+              *outPtr = useComponentConstants ? componentConstants->GetValue(idxC) : constant;
             }
             else
             {
@@ -130,7 +133,7 @@ void vtkImageConstantPadExecute(vtkImageConstantPad* self, vtkImageData* inData,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output data, and executes the filter
 // algorithm to fill the output from the input.
 // It just executes a switch statement to call the correct function for
@@ -169,9 +172,11 @@ void vtkImageConstantPad::ThreadedRequestData(vtkInformation* vtkNotUsed(request
   }
 }
 
+//------------------------------------------------------------------------------
 void vtkImageConstantPad::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Constant: " << this->Constant << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    SystemInformation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test to print system information useful for remote debugging.
 // .SECTION Description
 // Remote dashboard debugging often requires access to the
@@ -75,8 +63,11 @@ int TestSystemInformation(int argc, char* argv[])
   std::string build_dir = argv[1];
   build_dir += "/";
 
-  const char* files[] = { "CMakeCache.txt", "CMakeFiles/CMakeError.log",
-    "Common/Core/vtkConfigure.h", "Common/Core/vtkToolkits.h", "VTKConfig.cmake",
+  const char* files[] = { "CMakeCache.txt", "CMakeFiles/CMakeError.log", "Common/Core/vtkBuild.h",
+    "Common/Core/vtkConfigureDeprecated.h", "Common/Core/vtkDebug.h",
+    "Common/Core/vtkDebugRangeIterators.h", "Common/Core/vtkEndian.h", "Common/Core/vtkFeatures.h",
+    "Common/Core/vtkLegacy.h", "Common/Core/vtkOptions.h", "Common/Core/vtkPlatform.h",
+    "Common/Core/vtkSMP.h", "Common/Core/vtkThreads.h", "VTKConfig.cmake",
     "Testing/Temporary/ConfigSummary.txt", nullptr };
 
   cout << "CTEST_FULL_OUTPUT (Avoid ctest truncation of output)" << endl;

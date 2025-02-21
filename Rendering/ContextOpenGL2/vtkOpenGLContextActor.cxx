@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLContextActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLContextActor.h"
 
 #include "vtkContext2D.h"
@@ -22,15 +10,16 @@
 #include "vtkOpenGLContextDevice3D.h"
 #include "vtkRenderer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLContextActor);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLContextActor::vtkOpenGLContextActor() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLContextActor::~vtkOpenGLContextActor() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLContextActor::ReleaseGraphicsResources(vtkWindow* window)
 {
   vtkOpenGLContextDevice2D* device =
@@ -46,7 +35,7 @@ void vtkOpenGLContextActor::ReleaseGraphicsResources(vtkWindow* window)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Renders an actor2D's property and then it's mapper.
 int vtkOpenGLContextActor::RenderOverlay(vtkViewport* viewport)
 {
@@ -68,7 +57,7 @@ int vtkOpenGLContextActor::RenderOverlay(vtkViewport* viewport)
   return this->Superclass::RenderOverlay(viewport);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLContextActor::Initialize(vtkViewport* viewport)
 {
   vtkContextDevice2D* dev2D = nullptr;
@@ -106,8 +95,9 @@ void vtkOpenGLContextActor::Initialize(vtkViewport* viewport)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLContextActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPropItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPropItem
@@ -28,10 +16,12 @@
 
 #include "vtkAbstractContextItem.h"
 #include "vtkRenderingContext2DModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkProp;
 
-class VTKRENDERINGCONTEXT2D_EXPORT vtkPropItem : public vtkAbstractContextItem
+class VTKRENDERINGCONTEXT2D_EXPORT VTK_MARSHALAUTO vtkPropItem : public vtkAbstractContextItem
 {
 public:
   static vtkPropItem* New();
@@ -64,4 +54,5 @@ private:
   void operator=(const vtkPropItem&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPropItem_h

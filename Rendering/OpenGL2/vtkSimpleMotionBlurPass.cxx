@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSimpleMotionBlurPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSimpleMotionBlurPass.h"
 #include "vtkObjectFactory.h"
@@ -33,9 +21,10 @@
 #include "vtkSimpleMotionBlurPassFS.h"
 #include "vtkTextureObjectVS.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSimpleMotionBlurPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSimpleMotionBlurPass::vtkSimpleMotionBlurPass()
 {
   this->SubFrames = 30;
@@ -52,7 +41,7 @@ vtkSimpleMotionBlurPass::vtkSimpleMotionBlurPass()
   this->ColorFormat = vtkTextureObject::Fixed8;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSimpleMotionBlurPass::~vtkSimpleMotionBlurPass()
 {
   if (this->FrameBufferObject != nullptr)
@@ -81,7 +70,7 @@ vtkSimpleMotionBlurPass::~vtkSimpleMotionBlurPass()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSimpleMotionBlurPass::SetSubFrames(int subFrames)
 {
   if (this->SubFrames != subFrames)
@@ -97,14 +86,14 @@ void vtkSimpleMotionBlurPass::SetSubFrames(int subFrames)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSimpleMotionBlurPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   os << indent << "SubFrames: " << this->SubFrames << "\n";
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -267,13 +256,13 @@ void vtkSimpleMotionBlurPass::Render(const vtkRenderState* s)
 
   // now copy the result to the outer FO
   renWin->GetState()->PushReadFramebufferBinding();
-  this->FrameBufferObject->Bind(this->FrameBufferObject->GetReadMode());
+  this->FrameBufferObject->Bind(vtkOpenGLFramebufferObject::GetReadMode());
 
   ostate->vtkglViewport(
     this->ViewportX, this->ViewportY, this->ViewportWidth, this->ViewportHeight);
   ostate->vtkglScissor(this->ViewportX, this->ViewportY, this->ViewportWidth, this->ViewportHeight);
 
-  glBlitFramebuffer(0, 0, this->ViewportWidth, this->ViewportHeight, this->ViewportX,
+  ostate->vtkglBlitFramebuffer(0, 0, this->ViewportWidth, this->ViewportHeight, this->ViewportX,
     this->ViewportY, this->ViewportX + this->ViewportWidth, this->ViewportY + this->ViewportHeight,
     GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
@@ -282,7 +271,7 @@ void vtkSimpleMotionBlurPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -321,3 +310,4 @@ void vtkSimpleMotionBlurPass::ReleaseGraphicsResources(vtkWindow* w)
     this->BlendProgram = nullptr;
   }
 }
+VTK_ABI_NAMESPACE_END

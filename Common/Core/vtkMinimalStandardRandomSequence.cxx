@@ -1,21 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMinimalStandardRandomSequence.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMinimalStandardRandomSequence.h"
 
 #include "vtkObjectFactory.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMinimalStandardRandomSequence);
 
 const int VTK_K_A = 16807;
@@ -23,16 +13,16 @@ const int VTK_K_M = 2147483647; // Mersenne prime 2^(31)-1
 const int VTK_K_Q = 127773;     // M/A
 const int VTK_K_R = 2836;       // M%A
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMinimalStandardRandomSequence::vtkMinimalStandardRandomSequence()
 {
   this->Seed = 1;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMinimalStandardRandomSequence::~vtkMinimalStandardRandomSequence() = default;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMinimalStandardRandomSequence::SetSeedOnly(int value)
 {
   this->Seed = value;
@@ -51,7 +41,7 @@ void vtkMinimalStandardRandomSequence::SetSeedOnly(int value)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMinimalStandardRandomSequence::SetSeed(int value)
 {
   this->SetSeedOnly(value);
@@ -64,13 +54,13 @@ void vtkMinimalStandardRandomSequence::SetSeed(int value)
   this->Next();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMinimalStandardRandomSequence::GetSeed()
 {
   return this->Seed;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMinimalStandardRandomSequence::GetValue()
 {
   double result = static_cast<double>(this->Seed) / VTK_K_M;
@@ -79,7 +69,7 @@ double vtkMinimalStandardRandomSequence::GetValue()
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMinimalStandardRandomSequence::Next()
 {
   int hi = this->Seed / VTK_K_Q;
@@ -91,7 +81,7 @@ void vtkMinimalStandardRandomSequence::Next()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMinimalStandardRandomSequence::GetRangeValue(double rangeMin, double rangeMax)
 {
   double result;
@@ -109,8 +99,16 @@ double vtkMinimalStandardRandomSequence::GetRangeValue(double rangeMin, double r
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+double vtkMinimalStandardRandomSequence::GetNextRangeValue(double rangeMin, double rangeMax)
+{
+  this->Next();
+  return this->GetRangeValue(rangeMin, rangeMax);
+}
+
+//------------------------------------------------------------------------------
 void vtkMinimalStandardRandomSequence::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

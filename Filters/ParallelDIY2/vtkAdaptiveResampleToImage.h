@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAdaptiveResampleToImage.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkAdaptiveResampleToImage
  * @brief samples a dataset with adaptive refinements.
@@ -50,6 +38,7 @@
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkFiltersParallelDIY2Module.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiProcessController;
 
 class VTKFILTERSPARALLELDIY2_EXPORT vtkAdaptiveResampleToImage : public vtkDataObjectAlgorithm
@@ -59,16 +48,16 @@ public:
   vtkTypeMacro(vtkAdaptiveResampleToImage, vtkDataObjectAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * By default this filter uses the global controller,
    * but this method can be used to set another instead.
    */
   virtual void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set a hint to use to indicate how many different refinements to split
    * the dataset into. This is just a hint. The actual number of images used to
@@ -77,16 +66,16 @@ public:
    */
   vtkSetClampMacro(NumberOfImages, int, 0, VTK_INT_MAX);
   vtkGetMacro(NumberOfImages, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get sampling dimensions along each axis. Each partition will be
    * resampled using these dimensions.
    */
   vtkSetVector3Macro(SamplingDimensions, int);
   vtkGetVector3Macro(SamplingDimensions, int);
-  //@}
+  ///@}
 protected:
   vtkAdaptiveResampleToImage();
   ~vtkAdaptiveResampleToImage() override;
@@ -104,4 +93,5 @@ private:
   int SamplingDimensions[3];
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

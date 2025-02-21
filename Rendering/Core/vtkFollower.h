@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFollower.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFollower
  * @brief   a subclass of actor that always faces the camera
@@ -35,6 +23,7 @@
 #include "vtkActor.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCamera;
 
 class VTKRENDERINGCORE_EXPORT vtkFollower : public vtkActor
@@ -48,16 +37,16 @@ public:
    */
   static vtkFollower* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the camera to follow. If this is not set, then the follower
    * won't know who to follow.
    */
   virtual void SetCamera(vtkCamera*);
   vtkGetObjectMacro(Camera, vtkCamera);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This causes the actor to be rendered. It in turn will render the actor's
    * property, texture map and then mapper. If a property hasn't been
@@ -66,12 +55,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   virtual void Render(vtkRenderer* ren);
-  //@}
-
-  /**
-   * Does this prop have some translucent polygonal geometry?
-   */
-  vtkTypeBool HasTranslucentPolygonalGeometry() override;
+  ///@}
 
   /**
    * Release any graphics resources associated with this vtkProp3DFollower.
@@ -107,4 +91,5 @@ private:
   void Render(vtkRenderer*, vtkMapper*) override {}
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

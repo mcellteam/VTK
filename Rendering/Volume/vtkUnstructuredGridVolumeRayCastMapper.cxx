@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridVolumeRayCastMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkUnstructuredGridVolumeRayCastMapper.h"
 
 #include "vtkCamera.h"
@@ -40,6 +28,7 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 VTK_THREAD_RETURN_TYPE UnstructuredGridVolumeRayCastMapper_CastRays(void* arg);
 
 vtkStandardNewMacro(vtkUnstructuredGridVolumeRayCastMapper);
@@ -194,8 +183,8 @@ void vtkUnstructuredGridVolumeRayCastMapper::Render(vtkRenderer* ren, vtkVolume*
   vtkAlgorithm* inputAlg = this->GetInputAlgorithm(0, 0, inputAlgPort);
   inputAlg->UpdateWholeExtent();
 
-  this->Scalars = this->GetScalars(this->GetInput(), this->ScalarMode, this->ArrayAccessMode,
-    this->ArrayId, this->ArrayName, this->CellScalars);
+  this->Scalars = vtkUnstructuredGridVolumeRayCastMapper::GetScalars(this->GetInput(),
+    this->ScalarMode, this->ArrayAccessMode, this->ArrayId, this->ArrayName, this->CellScalars);
 
   if (this->Scalars == nullptr)
   {
@@ -220,14 +209,17 @@ void vtkUnstructuredGridVolumeRayCastMapper::Render(vtkRenderer* ren, vtkVolume*
   {
 
 #define ESTABLISH_INTEGRATOR(classname)                                                            \
-  if (!this->RealRayIntegrator || (!this->RealRayIntegrator->IsA(#classname)))                     \
+  do                                                                                               \
   {                                                                                                \
-    if (this->RealRayIntegrator)                                                                   \
-      this->RealRayIntegrator->UnRegister(this);                                                   \
-    this->RealRayIntegrator = classname::New();                                                    \
-    this->RealRayIntegrator->Register(this);                                                       \
-    this->RealRayIntegrator->Delete();                                                             \
-  }
+    if (!this->RealRayIntegrator || (!this->RealRayIntegrator->IsA(#classname)))                   \
+    {                                                                                              \
+      if (this->RealRayIntegrator)                                                                 \
+        this->RealRayIntegrator->UnRegister(this);                                                 \
+      this->RealRayIntegrator = classname::New();                                                  \
+      this->RealRayIntegrator->Register(this);                                                     \
+      this->RealRayIntegrator->Delete();                                                           \
+    }                                                                                              \
+  } while (false)
 
     if (this->CellScalars)
     {
@@ -345,7 +337,7 @@ void vtkUnstructuredGridVolumeRayCastMapper::Render(vtkRenderer* ren, vtkVolume*
   {
     int x1, x2, y1, y2;
     double* viewport = ren->GetViewport();
-    int* renWinSize = ren->GetRenderWindow()->GetSize();
+    const int* renWinSize = ren->GetRenderWindow()->GetSize();
 
     // turn this->ImageOrigin into (x1,y1) in window (not viewport!)
     // coordinates.
@@ -719,3 +711,4 @@ void vtkUnstructuredGridVolumeRayCastMapper::PrintSelf(ostream& os, vtkIndent in
   // methods for access from the ray cast function (not part of the public
   // API)
 }
+VTK_ABI_NAMESPACE_END

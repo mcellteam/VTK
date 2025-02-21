@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageQuantizeRGBToIndex.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageQuantizeRGBToIndex.h"
 
 #include "vtkImageData.h"
@@ -28,6 +16,7 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageQuantizeRGBToIndex);
 
 class vtkColorQuantizeNode
@@ -227,8 +216,7 @@ void vtkImageQuantizeRGBToIndexHistogram(
           value[0] = static_cast<int>(*(rgbPtr++) * 255.5) - bounds[0];
           value[1] = static_cast<int>(*(rgbPtr++) * 255.5) - bounds[2];
           value[2] = static_cast<int>(*(rgbPtr++) * 255.5) - bounds[4];
-          if (static_cast<int>(value[0]) < max[0] && static_cast<int>(value[1]) < max[1] &&
-            static_cast<int>(value[2]) < max[2])
+          if (value[0] < max[0] && value[1] < max[1] && value[2] < max[2])
           {
             histogram[0][value[0]]++;
             histogram[1][value[1]]++;
@@ -377,7 +365,7 @@ void vtkImageQuantizeRGBToIndexExecute(
   // by luminance (mapping the indices accordingly).
   if (self->GetSortIndexByLuminance())
   {
-    std::vector<std::pair<double, int> > luminance_index_map;
+    std::vector<std::pair<double, int>> luminance_index_map;
     double RGB[3];
     for (leaf = 0; leaf < numLeafNodes; leaf++)
     {
@@ -589,7 +577,7 @@ void vtkColorQuantizeNode::Divide(int axis, int nextIndex)
   this->Child1->SetBounds(newBounds);
 
   newBounds[axis * 2] = static_cast<int>(this->Median[axis] + 1);
-  newBounds[axis * 2 + 1] = static_cast<int>(this->Bounds[axis * 2 + 1]);
+  newBounds[axis * 2 + 1] = this->Bounds[axis * 2 + 1];
   this->Child2->SetBounds(newBounds);
 
   this->SplitPoint = static_cast<int>(this->Median[axis]);
@@ -735,3 +723,4 @@ void vtkImageQuantizeRGBToIndex::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Execute Time (in build tree stage): " << this->BuildTreeExecuteTime << endl;
   os << indent << "Execute Time (in lookup index stage): " << this->LookupIndexExecuteTime << endl;
 }
+VTK_ABI_NAMESPACE_END

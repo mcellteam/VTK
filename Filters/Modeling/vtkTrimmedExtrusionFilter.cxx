@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTrimmedExtrusionFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTrimmedExtrusionFilter.h"
 
 #include "vtkAbstractCellLocator.h"
@@ -33,13 +21,14 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTrimmedExtrusionFilter);
 vtkCxxSetObjectMacro(vtkTrimmedExtrusionFilter, Locator, vtkAbstractCellLocator);
 
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm.
 template <typename T>
 struct ExtrudePoints
@@ -53,18 +42,20 @@ struct ExtrudePoints
   double BoundsCenter[3];
   double BoundsLength;
   double Tol;
+  vtkTrimmedExtrusionFilter* Filter;
 
   // Don't want to allocate working arrays on every thread invocation. Thread local
   // storage eliminates lots of new/delete.
   vtkSMPThreadLocalObject<vtkGenericCell> Cell;
 
   ExtrudePoints(vtkIdType npts, T* inPts, T* points, unsigned char* hits,
-    vtkAbstractCellLocator* loc, double ed[3], double bds[6])
+    vtkAbstractCellLocator* loc, double ed[3], double bds[6], vtkTrimmedExtrusionFilter* filter)
     : NPts(npts)
     , InPoints(inPts)
     , Points(points)
     , Hits(hits)
     , Locator(loc)
+    , Filter(filter)
   {
     this->ExtrusionDirection[0] = ed[0];
     this->ExtrusionDirection[1] = ed[1];
@@ -95,9 +86,18 @@ struct ExtrudePoints
     int subId;
     unsigned char* hits = this->Hits + ptId;
     vtkGenericCell*& cell = this->Cell.Local();
+    bool isFirst = vtkSMPTools::GetSingleThread();
 
     for (; ptId < endPtId; ++ptId, xi += 3, x += 3, xo += 3, ++hits)
     {
+      if (isFirst)
+      {
+        this->Filter->CheckAbort();
+      }
+      if (this->Filter->GetAbortOutput())
+      {
+        break;
+      }
       // Copy input points to output
       x[0] = xi[0];
       x[1] = xi[1];
@@ -136,16 +136,16 @@ struct ExtrudePoints
   void Reduce() {}
 
   static void Execute(vtkIdType numPts, T* inPts, T* points, unsigned char* hits,
-    vtkAbstractCellLocator* loc, double ed[3], double bds[6])
+    vtkAbstractCellLocator* loc, double ed[3], double bds[6], vtkTrimmedExtrusionFilter* filter)
   {
-    ExtrudePoints extrude(numPts, inPts, points, hits, loc, ed, bds);
+    ExtrudePoints extrude(numPts, inPts, points, hits, loc, ed, bds, filter);
     vtkSMPTools::For(0, numPts, extrude);
   }
 }; // ExtrudePoints
 
 } // anonymous namespace
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Create object with normal extrusion type, capping on, scale factor=1.0,
 // vector (0,0,1), and extrusion point (0,0,0).
 vtkTrimmedExtrusionFilter::vtkTrimmedExtrusionFilter()
@@ -164,14 +164,14 @@ vtkTrimmedExtrusionFilter::vtkTrimmedExtrusionFilter()
   this->Locator = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Destructor
 vtkTrimmedExtrusionFilter::~vtkTrimmedExtrusionFilter()
 {
   this->SetLocator(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTrimmedExtrusionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -262,7 +262,7 @@ int vtkTrimmedExtrusionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   switch (newPts->GetDataType())
   {
     vtkTemplateMacro(ExtrudePoints<VTK_TT>::Execute(numPts, (VTK_TT*)inPtr, (VTK_TT*)outPtr, hits,
-      this->Locator, this->ExtrusionDirection, surfaceBds));
+      this->Locator, this->ExtrusionDirection, surfaceBds, this));
   }
 
   // Prepare to generate the topology. Different topolgy is built depending
@@ -282,6 +282,7 @@ int vtkTrimmedExtrusionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   {
     this->AdjustPoints(input, numPts, numCells, hits, newPts);
   }
+  delete[] hits;
 
   // Now generate the topology.
   this->ExtrudeEdges(input, output, numPts, numCells);
@@ -293,7 +294,7 @@ int vtkTrimmedExtrusionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Based on the capping strategy, adjust the point coordinates along the
 // extrusion ray. This requires looping over all cells, grabbing the cap
 // points, and then adjusting them as appropriate. Note this could be
@@ -317,6 +318,10 @@ void vtkTrimmedExtrusionFilter::AdjustPoints(
 
   for (cellId = 0; cellId < numCells; ++cellId)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     input->GetCellPoints(cellId, npts, ptIds);
 
     // Gather information about cell
@@ -386,7 +391,7 @@ void vtkTrimmedExtrusionFilter::AdjustPoints(
   } // for all cells
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkTrimmedExtrusionFilter::GetNeighborCount(
   vtkPolyData* input, vtkIdType inCellId, vtkIdType p1, vtkIdType p2, vtkIdList* cellIds)
 {
@@ -401,7 +406,7 @@ vtkIdType vtkTrimmedExtrusionFilter::GetNeighborCount(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Somewhat modified from vtkLinearExtrusionFilter
 void vtkTrimmedExtrusionFilter::ExtrudeEdges(
   vtkPolyData* input, vtkPolyData* output, vtkIdType numPts, vtkIdType numCells)
@@ -520,7 +525,7 @@ void vtkTrimmedExtrusionFilter::ExtrudeEdges(
     if (!(inCellId % progressInterval)) // manage progress / early abort
     {
       this->UpdateProgress(0.4 + 0.6 * inCellId / numCells);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
     }
 
     input->GetCell(inCellId, cell);
@@ -624,28 +629,28 @@ void vtkTrimmedExtrusionFilter::ExtrudeEdges(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the trim surface
 void vtkTrimmedExtrusionFilter::SetTrimSurfaceConnection(vtkAlgorithmOutput* algOutput)
 {
   this->SetInputConnection(1, algOutput);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a source object at a specified table location.
 void vtkTrimmedExtrusionFilter::SetTrimSurfaceData(vtkPolyData* pd)
 {
   this->SetInputData(1, pd);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get a pointer to a source object at a specified table location.
 vtkPolyData* vtkTrimmedExtrusionFilter::GetTrimSurface()
 {
   return vtkPolyData::SafeDownCast(this->GetExecutive()->GetInputData(1, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkTrimmedExtrusionFilter::GetTrimSurface(vtkInformationVector* sourceInfo)
 {
   vtkInformation* info = sourceInfo->GetInformationObject(1);
@@ -656,7 +661,7 @@ vtkPolyData* vtkTrimmedExtrusionFilter::GetTrimSurface(vtkInformationVector* sou
   return vtkPolyData::SafeDownCast(info->Get(vtkDataObject::DATA_OBJECT()));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTrimmedExtrusionFilter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_IS_REPEATABLE(), 0);
@@ -665,7 +670,7 @@ int vtkTrimmedExtrusionFilter::FillInputPortInformation(int vtkNotUsed(port), vt
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTrimmedExtrusionFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -680,3 +685,4 @@ void vtkTrimmedExtrusionFilter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Locator: " << this->Locator << "\n";
 }
+VTK_ABI_NAMESPACE_END

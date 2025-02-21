@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGDALVectorReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGDALVectorReader
  * @brief   Read vector file formats using GDAL.
@@ -36,6 +24,7 @@
 #include <map>    // STL required.
 #include <string> // for ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOGDAL_EXPORT vtkGDALVectorReader : public vtkMultiBlockDataSetAlgorithm
 {
 public:
@@ -43,8 +32,8 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkGDALVectorReader, vtkMultiBlockDataSetAlgorithm);
 
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
 
   /**
    * Return number of layers.
@@ -71,7 +60,7 @@ public:
    */
   int GetActiveLayerFeatureCount();
 
-  //@{
+  ///@{
   /**
    * Set and Get the active layer.
    * If ActiveLayer is less than 0 (the default is -1), then all
@@ -79,9 +68,9 @@ public:
    */
   vtkSetMacro(ActiveLayer, int);
   vtkGetMacro(ActiveLayer, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set and Get whether features are appended to a single
    * vtkPolyData. Turning the option on is useful when a shapefile has
@@ -91,7 +80,7 @@ public:
   vtkSetMacro(AppendFeatures, int);
   vtkGetMacro(AppendFeatures, int);
   vtkBooleanMacro(AppendFeatures, int);
-  //@}
+  ///@}
 
   /**
    * Return projection string belonging to each layer in WKT format.
@@ -111,7 +100,7 @@ public:
    */
   const char* GetLayerProjectionAsProj4(int layerIndex);
 
-  //@{
+  ///@{
   /**
    * Set/get whether feature IDs should be generated.
    * Some GDAL primitives (e.g., a polygon with a hole
@@ -125,7 +114,7 @@ public:
   vtkSetMacro(AddFeatureIds, int);
   vtkGetMacro(AddFeatureIds, int);
   vtkBooleanMacro(AddFeatureIds, int);
-  //@}
+  ///@}
 
 protected:
   vtkGDALVectorReader();
@@ -159,4 +148,5 @@ private:
   void operator=(const vtkGDALVectorReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkGDALVectorReader_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageCorrelation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageCorrelation.h"
 
 #include "vtkImageData.h"
@@ -20,16 +8,17 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageCorrelation);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageCorrelation::vtkImageCorrelation()
 {
   this->Dimensionality = 2;
   this->SetNumberOfInputPorts(2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Grow the output image
 int vtkImageCorrelation::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
@@ -40,7 +29,7 @@ int vtkImageCorrelation::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Grow
 int vtkImageCorrelation::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -79,7 +68,7 @@ int vtkImageCorrelation::RequestUpdateExtent(vtkInformation* vtkNotUsed(request)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 // Handles the two input operations
 template <class T>
@@ -157,7 +146,7 @@ void vtkImageCorrelationExecute(vtkImageCorrelation* self, vtkImageData* in1Data
           xKernMax = in2Extent[1];
         }
 
-        // sumation
+        // summation
         for (kIdxZ = 0; kIdxZ <= zKernMax; kIdxZ++)
         {
           for (kIdxY = 0; kIdxY <= yKernMax; kIdxY++)
@@ -186,7 +175,7 @@ void vtkImageCorrelationExecute(vtkImageCorrelation* self, vtkImageData* in1Data
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output datas, and executes the filter
 // algorithm to fill the output from the inputs.
 // It just executes a switch statement to call the correct function for
@@ -238,3 +227,4 @@ void vtkImageCorrelation::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Dimensionality: " << this->Dimensionality << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestHandleWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 //
 // This example tests picking a vtkFollower and vtkProp3DFollower
 //
@@ -40,7 +28,7 @@
 
 #define VTK_CREATE(type, name) vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 
-// -----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This does the actual work: updates the vtkPline implicit function.
 // This in turn causes the pipeline to update and clip the object.
 // Callback for the interaction
@@ -61,7 +49,7 @@ public:
   vtkPickFollowerCallback() = default;
 };
 
-// -----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char PickFollowerLog[] = "# StreamVersion 1\n"
                                "RenderEvent 0 0 0 0 0 0 0\n"
                                "EnterEvent 285 289 0 0 0 0 0\n"
@@ -239,7 +227,7 @@ const char PickFollowerLog[] = "# StreamVersion 1\n"
                                "EndPickEvent 173 162 0 0 112 1 p\n"
                                "KeyReleaseEvent 173 162 0 0 112 1 p\n";
 
-// -----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestFollowerPicking(int argc, char* argv[])
 {
   // Create some simple actors
@@ -330,7 +318,7 @@ int TestFollowerPicking(int argc, char* argv[])
   recorder->Play();
   recorder->Off();
 
-  int retVal = vtkRegressionTestImageThreshold(renWin, 10);
+  int retVal = vtkRegressionTestImageThreshold(renWin, 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Start();

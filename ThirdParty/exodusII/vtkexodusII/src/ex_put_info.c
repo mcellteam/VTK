@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 
 #include "exodusII.h"     // for ex_err, etc
@@ -56,7 +29,6 @@ ex_create() or ex_open().
                        define the number of info records instead of
                        defining and outputting, pass NULL for
                        info argument.
-
 
 The following code will write out three information records
 to an open exodus file -
@@ -88,7 +60,6 @@ num_info = 3;
 
 error = ex_put_info(exoid, num_info, NULL);
 
-
 \comment{Now, actually write the information records}
 info[0] = "This is the first information record.";
 info[1] = "This is the second information record.";
@@ -99,7 +70,7 @@ error = ex_put_info(exoid, num_info, info);
 
  */
 
-int ex_put_info(int exoid, int num_info, char *info[])
+int ex_put_info(int exoid, int num_info, char *const info[])
 {
   int    status;
   int    i, lindim, num_info_dim, dims[2], varid;
@@ -109,7 +80,9 @@ int ex_put_info(int exoid, int num_info, char *info[])
   int rootid = exoid & EX_FILE_ID_MASK;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* only do this if there are records */
   if (num_info > 0) {
@@ -162,10 +135,21 @@ int ex_put_info(int exoid, int num_info, char *info[])
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(rootid, varid, 3);
+      /* In parallel, only rank=0 will write the info records.
+       * Should be able to take advantage of HDF5 handling identical data on all ranks
+       * or use the compact storage, but we had issues on some NFS filesystems and some
+       * compilers/mpi so are doing it this way...
+       */
+#if defined(PARALLEL_AWARE_EXODUS)
+      if (exi_is_parallel(rootid)) {
+        nc_var_par_access(rootid, varid, NC_INDEPENDENT);
+      }
+#endif
 
       /*   leave define mode  */
-      if ((status = ex__leavedef(rootid, __func__)) != NC_NOERR) {
+      if ((status = exi_leavedef(rootid, __func__)) != NC_NOERR) {
+        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -196,21 +180,17 @@ int ex_put_info(int exoid, int num_info, char *info[])
         }
       }
     }
-    else if (ex__is_parallel(rootid)) {
-      /* All processors need to call nc_put_vara_text in case in a global
-       * collective mode */
-      char dummy[] = " ";
-      for (i = 0; i < num_info; i++) {
-        start[0] = start[1] = 0;
-        count[0] = count[1] = 0;
-        nc_put_vara_text(rootid, varid, start, count, dummy);
-      }
+    /* PnetCDF applies setting to entire file, so put back to collective... */
+#if defined(PARALLEL_AWARE_EXODUS)
+    if (exi_is_parallel(rootid)) {
+      nc_var_par_access(rootid, varid, NC_COLLECTIVE);
     }
+#endif
   }
   EX_FUNC_LEAVE(EX_NOERR);
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(rootid, __func__);
+  exi_leavedef(rootid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

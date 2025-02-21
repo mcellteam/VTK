@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkConstrained2DLayoutStrategy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkConstrained2DLayoutStrategy.h"
 
@@ -34,6 +18,7 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkIntArray.h"
+#include "vtkLogger.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
@@ -41,6 +26,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkTree.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkConstrained2DLayoutStrategy);
 
 // Cool-down function.
@@ -49,7 +35,7 @@ static inline float CoolDown(float t, float r)
   return t - (t / r);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkConstrained2DLayoutStrategy::vtkConstrained2DLayoutStrategy()
 {
@@ -74,7 +60,7 @@ vtkConstrained2DLayoutStrategy::vtkConstrained2DLayoutStrategy()
   this->SetInputArrayName("constraint");
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkConstrained2DLayoutStrategy::~vtkConstrained2DLayoutStrategy()
 {
@@ -147,7 +133,7 @@ void vtkConstrained2DLayoutStrategy::GenerateGaussianSplat(vtkImageData* splat, 
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the graph that will be laid out
 void vtkConstrained2DLayoutStrategy::Initialize()
 {
@@ -261,7 +247,7 @@ void vtkConstrained2DLayoutStrategy::Initialize()
   this->DensityGrid->SetOutputDimensions(100, 100, 1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Simple graph layout method
 void vtkConstrained2DLayoutStrategy::Layout()
@@ -548,7 +534,7 @@ void vtkConstrained2DLayoutStrategy::ResolveCoincidentVertices()
   giantGrid->Delete();
 
   // Report number of collision operations just for sanity check
-  // vtkWarningMacro("Collision Ops: " << totalCollisionOps);
+  vtkLog(TRACE, "Collision Ops: " << totalCollisionOps);
 }
 
 void vtkConstrained2DLayoutStrategy::PrintSelf(ostream& os, vtkIndent indent)
@@ -565,3 +551,4 @@ void vtkConstrained2DLayoutStrategy::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "InputArrayName: " << (this->InputArrayName ? this->InputArrayName : "(none)")
      << endl;
 }
+VTK_ABI_NAMESPACE_END

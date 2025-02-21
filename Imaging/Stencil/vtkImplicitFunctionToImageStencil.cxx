@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitFunctionToImageStencil.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImplicitFunctionToImageStencil.h"
 
 #include "vtkImageData.h"
@@ -24,10 +12,11 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImplicitFunctionToImageStencil);
 vtkCxxSetObjectMacro(vtkImplicitFunctionToImageStencil, Input, vtkImplicitFunction);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImplicitFunctionToImageStencil::vtkImplicitFunctionToImageStencil()
 {
   this->SetNumberOfInputPorts(0);
@@ -36,13 +25,13 @@ vtkImplicitFunctionToImageStencil::vtkImplicitFunctionToImageStencil()
   this->Input = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImplicitFunctionToImageStencil::~vtkImplicitFunctionToImageStencil()
 {
   this->SetInput(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitFunctionToImageStencil::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -51,7 +40,7 @@ void vtkImplicitFunctionToImageStencil::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Threshold: " << this->Threshold << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImplicitFunctionToImageStencil::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -65,7 +54,7 @@ vtkMTimeType vtkImplicitFunctionToImageStencil::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // set up the clipping extents from an implicit function by brute force
 // (i.e. by evaluating the function at each and every voxel)
 int vtkImplicitFunctionToImageStencil::RequestData(
@@ -144,3 +133,4 @@ int vtkImplicitFunctionToImageStencil::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSphereWidgetZoomInOut.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCommand.h"
 #include "vtkInteractorEventRecorder.h"
 #include "vtkRegressionTestImage.h"
@@ -286,7 +274,7 @@ int TestSphereWidgetZoomInOut(int argc, char* argv[])
   recorder->Off();
   renWin->Render();
 
-  // int retVal = vtkRegressionTestImageThreshold(renWin, 70);
+  // int retVal = vtkRegressionTestImageThreshold(renWin, 0.05);
   int retVal = vtkRegressionTestImage(renWin);
 
   iren->Start();

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCheckerboardSplatter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCheckerboardSplatter.h"
 
 #include "vtkCompositeDataIterator.h"
@@ -31,9 +19,10 @@
 #include <algorithm>
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCheckerboardSplatter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Algorithm and integration with vtkSMPTools
 template <typename TPoints, typename TScalars>
 class vtkCheckerboardSplatterAlgorithm
@@ -251,8 +240,7 @@ public:
   void SetScalar(vtkIdType ptId, double pd[3], double x[3], TScalars* sPtr)
   {
     double dist2 = (this->*Sample)(ptId, x, pd);
-    double v = (this->*SampleFactor)(ptId)*exp(
-      static_cast<double>(this->ExponentFactor * (dist2) / (this->R2)));
+    double v = (this->*SampleFactor)(ptId)*exp(this->ExponentFactor * (dist2) / (this->R2));
 
     TScalars Tv = static_cast<TScalars>(v);
     switch (this->AccumulationMode)
@@ -279,7 +267,7 @@ public:
   void Cap(TScalars* s, TScalars capValue);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is where the work is actually done and the points are splatted. Note
 // that splatting is only parallelized when the splat footprint is large
 // enough (to avoid multithreading overhead).
@@ -313,22 +301,11 @@ void vtkCheckerboardSplatterAlgorithm<TPoints, TScalars>::SplatPoint(vtkIdType p
     }
   }
 
-  // The parallel splat across the splat footprint. If the footprint is too
-  // small then use serial processing to avoid thread inefficiency. Note that
-  // empirically the crossover point seems to be a footprint=1 (e.g., 3x3x3
-  // splat footprint and smaller is processed in serial).
   splat.SetSliceBounds(min, max);
-  if (this->Footprint < this->ParallelSplatCrossover)
-  {
-    splat(min[2], max[2] + 1);
-  }
-  else
-  { // parallelize splat
-    vtkSMPTools::For(min[2], max[2] + 1, splat);
-  }
+  splat(min[2], max[2] + 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Cap the boundaries with a specific value (the capValue).
 template <typename TPoints, typename TScalars>
 void vtkCheckerboardSplatterAlgorithm<TPoints, TScalars>::Cap(TScalars* s, TScalars capValue)
@@ -396,7 +373,7 @@ void vtkCheckerboardSplatterAlgorithm<TPoints, TScalars>::Cap(TScalars* s, TScal
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The algorithm driver method.
 template <typename TPoints, typename TScalars>
 void vtkCheckerboardSplatterAlgorithm<TPoints, TScalars>::SplatPoints(vtkCheckerboardSplatter* self,
@@ -553,7 +530,7 @@ void vtkCheckerboardSplatterAlgorithm<TPoints, TScalars>::SplatPoints(vtkChecker
   delete[] algo.SPts;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Create the VTK class proper.  Construct object with dimensions=(50,50,50);
 // automatic computation of bounds; a splat radius of 0.1; an exponent factor
 // of -5; and normal and scalar warping turned on.
@@ -597,14 +574,14 @@ vtkCheckerboardSplatter::vtkCheckerboardSplatter()
     0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::SCALARS);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCheckerboardSplatter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPointSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCheckerboardSplatter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -644,7 +621,7 @@ int vtkCheckerboardSplatter::RequestInformation(vtkInformation* vtkNotUsed(reque
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCheckerboardSplatter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -733,7 +710,7 @@ int vtkCheckerboardSplatter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the size of the sample bounding box automatically from the
 // input data.
 void vtkCheckerboardSplatter::ComputeModelBounds(
@@ -783,7 +760,7 @@ void vtkCheckerboardSplatter::ComputeModelBounds(
   output->SetSpacing(this->Spacing);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the dimensions of the sampling structured point set.
 void vtkCheckerboardSplatter::SetSampleDimensions(int i, int j, int k)
 {
@@ -796,7 +773,7 @@ void vtkCheckerboardSplatter::SetSampleDimensions(int i, int j, int k)
   this->SetSampleDimensions(dim);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardSplatter::SetSampleDimensions(int dim[3])
 {
   int dataDim, i;
@@ -836,7 +813,7 @@ void vtkCheckerboardSplatter::SetSampleDimensions(int dim[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkCheckerboardSplatter::GetAccumulationModeAsString()
 {
   if (this->AccumulationMode == VTK_ACCUMULATION_MODE_MIN)
@@ -853,7 +830,7 @@ const char* vtkCheckerboardSplatter::GetAccumulationModeAsString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardSplatter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -886,3 +863,4 @@ void vtkCheckerboardSplatter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Parallel Splat Crossover: " << this->ParallelSplatCrossover << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestLinePlot.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAxis.h"
 #include "vtkChartXY.h"
@@ -39,7 +27,7 @@ static int periodical[] = { 184, 176, 166, 131, 171, 191, 231, 166, 197, 162, 15
 static int audiobook[] = { 903, 1038, 987, 1073, 1144, 1203, 1173, 1196, 1213, 1076, 926, 874 };
 static int video[] = { 1524, 1565, 1627, 1445, 1179, 1816, 2293, 1811, 1588, 1561, 1542, 1563 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestStackedPlot(int, char*[])
 {
   // Set up a 2D scene, add an XY chart to it

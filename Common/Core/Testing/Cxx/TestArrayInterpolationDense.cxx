@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ArrayInterpolationDense.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include <vtkArrayInterpolate.h>
 #include <vtkDenseArray.h>
@@ -36,14 +19,14 @@ int TestArrayInterpolationDense(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 {
   try
   {
-    vtkSmartPointer<vtkDenseArray<double> > a = vtkSmartPointer<vtkDenseArray<double> >::New();
+    vtkSmartPointer<vtkDenseArray<double>> a = vtkSmartPointer<vtkDenseArray<double>>::New();
     a->Resize(4);
     a->SetValue(0, 0);
     a->SetValue(1, 1);
     a->SetValue(2, 2);
     a->SetValue(3, 3);
 
-    vtkSmartPointer<vtkDenseArray<double> > b = vtkSmartPointer<vtkDenseArray<double> >::New();
+    vtkSmartPointer<vtkDenseArray<double>> b = vtkSmartPointer<vtkDenseArray<double>>::New();
     b->Resize(vtkArrayExtents(2));
 
     vtkInterpolate(a.GetPointer(),
@@ -58,7 +41,7 @@ int TestArrayInterpolationDense(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
     test_expression(b->GetValue(0) == 0.5, "expected 0.5");
     test_expression(b->GetValue(1) == 2.5, "expected 2.5");
 
-    vtkSmartPointer<vtkDenseArray<double> > c = vtkSmartPointer<vtkDenseArray<double> >::New();
+    vtkSmartPointer<vtkDenseArray<double>> c = vtkSmartPointer<vtkDenseArray<double>>::New();
     c->Resize(4, 2);
     c->SetValue(0, 0, 0);
     c->SetValue(0, 1, 1);
@@ -69,7 +52,7 @@ int TestArrayInterpolationDense(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
     c->SetValue(3, 0, 6);
     c->SetValue(3, 1, 7);
 
-    vtkSmartPointer<vtkDenseArray<double> > d = vtkSmartPointer<vtkDenseArray<double> >::New();
+    vtkSmartPointer<vtkDenseArray<double>> d = vtkSmartPointer<vtkDenseArray<double>>::New();
     d->Resize(vtkArrayExtents(2, 2));
 
     vtkInterpolate(c.GetPointer(),

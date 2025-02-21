@@ -1,22 +1,7 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkModelMetadata.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkModelMetadata
  * @brief   This class encapsulates the metadata
@@ -77,6 +62,7 @@
 #include "vtkObject.h"
 #include "vtkSmartPointer.h" // for vtkSmartPointer
 #include "vtkStringArray.h"  // for vtkStringArray
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkCharArray;
 class vtkIdTypeArray;
@@ -117,13 +103,13 @@ public:
 
   virtual void PrintLocalInformation();
 
-  //@{
+  ///@{
   /**
    * The title of the dataset.
    */
   vtkSetStringMacro(Title);
   const char* GetTitle() const { return this->Title; }
-  //@}
+  ///@}
 
   /**
    * Set the information lines.
@@ -141,7 +127,7 @@ public:
    */
   int GetNumberOfInformationLines() const { return this->NumberOfInformationLines; }
 
-  //@{
+  ///@{
   /**
    * Set the index of the time step represented by the results
    * data in the file attached to this ModelMetadata object.  Time
@@ -150,7 +136,7 @@ public:
    */
   vtkSetMacro(TimeStepIndex, int);
   int GetTimeStepIndex() const { return this->TimeStepIndex; }
-  //@}
+  ///@}
 
   /**
    * Set the total number of time steps in the file,
@@ -177,14 +163,14 @@ public:
    */
   int GetDimension() const { return this->Dimension; }
 
-  //@{
+  ///@{
   /**
    * The number of blocks in the file.  Set this before setting
    * any of the block arrays.
    */
   vtkSetMacro(NumberOfBlocks, int);
   int GetNumberOfBlocks() const { return this->NumberOfBlocks; }
-  //@}
+  ///@}
 
   /**
    * An arbitrary integer ID for each block.
@@ -267,14 +253,14 @@ public:
    */
   int* GetBlockAttributesIndex() const { return this->BlockAttributesIndex; }
 
-  //@{
+  ///@{
   /**
    * The number of node sets in the file.  Set this value before
    * setting the various node set arrays.
    */
   vtkSetMacro(NumberOfNodeSets, int);
   int GetNumberOfNodeSets() const { return this->NumberOfNodeSets; }
-  //@}
+  ///@}
 
   void SetNodeSetNames(vtkStringArray* names) { this->NodeSetNames = names; }
   vtkStringArray* GetNodeSetNames() const { return this->NodeSetNames; }
@@ -324,13 +310,13 @@ public:
   void SetNodeSetDistributionFactors(float*);
   float* GetNodeSetDistributionFactors() const { return this->NodeSetDistributionFactors; }
 
-  //@{
+  ///@{
   /**
    * Get the total number of nodes in all node sets
    */
   vtkSetMacro(SumNodesPerNodeSet, int);
   int GetSumNodesPerNodeSet() const { return this->SumNodesPerNodeSet; }
-  //@}
+  ///@}
 
   /**
    * Get the total number of distribution factors stored for all node sets
@@ -349,14 +335,14 @@ public:
    */
   int* GetNodeSetDistributionFactorIndex() const { return this->NodeSetDistributionFactorIndex; }
 
-  //@{
+  ///@{
   /**
    * Set or get the number of side sets.  Set this value before
    * setting any of the other side set arrays.
    */
   vtkSetMacro(NumberOfSideSets, int);
   int GetNumberOfSideSets() const { return this->NumberOfSideSets; }
-  //@}
+  ///@}
 
   void SetSideSetNames(vtkStringArray* names) { this->SideSetNames = names; }
   vtkStringArray* GetSideSetNames() const { return this->SideSetNames; }
@@ -429,13 +415,13 @@ public:
   void SetSideSetDistributionFactors(float*);
   float* GetSideSetDistributionFactors() const { return this->SideSetDistributionFactors; }
 
-  //@{
+  ///@{
   /**
    * Get the total number of sides in all side sets
    */
   vtkSetMacro(SumSidesPerSideSet, int);
   int GetSumSidesPerSideSet() const { return this->SumSidesPerSideSet; }
-  //@}
+  ///@}
 
   /**
    * Get the total number of distribution factors stored for all side sets
@@ -568,7 +554,7 @@ public:
   void SetElementVariableTruthTable(int*);
   int* GetElementVariableTruthTable() const { return this->ElementVariableTruthTable; }
 
-  //@{
+  ///@{
   /**
    * Instead of a truth table of all "1"s, you can set this
    * instance variable to indicate that all variables are
@@ -580,7 +566,7 @@ public:
   {
     return this->AllVariablesDefinedInAllBlocks;
   }
-  //@}
+  ///@}
 
   /**
    * The ModelMetadata object may contain these lists:
@@ -620,7 +606,7 @@ public:
   int* GetNodeVariableNumberOfComponents() const { return this->NodeVariableNumberOfComponents; }
   int* GetMapToOriginalNodeVariableNames() const { return this->MapToOriginalNodeVariableNames; }
 
-  //@{
+  ///@{
   /**
    * Free selected portions of the metadata when updating values
    * in the vtkModelMetadata object.  Resetting a particular field,
@@ -644,7 +630,7 @@ public:
   void FreeUsedNodeVariableNames();
   void FreeUsedElementVariables();
   void FreeUsedNodeVariables();
-  //@}
+  ///@}
 
   /**
    * Set the object back to it's initial state
@@ -823,8 +809,8 @@ private:
   int* ElementVariableTruthTable; // (G) NumBlocks*OrigNumberOfElementVariables
   vtkTypeBool AllVariablesDefinedInAllBlocks;
 
-private:
   vtkModelMetadata(const vtkModelMetadata&) = delete;
   void operator=(const vtkModelMetadata&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

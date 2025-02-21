@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridAlgorithm
  * @brief   Superclass for algorithms that produce
@@ -38,6 +26,7 @@
 #include "vtkAlgorithm.h"
 #include "vtkCommonExecutionModelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 class vtkDataSetAttributes;
 class vtkHyperTreeGrid;
@@ -50,38 +39,38 @@ public:
   vtkTypeMacro(vtkHyperTreeGridAlgorithm, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm.
    */
   vtkDataObject* GetOutput();
   vtkDataObject* GetOutput(int);
   virtual void SetOutput(vtkDataObject*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the output as a hyper tree grid.
    */
   vtkHyperTreeGrid* GetHyperTreeGridOutput();
   vtkHyperTreeGrid* GetHyperTreeGridOutput(int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the output as a polygonal dataset.
    */
   vtkPolyData* GetPolyDataOutput();
   vtkPolyData* GetPolyDataOutput(int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the output as an unstructured grid.
    */
   vtkUnstructuredGrid* GetUnstructuredGridOutput();
   vtkUnstructuredGrid* GetUnstructuredGridOutput(int);
-  //@}
+  ///@}
 
   /**
    * See vtkAlgorithm for details
@@ -89,7 +78,7 @@ public:
   vtkTypeBool ProcessRequest(
     vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection() to
@@ -97,9 +86,9 @@ public:
    */
   void SetInputData(vtkDataObject*);
   void SetInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use AddInputConnection() to
@@ -107,7 +96,7 @@ public:
    */
   void AddInputData(vtkDataObject*);
   void AddInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
 protected:
   vtkHyperTreeGridAlgorithm();
@@ -134,38 +123,41 @@ protected:
    */
   virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
+  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+
   /**
    * Main routine to process individual trees in the grid
    * This is pure virtual method to be implemented by concrete algorithms
    */
   virtual int ProcessTrees(vtkHyperTreeGrid*, vtkDataObject*) = 0;
 
-  //@{
+  ///@{
   /**
    * Define default input and output port types
    */
   int FillInputPortInformation(int, vtkInformation*) override;
   int FillOutputPortInformation(int, vtkInformation*) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Reference to input and output data
    */
   vtkDataSetAttributes* InData;
   vtkDataSetAttributes* OutData;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * JB Si a vrai, l'objet output aura le meme type que le type d'objet en entree input.
+   * If set, the output object will have the same type as the input object.
    */
   bool AppropriateOutput;
-  //@}
+  ///@}
 
 private:
   vtkHyperTreeGridAlgorithm(const vtkHyperTreeGridAlgorithm&) = delete;
   void operator=(const vtkHyperTreeGridAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHoverWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkHoverWidget.h"
 #include "vtkCallbackCommand.h"
 #include "vtkEvent.h"
@@ -21,9 +9,10 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkHoverWidget);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHoverWidget::vtkHoverWidget()
 {
   this->WidgetState = Start;
@@ -50,10 +39,10 @@ vtkHoverWidget::vtkHoverWidget()
     "Return", vtkWidgetEvent::Select, this, vtkHoverWidget::SelectAction);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHoverWidget::~vtkHoverWidget() = default;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHoverWidget::SetEnabled(int enabling)
 {
   if (enabling) //----------------
@@ -100,7 +89,7 @@ void vtkHoverWidget::SetEnabled(int enabling)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHoverWidget::MoveAction(vtkAbstractWidget* w)
 {
   vtkHoverWidget* self = reinterpret_cast<vtkHoverWidget*>(w);
@@ -117,7 +106,7 @@ void vtkHoverWidget::MoveAction(vtkAbstractWidget* w)
   self->TimerId = self->Interactor->CreateRepeatingTimer(self->TimerDuration);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHoverWidget::HoverAction(vtkAbstractWidget* w)
 {
   vtkHoverWidget* self = reinterpret_cast<vtkHoverWidget*>(w);
@@ -134,7 +123,7 @@ void vtkHoverWidget::HoverAction(vtkAbstractWidget* w)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHoverWidget::SelectAction(vtkAbstractWidget* w)
 {
   vtkHoverWidget* self = reinterpret_cast<vtkHoverWidget*>(w);
@@ -148,10 +137,11 @@ void vtkHoverWidget::SelectAction(vtkAbstractWidget* w)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHoverWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Timer Duration: " << this->TimerDuration << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEdgeLayout.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkEdgeLayout
  * @brief   layout graph edges
@@ -32,6 +17,7 @@
 #include "vtkGraphAlgorithm.h"
 #include "vtkInfovisLayoutModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkEdgeLayoutStrategy;
 class vtkEventForwarderCommand;
 
@@ -42,13 +28,13 @@ public:
   vtkTypeMacro(vtkEdgeLayout, vtkGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The layout strategy to use during graph layout.
    */
   void SetLayoutStrategy(vtkEdgeLayoutStrategy* strategy);
   vtkGetObjectMacro(LayoutStrategy, vtkEdgeLayoutStrategy);
-  //@}
+  ///@}
 
   /**
    * Get the modification time of the layout algorithm.
@@ -61,14 +47,14 @@ protected:
 
   vtkEdgeLayoutStrategy* LayoutStrategy;
 
-  //@{
+  ///@{
   /**
    * This intercepts events from the strategy object and re-emits them
    * as if they came from the layout engine itself.
    */
   vtkEventForwarderCommand* EventForwarder;
   unsigned long ObserverTag;
-  //@}
+  ///@}
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -79,4 +65,5 @@ private:
   void operator=(const vtkEdgeLayout&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

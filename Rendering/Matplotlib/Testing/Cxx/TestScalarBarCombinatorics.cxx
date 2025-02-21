@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestScalarBarCombinatorics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkBandedPolyDataContourFilter.h"
@@ -92,7 +80,7 @@ static vtkSmartPointer<vtkScalarBarActor> CreateScalarBar(vtkScalarBarTestCondit
 int TestScalarBarCombinatorics(int argc, char* argv[])
 {
   vtkTesting* t = vtkTesting::New();
-  double threshold = 10.;
+  double threshold = 0.05;
   for (int cc = 1; cc < argc; ++cc)
   {
     if ((cc < argc - 1) && (argv[cc][0] == '-') && (argv[cc][1] == 'E'))
@@ -114,7 +102,7 @@ int TestScalarBarCombinatorics(int argc, char* argv[])
   vtkNew<vtkLookupTable> lutB;
   // Create a grid of scalar bars
   int numBars = static_cast<int>(sizeof(conditions) / sizeof(conditions[0]));
-  std::vector<vtkSmartPointer<vtkScalarBarActor> > actors;
+  std::vector<vtkSmartPointer<vtkScalarBarActor>> actors;
   actors.reserve(numBars);
   for (int c = 0; c < numBars; ++c)
   {

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAreaContourSpectrumFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAreaContourSpectrumFilter.h"
 
 #include "vtkDataSetAttributes.h"
@@ -27,9 +15,10 @@
 #include "vtkTriangle.h"
 #include "vtkVariantArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAreaContourSpectrumFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAreaContourSpectrumFilter::vtkAreaContourSpectrumFilter()
 {
   this->SetNumberOfInputPorts(2);
@@ -38,10 +27,10 @@ vtkAreaContourSpectrumFilter::vtkAreaContourSpectrumFilter()
   this->NumberOfSamples = 100;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAreaContourSpectrumFilter::~vtkAreaContourSpectrumFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAreaContourSpectrumFilter::FillInputPortInformation(int portNumber, vtkInformation* info)
 {
   switch (portNumber)
@@ -58,7 +47,7 @@ int vtkAreaContourSpectrumFilter::FillInputPortInformation(int portNumber, vtkIn
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAreaContourSpectrumFilter::FillOutputPortInformation(
   int vtkNotUsed(portNumber), vtkInformation* info)
 {
@@ -68,7 +57,7 @@ int vtkAreaContourSpectrumFilter::FillOutputPortInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAreaContourSpectrumFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -77,13 +66,13 @@ void vtkAreaContourSpectrumFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Number of Samples: " << this->NumberOfSamples << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTable* vtkAreaContourSpectrumFilter::GetOutput()
 {
   return vtkTable::SafeDownCast(this->GetOutputDataObject(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAreaContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -155,6 +144,10 @@ int vtkAreaContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(request
 
       do
       {
+        if (this->CheckAbort())
+        {
+          break;
+        }
         vtkEdgeType e = eIt->Next();
         if (e.Id == ArcId)
         {
@@ -189,6 +182,10 @@ int vtkAreaContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(request
              max = scalarField->GetComponent(vertexIds[vertexIds.size() - 1], 0);
       for (unsigned int i = 0; i < vertexIds.size(); i++)
       {
+        if (this->CheckAbort())
+        {
+          break;
+        }
         scalarValues[i] = scalarField->GetComponent(vertexIds[i], 0);
 
         vtkIdList* starTriangleList = vtkIdList::New();
@@ -220,10 +217,14 @@ int vtkAreaContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(request
       }
 
       // now adjust to the desired sampling
-      std::vector<std::pair<int, double> > samples(NumberOfSamples);
+      std::vector<std::pair<int, double>> samples(NumberOfSamples);
       unsigned int pos = 0;
       for (int i = 0; i < NumberOfSamples; i++)
       {
+        if (this->CheckAbort())
+        {
+          break;
+        }
         samples[i].first = 0;
         samples[i].second = 0;
         double temp = min + (i + 1.0) * ((max - min) / ((double)NumberOfSamples));
@@ -256,6 +257,10 @@ int vtkAreaContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(request
       int lastSample = 0;
       for (int i = 0; i < NumberOfSamples; i++)
       {
+        if (this->CheckAbort())
+        {
+          break;
+        }
         if (!samples[i].first)
         {
           // not enough vertices in the region for the number of desired
@@ -294,3 +299,4 @@ int vtkAreaContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(request
   }
   return 0;
 }
+VTK_ABI_NAMESPACE_END

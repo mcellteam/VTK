@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArchiver.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkArchiver
  * @brief   Writes an archive
@@ -33,6 +21,7 @@
 
 #include <ios> // For std::streamsize
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCORE_EXPORT vtkArchiver : public vtkObject
 {
 public:
@@ -40,42 +29,42 @@ public:
   vtkTypeMacro(vtkArchiver, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the name of the archive to generate.
    */
   vtkGetStringMacro(ArchiveName);
   vtkSetStringMacro(ArchiveName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Open the arhive for writing.
+   * Open the archive for writing.
    */
   virtual void OpenArchive();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Close the arhive.
+   * Close the archive.
    */
   virtual void CloseArchive();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Insert \p data of size \p size into the archive at \p relativePath.
    */
   virtual void InsertIntoArchive(
-    const std::string& relativePath, const char* data, std::streamsize size);
-  //@}
+    const std::string& relativePath, const char* data, std::size_t size);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Checks if \p relativePath represents an entry in the archive.
    */
   virtual bool Contains(const std::string& relativePath);
-  //@}
+  ///@}
 
 protected:
   vtkArchiver();
@@ -88,4 +77,5 @@ private:
   void operator=(const vtkArchiver&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

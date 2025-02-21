@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyle3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInteractorStyle3D.h"
 
 #include "vtkAssemblyPath.h"
@@ -32,12 +20,13 @@
 #include "vtkTimerLog.h"
 #include "vtkTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkInteractorStyle3D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkInteractorStyle3D, InteractionPicker, vtkAbstractPropPicker);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyle3D::vtkInteractorStyle3D()
 {
   this->InteractionProp = nullptr;
@@ -51,7 +40,7 @@ vtkInteractorStyle3D::vtkInteractorStyle3D()
   this->DollyPhysicalSpeed = 1.6666;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyle3D::~vtkInteractorStyle3D()
 {
   this->InteractionPicker->Delete();
@@ -60,68 +49,73 @@ vtkInteractorStyle3D::~vtkInteractorStyle3D()
   this->TempTransform->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // We handle all adjustments here
-void vtkInteractorStyle3D::PositionProp(vtkEventData* ed)
+void vtkInteractorStyle3D::PositionProp(vtkEventData* ed, double* lwpos, double* lwori)
 {
   if (this->CurrentRenderer == nullptr || this->InteractionProp == nullptr)
   {
     return;
   }
 
-  vtkRenderWindowInteractor3D* rwi = static_cast<vtkRenderWindowInteractor3D*>(this->Interactor);
-
   if (ed->GetType() != vtkCommand::Move3DEvent)
   {
     return;
   }
+
   vtkEventDataDevice3D* edd = static_cast<vtkEventDataDevice3D*>(ed);
   double wpos[3];
   edd->GetWorldPosition(wpos);
+  double wori[4];
+  edd->GetWorldOrientation(wori);
 
-  double* lwpos = rwi->GetLastWorldEventPosition(rwi->GetPointerIndex());
-
-  double trans[3];
-  for (int i = 0; i < 3; i++)
+  // If no user defined last world event and last world orientation,
+  // use the ones stored by vtkRenderWindowInteractor3D
+  if (lwpos == nullptr || lwori == nullptr)
   {
-    trans[i] = wpos[i] - lwpos[i];
+    vtkRenderWindowInteractor3D* rwi = static_cast<vtkRenderWindowInteractor3D*>(this->Interactor);
+    if (rwi == nullptr)
+    {
+      vtkErrorMacro("vtkRenderWindowInteractor3D is necessary without setting lwpos and lwori.");
+      return;
+    }
+    lwpos = rwi->GetLastWorldEventPosition(rwi->GetPointerIndex());
+    lwori = rwi->GetLastWorldEventOrientation(rwi->GetPointerIndex());
   }
 
-  if (this->InteractionProp->GetUserTransform() != nullptr)
+  // the code below computes newModelToWorld and then sets the prop3D from
+  // it
+
+  // we need another temp matrix for these calculations
+  vtkNew<vtkMatrix4x4> tmpMatrix;
+
+  // the basic gist is
+  // newModelToWorld = oldModelToWorld -> worldToLastPose -> newPoseToWorld
+
+  // first use it to store newModelToWorld
+  vtkMatrix4x4* oldModelToLastPose = this->TempMatrix4;
+
+  // create a scope here so that some usages of TempMatrix4 and tmpMatrix
+  // go out of scope and will not be accidentally reused.
   {
-    vtkTransform* t = this->TempTransform;
-    t->PostMultiply();
-    t->Identity();
-    t->Concatenate(this->InteractionProp->GetUserMatrix());
-    t->Translate(trans);
-    vtkNew<vtkMatrix4x4> n;
-    n->DeepCopy(t->GetMatrix());
-    this->InteractionProp->SetUserMatrix(n);
+    vtkMatrix4x4* oldModelToWorld = this->TempMatrix4;
+    this->InteractionProp->GetModelToWorldMatrix(oldModelToWorld);
+
+    vtkMatrix4x4* worldToLastPose = tmpMatrix;
+    vtkMatrix4x4::PoseToMatrix(lwpos, lwori, worldToLastPose);
+    worldToLastPose->Invert();
+
+    vtkMatrix4x4::Multiply4x4(worldToLastPose, oldModelToWorld, oldModelToLastPose);
   }
-  else
-  {
-    this->InteractionProp->AddPosition(trans);
-  }
+  // oldModelToWorld and worldToLastPose are gone now
 
-  double* wori = rwi->GetWorldEventOrientation(rwi->GetPointerIndex());
+  vtkMatrix4x4* newPoseToWorld = tmpMatrix;
+  vtkMatrix4x4::PoseToMatrix(wpos, wori, newPoseToWorld);
 
-  double* lwori = rwi->GetLastWorldEventOrientation(rwi->GetPointerIndex());
+  vtkMatrix4x4* newModelToWorld = this->TempMatrix4;
+  vtkMatrix4x4::Multiply4x4(newPoseToWorld, oldModelToLastPose, newModelToWorld);
 
-  // compute the net rotation
-  vtkQuaternion<double> q1;
-  q1.SetRotationAngleAndAxis(vtkMath::RadiansFromDegrees(lwori[0]), lwori[1], lwori[2], lwori[3]);
-  vtkQuaternion<double> q2;
-  q2.SetRotationAngleAndAxis(vtkMath::RadiansFromDegrees(wori[0]), wori[1], wori[2], wori[3]);
-  q1.Conjugate();
-  q2 = q2 * q1;
-  double axis[4];
-  axis[0] = vtkMath::DegreesFromRadians(q2.GetRotationAngleAndAxis(axis + 1));
-
-  double scale[3];
-  scale[0] = scale[1] = scale[2] = 1.0;
-
-  double* rotate = axis;
-  this->Prop3DTransform(this->InteractionProp, wpos, 1, &rotate, scale);
+  this->InteractionProp->SetPropertiesFromModelToWorldMatrix(newModelToWorld);
 
   if (this->AutoAdjustCameraClippingRange)
   {
@@ -129,13 +123,13 @@ void vtkInteractorStyle3D::PositionProp(vtkEventData* ed)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyle3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyle3D::FindPickedActor(double pos[3], double orient[4])
 {
   if (!orient)
@@ -157,7 +151,7 @@ void vtkInteractorStyle3D::FindPickedActor(double pos[3], double orient[4])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyle3D::Prop3DTransform(
   vtkProp3D* prop3D, double* boxCenter, int numRotation, double** rotate, double* scale)
 {
@@ -221,10 +215,6 @@ void vtkInteractorStyle3D::Dolly3D(vtkEventData* ed)
 
   vtkRenderWindowInteractor3D* rwi = static_cast<vtkRenderWindowInteractor3D*>(this->Interactor);
 
-  if (ed->GetType() != vtkCommand::Move3DEvent)
-  {
-    return;
-  }
   vtkEventDataDevice3D* edd = static_cast<vtkEventDataDevice3D*>(ed);
   const double* wori = edd->GetWorldOrientation();
 
@@ -240,14 +230,12 @@ void vtkInteractorStyle3D::Dolly3D(vtkEventData* ed)
   double* trans = rwi->GetPhysicalTranslation(this->CurrentRenderer->GetActiveCamera());
 
   // scale speed by thumb position on the touchpad along Y axis
-  float tpos[3];
-  rwi->GetTouchPadPosition(edd->GetDevice(), vtkEventDataDeviceInput::Unknown, tpos);
-  if (fabs(tpos[0]) > fabs(tpos[1]))
+  // update touchpad/joystick if we have the data
+  if (edd->GetType() == vtkCommand::ViewerMovement3DEvent)
   {
-    // do not dolly if pressed direction is not up or down but left or right
-    return;
+    edd->GetTrackPadPosition(this->LastTrackPadPosition);
   }
-  double speedScaleFactor = tpos[1]; // -1 to +1 (the Y axis of the trackpad)
+  double speedScaleFactor = this->LastTrackPadPosition[1]; // -1 to +1 (the Y axis of the trackpad)
   double physicalScale = rwi->GetPhysicalScale();
 
   this->LastDolly3DEventTime->StopTimer();
@@ -298,3 +286,4 @@ void vtkInteractorStyle3D::SetScale(vtkCamera* camera, double newScale)
     this->CurrentRenderer->ResetCameraClippingRange();
   }
 }
+VTK_ABI_NAMESPACE_END

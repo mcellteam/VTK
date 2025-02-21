@@ -1,18 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXdmf3LightDataHandler.cxx
-  Language:  C++
-
-  Copyright (c) 1993-2002 Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkXdmf3LightDataHandler.h"
 
@@ -43,6 +30,7 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 shared_ptr<vtkXdmf3LightDataHandler> vtkXdmf3LightDataHandler::New(vtkXdmf3SILBuilder* sb,
   vtkXdmf3ArraySelection* f, vtkXdmf3ArraySelection* ce, vtkXdmf3ArraySelection* pn,
   vtkXdmf3ArraySelection* gc, vtkXdmf3ArraySelection* sc, unsigned int processor,
@@ -118,7 +106,7 @@ void vtkXdmf3LightDataHandler::InspectXDMF(
       }
       unsigned int nSets = grid->getNumberSets();
       std::string name = grid->getName();
-      if (name.length() != 0 && (nSets > 0 || parentVertex != -1))
+      if (!name.empty() && (nSets > 0 || parentVertex != -1))
       {
         std::string uName = this->UniqueName(name, true);
         grid->setName(uName);
@@ -139,7 +127,7 @@ void vtkXdmf3LightDataHandler::InspectXDMF(
     if (graph)
     {
       std::string name = graph->getName();
-      if (name.length() != 0 && parentVertex != -1)
+      if (!name.empty() && parentVertex != -1)
       {
         std::string uName = this->UniqueName(name, true);
         graph->setName(uName);
@@ -155,7 +143,7 @@ void vtkXdmf3LightDataHandler::InspectXDMF(
   {
     // four cases: domain, temporal, spatial or hierarchical
     shared_ptr<XdmfGridCollection> asGC = shared_dynamic_cast<XdmfGridCollection>(item);
-    bool isDomain = asGC ? false : true;
+    bool isDomain = !asGC;
 
     if (asGC)
     {
@@ -175,7 +163,7 @@ void vtkXdmf3LightDataHandler::InspectXDMF(
     if (!isTemporal && !isDomain)
     {
       std::string name = asGC->getName();
-      if (name.length() != 0 && !this->SILBuilder->IsMaxedOut())
+      if (!name.empty() && !this->SILBuilder->IsMaxedOut())
       {
         silVertex = this->SILBuilder->AddVertex(name.c_str());
         vtkIdType parent = parentVertex;
@@ -261,7 +249,7 @@ void vtkXdmf3LightDataHandler::InspectArrays(shared_ptr<XdmfItem> item)
     {
       shared_ptr<XdmfAttribute> xmfAttribute = grid->getAttribute(cc);
       std::string attrName = xmfAttribute->getName();
-      if (attrName.length() == 0)
+      if (attrName.empty())
       {
         std::cerr << "Skipping unnamed array." << std::endl;
         continue;
@@ -304,7 +292,7 @@ void vtkXdmf3LightDataHandler::InspectArrays(shared_ptr<XdmfItem> item)
       {
         shared_ptr<XdmfAttribute> xmfAttribute = graph->getAttribute(cc);
         std::string attrName = xmfAttribute->getName();
-        if (attrName.length() == 0)
+        if (attrName.empty())
         {
           std::cerr << "Skipping unnamed array." << std::endl;
           continue;
@@ -344,11 +332,7 @@ void vtkXdmf3LightDataHandler::InspectArrays(shared_ptr<XdmfItem> item)
 //------------------------------------------------------------------------------
 bool vtkXdmf3LightDataHandler::TooDeep(unsigned int depth)
 {
-  if (this->MaxDepth != 0 && depth >= this->MaxDepth)
-  {
-    return true;
-  }
-  return false;
+  return this->MaxDepth != 0 && depth >= this->MaxDepth;
 }
 
 //------------------------------------------------------------------------------
@@ -469,11 +453,7 @@ bool vtkXdmf3LightDataHandler::ShouldRead(unsigned int piece, unsigned int npiec
   }
   if (npieces < this->NumProcs)
   {
-    if (piece == this->Rank)
-    {
-      return true;
-    }
-    return false;
+    return piece == this->Rank;
   }
 
 #if 1
@@ -498,3 +478,4 @@ bool vtkXdmf3LightDataHandler::ShouldRead(unsigned int piece, unsigned int npiec
   }
 #endif
 }
+VTK_ABI_NAMESPACE_END

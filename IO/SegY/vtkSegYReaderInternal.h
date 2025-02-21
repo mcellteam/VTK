@@ -1,21 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSegYReaderInternal.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkSegYReaderInternal_h
 #define vtkSegYReaderInternal_h
-#ifndef __VTK_WRAP__
+
+#include "vtkABINamespace.h"
 
 #include <fstream>
 #include <string>
@@ -23,6 +12,7 @@
 #include <vtksys/FStream.hxx>
 
 // Forward declarations
+VTK_ABI_NAMESPACE_BEGIN
 class vtkStructuredGrid;
 class vtkImageData;
 class vtkSegYTraceReader;
@@ -37,7 +27,6 @@ public:
   vtkSegYReaderInternal& operator=(const vtkSegYReaderInternal& other) = delete;
   ~vtkSegYReaderInternal();
 
-public:
   bool Is3DComputeParameters(
     int* extent, double origin[3], double spacing[3][3], int* spacingSign, bool force2D);
   void LoadTraces(int* extent);
@@ -65,6 +54,6 @@ private:
   int SampleCountPerTrace;
 };
 
-#endif
+VTK_ABI_NAMESPACE_END
 #endif // vtkSegYReaderInternal_h
 // VTK-HeaderTest-Exclude: vtkSegYReaderInternal.h

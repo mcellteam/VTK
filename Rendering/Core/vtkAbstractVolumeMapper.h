@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractVolumeMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractVolumeMapper
  * @brief   Abstract class for a volume mapper
@@ -29,36 +17,38 @@
 
 #include "vtkAbstractMapper3D.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkVolume;
 class vtkWindow;
 class vtkDataSet;
 
-class VTKRENDERINGCORE_EXPORT vtkAbstractVolumeMapper : public vtkAbstractMapper3D
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkAbstractVolumeMapper : public vtkAbstractMapper3D
 {
 public:
   vtkTypeMacro(vtkAbstractVolumeMapper, vtkAbstractMapper3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the input data
    */
   virtual vtkDataSet* GetDataSetInput();
   virtual vtkDataObject* GetDataObjectInput();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return bounding box (array of six doubles) of data expressed as
    * (xmin,xmax, ymin,ymax, zmin,zmax).
    */
   double* GetBounds() VTK_SIZEHINT(6) override;
   void GetBounds(double bounds[6]) override { this->vtkAbstractMapper3D::GetBounds(bounds); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control how the mapper works with scalar point data and cell attribute
    * data.  By default (ScalarModeToDefault), the mapper will use point data,
@@ -84,9 +74,9 @@ public:
   {
     this->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When ScalarMode is set to UsePointFieldData or UseCellFieldData,
    * you can specify which scalar array to use during rendering.
@@ -95,7 +85,7 @@ public:
    */
   virtual void SelectScalarArray(int arrayNum);
   virtual void SelectScalarArray(const char* arrayName);
-  //@}
+  ///@}
 
   /**
    * Get the array name or number and component to use for rendering.
@@ -109,7 +99,7 @@ public:
    */
   const char* GetScalarModeAsString();
 
-  //@{
+  ///@{
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
    */
@@ -117,7 +107,7 @@ public:
   virtual float GetGradientMagnitudeBias() { return 0.0f; }
   virtual float GetGradientMagnitudeScale(int) { return 1.0f; }
   virtual float GetGradientMagnitudeBias(int) { return 0.0f; }
-  //@}
+  ///@}
 
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
@@ -151,4 +141,5 @@ private:
   void operator=(const vtkAbstractVolumeMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransformFeedback.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkTransformFeedback
@@ -33,6 +21,7 @@
 #include <string> // For string
 #include <vector> // For vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkShaderProgram;
 class vtkWindow;
 class vtkOpenGLBufferObject;
@@ -91,7 +80,7 @@ public:
    */
   size_t GetBytesPerVertex() const;
 
-  //@{
+  ///@{
   /**
    * The number of vertices expected to be captured. If the drawMode setter is
    * used, PrimitiveMode will also be set appropriately.
@@ -105,7 +94,7 @@ public:
   vtkSetMacro(NumberOfVertices, size_t);
   void SetNumberOfVertices(int drawMode, size_t inputVerts);
   vtkGetMacro(NumberOfVertices, size_t);
-  //@}
+  ///@}
 
   /**
    * The size (in bytes) of the capture buffer. Available after adding all
@@ -138,7 +127,7 @@ public:
    */
   int GetBufferHandle(int index = 0);
 
-  //@{
+  ///@{
   /**
    * The type of primitive to capture. Must be one of GL_POINTS, GL_LINES, or
    * GL_TRIANGLES. Default is GL_POINTS. Must be set prior to calling
@@ -146,7 +135,7 @@ public:
    */
   vtkSetMacro(PrimitiveMode, int);
   vtkGetMacro(PrimitiveMode, int);
-  //@}
+  ///@}
 
   /**
    * Generates and allocates the transform feedback buffers.
@@ -173,13 +162,13 @@ public:
    */
   void ReadBuffer(int index = 0);
 
-  //@{
+  ///@{
   /**
    * Get the transform buffer data as a void pointer. Only valid after calling
    * ReadBuffer.
    */
   vtkGetMacro(BufferData, void*);
-  //@}
+  ///@}
 
   /**
    * Release any graphics resources used by this object.
@@ -232,4 +221,5 @@ inline size_t vtkTransformFeedback::GetBytesPerVertex(vtkTransformFeedback::Vary
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkTransformFeedback_h

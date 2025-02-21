@@ -1,22 +1,6 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkCirclePackLayout.h
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
-/*-------------------------------------------------------------------------
- Copyright 2008 Sandia Corporation.
- Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- the U.S. Government retains certain rights in this software.
- -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkCirclePackLayout
  * @brief   layout a vtkTree as a circle packing.
@@ -48,6 +32,7 @@
 #include "vtkInfovisLayoutModule.h" // For export macro
 #include "vtkTreeAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCirclePackLayoutStrategy;
 class vtkDoubleArray;
 class vtkDataArray;
@@ -61,7 +46,7 @@ public:
   vtkTypeMacro(vtkCirclePackLayout, vtkTreeAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The field name to use for storing the circles for each vertex.
    * The rectangles are stored in a triple float array
@@ -70,7 +55,7 @@ public:
    */
   vtkGetStringMacro(CirclesFieldName);
   vtkSetStringMacro(CirclesFieldName);
-  //@}
+  ///@}
 
   /**
    * The array to use for the size of each vertex.
@@ -81,13 +66,13 @@ public:
     this->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_VERTICES, name);
   }
 
-  //@{
+  ///@{
   /**
    * The strategy to use when laying out the tree map.
    */
   vtkGetObjectMacro(LayoutStrategy, vtkCirclePackLayoutStrategy);
   void SetLayoutStrategy(vtkCirclePackLayoutStrategy* strategy);
-  //@}
+  ///@}
 
   /**
    * Returns the vertex id that contains pnt (or -1 if no one contains it)
@@ -123,4 +108,5 @@ private:
   void prepareSizeArray(vtkDoubleArray* mySizeArray, vtkTree* tree);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

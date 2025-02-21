@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestOBJReaderGroups.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Verifies that vtkOBJReader properly handles the presence of
 // groupIds
 // .SECTION Description
@@ -75,7 +63,8 @@ static bool CheckOBJGroups(const std::string& filename, const int maxExpected)
 int TestOBJReaderGroups(int argc, char* argv[])
 {
   // lambda for the testing
-  auto doTesting = [&](int maxExpected, const char* dataName) -> bool {
+  auto doTesting = [&](int maxExpected, const char* dataName) -> bool
+  {
     char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, dataName);
     std::string filename(fname);
     delete[] fname;

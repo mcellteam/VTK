@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageRectilinearWipe.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageRectilinearWipe
  * @brief   make a rectilinear combination of two images.
@@ -58,6 +46,7 @@
 #define VTK_WIPE_UPPER_LEFT 5
 #define VTK_WIPE_UPPER_RIGHT 6
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGHYBRID_EXPORT vtkImageRectilinearWipe : public vtkThreadedImageAlgorithm
 {
 public:
@@ -65,23 +54,23 @@ public:
   vtkTypeMacro(vtkImageRectilinearWipe, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the location of the image transition. Note that position is
    * specified in pixels.
    */
   vtkSetVector2Macro(Position, int);
   vtkGetVectorMacro(Position, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the location of the wipe axes. The default is X,Y (ie vector
    * values of 0 and 1).
    */
   vtkSetVector2Macro(Axis, int);
   vtkGetVectorMacro(Axis, int, 2);
-  //@}
+  ///@}
 
   /**
    * Set the two inputs to this filter.
@@ -89,7 +78,7 @@ public:
   virtual void SetInput1Data(vtkDataObject* in) { this->SetInputData(0, in); }
   virtual void SetInput2Data(vtkDataObject* in) { this->SetInputData(1, in); }
 
-  //@{
+  ///@{
   /**
    * Specify the wipe mode. This mode determnis how input 0 and input
    * 1 are combined to produce the output. Each mode uses one or both
@@ -117,11 +106,11 @@ public:
   void SetWipeToLowerRight() { this->SetWipe(VTK_WIPE_LOWER_RIGHT); }
   void SetWipeToUpperLeft() { this->SetWipe(VTK_WIPE_UPPER_LEFT); }
   void SetWipeToUpperRight() { this->SetWipe(VTK_WIPE_UPPER_RIGHT); }
-  //@}
+  ///@}
 
 protected:
   vtkImageRectilinearWipe();
-  ~vtkImageRectilinearWipe() override {}
+  ~vtkImageRectilinearWipe() override = default;
 
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData,
@@ -136,4 +125,5 @@ private:
   void operator=(const vtkImageRectilinearWipe&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,42 +1,24 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    TestPolyhedron6.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkClipDataSet.h"
 #include "vtkContourFilter.h"
 #include "vtkDoubleArray.h"
 #include "vtkNew.h"
 #include "vtkPointData.h"
+#include "vtkTestUtilities.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkXMLUnstructuredGridReader.h"
-
-using namespace std;
 
 int TestPolyhedronContouring(int argc, char* argv[])
 {
   vtkObject::GlobalWarningDisplayOff();
   vtkNew<vtkXMLUnstructuredGridReader> r;
   vtkNew<vtkContourFilter> cf;
-
-  if (argc < 3)
-  {
-    cout << "Not enough arguments. Passing test nonetheless.";
-    return EXIT_SUCCESS;
-  }
+  cf->GenerateTrianglesOff();
 
   {
-    char* fname = argv[1];
+    char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/cell_850113.vtu");
     r->SetFileName(fname);
     r->Update();
 
@@ -51,6 +33,15 @@ int TestPolyhedronContouring(int argc, char* argv[])
     if (polys->GetNumberOfCells() != 2)
     {
       cerr << "Number of polys not 2 (as expected), but " << polys->GetNumberOfCells() << endl;
+      return EXIT_FAILURE;
+    }
+    cf->GenerateTrianglesOn();
+    cf->Update();
+    vtkPolyData* triangles = cf->GetOutput();
+    if (triangles->GetNumberOfCells() != 4)
+    {
+      cerr << "Number of triangles is not 4 (as expected), but " << triangles->GetNumberOfCells()
+           << endl;
       return EXIT_FAILURE;
     }
 
@@ -152,6 +143,7 @@ int TestPolyhedronContouring(int argc, char* argv[])
     cf->SetInputArrayToProcess(
       0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "AirVolumeFraction");
     cf->SetInputData(p);
+    cf->GenerateTrianglesOff();
     cf->SetValue(0, 0.5);
     cf->Update();
 
@@ -169,7 +161,16 @@ int TestPolyhedronContouring(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    r->SetFileName(argv[2]);
+    cf->GenerateTrianglesOn();
+    cf->Update();
+    vtkPolyData* triangles = cf->GetOutput();
+    if (triangles->GetNumberOfCells() != 5)
+    {
+      cerr << "Expected 5 contour triangles, got " << triangles->GetNumberOfCells() << endl;
+      return EXIT_FAILURE;
+    }
+
+    r->SetFileName(vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/cell_12851_26.vtu"));
     r->Update();
 
     vtkUnstructuredGrid* cell_12851 = r->GetOutput();
@@ -236,6 +237,7 @@ int TestPolyhedronContouring(int argc, char* argv[])
       0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "AirVolumeFraction");
     cf->SetInputData(ba);
     cf->SetValue(0, 0.5);
+    cf->GenerateTrianglesOff();
     cf->Update();
 
     vtkPolyData* result = cf->GetOutput();

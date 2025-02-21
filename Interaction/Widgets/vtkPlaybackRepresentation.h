@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlaybackRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPlaybackRepresentation
  * @brief   represent the vtkPlaybackWidget
@@ -30,6 +18,7 @@
 #include "vtkBorderRepresentation.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkRenderWindowInteractor;
 class vtkPoints;
@@ -47,21 +36,21 @@ public:
    */
   static vtkPlaybackRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK class methods.
    */
   vtkTypeMacro(vtkPlaybackRepresentation, vtkBorderRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * By obtaining this property you can specify the properties of the
    * representation.
    */
   vtkGetObjectMacro(Property, vtkProperty2D);
-  //@}
+  ///@}
 
   /**
    * Virtual callbacks that subclasses should implement.
@@ -83,7 +72,7 @@ public:
     size[1] = 2.0;
   }
 
-  //@{
+  ///@{
   /**
    * These methods are necessary to make this representation behave as
    * a vtkProp.
@@ -94,7 +83,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport*) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
 protected:
   vtkPlaybackRepresentation();
@@ -113,4 +102,5 @@ private:
   void operator=(const vtkPlaybackRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

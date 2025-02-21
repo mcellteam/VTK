@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkColorSeries.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkColorSeries
@@ -23,13 +11,12 @@
  * of what colors are returned. In essence a color scheme is set and then
  * the number of colors and individual color values may be requested.
  *
- * For a web page of the default palettes, see:
+ * For a web page showcasing the default palettes, see:
  * <a
- * href="http://htmlpreview.github.io/?https://github.com/lorensen/VTKExamples/blob/master/src/Python/Visualization/VTKColorSeriesPatches.html">VTKColorSeriesPatches</a>.
- * Use
+ * href="https://htmlpreview.github.io/?https://github.com/Kitware/vtk-examples/blob/gh-pages/VTKColorSeriesPatches.html">VTKColorSeriesPatches</a>;
  * <a
- * href="https://lorensen.github.io/VTKExamples/site/Python/Visualization/ColorSeriesPatches/">ColorSeriesPatches</a>
- * to generate this table.
+ * href="https://kitware.github.io/vtk-examples/site/Python/Visualization/ColorSeriesPatches/">ColorSeriesPatches</a>
+ * was used to generate this table.
  *
  * It is also possible to add schemes beyond the default palettes.
  * Whenever \a SetColorScheme is called with a string for which no palette
@@ -43,7 +30,7 @@
  *
  * The "Brewer" palettes are courtesy of
  * Cynthia A. Brewer (Dept. of Geography, Pennsylvania State University)
- * and present under the Apache License. See the source code for details.
+ * and under the Apache License. See the source code for details.
  */
 
 #ifndef vtkColorSeries_h
@@ -52,11 +39,13 @@
 #include "vtkColor.h"             // Needed for vtkColor[34]ub
 #include "vtkCommonColorModule.h" // For export macro
 #include "vtkObject.h"
-#include "vtkStdString.h" // Needed for arguments
+#include "vtkStdString.h"     // Needed for arguments
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLookupTable;
 
-class VTKCOMMONCOLOR_EXPORT vtkColorSeries : public vtkObject
+class VTKCOMMONCOLOR_EXPORT VTK_MARSHALAUTO vtkColorSeries : public vtkObject
 {
 public:
   vtkTypeMacro(vtkColorSeries, vtkObject);
@@ -213,7 +202,7 @@ public:
     CATEGORICAL
   };
 
-  //@{
+  ///@{
   /**
    * Set the color scheme that should be used.
    * The variant of this function that takes an integer should pass a
@@ -223,7 +212,7 @@ public:
    */
   virtual void SetColorScheme(int scheme);
   virtual int SetColorSchemeByName(const vtkStdString& schemeName);
-  //@}
+  ///@}
 
   /**
    * Return the number of schemes currently defined.
@@ -331,13 +320,13 @@ protected:
    */
   virtual void CopyOnWrite();
 
-  //@{
+  ///@{
   /**
    * Private data pointer of the class, stores the color list.
    */
   class Private;
   Private* Storage;
-  //@}
+  ///@}
 
   /**
    * The color scheme being used.
@@ -352,4 +341,5 @@ private:
   void operator=(const vtkColorSeries&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkColorSeries_h

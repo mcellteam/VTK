@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTooltipItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkTooltipItem
@@ -31,12 +19,14 @@
 #include "vtkRenderingContext2DModule.h" // For export macro
 #include "vtkStdString.h"                // For vtkStdString ivars
 #include "vtkVector.h"                   // Needed for vtkVector2f
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPen;
 class vtkBrush;
 class vtkTextProperty;
 
-class VTKRENDERINGCONTEXT2D_EXPORT vtkTooltipItem : public vtkContextItem
+class VTKRENDERINGCONTEXT2D_EXPORT VTK_MARSHALAUTO vtkTooltipItem : public vtkContextItem
 {
 public:
   vtkTypeMacro(vtkTooltipItem, vtkContextItem);
@@ -47,51 +37,51 @@ public:
    */
   static vtkTooltipItem* New();
 
-  //@{
+  ///@{
   /**
    * Set the position of the tooltip (in pixels).
    */
   vtkSetVector2Macro(Position, float);
   void SetPosition(const vtkVector2f& pos);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get position of the axis (in pixels).
    */
   vtkGetVector2Macro(Position, float);
   vtkVector2f GetPositionVector();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/set the text of the item.
    */
-  virtual void SetText(const vtkStdString& title);
+  virtual void SetText(const vtkStdString& text);
   virtual vtkStdString GetText();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get a pointer to the vtkTextProperty object that controls the way the
    * text is rendered.
    */
   vtkGetObjectMacro(Pen, vtkPen);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get a pointer to the vtkPen object.
    */
   vtkGetObjectMacro(Brush, vtkBrush);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the vtkTextProperty that governs how the tooltip text is displayed.
    */
   vtkGetObjectMacro(TextProperties, vtkTextProperty);
-  //@}
+  ///@}
 
   /**
    * Update the geometry of the tooltip.
@@ -119,4 +109,5 @@ private:
   void operator=(const vtkTooltipItem&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkTooltipItem_h

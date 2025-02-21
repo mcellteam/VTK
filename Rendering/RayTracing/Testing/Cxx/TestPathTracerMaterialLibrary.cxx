@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPathTracerMaterials.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test verifies that we can load a set of materials specification
 // from disk and use them.
 
@@ -49,9 +37,9 @@ int TestPathTracerMaterialLibrary(int argc, char* argv[])
     return VTK_ERROR;
   }
   cout << "Found Water material." << endl;
-  if (lib->LookupImplName("Water") != "Glass")
+  if (lib->LookupImplName("Water") != "glass")
   {
-    cerr << "Problem, expected Water to be implemented by the Glass material." << endl;
+    cerr << "Problem, expected Water to be implemented by the glass material." << endl;
     return VTK_ERROR;
   }
   cout << "Water is the right type." << endl;
@@ -68,7 +56,21 @@ int TestPathTracerMaterialLibrary(int argc, char* argv[])
     return VTK_ERROR;
   }
   cout << "Bumpy has a good texture too." << endl;
-
+  std::string textureName = lib->GetTextureName("Bumpy", "map_bump");
+  if (textureName != "vtk")
+  {
+    cerr << "Problem, expected Bumpy to have a 'map_bump' texture named 'vtk'." << endl;
+    return VTK_ERROR;
+  }
+  cout << "Bumpy has a good texture name too." << endl;
+  std::string textureFilename = lib->GetTextureFilename("Bumpy", "map_bump");
+  if (textureFilename != vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/vtk.png"))
+  {
+    cerr << "Problem, expected Bumpy to have a 'map_bump' texture with filename named vtk.png"
+         << endl;
+    return VTK_ERROR;
+  }
+  cout << "Bumpy has a good texture filename too." << endl;
   // read a wavefront mtl file
   const char* materialFile2 =
     vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/ospray_mats.mtl");
@@ -119,6 +121,21 @@ int TestPathTracerMaterialLibrary(int argc, char* argv[])
   }
   cout << "mat2 has a good texture too." << endl;
 
+  textureName = lib->GetTextureName("mat2", "map_Kd");
+  if (textureName != "vtk")
+  {
+    cerr << "Problem, expected mat2 to have a texture named 'vtk'." << endl;
+    return VTK_ERROR;
+  }
+  cout << "mat2 has a good texture name too." << endl;
+  textureFilename = lib->GetTextureFilename("mat2", "map_Kd");
+  if (textureFilename != vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/vtk.png"))
+  {
+    cerr << "Problem, expected Bumpy to have a 'map_bump' texture with filename named vtk.png"
+         << endl;
+    return VTK_ERROR;
+  }
+  cout << "mat2 has a good texture filename too." << endl;
   lib->RemoveAllTextures("mat2");
   if (lib->GetTexture("mat2", "map_Kd") != nullptr)
   {
@@ -131,9 +148,9 @@ int TestPathTracerMaterialLibrary(int argc, char* argv[])
     cerr << "Problem, could not find expected material named mat3." << endl;
     return VTK_ERROR;
   }
-  if (lib->LookupImplName("mat3") != "Metal")
+  if (lib->LookupImplName("mat3") != "metal")
   {
-    cerr << "Problem, expected mat3 to be implemented by the Metal material." << endl;
+    cerr << "Problem, expected mat3 to be implemented by the metal material." << endl;
     return VTK_ERROR;
   }
   cout << "mat3 is the right type." << endl;

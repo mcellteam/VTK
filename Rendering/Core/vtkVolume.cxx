@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVolume.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkVolume.h"
 
 #include "vtkAbstractVolumeMapper.h"
@@ -31,6 +19,7 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkVolume);
 
 // Creates a Volume with the following defaults: origin(0,0,0)
@@ -430,7 +419,7 @@ vtkVolumeProperty* vtkVolume::GetProperty()
 
 vtkMTimeType vtkVolume::GetMTime()
 {
-  vtkMTimeType mTime = this->vtkObject::GetMTime();
+  vtkMTimeType mTime = this->Superclass::GetMTime();
   vtkMTimeType time;
 
   if (this->Property != nullptr)
@@ -650,7 +639,7 @@ void vtkVolume::UpdateTransferFunctions(vtkRenderer* vtkNotUsed(ren))
       float low = -bias;
       float high = 255 / scale - bias;
 
-      gotf->GetTable(low, high, static_cast<int>(0x100), this->GradientOpacityArray[c]);
+      gotf->GetTable(low, high, 0x100, this->GradientOpacityArray[c]);
 
       if (!strcmp(gotf->GetType(), "Constant"))
       {
@@ -789,3 +778,4 @@ void vtkVolume::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Bounds: (not defined)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

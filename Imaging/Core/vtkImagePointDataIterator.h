@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImagePointDataIterator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImagePointDataIterator
  * @brief   iterate over point data in an image.
@@ -34,6 +22,7 @@
 #include "vtkImagingCoreModule.h" // for export macro
 #include "vtkSystemIncludes.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkImageData;
 class vtkImageStencilData;
@@ -86,7 +75,7 @@ public:
    */
   bool IsInStencil() { return this->InStencil; }
 
-  //@{
+  ///@{
   /**
    * Get the index at the beginning of the current span.
    */
@@ -96,7 +85,7 @@ public:
     result[1] = this->Index[1];
     result[2] = this->Index[2];
   }
-  //@}
+  ///@}
 
   /**
    * Get the index at the beginning of the current span.
@@ -174,5 +163,6 @@ protected:
   int ThreadId;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkImagePointDataIterator.h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeDataDisplayAttributesLegacy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCompositeDataDisplayAttributesLegacy.h"
 
@@ -22,6 +10,7 @@
 #include "vtkMultiPieceDataSet.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositeDataDisplayAttributesLegacy);
 
 vtkCompositeDataDisplayAttributesLegacy::vtkCompositeDataDisplayAttributesLegacy() = default;
@@ -67,13 +56,6 @@ void vtkCompositeDataDisplayAttributesLegacy::RemoveBlockVisibilities()
 {
   this->BlockVisibilities.clear();
 }
-
-#ifndef VTK_LEGACY_REMOVE
-void vtkCompositeDataDisplayAttributesLegacy::RemoveBlockVisibilites()
-{
-  this->RemoveBlockVisibilities();
-}
-#endif
 
 void vtkCompositeDataDisplayAttributesLegacy::SetBlockPickability(
   unsigned int flat_index, bool visible)
@@ -254,7 +236,7 @@ void vtkCompositeDataDisplayAttributesLegacy::ComputeVisibleBoundsInternal(
         cda, child, flat_index, bbox, blockVisible);
     }
   }
-  else if (dobj && blockVisible == true)
+  else if (dobj && blockVisible)
   {
     vtkDataSet* ds = vtkDataSet::SafeDownCast(dobj);
     if (ds)
@@ -265,3 +247,4 @@ void vtkCompositeDataDisplayAttributesLegacy::ComputeVisibleBoundsInternal(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

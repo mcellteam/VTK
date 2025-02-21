@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDijkstraImageGeodesicPath.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDijkstraImageGeodesicPath
  * @brief   Dijkstra algorithm to compute the graph geodesic.
@@ -50,9 +38,11 @@
 #ifndef vtkDijkstraImageGeodesicPath_h
 #define vtkDijkstraImageGeodesicPath_h
 
+#include "vtkDeprecation.h" // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkDijkstraGraphGeodesicPath.h"
 #include "vtkFiltersModelingModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 
 class VTKFILTERSMODELING_EXPORT vtkDijkstraImageGeodesicPath : public vtkDijkstraGraphGeodesicPath
@@ -63,45 +53,47 @@ public:
    */
   static vtkDijkstraImageGeodesicPath* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for printing and determining type information.
    */
   vtkTypeMacro(vtkDijkstraImageGeodesicPath, vtkDijkstraGraphGeodesicPath);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the image object which is used as a cost function.
    */
   void SetInputData(vtkDataObject*);
-  vtkImageData* GetInputAsImageData();
-  //@}
+  vtkImageData* GetImageDataInput();
+  VTK_DEPRECATED_IN_9_5_0("Use GetImageDataInput() instead.")
+  vtkImageData* GetInputAsImageData() { return this->GetImageDataInput(); }
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Image cost weight.
    */
   void SetImageWeight(double);
   vtkGetMacro(ImageWeight, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Edge length cost weight.
    */
   void SetEdgeLengthWeight(double);
   vtkGetMacro(EdgeLengthWeight, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Curvature cost weight.
    */
   vtkSetClampMacro(CurvatureWeight, double, 0.0, 1.0);
   vtkGetMacro(CurvatureWeight, double);
-  //@}
+  ///@}
 
 protected:
   vtkDijkstraImageGeodesicPath();
@@ -131,4 +123,5 @@ private:
   void operator=(const vtkDijkstraImageGeodesicPath&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

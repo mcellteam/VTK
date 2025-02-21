@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestImageDAtaToUniformGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME TestImageDAtaToUniformGrid.cxx --Test vtkImageDataToUniformGrid
 //
 // .SECTION Description
@@ -52,11 +40,8 @@ int TestSingleGridBlanking(bool pointBlanking, bool reverse, int expectedNumberO
   pointDataToCellData->Update();
 
   vtkNew<vtkImageDataToUniformGrid> imageDataToUniformGrid;
-  if (reverse)
-  {
-    imageDataToUniformGrid->ReverseOn();
-  }
   imageDataToUniformGrid->SetInputConnection(pointDataToCellData->GetOutputPort());
+  imageDataToUniformGrid->SetReverse(reverse);
   if (pointBlanking)
   {
     imageDataToUniformGrid->SetInputArrayToProcess(
@@ -75,7 +60,9 @@ int TestSingleGridBlanking(bool pointBlanking, bool reverse, int expectedNumberO
   // are the blanked cells.
   vtkNew<vtkThreshold> threshold;
   threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "RTData");
-  threshold->ThresholdBetween(-1000, 1000);
+  threshold->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  threshold->SetLowerThreshold(-1000.0);
+  threshold->SetUpperThreshold(1000.0);
   threshold->SetInputConnection(imageDataToUniformGrid->GetOutputPort());
   threshold->Update();
   vtkUnstructuredGrid* outputGrid = threshold->GetOutput();
@@ -118,7 +105,9 @@ int TestMultiBlockBlanking(int expectedNumberOfCells)
 
   vtkNew<vtkThreshold> threshold;
   threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "RTData");
-  threshold->ThresholdBetween(50, 150);
+  threshold->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  threshold->SetLowerThreshold(50.0);
+  threshold->SetUpperThreshold(150.0);
   threshold->SetInputData(output->GetBlock(0));
   threshold->Update();
   vtkUnstructuredGrid* outputGrid = threshold->GetOutput();

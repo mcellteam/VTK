@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAdaptiveTemporalInterpolator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAdaptiveTemporalInterpolator.h"
 
 #include "vtkCellCenters.h"
@@ -31,9 +19,10 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAdaptiveTemporalInterpolator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkAdaptiveTemporalInterpolator::ResamplingHelperImpl
 {
 public:
@@ -60,7 +49,7 @@ public:
     pointDataResampler->SetCellLocatorPrototype(pointDataResamplerLocator);
 
     cellCenters->SetInputConnection(stripAllArrays->GetOutputPort());
-    cellCenters->SetVertexCells(1);
+    cellCenters->SetVertexCells(true);
 
     cellDataResampler->SetSourceConnection(keepOnlyCellArrays->GetOutputPort());
     cellDataResampler->SetInputConnection(cellCenters->GetOutputPort());
@@ -75,7 +64,7 @@ public:
     appendAttributes->AddInputConnection(pointToCell->GetOutputPort());
   }
 
-  ~ResamplingHelperImpl() {}
+  ~ResamplingHelperImpl() = default;
 
   vtkPointSet* GetResampledDataObject(vtkPointSet* t0, vtkPointSet* t1)
   {
@@ -108,28 +97,25 @@ public:
   vtkNew<vtkPMergeArrays> appendAttributes;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAdaptiveTemporalInterpolator::vtkAdaptiveTemporalInterpolator()
 {
   this->ResampleImpl = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAdaptiveTemporalInterpolator::~vtkAdaptiveTemporalInterpolator()
 {
-  if (this->ResampleImpl != nullptr)
-  {
-    delete this->ResampleImpl;
-  }
+  delete this->ResampleImpl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAdaptiveTemporalInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
   vtkDataSet* in1, vtkDataSet* in2, double ratio)
 {
@@ -275,11 +261,11 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
     if (arrays[1])
     {
       // do a quick check to see if all arrays have the same number of tuples
-      if (this->VerifyArrays(&arrays[0], 2) == MATCHED)
+      if (this->VerifyArrays(arrays.data(), 2) == MATCHED)
       {
         // allocate double for output if input is double - otherwise float
         vtkDataArray* outarray =
-          this->InterpolateDataArray(ratio, &arrays[0], arrays[0]->GetNumberOfTuples());
+          this->InterpolateDataArray(ratio, arrays.data(), arrays[0]->GetNumberOfTuples());
         output->GetPointData()->AddArray(outarray);
         outarray->Delete();
       }
@@ -331,11 +317,11 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
     if (arrays[1])
     {
       // do a quick check to see if all arrays have the same number of tuples
-      if (this->VerifyArrays(&arrays[0], 2) == MATCHED)
+      if (this->VerifyArrays(arrays.data(), 2) == MATCHED)
       {
         // allocate double for output if input is double - otherwise float
         vtkDataArray* outarray =
-          this->InterpolateDataArray(ratio, &arrays[0], arrays[0]->GetNumberOfTuples());
+          this->InterpolateDataArray(ratio, arrays.data(), arrays[0]->GetNumberOfTuples());
         output->GetCellData()->AddArray(outarray);
         outarray->Delete();
       }
@@ -359,7 +345,7 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
   return output;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointSet* vtkAdaptiveTemporalInterpolator::ResampleDataObject(
   vtkPointSet*& a, vtkPointSet*& b, int sourceInput)
 {
@@ -400,3 +386,4 @@ vtkPointSet* vtkAdaptiveTemporalInterpolator::ResampleDataObject(
 
   return resampled;
 }
+VTK_ABI_NAMESPACE_END

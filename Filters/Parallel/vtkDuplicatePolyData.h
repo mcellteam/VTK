@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDuplicatePolyData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDuplicatePolyData
  * @brief   For distributed tiled displays.
@@ -27,6 +15,7 @@
 
 #include "vtkFiltersParallelModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSocketController;
 class vtkMultiProcessController;
 
@@ -37,18 +26,18 @@ public:
   vtkTypeMacro(vtkDuplicatePolyData, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * By default this filter uses the global controller,
    * but this method can be used to set another instead.
    */
   virtual void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
   void InitializeSchedule(int numProcs);
 
-  //@{
+  ///@{
   /**
    * This flag causes sends and receives to be matched.
    * When this flag is off, two sends occur then two receives.
@@ -58,9 +47,9 @@ public:
   vtkSetMacro(Synchronous, vtkTypeBool);
   vtkGetMacro(Synchronous, vtkTypeBool);
   vtkBooleanMacro(Synchronous, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This duplicate filter works in client server mode when this
    * controller is set.  We have a client flag to differentiate the
@@ -71,16 +60,16 @@ public:
   void SetSocketController(vtkSocketController* controller);
   vtkSetMacro(ClientFlag, int);
   vtkGetMacro(ClientFlag, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This returns to size of the output (on this process).
    * This method is not really used.  It is needed to have
    * the same API as vtkCollectPolyData.
    */
   vtkGetMacro(MemorySize, unsigned long);
-  //@}
+  ///@}
 
 protected:
   vtkDuplicatePolyData();
@@ -109,4 +98,5 @@ private:
   void operator=(const vtkDuplicatePolyData&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

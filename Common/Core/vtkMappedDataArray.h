@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMappedDataArray.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMappedDataArray
  * @brief   Map non-contiguous data structures into the
@@ -35,10 +23,14 @@
 #ifndef vtkMappedDataArray_h
 #define vtkMappedDataArray_h
 
+#include "vtkDeprecation.h" // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkTypedDataArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 template <class Scalar>
-class vtkMappedDataArray : public vtkTypedDataArray<Scalar>
+class VTK_DEPRECATED_IN_9_5_0("Please use the SetArray functionality of `vtkAOSDataArrayTemplate` "
+                              "for 1 component or `vtkSOADataArrayTemplate` for more "
+                              "instead.") vtkMappedDataArray : public vtkTypedDataArray<Scalar>
 {
 public:
   vtkTemplateTypeMacro(vtkMappedDataArray<Scalar>, vtkTypedDataArray<Scalar>);
@@ -93,16 +85,16 @@ public:
    */
   void DataChanged() override;
 
-  //@{
+  ///@{
   /**
    * These methods don't make sense for mapped data array. Prints an error and
    * returns.
    */
   void SetVoidArray(void*, vtkIdType, int) override;
   void SetVoidArray(void*, vtkIdType, int, int) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Not implemented. Print error and return nullptr.
    */
@@ -111,7 +103,7 @@ public:
     vtkErrorMacro(<< "WriteVoidPointer: Method not implemented.");
     return nullptr;
   }
-  //@}
+  ///@}
 
   /**
    * Invalidate the internal temporary array and call superclass method.
@@ -131,18 +123,19 @@ private:
   vtkMappedDataArray(const vtkMappedDataArray&) = delete;
   void operator=(const vtkMappedDataArray&) = delete;
 
-  //@{
+  ///@{
   /**
    * GetVoidPointer.
    */
   ValueType* TemporaryScalarPointer;
   size_t TemporaryScalarPointerSize;
-  //@}
+  ///@}
 };
 
 // Declare vtkArrayDownCast implementations for mapped containers:
 vtkArrayDownCast_TemplateFastCastMacro(vtkMappedDataArray);
 
+VTK_ABI_NAMESPACE_END
 #include "vtkMappedDataArray.txx"
 
 // Adds an implementation of NewInstanceInternal() that returns an AoS

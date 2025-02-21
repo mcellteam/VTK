@@ -1,39 +1,28 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationVariantKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationVariantKey.h"
 
 #include "vtkInformation.h"
 #include "vtkVariant.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationVariantKey::vtkInformationVariantKey(const char* name, const char* location)
   : vtkInformationKey(name, location)
 {
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationVariantKey::~vtkInformationVariantKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVariantKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkInformationVariantValue : public vtkObjectBase
 {
 public:
@@ -44,7 +33,7 @@ public:
 
 vtkVariant vtkInformationVariantValue::Invalid;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVariantKey::Set(vtkInformation* info, const vtkVariant& value)
 {
   if (vtkInformationVariantValue* oldv =
@@ -71,7 +60,7 @@ void vtkInformationVariantKey::Set(vtkInformation* info, const vtkVariant& value
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkVariant& vtkInformationVariantKey::Get(vtkInformation* info)
 {
   vtkInformationVariantValue* v =
@@ -79,7 +68,7 @@ const vtkVariant& vtkInformationVariantKey::Get(vtkInformation* info)
   return v ? v->Value : vtkInformationVariantValue::Invalid;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVariantKey::ShallowCopy(vtkInformation* from, vtkInformation* to)
 {
   if (this->Has(from))
@@ -92,7 +81,7 @@ void vtkInformationVariantKey::ShallowCopy(vtkInformation* from, vtkInformation*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationVariantKey::Print(ostream& os, vtkInformation* info)
 {
   // Print the value.
@@ -102,7 +91,7 @@ void vtkInformationVariantKey::Print(ostream& os, vtkInformation* info)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVariant* vtkInformationVariantKey::GetWatchAddress(vtkInformation* info)
 {
   if (vtkInformationVariantValue* v =
@@ -112,3 +101,4 @@ vtkVariant* vtkInformationVariantKey::GetWatchAddress(vtkInformation* info)
   }
   return nullptr;
 }
+VTK_ABI_NAMESPACE_END

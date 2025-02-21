@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMoleculeAppend.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMoleculeAppend.h"
 
 #include "vtkAlgorithmOutput.h"
@@ -30,15 +18,23 @@
 #include <set>
 #include <utility>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMoleculeAppend);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkMoleculeAppend::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+  os << indent << "MergeCoincidentAtoms: " << this->MergeCoincidentAtoms << endl;
+}
+
+//------------------------------------------------------------------------------
 vtkMoleculeAppend::vtkMoleculeAppend()
   : MergeCoincidentAtoms(true)
 {
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkMoleculeAppend::GetInput(int idx)
 {
   if (this->GetNumberOfInputConnections(0) <= idx)
@@ -48,7 +44,7 @@ vtkDataObject* vtkMoleculeAppend::GetInput(int idx)
   return vtkMolecule::SafeDownCast(this->GetExecutive()->GetInputData(0, idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMoleculeAppend::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -72,12 +68,18 @@ int vtkMoleculeAppend::RequestData(
   vtkNew<vtkPoints> uniquePointsList;
   double bounds[6] = { 0., 0., 0., 0., 0., 0. };
   uniquePoints->InitPointInsertion(uniquePointsList, bounds, 0);
-  std::set<std::pair<vtkIdType, vtkIdType> > uniqueBonds;
+  std::set<std::pair<vtkIdType, vtkIdType>> uniqueBonds;
+
+  int checkAbortInterval = std::min(this->GetNumberOfInputConnections(0) / 10 + 1, 1000);
 
   // ********************
   // Process each input
   for (int idx = 0; idx < this->GetNumberOfInputConnections(0); ++idx)
   {
+    if (idx % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     vtkMolecule* input = vtkMolecule::GetData(inputVector[0], idx);
 
     // --------------------
@@ -243,17 +245,17 @@ int vtkMoleculeAppend::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMoleculeAppend::FillInputPortInformation(int i, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_IS_REPEATABLE(), 1);
   return this->Superclass::FillInputPortInformation(i, info);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMoleculeAppend::CheckArrays(vtkAbstractArray* array1, vtkAbstractArray* array2)
 {
-  if (strcmp(array1->GetName(), array2->GetName()))
+  if (strcmp(array1->GetName(), array2->GetName()) != 0)
   {
     vtkErrorMacro(<< "Execute: input name (" << array1->GetName() << "), must match output name ("
                   << array2->GetName() << ")");
@@ -275,3 +277,4 @@ bool vtkMoleculeAppend::CheckArrays(vtkAbstractArray* array1, vtkAbstractArray* 
 
   return true;
 }
+VTK_ABI_NAMESPACE_END

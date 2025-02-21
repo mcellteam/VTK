@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSplitColumnComponents.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-NVIDIA-USGov
 /**
  * @class   vtkSplitColumnComponents
  * @brief   split multicomponent table columns
@@ -40,8 +24,9 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkTableAlgorithm.h"
 
-#include <string> // for std::strin
+#include <string> // for std::string
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformationIntegerKey;
 class vtkInformationStringKey;
 
@@ -52,7 +37,7 @@ public:
   vtkTypeMacro(vtkSplitColumnComponents, vtkTableAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * If on this filter will calculate an additional magnitude column for all
    * columns it splits with two or more components.
@@ -61,7 +46,7 @@ public:
   vtkSetMacro(CalculateMagnitudes, bool);
   vtkGetMacro(CalculateMagnitudes, bool);
   vtkBooleanMacro(CalculateMagnitudes, bool);
-  //@}
+  ///@}
 
   enum
   {
@@ -71,7 +56,7 @@ public:
     NAMES_WITH_UNDERSCORES = 3    // e.g. Points_X
   };
 
-  //@{
+  ///@{
   /**
    * Get/Set the array naming mode.
    * Description is NUMBERS_WITH_PARENS.
@@ -82,9 +67,9 @@ public:
   void SetNamingModeToNamesWithParens() { this->SetNamingMode(NAMES_WITH_PARENS); }
   void SetNamingModeToNamesWithUnderscores() { this->SetNamingMode(NAMES_WITH_UNDERSCORES); }
   vtkGetMacro(NamingMode, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These are keys that get added to each output array to make it easier for
    * downstream filters to know which output array were extracted from which
@@ -97,7 +82,7 @@ public:
    */
   static vtkInformationStringKey* ORIGINAL_ARRAY_NAME();
   static vtkInformationIntegerKey* ORIGINAL_COMPONENT_NUMBER();
-  //@}
+  ///@}
 
 protected:
   vtkSplitColumnComponents();
@@ -119,4 +104,5 @@ private:
   int NamingMode;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

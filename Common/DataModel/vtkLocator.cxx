@@ -1,24 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLocator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLocator.h"
 
 #include "vtkDataSet.h"
 #include "vtkGarbageCollector.h"
 
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkLocator, DataSet, vtkDataSet);
 
+//------------------------------------------------------------------------------
 vtkLocator::vtkLocator()
 {
   this->DataSet = nullptr;
@@ -26,8 +17,10 @@ vtkLocator::vtkLocator()
   this->Automatic = 1;
   this->MaxLevel = 8;
   this->Level = 8;
+  this->UseExistingSearchStructure = 0;
 }
 
+//------------------------------------------------------------------------------
 vtkLocator::~vtkLocator()
 {
   // commented out because of compiler problems in g++
@@ -35,12 +28,14 @@ vtkLocator::~vtkLocator()
   this->SetDataSet(nullptr);
 }
 
+//------------------------------------------------------------------------------
 void vtkLocator::Initialize()
 {
   // free up hash table
   this->FreeSearchStructure();
 }
 
+//------------------------------------------------------------------------------
 void vtkLocator::Update()
 {
   if (!this->DataSet)
@@ -54,6 +49,7 @@ void vtkLocator::Update()
   }
 }
 
+//------------------------------------------------------------------------------
 void vtkLocator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -72,23 +68,13 @@ void vtkLocator::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Build Time: " << this->BuildTime.GetMTime() << "\n";
   os << indent << "MaxLevel: " << this->MaxLevel << "\n";
   os << indent << "Level: " << this->Level << "\n";
+  os << indent << "UseExistingSearchStructure: " << this->UseExistingSearchStructure << "\n";
 }
 
-//----------------------------------------------------------------------------
-void vtkLocator::Register(vtkObjectBase* o)
-{
-  this->RegisterInternal(o, 1);
-}
-
-//----------------------------------------------------------------------------
-void vtkLocator::UnRegister(vtkObjectBase* o)
-{
-  this->UnRegisterInternal(o, 1);
-}
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLocator::ReportReferences(vtkGarbageCollector* collector)
 {
   this->Superclass::ReportReferences(collector);
   vtkGarbageCollectorReport(collector, this->DataSet, "DataSet");
 }
+VTK_ABI_NAMESPACE_END

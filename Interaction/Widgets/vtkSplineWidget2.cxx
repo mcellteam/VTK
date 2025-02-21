@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSplineWidget2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSplineWidget2.h"
 
 #include "vtkCallbackCommand.h"
@@ -26,8 +14,11 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+#include <algorithm>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSplineWidget2);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSplineWidget2::vtkSplineWidget2()
 {
   this->WidgetState = vtkSplineWidget2::Start;
@@ -48,21 +39,19 @@ vtkSplineWidget2::vtkSplineWidget2()
     vtkWidgetEvent::EndScale, this, vtkSplineWidget2::EndSelectAction);
   this->CallbackMapper->SetCallbackMethod(
     vtkCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkSplineWidget2::MoveAction);
-  this->CallbackMapper->SetCallbackMethod(
-    vtkCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkSplineWidget2::MoveAction);
 
   this->KeyEventCallbackCommand = vtkCallbackCommand::New();
   this->KeyEventCallbackCommand->SetClientData(this);
   this->KeyEventCallbackCommand->SetCallback(vtkSplineWidget2::ProcessKeyEvents);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSplineWidget2::~vtkSplineWidget2()
 {
   this->KeyEventCallbackCommand->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::SetEnabled(int enabling)
 {
   int enabled = this->Enabled;
@@ -101,7 +90,7 @@ void vtkSplineWidget2::SetEnabled(int enabling)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::SelectAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -159,14 +148,14 @@ void vtkSplineWidget2::SelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::TranslateAction(vtkAbstractWidget* w)
 {
   // Not sure this should be any different that SelectAction
   vtkSplineWidget2::SelectAction(w);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::ScaleAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -209,7 +198,7 @@ void vtkSplineWidget2::ScaleAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::MoveAction(vtkAbstractWidget* w)
 {
   vtkSplineWidget2* self = reinterpret_cast<vtkSplineWidget2*>(w);
@@ -236,7 +225,7 @@ void vtkSplineWidget2::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkSplineWidget2* self = reinterpret_cast<vtkSplineWidget2*>(w);
@@ -268,7 +257,7 @@ void vtkSplineWidget2::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -277,55 +266,41 @@ void vtkSplineWidget2::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::ProcessKeyEvents(vtkObject*, unsigned long event, void* clientdata, void*)
 {
   vtkSplineWidget2* self = static_cast<vtkSplineWidget2*>(clientdata);
-  vtkRenderWindowInteractor* iren = self->GetInteractor();
   vtkSplineRepresentation* rep = vtkSplineRepresentation::SafeDownCast(self->WidgetRep);
-  switch (event)
+  char* cKeySym = self->Interactor->GetKeySym();
+  std::string keySym = cKeySym != nullptr ? cKeySym : "";
+  std::transform(keySym.begin(), keySym.end(), keySym.begin(), ::toupper);
+  if (event == vtkCommand::KeyPressEvent)
   {
-    case vtkCommand::KeyPressEvent:
-      switch (iren->GetKeyCode())
-      {
-        case 'x':
-        case 'X':
-          rep->SetXTranslationAxisOn();
-          break;
-        case 'y':
-        case 'Y':
-          rep->SetYTranslationAxisOn();
-          break;
-        case 'z':
-        case 'Z':
-          rep->SetZTranslationAxisOn();
-          break;
-        default:
-          break;
-      }
-      break;
-    case vtkCommand::KeyReleaseEvent:
-      switch (iren->GetKeyCode())
-      {
-        case 'x':
-        case 'X':
-        case 'y':
-        case 'Y':
-        case 'z':
-        case 'Z':
-          rep->SetTranslationAxisOff();
-          break;
-        default:
-          break;
-      }
-      break;
-    default:
-      break;
+    if (keySym == "X")
+    {
+      rep->SetXTranslationAxisOn();
+    }
+    else if (keySym == "Y")
+    {
+      rep->SetYTranslationAxisOn();
+    }
+    else if (keySym == "Z")
+    {
+      rep->SetZTranslationAxisOn();
+    }
+  }
+  else if (event == vtkCommand::KeyReleaseEvent)
+  {
+    if (keySym == "X" || keySym == "Y" || keySym == "Z")
+    {
+      rep->SetTranslationAxisOff();
+    }
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

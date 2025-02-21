@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMapper2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMapper2D
  * @brief   abstract class specifies interface for objects which render 2D actors
@@ -28,11 +16,13 @@
 
 #include "vtkAbstractMapper.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkViewport;
 class vtkActor2D;
 
-class VTKRENDERINGCORE_EXPORT vtkMapper2D : public vtkAbstractMapper
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkMapper2D : public vtkAbstractMapper
 {
 public:
   vtkTypeMacro(vtkMapper2D, vtkAbstractMapper);
@@ -44,12 +34,13 @@ public:
   virtual vtkTypeBool HasTranslucentPolygonalGeometry() { return 0; }
 
 protected:
-  vtkMapper2D() {}
-  ~vtkMapper2D() override {}
+  vtkMapper2D() = default;
+  ~vtkMapper2D() override = default;
 
 private:
   vtkMapper2D(const vtkMapper2D&) = delete;
   void operator=(const vtkMapper2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTrivialProducer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTrivialProducer
  * @brief   Producer for stand-alone data objects.
@@ -28,10 +16,12 @@
 
 #include "vtkAlgorithm.h"
 #include "vtkCommonExecutionModelModule.h" // For export macro
+#include "vtkWrappingHints.h"              // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataObject;
 
-class VTKCOMMONEXECUTIONMODEL_EXPORT vtkTrivialProducer : public vtkAlgorithm
+class VTKCOMMONEXECUTIONMODEL_EXPORT VTK_MARSHALAUTO vtkTrivialProducer : public vtkAlgorithm
 {
 public:
   static vtkTrivialProducer* New();
@@ -50,6 +40,7 @@ public:
    * Set the data object that is "produced" by this producer.  It is
    * never really modified.
    */
+  VTK_MARSHALSETTER(OutputDataObject)
   virtual void SetOutput(vtkDataObject* output);
 
   /**
@@ -58,7 +49,7 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set the whole extent to use for the data this producer is producing.
    * This may be different than the extent of the output data when
@@ -66,7 +57,7 @@ public:
    */
   vtkSetVector6Macro(WholeExtent, int);
   vtkGetVector6Macro(WholeExtent, int);
-  //@}
+  ///@}
 
   /**
    * This method can be used to copy meta-data from an existing data
@@ -95,4 +86,5 @@ private:
   void operator=(const vtkTrivialProducer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractCellLinks.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractCellLinks
  * @brief   an abstract base class for classes that build
@@ -32,8 +20,10 @@
 #define vtkAbstractCellLinks_h
 
 #include "vtkCommonDataModelModule.h" // For export macro
+#include "vtkDeprecation.h"           // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkCellArray;
 class vtkIdList;
@@ -41,18 +31,26 @@ class vtkIdList;
 class VTKCOMMONDATAMODEL_EXPORT vtkAbstractCellLinks : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard type and print methods.
    */
   vtkTypeMacro(vtkAbstractCellLinks, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the points/cells defining this dataset.
+   */
+  virtual void SetDataSet(vtkDataSet*);
+  vtkGetObjectMacro(DataSet, vtkDataSet);
+  ///@}
 
   /**
-   * Build the link list array. All subclasses must implement this method.
+   * Build the link list array from the input dataset.
    */
-  virtual void BuildLinks(vtkDataSet* data) = 0;
+  virtual void BuildLinks() = 0;
 
   /**
    * Release memory and revert to empty state.
@@ -80,10 +78,18 @@ public:
   virtual unsigned long GetActualMemorySize() = 0;
 
   /**
-   * Standard DeepCopy method.  Since this object contains no reference
-   * to other objects, there is no ShallowCopy.
+   * Standard DeepCopy method.
+   *
+   * Before you deep copy, make sure to call SetDataSet()
    */
   virtual void DeepCopy(vtkAbstractCellLinks* src) = 0;
+
+  /**
+   * Standard ShallowCopy method.
+   *
+   * Before you shallow copy, make sure to call SetDataSet()
+   */
+  virtual void ShallowCopy(vtkAbstractCellLinks* src) = 0;
 
   // Enums for cell links type. Note that the specialized type is
   // set when users do not use ComputeType() and roll their own type.
@@ -109,11 +115,12 @@ public:
    * is hardwired for vtkIdType.
    */
   static int ComputeType(vtkIdType maxPtId, vtkIdType maxCellId, vtkCellArray* ca);
+  static int ComputeType(vtkIdType maxPtId, vtkIdType maxCellId, vtkIdType connectivitySize);
 
   /**
    * Return the type of locator (see enum above).
    */
-  int GetType() { return this->Type; }
+  vtkGetMacro(Type, int);
 
   /**
    * These methods are not virtual due to performance concerns. However,
@@ -128,7 +135,18 @@ public:
    *    TIds *GetCells(vtkIdType ptId)
    */
 
-  //@{
+  ///@{
+  /**
+   * Select all cells with a point degree in the range [minDegree,maxDegree).
+   * The degree is the number of cells using a point. The selection is
+   * indicated through the provided unsigned char array, with a non-zero
+   * value indicates selection. The memory allocated for cellSelection must
+   * be the maximum cell id referenced in the links.
+   */
+  virtual void SelectCells(vtkIdType minMaxDegree[2], unsigned char* cellSelection) = 0;
+  ///@}
+
+  ///@{
   /**
    * Force sequential processing (i.e. single thread) of the link building
    * process. By default, sequential processing is off. Note this flag only
@@ -137,21 +155,60 @@ public:
    * filter always runs in serial mode.) This flag is typically used for
    * benchmarking purposes.
    */
+  VTK_DEPRECATED_IN_9_5_0("No longer used.")
   vtkSetMacro(SequentialProcessing, bool);
+  VTK_DEPRECATED_IN_9_5_0("No longer used.")
   vtkGetMacro(SequentialProcessing, bool);
-  vtkBooleanMacro(SequentialProcessing, bool);
-  //@}
+  VTK_DEPRECATED_IN_9_5_0("No longer used.")
+  virtual void SequentialProcessingOn()
+  {
+    if (!this->SequentialProcessing)
+    {
+      this->SequentialProcessing = true;
+      this->Modified();
+    }
+  }
+  VTK_DEPRECATED_IN_9_5_0("No longer used.")
+  virtual void SequentialProcessingOff()
+  {
+    if (this->SequentialProcessing)
+    {
+      this->SequentialProcessing = false;
+      this->Modified();
+    }
+  }
+  ///@}
 
+  ///@{
+  /**
+   * Return the time of the last data structure build.
+   */
+  vtkGetMacro(BuildTime, vtkMTimeType);
+  ///@}
+
+  ///@{
+  /**
+   * Handle the dataset <-> Links loop.
+   */
+  bool UsesGarbageCollector() const override { return true; }
+  ///@}
 protected:
   vtkAbstractCellLinks();
   ~vtkAbstractCellLinks() override;
 
+  vtkDataSet* DataSet;
+  // VTK_DEPRECATED_IN_9_5_0("No longer used.")
   bool SequentialProcessing; // control whether to thread or not
   int Type;                  // derived classes set this instance variable when constructed
+
+  vtkTimeStamp BuildTime; // time at which links were built
+
+  void ReportReferences(vtkGarbageCollector*) override;
 
 private:
   vtkAbstractCellLinks(const vtkAbstractCellLinks&) = delete;
   void operator=(const vtkAbstractCellLinks&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

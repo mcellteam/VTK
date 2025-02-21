@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkOrderStatistics.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkOrderStatistics
  * @brief   A class for univariate order statistics
@@ -46,6 +30,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkFiltersStatisticsModule.h" // For export macro
 #include "vtkStatisticsAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiBlockDataSet;
 class vtkStringArray;
 class vtkTable;
@@ -68,38 +53,38 @@ public:
     NearestObservation = 2       // Identical to method 3 of R
   };
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of quantiles (with uniform spacing).
    */
   vtkSetMacro(NumberOfIntervals, vtkIdType);
   vtkGetMacro(NumberOfIntervals, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the quantile definition.
    */
   vtkSetMacro(QuantileDefinition, QuantileDefinitionType);
   void SetQuantileDefinition(int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get whether quantization will be allowed to enforce maximum histogram size.
    */
   vtkSetMacro(Quantize, bool);
   vtkGetMacro(Quantize, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the maximum histogram size.
    * This maximum size is enforced only when Quantize is TRUE.
    */
   vtkSetMacro(MaximumHistogramSize, vtkIdType);
   vtkGetMacro(MaximumHistogramSize, vtkIdType);
-  //@}
+  ///@}
 
   /**
    * Get the quantile definition.
@@ -117,11 +102,28 @@ public:
    * Given a collection of models, calculate aggregate model
    * NB: not implemented
    */
-  void Aggregate(vtkDataObjectCollection*, vtkMultiBlockDataSet*) override { return; }
+  void Aggregate(vtkDataObjectCollection*, vtkMultiBlockDataSet*) override {}
+
+  ///@{
+  /**
+   * If there is a ghost array in the input, then ghosts matching `GhostsToSkip` mask
+   * will be skipped. It is set to 0xff by default (every ghosts types are skipped).
+   *
+   * @sa
+   * vtkDataSetAttributes
+   * vtkFieldData
+   * vtkPointData
+   * vtkCellData
+   */
+  vtkSetMacro(GhostsToSkip, unsigned char);
+  vtkGetMacro(GhostsToSkip, unsigned char);
+  ///@}
 
 protected:
   vtkOrderStatistics();
   ~vtkOrderStatistics() override;
+
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   /**
    * Execute the calculations required by the Learn option.
@@ -156,10 +158,13 @@ protected:
   QuantileDefinitionType QuantileDefinition;
   bool Quantize;
   vtkIdType MaximumHistogramSize;
+  vtkIdType NumberOfGhosts;
+  unsigned char GhostsToSkip;
 
 private:
   vtkOrderStatistics(const vtkOrderStatistics&) = delete;
   void operator=(const vtkOrderStatistics&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

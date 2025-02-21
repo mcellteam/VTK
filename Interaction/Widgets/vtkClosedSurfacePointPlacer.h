@@ -1,22 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkClosedSurfacePointPlacer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkClosedSurfacePointPlacer
  * @brief   PointPlacer to constrain validity within a set of convex planes
  *
- * This placer takes a set of boudning planes and constraints the validity
+ * This placer takes a set of bounding planes and constraints the validity
  * within the supplied convex planes. It is used by the
  * ParallelopPipedRepresentation to place constraints on the motion the
  * handles within the parallelopiped.
@@ -31,6 +19,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPointPlacer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPlane;
 class vtkPlaneCollection;
 class vtkPlanes;
@@ -44,15 +33,15 @@ public:
    */
   static vtkClosedSurfacePointPlacer* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkClosedSurfacePointPlacer, vtkPointPlacer);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * A collection of plane equations used to bound the position of the point.
    * This is in addition to confining the point to a plane - these constraints
@@ -67,7 +56,7 @@ public:
   virtual void SetBoundingPlanes(vtkPlaneCollection*);
   vtkGetObjectMacro(BoundingPlanes, vtkPlaneCollection);
   void SetBoundingPlanes(vtkPlanes* planes);
-  //@}
+  ///@}
 
   /**
    * Given a renderer and a display position, compute the
@@ -97,7 +86,7 @@ public:
    * NOTE: Note that a set of bounding planes must be supplied. The Oblique
    * plane, if supplied is ignored.
    */
-  int ComputeWorldPosition(vtkRenderer* ren, double displayPos[2], double refWorldPos[2],
+  int ComputeWorldPosition(vtkRenderer* ren, double displayPos[2], double refWorldPos[3],
     double worldPos[3], double worldOrient[9]) override;
 
   /**
@@ -107,12 +96,12 @@ public:
    */
   int ValidateWorldPosition(double worldPos[3]) override;
 
-  // Descrption:
+  // Description:
   // Orientationation is ignored, and the above method
   // is called instead.
   int ValidateWorldPosition(double worldPos[3], double worldOrient[9]) override;
 
-  // Descrption:
+  // Description:
   // The minimum distance the object should be from the faces of the object.
   // Must be greater than 0. Default is 0.
   vtkSetClampMacro(MinimumDistance, double, 0.0, VTK_DOUBLE_MAX);
@@ -141,4 +130,5 @@ private:
   void operator=(const vtkClosedSurfacePointPlacer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestParticleTracers.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDoubleArray.h"
 #include "vtkImageData.h"
 #include "vtkImageGradient.h"
@@ -62,7 +50,7 @@ int TestFieldNames(int, char*[])
   image0->GetPointData()->AddArray(arr0);
 
   vtkSmartPointer<vtkDoubleArray> arr1 = vtkSmartPointer<vtkDoubleArray>::New();
-  arr1->Allocate(numPts);
+  arr1->SetNumberOfTuples(numPts);
   arr1->SetName("array 1");
   for (vtkIdType idx = 0; idx < numPts; idx++)
   {
@@ -70,10 +58,16 @@ int TestFieldNames(int, char*[])
   }
   image1->GetPointData()->AddArray(arr1);
 
+  vtkNew<vtkIntArray> fieldArray;
+  fieldArray->SetNumberOfTuples(1);
+  fieldArray->SetName("GlobalData");
+  fieldArray->SetValue(0, 3);
+
   vtkNew<vtkMultiBlockDataSet> dataSets;
   dataSets->SetNumberOfBlocks(2);
   dataSets->SetBlock(0, image0);
   dataSets->SetBlock(1, image1);
+  dataSets->GetFieldData()->AddArray(fieldArray);
 
   // create one seed
   vtkNew<vtkPolyData> seeds;
@@ -94,7 +88,8 @@ int TestFieldNames(int, char*[])
   vtkPolyData* trace = vtkPolyData::SafeDownCast(tracer->GetOutputDataObject(0));
   if (trace->GetPointData()->GetArray("array 0") != nullptr ||
     trace->GetPointData()->GetArray("array 1") != nullptr ||
-    trace->GetPointData()->GetArray("RTData") == nullptr || trace->GetNumberOfPoints() == 0)
+    trace->GetPointData()->GetArray("RTData") == nullptr || trace->GetNumberOfPoints() == 0 ||
+    trace->GetFieldData()->GetArray("GlobalData") == nullptr)
   {
     return EXIT_FAILURE;
   }

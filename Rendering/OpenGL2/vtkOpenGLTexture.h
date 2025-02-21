@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLTexture.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLTexture
  * @brief   OpenGL texture map
@@ -25,12 +13,14 @@
 
 #include "vtkRenderingOpenGL2Module.h" // For export macro
 #include "vtkTexture.h"
-#include "vtkWeakPointer.h" // needed for vtkWeakPointer.
+#include "vtkWeakPointer.h"   // needed for vtkWeakPointer.
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderWindow;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkOpenGLTexture : public vtkTexture
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkOpenGLTexture : public vtkTexture
 {
 public:
   static vtkOpenGLTexture* New();
@@ -66,23 +56,25 @@ public:
    */
   void CopyTexImage(int x, int y, int width, int height);
 
-  //@{
+  ///@{
   /**
    * Provide for specifying a format for the texture
    */
   vtkGetMacro(IsDepthTexture, int);
   vtkSetMacro(IsDepthTexture, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * What type of texture map GL_TEXTURE_2D versus GL_TEXTURE_RECTANGLE
    */
   vtkGetMacro(TextureType, int);
   vtkSetMacro(TextureType, int);
-  //@}
+  ///@}
 
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   vtkGetObjectMacro(TextureObject, vtkTextureObject);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   void SetTextureObject(vtkTextureObject*);
 
   /**
@@ -121,4 +113,5 @@ private:
   void operator=(const vtkOpenGLTexture&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

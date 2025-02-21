@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTriQuadraticHexahedron.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Thanks to Soeren Gebbert who developed this class and
 // integrated it into VTK 5.0.
@@ -25,10 +13,12 @@
 #include "vtkObjectFactory.h"
 #include "vtkPoints.h"
 #include "vtkQuadraticEdge.h"
+#include <array>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTriQuadraticHexahedron);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the triquadhex with 27 nodes
 vtkTriQuadraticHexahedron::vtkTriQuadraticHexahedron()
 {
@@ -48,7 +38,7 @@ vtkTriQuadraticHexahedron::vtkTriQuadraticHexahedron()
   this->Scalars->SetNumberOfTuples(8); // vertices of a linear hexahedron
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTriQuadraticHexahedron::~vtkTriQuadraticHexahedron()
 {
   this->Edge->Delete();
@@ -58,7 +48,7 @@ vtkTriQuadraticHexahedron::~vtkTriQuadraticHexahedron()
   this->Scalars->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int LinearHexs[8][8] = {
   { 0, 8, 24, 11, 16, 22, 26, 20 },
   { 8, 1, 9, 24, 22, 17, 21, 26 },
@@ -94,18 +84,18 @@ static constexpr vtkIdType HexEdges[12][3] = {
   { 2, 6, 18 },
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTriQuadraticHexahedron::GetEdgeArray(vtkIdType edgeId)
 {
   return HexEdges[edgeId];
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTriQuadraticHexahedron::GetFaceArray(vtkIdType faceId)
 {
   return HexFaces[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkTriQuadraticHexahedron::GetEdge(int edgeId)
 {
   edgeId = (edgeId < 0 ? 0 : (edgeId > 11 ? 11 : edgeId));
@@ -119,7 +109,7 @@ vtkCell* vtkTriQuadraticHexahedron::GetEdge(int edgeId)
   return this->Edge;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkTriQuadraticHexahedron::GetFace(int faceId)
 {
   faceId = (faceId < 0 ? 0 : (faceId > 5 ? 5 : faceId));
@@ -133,7 +123,7 @@ vtkCell* vtkTriQuadraticHexahedron::GetFace(int faceId)
   return this->Face;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static const double VTK_DIVERGED = 1.e6;
 static const int VTK_HEX_MAX_ITERATION = 10;
 static const double VTK_HEX_CONVERGED = 1.e-03;
@@ -145,7 +135,7 @@ int vtkTriQuadraticHexahedron::EvaluatePosition(const double* x, double* closest
   double params[3];
   double fcol[3], rcol[3], scol[3], tcol[3];
   int i, j;
-  double pt[3];
+  const double* pt;
   double derivs[81];
   double hexweights[8];
 
@@ -156,7 +146,9 @@ int vtkTriQuadraticHexahedron::EvaluatePosition(const double* x, double* closest
   // Use a tri-linear hexahederon to get good starting values
   vtkHexahedron* hex = vtkHexahedron::New();
   for (i = 0; i < 8; i++)
+  {
     hex->GetPoints()->SetPoint(i, this->Points->GetPoint(i));
+  }
 
   hex->EvaluatePosition(x, closestPoint, subId, pcoords, dist2, hexweights);
   hex->Delete();
@@ -165,12 +157,21 @@ int vtkTriQuadraticHexahedron::EvaluatePosition(const double* x, double* closest
   params[1] = pcoords[1];
   params[2] = pcoords[2];
 
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
   //  enter iteration loop
   for (iteration = converged = 0; !converged && (iteration < VTK_HEX_MAX_ITERATION); iteration++)
   {
     //  calculate element interpolation functions and derivatives
-    this->InterpolationFunctions(pcoords, weights);
-    this->InterpolationDerivs(pcoords, derivs);
+    vtkTriQuadraticHexahedron::InterpolationFunctions(pcoords, weights);
+    vtkTriQuadraticHexahedron::InterpolationDerivs(pcoords, derivs);
 
     //  calculate newton functions
     for (i = 0; i < 3; i++)
@@ -179,7 +180,7 @@ int vtkTriQuadraticHexahedron::EvaluatePosition(const double* x, double* closest
     }
     for (i = 0; i < 27; i++)
     {
-      this->Points->GetPoint(i, pt);
+      pt = pts + 3 * i;
       for (j = 0; j < 3; j++)
       {
         fcol[j] += pt[j] * weights[i];
@@ -237,7 +238,7 @@ int vtkTriQuadraticHexahedron::EvaluatePosition(const double* x, double* closest
     return -1;
   }
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkTriQuadraticHexahedron::InterpolationFunctions(pcoords, weights);
 
   if (pcoords[0] >= -0.001 && pcoords[0] <= 1.001 && pcoords[1] >= -0.001 && pcoords[1] <= 1.001 &&
     pcoords[2] >= -0.001 && pcoords[2] <= 1.001)
@@ -278,19 +279,28 @@ int vtkTriQuadraticHexahedron::EvaluatePosition(const double* x, double* closest
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTriQuadraticHexahedron::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
   int i, j;
-  double pt[3];
+  const double* pt;
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkTriQuadraticHexahedron::InterpolationFunctions(pcoords, weights);
+
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
 
   x[0] = x[1] = x[2] = 0.0;
   for (i = 0; i < 27; i++)
   {
-    this->Points->GetPoint(i, pt);
+    pt = pts + 3 * i;
     for (j = 0; j < 3; j++)
     {
       x[j] += pt[j] * weights[i];
@@ -298,13 +308,13 @@ void vtkTriQuadraticHexahedron::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTriQuadraticHexahedron::CellBoundary(int subId, const double pcoords[3], vtkIdList* pts)
 {
   return this->Hex->CellBoundary(subId, pcoords, pts);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTriQuadraticHexahedron::Contour(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* verts, vtkCellArray* lines,
   vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
@@ -324,7 +334,7 @@ void vtkTriQuadraticHexahedron::Contour(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip this triquadratic hex using scalar value provided. Like contouring,
 // except that it cuts the hex to produce tetrahedra.
 void vtkTriQuadraticHexahedron::Clip(double value, vtkDataArray* cellScalars,
@@ -345,7 +355,7 @@ void vtkTriQuadraticHexahedron::Clip(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Line-hex intersection. Intersection has to occur within [0,1] parametric
 // coordinates and with specified tolerance.
 int vtkTriQuadraticHexahedron::IntersectWithLine(
@@ -418,22 +428,39 @@ int vtkTriQuadraticHexahedron::IntersectWithLine(
   return intersection;
 }
 
-//----------------------------------------------------------------------------
-int vtkTriQuadraticHexahedron::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkTriQuadraticHexahedron::TriangulateLocalIds(int index, vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
-
-  ptIds->InsertId(0, this->PointIds->GetId(0));
-  pts->InsertPoint(0, this->Points->GetPoint(0));
-
-  ptIds->InsertId(1, this->PointIds->GetId(1));
-  pts->InsertPoint(1, this->Points->GetPoint(1));
-
+  // Triangulation varies depending upon index See vtkHexahedron::TriangulateLocalIds
+  ptIds->SetNumberOfIds(8 * 20);
+  if ((index % 2))
+  {
+    constexpr std::array<vtkIdType, 20> linearHexPtIds{ 0, 1, 3, 4, 1, 4, 5, 6, 1, 4, 6, 3, 1, 3, 6,
+      2, 3, 6, 7, 4 };
+    for (int linear_hex_i = 0; linear_hex_i < 8; linear_hex_i++)
+    {
+      for (int node_i = 0; node_i < 20; node_i++)
+      {
+        ptIds->SetId(linear_hex_i * 20 + node_i, LinearHexs[linear_hex_i][linearHexPtIds[node_i]]);
+      }
+    }
+  }
+  else
+  {
+    constexpr std::array<vtkIdType, 20> linearHexPtIds{ 2, 1, 5, 0, 0, 2, 3, 7, 2, 5, 6, 7, 0, 7, 4,
+      5, 0, 2, 7, 5 };
+    for (int linear_hex_i = 0; linear_hex_i < 8; linear_hex_i++)
+    {
+      for (int node_i = 0; node_i < 20; node_i++)
+      {
+        ptIds->SetId(linear_hex_i * 20 + node_i, LinearHexs[linear_hex_i][linearHexPtIds[node_i]]);
+      }
+    }
+  }
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given parametric coordinates compute inverse Jacobian transformation
 // matrix. Returns 9 elements of 3x3 inverse Jacobian plus interpolation
 // function derivatives.
@@ -445,7 +472,7 @@ void vtkTriQuadraticHexahedron::JacobianInverse(
   double x[3];
 
   // compute interpolation function derivatives
-  this->InterpolationDerivs(pcoords, derivs);
+  vtkTriQuadraticHexahedron::InterpolationDerivs(pcoords, derivs);
 
   // create Jacobian matrix
   m[0] = m0;
@@ -475,7 +502,7 @@ void vtkTriQuadraticHexahedron::JacobianInverse(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTriQuadraticHexahedron::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
@@ -506,7 +533,7 @@ void vtkTriQuadraticHexahedron::Derivatives(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute interpolation functions for the 27 nodes.
 void vtkTriQuadraticHexahedron::InterpolationFunctions(const double pcoords[3], double weights[27])
 {
@@ -565,7 +592,7 @@ void vtkTriQuadraticHexahedron::InterpolationFunctions(const double pcoords[3], 
   weights[26] = g2r * g2s * g2t;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Derivatives in parametric space.
 void vtkTriQuadraticHexahedron::InterpolationDerivs(const double pcoords[3], double derivs[81])
 {
@@ -687,12 +714,12 @@ void vtkTriQuadraticHexahedron::InterpolationDerivs(const double pcoords[3], dou
   derivs[79] = g2r * g2s * g3t_t;
   derivs[80] = g2r * g2s * g2t_t;
 
-  // we compute derivatives in in [-1; 1] but we need them in [ 0; 1]
+  // we compute derivatives in [-1; 1] but we need them in [ 0; 1]
   for (int i = 0; i < 81; i++)
     derivs[i] *= 2;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkQHexCellPCoords[81] = {
   0.0, 0.0, 0.0, //
   1.0, 0.0, 0.0, //
@@ -728,7 +755,7 @@ double* vtkTriQuadraticHexahedron::GetParametricCoords()
   return vtkQHexCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTriQuadraticHexahedron::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -742,3 +769,4 @@ void vtkTriQuadraticHexahedron::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Scalars:\n";
   this->Scalars->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageResize.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkImageResize.h"
 
@@ -34,10 +22,11 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageResize);
 vtkCxxSetObjectMacro(vtkImageResize, Interpolator, vtkAbstractImageInterpolator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageResize::vtkImageResize()
 {
   this->ResizeMethod = vtkImageResize::OUTPUT_DIMENSIONS;
@@ -81,7 +70,7 @@ vtkImageResize::vtkImageResize()
   this->DesiredBytesPerPiece = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageResize::~vtkImageResize()
 {
   this->SetInterpolator(nullptr);
@@ -91,7 +80,7 @@ vtkImageResize::~vtkImageResize()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkImageResize::GetResizeMethodAsString()
 {
   switch (this->ResizeMethod)
@@ -106,7 +95,7 @@ const char* vtkImageResize::GetResizeMethodAsString()
   return "";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageResize::RequestInformation(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -243,7 +232,7 @@ int vtkImageResize::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageResize::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -333,7 +322,7 @@ int vtkImageResize::RequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Methods used by execute
 
 namespace
@@ -347,7 +336,10 @@ namespace
   }
 
 #define VTK_RESIZE_CONVERT_FLOAT(T)                                                                \
-  void vtkImageResizeConvert(double v, T& u) { u = static_cast<T>(v); }
+  void vtkImageResizeConvert(double v, T& u)                                                       \
+  {                                                                                                \
+    u = static_cast<T>(v);                                                                         \
+  }
 
 VTK_RESIZE_CONVERT_INT_CLAMP(vtkTypeUInt8, 0.0, 255.0);
 VTK_RESIZE_CONVERT_INT_CLAMP(vtkTypeUInt16, 0.0, 65535.0);
@@ -358,7 +350,7 @@ VTK_RESIZE_CONVERT_INT_CLAMP(vtkTypeInt32, -2147483648.0, 2147483647.0);
 VTK_RESIZE_CONVERT_FLOAT(vtkTypeFloat32);
 VTK_RESIZE_CONVERT_FLOAT(vtkTypeFloat64);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply a 1D filter in the X direction.
 // The inPtr parameter must be positioned at the correct slice.
 template <class T>
@@ -405,7 +397,7 @@ void vtkImageResizeFilterX(const T* inPtr, double* outPtr, int ncomp, const int 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply a 1D filter along the Y or Z direction, given kernelSize rows
 // of data as input and producing one row of data as output.  This function
 // must be called for each row of the output to filter a whole slice.
@@ -448,7 +440,7 @@ void vtkImageResizeFilterYOrZ(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply a 2D filter to image slices (either XY or XZ slices).
 // The inPtr parameter must be positioned at the correct slice.
 template <class T, class U>
@@ -548,7 +540,7 @@ void vtkImageResizeFilter2D(const T* inPtr, U* outPtr, const vtkIdType outInc[3]
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply separable blur filter fX, fY, fZ to an image with minimum
 // memory overhead (3 rows of temp storage for 2D, 3 slices for 3D).
 // The aX, aY, and aZ contain increments for the X, Y, and Z
@@ -566,9 +558,18 @@ void vtkImageResizeFilter3D(const T* inPtr, T* outPtr, const vtkIdType outInc[3]
   aY += extent[2] * kernelSizeY;
   aZ += extent[4] * kernelSizeZ;
 
-  fX += extent[0] * kernelSizeX;
-  fY += extent[2] * kernelSizeY;
-  fZ += extent[4] * kernelSizeZ;
+  if (fX)
+  {
+    fX += extent[0] * kernelSizeX;
+  }
+  if (fY)
+  {
+    fY += extent[2] * kernelSizeY;
+  }
+  if (fZ)
+  {
+    fZ += extent[4] * kernelSizeZ;
+  }
 
   if (kernelSizeX == 1 && kernelSizeY == 1 && kernelSizeZ == 1)
   {
@@ -804,7 +805,7 @@ void vtkImageResizeFilter3D(const T* inPtr, T* outPtr, const vtkIdType outInc[3]
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // RequestData is where the interpolator is updated, since it must be updated
 // before the threads are split
 int vtkImageResize::RequestData(
@@ -821,7 +822,7 @@ int vtkImageResize::RequestData(
   return rval;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResize::ThreadedRequestData(vtkInformation*, vtkInformationVector**,
   vtkInformationVector*, vtkImageData***, vtkImageData** outData, int extent[6], int threadId)
 {
@@ -889,7 +890,7 @@ void vtkImageResize::ThreadedRequestData(vtkInformation*, vtkInformationVector**
   interpolator->FreePrecomputedWeights(weights);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResize::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -917,7 +918,7 @@ void vtkImageResize::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Interpolator: " << this->Interpolator << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractImageInterpolator* vtkImageResize::GetInterpolator()
 {
   if (this->Interpolator == nullptr)
@@ -932,7 +933,7 @@ vtkAbstractImageInterpolator* vtkImageResize::GetInterpolator()
   return this->Interpolator;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractImageInterpolator* vtkImageResize::GetInternalInterpolator()
 {
   if (this->Interpolate)
@@ -950,7 +951,7 @@ vtkAbstractImageInterpolator* vtkImageResize::GetInternalInterpolator()
   return this->NNInterpolator;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImageResize::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -964,3 +965,4 @@ vtkMTimeType vtkImageResize::GetMTime()
 
   return mTime;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransformTextureCoords.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTransformTextureCoords
  * @brief   transform (scale, rotate, translate) texture coordinates
@@ -38,6 +26,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersTextureModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSTEXTURE_EXPORT vtkTransformTextureCoords : public vtkDataSetAlgorithm
 {
 public:
@@ -50,34 +39,34 @@ public:
    */
   static vtkTransformTextureCoords* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the position of the texture map. Setting the position translates
    * the texture map by the amount specified.
    */
   vtkSetVector3Macro(Position, double);
   vtkGetVectorMacro(Position, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Incrementally change the position of the texture map (i.e., does a
    * translate or shift of the texture coordinates).
    */
   void AddPosition(double deltaR, double deltaS, double deltaT);
   void AddPosition(double deltaPosition[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale of the texture map. Scaling in performed independently
    * on the r, s and t axes.
    */
   vtkSetVector3Macro(Scale, double);
   vtkGetVectorMacro(Scale, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the origin of the texture map. This is the point about which the
    * texture map is flipped (e.g., rotated). Since a typical texture map ranges
@@ -86,9 +75,9 @@ public:
    */
   vtkSetVector3Macro(Origin, double);
   vtkGetVectorMacro(Origin, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean indicates whether the texture map should be flipped around the
    * s-axis. Note that the flips occur around the texture origin.
@@ -96,9 +85,9 @@ public:
   vtkSetMacro(FlipR, vtkTypeBool);
   vtkGetMacro(FlipR, vtkTypeBool);
   vtkBooleanMacro(FlipR, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean indicates whether the texture map should be flipped around the
    * s-axis. Note that the flips occur around the texture origin.
@@ -106,9 +95,9 @@ public:
   vtkSetMacro(FlipS, vtkTypeBool);
   vtkGetMacro(FlipS, vtkTypeBool);
   vtkBooleanMacro(FlipS, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean indicates whether the texture map should be flipped around the
    * t-axis. Note that the flips occur around the texture origin.
@@ -116,11 +105,11 @@ public:
   vtkSetMacro(FlipT, vtkTypeBool);
   vtkGetMacro(FlipT, vtkTypeBool);
   vtkBooleanMacro(FlipT, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkTransformTextureCoords();
-  ~vtkTransformTextureCoords() override {}
+  ~vtkTransformTextureCoords() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -135,4 +124,5 @@ private:
   void operator=(const vtkTransformTextureCoords&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

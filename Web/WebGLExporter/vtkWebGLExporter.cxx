@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWebGLExporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkWebGLExporter.h"
 
@@ -148,7 +136,7 @@ void vtkWebGLExporter::parseRenderer(
     vtkWidgetRepresentation* trt = vtkWidgetRepresentation::SafeDownCast(prop);
     if (trt != nullptr)
       this->hasWidget = true;
-    if ((onlyWidget == false || trt != nullptr) && prop->GetVisibility())
+    if ((!onlyWidget || trt != nullptr) && prop->GetVisibility())
     {
       vtkPropCollection* allactors = vtkPropCollection::New();
       prop->GetActors(allactors);
@@ -162,7 +150,7 @@ void vtkWebGLExporter::parseRenderer(
       }
       allactors->Delete();
     }
-    if (onlyWidget == false && prop->GetVisibility())
+    if (!onlyWidget && prop->GetVisibility())
     {
       vtkPropCollection* all2dactors = vtkPropCollection::New();
       prop->GetActors2D(all2dactors);
@@ -196,7 +184,6 @@ void vtkWebGLExporter::parseActor2D(
 
     if (actor->GetMapper())
     {
-      std::string name = actor->GetMapper()->GetClassName();
       if (vtkPolyDataMapper2D::SafeDownCast(actor->GetMapper()))
       {
       }
@@ -228,7 +215,7 @@ void vtkWebGLExporter::parseActor2D(
     ss << (vtkMTimeType)actor;
     for (size_t i = 0; i < this->Internal->tempObj.size(); i++)
     {
-      if (this->Internal->tempObj[i]->GetId().compare(ss.str()) == 0)
+      if (this->Internal->tempObj[i]->GetId() == ss.str())
       {
         vtkWebGLObject* obj = this->Internal->tempObj[i];
         this->Internal->tempObj.erase(this->Internal->tempObj.begin() + i);
@@ -278,7 +265,7 @@ void vtkWebGLExporter::parseActor(
       ss << (size_t)actor;
       for (size_t i = 0; i < this->Internal->tempObj.size(); i++)
       {
-        if (this->Internal->tempObj[i]->GetId().compare(ss.str()) == 0)
+        if (this->Internal->tempObj[i]->GetId() == ss.str())
         {
           obj = this->Internal->tempObj[i];
           this->Internal->tempObj.erase(this->Internal->tempObj.begin() + i);
@@ -302,8 +289,7 @@ void vtkWebGLExporter::parseActor(
             vtkWebGLPolyData* newobj = vtkWebGLPolyData::New();
             double ccc[3];
             actor->GetProperty()->GetEdgeColor(&ccc[0]);
-            ((vtkWebGLPolyData*)newobj)
-              ->GetLinesFromPolygon(mapper, actor, this->lineObjMaxSize, ccc);
+            newobj->GetLinesFromPolygon(mapper, actor, this->lineObjMaxSize, ccc);
             newobj->SetId(ss.str() + "1");
             newobj->SetRendererId(static_cast<int>(rendererId));
             this->Internal->Objects.push_back(newobj);
@@ -404,7 +390,7 @@ void vtkWebGLExporter::parseActor(
       ss << (size_t)actor;
       for (size_t i = 0; i < this->Internal->tempObj.size(); i++)
       {
-        if (this->Internal->tempObj[i]->GetId().compare(ss.str()) == 0)
+        if (this->Internal->tempObj[i]->GetId() == ss.str())
         {
           vtkWebGLObject* obj = this->Internal->tempObj[i];
           this->Internal->tempObj.erase(this->Internal->tempObj.begin() + i);
@@ -575,13 +561,14 @@ vtkTriangleFilter* vtkWebGLExporter::GetPolyData(vtkMapper* mapper, vtkMTimeType
     { "id": ,"LookAt": ,"Background1": ,"Background2":
     "Objects": [{"id": ,"md5": ,"parts": },  {"id": ,"md5": ,"parts": }] }
 */
+VTK_ABI_NAMESPACE_BEGIN
 const char* vtkWebGLExporter::GenerateMetadata()
 {
   double max = std::max(this->SceneSize[0], this->SceneSize[1]);
   max = std::max(max, this->SceneSize[2]);
   std::stringstream ss;
 
-  ss << "{\"id\":" << this->SceneId.c_str() << ",";
+  ss << "{\"id\":" << this->SceneId << ",";
   ss << "\"MaxSize\":" << max << ",";
   ss << "\"Center\":[";
   for (int i = 0; i < 2; i++)
@@ -746,8 +733,6 @@ void vtkWebGLExporter::exportStaticScene(
   resultHTML += "} else { done = true; } }";
   resultHTML += "return result; }";
 
-  vtkBase64Utilities* base64 = vtkBase64Utilities::New();
-
   this->parseScene(renderers, "1234567890", VTK_PARSEALL);
   const char* metadata = this->GenerateExportMetadata();
   resultHTML += "var metadata = '" + std::string(metadata) + "';";
@@ -763,7 +748,8 @@ void vtkWebGLExporter::exportStaticScene(
       for (int j = 0; j < obj->GetNumberOfParts(); j++)
       {
         unsigned char* output = new unsigned char[obj->GetBinarySize(j) * 2];
-        size = base64->Encode(obj->GetBinaryData(j), obj->GetBinarySize(j), output, false);
+        size =
+          vtkBase64Utilities::Encode(obj->GetBinaryData(j), obj->GetBinarySize(j), output, false);
         test = std::string((const char*)output, size);
         resultHTML += "'" + test + "',\n";
         delete[] output;
@@ -781,11 +767,9 @@ void vtkWebGLExporter::exportStaticScene(
   file.open(path.c_str());
   file << resultHTML;
   file.close();
-
-  base64->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWebGLExporter::ComputeMD5(const unsigned char* content, int size, std::string& hash)
 {
   unsigned char digest[16];
@@ -801,3 +785,4 @@ void vtkWebGLExporter::ComputeMD5(const unsigned char* content, int size, std::s
 
   hash = md5Hash;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSphereHandleRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSphereHandleRepresentation
  * @brief   A spherical rendition of point in 3D space
@@ -31,6 +19,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkSphereSource.h"             // Needed for delegation to sphere
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSphereSource;
 class vtkProperty;
 class vtkActor;
@@ -45,17 +34,17 @@ public:
    */
   static vtkSphereHandleRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkSphereHandleRepresentation, vtkHandleRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   using vtkHandleRepresentation::Translate;
 
-  //@{
+  ///@{
   /**
    * Set the position of the point in world and display coordinates. Note
    * that if the position is set outside of the bounding box, it will be
@@ -65,9 +54,9 @@ public:
    */
   void SetWorldPosition(double p[3]) override;
   void SetDisplayPosition(double p[3]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If translation mode is on, as the widget is moved the bounding box,
    * shadows, and cursor are all translated simultaneously as the point moves
@@ -79,12 +68,12 @@ public:
   vtkSetMacro(TranslationMode, vtkTypeBool);
   vtkGetMacro(TranslationMode, vtkTypeBool);
   vtkBooleanMacro(TranslationMode, vtkTypeBool);
-  //@}
+  ///@}
 
   void SetSphereRadius(double);
   double GetSphereRadius();
 
-  //@{
+  ///@{
   /**
    * Set/Get the handle properties when unselected and selected.
    */
@@ -92,9 +81,9 @@ public:
   void SetSelectedProperty(vtkProperty*);
   vtkGetObjectMacro(Property, vtkProperty);
   vtkGetObjectMacro(SelectedProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the "hot spot" size; i.e., the region around the focus, in which the
    * motion vector is used to control the constrained sliding action. Note the
@@ -103,7 +92,7 @@ public:
    */
   vtkSetClampMacro(HotSpotSize, double, 0.0, 1.0);
   vtkGetMacro(HotSpotSize, double);
-  //@}
+  ///@}
 
   /**
    * Overload the superclasses SetHandleSize() method to update internal
@@ -111,7 +100,7 @@ public:
    */
   void SetHandleSize(double size) override;
 
-  //@{
+  ///@{
   /**
    * Methods to make this class properly act like a vtkWidgetRepresentation.
    */
@@ -121,9 +110,9 @@ public:
   void WidgetInteraction(double eventPos[2]) override;
   int ComputeInteractionState(int X, int Y, int modify = 0) override;
   void PlaceWidget(double bounds[6]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to make this class behave as a vtkProp.
    */
@@ -134,7 +123,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
   void Highlight(int highlight) override;
 
@@ -195,4 +184,5 @@ private:
   void operator=(const vtkSphereHandleRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

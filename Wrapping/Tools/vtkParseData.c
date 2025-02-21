@@ -1,24 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParseData.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright (c) 2010 David Gobbi.
-
-  Contributed to the VisualizationToolkit by the author in May 2010
-  under the terms of the Visualization Toolkit 2008 copyright.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2010 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParseData.h"
 #include <stdlib.h>
 #include <string.h>
@@ -141,11 +123,15 @@ void vtkParse_InitFunction(FunctionInfo* func)
   func->Template = NULL;
   func->NumberOfParameters = 0;
   func->Parameters = NULL;
+  func->MarshalPropertyName = NULL;
+  func->MarshalExcludeReason = NULL;
   func->ReturnValue = NULL;
   func->NumberOfPreconds = 0;
   func->Preconds = NULL;
   func->Macro = NULL;
   func->SizeHint = NULL;
+  func->DeprecatedReason = NULL;
+  func->DeprecatedVersion = NULL;
   func->IsStatic = 0;
   func->IsVirtual = 0;
   func->IsPureVirtual = 0;
@@ -156,8 +142,9 @@ void vtkParse_InitFunction(FunctionInfo* func)
   func->IsFinal = 0;
   func->IsOverride = 0;
   func->IsExplicit = 0;
-  func->IsLegacy = 0;
   func->IsExcluded = 0;
+  func->IsDeprecated = 0;
+  func->IsMarshalExcluded = 0;
 
 #ifndef VTK_PARSE_LEGACY_REMOVE
   /* everything below here is legacy information, *
@@ -170,6 +157,7 @@ void vtkParse_InitFunction(FunctionInfo* func)
   func->ArrayFailure = 0;
   func->IsPublic = 0;
   func->IsProtected = 0;
+  func->IsLegacy = 0;
 
   for (i = 0; i < MAX_ARGS; i++)
   {
@@ -192,6 +180,9 @@ void vtkParse_CopyFunction(FunctionInfo* func, const FunctionInfo* orig)
   func->Class = orig->Class;
   func->Signature = orig->Signature;
   func->Template = NULL;
+
+  func->MarshalPropertyName = orig->MarshalPropertyName;
+  func->MarshalExcludeReason = orig->MarshalExcludeReason;
 
   if (orig->Template)
   {
@@ -231,6 +222,8 @@ void vtkParse_CopyFunction(FunctionInfo* func, const FunctionInfo* orig)
 
   func->Macro = orig->Macro;
   func->SizeHint = orig->SizeHint;
+  func->DeprecatedReason = orig->DeprecatedReason;
+  func->DeprecatedVersion = orig->DeprecatedVersion;
   func->IsStatic = orig->IsStatic;
   func->IsVirtual = orig->IsVirtual;
   func->IsPureVirtual = orig->IsPureVirtual;
@@ -243,6 +236,8 @@ void vtkParse_CopyFunction(FunctionInfo* func, const FunctionInfo* orig)
   func->IsExplicit = orig->IsExplicit;
   func->IsLegacy = orig->IsLegacy;
   func->IsExcluded = orig->IsExcluded;
+  func->IsDeprecated = orig->IsDeprecated;
+  func->IsMarshalExcluded = orig->IsMarshalExcluded;
 
 #ifndef VTK_PARSE_LEGACY_REMOVE
   /* everything below here is legacy information, *
@@ -306,6 +301,7 @@ void vtkParse_InitValue(ValueInfo* val)
   val->Name = NULL;
   val->Comment = NULL;
   val->Value = NULL;
+  val->Attributes = 0;
   val->Type = 0;
   val->Class = NULL;
   val->Count = 0;
@@ -329,6 +325,7 @@ void vtkParse_CopyValue(ValueInfo* val, const ValueInfo* orig)
   val->Name = orig->Name;
   val->Comment = orig->Comment;
   val->Value = orig->Value;
+  val->Attributes = orig->Attributes;
   val->Type = orig->Type;
   val->Class = orig->Class;
   val->Count = orig->Count;
@@ -399,7 +396,7 @@ void vtkParse_CopyEnum(EnumInfo* item, const EnumInfo* orig)
 /* Free an Enum struct */
 void vtkParse_FreeEnum(EnumInfo* enum_info)
 {
-  free(enum_info);
+  vtkParse_FreeClass(enum_info);
 }
 
 /* Initialize a Using struct */
@@ -432,6 +429,7 @@ void vtkParse_FreeUsing(UsingInfo* using_info)
 void vtkParse_InitClass(ClassInfo* cls)
 {
   cls->ItemType = VTK_CLASS_INFO;
+  cls->MarshalType = VTK_MARSHAL_NONE;
   cls->Access = VTK_ACCESS_PUBLIC;
   cls->Name = NULL;
   cls->Comment = NULL;
@@ -458,10 +456,13 @@ void vtkParse_InitClass(ClassInfo* cls)
   cls->Namespaces = NULL;
   cls->NumberOfComments = 0;
   cls->Comments = NULL;
+  cls->DeprecatedReason = NULL;
+  cls->DeprecatedVersion = NULL;
   cls->IsAbstract = 0;
   cls->IsFinal = 0;
   cls->HasDelete = 0;
   cls->IsExcluded = 0;
+  cls->IsDeprecated = 0;
 }
 
 /* Copy a Class struct */
@@ -469,6 +470,7 @@ void vtkParse_CopyClass(ClassInfo* cls, const ClassInfo* orig)
 {
   int i, n;
 
+  cls->MarshalType = orig->MarshalType;
   cls->ItemType = orig->ItemType;
   cls->Access = orig->Access;
   cls->Name = orig->Name;
@@ -612,10 +614,13 @@ void vtkParse_CopyClass(ClassInfo* cls, const ClassInfo* orig)
     }
   }
 
+  cls->DeprecatedReason = orig->DeprecatedReason;
+  cls->DeprecatedVersion = orig->DeprecatedVersion;
   cls->IsAbstract = orig->IsAbstract;
   cls->IsFinal = orig->IsFinal;
   cls->HasDelete = orig->HasDelete;
   cls->IsExcluded = orig->IsExcluded;
+  cls->IsDeprecated = orig->IsDeprecated;
 }
 
 /* Free a Class struct */

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNIFTIImageWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkNIFTIImageWriter.h"
 #include "vtkCommand.h"
@@ -26,7 +14,9 @@
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkVersion.h"
-#include <vtksys/SystemTools.hxx>
+
+#include "vtksys/Encoding.hxx"
+#include "vtksys/SystemTools.hxx"
 
 #include <sstream>
 
@@ -42,12 +32,30 @@
 #include <cstdio>
 #include <cstring>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkNIFTIImageWriter);
 vtkCxxSetObjectMacro(vtkNIFTIImageWriter, QFormMatrix, vtkMatrix4x4);
 vtkCxxSetObjectMacro(vtkNIFTIImageWriter, SFormMatrix, vtkMatrix4x4);
 vtkCxxSetObjectMacro(vtkNIFTIImageWriter, NIFTIHeader, vtkNIFTIImageHeader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+namespace
+{
+
+// helper function for opening compressed files
+gzFile GZFopen(const char* path, const char* mode)
+{
+#if defined(_WIN32)
+  std::wstring wpath = vtksys::Encoding::ToWide(path);
+  return gzopen_w(wpath.c_str(), mode);
+#else
+  return gzopen(path, mode);
+#endif
+}
+
+}
+
+//------------------------------------------------------------------------------
 vtkNIFTIImageWriter::vtkNIFTIImageWriter()
 {
   this->FileLowerLeft = 1;
@@ -73,7 +81,7 @@ vtkNIFTIImageWriter::vtkNIFTIImageWriter()
   this->PlanarRGB = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNIFTIImageWriter::~vtkNIFTIImageWriter()
 {
   if (this->QFormMatrix)
@@ -95,7 +103,7 @@ vtkNIFTIImageWriter::~vtkNIFTIImageWriter()
   delete[] this->Description;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNIFTIImageHeader* vtkNIFTIImageWriter::GetNIFTIHeader()
 {
   if (!this->NIFTIHeader)
@@ -105,7 +113,7 @@ vtkNIFTIImageHeader* vtkNIFTIImageWriter::GetNIFTIHeader()
   return this->NIFTIHeader;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -162,7 +170,7 @@ void vtkNIFTIImageWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "PlanarRGB: " << (this->PlanarRGB ? "On\n" : "Off\n");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkNIFTIImageWriter::ReplaceExtension(
   const char* filename, const char* ext1, const char* ext2)
 {
@@ -196,7 +204,7 @@ char* vtkNIFTIImageWriter::ReplaceExtension(
   return newname;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 
@@ -260,10 +268,6 @@ void vtkNIFTIImageWriterSetInformation(nifti_2_header* hdr, vtkInformation* info
 #endif
     { VTK_LONG_LONG, NIFTI_TYPE_INT64, 64 },
     { VTK_UNSIGNED_LONG_LONG, NIFTI_TYPE_UINT64, 64 },
-#if !defined(VTK_LEGACY_REMOVE)
-    { VTK___INT64, NIFTI_TYPE_INT64, 64 },
-    { VTK_UNSIGNED___INT64, NIFTI_TYPE_UINT64, 64 },
-#endif
     { VTK_FLOAT, NIFTI_TYPE_FLOAT32, 32 },
     { VTK_DOUBLE, NIFTI_TYPE_FLOAT64, 64 },
     { 0, 0, 0 }
@@ -272,8 +276,8 @@ void vtkNIFTIImageWriterSetInformation(nifti_2_header* hdr, vtkInformation* info
   short datatype = 0;
   short databits = 0;
 
-  // the end of the typemap has been reached when typeMap[2] is 0
-  for (int i = 0; typeMap[2] != nullptr; i++)
+  // the end of the typemap has been reached when typeMap[i][2] is 0
+  for (int i = 0; typeMap[i][2] != 0; i++)
   {
     if (scalarType == typeMap[i][0])
     {
@@ -417,7 +421,7 @@ void vtkNIFTIImageWriterMatrix(double mmat[16], vtkMatrix4x4* matrix, const doub
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNIFTIImageWriter::GenerateHeader(vtkInformation* info, bool singleFile)
 {
   // create the header
@@ -576,7 +580,7 @@ int vtkNIFTIImageWriter::GenerateHeader(vtkInformation* info, bool singleFile)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNIFTIImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -668,7 +672,7 @@ int vtkNIFTIImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
   FILE* ufile = nullptr;
   if (isCompressed)
   {
-    file = gzopen(hdrname, "wb");
+    file = GZFopen(hdrname, "wb");
   }
   else
   {
@@ -731,7 +735,7 @@ int vtkNIFTIImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
     if (isCompressed)
     {
       gzclose(file);
-      file = gzopen(imgname, "wb");
+      file = GZFopen(imgname, "wb");
     }
     else
     {
@@ -939,3 +943,4 @@ int vtkNIFTIImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

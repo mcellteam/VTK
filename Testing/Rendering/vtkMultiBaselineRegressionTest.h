@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkMultiBaselineRegressionTest_h
 #define vtkMultiBaselineRegressionTest_h
 
@@ -18,6 +20,7 @@
  * image (specified with "-V" on the command line) with the given \a img
  * value. The directory portion of the valid image path preceding is untouched.
  */
+VTK_ABI_NAMESPACE_BEGIN
 template <typename T>
 int RegressionTestWithImageName(
   int argc, char* argv[], T* rw, const std::string& img, double thresh = 10.)
@@ -54,11 +57,12 @@ int RegressionTestWithImageName(
   if (testing->IsValidImageSpecified())
   {
     testing->SetRenderWindow(rw);
-    return testing->RegressionTestAndCaptureOutput(thresh, cout);
+    return testing->RegressionTest(thresh, cout);
   }
 
   return vtkTesting::NOT_RUN;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkMultiBaselineRegressionTest.h

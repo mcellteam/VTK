@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositedSynchronizedRenderers.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCompositedSynchronizedRenderers.h"
 
 #include "vtkFloatArray.h"
@@ -22,21 +10,22 @@
 #include "vtkTreeCompositer.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositedSynchronizedRenderers);
 vtkCxxSetObjectMacro(vtkCompositedSynchronizedRenderers, Compositer, vtkCompositer);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositedSynchronizedRenderers::vtkCompositedSynchronizedRenderers()
 {
   this->Compositer = vtkTreeCompositer::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositedSynchronizedRenderers::~vtkCompositedSynchronizedRenderers()
 {
   this->Compositer->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositedSynchronizedRenderers::MasterEndRender()
 {
   vtkRawImage& rawImage = this->CaptureRenderedImage();
@@ -57,7 +46,7 @@ void vtkCompositedSynchronizedRenderers::MasterEndRender()
   resultColor->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositedSynchronizedRenderers::SlaveEndRender()
 {
   vtkRawImage& rawImage = this->CaptureRenderedImage();
@@ -77,7 +66,7 @@ void vtkCompositedSynchronizedRenderers::SlaveEndRender()
   result_depth->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositedSynchronizedRenderers::CaptureRenderedDepthBuffer(vtkFloatArray* depth_buffer)
 {
   double viewport[4];
@@ -102,7 +91,7 @@ void vtkCompositedSynchronizedRenderers::CaptureRenderedDepthBuffer(vtkFloatArra
     static_cast<int>(window_size[1] * viewport[3]) - 1, depth_buffer->GetPointer(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositedSynchronizedRenderers::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -116,3 +105,4 @@ void vtkCompositedSynchronizedRenderers::PrintSelf(ostream& os, vtkIndent indent
     os << "(none)" << endl;
   }
 }
+VTK_ABI_NAMESPACE_END

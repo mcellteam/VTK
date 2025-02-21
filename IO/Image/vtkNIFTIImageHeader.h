@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNIFTIImageHeader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkNIFTIImageHeader
  * @brief   Store NIfTI header information.
@@ -42,6 +30,7 @@
 struct nifti_1_header;
 struct nifti_2_header;
 
+VTK_ABI_NAMESPACE_BEGIN
 //----------------------------------------------------------------------------
 class VTKIOIMAGE_EXPORT vtkNIFTIImageHeader : public vtkObject
 {
@@ -173,13 +162,13 @@ public:
     NIFTI2HeaderSize = 540
   };
 
-  //@{
+  ///@{
   /**
    * Static method for construction.
    */
   static vtkNIFTIImageHeader* New();
   vtkTypeMacro(vtkNIFTIImageHeader, vtkObject);
-  //@}
+  ///@}
 
   /**
    * Print information about this object.
@@ -219,14 +208,14 @@ public:
    */
   double GetPixDim(int i) { return (i < 0 || i > 7 ? 0.0 : this->PixDim[i]); }
 
-  //@{
+  ///@{
   /**
    * Get the NIFTI intent code.  This is an enumerated value in the NIFTI
    * header that states what the data is intended to be used for.
    */
   vtkSetMacro(IntentCode, int);
   int GetIntentCode() { return this->IntentCode; }
-  //@}
+  ///@}
 
   /**
    * Get the intent name.  This should match the intent code.
@@ -234,7 +223,7 @@ public:
   void SetIntentName(const char* name);
   const char* GetIntentName() { return this->IntentName; }
 
-  //@{
+  ///@{
   /**
    * Get one of the NIFTI intent parameters.  The definition of these
    * parameters varies according to the IntentCode.
@@ -245,9 +234,9 @@ public:
   double GetIntentP2() { return this->IntentP2; }
   vtkSetMacro(IntentP3, double);
   double GetIntentP3() { return this->IntentP3; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the scale and slope to apply to the data in order to get
    * the real-valued data values.
@@ -256,9 +245,9 @@ public:
   double GetSclSlope() { return this->SclSlope; }
   vtkSetMacro(SclInter, double);
   double GetSclInter() { return this->SclInter; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the calibrated range of the data, i.e. the values stored in the
    * cal_min and cal_max fields in the header.
@@ -267,9 +256,9 @@ public:
   double GetCalMin() { return this->CalMin; }
   vtkSetMacro(CalMax, double);
   double GetCalMax() { return this->CalMax; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the slice_duration and toffset from the header.
    */
@@ -277,9 +266,9 @@ public:
   double GetSliceDuration() { return this->SliceDuration; }
   vtkSetMacro(TOffset, double);
   double GetTOffset() { return this->TOffset; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the slice range for the data.
    */
@@ -287,25 +276,25 @@ public:
   vtkTypeInt64 GetSliceStart() { return this->SliceStart; }
   vtkSetMacro(SliceEnd, vtkTypeInt64);
   vtkTypeInt64 GetSliceEnd() { return this->SliceEnd; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the slice code for the data.
    */
   vtkSetMacro(SliceCode, int);
   int GetSliceCode() { return this->SliceCode; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get a bitfield that describes the units for the first 4 dims.
    */
   vtkSetMacro(XYZTUnits, int);
   int GetXYZTUnits() { return this->XYZTUnits; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get a bitfield with extra information about the dimensions, it
    * states which dimensions are the phase encode, frequency encode,
@@ -313,7 +302,7 @@ public:
    */
   vtkSetMacro(DimInfo, int);
   int GetDimInfo() { return this->DimInfo; }
-  //@}
+  ///@}
 
   /**
    * Get a null-terminated file descriptor, this usually gives the
@@ -331,10 +320,10 @@ public:
    * 24 characters, and it will be assumed to be in the same directory
    * as the NIFTI file.
    */
-  void SetAuxFile(const char* auxfile);
-  const char* GetAuxFile() { return this->AuxFile; }
+  void SetAuxFile(VTK_FILEPATH const char* auxfile);
+  VTK_FILEPATH const char* GetAuxFile() { return this->AuxFile; }
 
-  //@{
+  ///@{
   /**
    * Get the QForm or SForm code.
    */
@@ -342,9 +331,9 @@ public:
   int GetQFormCode() { return this->QFormCode; }
   vtkSetMacro(SFormCode, int);
   int GetSFormCode() { return this->SFormCode; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get information about the quaternion transformation.  Note that
    * the vtkNIFTIImageWriter ignores this part of the header if a quaternion
@@ -362,9 +351,9 @@ public:
   double GetQOffsetY() { return this->QOffsetY; }
   vtkSetMacro(QOffsetZ, double);
   double GetQOffsetZ() { return this->QOffsetZ; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get information about the matrix transformation.  Note that
    * the vtkNIFTIImageWriter ignores this part of the header if a matrix
@@ -376,7 +365,7 @@ public:
   vtkGetVector4Macro(SRowY, double);
   vtkSetVector4Macro(SRowZ, double);
   vtkGetVector4Macro(SRowZ, double);
-  //@}
+  ///@}
 
   /**
    * Initialize the header to default values.
@@ -388,7 +377,7 @@ public:
    */
   void DeepCopy(vtkNIFTIImageHeader* o);
 
-  //@{
+  ///@{
   /**
    * Set the values from an existing nifti struct, or store
    * the values in an existing nifti struct.
@@ -397,7 +386,7 @@ public:
   void GetHeader(nifti_1_header* hdr);
   void SetHeader(const nifti_2_header* hdr);
   void GetHeader(nifti_2_header* hdr);
-  //@}
+  ///@}
 
 protected:
   vtkNIFTIImageHeader();
@@ -446,4 +435,5 @@ private:
   void operator=(const vtkNIFTIImageHeader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkNIFTIImageHeader_h

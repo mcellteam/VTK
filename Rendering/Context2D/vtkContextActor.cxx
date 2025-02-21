@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContextActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkContextActor.h"
 
 #include "vtkContext2D.h"
@@ -26,6 +14,7 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 // vtkViewportSpecification is a helper class that makes it easier to do some
@@ -111,7 +100,7 @@ vtkViewportSpecification<int> convert(
 
 vtkObjectFactoryNewMacro(vtkContextActor);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkContextActor::vtkContextActor()
   : ForceDevice(nullptr)
 {
@@ -121,7 +110,7 @@ vtkContextActor::vtkContextActor()
   this->Context->SetContext3D(this->Context3D);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkContextActor::~vtkContextActor()
 {
   if (this->Context)
@@ -134,19 +123,19 @@ vtkContextActor::~vtkContextActor()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkContextScene* vtkContextActor::GetScene()
 {
   return this->Scene;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextActor::SetScene(vtkContextScene* scene)
 {
   this->Scene = scene;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextActor::SetForceDevice(vtkContextDevice2D* dev)
 {
   if (this->ForceDevice != dev)
@@ -170,10 +159,10 @@ void vtkContextActor::SetForceDevice(vtkContextDevice2D* dev)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextActor::ReleaseGraphicsResources(vtkWindow*) {}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Renders an actor2D's property and then it's mapper.
 int vtkContextActor::RenderOverlay(vtkViewport* viewport)
 {
@@ -221,7 +210,9 @@ int vtkContextActor::RenderOverlay(vtkViewport* viewport)
   }
 
   // Pass the viewport details onto the context device.
-  int size[2];
+  int origin[2], size[2];
+  origin[0] = view_viewport_pixels.x();
+  origin[1] = view_viewport_pixels.y();
   size[0] = view_viewport_pixels.width();
   size[1] = view_viewport_pixels.height();
   vtkRecti viewportRect(actual_viewport_pixels.x() - view_viewport_pixels.x(),
@@ -234,6 +225,7 @@ int vtkContextActor::RenderOverlay(vtkViewport* viewport)
   // First initialize the drawing device.
 
   this->Context->GetDevice()->Begin(viewport);
+  this->Scene->SetOrigin(origin);
   this->Scene->SetGeometry(size);
   this->Scene->Paint(this->Context);
   this->Context->GetDevice()->End();
@@ -241,13 +233,13 @@ int vtkContextActor::RenderOverlay(vtkViewport* viewport)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextActor::Initialize(vtkViewport*)
 {
   // Initialization deferred to the derived actor classes.
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -257,4 +249,10 @@ void vtkContextActor::PrintSelf(ostream& os, vtkIndent indent)
   {
     this->Context->PrintSelf(os, indent.GetNextIndent());
   }
+  os << indent << "Scene: " << this->Scene << "\n";
+  if (this->Scene)
+  {
+    this->Scene->PrintSelf(os, indent.GetNextIndent());
+  }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataArrayValueRange_Generic.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * Generic implementation of value ranges and iterators, suitable for
  * vtkDataArray and all subclasses.
@@ -29,26 +17,24 @@
 #include <tuple>
 #include <type_traits>
 
-#ifndef __VTK_WRAP__
-
 VTK_ITER_OPTIMIZE_START
 
 namespace vtk
 {
-
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 // Forward decs for friends/args
-template <typename ArrayType, ComponentIdType>
+template <typename ArrayType, ComponentIdType, typename ForceValueTypeForVtkDataArray>
 struct ValueReference;
-template <typename ArrayType, ComponentIdType>
+template <typename ArrayType, ComponentIdType, typename ForceValueTypeForVtkDataArray>
 struct ConstValueReference;
-template <typename ArrayType, ComponentIdType>
+template <typename ArrayType, ComponentIdType, typename ForceValueTypeForVtkDataArray>
 struct ValueIterator;
-template <typename ArrayType, ComponentIdType>
+template <typename ArrayType, ComponentIdType, typename ForceValueTypeForVtkDataArray>
 struct ConstValueIterator;
-template <typename ArrayType, ComponentIdType>
+template <typename ArrayType, ComponentIdType, typename ForceValueTypeForVtkDataArray>
 struct ValueRange;
 
 //------------------------------------------------------------------------------
@@ -83,7 +69,7 @@ struct IdStorage
 
   VTK_ITER_INLINE
   IdStorage(TupleIdType tupleId, ComponentIdType comp, NumCompsType numComps) noexcept
-    : ValueId(tupleId* numComps.value + comp)
+    : ValueId(tupleId * numComps.value + comp)
     , TupleId(tupleId)
     , ComponentId(comp)
     , NumComps(numComps)
@@ -231,7 +217,7 @@ private:
 
 //------------------------------------------------------------------------------
 // Value reference
-template <typename ArrayType, ComponentIdType TupleSize>
+template <typename ArrayType, ComponentIdType TupleSize, typename ForceValueTypeForVtkDataArray>
 struct ConstValueReference
 {
 private:
@@ -239,9 +225,11 @@ private:
   static_assert(IsVtkDataArray<ArrayType>::value, "Invalid array type.");
 
   using IdStorageType = IdStorage<TupleSize>;
-  using APIType = GetAPIType<ArrayType>;
+  using APIType = GetAPIType<ArrayType, ForceValueTypeForVtkDataArray>;
 
 public:
+  using value_type = APIType;
+
   VTK_ITER_INLINE
   ConstValueReference() noexcept
     : Array{ nullptr }
@@ -258,7 +246,7 @@ public:
   }
 
   VTK_ITER_INLINE
-  ConstValueReference(const ValueReference<ArrayType, TupleSize>& o)
+  ConstValueReference(const ValueReference<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>& o)
     : Array{ o.Array }
     , Id{ o.Id }
   {
@@ -290,30 +278,41 @@ public:
     return *this;
   }
 
-  VTK_ITER_INLINE
-  operator APIType() const noexcept
+  VTK_ITER_INLINE operator APIType() const noexcept { return this->castOperator(); }
+
+protected:
+  template <typename AT = ArrayType>
+  typename std::enable_if<std::is_same<AT, vtkDataArray>::value, APIType>::type VTK_ITER_INLINE
+  castOperator() const noexcept
   {
     VTK_ITER_ASSUME(this->Id.GetTupleSize() > 0);
     VTK_ITER_ASSUME(this->Array->GetNumberOfComponents() == this->Id.GetTupleSize());
-    vtkDataArrayAccessor<ArrayType> acc{ this->Array };
-    return acc.Get(this->Id.GetTupleId(), this->Id.GetComponentId());
+    return this->Array->GetComponent(this->Id.GetTupleId(), this->Id.GetComponentId());
   }
 
-protected:
+  template <typename AT = ArrayType>
+  typename std::enable_if<!std::is_same<AT, vtkDataArray>::value, APIType>::type VTK_ITER_INLINE
+  castOperator() const noexcept
+  {
+    VTK_ITER_ASSUME(this->Id.GetTupleSize() > 0);
+    VTK_ITER_ASSUME(this->Array->GetNumberOfComponents() == this->Id.GetTupleSize());
+    return this->Array->GetTypedComponent(this->Id.GetTupleId(), this->Id.GetComponentId());
+  }
+
   mutable ArrayType* Array;
   IdStorageType Id;
 };
 
 //------------------------------------------------------------------------------
 // Value reference
-template <typename ArrayType, ComponentIdType TupleSize>
+template <typename ArrayType, ComponentIdType TupleSize, typename ForceValueTypeForVtkDataArray>
 struct ValueReference
 {
 private:
   static_assert(IsValidTupleSize<TupleSize>::value, "Invalid tuple size.");
   static_assert(IsVtkDataArray<ArrayType>::value, "Invalid array type.");
 
-  using APIType = GetAPIType<ArrayType>;
+  using APIType = GetAPIType<ArrayType, ForceValueTypeForVtkDataArray>;
   using IdStorageType = IdStorage<TupleSize>;
 
 public:
@@ -370,28 +369,34 @@ public:
   }
 
   template <typename OArray, ComponentIdType OSize>
-  VTK_ITER_INLINE ValueReference operator=(const ValueReference<OArray, OSize>& o) noexcept
+  VTK_ITER_INLINE ValueReference operator=(
+    const ValueReference<OArray, OSize, ForceValueTypeForVtkDataArray>& o) noexcept
   { // Always copy the value for different reference types:
     const APIType tmp = o;
     return *this = std::move(tmp);
   }
 
-  VTK_ITER_INLINE
-  operator APIType() const noexcept
+  VTK_ITER_INLINE operator APIType() const noexcept { return this->castOperator(); }
+
+  template <typename AT = ArrayType>
+  typename std::enable_if<std::is_same<AT, vtkDataArray>::value, ValueReference>::type
+    VTK_ITER_INLINE
+    operator=(APIType val) noexcept
   {
     VTK_ITER_ASSUME(this->Id.GetTupleSize() > 0);
     VTK_ITER_ASSUME(this->Array->GetNumberOfComponents() == this->Id.GetTupleSize());
-    vtkDataArrayAccessor<ArrayType> acc{ this->Array };
-    return acc.Get(this->Id.GetTupleId(), this->Id.GetComponentId());
+    this->Array->SetComponent(this->Id.GetTupleId(), this->Id.GetComponentId(), val);
+    return *this;
   }
 
-  VTK_ITER_INLINE
-  ValueReference operator=(APIType val) noexcept
+  template <typename AT = ArrayType>
+  typename std::enable_if<!std::is_same<AT, vtkDataArray>::value, ValueReference>::type
+    VTK_ITER_INLINE
+    operator=(APIType val) noexcept
   {
     VTK_ITER_ASSUME(this->Id.GetTupleSize() > 0);
     VTK_ITER_ASSUME(this->Array->GetNumberOfComponents() == this->Id.GetTupleSize());
-    vtkDataArrayAccessor<ArrayType> acc{ this->Array };
-    acc.Set(this->Id.GetTupleId(), this->Id.GetComponentId(), val);
+    this->Array->SetTypedComponent(this->Id.GetTupleId(), this->Id.GetComponentId(), val);
     return *this;
   }
 
@@ -403,9 +408,11 @@ public:
   }
 
   template <typename OArray, ComponentIdType OSize>
-  friend VTK_ITER_INLINE void swap(ValueReference lhs, ValueReference<OArray, OSize> rhs) noexcept
+  friend VTK_ITER_INLINE void swap(
+    ValueReference lhs, ValueReference<OArray, OSize, ForceValueTypeForVtkDataArray> rhs) noexcept
   { // Swap values, not references:
-    using OAPIType = typename ValueReference<OArray, OSize>::value_type;
+    using OAPIType =
+      typename ValueReference<OArray, OSize, ForceValueTypeForVtkDataArray>::value_type;
     static_assert(
       std::is_same<APIType, OAPIType>::value, "Cannot swap components with different types.");
 
@@ -467,8 +474,8 @@ public:
     lhs = newVal;                                                                                  \
     return lhs;                                                                                    \
   }                                                                                                \
-  friend VTK_ITER_INLINE ValueReference operator Op(ValueReference lhs, ValueReference val)        \
-    noexcept                                                                                       \
+  friend VTK_ITER_INLINE ValueReference operator Op(                                               \
+    ValueReference lhs, ValueReference val) noexcept                                               \
   {                                                                                                \
     const APIType newVal = lhs ImplOp val;                                                         \
     lhs = newVal;                                                                                  \
@@ -488,10 +495,28 @@ public:
 
 #undef VTK_REF_OP_OVERLOADS
 
-  friend struct ConstValueReference<ArrayType, TupleSize>;
-  friend struct ValueIterator<ArrayType, TupleSize>;
+  friend struct ConstValueReference<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
+  friend struct ValueIterator<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
 
 protected:
+  template <typename AT = ArrayType>
+  typename std::enable_if<std::is_same<AT, vtkDataArray>::value, APIType>::type VTK_ITER_INLINE
+  castOperator() const noexcept
+  {
+    VTK_ITER_ASSUME(this->Id.GetTupleSize() > 0);
+    VTK_ITER_ASSUME(this->Array->GetNumberOfComponents() == this->Id.GetTupleSize());
+    return this->Array->GetComponent(this->Id.GetTupleId(), this->Id.GetComponentId());
+  }
+
+  template <typename AT = ArrayType>
+  typename std::enable_if<!std::is_same<AT, vtkDataArray>::value, APIType>::type VTK_ITER_INLINE
+  castOperator() const noexcept
+  {
+    VTK_ITER_ASSUME(this->Id.GetTupleSize() > 0);
+    VTK_ITER_ASSUME(this->Array->GetNumberOfComponents() == this->Id.GetTupleSize());
+    return this->Array->GetTypedComponent(this->Id.GetTupleId(), this->Id.GetComponentId());
+  }
+
   void CopyReference(const ValueReference& o) noexcept
   {
     this->Array = o.Array;
@@ -504,27 +529,22 @@ protected:
 
 //------------------------------------------------------------------------------
 // Const value iterator
-template <typename ArrayType, ComponentIdType TupleSize>
+template <typename ArrayType, ComponentIdType TupleSize, typename ForceValueTypeForVtkDataArray>
 struct ConstValueIterator
-  : public std::iterator<std::random_access_iterator_tag, GetAPIType<ArrayType>, ValueIdType,
-      // expected types don't have members, no op->().
-      void, ConstValueReference<ArrayType, TupleSize> >
 {
 private:
   static_assert(IsValidTupleSize<TupleSize>::value, "Invalid tuple size.");
   static_assert(IsVtkDataArray<ArrayType>::value, "Invalid array type.");
 
-  using APIType = GetAPIType<ArrayType>;
+  using APIType = GetAPIType<ArrayType, ForceValueTypeForVtkDataArray>;
   using IdStorageType = IdStorage<TupleSize>;
-  using Superclass = std::iterator<std::random_access_iterator_tag, APIType, ValueIdType, void,
-    ConstValueReference<ArrayType, TupleSize> >;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = APIType;
+  using difference_type = ValueIdType;
+  using pointer = void;
+  using reference = ConstValueReference<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
 
   VTK_ITER_INLINE
   ConstValueIterator() noexcept
@@ -542,7 +562,8 @@ public:
   }
 
   VTK_ITER_INLINE
-  ConstValueIterator(const ValueIterator<ArrayType, TupleSize>& o) noexcept
+  ConstValueIterator(
+    const ValueIterator<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>& o) noexcept
     : Array{ o.GetArray() }
     , Id{ o.GetId() }
   {
@@ -670,32 +691,29 @@ private:
 
 //------------------------------------------------------------------------------
 // Component iterator
-template <typename ArrayType, ComponentIdType TupleSize>
+template <typename ArrayType, ComponentIdType TupleSize, typename ForceValueTypeForVtkDataArray>
 struct ValueIterator
-  : public std::iterator<std::random_access_iterator_tag, vtk::GetAPIType<ArrayType>, ValueIdType,
-      ValueReference<ArrayType, TupleSize>, ValueReference<ArrayType, TupleSize> >
 {
 private:
   static_assert(IsValidTupleSize<TupleSize>::value, "Invalid tuple size.");
   static_assert(IsVtkDataArray<ArrayType>::value, "Invalid array type.");
 
-  using APIType = GetAPIType<ArrayType>;
+  using APIType = GetAPIType<ArrayType, ForceValueTypeForVtkDataArray>;
   using IdStorageType = IdStorage<TupleSize>;
-  using Superclass = std::iterator<std::random_access_iterator_tag, GetAPIType<ArrayType>,
-    ValueIdType, ValueReference<ArrayType, TupleSize>, ValueReference<ArrayType, TupleSize> >;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = GetAPIType<ArrayType, ForceValueTypeForVtkDataArray>;
+  using difference_type = ValueIdType;
+  using pointer = ValueReference<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
+  using reference = ValueReference<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
 
   VTK_ITER_INLINE
   ValueIterator() noexcept = default;
 
   VTK_ITER_INLINE
-  ValueIterator(ArrayType* array, IdStorageType id) noexcept : Ref{ array, id }
+  ValueIterator(ArrayType* array, IdStorageType id) noexcept
+    : Ref{ array, id }
   {
     this->DebugIdAsserts();
   }
@@ -756,8 +774,8 @@ public:
   const pointer& operator->() const noexcept { return this->Ref; }
 
 #define VTK_TMP_MAKE_OPERATOR(OP)                                                                  \
-  friend VTK_ITER_INLINE bool operator OP(const ValueIterator& lhs, const ValueIterator& rhs)      \
-    noexcept                                                                                       \
+  friend VTK_ITER_INLINE bool operator OP(                                                         \
+    const ValueIterator& lhs, const ValueIterator& rhs) noexcept                                   \
   {                                                                                                \
     VTK_ITER_ASSERT(                                                                               \
       lhs.GetArray() == rhs.GetArray(), "Mismatched arrays in iterator comparison.");              \
@@ -825,7 +843,7 @@ public:
     swap(lhs.GetId(), rhs.GetId());
   }
 
-  friend struct ConstValueIterator<ArrayType, TupleSize>;
+  friend struct ConstValueIterator<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
 
 protected:
   VTK_ITER_INLINE
@@ -837,12 +855,12 @@ protected:
   IdStorageType& GetId() noexcept { return this->Ref.Id; }
   const IdStorageType& GetId() const noexcept { return this->Ref.Id; }
 
-  ValueReference<ArrayType, TupleSize> Ref;
+  ValueReference<ArrayType, TupleSize, ForceValueTypeForVtkDataArray> Ref;
 };
 
 //------------------------------------------------------------------------------
 // ValueRange
-template <typename ArrayTypeT, ComponentIdType TupleSize>
+template <typename ArrayTypeT, ComponentIdType TupleSize, typename ForceValueTypeForVtkDataArray>
 struct ValueRange
 {
 private:
@@ -854,12 +872,13 @@ private:
 
 public:
   using ArrayType = ArrayTypeT;
-  using ValueType = GetAPIType<ArrayTypeT>;
+  using ValueType = GetAPIType<ArrayType, ForceValueTypeForVtkDataArray>;
 
-  using IteratorType = ValueIterator<ArrayType, TupleSize>;
-  using ConstIteratorType = ConstValueIterator<ArrayType, TupleSize>;
-  using ReferenceType = ValueReference<ArrayType, TupleSize>;
-  using ConstReferenceType = ConstValueReference<ArrayType, TupleSize>;
+  using IteratorType = ValueIterator<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
+  using ConstIteratorType = ConstValueIterator<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
+  using ReferenceType = ValueReference<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
+  using ConstReferenceType =
+    ConstValueReference<ArrayType, TupleSize, ForceValueTypeForVtkDataArray>;
 
   // May be DynamicTupleSize, or the actual tuple size.
   constexpr static ComponentIdType TupleSizeTag = TupleSize;
@@ -940,6 +959,24 @@ public:
     return const_reference{ this->Array, this->BeginValue + i };
   }
 
+  ///@{
+  /**
+   * @warning Just be sure you know the repercussions of using `data()`. Only use
+   *  when absolutely necessary.  If the value_type is not the real underlying
+   *  type of the vtkDataArray, this method returns invalid values in some cases.
+   *  Ex: the elements are completely different when an array of 32-bit floats is reinterpreted as
+   * an array of unsigned 8-bit integer,
+   */
+  value_type* data() noexcept
+  {
+    return reinterpret_cast<value_type*>(this->Array->GetVoidPointer(0));
+  }
+  value_type* data() const noexcept
+  {
+    return reinterpret_cast<value_type*>(this->Array->GetVoidPointer(0));
+  }
+  ///@}
+
 private:
   VTK_ITER_INLINE
   iterator NewIterator(IdStorageType id) const noexcept { return iterator{ this->Array, id }; }
@@ -957,15 +994,16 @@ private:
 };
 
 // Unimplemented, only used inside decltype in SelectValueRange:
-template <typename ArrayType, ComponentIdType TupleSize>
-ValueRange<ArrayType, TupleSize> DeclareValueRangeSpecialization(vtkDataArray*);
+template <typename ArrayType, ComponentIdType TupleSize, typename ForceValueTypeForVtkDataArray>
+ValueRange<ArrayType, TupleSize, ForceValueTypeForVtkDataArray> DeclareValueRangeSpecialization(
+  vtkDataArray*);
 
+VTK_ABI_NAMESPACE_END
 } // end namespace detail
 } // end namespace vtk
 
 VTK_ITER_OPTIMIZE_END
 
-#endif // __VTK_WRAP__
 #endif // vtkDataArrayValueRange_Generic_h
 
 // VTK-HeaderTest-Exclude: vtkDataArrayValueRange_Generic.h

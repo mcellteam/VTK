@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEnsembleSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkEnsembleSource.h"
 
 #include "vtkDataObject.h"
@@ -27,6 +15,7 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkEnsembleSource);
 vtkCxxSetObjectMacro(vtkEnsembleSource, MetaData, vtkTable);
 
@@ -48,7 +37,7 @@ vtkInformationKeySubclassMacro(
 
 struct vtkEnsembleSourceInternal
 {
-  std::vector<vtkSmartPointer<vtkAlgorithm> > Algorithms;
+  std::vector<vtkSmartPointer<vtkAlgorithm>> Algorithms;
 };
 
 vtkEnsembleSource::vtkEnsembleSource()
@@ -103,9 +92,9 @@ vtkTypeBool vtkEnsembleSource::ProcessRequest(
       // data structures there. Note that this has to be done here
       // because current reader can be changed with a pipeline request
       // which does not cause REQUEST_INFORMATION to happen again.
-      std::vector<vtkSmartPointer<vtkAlgorithm> >::iterator iter =
+      std::vector<vtkSmartPointer<vtkAlgorithm>>::iterator iter =
         this->Internal->Algorithms.begin();
-      std::vector<vtkSmartPointer<vtkAlgorithm> >::iterator end = this->Internal->Algorithms.end();
+      std::vector<vtkSmartPointer<vtkAlgorithm>>::iterator end = this->Internal->Algorithms.end();
       for (; iter != end; ++iter)
       {
         int retVal = (*iter)->ProcessRequest(request, inputVector, outputVector);
@@ -124,7 +113,7 @@ vtkTypeBool vtkEnsembleSource::ProcessRequest(
 
 void vtkEnsembleSource::AddMember(vtkAlgorithm* alg)
 {
-  this->Internal->Algorithms.push_back(alg);
+  this->Internal->Algorithms.emplace_back(alg);
 }
 
 void vtkEnsembleSource::RemoveAllMembers()
@@ -176,3 +165,4 @@ void vtkEnsembleSource::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "(nullptr)" << endl;
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPStreamAMR.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "TestVectorFieldSource.h"
 #include "vtkAMRBox.h"
 #include "vtkAMREnzoReader.h"
@@ -22,7 +10,6 @@
 #include "vtkIdList.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkInterpolatedVelocityField.h"
 #include "vtkMPIController.h"
 #include "vtkMath.h"
 #include "vtkNew.h"
@@ -69,7 +56,7 @@ public:
 
   static TestAMRVectorSource* New();
 
-  virtual int FillInputPortInformation(int, vtkInformation* info) override
+  int FillInputPortInformation(int, vtkInformation* info) override
   {
     // now add our info
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkOverlappingAMR");
@@ -89,7 +76,7 @@ protected:
   // Description:
   // This is called by the superclass.
   // This is the method you should override.
-  virtual int RequestData(vtkInformation*, vtkInformationVector** inputVector,
+  int RequestData(vtkInformation*, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override
   {
     vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
@@ -107,13 +94,13 @@ protected:
       return 0;
     }
 
-    output->ShallowCopy(input);
+    output->DeepCopy(input);
 
-    for (unsigned int level = 0; level < input->GetNumberOfLevels(); ++level)
+    for (unsigned int level = 0; level < output->GetNumberOfLevels(); ++level)
     {
-      for (unsigned int idx = 0; idx < input->GetNumberOfDataSets(level); ++idx)
+      for (unsigned int idx = 0; idx < output->GetNumberOfDataSets(level); ++idx)
       {
-        vtkUniformGrid* grid = input->GetDataSet(level, idx);
+        vtkUniformGrid* grid = output->GetDataSet(level, idx);
         if (!grid)
         {
           continue;
@@ -155,8 +142,9 @@ int TestPStreamAMR(int argc, char* argv[])
   int Rank = c->GetLocalProcessId();
   if (numProcs != 4)
   {
-    cerr << "Cannot Create four MPI Processes. Success is only norminal";
-    return EXIT_SUCCESS;
+    std::cerr << "Test requires 4 processes." << std::endl;
+    c->Finalize();
+    return EXIT_FAILURE;
   }
 
   char* fname =
@@ -174,6 +162,8 @@ int TestPStreamAMR(int argc, char* argv[])
   imageSource->SetCellArrayStatus("x-velocity", 1);
   imageSource->SetCellArrayStatus("y-velocity", 1);
   imageSource->SetCellArrayStatus("z-velocity", 1);
+
+  delete[] fname;
 
   vtkNew<TestAMRVectorSource> gradientSource;
   gradientSource->SetInputConnection(imageSource->GetOutputPort());

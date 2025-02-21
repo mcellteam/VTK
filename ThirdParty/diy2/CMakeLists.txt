@@ -1,17 +1,26 @@
 vtk_module_third_party_internal(
   HEADER_ONLY
-  LICENSE_FILES "vtkdiy2/LICENSE.txt"
-                "vtkdiy2/LEGAL.txt"
-  VERSION       "3.5.0")
+  LICENSE_FILES
+    "vtkdiy2/LICENSE.txt"
+    "vtkdiy2/LEGAL.txt"
+  SPDX_LICENSE_IDENTIFIER
+    "BSD-3-Clause"
+  SPDX_COPYRIGHT_TEXT
+    "Copyright (c) 2015, The Regents of the University of California, through Lawrence Berkeley National Laboratory (subject to receipt of any required approvals from the U.S. Dept. of Energy)"
+  SPDX_DOWNLOAD_LOCATION
+    "git+https://gitlab.kitware.com/third-party/diy2.git@for/vtk-20250128-3.6.0-1"
+  VERSION
+    "3.6.0"
+)
 
 if (TARGET VTK::mpi)
   vtk_module_link(VTK::diy2
     INTERFACE
       VTK::mpi)
 
-  set(DIY_NO_MPI FALSE)
+  vtk_module_definitions(VTK::diy2 INTERFACE DIY_HAS_MPI=1)
 else ()
-  set(DIY_NO_MPI TRUE)
+  vtk_module_definitions(VTK::diy2 INTERFACE DIY_HAS_MPI=0)
 endif ()
 
 configure_file(

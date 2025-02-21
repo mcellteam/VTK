@@ -1,26 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPerspectiveTransform.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPerspectiveTransform.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
 #include <cstdlib>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPerspectiveTransform);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPerspectiveTransform::vtkPerspectiveTransform()
 {
   this->Input = nullptr;
@@ -32,7 +21,7 @@ vtkPerspectiveTransform::vtkPerspectiveTransform()
   this->Stack = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPerspectiveTransform::~vtkPerspectiveTransform()
 {
   this->SetInput(nullptr);
@@ -47,7 +36,7 @@ vtkPerspectiveTransform::~vtkPerspectiveTransform()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPerspectiveTransform::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Update();
@@ -68,7 +57,7 @@ void vtkPerspectiveTransform::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPerspectiveTransform::Concatenate(vtkHomogeneousTransform* transform)
 {
   if (transform->CircuitCheck(this))
@@ -80,7 +69,7 @@ void vtkPerspectiveTransform::Concatenate(vtkHomogeneousTransform* transform)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPerspectiveTransform::SetInput(vtkHomogeneousTransform* input)
 {
   if (this->Input == input)
@@ -104,7 +93,7 @@ void vtkPerspectiveTransform::SetInput(vtkHomogeneousTransform* input)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPerspectiveTransform::CircuitCheck(vtkAbstractTransform* transform)
 {
   if (this->vtkHomogeneousTransform::CircuitCheck(transform) ||
@@ -125,13 +114,13 @@ int vtkPerspectiveTransform::CircuitCheck(vtkAbstractTransform* transform)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractTransform* vtkPerspectiveTransform::MakeTransform()
 {
   return vtkPerspectiveTransform::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkPerspectiveTransform::GetMTime()
 {
   vtkMTimeType mtime = this->vtkHomogeneousTransform::GetMTime();
@@ -153,7 +142,7 @@ vtkMTimeType vtkPerspectiveTransform::GetMTime()
   return mtime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPerspectiveTransform::InternalDeepCopy(vtkAbstractTransform* gtrans)
 {
   vtkPerspectiveTransform* transform = static_cast<vtkPerspectiveTransform*>(gtrans);
@@ -186,7 +175,7 @@ void vtkPerspectiveTransform::InternalDeepCopy(vtkAbstractTransform* gtrans)
   this->vtkHomogeneousTransform::InternalDeepCopy(transform);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPerspectiveTransform::InternalUpdate()
 {
   // copy matrix from input
@@ -226,7 +215,7 @@ void vtkPerspectiveTransform::InternalUpdate()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Utility for adjusting the window range to a new one.  Usually the
 // previous range was ([-1,+1],[-1,+1]) as per Ortho and Frustum, and you
 // are mapping to the display coordinate range ([0,width-1],[0,height-1]).
@@ -245,7 +234,7 @@ void vtkPerspectiveTransform::AdjustViewport(double oldXMin, double oldXMax, dou
   this->Concatenate(*matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Utility for adjusting the min/max range of the Z buffer.  Usually
 // the oldZMin, oldZMax are [-1,+1] as per Ortho and Frustum, and
 // you are mapping the Z buffer to a new range.
@@ -261,7 +250,7 @@ void vtkPerspectiveTransform::AdjustZBuffer(
   this->Concatenate(*matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The orthographic perspective maps [xmin,xmax], [ymin,ymax], [-znear,-zfar]
 // to [-1,+1], [-1,+1], [-1,+1].
 // From the OpenGL Programmer's guide, 2nd Ed.
@@ -282,8 +271,8 @@ void vtkPerspectiveTransform::Ortho(
   this->Concatenate(*matrix);
 }
 
-//----------------------------------------------------------------------------
-// The frustrum perspective maps a frustum with the front plane at -znear
+//------------------------------------------------------------------------------
+// The frustum perspective maps a frustum with the front plane at -znear
 // which has extent [xmin,xmax],[ymin,ymax] and a back plane at -zfar
 // to [-1,+1], [-1,+1], [-1,+1].
 // From the OpenGL Programmer's guide, 2nd Ed.
@@ -315,7 +304,7 @@ void vtkPerspectiveTransform::Frustum(
   this->Concatenate(*matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // For convenience, an easy way to set up a symmetrical frustum.
 void vtkPerspectiveTransform::Perspective(double angle, double aspect, double znear, double zfar)
 {
@@ -328,7 +317,7 @@ void vtkPerspectiveTransform::Perspective(double angle, double aspect, double zn
   this->Frustum(xmin, xmax, ymin, ymax, znear, zfar);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The Shear method can be used after Perspective to create correct
 // perspective views for use with head-tracked stereo on a flat, fixed
 // (i.e. not head-mounted) viewing screen.
@@ -398,7 +387,7 @@ void vtkPerspectiveTransform::Shear(double dxdz, double dydz, double zplane)
   this->Concatenate(*matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // For convenience -- this is sufficient for most people's stereo needs.
 // Set the angle to negative for left eye, positive for right eye.
 void vtkPerspectiveTransform::Stereo(double angle, double focaldistance)
@@ -408,7 +397,7 @@ void vtkPerspectiveTransform::Stereo(double angle, double focaldistance)
   this->Shear(dxdz, 0.0, focaldistance);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPerspectiveTransform::SetupCamera(
   const double position[3], const double focalPoint[3], const double viewUp[3])
 {
@@ -465,3 +454,4 @@ void vtkPerspectiveTransform::SetupCamera(double p0, double p1, double p2, doubl
 
   this->SetupCamera(p, fp, vup);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkChartParallelCoordinates.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkChartParallelCoordinates
@@ -27,13 +15,15 @@
 #include "vtkChart.h"
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkNew.h"              // For vtkNew
+#include "vtkWrappingHints.h"    // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdTypeArray;
 class vtkStdString;
 class vtkStringArray;
 class vtkPlotParallelCoordinates;
 
-class VTKCHARTSCORE_EXPORT vtkChartParallelCoordinates : public vtkChart
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkChartParallelCoordinates : public vtkChart
 {
 public:
   vtkTypeMacro(vtkChartParallelCoordinates, vtkChart);
@@ -55,6 +45,11 @@ public:
    * Paint event for the chart, called whenever the chart needs to be drawn
    */
   bool Paint(vtkContext2D* painter) override;
+
+  /**
+   * Draw a rect on a specific axis
+   */
+  bool PaintRect(vtkContext2D* painter, int axis, float min, float max);
 
   /**
    * Set the visibility of the specified column.
@@ -91,6 +86,17 @@ public:
    * Get the number of plots the chart contains.
    */
   vtkIdType GetNumberOfPlots() override;
+
+  /**
+   * Set whether the chart should draw a legend.
+   */
+  void SetShowLegend(bool visible) override;
+
+  /**
+   * Get the legend for the chart, if available. Can return nullptr if there is no
+   * legend.
+   */
+  vtkChartLegend* GetLegend() override;
 
   /**
    * Get the axis specified by axisIndex.
@@ -149,17 +155,28 @@ public:
    */
   bool MouseWheelEvent(const vtkContextMouseEvent& mouse, int delta) override;
 
+  /**
+   * Update the selection of an axis based on the current selectionMode we
+   * have previously set.
+   */
+  void UpdateCurrentAxisSelection(int axisId);
+
 protected:
   vtkChartParallelCoordinates();
   ~vtkChartParallelCoordinates() override;
 
-  //@{
+  ///@{
   /**
    * Private storage object - where we hide all of our STL objects...
    */
-  class Private;
+  struct Private;
   Private* Storage;
-  //@}
+  ///@}
+
+  /**
+   * The legend for the chart.
+   */
+  vtkChartLegend* Legend;
 
   bool GeometryValid;
 
@@ -179,9 +196,9 @@ protected:
   vtkTimeStamp BuildTime;
 
   void ResetSelection();
-  bool ResetAxeSelection(int axe);
+  void ResetAxeSelection(int axe);
   void ResetAxesSelection();
-  void UpdateGeometry();
+  void UpdateGeometry(vtkContext2D* painter);
   void CalculatePlotTransform();
   void SwapAxes(int a1, int a2);
 
@@ -190,4 +207,5 @@ private:
   void operator=(const vtkChartParallelCoordinates&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkChartParallelCoordinates_h

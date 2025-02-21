@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeDataReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCompositeDataReader
  * @brief   read vtkCompositeDataSet data file.
@@ -28,6 +16,7 @@
 #include "vtkDataReader.h"
 #include "vtkIOLegacyModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCompositeDataSet;
 class vtkHierarchicalBoxDataSet;
 class vtkMultiBlockDataSet;
@@ -44,19 +33,19 @@ public:
   vtkTypeMacro(vtkCompositeDataReader, vtkDataReader);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output of this reader.
    */
   vtkCompositeDataSet* GetOutput();
   vtkCompositeDataSet* GetOutput(int idx);
   void SetOutput(vtkCompositeDataSet* output);
-  //@}
+  ///@}
 
   /**
    * Actual reading happens here
    */
-  int ReadMeshSimple(const std::string& fname, vtkDataObject* output) override;
+  int ReadMeshSimple(VTK_FILEPATH const std::string& fname, vtkDataObject* output) override;
 
 protected:
   vtkCompositeDataReader();
@@ -73,6 +62,7 @@ protected:
 
   bool ReadCompositeData(vtkMultiPieceDataSet*);
   bool ReadCompositeData(vtkMultiBlockDataSet*);
+  VTK_DEPRECATED_IN_9_5_0("Please use `vtkOverlappingAMR` version instead.")
   bool ReadCompositeData(vtkHierarchicalBoxDataSet*);
   bool ReadCompositeData(vtkOverlappingAMR*);
   bool ReadCompositeData(vtkPartitionedDataSet*);
@@ -85,4 +75,5 @@ private:
   void operator=(const vtkCompositeDataReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

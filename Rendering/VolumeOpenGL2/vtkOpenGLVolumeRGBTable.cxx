@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLVolumeRGBTable.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLVolumeRGBTable.h"
 
@@ -20,15 +8,16 @@
 #include "vtkOpenGLRenderWindow.h"
 #include "vtkTextureObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLVolumeRGBTable);
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLVolumeRGBTable::vtkOpenGLVolumeRGBTable()
 {
   this->NumberOfColorComponents = 3;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLVolumeRGBTable::InternalUpdate(vtkObject* func, int vtkNotUsed(blendMode),
   double vtkNotUsed(sampleDistance), double vtkNotUsed(unitDistance), int filterValue)
 {
@@ -46,8 +35,9 @@ void vtkOpenGLVolumeRGBTable::InternalUpdate(vtkObject* func, int vtkNotUsed(ble
     this->TextureWidth, 1, this->NumberOfColorComponents, VTK_FLOAT, this->Table);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLVolumeRGBTable::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

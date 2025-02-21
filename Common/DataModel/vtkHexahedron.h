@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHexahedron.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHexahedron
  * @brief   a cell that represents a linear 3D hexahedron
@@ -34,6 +22,7 @@
 #include "vtkCell3D.h"
 #include "vtkCommonDataModelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLine;
 class vtkQuad;
 class vtkIncrementalPointLocator;
@@ -45,24 +34,19 @@ public:
   vtkTypeMacro(vtkHexahedron, vtkCell3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * See vtkCell3D API for description of these methods.
    */
   void GetEdgePoints(vtkIdType edgeId, const vtkIdType*& pts) override;
-  // @deprecated Replaced by GetEdgePoints(vtkIdType, const vtkIdType*&) as of VTK 9.0
-  VTK_LEGACY(virtual void GetEdgePoints(int edgeId, int*& pts) override);
   vtkIdType GetFacePoints(vtkIdType faceId, const vtkIdType*& pts) override;
-  // @deprecated Replaced by GetFacePoints(vtkIdType, const vtkIdType*&) as of VTK 9.0
-  VTK_LEGACY(virtual void GetFacePoints(int faceId, int*& pts) override);
   void GetEdgeToAdjacentFaces(vtkIdType edgeId, const vtkIdType*& pts) override;
   vtkIdType GetFaceToAdjacentFaces(vtkIdType faceId, const vtkIdType*& faceIds) override;
   vtkIdType GetPointToIncidentEdges(vtkIdType pointId, const vtkIdType*& edgeIds) override;
   vtkIdType GetPointToIncidentFaces(vtkIdType pointId, const vtkIdType*& faceIds) override;
   vtkIdType GetPointToOneRingPoints(vtkIdType pointId, const vtkIdType*& pts) override;
   bool GetCentroid(double centroid[3]) const override;
-  bool IsInsideOut() override;
-  //@}
+  ///@}
 
   /**
    * static constexpr handle on the number of points.
@@ -92,7 +76,7 @@ public:
    */
   static constexpr vtkIdType MaximumValence = 3;
 
-  //@{
+  ///@{
   /**
    * See the vtkCell API for descriptions of these methods.
    */
@@ -105,14 +89,14 @@ public:
   void Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
     vtkCellArray* verts, vtkCellArray* lines, vtkCellArray* polys, vtkPointData* inPd,
     vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId, vtkCellData* outCd) override;
-  //@}
+  ///@}
 
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
   int IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t, double x[3],
     double pcoords[3], int& subId) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
   double* GetParametricCoords() override;
@@ -128,7 +112,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[8]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[24]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -141,9 +125,9 @@ public:
   {
     vtkHexahedron::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return the ids of the vertices defining edge/face (`edgeId`/`faceId').
    * Ids are related to the cell, not to the dataset.
@@ -154,7 +138,7 @@ public:
    */
   static const vtkIdType* GetEdgeArray(vtkIdType edgeId) VTK_SIZEHINT(2);
   static const vtkIdType* GetFaceArray(vtkIdType faceId) VTK_SIZEHINT(4);
-  //@}
+  ///@}
 
   /**
    * Static method version of GetEdgeToAdjacentFaces.
@@ -205,4 +189,5 @@ private:
   void operator=(const vtkHexahedron&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

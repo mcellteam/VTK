@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContourGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkContourGrid.h"
 
 #include "vtkCell.h"
@@ -44,9 +32,10 @@
 #include <cmath>
 #include <limits>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkContourGrid);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with initial range (0,1) and single contour value
 // of 0.0.
 vtkContourGrid::vtkContourGrid()
@@ -54,9 +43,6 @@ vtkContourGrid::vtkContourGrid()
   this->ContourValues = vtkContourValues::New();
 
   this->ComputeNormals = 0;
-#ifndef VTK_LEGACY_REMOVE
-  this->ComputeGradients = 0;
-#endif
   this->ComputeScalars = 1;
   this->GenerateTriangles = 1;
 
@@ -74,7 +60,7 @@ vtkContourGrid::vtkContourGrid()
   this->EdgeTable = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkContourGrid::~vtkContourGrid()
 {
   this->ContourValues->Delete();
@@ -89,7 +75,7 @@ vtkContourGrid::~vtkContourGrid()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If contour values are modified,
 // then this object is modified as well.
 vtkMTimeType vtkContourGrid::GetMTime()
@@ -111,13 +97,13 @@ vtkMTimeType vtkContourGrid::GetMTime()
   return mTime;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContourGridExecute(vtkContourGrid* self, vtkDataSet* input, vtkPolyData* output,
-  vtkDataArray* inScalars, vtkIdType numContours, double* values, int computeScalars,
+  vtkDataArray* inScalars, vtkIdType numContours, double* values, vtkTypeBool computeScalars,
   int useScalarTree, vtkScalarTree* scalarTree, bool generateTriangles)
 {
   vtkIdType i;
-  int abortExecute = 0;
+  bool abortExecute = false;
   vtkIncrementalPointLocator* locator = self->GetLocator();
   vtkNew<vtkGenericCell> cell;
   vtkCellArray *newVerts, *newLines, *newPolys;
@@ -211,7 +197,6 @@ void vtkContourGridExecute(vtkContourGrid* self, vtkDataSet* input, vtkPolyData*
     estimatedSize, generateTriangles);
   // If enabled, build a scalar tree to accelerate search
   //
-  vtkIdType numCellsContoured = 0;
   if (!useScalarTree)
   {
     // Three passes over the cells to process lower dimensional cells first.
@@ -229,8 +214,6 @@ void vtkContourGridExecute(vtkContourGrid* self, vtkDataSet* input, vtkPolyData*
     //
     const int numComps = cellScalars->GetNumberOfComponents();
     int cellType;
-    unsigned char cellTypeDimensions[VTK_NUMBER_OF_CELL_TYPES];
-    vtkCutter::GetCellTypeDimensions(cellTypeDimensions);
     int dimensionality;
     // We skip 0d cells (points), because they cannot be cut (generate no data).
     for (dimensionality = 1; dimensionality <= 3; ++dimensionality)
@@ -251,7 +234,7 @@ void vtkContourGridExecute(vtkContourGrid* self, vtkDataSet* input, vtkPolyData*
           vtkGenericWarningMacro("Unknown cell type " << cellType);
           continue;
         }
-        if (cellTypeDimensions[cellType] != dimensionality)
+        if (vtkCellTypes::GetDimension(cellType) != dimensionality)
         {
           continue;
         }
@@ -282,9 +265,9 @@ void vtkContourGridExecute(vtkContourGrid* self, vtkDataSet* input, vtkPolyData*
         if (dimensionality == 3 && !(cellIter->GetCellId() % 5000))
         {
           self->UpdateProgress(static_cast<double>(cellIter->GetCellId()) / numCells);
-          if (self->GetAbortExecute())
+          if (self->CheckAbort())
           {
-            abortExecute = 1;
+            abortExecute = true;
             break;
           }
         }
@@ -329,14 +312,19 @@ void vtkContourGridExecute(vtkContourGrid* self, vtkDataSet* input, vtkPolyData*
     vtkCell* tmpCell;
     vtkIdList* dummyIdList = nullptr;
     vtkIdType cellId = cellIter->GetCellId();
-    for (i = 0; i < numContours; i++)
+    vtkIdType numCellsContoured = 0;
+    vtkIdType checkAbortInterval = std::min(numCells / 10 + 1, (vtkIdType)1000);
+    for (i = 0; i < numContours && !abortExecute; i++)
     {
       for (scalarTree->InitTraversal(values[i]);
            (tmpCell = scalarTree->GetNextCell(cellId, dummyIdList, cellScalars));)
       {
+        if (numCellsContoured % checkAbortInterval == 0 && self->CheckAbort())
+        {
+          abortExecute = true;
+          break;
+        }
         helper.Contour(tmpCell, values[i], cellScalars, cellId);
-        numCellsContoured++;
-
         // don't want to call Contour any more than necessary
       } // for all cells
     }   // for all contour values
@@ -371,7 +359,7 @@ void vtkContourGridExecute(vtkContourGrid* self, vtkDataSet* input, vtkPolyData*
   output->Squeeze();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Contouring filter for unstructured grids.
 //
 int vtkContourGrid::RequestData(vtkInformation* vtkNotUsed(request),
@@ -390,7 +378,7 @@ int vtkContourGrid::RequestData(vtkInformation* vtkNotUsed(request),
   vtkIdType numCells;
   vtkIdType numContours = this->ContourValues->GetNumberOfContours();
   double* values = this->ContourValues->GetValues();
-  int computeScalars = this->ComputeScalars;
+  vtkTypeBool computeScalars = this->ComputeScalars;
 
   vtkDebugMacro(<< "Executing contour filter");
 
@@ -441,7 +429,7 @@ int vtkContourGrid::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By default,
 // an instance of vtkMergePoints is used.
 void vtkContourGrid::SetScalarTree(vtkScalarTree* sTree)
@@ -463,7 +451,7 @@ void vtkContourGrid::SetScalarTree(vtkScalarTree* sTree)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By default,
 // an instance of vtkMergePoints is used.
 void vtkContourGrid::SetLocator(vtkIncrementalPointLocator* locator)
@@ -485,7 +473,7 @@ void vtkContourGrid::SetLocator(vtkIncrementalPointLocator* locator)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContourGrid::CreateDefaultLocator()
 {
   if (this->Locator == nullptr)
@@ -496,34 +484,31 @@ void vtkContourGrid::CreateDefaultLocator()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContourGrid::SetOutputPointsPrecision(int precision)
 {
   this->OutputPointsPrecision = precision;
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkContourGrid::GetOutputPointsPrecision() const
 {
   return this->OutputPointsPrecision;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkContourGrid::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkUnstructuredGridBase");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContourGrid::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
-#ifndef VTK_LEGACY_REMOVE
-  os << indent << "Compute Gradients: " << (this->ComputeGradients ? "On\n" : "Off\n");
-#endif
   os << indent << "Compute Normals: " << (this->ComputeNormals ? "On\n" : "Off\n");
   os << indent << "Compute Scalars: " << (this->ComputeScalars ? "On\n" : "Off\n");
   os << indent << "Use Scalar Tree: " << (this->UseScalarTree ? "On\n" : "Off\n");
@@ -550,3 +535,4 @@ void vtkContourGrid::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Precision of the output points: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

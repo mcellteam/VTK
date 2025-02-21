@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataObjectGenerator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkDataObjectGenerator.h"
 
@@ -28,8 +16,8 @@
 #include "vtkUnstructuredGrid.h"
 
 #include "vtkAMRBox.h"
-#include "vtkHierarchicalBoxDataSet.h"
 #include "vtkMultiBlockDataSet.h"
+#include "vtkOverlappingAMR.h"
 
 #include "vtkCell.h"
 #include "vtkCellData.h"
@@ -40,6 +28,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDataObjectGenerator);
 
 //============================================================================
@@ -99,7 +88,7 @@ const char vtkDataObjectGeneratorTypeStrings[NUMTOKENS][30] = {
   "vtkUnstructuredGrid",
   "NA",
   "NA",
-  "vtkHierarchicalBoxDataSet",
+  "vtkOverlappingAMR",
   "NA",
   "vtkMultiBlockDataSet",
   "NA",
@@ -177,7 +166,7 @@ public:
   std::vector<vtkInternalStructureCache*> children;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // search the head of the input string for one of the tokens we know how to
 // do something with. If we see something, bump char ptr passed it, and return
 // a code that says what we found. Skip over chars we don't recognize. When
@@ -208,7 +197,7 @@ static int vtkDataObjectGeneratorGetNextToken(char** str)
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static vtkInternalStructureCache* vtkDataObjectGeneratorParseStructure(char* Program)
 {
   vtkInternalStructureCache* structure = new vtkInternalStructureCache();
@@ -284,7 +273,7 @@ static vtkInternalStructureCache* vtkDataObjectGeneratorParseStructure(char* Pro
   return structure;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObjectGenerator::vtkDataObjectGenerator()
 {
   this->SetNumberOfInputPorts(0);
@@ -300,21 +289,21 @@ vtkDataObjectGenerator::vtkDataObjectGenerator()
   this->ZOffset = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObjectGenerator::~vtkDataObjectGenerator()
 {
   this->SetProgram(nullptr);
   delete this->Structure;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Program: " << (this->Program ? this->Program : "(none)") << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataObjectGenerator::RequestDataObject(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outV)
 {
@@ -338,7 +327,7 @@ int vtkDataObjectGenerator::RequestDataObject(
   return VTK_OK;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkDataObjectGenerator::CreateOutputDataObjects(vtkInternalStructureCache* structure)
 {
   vtkDataObject* outData;
@@ -399,7 +388,7 @@ vtkDataObject* vtkDataObjectGenerator::CreateOutputDataObjects(vtkInternalStruct
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataObjectGenerator::RequestInformation(
   vtkInformation* req, vtkInformationVector** inV, vtkInformationVector* outV)
 {
@@ -490,7 +479,7 @@ int vtkDataObjectGenerator::RequestInformation(
   return this->Superclass::RequestInformation(req, inV, outV);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataObjectGenerator::RequestUpdateExtent(
   vtkInformation* req, vtkInformationVector** inV, vtkInformationVector* outV)
 {
@@ -501,7 +490,7 @@ int vtkDataObjectGenerator::RequestUpdateExtent(
   return this->Superclass::RequestUpdateExtent(req, inV, outV);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataObjectGenerator::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outV)
 {
@@ -552,7 +541,7 @@ int vtkDataObjectGenerator::RequestData(
   return VTK_OK;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkDataObjectGenerator::FillOutputDataObjects(
   vtkInternalStructureCache* structure, int level, int stripe)
 {
@@ -653,9 +642,9 @@ vtkDataObject* vtkDataObjectGenerator::FillOutputDataObjects(
     }
     case HBS:
     {
-      // Making octrees, structured can grid up space arbitratily though
+      // Making octrees, structured can grid up space arbitrarily though
 
-      vtkHierarchicalBoxDataSet* hbo = vtkHierarchicalBoxDataSet::SafeDownCast(outData);
+      vtkOverlappingAMR* hbo = vtkOverlappingAMR::SafeDownCast(outData);
 
       std::vector<int> blocksPerLevel;
       std::vector<vtkInternalStructureCache*>::iterator git;
@@ -667,11 +656,14 @@ vtkDataObject* vtkDataObjectGenerator::FillOutputDataObjects(
       }
 
       double origin[3] = { 0, 0, 0 };
-      hbo->Initialize(static_cast<int>(blocksPerLevel.size()), &blocksPerLevel[0]);
+      hbo->Initialize(static_cast<int>(blocksPerLevel.size()), blocksPerLevel.data());
       hbo->SetOrigin(origin);
       hbo->SetGridDescription(VTK_XYZ_GRID);
       vtkIdType gcnt = 0;
-      for (git = structure->children.begin(); git != structure->children.end(); ++git)
+      bool abort = false;
+      vtkIdType progressCounter = 0;
+      vtkIdType checkAbortInterval = 0;
+      for (git = structure->children.begin(); git != structure->children.end() && !abort; ++git)
       {
         // cerr << "LVL=" << gcnt  << endl;
 
@@ -692,12 +684,20 @@ vtkDataObject* vtkDataObjectGenerator::FillOutputDataObjects(
 
         int r2 = static_cast<int>(pow(static_cast<double>(refinement), static_cast<double>(gcnt)));
         // how many children across each dimension
+        checkAbortInterval = std::min((vtkIdType)(maxchildren / 10 + 1), (vtkIdType)1000);
+        progressCounter = 0;
 
         for (dit = gptr->children.begin();
              dit != gptr->children.end() && dcnt < maxchildren // ignore extra children
              ;
              ++dit)
         {
+          if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+          {
+            abort = true;
+            break;
+          }
+          progressCounter++;
           // cerr << "DS=" << dcnt  << endl;
           vtkInternalStructureCache* dptr = *dit;
           // dptr->type should be UF1
@@ -775,9 +775,15 @@ vtkDataObject* vtkDataObjectGenerator::FillOutputDataObjects(
       mbo->SetNumberOfBlocks(static_cast<unsigned int>(structure->children.size()));
       std::vector<vtkInternalStructureCache*>::iterator git;
       vtkIdType gcnt = 0;
+      vtkIdType checkAbortInterval =
+        std::min((vtkIdType)structure->children.size() / 10 + 1, (vtkIdType)1000);
 
       for (git = structure->children.begin(); git != structure->children.end(); ++git)
       {
+        if (gcnt % checkAbortInterval == 0 && this->CheckAbort())
+        {
+          break;
+        }
         this->ZOffset += 1.0;
         vtkInternalStructureCache* gptr = *git;
         if (gptr->type == GS)
@@ -809,7 +815,7 @@ vtkDataObject* vtkDataObjectGenerator::FillOutputDataObjects(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeValues(vtkDataSet* ds)
 {
   vtkIdTypeArray* ids;
@@ -837,9 +843,13 @@ void vtkDataObjectGenerator::MakeValues(vtkDataSet* ds)
   zcoords->SetName("Cell Z");
   zcoords->SetNumberOfComponents(1);
   zcoords->SetNumberOfTuples(num);
-
+  vtkIdType checkAbortInterval = std::min(num / 10 + 1, (vtkIdType)1000);
   for (vtkIdType i = 0; i < num; i++)
   {
+    if (i % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     ids->SetValue(i, this->CellIdCounter++);
     const double* bds = ds->GetCell(i)->GetBounds();
     xcoords->SetValue(i, (bds[0] + bds[1]) * 0.5);
@@ -875,8 +885,13 @@ void vtkDataObjectGenerator::MakeValues(vtkDataSet* ds)
   zcoords->SetNumberOfComponents(1);
   zcoords->SetNumberOfTuples(num);
 
+  checkAbortInterval = std::min(num / 10 + 1, (vtkIdType)1000);
   for (vtkIdType i = 0; i < num; i++)
   {
+    if (i % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     ids->SetValue(i, this->PointIdCounter++);
     double* coords = ds->GetPoint(i);
     xcoords->SetValue(i, coords[0]);
@@ -894,7 +909,7 @@ void vtkDataObjectGenerator::MakeValues(vtkDataSet* ds)
   zcoords->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeImageData1(vtkDataSet* ids)
 {
   // ID1 == an ImageData of 1 voxel
@@ -912,7 +927,7 @@ void vtkDataObjectGenerator::MakeImageData1(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeImageData2(vtkDataSet* ids)
 {
   // ID2 == an ImageData of 24 voxel2
@@ -930,7 +945,7 @@ void vtkDataObjectGenerator::MakeImageData2(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeUniformGrid1(vtkDataSet* ids)
 {
   // UF1 == an UniformGrid of 8 voxels
@@ -948,7 +963,7 @@ void vtkDataObjectGenerator::MakeUniformGrid1(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeRectilinearGrid1(vtkDataSet* ids)
 {
   // RG1 = a RectilnearGrid of 1 voxel
@@ -992,7 +1007,7 @@ void vtkDataObjectGenerator::MakeRectilinearGrid1(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeStructuredGrid1(vtkDataSet* ids)
 {
   // SG1 = a StructuredGrid of 1 voxel
@@ -1022,7 +1037,7 @@ void vtkDataObjectGenerator::MakeStructuredGrid1(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakePolyData1(vtkDataSet* ids)
 {
   // PD1 = a PolyData of 1 triangle
@@ -1050,7 +1065,7 @@ void vtkDataObjectGenerator::MakePolyData1(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakePolyData2(vtkDataSet* ids)
 {
   // PD2 = a PolyData of 1 triangle and 1 point
@@ -1081,7 +1096,7 @@ void vtkDataObjectGenerator::MakePolyData2(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeUnstructuredGrid1(vtkDataSet* ids)
 {
   // UG1 = an UnstructuredGrid of 1 triangle
@@ -1108,7 +1123,7 @@ void vtkDataObjectGenerator::MakeUnstructuredGrid1(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeUnstructuredGrid2(vtkDataSet* ids)
 {
   // UG2 = an UnstructuredGrid of 2 triangles
@@ -1137,7 +1152,7 @@ void vtkDataObjectGenerator::MakeUnstructuredGrid2(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeUnstructuredGrid3(vtkDataSet* ids)
 {
   // UG3 = an UnstructuredGrid of 1 tet
@@ -1165,7 +1180,7 @@ void vtkDataObjectGenerator::MakeUnstructuredGrid3(vtkDataSet* ids)
   this->MakeValues(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectGenerator::MakeUnstructuredGrid4(vtkDataSet* ids)
 {
   // UG4 = an UnstructuredGrid of 2 triangles and 1 tetraheda
@@ -1200,3 +1215,4 @@ void vtkDataObjectGenerator::MakeUnstructuredGrid4(vtkDataSet* ids)
 
   this->MakeValues(ds);
 }
+VTK_ABI_NAMESPACE_END

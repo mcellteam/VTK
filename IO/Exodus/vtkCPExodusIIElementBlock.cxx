@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCPExodusIIElementBlock.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCPExodusIIElementBlock.h"
 
@@ -25,6 +13,7 @@
 #include <algorithm>
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCPExodusIIElementBlock);
 vtkStandardNewMacro(vtkCPExodusIIElementBlockImpl);
 
@@ -119,6 +108,22 @@ void vtkCPExodusIIElementBlockImpl::GetCellPoints(vtkIdType cellId, vtkIdList* p
 }
 
 //------------------------------------------------------------------------------
+void vtkCPExodusIIElementBlockImpl::GetFaceStream(
+  vtkIdType vtkNotUsed(cellId), vtkIdList* vtkNotUsed(ptIds))
+{
+  // vtkCPExodusIIElementBlockImpl does not support polyhedra
+  vtkErrorMacro(<< __FUNCTION__ << " is not implemented");
+}
+
+//------------------------------------------------------------------------------
+void vtkCPExodusIIElementBlockImpl::GetPolyhedronFaces(
+  vtkIdType vtkNotUsed(cellId), vtkCellArray* vtkNotUsed(faces))
+{
+  // vtkCPExodusIIElementBlockImpl does not support polyhedra
+  vtkErrorMacro(<< __FUNCTION__ << " is not implemented");
+}
+
+//------------------------------------------------------------------------------
 void vtkCPExodusIIElementBlockImpl::GetPointCells(vtkIdType ptId, vtkIdList* cellIds)
 {
   const int targetElement = PointToNode(ptId);
@@ -184,7 +189,7 @@ vtkIdType vtkCPExodusIIElementBlockImpl::InsertNextCell(int, vtkIdType, const vt
 
 //------------------------------------------------------------------------------
 vtkIdType vtkCPExodusIIElementBlockImpl::InsertNextCell(
-  int, vtkIdType, const vtkIdType[], vtkIdType, const vtkIdType[])
+  int, vtkIdType, const vtkIdType[], vtkCellArray*)
 {
   vtkErrorMacro("Read only container.");
   return -1;
@@ -210,3 +215,4 @@ vtkCPExodusIIElementBlockImpl::~vtkCPExodusIIElementBlockImpl()
 {
   delete[] this->Elements;
 }
+VTK_ABI_NAMESPACE_END

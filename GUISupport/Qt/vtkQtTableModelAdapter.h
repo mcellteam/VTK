@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQtTableModelAdapter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkQtTableModelAdapter
  * @brief   Adapts a table to a Qt item model.
@@ -32,16 +16,16 @@
 #ifndef vtkQtTableModelAdapter_h
 #define vtkQtTableModelAdapter_h
 
-#include "vtkConfigure.h"
 #include "vtkGUISupportQtModule.h" // For export macro
 #include "vtkQtAbstractModelAdapter.h"
 #include <QImage> // Needed for icon support
 
+class QMimeData;
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSelection;
 class vtkTable;
 class vtkVariant;
-
-class QMimeData;
 
 class VTKGUISUPPORTQT_EXPORT vtkQtTableModelAdapter : public vtkQtAbstractModelAdapter
 {
@@ -52,21 +36,21 @@ public:
   vtkQtTableModelAdapter(vtkTable* table, QObject* parent = nullptr);
   ~vtkQtTableModelAdapter() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the VTK data object as input to this adapter
    */
   void SetVTKDataObject(vtkDataObject* data) override;
   vtkDataObject* GetVTKDataObject() const override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Selection conversion from VTK land to Qt land
    */
-  vtkSelection* QModelIndexListToVTKIndexSelection(const QModelIndexList qmil) const override;
+  vtkSelection* QModelIndexListToVTKIndexSelection(QModelIndexList qmil) const override;
   QItemSelection VTKIndexSelectionToQItemSelection(vtkSelection* vtksel) const override;
-  //@}
+  ///@}
 
   void SetKeyColumnName(const char* name) override;
   void SetColorColumnName(const char* name) override;
@@ -100,7 +84,7 @@ public:
   bool GetSplitMultiComponentColumns() const;
   void SetSplitMultiComponentColumns(bool value);
 
-  //@{
+  ///@{
   /**
    * Set up the model based on the current table.
    */
@@ -115,7 +99,7 @@ public:
   QModelIndex parent(const QModelIndex& index) const override;
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-  //@}
+  ///@}
 
   bool dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column,
     const QModelIndex& parent) override;
@@ -127,7 +111,7 @@ public:
   void SetIconSize(int w, int h);
   void SetIconSheetSize(int w, int h);
 
-signals:
+Q_SIGNALS:
   void selectionDropped(vtkSelection*);
 
 private:
@@ -153,5 +137,6 @@ private:
   void operator=(const vtkQtTableModelAdapter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkQtTableModelAdapter.h

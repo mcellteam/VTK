@@ -1,24 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPolyDataPointSampler.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // The command line arguments are:
 // -I        => run in interactive mode; unless this is used, the program will
 //              not allow interaction and exit
 // -D <path> => path to the data; the data should be in <path>/Data/
 
 // If WRITE_RESULT is defined, the result of the surface filter is saved.
-//#define WRITE_RESULT
+// #define WRITE_RESULT
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
@@ -90,7 +78,7 @@ int TestPolyDataPointSampler(int argc, char* argv[])
   renderer->GetActiveCamera()->Zoom(2);
   renWin->Render();
 
-  int retVal = vtkRegressionTestImageThreshold(renWin, 0.3);
+  int retVal = vtkRegressionTestImageThreshold(renWin, 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Start();

@@ -1,7 +1,7 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkScalarBarActorInternal_h
 #define vtkScalarBarActorInternal_h
-
-#ifndef __VTK_WRAP__
 
 #include "vtkColor.h"                     // for AnnotationColors, LabelColorMap, and tuples
 #include "vtkRenderingAnnotationModule.h" // For export macro
@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor2D;
 class vtkCellArray;
 class vtkTextActor;
@@ -22,7 +23,7 @@ class vtkViewport;
 
 /// A vector of smart pointers.
 template <class T>
-class VTKRENDERINGANNOTATION_EXPORT vtkSmartVector : public std::vector<vtkSmartPointer<T> >
+class VTKRENDERINGANNOTATION_EXPORT vtkSmartVector : public std::vector<vtkSmartPointer<T>>
 {
 public:
   /**\brief Convert to an array of "dumb" pointers for functions
@@ -92,7 +93,7 @@ public:
    *
    * Only valid within methods invoked by vtkScalarBarActor::RebuildLayout().
    */
-  //@{
+  ///@{
   vtkViewport* Viewport;
 
   /// The thickness and length of the (square) NaN swatch.
@@ -161,11 +162,12 @@ public:
   /// Map from viewport coordinates to the leader line color of each
   /// annotation.
   std::map<double, vtkColor3ub> LabelColors;
-  //@}
+  ///@}
 
   /// Cache of classes holding geometry assembled and ready for rendering.
-  //@{
+  ///@{
   ActorVector TextActors;
+  DoubleVector TextActorAnchors;
   vtkPolyData* AnnotationBoxes;
   vtkPolyDataMapper2D* AnnotationBoxesMapper;
   vtkActor2D* AnnotationBoxesActor;
@@ -186,10 +188,9 @@ public:
   vtkPolyData* AboveRangeSwatch;
   vtkPolyDataMapper2D* AboveRangeSwatchMapper;
   vtkActor2D* AboveRangeSwatchActor;
-  //@}
+  ///@}
 };
 
-#endif
-
+VTK_ABI_NAMESPACE_END
 #endif // vtkScalarBarActorInternal_h
 // VTK-HeaderTest-Exclude: vtkScalarBarActorInternal.h

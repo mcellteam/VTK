@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkScalarBarRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkXYPlotRepresentation
@@ -36,6 +24,7 @@
 #include "vtkBorderRepresentation.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkXYPlotActor;
 
 class VTKINTERACTIONWIDGETS_EXPORT vtkXYPlotRepresentation : public vtkBorderRepresentation
@@ -45,15 +34,15 @@ public:
   virtual void PrintSelf(ostream& os, vtkIndent indent);
   static vtkXYPlotRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * The prop that is placed in the renderer.
    */
   vtkGetObjectMacro(XYPlotActor, vtkXYPlotActor);
   virtual void SetXYPlotActor(vtkXYPlotActor*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Satisfy the superclass' API.
    */
@@ -64,9 +53,9 @@ public:
     size[0] = 2.0;
     size[1] = 2.0;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods are necessary to make this representation behave as
    * a vtkProp.
@@ -79,17 +68,17 @@ public:
   virtual int RenderOpaqueGeometry(vtkViewport*);
   virtual int RenderTranslucentPolygonalGeometry(vtkViewport*);
   virtual vtkTypeBool HasTranslucentPolygonalGeometry();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set glyph properties
    */
   void SetGlyphSize(double x);
   void SetPlotGlyphType(int curve, int glyph);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set title properties
    */
@@ -104,9 +93,9 @@ public:
   void SetTitleVerticalJustification(int x);
   void SetAdjustTitlePosition(int x);
   void SetTitlePosition(double x, double y);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get axis properties
    */
@@ -121,9 +110,9 @@ public:
   void SetYTitlePosition(int pos);
   int GetYTitlePosition() const;
   void SetXValues(int x);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set axis title properties
    */
@@ -135,9 +124,9 @@ public:
   void SetAxisTitleFontSize(int x);
   void SetAxisTitleJustification(int x);
   void SetAxisTitleVerticalJustification(int x);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set axis label properties
    */
@@ -151,9 +140,9 @@ public:
   void SetAxisLabelVerticalJustification(int x);
   void SetXLabelFormat(const char* _arg);
   void SetYLabelFormat(const char* _arg);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set various properties
    */
@@ -171,7 +160,7 @@ public:
   void SetPlotLines(int i);
   void SetPlotPoints(int i);
   void SetPlotLabel(int i, const char* label);
-  //@}
+  ///@}
 
 protected:
   vtkXYPlotRepresentation();
@@ -184,4 +173,5 @@ private:
   void operator=(const vtkXYPlotRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkXYPlotRepresentation_h

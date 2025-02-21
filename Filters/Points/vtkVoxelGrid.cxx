@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVoxelGrid.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkVoxelGrid.h"
 
 #include "vtkArrayListTemplate.h" // For processing attribute data
@@ -30,15 +18,16 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkVoxelGrid);
 vtkCxxSetObjectMacro(vtkVoxelGrid, Kernel, vtkInterpolationKernel);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm (first pass)
 template <typename T>
 struct Subsample
@@ -129,7 +118,7 @@ struct Subsample
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVoxelGrid::vtkVoxelGrid()
 {
   this->Locator = vtkStaticPointLocator::New();
@@ -142,7 +131,7 @@ vtkVoxelGrid::vtkVoxelGrid()
   this->Kernel = vtkLinearKernel::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVoxelGrid::~vtkVoxelGrid()
 {
   this->Locator->UnRegister(this);
@@ -150,7 +139,7 @@ vtkVoxelGrid::~vtkVoxelGrid()
   this->SetKernel(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Produce the output data
 int vtkVoxelGrid::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -181,7 +170,7 @@ int vtkVoxelGrid::RequestData(vtkInformation* vtkNotUsed(request),
     return 1;
   }
 
-  bool valid = 1;
+  bool valid = true;
   if (this->LeafSize[0] <= 0.0 || this->LeafSize[1] <= 0.0 || this->LeafSize[2] <= 0.0 ||
     this->Divisions[0] < 1 || this->Divisions[1] < 1 || this->Divisions[2] < 1)
   {
@@ -246,7 +235,7 @@ int vtkVoxelGrid::RequestData(vtkInformation* vtkNotUsed(request),
   switch (output->GetPoints()->GetDataType())
   {
     vtkTemplateMacro(Subsample<VTK_TT>::Execute((VTK_TT*)inPtr, inPD, outPD, this->Locator,
-      this->Kernel, numOutPts, &binMap[0], (VTK_TT*)outPtr));
+      this->Kernel, numOutPts, binMap.data(), (VTK_TT*)outPtr));
   }
 
   // Send attributes to output
@@ -263,14 +252,14 @@ int vtkVoxelGrid::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVoxelGrid::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPointSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVoxelGrid::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -285,3 +274,4 @@ void vtkVoxelGrid::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Number of Points Per Bin: " << this->NumberOfPointsPerBin << endl;
 }
+VTK_ABI_NAMESPACE_END

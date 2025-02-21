@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDatabaseToTableReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDoubleArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -28,17 +16,18 @@
 
 #include "vtkDatabaseToTableReader.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkDatabaseToTableReader::vtkDatabaseToTableReader()
 {
   this->Database = nullptr;
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDatabaseToTableReader::~vtkDatabaseToTableReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDatabaseToTableReader::SetDatabase(vtkSQLDatabase* db)
 {
   if (!db)
@@ -46,7 +35,7 @@ bool vtkDatabaseToTableReader::SetDatabase(vtkSQLDatabase* db)
     return false;
   }
   this->Database = db;
-  if (this->Database->IsOpen() == false)
+  if (!this->Database->IsOpen())
   {
     vtkErrorMacro(<< "SetDatabase must be passed an open database connection");
     this->Database = nullptr;
@@ -60,7 +49,7 @@ bool vtkDatabaseToTableReader::SetDatabase(vtkSQLDatabase* db)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDatabaseToTableReader::SetTableName(const char* name)
 {
   std::string nameStr = name;
@@ -72,7 +61,7 @@ bool vtkDatabaseToTableReader::SetTableName(const char* name)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDatabaseToTableReader::CheckIfTableExists()
 {
   if (!this->Database->IsOpen())
@@ -96,8 +85,9 @@ bool vtkDatabaseToTableReader::CheckIfTableExists()
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDatabaseToTableReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

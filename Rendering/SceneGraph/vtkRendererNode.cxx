@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRendererNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRendererNode.h"
 
 #include "vtkActor.h"
@@ -25,12 +13,12 @@
 #include "vtkObjectFactory.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderer.h"
-#include "vtkRendererNode.h"
 
 //============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRendererNode);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRendererNode::vtkRendererNode()
 {
   this->Size[0] = 0;
@@ -43,16 +31,16 @@ vtkRendererNode::vtkRendererNode()
   this->Scale[1] = 1;
 }
 
-//----------------------------------------------------------------------------
-vtkRendererNode::~vtkRendererNode() {}
+//------------------------------------------------------------------------------
+vtkRendererNode::~vtkRendererNode() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRendererNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRendererNode::Build(bool prepass)
 {
   if (prepass)
@@ -78,3 +66,4 @@ void vtkRendererNode::Build(bool prepass)
     this->RemoveUnusedNodes();
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkExodusIIReaderParser.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExodusIIReaderParser
  * @brief   internal parser used by vtkExodusIIReader.
@@ -24,15 +13,15 @@
 #define vtkExodusIIReaderParser_h
 
 #include "vtkIOExodusModule.h" // For export macro
-#include "vtkSmartPointer.h"
+#include "vtkSmartPointer.h"   // for ivars
 #include "vtkXMLParser.h"
 
-#include <map>
-#include <set>
-#include <sstream>
-#include <string>
-#include <vector>
+#include <map>    // for std::map
+#include <set>    // for std::set
+#include <string> // for std::string
+#include <vector> // for std::vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMutableDirectedGraph;
 class vtkStringArray;
 class vtkUnsignedCharArray;
@@ -44,18 +33,18 @@ public:
   vtkTypeMacro(vtkExodusIIReaderParser, vtkXMLParser);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Returns the SIL.
    * This is valid only after Go().
    */
   vtkGetObjectMacro(SIL, vtkMutableDirectedGraph);
-  //@}
+  ///@}
 
   /**
    * Trigger parsing of the XML file.
    */
-  void Go(const char* filename);
+  void Go(VTK_FILEPATH const char* filename);
 
   // Returns if the parser has some information about the block with given "id".
   // This is valid only after Go().
@@ -70,7 +59,7 @@ public:
    */
   std::string GetBlockName(int id);
 
-  //@{
+  ///@{
   /**
    * Fills up the blockIdsSet with the block ids referred to by the XML.
    * This is valid only after Go().
@@ -83,7 +72,7 @@ public:
       blockIdsSet.insert(iter->first);
     }
   }
-  //@}
+  ///@}
 
 protected:
   vtkExodusIIReaderParser();
@@ -173,6 +162,5 @@ private:
   void operator=(const vtkExodusIIReaderParser&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkExodusIIReaderParser.h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkUnstructuredGridWriter
  * @brief   write vtk unstructured grid data file
@@ -27,7 +15,8 @@
 
 #include "vtkDataWriter.h"
 #include "vtkIOLegacyModule.h" // For export macro
-class vtkUnstructuredGrid;
+VTK_ABI_NAMESPACE_BEGIN
+class vtkUnstructuredGridBase;
 
 class VTKIOLEGACY_EXPORT vtkUnstructuredGridWriter : public vtkDataWriter
 {
@@ -36,21 +25,21 @@ public:
   vtkTypeMacro(vtkUnstructuredGridWriter, vtkDataWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
-  vtkUnstructuredGrid* GetInput();
-  vtkUnstructuredGrid* GetInput(int port);
-  //@}
+  vtkUnstructuredGridBase* GetInput();
+  vtkUnstructuredGridBase* GetInput(int port);
+  ///@}
 
 protected:
-  vtkUnstructuredGridWriter() {}
-  ~vtkUnstructuredGridWriter() override {}
+  vtkUnstructuredGridWriter() = default;
+  ~vtkUnstructuredGridWriter() override = default;
 
   void WriteData() override;
 
-  int WriteCellsAndFaces(ostream* fp, vtkUnstructuredGrid* grid, const char* label);
+  int WriteCellsAndFaces(ostream* fp, vtkUnstructuredGridBase* grid, const char* label);
 
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
@@ -59,4 +48,5 @@ private:
   void operator=(const vtkUnstructuredGridWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

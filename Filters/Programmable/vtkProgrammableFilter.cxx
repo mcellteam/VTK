@@ -1,22 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProgrammableFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkProgrammableFilter.h"
 
 #include "vtkCompositeDataIterator.h"
 #include "vtkCompositeDataSet.h"
 #include "vtkGraph.h"
+#include "vtkHyperTreeGrid.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMolecule.h"
@@ -28,7 +17,57 @@
 #include "vtkTable.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkProgrammableFilter);
+VTK_ABI_NAMESPACE_END
+
+namespace details
+{
+VTK_ABI_NAMESPACE_BEGIN
+// CopyStructure is not defined at vtkDataObject level.
+// Use template to downcast and forward call.
+template <class DataType>
+void copyStructure(vtkDataObject* dataIn, vtkDataObject* dataOut)
+{
+  DataType* in = DataType::SafeDownCast(dataIn);
+  DataType* out = DataType::SafeDownCast(dataOut);
+  if (in && out)
+  {
+    out->CopyStructure(in);
+  }
+}
+
+void initializeOutput(vtkDataObject* objInput, vtkDataObject* objOutput, bool copyArrays)
+{
+  if (objInput && objOutput && objInput->GetDataObjectType() == objOutput->GetDataObjectType())
+  {
+    if (copyArrays)
+    {
+      // Shallow copy is defined at vtkDataObject level. If output is of same concrete type than
+      // input and copy if data arrays are requested, we can directly call ShallowCopy.
+      objOutput->ShallowCopy(objInput);
+      return;
+    }
+
+    // if not copyArrays, copy only the structure for relevant classes.
+    if (vtkDataSet::SafeDownCast(objInput))
+    {
+      details::copyStructure<vtkDataSet>(objInput, objOutput);
+    }
+    else if (vtkGraph::SafeDownCast(objInput))
+    {
+      details::copyStructure<vtkGraph>(objInput, objOutput);
+    }
+    else if (vtkHyperTreeGrid::SafeDownCast(objInput))
+    {
+      details::copyStructure<vtkHyperTreeGrid>(objInput, objOutput);
+    }
+  }
+}
+VTK_ABI_NAMESPACE_END
+}
+
+VTK_ABI_NAMESPACE_BEGIN
 
 // Construct programmable filter with empty execute method.
 vtkProgrammableFilter::vtkProgrammableFilter()
@@ -99,6 +138,12 @@ vtkTable* vtkProgrammableFilter::GetTableInput()
   return static_cast<vtkTable*>(this->GetInput());
 }
 
+// Get the input as a concrete type.
+vtkHyperTreeGrid* vtkProgrammableFilter::GetHyperTreeGridInput()
+{
+  return static_cast<vtkHyperTreeGrid*>(this->GetInput());
+}
+
 // Specify the function to use to operate on the point attribute data. Note
 // that the function takes a single (void *) argument.
 void vtkProgrammableFilter::SetExecuteMethod(void (*f)(void*), void* arg)
@@ -141,73 +186,8 @@ int vtkProgrammableFilter::RequestData(vtkInformation* vtkNotUsed(request),
   if (inInfo)
   {
     vtkDataObject* objInput = inInfo->Get(vtkDataObject::DATA_OBJECT());
-    if (vtkDataSet::SafeDownCast(objInput))
-    {
-      vtkDataSet* dsInput = vtkDataSet::SafeDownCast(objInput);
-      vtkDataSet* dsOutput = vtkDataSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-      // First, copy the input to the output as a starting point
-      if (dsInput && dsOutput && dsInput->GetDataObjectType() == dsOutput->GetDataObjectType())
-      {
-        if (this->CopyArrays)
-        {
-          dsOutput->ShallowCopy(dsInput);
-        }
-        else
-        {
-          dsOutput->CopyStructure(dsInput);
-        }
-      }
-    }
-    if (vtkGraph::SafeDownCast(objInput))
-    {
-      vtkGraph* graphInput = vtkGraph::SafeDownCast(objInput);
-      vtkGraph* graphOutput = vtkGraph::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-      // First, copy the input to the output as a starting point
-      if (graphInput && graphOutput &&
-        graphInput->GetDataObjectType() == graphOutput->GetDataObjectType())
-      {
-        if (this->CopyArrays)
-        {
-          graphOutput->ShallowCopy(graphInput);
-        }
-        else
-        {
-          graphOutput->CopyStructure(graphInput);
-        }
-      }
-    }
-    if (vtkMolecule::SafeDownCast(objInput))
-    {
-      vtkMolecule* molInput = vtkMolecule::SafeDownCast(objInput);
-      vtkMolecule* molOutput =
-        vtkMolecule::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-      // First, copy the input to the output as a starting point
-      if (molInput && molOutput && molInput->GetDataObjectType() == molOutput->GetDataObjectType())
-      {
-        if (this->CopyArrays)
-        {
-          molOutput->ShallowCopy(molInput);
-        }
-        else
-        {
-          molOutput->CopyStructure(molInput);
-        }
-      }
-    }
-    if (vtkTable::SafeDownCast(objInput))
-    {
-      vtkTable* tableInput = vtkTable::SafeDownCast(objInput);
-      vtkTable* tableOutput = vtkTable::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-      // First, copy the input to the output as a starting point
-      if (tableInput && tableOutput &&
-        tableInput->GetDataObjectType() == tableOutput->GetDataObjectType())
-      {
-        if (this->CopyArrays)
-        {
-          tableOutput->ShallowCopy(tableInput);
-        }
-      }
-    }
+    vtkDataObject* objOutput = outInfo->Get(vtkDataObject::DATA_OBJECT());
+
     if (vtkCompositeDataSet::SafeDownCast(objInput))
     {
       vtkCompositeDataSet* cdsInput = vtkCompositeDataSet::SafeDownCast(objInput);
@@ -224,25 +204,17 @@ int vtkProgrammableFilter::RequestData(vtkInformation* vtkNotUsed(request),
           vtkDataObject* oblock = iblock->NewInstance();
           if (iblock)
           {
-            if (this->CopyArrays)
-            {
-              oblock->ShallowCopy(iblock);
-            }
-            else
-            {
-              vtkDataSet* iblockDS = vtkDataSet::SafeDownCast(iblock);
-              vtkDataSet* oblockDS = vtkDataSet::SafeDownCast(oblock);
-              if (iblockDS && oblockDS)
-              {
-                oblockDS->CopyStructure(iblockDS);
-              }
-            }
+            details::initializeOutput(iblock, oblock, this->CopyArrays);
           }
           cdsOutput->SetDataSet(iter, oblock);
           oblock->Delete();
         }
         iter->Delete();
       }
+    }
+    else
+    {
+      details::initializeOutput(objInput, objOutput, this->CopyArrays);
     }
   }
 
@@ -259,12 +231,11 @@ int vtkProgrammableFilter::RequestData(vtkInformation* vtkNotUsed(request),
 
 int vtkProgrammableFilter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
-  // This algorithm may accept a vtkDataSet or vtkGraph or vtkTable.
   info->Remove(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE());
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkGraph");
-  info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkMolecule");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkTable");
+  info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkHyperTreeGrid");
   return 1;
 }
 
@@ -274,3 +245,4 @@ void vtkProgrammableFilter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "CopyArrays: " << this->CopyArrays << endl;
 }
+VTK_ABI_NAMESPACE_END

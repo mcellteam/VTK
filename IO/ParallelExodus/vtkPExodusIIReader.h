@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPExodusIIReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPExodusIIReader
@@ -44,6 +29,7 @@
 
 #include <vector> // Required for vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTimerLog;
 class vtkMultiProcessController;
 
@@ -54,7 +40,7 @@ public:
   vtkTypeMacro(vtkPExodusIIReader, vtkExodusIIReader);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/get the communication object used to relay a list of files
    * from the rank 0 process to all others. This is the only interprocess
@@ -62,9 +48,9 @@ public:
    */
   void SetController(vtkMultiProcessController* c);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods tell the reader that the data is distributed across
    * multiple files. This is for distributed execution. It this case,
@@ -74,13 +60,13 @@ public:
    * numbers. This may happen in the future. (That is why there is no
    * GetFileNumberRange method.
    */
-  vtkSetStringMacro(FilePattern);
-  vtkGetStringMacro(FilePattern);
-  vtkSetStringMacro(FilePrefix);
-  vtkGetStringMacro(FilePrefix);
-  //@}
+  vtkSetFilePathMacro(FilePattern);
+  vtkGetFilePathMacro(FilePattern);
+  vtkSetFilePathMacro(FilePrefix);
+  vtkGetFilePathMacro(FilePrefix);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the range of files that are being loaded. The range for single
    * file should add to 0.
@@ -88,7 +74,7 @@ public:
   void SetFileRange(int, int);
   void SetFileRange(int* r) { this->SetFileRange(r[0], r[1]); }
   vtkGetVector2Macro(FileRange, int);
-  //@}
+  ///@}
 
   /**
    * Provide an arbitrary list of file names instead of a prefix,
@@ -98,7 +84,7 @@ public:
    */
   void SetFileNames(int nfiles, const char** names);
 
-  void SetFileName(const char* name) override;
+  void SetFileName(VTK_FILEPATH const char* name) override;
 
   /**
    * Return pointer to list of file names set in SetFileNames
@@ -110,12 +96,12 @@ public:
    */
   int GetNumberOfFileNames() { return this->NumberOfFileNames; }
 
-  //@{
+  ///@{
   /**
    * Return the number of files to be read.
    */
   vtkGetMacro(NumberOfFiles, int);
-  //@}
+  ///@}
 
   vtkIdType GetTotalNumberOfElements() override;
   vtkIdType GetTotalNumberOfNodes() override;
@@ -126,7 +112,7 @@ public:
    */
   virtual void Broadcast(vtkMultiProcessController* ctrl);
 
-  //@{
+  ///@{
   /**
    * The size of the variable cache in MegaByes. This represents the maximum
    * size of cache that a single partition reader can have while reading. When
@@ -139,19 +125,19 @@ public:
    */
   vtkGetMacro(VariableCacheSize, double);
   vtkSetMacro(VariableCacheSize, double);
-  //@}
+  ///@}
 
 protected:
   vtkPExodusIIReader();
   ~vtkPExodusIIReader() override;
 
-  //@{
+  ///@{
   /**
    * Try to "guess" the pattern of files.
    */
   int DeterminePattern(const char* file);
   static int DetermineFileId(const char* file);
-  //@}
+  ///@}
 
   // holds the size of the variable cache in GigaBytes
   double VariableCacheSize;
@@ -190,4 +176,5 @@ private:
   void operator=(const vtkPExodusIIReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

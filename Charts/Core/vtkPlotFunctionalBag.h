@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlotFunctionalBag.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPlotFunctionalBag
@@ -35,14 +23,16 @@
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkNew.h"              // Needed to hold SP ivars
 #include "vtkPlot.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkPlotFuntionalBagInternal;
 class vtkPlotLine;
 class vtkPoints2D;
 class vtkScalarsToColors;
 
-class VTKCHARTSCORE_EXPORT vtkPlotFunctionalBag : public vtkPlot
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPlotFunctionalBag : public vtkPlot
 {
 public:
   vtkTypeMacro(vtkPlotFunctionalBag, vtkPlot);
@@ -63,13 +53,6 @@ public:
    * Reimplemented to enforce visibility when selected.
    */
   bool GetVisible() override;
-
-  /**
-   * Perform any updates to the item that may be necessary before rendering.
-   * The scene should take care of calling this on all items before their
-   * Paint function is invoked.
-   */
-  void Update() override;
 
   /**
    * Paint event for the plot, called whenever the chart needs to be drawn.
@@ -95,13 +78,13 @@ public:
    */
   void GetUnscaledInputBounds(double bounds[4]) override;
 
-  //@{
+  ///@{
   /**
    * Specify a lookup table for the mapper to use.
    */
   void SetLookupTable(vtkScalarsToColors* lut);
   vtkScalarsToColors* GetLookupTable();
-  //@}
+  ///@}
 
   /**
    * Create default lookup table. Generally used to create one when none
@@ -115,16 +98,8 @@ public:
    * -1.
    */
   vtkIdType GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
-    vtkVector2f* location,
-#ifndef VTK_LEGACY_REMOVE
-    vtkIdType* segmentId) override;
-#else
-    vtkIdType* segmentId = nullptr) override;
-#endif // VTK_LEGACY_REMOVE
-
-#ifndef VTK_LEGACY_REMOVE
+    vtkVector2f* location, vtkIdType* segmentId) override;
   using vtkPlot::GetNearestPoint;
-#endif // VTK_LEGACY_REMOVE
 
   /**
    * Select all points in the specified rectangle.
@@ -136,6 +111,14 @@ public:
    */
   bool SelectPointsInPolygon(const vtkContextPolygon& polygon) override;
 
+  /**
+   * Update the internal cache. Returns true if cache was successfully updated. Default does
+   * nothing.
+   * This method is called by Update() when either the plot's data has changed or
+   * CacheRequiresUpdate() returns true. It is not necessary to call this method explicitly.
+   */
+  bool UpdateCache() override;
+
 protected:
   vtkPlotFunctionalBag();
   ~vtkPlotFunctionalBag() override;
@@ -146,14 +129,9 @@ protected:
   bool GetDataArrays(vtkTable* table, vtkDataArray* array[2]);
 
   /**
-   * Update the table cache.
+   * Test if the internal cache requires an update.
    */
-  bool UpdateTableCache(vtkTable*);
-
-  /**
-   * The cache is marked dirty until it has been initialized.
-   */
-  vtkTimeStamp BuildTime;
+  bool CacheRequiresUpdate() override;
 
   /**
    * Lookup Table for coloring points by scalar value
@@ -177,4 +155,5 @@ private:
   void operator=(const vtkPlotFunctionalBag&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPlotFunctionalBag_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSPHKernel.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSPHKernel
  * @brief   a family of SPH interpolation kernels
@@ -57,8 +45,8 @@
 
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkInterpolationKernel.h"
-#include "vtkStdString.h" // For vtkStdString ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 class vtkDoubleArray;
 class vtkDataArray;
@@ -67,40 +55,40 @@ class vtkFloatArray;
 class VTKFILTERSPOINTS_EXPORT vtkSPHKernel : public vtkInterpolationKernel
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation, obtaining type information, and printing.
    */
   vtkTypeMacro(vtkSPHKernel, vtkInterpolationKernel);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The user defined initial particle spatial step. This is also referred to as
    * the smoothing length.
    */
   vtkSetClampMacro(SpatialStep, double, 0.0, VTK_FLOAT_MAX);
   vtkGetMacro(SpatialStep, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The domain dimension, default to 3.
    */
   vtkSetClampMacro(Dimension, int, 1, 3);
   vtkGetMacro(Dimension, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return the cutoff factor. This is hard wired into the kernel (e.g., the
    * vtkSPHQuinticKernel has a cutoff factor = 3.0).
    */
   vtkGetMacro(CutoffFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the (optional) array defining a cutoff distance. If provided this
    * distance is used to find the interpolating points within the local
@@ -109,25 +97,25 @@ public:
    */
   virtual void SetCutoffArray(vtkDataArray*);
   vtkGetObjectMacro(CutoffArray, vtkDataArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the (optional) density array. Used with the mass array to
    * compute local particle volumes.
    */
   virtual void SetDensityArray(vtkDataArray*);
   vtkGetObjectMacro(DensityArray, vtkDataArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the (optional) mass array. Used with the density array to
    * compute local particle volumes.
    */
   virtual void SetMassArray(vtkDataArray*);
   vtkGetObjectMacro(MassArray, vtkDataArray);
-  //@}
+  ///@}
 
   /**
    * Produce the computational parameters for the kernel. Invoke this method
@@ -161,15 +149,15 @@ public:
   /**
    * Compute weighting factor given a normalized distance from a sample point.
    */
-  virtual double ComputeFunctionWeight(const double d) = 0;
+  virtual double ComputeFunctionWeight(double d) = 0;
 
   /**
    * Compute weighting factor for derivative quantities given a normalized
    * distance from a sample point.
    */
-  virtual double ComputeDerivWeight(const double d) = 0;
+  virtual double ComputeDerivWeight(double d) = 0;
 
-  //@{
+  ///@{
   /**
    * Return the SPH normalization factor. This also includes the contribution
    * of 1/h^d, where h is the smoothing length (i.e., spatial step) and d is
@@ -177,7 +165,7 @@ public:
    * kernel is initialized.
    */
   vtkGetMacro(NormFactor, double);
-  //@}
+  ///@}
 
 protected:
   vtkSPHKernel();
@@ -208,4 +196,5 @@ private:
   void operator=(const vtkSPHKernel&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCameraRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCameraRepresentation.h"
 #include "vtkActor2D.h"
 #include "vtkCallbackCommand.h"
@@ -29,12 +17,13 @@
 #include "vtkTransform.h"
 #include "vtkTransformPolyDataFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCameraRepresentation);
 
 vtkCxxSetObjectMacro(vtkCameraRepresentation, Camera, vtkCamera);
 vtkCxxSetObjectMacro(vtkCameraRepresentation, Interpolator, vtkCameraInterpolator);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCameraRepresentation::vtkCameraRepresentation()
 {
   this->Camera = nullptr;
@@ -47,7 +36,7 @@ vtkCameraRepresentation::vtkCameraRepresentation()
   this->Position2Coordinate->SetValue(0.04 * size[0], 0.04 * size[1]);
   this->ProportionalResize = 1;
   this->Moving = 1;
-  this->SetShowBorder(vtkBorderRepresentation::BORDER_ON);
+  this->SetShowBorderToOn();
 
   // Create the geometry in canonical coordinates
   this->Points = vtkPoints::New();
@@ -123,7 +112,7 @@ vtkCameraRepresentation::vtkCameraRepresentation()
   this->Actor->SetProperty(this->Property);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCameraRepresentation::~vtkCameraRepresentation()
 {
   this->SetCamera(nullptr);
@@ -137,14 +126,14 @@ vtkCameraRepresentation::~vtkCameraRepresentation()
   this->Actor->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraRepresentation::BuildRepresentation()
 {
   // Note that the transform is updated by the superclass
   this->Superclass::BuildRepresentation();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraRepresentation::AddCameraToPath()
 {
   if (!this->Camera)
@@ -159,7 +148,7 @@ void vtkCameraRepresentation::AddCameraToPath()
   this->Interpolator->AddCamera(this->CurrentTime, this->Camera);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraRepresentation::AnimatePath(vtkRenderWindowInteractor* rwi)
 {
   vtkCameraInterpolator* camInt = this->Interpolator;
@@ -184,7 +173,7 @@ void vtkCameraRepresentation::AnimatePath(vtkRenderWindowInteractor* rwi)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraRepresentation::InitializePath()
 {
   if (!this->Interpolator)
@@ -195,21 +184,24 @@ void vtkCameraRepresentation::InitializePath()
   this->CurrentTime = 0.0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraRepresentation::GetActors2D(vtkPropCollection* pc)
 {
-  pc->AddItem(this->Actor);
+  if (pc != nullptr && this->GetVisibility())
+  {
+    pc->AddItem(this->Actor);
+  }
   this->Superclass::GetActors2D(pc);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraRepresentation::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->Actor->ReleaseGraphicsResources(w);
   this->Superclass::ReleaseGraphicsResources(w);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCameraRepresentation::RenderOverlay(vtkViewport* w)
 {
   int count = this->Superclass::RenderOverlay(w);
@@ -217,7 +209,7 @@ int vtkCameraRepresentation::RenderOverlay(vtkViewport* w)
   return count;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCameraRepresentation::RenderOpaqueGeometry(vtkViewport* w)
 {
   int count = this->Superclass::RenderOpaqueGeometry(w);
@@ -225,7 +217,7 @@ int vtkCameraRepresentation::RenderOpaqueGeometry(vtkViewport* w)
   return count;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCameraRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w)
 {
   int count = this->Superclass::RenderTranslucentPolygonalGeometry(w);
@@ -233,7 +225,7 @@ int vtkCameraRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w)
   return count;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkCameraRepresentation::HasTranslucentPolygonalGeometry()
@@ -243,7 +235,7 @@ vtkTypeBool vtkCameraRepresentation::HasTranslucentPolygonalGeometry()
   return result;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCameraRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -262,3 +254,4 @@ void vtkCameraRepresentation::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Camera: " << this->Camera << "\n";
   os << indent << "Number of Frames: " << this->NumberOfFrames << "\n";
 }
+VTK_ABI_NAMESPACE_END

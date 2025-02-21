@@ -1,33 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestTriangle.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // .NAME
 // .SECTION Description
 // this program tests the Triangle
 
+#include "vtkMathUtilities.h"
 #include "vtkNew.h"
 #include "vtkPoints.h"
 #include "vtkSmartPointer.h"
 #include "vtkTriangle.h"
 #include <limits>
-
-template <class A>
-bool fuzzyCompare(A a, A b)
-{
-  return fabs(a - b) < std::numeric_limits<A>::epsilon();
-}
 
 int TestTriangle(int, char*[])
 {
@@ -115,7 +98,7 @@ int TestTriangle(int, char*[])
   triangle->GetPoints()->SetPoint(2, 0.0, 1.0, 0.0);
 
   double area = triangle->ComputeArea();
-  if (!fuzzyCompare(area, 0.5))
+  if (!vtkMathUtilities::NearlyEqual<double>(area, 0.5))
   {
     cerr << "ERROR:  triangle area is " << area << ", should be 0.5" << endl;
     return EXIT_FAILURE;
@@ -137,9 +120,14 @@ int TestTriangle(int, char*[])
   double pcoords[3];
   int subId;
   double dEpsilon = std::numeric_limits<double>::epsilon();
-  if (triangleDeg->IntersectWithLine(p1, p2, dEpsilon, t, x, pcoords, subId) != 1 || x[0] != 0 ||
-    x[1] != 0 || x[2] != 1 || t != 0.5 || pcoords[0] != 1.1 || pcoords[1] != 0.55 ||
-    pcoords[2] != 0)
+  if (triangleDeg->IntersectWithLine(p1, p2, dEpsilon, t, x, pcoords, subId) != 1 ||
+    !vtkMathUtilities::NearlyEqual<double>(x[0], 0.0) ||
+    !vtkMathUtilities::NearlyEqual<double>(x[1], 0.0) ||
+    !vtkMathUtilities::NearlyEqual<double>(x[2], 1.0) ||
+    !vtkMathUtilities::NearlyEqual<double>(t, 0.5) ||
+    !vtkMathUtilities::NearlyEqual<double>(pcoords[0], 1.1) ||
+    !vtkMathUtilities::NearlyEqual<double>(pcoords[1], 0.55) ||
+    !vtkMathUtilities::NearlyEqual<double>(pcoords[2], 0.0))
   {
     cerr << "Error while intersecting degenerated triangle" << endl;
     return EXIT_FAILURE;
@@ -151,5 +139,57 @@ int TestTriangle(int, char*[])
     cerr << "Error while intersecting degenerated triangle" << endl;
     return EXIT_FAILURE;
   }
+
+  // Testing intersection of triangle with coplanar line
+
+  // Build triangle
+  double pt0[3] = { 0, 0, 0 };
+  double pt1[3] = { 0, 10, 0 };
+  double pt2[3] = { 0, 0, 10 };
+  vtkNew<vtkTriangle> coplanarTriangle;
+  coplanarTriangle->GetPoints()->SetPoint(0, pt0);
+  coplanarTriangle->GetPoints()->SetPoint(1, pt1);
+  coplanarTriangle->GetPoints()->SetPoint(2, pt2);
+
+  // Define line extremities with first extremity inside
+  double ext1[3] = { 0, 1, 5 };
+  double ext2[3] = { 0, 11, 5 };
+
+  int res = coplanarTriangle->IntersectWithLine(ext1, ext2, dEpsilon, t, x, pcoords, subId);
+  // Verify correct output values
+  if (res != 1)
+  {
+    cerr << "Line intersection with coplanar triangle not detected" << endl;
+    return EXIT_FAILURE;
+  }
+  else if (x[0] != 0 || x[1] != 1 || x[2] != 5 || t != 0.0 || pcoords[0] != 0.1 ||
+    pcoords[1] != 0.5 || pcoords[2] != 0.0)
+  {
+    cerr << "Output coordinates of intersecting point incorrect" << endl;
+    return EXIT_FAILURE;
+  }
+
+  // Define line extremities with first extremity outside
+  ext1[0] = 0;
+  ext1[1] = -1;
+  ext1[2] = 5;
+  ext2[0] = 0;
+  ext2[1] = 9;
+  ext2[2] = 5;
+
+  res = coplanarTriangle->IntersectWithLine(ext1, ext2, dEpsilon, t, x, pcoords, subId);
+  // Verify correct output values
+  if (res != 1)
+  {
+    cerr << "Line intersection with coplanar triangle not detected" << endl;
+    return EXIT_FAILURE;
+  }
+  else if (x[0] != 0 || x[1] != 0 || x[2] != 5 || t != 0.1 || pcoords[0] != 0.0 ||
+    pcoords[1] != 0.5 || pcoords[2] != 0.0)
+  {
+    cerr << "Output coordinates of intersecting point incorrect" << endl;
+    return EXIT_FAILURE;
+  }
+
   return EXIT_SUCCESS;
 }

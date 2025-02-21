@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMergeFields.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMergeFields.h"
 
 #include "vtkArrayDispatch.h"
@@ -25,6 +13,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMergeFields);
 
 char vtkMergeFields::FieldLocationNames[3][12] = { "DATA_OBJECT", "POINT_DATA", "CELL_DATA" };
@@ -252,10 +241,18 @@ int vtkMergeFields::RequestData(vtkInformation* vtkNotUsed(request),
   outputArray->SetNumberOfTuples(numTuples);
   outputArray->SetName(this->FieldName);
 
+  int checkAbortInterval = std::min(this->NumberOfComponents / 10 + 1, 1000);
+  int progressCount = 0;
+
   // Merge
   cur = this->GetFirst();
   do
   {
+    if (progressCount % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
+    progressCount++;
     before = cur;
     cur = cur->Next;
     inputArray = fd->GetArray(before->FieldName);
@@ -282,13 +279,13 @@ int vtkMergeFields::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-namespace {
+namespace
+{
 
 struct MergeFieldsWorker
 {
   template <typename SrcArrayT, typename DstArrayT>
-  void operator()(SrcArrayT* input, DstArrayT* output,
-                  int inComp, int outComp) const
+  void operator()(SrcArrayT* input, DstArrayT* output, int inComp, int outComp) const
   {
     const auto srcRange = vtk::DataArrayTupleRange(input);
     auto dstRange = vtk::DataArrayTupleRange(output);
@@ -422,3 +419,4 @@ void vtkMergeFields::PrintAllComponents(ostream& os, vtkIndent indent)
     this->PrintComponent(before, os, indent);
   } while (cur);
 }
+VTK_ABI_NAMESPACE_END

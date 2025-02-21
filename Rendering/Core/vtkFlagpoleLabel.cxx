@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFlagpoleLabel.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkFlagpoleLabel.h"
 
@@ -33,6 +21,7 @@
 #include "vtkTexture.h"
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkFlagpoleLabel);
 vtkCxxSetObjectMacro(vtkFlagpoleLabel, TextProperty, vtkTextProperty);
 
@@ -100,7 +89,7 @@ void vtkFlagpoleLabel::SetForceOpaque(bool opaque)
 }
 
 //------------------------------------------------------------------------------
-bool vtkFlagpoleLabel::GetForceOpaque()
+bool vtkFlagpoleLabel::GetForceOpaque() VTK_FUTURE_CONST
 {
   return this->QuadActor->GetForceOpaque();
 }
@@ -127,7 +116,7 @@ void vtkFlagpoleLabel::SetForceTranslucent(bool trans)
 }
 
 //------------------------------------------------------------------------------
-bool vtkFlagpoleLabel::GetForceTranslucent()
+bool vtkFlagpoleLabel::GetForceTranslucent() VTK_FUTURE_CONST
 {
   return this->QuadActor->GetForceTranslucent();
 }
@@ -416,18 +405,31 @@ void vtkFlagpoleLabel::GenerateQuad(vtkRenderer* ren)
   double scale = this->FlagSize * 0.001;
   vtkCamera* cam = ren->GetActiveCamera();
   double pos[3];
-  cam->GetPosition(pos);
-  if (cam->GetParallelProjection())
+  if (cam->GetUseOffAxisProjection())
   {
-    double cscale = cam->GetParallelScale();
-    scale = scale * cscale;
-  }
-  else
-  {
-    double vangle = cam->GetViewAngle();
+    cam->GetStereoEyePosition(pos);
+
+    double vangle = 90.0;
     double dist = sqrt(vtkMath::Distance2BetweenPoints(pos, this->TopPosition));
     dist *= 2.0 * tan(vtkMath::RadiansFromDegrees(vangle / 2.0));
     scale = scale * dist;
+  }
+  else
+  {
+    cam->GetPosition(pos);
+
+    if (cam->GetParallelProjection())
+    {
+      double cscale = cam->GetParallelScale();
+      scale = scale * cscale;
+    }
+    else
+    {
+      double vangle = cam->GetViewAngle();
+      double dist = sqrt(vtkMath::Distance2BetweenPoints(pos, this->TopPosition));
+      dist *= 2.0 * tan(vtkMath::RadiansFromDegrees(vangle / 2.0));
+      scale = scale * dist;
+    }
   }
 
   // the middle bottom of the quad should be at TopPosition
@@ -505,3 +507,4 @@ void vtkFlagpoleLabel::PreRender()
   this->PoleActor->SetPropertyKeys(this->GetPropertyKeys());
   this->QuadActor->SetPropertyKeys(this->GetPropertyKeys());
 }
+VTK_ABI_NAMESPACE_END

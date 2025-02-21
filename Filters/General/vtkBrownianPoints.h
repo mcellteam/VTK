@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBrownianPoints.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBrownianPoints
  * @brief   assign random vector to points
@@ -30,6 +18,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersGeneralModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkBrownianPoints : public vtkDataSetAlgorithm
 {
 public:
@@ -41,25 +30,25 @@ public:
   vtkTypeMacro(vtkBrownianPoints, vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the minimum speed value.
    */
   vtkSetClampMacro(MinimumSpeed, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(MinimumSpeed, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the maximum speed value.
    */
   vtkSetClampMacro(MaximumSpeed, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(MaximumSpeed, double);
-  //@}
+  ///@}
 
 protected:
   vtkBrownianPoints();
-  ~vtkBrownianPoints() override {}
+  ~vtkBrownianPoints() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   double MinimumSpeed;
@@ -70,4 +59,5 @@ private:
   void operator=(const vtkBrownianPoints&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

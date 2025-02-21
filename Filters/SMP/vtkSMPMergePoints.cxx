@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSMPMergePoints.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSMPMergePoints.h"
 #include "vtkFloatArray.h"
@@ -21,6 +9,7 @@
 #include "vtkPoints.h"
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSMPMergePoints);
 
 //------------------------------------------------------------------------------
@@ -138,8 +127,7 @@ void vtkSMPMergePoints::Merge(vtkSMPMergePoints* locator, vtkIdType idx, vtkPoin
 
   // points have to be added
   vtkIdType numberOfInsertions = oldIdToMerge->GetNumberOfIds();
-  vtkIdType firstId = this->AtomicInsertionId;
-  this->AtomicInsertionId += numberOfInsertions;
+  vtkIdType firstId = this->AtomicInsertionId.fetch_add(numberOfInsertions);
   bucket->Resize(bucket->GetNumberOfIds() + numberOfInsertions);
   for (vtkIdType i = 0; i < numberOfInsertions; ++i)
   {
@@ -165,3 +153,4 @@ void vtkSMPMergePoints::FixSizeOfPointArray()
 {
   this->Points->SetNumberOfPoints(this->AtomicInsertionId);
 }
+VTK_ABI_NAMESPACE_END

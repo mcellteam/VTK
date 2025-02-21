@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOutlineCornerSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOutlineCornerSource
  * @brief   create wireframe outline corners around bounding box
@@ -26,6 +14,7 @@
 #include "vtkFiltersSourcesModule.h" // For export macro
 #include "vtkOutlineSource.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSSOURCES_EXPORT vtkOutlineCornerSource : public vtkOutlineSource
 {
 public:
@@ -37,18 +26,18 @@ public:
    */
   static vtkOutlineCornerSource* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the factor that controls the relative size of the corners
    * to the length of the corresponding bounds
    */
   vtkSetClampMacro(CornerFactor, double, 0.001, 0.5);
   vtkGetMacro(CornerFactor, double);
-  //@}
+  ///@}
 
 protected:
   vtkOutlineCornerSource();
-  ~vtkOutlineCornerSource() override {}
+  ~vtkOutlineCornerSource() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -59,4 +48,5 @@ private:
   void operator=(const vtkOutlineCornerSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

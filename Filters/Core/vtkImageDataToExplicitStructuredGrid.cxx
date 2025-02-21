@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageDataToExplicitStructuredGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageDataToExplicitStructuredGrid.h"
 
 #include "vtkCellArray.h"
@@ -26,9 +14,16 @@
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageDataToExplicitStructuredGrid);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageDataToExplicitStructuredGrid::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 int vtkImageDataToExplicitStructuredGrid::RequestInformation(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -41,7 +36,7 @@ int vtkImageDataToExplicitStructuredGrid::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToExplicitStructuredGrid::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -71,8 +66,13 @@ int vtkImageDataToExplicitStructuredGrid::RequestData(
   vtkNew<vtkPoints> points;
   points->SetDataTypeToDouble();
   points->SetNumberOfPoints(nbPoints);
+  vtkIdType checkAbortInterval = std::min(nbPoints / 10 + 1, (vtkIdType)1000);
   for (vtkIdType i = 0; i < nbPoints; i++)
   {
+    if (i % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     double p[3];
     input->GetPoint(i, p);
     points->SetPoint(i, p);
@@ -82,8 +82,13 @@ int vtkImageDataToExplicitStructuredGrid::RequestData(
   vtkNew<vtkCellArray> cells;
   cells->AllocateEstimate(nbCells, 8);
   vtkNew<vtkIdList> ptIds;
+  checkAbortInterval = std::min(nbCells / 10 + 1, (vtkIdType)1000);
   for (vtkIdType i = 0; i < nbCells; i++)
   {
+    if (i % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     input->GetCellPoints(i, ptIds.Get());
     assert(ptIds->GetNumberOfIds() == 8);
     // Change point order: voxels and hexahedron don't have same connectivity.
@@ -108,10 +113,11 @@ int vtkImageDataToExplicitStructuredGrid::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToExplicitStructuredGrid::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkImageData");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

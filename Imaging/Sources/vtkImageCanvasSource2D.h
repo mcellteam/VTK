@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageCanvasSource2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageCanvasSource2D
  * @brief   Paints on a canvas
@@ -27,6 +15,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingSourcesModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGSOURCES_EXPORT vtkImageCanvasSource2D : public vtkImageAlgorithm
 {
 public:
@@ -38,14 +27,14 @@ public:
   vtkTypeMacro(vtkImageCanvasSource2D, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get DrawColor.  This is the value that is used when filling data
    * or drawing lines. Default is (0,0,0,0)
    */
   vtkSetVector4Macro(DrawColor, double);
   vtkGetVector4Macro(DrawColor, double);
-  //@}
+  ///@}
 
   /**
    * Set DrawColor to (a, 0, 0, 0)
@@ -67,7 +56,7 @@ public:
    */
   void InitializeCanvasVolume(vtkImageData* volume);
 
-  //@{
+  ///@{
   /**
    * Set the pixels inside the box (min0, max0, min1, max1) to the current
    * DrawColor
@@ -90,7 +79,7 @@ public:
     p2[2] = z2;
     this->DrawSegment3D(p1, p2);
   }
-  //@}
+  ///@}
 
   /**
    * Draw subimage of the input image in the canvas at position x0 and
@@ -106,7 +95,7 @@ public:
    */
   void FillPixel(int x, int y);
 
-  //@{
+  ///@{
   /**
    * These methods set the WholeExtent of the output
    * It sets the size of the canvas.
@@ -114,9 +103,9 @@ public:
    */
   void SetExtent(int* extent);
   void SetExtent(int x1, int x2, int y1, int y2, int z1, int z2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The drawing operations can only draw into one 2D XY plane at a time.
    * If the canvas is a 3D volume, then this z value is used
@@ -124,9 +113,9 @@ public:
    */
   vtkSetMacro(DefaultZ, int);
   vtkGetMacro(DefaultZ, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get Ratio. This is the value that is used to pre-multiply each
    * (x, y, z) drawing coordinates (including DefaultZ). The default
@@ -134,17 +123,17 @@ public:
    */
   vtkSetVector3Macro(Ratio, double);
   vtkGetVector3Macro(Ratio, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of scalar components
    */
   virtual void SetNumberOfScalarComponents(int i);
   virtual int GetNumberOfScalarComponents() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the data scalar type (i.e VTK_DOUBLE). Note that these methods
    * are setting and getting the pipeline scalar type. i.e. they are setting
@@ -164,7 +153,7 @@ public:
   void SetScalarTypeToChar() { this->SetScalarType(VTK_CHAR); }
   void SetScalarType(int);
   int GetScalarType() const;
-  //@}
+  ///@}
 
 protected:
   vtkImageCanvasSource2D();
@@ -189,4 +178,5 @@ private:
   void operator=(const vtkImageCanvasSource2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

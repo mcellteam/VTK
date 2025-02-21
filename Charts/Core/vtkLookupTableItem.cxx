@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLookupTableItem.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkLookupTableItem.h"
 #include "vtkCallbackCommand.h"
@@ -23,17 +11,18 @@
 
 #include <cassert>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLookupTableItem);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLookupTableItem::vtkLookupTableItem()
 {
   this->Interpolate = false;
   this->LookupTable = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLookupTableItem::~vtkLookupTableItem()
 {
   if (this->LookupTable)
@@ -43,7 +32,7 @@ vtkLookupTableItem::~vtkLookupTableItem()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLookupTableItem::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -59,7 +48,7 @@ void vtkLookupTableItem::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLookupTableItem::ComputeBounds(double* bounds)
 {
   this->Superclass::ComputeBounds(bounds);
@@ -71,7 +60,7 @@ void vtkLookupTableItem::ComputeBounds(double* bounds)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLookupTableItem::SetLookupTable(vtkLookupTable* t)
 {
   if (t == this->LookupTable)
@@ -90,7 +79,7 @@ void vtkLookupTableItem::SetLookupTable(vtkLookupTable* t)
   this->ScalarsToColorsModified(this->LookupTable, vtkCommand::ModifiedEvent, nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLookupTableItem::ComputeTexture()
 {
   double bounds[4];
@@ -125,3 +114,4 @@ void vtkLookupTableItem::ComputeTexture()
     }
   }
 }
+VTK_ABI_NAMESPACE_END

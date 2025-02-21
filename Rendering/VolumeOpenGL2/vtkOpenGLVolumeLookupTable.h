@@ -1,20 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLVolumeLookupTable.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=============================================================================
-Copyright and License information
-=============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkOpenGLVolumeLookupTable
  * @brief Base class for OpenGL texture management of scalar color,
@@ -23,16 +8,17 @@ Copyright and License information
 
 #ifndef vtkOpenGLVolumeLookupTable_h
 #define vtkOpenGLVolumeLookupTable_h
-#ifndef __VTK_WRAP__
 
 #include "vtkObject.h"
+#include "vtkRenderingVolumeOpenGL2Module.h" // For export macro
 
 // Forward declarations
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLRenderWindow;
 class vtkTextureObject;
 class vtkWindow;
 
-class vtkOpenGLVolumeLookupTable : public vtkObject
+class VTKRENDERINGVOLUMEOPENGL2_EXPORT vtkOpenGLVolumeLookupTable : public vtkObject
 {
 public:
   vtkTypeMacro(vtkOpenGLVolumeLookupTable, vtkObject);
@@ -48,10 +34,10 @@ public:
   /**
    * Activate / deactivate the internal texture object
    */
-  //@{
+  ///@{
   void Activate();
   void Deactivate();
-  //@}
+  ///@}
 
   /**
    * Get the maximum supported texture width for the target OpenGL environment.
@@ -81,7 +67,7 @@ public:
 
 protected:
   vtkOpenGLVolumeLookupTable() = default;
-  virtual ~vtkOpenGLVolumeLookupTable() override;
+  ~vtkOpenGLVolumeLookupTable() override;
 
   double LastRange[2] = { 0.0, 0.0 };
   float* Table = nullptr;
@@ -120,6 +106,5 @@ private:
   void operator=(const vtkOpenGLVolumeLookupTable&) = delete;
 };
 
-#endif //__VTK_WRAP__
+VTK_ABI_NAMESPACE_END
 #endif // vtkOpenGLVolumeLookupTable_h
-// VTK-HeaderTest-Exclude: vtkOpenGLVolumeLookupTable.h

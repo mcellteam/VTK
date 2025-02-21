@@ -1,22 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEvent.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkEvent.h"
 #include "vtkCommand.h"
 #include "vtkObjectFactory.h"
 #include "vtkRenderWindowInteractor.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkEvent);
 
 vtkEvent::vtkEvent()
@@ -34,20 +23,13 @@ vtkEvent::~vtkEvent()
 }
 
 // Comparison against event with no modifiers
-bool vtkEvent::operator==(unsigned long VTKEvent)
+bool vtkEvent::operator==(unsigned long VTKEvent) const
 {
-  if (this->EventId == VTKEvent)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return this->EventId == VTKEvent;
 }
 
 // Comparison against event with modifiers
-bool vtkEvent::operator==(vtkEvent* e)
+bool vtkEvent::operator==(vtkEvent* e) const
 {
   if (this->EventId != e->EventId)
   {
@@ -74,7 +56,7 @@ bool vtkEvent::operator==(vtkEvent* e)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEvent::GetModifier(vtkRenderWindowInteractor* i)
 {
   int modifier = 0;
@@ -85,7 +67,7 @@ int vtkEvent::GetModifier(vtkRenderWindowInteractor* i)
   return modifier;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEvent::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -138,3 +120,4 @@ void vtkEvent::PrintSelf(ostream& os, vtkIndent indent)
     os << this->KeySym << "\n";
   }
 }
+VTK_ABI_NAMESPACE_END

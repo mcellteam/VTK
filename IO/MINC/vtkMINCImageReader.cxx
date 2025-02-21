@@ -1,50 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMINCImageReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=========================================================================
-
-Copyright (c) 2006 Atamai, Inc.
-
-Use, modification and redistribution of the software, in source or
-binary forms, are permitted provided that the following terms and
-conditions are met:
-
-1) Redistribution of the source code, in verbatim or modified
-   form, must retain the above copyright notice, this license,
-   the following disclaimer, and any notices that refer to this
-   license and/or the following disclaimer.
-
-2) Redistribution in binary form must include the above copyright
-   notice, a copy of this license and the following disclaimer
-   in the documentation or with other materials provided with the
-   distribution.
-
-3) Modified copies of the source code must be clearly marked as such,
-   and must not be misrepresented as verbatim copies of the source code.
-
-THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE SOFTWARE "AS IS"
-WITHOUT EXPRESSED OR IMPLIED WARRANTY INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  IN NO EVENT SHALL ANY COPYRIGHT HOLDER OR OTHER PARTY WHO MAY
-MODIFY AND/OR REDISTRIBUTE THE SOFTWARE UNDER THE TERMS OF THIS LICENSE
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, LOSS OF DATA OR DATA BECOMING INACCURATE
-OR LOSS OF PROFIT OR BUSINESS INTERRUPTION) ARISING IN ANY WAY OUT OF
-THE USE OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGES.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2006 Atamai, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMINCImageReader.h"
 
@@ -80,10 +36,11 @@ POSSIBILITY OF SUCH DAMAGES.
 
 #define VTK_MINC_MAX_DIMS 8
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMINCImageReader);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMINCImageReader::vtkMINCImageReader()
 {
   this->NumberOfTimeSteps = 1;
@@ -111,7 +68,7 @@ vtkMINCImageReader::vtkMINCImageReader()
   this->FileNameHasChanged = 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMINCImageReader::~vtkMINCImageReader()
 {
   if (this->DirectionCosines)
@@ -126,7 +83,7 @@ vtkMINCImageReader::~vtkMINCImageReader()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMINCImageReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -150,7 +107,7 @@ void vtkMINCImageReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "TimeStep: " << this->TimeStep << "\n";
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMINCImageReader::SetFileName(const char* name)
 {
   // Set FileNameHasChanged even if the file name hasn't changed,
@@ -164,7 +121,7 @@ void vtkMINCImageReader::SetFileName(const char* name)
   this->Superclass::SetFileName(name);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMINCImageReader::CanReadFile(const char* fname)
 {
   // First do a very rapid check of the magic number
@@ -235,14 +192,14 @@ int vtkMINCImageReader::CanReadFile(const char* fname)
   return 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMatrix4x4* vtkMINCImageReader::GetDirectionCosines()
 {
   this->ReadMINCFileAttributes();
   return this->DirectionCosines;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMINCImageReader::GetRescaleSlope()
 {
   this->ReadMINCFileAttributes();
@@ -250,7 +207,7 @@ double vtkMINCImageReader::GetRescaleSlope()
   return this->RescaleSlope;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMINCImageReader::GetRescaleIntercept()
 {
   this->ReadMINCFileAttributes();
@@ -258,7 +215,7 @@ double vtkMINCImageReader::GetRescaleIntercept()
   return this->RescaleIntercept;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkMINCImageReader::GetDataRange()
 {
   this->ReadMINCFileAttributes();
@@ -266,21 +223,21 @@ double* vtkMINCImageReader::GetDataRange()
   return this->DataRange;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMINCImageReader::GetNumberOfTimeSteps()
 {
   this->ReadMINCFileAttributes();
   return this->NumberOfTimeSteps;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMINCImageAttributes* vtkMINCImageReader::GetImageAttributes()
 {
   this->ReadMINCFileAttributes();
   return this->ImageAttributes;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMINCImageReader::OpenNetCDFFile(const char* filename, int& ncid)
 {
   int status = 0;
@@ -301,7 +258,7 @@ int vtkMINCImageReader::OpenNetCDFFile(const char* filename, int& ncid)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMINCImageReader::CloseNetCDFFile(int ncid)
 {
   int status = 0;
@@ -315,9 +272,10 @@ int vtkMINCImageReader::CloseNetCDFFile(int ncid)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // this is a macro so the vtkErrorMacro will report a useful line number
 #define vtkMINCImageReaderFailAndClose(ncid, status)                                               \
+  do                                                                                               \
   {                                                                                                \
     if ((status) != NC_NOERR)                                                                      \
     {                                                                                              \
@@ -326,9 +284,9 @@ int vtkMINCImageReader::CloseNetCDFFile(int ncid)
         << nc_strerror(status));                                                                   \
     }                                                                                              \
     nc_close(ncid);                                                                                \
-  }
+  } while (false)
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Function for getting VTK dimension index from the dimension name.
 int vtkMINCImageReader::IndexFromDimensionName(const char* dimName)
 {
@@ -352,7 +310,7 @@ int vtkMINCImageReader::IndexFromDimensionName(const char* dimName)
   return 3;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMINCImageReader::ReadMINCFileAttributes()
 {
   // If the filename hasn't changed since the last time the attributes
@@ -672,7 +630,8 @@ int vtkMINCImageReader::ReadMINCFileAttributes()
   }
 
   // Get the data type
-  int dataType = this->ConvertMINCTypeToVTKType(this->MINCImageType, this->MINCImageTypeSigned);
+  int dataType =
+    vtkMINCImageReader::ConvertMINCTypeToVTKType(this->MINCImageType, this->MINCImageTypeSigned);
   this->ImageAttributes->SetDataType(dataType);
 
   // Get the name from the file name by removing the path and
@@ -726,7 +685,7 @@ int vtkMINCImageReader::ReadMINCFileAttributes()
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMINCImageReader::ConvertMINCTypeToVTKType(int minctype, int mincsigned)
 {
   int dataType = 0;
@@ -768,7 +727,7 @@ int vtkMINCImageReader::ConvertMINCTypeToVTKType(int minctype, int mincsigned)
   return dataType;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMINCImageReader::FindRangeAndRescaleValues()
 {
   // Set DataRange and Rescale values according to whether
@@ -797,7 +756,7 @@ void vtkMINCImageReader::FindRangeAndRescaleValues()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMINCImageReader::ExecuteInformation()
 {
   // Read the MINC attributes from the file.
@@ -861,24 +820,24 @@ void vtkMINCImageReader::ExecuteInformation()
   unsigned int numberOfDimensions = dimensionNames->GetNumberOfValues();
   for (unsigned int i = 0; i < numberOfDimensions; i++)
   {
-    const char* dimName = dimensionNames->GetValue(i);
+    std::string dimName = dimensionNames->GetValue(i);
     vtkIdType dimLength = dimensionLengths->GetValue(i);
 
     // Set the VTK dimension index.
-    int dimIndex = this->IndexFromDimensionName(dimName);
+    int dimIndex = this->IndexFromDimensionName(dimName.c_str());
 
     // Do special things with the spatial dimensions.
     if (dimIndex >= 0 && dimIndex < 3)
     {
       // Set the spacing from the 'step' attribute.
-      double step = this->ImageAttributes->GetAttributeValueAsDouble(dimName, MIstep);
+      double step = this->ImageAttributes->GetAttributeValueAsDouble(dimName.c_str(), MIstep);
       if (step)
       {
         dataSpacing[dimIndex] = step;
       }
 
       // Set the origin from the 'start' attribute.
-      double start = this->ImageAttributes->GetAttributeValueAsDouble(dimName, MIstart);
+      double start = this->ImageAttributes->GetAttributeValueAsDouble(dimName.c_str(), MIstart);
       if (start)
       {
         dataOrigin[dimIndex] = start;
@@ -889,7 +848,7 @@ void vtkMINCImageReader::ExecuteInformation()
     }
 
     // Check for vector_dimension.
-    else if (strcmp(dimName, MIvector_dimension) == 0)
+    else if (dimName == MIvector_dimension)
     {
       numberOfComponents = dimLength;
     }
@@ -902,7 +861,7 @@ void vtkMINCImageReader::ExecuteInformation()
   this->SetNumberOfScalarComponents(numberOfComponents);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Data conversion functions.  The rounding is done using the same
 // method as in the MINC libraries.
 #define vtkMINCImageReaderConvertMacro(F, T, MIN, MAX)                                             \
@@ -937,7 +896,7 @@ vtkMINCImageReaderConvertMacro(double, unsigned int, 0, VTK_UNSIGNED_INT_MAX);
 vtkMINCImageReaderConvertMacroFloat(double, float);
 vtkMINCImageReaderConvertMacroFloat(double, double);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overloaded functions for reading various data types.
 
 // Handle most with a macro.
@@ -964,7 +923,7 @@ vtkMINCImageReaderReadChunkMacro2(nc_get_vara_int, unsigned int, int);
 vtkMINCImageReaderReadChunkMacro(nc_get_vara_float, float);
 vtkMINCImageReaderReadChunkMacro(nc_get_vara_double, double);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2>
 void vtkMINCImageReaderExecuteChunk(T1* outPtr, T2* buffer, double slope, double intercept,
   int ncid, int varid, int ndims, size_t* start, size_t* count, vtkIdType* permutedInc)
@@ -1064,7 +1023,7 @@ void vtkMINCImageReaderExecuteChunk(T1* outPtr, T2* buffer, double slope, double
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Our own template that only includes MINC data types.
 
 #define vtkMINCImageReaderTemplateMacro(call)                                                      \
@@ -1117,7 +1076,7 @@ void vtkMINCImageReaderExecuteChunk(T1* outPtr, T2* buffer, double slope, double
   }                                                                                                \
   break
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMINCImageReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
 {
   vtkImageData* data = this->AllocateOutputData(output, outInfo);
@@ -1191,12 +1150,12 @@ void vtkMINCImageReader::ExecuteDataWithInformation(vtkDataObject* output, vtkIn
   {
     idim--;
 
-    const char* dimName = dimensionNames->GetValue(idim);
+    std::string dimName = dimensionNames->GetValue(idim);
     vtkIdType dimLength = dimensionLengths->GetValue(idim);
     length[idim] = dimLength;
 
     // Find the VTK dimension index.
-    int dimIndex = this->IndexFromDimensionName(dimName);
+    int dimIndex = this->IndexFromDimensionName(dimName.c_str());
 
     if (dimIndex >= 0 && dimIndex < 3)
     {
@@ -1205,7 +1164,7 @@ void vtkMINCImageReader::ExecuteDataWithInformation(vtkDataObject* output, vtkIn
       count[idim] = outExt[2 * dimIndex + 1] - outExt[2 * dimIndex] + 1;
       permutedInc[idim] = outInc[dimIndex];
     }
-    else if (strcmp(dimName, MIvector_dimension) == 0)
+    else if (dimName == MIvector_dimension)
     {
       // Vector dimension size is also stored in numComponents.
       start[idim] = 0;
@@ -1353,8 +1312,9 @@ void vtkMINCImageReader::ExecuteDataWithInformation(vtkDataObject* output, vtkIn
 
   switch (fileType)
   {
-    vtkMINCImageReaderTemplateMacro(delete[]((VTK_TT*)buffer));
+    vtkMINCImageReaderTemplateMacro(delete[] ((VTK_TT*)buffer));
   }
 
   this->CloseNetCDFFile(ncid);
 }
+VTK_ABI_NAMESPACE_END

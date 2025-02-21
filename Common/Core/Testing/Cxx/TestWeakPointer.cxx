@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestWeakPointer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test of vtkWeakPointer.
 // .SECTION Description
 // Tests instantiations of the vtkWeakPointer class template.
@@ -134,6 +122,7 @@ int TestWeakPointer(int, char*[])
   {
     vtkNew<vtkIntArray> array;
     vtkWeakPointer<vtkIntArray> intArray(array);
+    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
     vtkWeakPointer<vtkIntArray> intArray2(intArray);
     if (array != intArray || array != intArray2 || array->GetReferenceCount() != 1)
     {
@@ -152,6 +141,7 @@ int TestWeakPointer(int, char*[])
     vtkNew<vtkIntArray> array;
     vtkWeakPointer<vtkIntArray> intArray(array);
     vtkWeakPointer<vtkIntArray> intArray2(std::move(intArray));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     if (intArray || array != intArray2 || array->GetReferenceCount() != 1)
     {
       std::cerr << "Move failed.\n";
@@ -186,6 +176,7 @@ int TestWeakPointer(int, char*[])
     vtkNew<vtkIntArray> array;
     vtkWeakPointer<vtkIntArray> intArray(array);
     vtkWeakPointer<vtkDataArray> dataArray(std::move(intArray));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     if (intArray || array != dataArray || array->GetReferenceCount() != 1)
     {
       std::cerr << "Move failed.\n";

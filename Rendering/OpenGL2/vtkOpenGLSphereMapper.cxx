@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLSphereMapper.h"
 
 #include "vtkOpenGLHelper.h"
@@ -33,15 +22,16 @@
 #include "vtkShaderProgram.h"
 #include "vtkUnsignedCharArray.h"
 
-#include "vtkPointGaussianVS.h"
+#include "vtkSimpleSplatVS.h"
 #include "vtkSphereMapperGS.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLSphereMapper);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLSphereMapper::vtkOpenGLSphereMapper()
 {
   this->ScaleArray = nullptr;
@@ -49,12 +39,12 @@ vtkOpenGLSphereMapper::vtkOpenGLSphereMapper()
   this->Radius = 0.3;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLSphereMapper::GetShaderTemplate(
   std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* actor)
 {
   this->Superclass::GetShaderTemplate(shaders, ren, actor);
-  shaders[vtkShader::Vertex]->SetSource(vtkPointGaussianVS);
+  shaders[vtkShader::Vertex]->SetSource(vtkSimpleSplatVS);
   shaders[vtkShader::Geometry]->SetSource(vtkSphereMapperGS);
 }
 
@@ -133,13 +123,13 @@ void vtkOpenGLSphereMapper::ReplaceShaderValues(
   this->Superclass::ReplaceShaderValues(shaders, ren, actor);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLSphereMapper::~vtkOpenGLSphereMapper()
 {
   this->SetScaleArray(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLSphereMapper::SetCameraShaderParameters(
   vtkOpenGLHelper& cellBO, vtkRenderer* ren, vtkActor* actor)
 {
@@ -179,7 +169,7 @@ void vtkOpenGLSphereMapper::SetCameraShaderParameters(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLSphereMapper::SetMapperShaderParameters(
   vtkOpenGLHelper& cellBO, vtkRenderer* ren, vtkActor* actor)
 {
@@ -191,7 +181,7 @@ void vtkOpenGLSphereMapper::SetMapperShaderParameters(
   this->Superclass::SetMapperShaderParameters(cellBO, ren, actor);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLSphereMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -235,7 +225,7 @@ void vtkOpenGLSphereMapper::CreateVBO(vtkPolyData* poly, vtkIdType numPts, unsig
   VBOs->BuildAllVBOs(ren);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLSphereMapper::BuildBufferObjects(vtkRenderer* ren, vtkActor* act)
 {
   vtkPolyData* poly = this->CurrentInput;
@@ -306,7 +296,7 @@ void vtkOpenGLSphereMapper::BuildBufferObjects(vtkRenderer* ren, vtkActor* act)
   this->VBOBuildTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLSphereMapper::Render(vtkRenderer* ren, vtkActor* act)
 {
   vtkProperty* prop = act->GetProperty();
@@ -322,7 +312,7 @@ void vtkOpenGLSphereMapper::Render(vtkRenderer* ren, vtkActor* act)
   this->Superclass::Render(ren, act);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLSphereMapper::RenderPieceDraw(vtkRenderer* ren, vtkActor* actor)
 {
   // draw polygons
@@ -334,3 +324,4 @@ void vtkOpenGLSphereMapper::RenderPieceDraw(vtkRenderer* ren, vtkActor* actor)
     glDrawArrays(GL_POINTS, 0, static_cast<GLuint>(numVerts));
   }
 }
+VTK_ABI_NAMESPACE_END

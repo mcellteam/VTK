@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCocoaRenderWindowInteractor.mm
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #import "vtkCocoaMacOSXSDKCompatibility.h" // Needed to support old SDKs
 #import <Cocoa/Cocoa.h>
 
@@ -426,9 +414,10 @@ void vtkCocoaRenderWindowInteractor::ExitCallback()
   {
     this->InvokeEvent(vtkCommand::ExitEvent, nullptr);
   }
-  else if (this->ClassExitMethod)
+  else if (vtkCocoaRenderWindowInteractor::ClassExitMethod)
   {
-    (*this->ClassExitMethod)(this->ClassExitMethodArg);
+    (*vtkCocoaRenderWindowInteractor::ClassExitMethod)(
+      vtkCocoaRenderWindowInteractor::ClassExitMethodArg);
   }
   this->TerminateApp();
 }

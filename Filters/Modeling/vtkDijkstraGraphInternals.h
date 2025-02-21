@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDijkstraGraphInternals.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDijkstraGraphInternals
  * @brief   Helper class due to PIMPL excess
@@ -29,12 +17,13 @@
 #include <vector>
 
 //-----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDijkstraGraphInternals
 {
 public:
   vtkDijkstraGraphInternals() { this->HeapSize = 0; }
 
-  ~vtkDijkstraGraphInternals() {}
+  ~vtkDijkstraGraphInternals() = default;
 
   // CumulativeWeights(v) current summed weight for path to vertex v.
   std::vector<double> CumulativeWeights;
@@ -53,7 +42,7 @@ public:
   std::vector<unsigned char> ClosedVertices;
 
   // Adjacency representation.
-  std::vector<std::map<int, double> > Adjacency;
+  std::vector<std::map<int, double>> Adjacency;
 
   // Path repelling by assigning high costs to flagged vertices.
   std::vector<unsigned char> BlockedVertices;
@@ -180,5 +169,6 @@ private:
   std::vector<int> HeapIndices;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkDijkstraGraphInternals.h

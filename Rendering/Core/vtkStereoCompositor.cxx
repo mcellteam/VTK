@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStereoCompositor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStereoCompositor.h"
 
 #include "vtkObjectFactory.h"
@@ -21,14 +9,15 @@
 #include <algorithm>
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStereoCompositor);
-//----------------------------------------------------------------------------
-vtkStereoCompositor::vtkStereoCompositor() {}
+//------------------------------------------------------------------------------
+vtkStereoCompositor::vtkStereoCompositor() = default;
 
-//----------------------------------------------------------------------------
-vtkStereoCompositor::~vtkStereoCompositor() {}
+//------------------------------------------------------------------------------
+vtkStereoCompositor::~vtkStereoCompositor() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkStereoCompositor::Validate(vtkUnsignedCharArray* rgbLeftNResult,
   vtkUnsignedCharArray* rgbRight, const int* size /*=nullptr*/)
 {
@@ -55,7 +44,7 @@ bool vtkStereoCompositor::Validate(vtkUnsignedCharArray* rgbLeftNResult,
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkStereoCompositor::RedBlue(
   vtkUnsignedCharArray* rgbLeftNResult, vtkUnsignedCharArray* rgbRight)
 {
@@ -65,7 +54,8 @@ bool vtkStereoCompositor::RedBlue(
   }
 
   vtkSMPTools::For(0, rgbLeftNResult->GetNumberOfTuples(),
-    [rgbLeftNResult, rgbRight](vtkIdType first, vtkIdType last) {
+    [rgbLeftNResult, rgbRight](vtkIdType first, vtkIdType last)
+    {
       unsigned char value[3];
       unsigned char output[3] = { 0, 0, 0 };
       for (auto cc = first; cc < last; ++cc)
@@ -82,7 +72,7 @@ bool vtkStereoCompositor::RedBlue(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkStereoCompositor::Anaglyph(vtkUnsignedCharArray* rgbLeftNResult,
   vtkUnsignedCharArray* rgbRight, float colorSaturation, const int colorMask[2])
 {
@@ -106,49 +96,51 @@ bool vtkStereoCompositor::Anaglyph(vtkUnsignedCharArray* rgbLeftNResult,
     satcolor[x] = int(a * x);
   }
 
-  vtkSMPTools::For(0, rgbLeftNResult->GetNumberOfTuples(), [&](vtkIdType first, vtkIdType last) {
-    unsigned char inL[3], inR[3];
-    unsigned char out[3];
-    for (auto cc = first; cc < last; ++cc)
+  vtkSMPTools::For(0, rgbLeftNResult->GetNumberOfTuples(),
+    [&](vtkIdType first, vtkIdType last)
     {
-      rgbLeftNResult->GetTypedTuple(cc, inL);
-      rgbRight->GetTypedTuple(cc, inR);
+      unsigned char inL[3], inR[3];
+      unsigned char out[3];
+      for (auto cc = first; cc < last; ++cc)
+      {
+        rgbLeftNResult->GetTypedTuple(cc, inL);
+        rgbRight->GetTypedTuple(cc, inR);
 
-      auto ave0 = avecolor[inL[0]][0] + avecolor[inL[1]][1] + avecolor[inL[2]][2];
-      auto ave1 = avecolor[inR[0]][0] + avecolor[inR[1]][1] + avecolor[inR[2]][2];
+        auto ave0 = avecolor[inL[0]][0] + avecolor[inL[1]][1] + avecolor[inL[2]][2];
+        auto ave1 = avecolor[inR[0]][0] + avecolor[inR[1]][1] + avecolor[inR[2]][2];
 
-      if (m0 & 0x4)
-      {
-        out[0] = satcolor[inL[0]] + ave0;
+        if (m0 & 0x4)
+        {
+          out[0] = satcolor[inL[0]] + ave0;
+        }
+        if (m0 & 0x2)
+        {
+          out[1] = satcolor[inL[1]] + ave0;
+        }
+        if (m0 & 0x1)
+        {
+          out[2] = satcolor[inL[2]] + ave0;
+        }
+        if (m1 & 0x4)
+        {
+          out[0] = satcolor[inR[0]] + ave1;
+        }
+        if (m1 & 0x2)
+        {
+          out[1] = satcolor[inR[1]] + ave1;
+        }
+        if (m1 & 0x1)
+        {
+          out[2] = satcolor[inR[2]] + ave1;
+        }
+        rgbLeftNResult->SetTypedTuple(cc, out);
       }
-      if (m0 & 0x2)
-      {
-        out[1] = satcolor[inL[1]] + ave0;
-      }
-      if (m0 & 0x1)
-      {
-        out[2] = satcolor[inL[2]] + ave0;
-      }
-      if (m1 & 0x4)
-      {
-        out[0] = satcolor[inR[0]] + ave1;
-      }
-      if (m1 & 0x2)
-      {
-        out[1] = satcolor[inR[1]] + ave1;
-      }
-      if (m1 & 0x1)
-      {
-        out[2] = satcolor[inR[2]] + ave1;
-      }
-      rgbLeftNResult->SetTypedTuple(cc, out);
-    }
-  });
+    });
 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkStereoCompositor::Interlaced(
   vtkUnsignedCharArray* rgbLeftNResult, vtkUnsignedCharArray* rgbRight, const int size[2])
 {
@@ -177,7 +169,7 @@ bool vtkStereoCompositor::Interlaced(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkStereoCompositor::Dresden(
   vtkUnsignedCharArray* rgbLeftNResult, vtkUnsignedCharArray* rgbRight, const int size[2])
 {
@@ -210,7 +202,7 @@ bool vtkStereoCompositor::Dresden(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkStereoCompositor::Checkerboard(
   vtkUnsignedCharArray* rgbLeftNResult, vtkUnsignedCharArray* rgbRight, const int size[2])
 {
@@ -244,7 +236,7 @@ bool vtkStereoCompositor::Checkerboard(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkStereoCompositor::SplitViewportHorizontal(
   vtkUnsignedCharArray* rgbLeftNResult, vtkUnsignedCharArray* rgbRight, const int size[2])
 {
@@ -295,8 +287,9 @@ bool vtkStereoCompositor::SplitViewportHorizontal(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStereoCompositor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

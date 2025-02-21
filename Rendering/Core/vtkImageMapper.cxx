@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkImageMapper.h"
 
@@ -24,11 +12,12 @@
 #include "vtkViewport.h"
 #include "vtkWindow.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return nullptr if no override is supplied.
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkImageMapper);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkImageMapper::vtkImageMapper()
 {
@@ -50,13 +39,13 @@ vtkImageMapper::vtkImageMapper()
 
 vtkImageMapper::~vtkImageMapper() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageMapper::SetInputData(vtkImageData* input)
 {
   this->SetInputDataInternal(0, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkImageMapper::GetInput()
 {
   if (this->GetNumberOfInputConnections(0) < 1)
@@ -149,7 +138,7 @@ void vtkImageMapper::RenderStart(vtkViewport* viewport, vtkActor2D* actor)
     vCoords[3] = 1.0;
     viewport->NormalizedViewportToViewport(vCoords[0], vCoords[1]);
     viewport->NormalizedViewportToViewport(vCoords[2], vCoords[3]);
-    int* vSize = viewport->GetSize();
+    const int* vSize = viewport->GetSize();
 
     // the basic formula is that the draw pos equals
     // the pos + extentPos + clippedAmount
@@ -215,7 +204,7 @@ void vtkImageMapper::RenderStart(vtkViewport* viewport, vtkActor2D* actor)
   this->RenderData(viewport, data, actor);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageMapper::GetWholeZMin()
 {
   int* extent;
@@ -229,7 +218,7 @@ int vtkImageMapper::GetWholeZMin()
   return extent[4];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageMapper::GetWholeZMax()
 {
   int* extent;
@@ -243,9 +232,10 @@ int vtkImageMapper::GetWholeZMax()
   return extent[5];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageMapper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkImageData");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

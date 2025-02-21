@@ -1,19 +1,8 @@
-/*=========================================================================
-
-  Program:   VisualizationJSONlkit
-  Module:    vtkJSONSceneExporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkJSONSceneExporter.h"
 
+#include "vtkAbstractVolumeMapper.h"
 #include "vtkArchiver.h"
 #include "vtkCamera.h"
 #include "vtkCompositeDataIterator.h"
@@ -27,8 +16,14 @@
 #include "vtkJPEGWriter.h"
 #include "vtkJSONDataSetWriter.h"
 #include "vtkMapper.h"
+#include "vtkMolecule.h"
+#include "vtkMoleculeMapper.h"
+#include "vtkMoleculeToAtomBallFilter.h"
+#include "vtkMoleculeToBondStickFilter.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
+#include "vtkPiecewiseFunction.h"
+#include "vtkPolyDataNormals.h"
 #include "vtkProp.h"
 #include "vtkPropCollection.h"
 #include "vtkProperty.h"
@@ -38,6 +33,9 @@
 #include "vtkRendererCollection.h"
 #include "vtkScalarsToColors.h"
 #include "vtkTexture.h"
+#include "vtkVolume.h"
+#include "vtkVolumeCollection.h"
+#include "vtkVolumeProperty.h"
 #include "vtksys/FStream.hxx"
 #include "vtksys/SystemTools.hxx"
 
@@ -45,10 +43,10 @@
 #include <sstream>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkJSONSceneExporter);
 
-// ----------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------
 vtkJSONSceneExporter::vtkJSONSceneExporter()
 {
   this->FileName = nullptr;
@@ -61,16 +59,30 @@ vtkJSONSceneExporter::vtkJSONSceneExporter()
   this->PolyLODsBaseUrl = nullptr;
 }
 
-// ----------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------
 vtkJSONSceneExporter::~vtkJSONSceneExporter()
 {
-  delete[] this->FileName;
+  this->SetFileName(nullptr);
+  this->SetTextureLODsBaseUrl(nullptr);
+  this->SetPolyLODsBaseUrl(nullptr);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkJSONSceneExporter::SetNamedActorsMap(std::map<std::string, vtkActor*>& map)
+{
+  this->NamedActorsMap = map;
+  this->Modified();
+}
 
-void vtkJSONSceneExporter::WriteDataObject(ostream& os, vtkDataObject* dataObject, vtkActor* actor)
+//------------------------------------------------------------------------------
+std::map<std::string, vtkActor*> vtkJSONSceneExporter::GetNamedActorsMap()
+{
+  return this->NamedActorsMap;
+}
+
+//------------------------------------------------------------------------------
+void vtkJSONSceneExporter::WriteDataObject(
+  ostream& os, vtkDataObject* dataObject, vtkActor* actor, vtkVolume* volume, const char* name)
 {
   // Skip if nothing to process
   if (dataObject == nullptr)
@@ -82,22 +94,30 @@ void vtkJSONSceneExporter::WriteDataObject(ostream& os, vtkDataObject* dataObjec
   if (dataObject->IsA("vtkDataSet"))
   {
     std::string texturesString;
-    if (this->WriteTextures && actor->GetTexture())
-    {
-      // Write out the textures, add it to the textures string
-      texturesString += this->WriteTexture(actor->GetTexture());
-    }
+    std::string renderingSetup;
 
-    if (this->WriteTextureLODs && actor->GetTexture())
+    if (actor)
     {
-      // Write out the texture LODs, add it to the textures string
-      texturesString += this->WriteTextureLODSeries(actor->GetTexture());
-    }
+      if (this->WriteTextures && actor->GetTexture())
+      {
+        // Write out the textures, add it to the textures string
+        texturesString += this->WriteTexture(actor->GetTexture());
+      }
 
-    std::string renderingSetup = this->ExtractRenderingSetup(actor);
+      if (this->WriteTextureLODs && actor->GetTexture())
+      {
+        // Write out the texture LODs, add it to the textures string
+        texturesString += this->WriteTextureLODSeries(actor->GetTexture());
+      }
+      renderingSetup = this->ExtractActorRenderingSetup(actor);
+    }
+    else if (volume)
+    {
+      renderingSetup = this->ExtractVolumeRenderingSetup(volume);
+    }
     std::string addOnMeta = renderingSetup + texturesString + "\n";
     std::string dsMeta =
-      this->WriteDataSet(vtkDataSet::SafeDownCast(dataObject), addOnMeta.c_str());
+      this->WriteDataSet(vtkDataSet::SafeDownCast(dataObject), addOnMeta.c_str(), name);
     if (!dsMeta.empty())
     {
       os << dsMeta;
@@ -109,20 +129,259 @@ void vtkJSONSceneExporter::WriteDataObject(ostream& os, vtkDataObject* dataObjec
   if (dataObject->IsA("vtkCompositeDataSet"))
   {
     vtkCompositeDataSet* composite = vtkCompositeDataSet::SafeDownCast(dataObject);
-    vtkSmartPointer<vtkCompositeDataIterator> iter = composite->NewIterator();
+    vtkSmartPointer<vtkCompositeDataIterator> iter;
+    iter.TakeReference(composite->NewIterator());
     iter->SkipEmptyNodesOn();
     iter->InitTraversal();
     while (!iter->IsDoneWithTraversal())
     {
-      this->WriteDataObject(os, iter->GetCurrentDataObject(), actor);
+      this->WriteDataObject(os, iter->GetCurrentDataObject(), actor, volume, name);
       iter->GoToNextItem();
     }
+
+    return;
+  }
+
+  // Handle molecule
+  if (dataObject->IsA("vtkMolecule"))
+  {
+    vtkMolecule* molecule = vtkMolecule::SafeDownCast(dataObject);
+
+    // Create tubes for each bond
+    vtkNew<vtkMoleculeToBondStickFilter> stickFilter;
+    stickFilter->SetInputDataObject(molecule);
+    stickFilter->Update();
+
+    // Create spheres for each atom
+    vtkNew<vtkMoleculeToAtomBallFilter> ballFilter;
+    ballFilter->SetInputDataObject(molecule);
+
+    if (actor)
+    {
+      // Retrieve radius type and scale factor from mapper
+      vtkMoleculeMapper* mapper = vtkMoleculeMapper::SafeDownCast(actor->GetMapper());
+
+      switch (mapper->GetAtomicRadiusType())
+      {
+        case vtkMoleculeMapper::CovalentRadius:
+        {
+          ballFilter->SetRadiusSource(vtkMoleculeToAtomBallFilter::CovalentRadius);
+          break;
+        }
+        case vtkMoleculeMapper::VDWRadius:
+        {
+          ballFilter->SetRadiusSource(vtkMoleculeToAtomBallFilter::VDWRadius);
+          break;
+        }
+        case vtkMoleculeMapper::UnitRadius:
+        {
+          ballFilter->SetRadiusSource(vtkMoleculeToAtomBallFilter::UnitRadius);
+          break;
+        }
+        default:
+        {
+          // Default to Van Der Waals
+          ballFilter->SetRadiusSource(vtkMoleculeToAtomBallFilter::VDWRadius);
+          break;
+        }
+      }
+
+      ballFilter->SetRadiusScale(mapper->GetAtomicRadiusScaleFactor());
+    }
+    else
+    {
+      // Set default radius type and scale
+      ballFilter->SetRadiusSource(vtkMoleculeToAtomBallFilter::VDWRadius);
+      ballFilter->SetRadiusScale(0.3);
+    }
+
+    // Reduce resolution when the number of atoms is high
+    // The threshold value has been arbitrarily chosen
+    if (molecule->GetNumberOfAtoms() > 100)
+    {
+      ballFilter->SetResolution(20);
+    }
+
+    // Create vertex normals for a smoother appearance
+    vtkNew<vtkPolyDataNormals> normalFilter;
+    normalFilter->SetInputConnection(ballFilter->GetOutputPort());
+    normalFilter->Update();
+
+    // Write tubes and spheres
+    this->WriteDataObject(os, stickFilter->GetOutput(), actor, volume, name);
+    this->WriteDataObject(os, normalFilter->GetOutput(), actor, volume, name);
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+std::string vtkJSONSceneExporter::ExtractColorTransferFunctionSetup(
+  vtkColorTransferFunction* function)
+{
+  std::stringstream configuration;
 
-std::string vtkJSONSceneExporter::ExtractRenderingSetup(vtkActor* actor)
+  bool useAboveRangeColor = function->GetUseAboveRangeColor();
+  bool useBelowRangeColor = function->GetUseBelowRangeColor();
+  int colorSpace = function->GetColorSpace();
+  double aboveRangeColor[3] = { 0 };
+  double belowRangeColor[3] = { 0 };
+  double nanColor[3] = { 0 };
+  function->GetAboveRangeColor(aboveRangeColor);
+  function->GetBelowRangeColor(belowRangeColor);
+  function->GetNanColor(nanColor);
+
+  vtkIdType numberOfNodes = function->GetSize();
+  constexpr const char* INDENT = "            ";
+  configuration << INDENT << "  \"useAboveRangeColor\": " << (useAboveRangeColor ? "true" : "false")
+                << ",\n"
+                << INDENT << "  \"useBelowRangeColor\": " << (useBelowRangeColor ? "true" : "false")
+                << ",\n"
+                << INDENT << "  \"colorSpace\": " << colorSpace << ",\n";
+  if (useAboveRangeColor)
+  {
+    configuration << INDENT << "  \"aboveRangeColor\": [" << aboveRangeColor[0] << ", "
+                  << aboveRangeColor[1] << ", " << aboveRangeColor[2] << "],\n";
+  }
+  if (useBelowRangeColor)
+  {
+    configuration << INDENT << "  \"belowRangeColor\": [" << belowRangeColor[0] << ", "
+                  << belowRangeColor[1] << ", " << belowRangeColor[2] << "],\n";
+  }
+  configuration << INDENT << "  \"nanColor\": [" << nanColor[0] << ", " << nanColor[1] << ", "
+                << nanColor[2] << "],\n";
+  configuration << INDENT << "  \"nodes\": [\n";
+  for (vtkIdType nodeId = 0; nodeId < numberOfNodes; ++nodeId)
+  {
+    double node[6];
+    function->GetNodeValue(nodeId, node);
+    configuration << INDENT << "    [";
+    for (int i = 0; i < 6; ++i)
+    {
+      configuration << node[i] << (i == 5 ? "]" : ", ");
+    }
+    if (nodeId < numberOfNodes - 1)
+    {
+      configuration << ",";
+    }
+    configuration << "\n";
+  }
+  configuration << INDENT << "  ]\n";
+  return configuration.str();
+}
+
+//------------------------------------------------------------------------------
+std::string vtkJSONSceneExporter::ExtractPiecewiseFunctionSetup(vtkPiecewiseFunction* function)
+{
+  bool clamping = function->GetClamping();
+  vtkIdType numberOfPoints = function->GetSize();
+  constexpr const char* INDENT = "            ";
+  std::stringstream configuration;
+  configuration << INDENT << "  \"clamping\": " << (clamping ? "true" : "false") << ",\n";
+  configuration << INDENT << "  \"points\": [\n";
+  for (vtkIdType pointId = 0; pointId < numberOfPoints; ++pointId)
+  {
+    double point[4];
+    function->GetNodeValue(pointId, point);
+    configuration << INDENT << "    [";
+    for (int i = 0; i < 4; ++i)
+    {
+      configuration << point[i] << (i < 3 ? ", " : "");
+    }
+    configuration << "]";
+    if (pointId < numberOfPoints - 1)
+    {
+      configuration << ",";
+    }
+    configuration << "\n";
+  }
+  configuration << INDENT << "  ]\n";
+  return configuration.str();
+}
+
+//------------------------------------------------------------------------------
+std::string vtkJSONSceneExporter::ExtractVolumeRenderingSetup(vtkVolume* volume)
+{
+  vtkVolumeProperty* property = volume->GetProperty();
+
+  double* p3dPosition = volume->GetPosition();
+  double* p3dScale = volume->GetScale();
+  double* p3dOrigin = volume->GetOrigin();
+  double* p3dRotateWXYZ = volume->GetOrientationWXYZ();
+
+  int interpolationType = property->GetInterpolationType();
+
+  vtkTypeBool independentComponents = property->GetIndependentComponents();
+  int shade = property->GetShade();
+  double ambient = property->GetAmbient();
+  double diffuse = property->GetDiffuse();
+  double specular = property->GetSpecular();
+  double specularPower = property->GetSpecularPower();
+
+  constexpr const char* INDENT = "      ";
+  std::stringstream renderingConfig;
+  renderingConfig << ",\n"
+                  << "\"volume\": {\n"
+                  << INDENT << "  \"origin\": [" << p3dOrigin[0] << ", " << p3dOrigin[1] << ", "
+                  << p3dOrigin[2] << "],\n"
+                  << INDENT << "  \"scale\": [" << p3dScale[0] << ", " << p3dScale[1] << ", "
+                  << p3dScale[2] << "],\n"
+                  << INDENT << "  \"position\": [" << p3dPosition[0] << ", " << p3dPosition[1]
+                  << ", " << p3dPosition[2] << "]\n"
+                  << INDENT << "},\n"
+                  << INDENT << "\"volumeRotation\": [" << p3dRotateWXYZ[0] << ", "
+                  << p3dRotateWXYZ[1] << ", " << p3dRotateWXYZ[2] << ", " << p3dRotateWXYZ[3]
+                  << "],\n"
+                  << INDENT << "\"mapper\": {},\n"
+                  << INDENT << "\"property\": {\n"
+                  << INDENT << "  \"interpolationType\": " << interpolationType << ",\n"
+                  << INDENT
+                  << "  \"independentComponents\": " << (independentComponents ? "true" : "false")
+                  << ",\n"
+                  << INDENT << "  \"ambient\": " << ambient << ",\n"
+                  << INDENT << "  \"diffuse\": " << diffuse << ",\n"
+                  << INDENT << "  \"specular\": " << specular << ",\n"
+                  << INDENT << "  \"specularPower\": " << specularPower << ",\n"
+                  << INDENT << "  \"shade\": " << shade << ",\n"
+                  << INDENT << "  \"components\": [\n";
+  for (vtkIdType component = 0; component < VTK_MAX_VRCOMP; ++component)
+  {
+    renderingConfig << INDENT << "  {\n";
+    int colorChannels = property->GetColorChannels(component);
+    renderingConfig << INDENT << "    \"colorChannels\": " << colorChannels << ",\n";
+    if (colorChannels == 3)
+    {
+      renderingConfig << INDENT << "    \"rgbTransferFunction\":\n"
+                      << INDENT << "    {\n"
+                      << this->ExtractColorTransferFunctionSetup(
+                           property->GetRGBTransferFunction(component))
+                      << INDENT << "    },\n";
+    }
+    else if (colorChannels == 1)
+    {
+      renderingConfig << INDENT << "    \"grayTransferFunction\":\n"
+                      << INDENT << "    {\n"
+                      << this->ExtractPiecewiseFunctionSetup(
+                           property->GetGrayTransferFunction(component))
+                      << INDENT << "    },\n";
+    }
+    renderingConfig << INDENT << "    \"scalarOpacity\":\n"
+                    << INDENT << "    {\n"
+                    << this->ExtractPiecewiseFunctionSetup(property->GetScalarOpacity(component))
+                    << INDENT << "    },\n";
+    double scalarOpacityUnitDistance = property->GetScalarOpacityUnitDistance(component);
+    renderingConfig << INDENT << "    \"scalarOpacityUnitDistance\": " << scalarOpacityUnitDistance
+                    << "\n"
+                    << INDENT << "  }";
+    if (component < VTK_MAX_VRCOMP - 1)
+    {
+      renderingConfig << ",";
+    }
+    renderingConfig << "\n";
+  }
+  renderingConfig << INDENT << "  ]\n" << INDENT << "}\n";
+  return renderingConfig.str();
+}
+
+std::string vtkJSONSceneExporter::ExtractActorRenderingSetup(vtkActor* actor)
 {
   vtkMapper* mapper = actor->GetMapper();
   // int scalarVisibility = mapper->GetScalarVisibility();
@@ -146,7 +405,7 @@ std::string vtkJSONSceneExporter::ExtractRenderingSetup(vtkActor* actor)
   double* p3dOrigin = actor->GetOrigin();
   double* p3dRotateWXYZ = actor->GetOrientationWXYZ();
 
-  const char* INDENT = "      ";
+  constexpr const char* INDENT = "      ";
   std::stringstream renderingConfig;
   renderingConfig << ",\n"
                   << INDENT << "\"actor\": {\n"
@@ -177,18 +436,23 @@ std::string vtkJSONSceneExporter::ExtractRenderingSetup(vtkActor* actor)
   return renderingConfig.str();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+std::string vtkJSONSceneExporter::GetTemporaryPath() const
+{
+  return std::string(this->FileName) + ".pvtmp";
+}
 
+//------------------------------------------------------------------------------
 std::string vtkJSONSceneExporter::CurrentDataSetPath() const
 {
   std::stringstream path;
-  path << this->FileName << "/" << this->DatasetCount + 1;
+  path << this->GetTemporaryPath() << "/" << this->DatasetCount + 1;
   return vtksys::SystemTools::ConvertToOutputPath(path.str());
 }
 
-// ----------------------------------------------------------------------------
-
-std::string vtkJSONSceneExporter::WriteDataSet(vtkDataSet* dataset, const char* addOnMeta = nullptr)
+//------------------------------------------------------------------------------
+std::string vtkJSONSceneExporter::WriteDataSet(
+  vtkDataSet* dataset, const char* addOnMeta, const char* name)
 {
   if (!dataset)
   {
@@ -211,6 +475,42 @@ std::string vtkJSONSceneExporter::WriteDataSet(vtkDataSet* dataset, const char* 
   vtkNew<vtkJSONDataSetWriter> dsWriter;
   dsWriter->SetInputData(dataset);
   dsWriter->GetArchiver()->SetArchiveName(dsPath.c_str());
+
+  // When the dataset is given a name, ie when we're working with a named actor map,
+  // disable all arrays by default, and select only the ones that are mapped.
+  if (name)
+  {
+    dsWriter->GetPointArraySelection()->SetUnknownArraySetting(0);
+    dsWriter->GetCellArraySelection()->SetUnknownArraySetting(0);
+
+    // Parse MapPointArrays's list of arrays, filter the ones that start with "propName:X", and
+    // forward information about X to the writer
+    for (int id = 0; id < this->PointArraySelection->GetNumberOfArrays(); id++)
+    {
+      std::string currentName = this->PointArraySelection->GetArrayName(id);
+      if (currentName.find(name) != std::string::npos &&
+        currentName[std::string(name).size()] == ':')
+      {
+        std::string arrayName = currentName.substr(std::string(name).size() + 1);
+        dsWriter->GetPointArraySelection()->SetArraySetting(
+          arrayName.c_str(), this->PointArraySelection->ArrayIsEnabled(currentName.c_str()));
+      }
+    }
+
+    // Same for cell arrays
+    for (int id = 0; id < this->CellArraySelection->GetNumberOfArrays(); id++)
+    {
+      std::string currentName = this->CellArraySelection->GetArrayName(id);
+      if (currentName.find(name) != std::string::npos &&
+        currentName[std::string(name).size()] == ':')
+      {
+        std::string arrayName = currentName.substr(std::string(name).size() + 1);
+        dsWriter->GetCellArraySelection()->SetArraySetting(
+          arrayName.c_str(), this->CellArraySelection->ArrayIsEnabled(currentName.c_str()));
+      }
+    }
+  }
+
   dsWriter->Write();
 
   if (!dsWriter->IsDataSetValid())
@@ -228,11 +528,12 @@ std::string vtkJSONSceneExporter::WriteDataSet(vtkDataSet* dataset, const char* 
   {
     meta << "\n";
   }
-  const char* INDENT = "    ";
+  constexpr const char* INDENT = "    ";
+  std::string dsName = (name ? name : std::to_string(this->DatasetCount));
   meta << INDENT << "{\n"
-       << INDENT << "  \"name\": \"" << this->DatasetCount << "\",\n"
-       << INDENT << "  \"type\": \"httpDataSetReader\",\n"
-       << INDENT << "  \"httpDataSetReader\": { \"url\": \"" << this->DatasetCount << "\" }";
+       << INDENT << "  \"name\": \"" << dsName << "\",\n"
+       << INDENT << "  \"type\": \"vtkHttpDataSetReader\",\n"
+       << INDENT << "  \"vtkHttpDataSetReader\": { \"url\": \"" << this->DatasetCount << "\" }";
 
   if (addOnMeta != nullptr)
   {
@@ -245,8 +546,7 @@ std::string vtkJSONSceneExporter::WriteDataSet(vtkDataSet* dataset, const char* 
   return meta.str();
 }
 
-// ----------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------
 void vtkJSONSceneExporter::WriteLookupTable(const char* name, vtkScalarsToColors* lookupTable)
 {
   if (lookupTable == nullptr)
@@ -258,7 +558,7 @@ void vtkJSONSceneExporter::WriteLookupTable(const char* name, vtkScalarsToColors
     vtkDiscretizableColorTransferFunction::SafeDownCast(lookupTable);
   if (dctfn != nullptr)
   {
-    const char* INDENT = "    ";
+    constexpr const char* INDENT = "    ";
     std::stringstream lutJSON;
     lutJSON << "{\n"
             << INDENT << "  \"clamping\": " << (dctfn->GetClamping() ? "true" : "false") << ",\n"
@@ -295,8 +595,80 @@ void vtkJSONSceneExporter::WriteLookupTable(const char* name, vtkScalarsToColors
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkJSONSceneExporter::WritePropCollection(
+  vtkPropCollection* props, std::ostream& sceneComponents)
+{
+  vtkIdType nbProps = props->GetNumberOfItems();
+  for (vtkIdType rpIdx = 0; rpIdx < nbProps; rpIdx++)
+  {
+    vtkProp* prop = vtkProp::SafeDownCast(props->GetItemAsObject(rpIdx));
+    // Skip non-visible actors
+    if (!prop || !prop->GetVisibility())
+    {
+      continue;
+    }
 
+    // Skip actors with no geometry
+    vtkActor* actor = vtkActor::SafeDownCast(prop);
+    if (actor)
+    {
+      vtkMapper* mapper = actor->GetMapper();
+
+      vtkDataObject* dataObject = mapper->GetInputDataObject(0, 0);
+      this->WriteDataObject(sceneComponents, dataObject, actor, nullptr, nullptr);
+      this->WriteLookupTable(mapper->GetArrayName(), mapper->GetLookupTable());
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkJSONSceneExporter::WriteVolumeCollection(
+  vtkVolumeCollection* volumes, std::ostream& sceneComponents)
+{
+  vtkVolume* volume = nullptr;
+  volumes->InitTraversal();
+  while ((volume = volumes->GetNextVolume()))
+  {
+    // Skip non-visible actors
+    if (!volume || !volume->GetVisibility())
+    {
+      continue;
+    }
+
+    vtkAbstractVolumeMapper* mapper = volume->GetMapper();
+    vtkDataObject* dataObject = mapper->GetInputDataObject(0, 0);
+    this->WriteDataObject(sceneComponents, dataObject, nullptr, volume, nullptr);
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkJSONSceneExporter::WriteNamedActors(
+  std::map<std::string, vtkActor*>& actorMap, std::ostream& sceneComponents)
+{
+  for (auto it = actorMap.begin(); it != actorMap.end(); it++)
+  {
+    vtkProp* prop = vtkProp::SafeDownCast(it->second);
+    // Skip non-visible actors
+    if (!prop || !prop->GetVisibility())
+    {
+      continue;
+    }
+
+    // Skip actors with no geometry
+    vtkActor* actor = vtkActor::SafeDownCast(prop);
+    if (actor)
+    {
+      vtkMapper* mapper = actor->GetMapper();
+
+      vtkDataObject* dataObject = mapper->GetInputDataObject(0, 0);
+      this->WriteDataObject(sceneComponents, dataObject, actor, nullptr, it->first.c_str());
+      this->WriteLookupTable(mapper->GetArrayName(), mapper->GetLookupTable());
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkJSONSceneExporter::WriteData()
 {
   this->DatasetCount = 0;
@@ -311,9 +683,11 @@ void vtkJSONSceneExporter::WriteData()
     return;
   }
 
-  if (!vtksys::SystemTools::MakeDirectory(this->FileName))
+  std::string tmpPath = this->GetTemporaryPath();
+
+  if (!vtksys::SystemTools::MakeDirectory(tmpPath))
   {
-    vtkErrorMacro(<< "Can not create directory " << this->FileName);
+    vtkErrorMacro(<< "Cannot create directory " << tmpPath);
     return;
   }
 
@@ -326,28 +700,16 @@ void vtkJSONSceneExporter::WriteData()
 
   std::stringstream sceneComponents;
   vtkPropCollection* renProps = renderer->GetViewProps();
-  vtkIdType nbProps = renProps->GetNumberOfItems();
-  for (vtkIdType rpIdx = 0; rpIdx < nbProps; rpIdx++)
+
+  auto actorMap = this->GetNamedActorsMap();
+  if (!actorMap.empty())
   {
-    vtkProp* renProp = vtkProp::SafeDownCast(renProps->GetItemAsObject(rpIdx));
-
-    // Skip non-visible actors
-    if (!renProp || !renProp->GetVisibility())
-    {
-      continue;
-    }
-
-    // Skip actors with no geometry
-    vtkActor* actor = vtkActor::SafeDownCast(renProp);
-    if (!actor)
-    {
-      continue;
-    }
-
-    vtkMapper* mapper = actor->GetMapper();
-    vtkDataObject* dataObject = mapper->GetInputDataObject(0, 0);
-    this->WriteDataObject(sceneComponents, dataObject, actor);
-    this->WriteLookupTable(mapper->GetArrayName(), mapper->GetLookupTable());
+    this->WriteNamedActors(actorMap, sceneComponents);
+  }
+  else
+  {
+    this->WritePropCollection(renProps, sceneComponents);
+    this->WriteVolumeCollection(renderer->GetVolumes(), sceneComponents);
   }
 
   std::stringstream sceneJsonFile;
@@ -372,8 +734,7 @@ void vtkJSONSceneExporter::WriteData()
   size_t nbLuts = this->LookupTables.size();
   for (auto const& lut : this->LookupTables)
   {
-    sceneJsonFile << "    \"" << lut.first.c_str() << "\": " << lut.second.c_str()
-                  << (--nbLuts ? "," : "") << "\n";
+    sceneJsonFile << "    \"" << lut.first << "\": " << lut.second << (--nbLuts ? "," : "") << "\n";
   }
 
   sceneJsonFile << "  }\n"
@@ -381,18 +742,32 @@ void vtkJSONSceneExporter::WriteData()
 
   // Write meta-data file
   std::stringstream scenePath;
-  scenePath << this->FileName << "/index.json";
+  scenePath << tmpPath << "/index.json";
 
   vtksys::ofstream file;
   file.open(scenePath.str().c_str(), ios::out);
-  file << sceneJsonFile.str().c_str();
+  file << sceneJsonFile.str();
   file.close();
+
+  if (vtksys::SystemTools::FileExists(this->FileName))
+  {
+    vtksys::SystemTools::RemoveFile(this->FileName);
+  }
+
+  int result = std::rename(tmpPath.c_str(), this->FileName);
+
+  if (result != 0)
+  {
+    vtkErrorMacro("Cannot rename temporary file.");
+    return;
+  }
 }
 
+//------------------------------------------------------------------------------
 namespace
 {
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 size_t getFileSize(const std::string& path)
 {
@@ -404,7 +779,7 @@ size_t getFileSize(const std::string& path)
   int res = vtksys::SystemTools::Stat(path, &stat_buf);
   if (res < 0)
   {
-    std::cerr << "Failed to get size of file " << path.c_str() << std::endl;
+    std::cerr << "Failed to get size of file " << path << std::endl;
     return 0;
   }
 
@@ -413,11 +788,10 @@ size_t getFileSize(const std::string& path)
 
 } // end anon namespace
 
-// ----------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------
 std::string vtkJSONSceneExporter::WriteTexture(vtkTexture* texture)
 {
-  // If this texture has already been written, just re-use the one
+  // If this texture has already been written, just reuse the one
   // we have.
   if (this->TextureStrings.find(texture) != this->TextureStrings.end())
   {
@@ -443,18 +817,17 @@ std::string vtkJSONSceneExporter::WriteTexture(vtkTexture* texture)
   writer->SetInputDataObject(image);
   writer->Write();
 
-  const char* INDENT = "      ";
+  constexpr const char* INDENT = "      ";
   std::stringstream config;
   config << ",\n" << INDENT << "\"texture\": \"" << this->DatasetCount + 1 << "/texture.jpg\"";
   this->TextureStrings[texture] = config.str();
   return config.str();
 }
 
-// ----------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------
 std::string vtkJSONSceneExporter::WriteTextureLODSeries(vtkTexture* texture)
 {
-  // If this texture has already been written, just re-use the one
+  // If this texture has already been written, just reuse the one
   // we have.
   if (this->TextureLODStrings.find(texture) != this->TextureLODStrings.end())
   {
@@ -472,7 +845,7 @@ std::string vtkJSONSceneExporter::WriteTextureLODSeries(vtkTexture* texture)
 
   // Write these into the parent directory of our file.
   // This next line also converts the path to unix slashes.
-  std::string path = vtksys::SystemTools::GetParentDirectory(this->FileName);
+  std::string path = vtksys::SystemTools::GetParentDirectory(this->GetTemporaryPath());
   path += "/";
   path = vtksys::SystemTools::ConvertToOutputPath(path);
 
@@ -513,7 +886,7 @@ std::string vtkJSONSceneExporter::WriteTextureLODSeries(vtkTexture* texture)
   std::string baseUrl = url ? url : "";
 
   // Now, write out the config
-  const char* INDENT = "      ";
+  constexpr const char* INDENT = "      ";
   std::stringstream config;
   config << ",\n"
          << INDENT << "\"textureLODs\": {\n"
@@ -541,8 +914,7 @@ std::string vtkJSONSceneExporter::WriteTextureLODSeries(vtkTexture* texture)
   return config.str();
 }
 
-// ----------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------
 vtkSmartPointer<vtkPolyData> vtkJSONSceneExporter::WritePolyLODSeries(
   vtkPolyData* dataset, std::string& polyLODsConfig)
 {
@@ -552,7 +924,7 @@ vtkSmartPointer<vtkPolyData> vtkJSONSceneExporter::WritePolyLODSeries(
   // Write these into the parent directory of our file.
   // This next line also converts the path to unix slashes.
   vtkNew<vtkJSONDataSetWriter> dsWriter;
-  std::string path = vtksys::SystemTools::GetParentDirectory(this->FileName) + "/";
+  std::string path = vtksys::SystemTools::GetParentDirectory(this->GetTemporaryPath()) + "/";
   path = vtksys::SystemTools::ConvertToOutputPath(path);
 
   // If the new size is not at least 5% different from the old size,
@@ -708,7 +1080,7 @@ vtkSmartPointer<vtkPolyData> vtkJSONSceneExporter::WritePolyLODSeries(
   const char* url = this->PolyLODsBaseUrl;
   std::string baseUrl = url ? url : "";
 
-  const char* INDENT = "      ";
+  constexpr const char* INDENT = "      ";
   std::stringstream config;
   config << ",\n"
          << INDENT << "\"sourceLODs\": {\n"
@@ -737,9 +1109,9 @@ vtkSmartPointer<vtkPolyData> vtkJSONSceneExporter::WritePolyLODSeries(
   return polyData;
 }
 
-// ----------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------
 void vtkJSONSceneExporter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageThreshold.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageThreshold
  * @brief    Flexible threshold
@@ -27,6 +15,7 @@
 #include "vtkImagingCoreModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImageThreshold : public vtkThreadedImageAlgorithm
 {
 public:
@@ -49,49 +38,49 @@ public:
    */
   void ThresholdBetween(double lower, double upper);
 
-  //@{
+  ///@{
   /**
    * Determines whether to replace the pixel in range with InValue
    */
   vtkSetMacro(ReplaceIn, vtkTypeBool);
   vtkGetMacro(ReplaceIn, vtkTypeBool);
   vtkBooleanMacro(ReplaceIn, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Replace the in range pixels with this value.
    */
   void SetInValue(double val);
   vtkGetMacro(InValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Determines whether to replace the pixel out of range with OutValue
    */
   vtkSetMacro(ReplaceOut, vtkTypeBool);
   vtkGetMacro(ReplaceOut, vtkTypeBool);
   vtkBooleanMacro(ReplaceOut, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Replace the in range pixels with this value.
    */
   void SetOutValue(double val);
   vtkGetMacro(OutValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the Upper and Lower thresholds.
    */
   vtkGetMacro(UpperThreshold, double);
   vtkGetMacro(LowerThreshold, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the desired output scalar type to cast to
    */
@@ -108,11 +97,11 @@ public:
   void SetOutputScalarTypeToChar() { this->SetOutputScalarType(VTK_CHAR); }
   void SetOutputScalarTypeToSignedChar() { this->SetOutputScalarType(VTK_SIGNED_CHAR); }
   void SetOutputScalarTypeToUnsignedChar() { this->SetOutputScalarType(VTK_UNSIGNED_CHAR); }
-  //@}
+  ///@}
 
 protected:
   vtkImageThreshold();
-  ~vtkImageThreshold() override {}
+  ~vtkImageThreshold() override = default;
 
   double UpperThreshold;
   double LowerThreshold;
@@ -134,4 +123,5 @@ private:
   void operator=(const vtkImageThreshold&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContinuousValueWidgetRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkContinuousValueWidgetRepresentation
@@ -32,20 +15,22 @@
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkWidgetRepresentation.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkContinuousValueWidgetRepresentation
+VTK_ABI_NAMESPACE_BEGIN
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkContinuousValueWidgetRepresentation
   : public vtkWidgetRepresentation
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for the class.
    */
   vtkTypeMacro(vtkContinuousValueWidgetRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to interface with the vtkSliderWidget. The PlaceWidget() method
    * assumes that the parameter bounds[6] specifies the location in display
@@ -56,10 +41,10 @@ public:
   void StartWidgetInteraction(double eventPos[2]) override = 0;
   void WidgetInteraction(double eventPos[2]) override = 0;
   //  virtual void Highlight(int);
-  //@}
+  ///@}
 
   // Enums are used to describe what is selected
-  enum _InteractionState
+  enum InteractionStateType
   {
     Outside = 0,
     Inside,
@@ -81,4 +66,5 @@ private:
   void operator=(const vtkContinuousValueWidgetRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

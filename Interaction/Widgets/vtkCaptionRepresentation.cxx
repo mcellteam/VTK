@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCaptionRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCaptionRepresentation.h"
 #include "vtkCaptionActor2D.h"
 #include "vtkConeSource.h"
@@ -26,9 +14,10 @@
 #include "vtkTextProperty.h"
 #include "vtkTextRenderer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCaptionRepresentation);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCaptionRepresentation::vtkCaptionRepresentation()
 {
   this->AnchorRepresentation = vtkPointHandleRepresentation3D::New();
@@ -56,11 +45,12 @@ vtkCaptionRepresentation::vtkCaptionRepresentation()
   this->CaptionGlyph->SetCenter(-0.5, 0, 0);
   this->CaptionActor2D->SetLeaderGlyphConnection(this->CaptionGlyph->GetOutputPort());
 
-  this->SetShowBorder(vtkBorderRepresentation::BORDER_OFF);
+  this->SetShowBorderToOff();
   this->FontFactor = 1.0;
+  this->Fit = VTK_FIT_TO_BORDER;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCaptionRepresentation::~vtkCaptionRepresentation()
 {
   this->SetCaptionActor2D(nullptr);
@@ -68,16 +58,16 @@ vtkCaptionRepresentation::~vtkCaptionRepresentation()
   this->SetAnchorRepresentation(nullptr);
 }
 
-//-------------------------------------------------------------------------
-void vtkCaptionRepresentation::SetCaptionActor2D(vtkCaptionActor2D* capActor)
+//------------------------------------------------------------------------------
+void vtkCaptionRepresentation::SetCaptionActor2D(vtkCaptionActor2D* captionActor)
 {
-  if (capActor != this->CaptionActor2D)
+  if (captionActor != this->CaptionActor2D)
   {
     if (this->CaptionActor2D)
     {
       this->CaptionActor2D->Delete();
     }
-    this->CaptionActor2D = capActor;
+    this->CaptionActor2D = captionActor;
     if (this->CaptionActor2D)
     {
       this->CaptionActor2D->Register(this);
@@ -97,7 +87,7 @@ void vtkCaptionRepresentation::SetCaptionActor2D(vtkCaptionActor2D* capActor)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionRepresentation::SetAnchorRepresentation(vtkPointHandleRepresentation3D* rep)
 {
   if (rep != this->AnchorRepresentation)
@@ -115,20 +105,34 @@ void vtkCaptionRepresentation::SetAnchorRepresentation(vtkPointHandleRepresentat
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionRepresentation::SetAnchorPosition(double pos[3])
 {
   this->CaptionActor2D->GetAttachmentPointCoordinate()->SetValue(pos);
   this->AnchorRepresentation->SetWorldPosition(pos);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionRepresentation::GetAnchorPosition(double pos[3])
 {
   this->CaptionActor2D->GetAttachmentPointCoordinate()->GetValue(pos);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Return the type of fitting to use.
+const char* vtkCaptionRepresentation::GetFitAsString()
+{
+  if (this->Fit == VTK_FIT_TO_BORDER)
+  {
+    return "FitToBorder";
+  }
+  else // if (this->Fit == VTK_FIT_TO_TEXT)
+  {
+    return "FitToText";
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkCaptionRepresentation::BuildRepresentation()
 {
   if (this->GetMTime() > this->BuildTime || this->CaptionActor2D->GetMTime() > this->BuildTime ||
@@ -136,26 +140,31 @@ void vtkCaptionRepresentation::BuildRepresentation()
       this->Renderer->GetVTKWindow()->GetMTime() > this->BuildTime))
   {
 
-    // If the text actor's text scaling is off, we still want to be able
-    // to change the caption's text size programmatically by changing a
-    // *relative* font size factor. We will also need to change the
-    // caption's boundary size accordingly.
-
+    // If the text actor's text scaling is off, we still may want to be able
+    // to change the caption's text to respond to changes in the border/box
+    // sizing.  This is done using the *relative* font size factor. We will
+    // also need to change the caption's boundary size accordingly. It
+    // depends on the relationship between the fit of the text to the border.
     if (!this->Moving && this->CaptionActor2D && this->CaptionActor2D->GetCaption() &&
-      (this->CaptionActor2D->GetTextActor()->GetTextScaleMode() ==
-        vtkTextActor::TEXT_SCALE_MODE_NONE))
+      this->CaptionActor2D->GetTextActor()->GetTextScaleMode() ==
+        vtkTextActor::TEXT_SCALE_MODE_NONE)
     {
-      // Create a dummy text mapper for getting font sizes
-      vtkTextMapper* textMapper = vtkTextMapper::New();
+      // Create a dummy text mapper for managing font sizes.
+      vtkNew<vtkTextMapper> textMapper;
       vtkTextProperty* tprop = textMapper->GetTextProperty();
-
       tprop->ShallowCopy(this->CaptionActor2D->GetCaptionTextProperty());
       textMapper->SetInput(this->CaptionActor2D->GetCaption());
       int textsize[2];
       int fsize = vtkTextMapper::SetRelativeFontSize(
         textMapper, this->Renderer, this->Renderer->GetSize(), textsize, 0.015 * this->FontFactor);
-      this->CaptionActor2D->GetCaptionTextProperty()->SetFontSize(fsize);
-      textMapper->Delete();
+
+      if (this->Fit == VTK_FIT_TO_BORDER)
+      {
+        this->CaptionActor2D->GetCaptionTextProperty()->SetFontSize(fsize);
+      }
+      else // this->Fit == VTK_FIT_TO_TEXT
+      {
+      }
       this->AdjustCaptionBoundary();
     }
 
@@ -174,7 +183,7 @@ void vtkCaptionRepresentation::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionRepresentation::AdjustCaptionBoundary()
 {
   if (this->CaptionActor2D->GetCaption())
@@ -225,21 +234,24 @@ void vtkCaptionRepresentation::AdjustCaptionBoundary()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionRepresentation::GetActors2D(vtkPropCollection* pc)
 {
-  pc->AddItem(this->CaptionActor2D);
+  if (pc != nullptr && this->GetVisibility())
+  {
+    pc->AddItem(this->CaptionActor2D);
+  }
   this->Superclass::GetActors2D(pc);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionRepresentation::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->CaptionActor2D->ReleaseGraphicsResources(w);
   this->Superclass::ReleaseGraphicsResources(w);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCaptionRepresentation::RenderOverlay(vtkViewport* w)
 {
   this->BuildRepresentation();
@@ -248,7 +260,7 @@ int vtkCaptionRepresentation::RenderOverlay(vtkViewport* w)
   return count;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCaptionRepresentation::RenderOpaqueGeometry(vtkViewport* w)
 {
   this->BuildRepresentation();
@@ -257,7 +269,7 @@ int vtkCaptionRepresentation::RenderOpaqueGeometry(vtkViewport* w)
   return count;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCaptionRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w)
 {
   this->BuildRepresentation();
@@ -266,7 +278,7 @@ int vtkCaptionRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w)
   return count;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkCaptionRepresentation::HasTranslucentPolygonalGeometry()
@@ -277,14 +289,16 @@ vtkTypeBool vtkCaptionRepresentation::HasTranslucentPolygonalGeometry()
   return result;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Caption Actor: " << this->CaptionActor2D << "\n";
   os << indent << "Font Factor: " << this->FontFactor << "\n";
+  os << indent << "Fit: " << this->GetFitAsString() << "\n";
 
   os << indent << "Anchor Representation:\n";
   this->AnchorRepresentation->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

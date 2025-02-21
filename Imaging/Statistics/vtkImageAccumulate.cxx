@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageAccumulate.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageAccumulate.h"
 
 #include "vtkImageData.h"
@@ -25,9 +13,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageAccumulate);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor sets default values
 vtkImageAccumulate::vtkImageAccumulate()
 {
@@ -53,10 +42,10 @@ vtkImageAccumulate::vtkImageAccumulate()
   this->SetNumberOfInputPorts(2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageAccumulate::~vtkImageAccumulate() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageAccumulate::SetComponentExtent(int extent[6])
 {
   int idx, modified = 0;
@@ -75,7 +64,7 @@ void vtkImageAccumulate::SetComponentExtent(int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageAccumulate::SetComponentExtent(
   int minX, int maxX, int minY, int maxY, int minZ, int maxZ)
 {
@@ -90,7 +79,7 @@ void vtkImageAccumulate::SetComponentExtent(
   this->SetComponentExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageAccumulate::GetComponentExtent(int extent[6])
 {
   for (int idx = 0; idx < 6; ++idx)
@@ -99,13 +88,13 @@ void vtkImageAccumulate::GetComponentExtent(int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageAccumulate::SetStencilData(vtkImageStencilData* stencil)
 {
   this->SetInputData(1, stencil);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilData* vtkImageAccumulate::GetStencil()
 {
   if (this->GetNumberOfInputConnections(1) < 1)
@@ -115,7 +104,7 @@ vtkImageStencilData* vtkImageAccumulate::GetStencil()
   return vtkImageStencilData::SafeDownCast(this->GetExecutive()->GetInputData(1, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class T>
 int vtkImageAccumulateExecute(vtkImageAccumulate* self, vtkImageData* inData, T*,
@@ -249,7 +238,7 @@ int vtkImageAccumulateExecute(vtkImageAccumulate* self, vtkImageData* inData, T*
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output Data, and executes the filter
 // algorithm to fill the output from the input.
 // It just executes a switch statement to call the correct function for
@@ -309,7 +298,7 @@ int vtkImageAccumulate::RequestData(vtkInformation* vtkNotUsed(request),
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageAccumulate::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -324,7 +313,7 @@ int vtkImageAccumulate::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get ALL of the input.
 int vtkImageAccumulate::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
@@ -350,7 +339,7 @@ int vtkImageAccumulate::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageAccumulate::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 1)
@@ -366,7 +355,7 @@ int vtkImageAccumulate::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageAccumulate::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -393,3 +382,4 @@ void vtkImageAccumulate::PrintSelf(ostream& os, vtkIndent indent)
      << this->ComponentExtent[3] << " " << this->ComponentExtent[4] << ","
      << this->ComponentExtent[5] << " }\n";
 }
+VTK_ABI_NAMESPACE_END

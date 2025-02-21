@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkResliceImageViewerMeasurements.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkResliceImageViewerMeasurements
  * @brief   Manage measurements on a resliced image
@@ -29,6 +17,7 @@
 #include "vtkInteractionImageModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkResliceImageViewer;
 class vtkAbstractWidget;
 class vtkCallbackCommand;
@@ -45,30 +34,30 @@ class vtkSeedWidget;
 class VTKINTERACTIONIMAGE_EXPORT vtkResliceImageViewerMeasurements : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard VTK methods.
    */
   static vtkResliceImageViewerMeasurements* New();
   vtkTypeMacro(vtkResliceImageViewerMeasurements, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Render the measurements.
    */
   virtual void Render();
 
-  //@{
+  ///@{
   /**
    * Add / remove a measurement widget
    */
   virtual void AddItem(vtkAbstractWidget*);
   virtual void RemoveItem(vtkAbstractWidget*);
   virtual void RemoveAllItems();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to change whether the widget responds to interaction.
    * Set this to Off to disable interaction. On by default.
@@ -78,24 +67,24 @@ public:
   vtkSetClampMacro(ProcessEvents, vtkTypeBool, 0, 1);
   vtkGetMacro(ProcessEvents, vtkTypeBool);
   vtkBooleanMacro(ProcessEvents, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Tolerance for Point-in-Plane check
    */
   vtkSetMacro(Tolerance, double);
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the reslice image viewer. This is automatically done in the class
    * vtkResliceImageViewer
    */
   virtual void SetResliceImageViewer(vtkResliceImageViewer*);
   vtkGetObjectMacro(ResliceImageViewer, vtkResliceImageViewer);
-  //@}
+  ///@}
 
   /**
    * Update the measurements. This is automatically called when the reslice
@@ -107,7 +96,7 @@ protected:
   vtkResliceImageViewerMeasurements();
   ~vtkResliceImageViewerMeasurements() override;
 
-  //@{
+  ///@{
   /**
    * Check if a measurement widget is on the resliced plane.
    */
@@ -121,7 +110,7 @@ protected:
   bool IsWidgetOnReslicedPlane(vtkHandleWidget* w);
   bool IsPointOnReslicedPlane(vtkHandleRepresentation* h);
   bool IsPositionOnReslicedPlane(double p[3]);
-  //@}
+  ///@}
 
   // Handles the events; centralized here for all widgets.
   static void ProcessEventsHandler(
@@ -145,4 +134,5 @@ private:
   void operator=(const vtkResliceImageViewerMeasurements&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

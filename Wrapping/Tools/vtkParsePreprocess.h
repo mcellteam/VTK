@@ -1,24 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParsePreprocess.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright (c) 2010 David Gobbi.
-
-  Contributed to the VisualizationToolkit by the author in June 2010
-  under the terms of the Visualization Toolkit 2008 copyright.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2010 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 /**
   This file provides subroutines to assist in preprocessing
   C/C++ header files.  It evaluates preprocessor directives
@@ -44,6 +26,7 @@
 #define vtkParsePreprocess_h
 
 #include "vtkParseString.h"
+#include "vtkParseSystem.h"
 #include "vtkWrappingToolsModule.h"
 
 /**
@@ -60,7 +43,7 @@ typedef unsigned long long preproc_uint_t;
 /**
  * Struct to describe a preprocessor symbol.
  */
-typedef struct _MacroInfo
+typedef struct MacroInfo_
 {
   const char* Name;
   const char* Definition;
@@ -78,7 +61,7 @@ typedef struct _MacroInfo
  * Contains all symbols defined thus far (including those defined
  * in any included header files).
  */
-typedef struct _PreprocessInfo
+typedef struct PreprocessInfo_
 {
   const char* FileName;        /* the file that is being parsed */
   MacroInfo*** MacroHashTable; /* hash table for macro lookup */
@@ -86,17 +69,20 @@ typedef struct _PreprocessInfo
   const char** IncludeDirectories;
   int NumberOfIncludeFiles; /* all included files */
   const char** IncludeFiles;
-  StringCache* Strings; /* to aid string allocation */
-  int IsExternal;       /* label all macros as "external" */
-  int ConditionalDepth; /* internal state variable */
-  int ConditionalDone;  /* internal state variable */
-  int MacroCounter;     /* for ordering macro definitions */
+  StringCache* Strings;     /* to aid string allocation */
+  int IsExternal;           /* label all macros as "external" */
+  int ConditionalDepth;     /* internal state variable */
+  int ConditionalDone;      /* internal state variable */
+  int MacroCounter;         /* for ordering macro definitions */
+  int NumberOfMissingFiles; /* include files that cannot be found */
+  const char** MissingFiles;
+  SystemInfo* System; /* for caching the file system directory */
 } PreprocessInfo;
 
 /**
  * Platforms.  Always choose native unless crosscompiling.
  */
-typedef enum _preproc_platform_t
+typedef enum preproc_platform_t_
 {
   VTK_PARSE_NATIVE,
   VTK_PARSE_UNDEF
@@ -105,7 +91,7 @@ typedef enum _preproc_platform_t
 /**
  * Search methods for include files.
  */
-typedef enum _preproc_search_t
+typedef enum preproc_search_t_
 {
   VTK_PARSE_CURDIR_INCLUDE, /* look in current directory first */
   VTK_PARSE_SOURCE_INCLUDE, /* look in source directory first */
@@ -115,7 +101,7 @@ typedef enum _preproc_search_t
 /**
  * Directive return values.
  */
-enum _preproc_return_t
+typedef enum preproc_return_t_
 {
   VTK_PARSE_OK = 0,
   VTK_PARSE_SKIP = 1,            /* skip next block */
@@ -130,7 +116,7 @@ enum _preproc_return_t
   VTK_PARSE_MACRO_NUMARGS = 10,  /* wrong number of args to func macro */
   VTK_PARSE_SYNTAX_ERROR = 11,   /* any and all syntax errors */
   VTK_PARSE_OUT_OF_MEMORY = 12   /* out-of-memory */
-};
+} preproc_return_t;
 
 /**
  * Bitfield for fatal errors.
@@ -218,7 +204,7 @@ extern "C"
    */
   VTKWRAPPINGTOOLS_EXPORT
   void vtkParsePreprocess_FreeMacroExpansion(
-    PreprocessInfo* info, MacroInfo* macro, const char* text);
+    const PreprocessInfo* info, const MacroInfo* macro, const char* text);
 
   /**
    * Fully process a string with the preprocessor, and
@@ -234,7 +220,7 @@ extern "C"
    * return the original string if no processing was needed.
    */
   VTKWRAPPINGTOOLS_EXPORT
-  void vtkParsePreprocess_FreeProcessedString(PreprocessInfo* info, const char* text);
+  void vtkParsePreprocess_FreeProcessedString(const PreprocessInfo* info, const char* text);
 
   /**
    * Add an include directory.  The directories that were added

@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkKdNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkKdNode.h"
 #include "vtkBox.h"
 #include "vtkCell.h"
@@ -26,12 +9,13 @@
 #include "vtkPlanesIntersection.h"
 #include "vtkPoints.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkKdNode);
 vtkCxxSetObjectMacro(vtkKdNode, Left, vtkKdNode);
 vtkCxxSetObjectMacro(vtkKdNode, Right, vtkKdNode);
 vtkCxxSetObjectMacro(vtkKdNode, Up, vtkKdNode);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkKdNode::vtkKdNode()
 {
   this->Up = this->Left = this->Right = nullptr;
@@ -55,7 +39,7 @@ vtkKdNode::vtkKdNode()
   this->MaxVal[2] = 0.0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkKdNode::~vtkKdNode()
 {
   this->SetLeft(nullptr);
@@ -63,7 +47,7 @@ vtkKdNode::~vtkKdNode()
   this->SetUp(nullptr);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::SetBounds(double x1, double x2, double y1, double y2, double z1, double z2)
 {
   this->Min[0] = x1;
@@ -74,7 +58,7 @@ void vtkKdNode::SetBounds(double x1, double x2, double y1, double y2, double z1,
   this->Max[2] = z2;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::SetMinBounds(const double* b)
 {
   this->Min[0] = b[0];
@@ -82,7 +66,7 @@ void vtkKdNode::SetMinBounds(const double* b)
   this->Min[2] = b[2];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::SetMaxBounds(const double* b)
 {
   this->Max[0] = b[0];
@@ -90,7 +74,7 @@ void vtkKdNode::SetMaxBounds(const double* b)
   this->Max[2] = b[2];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::SetMinDataBounds(const double* b)
 {
   this->MinVal[0] = b[0];
@@ -98,7 +82,7 @@ void vtkKdNode::SetMinDataBounds(const double* b)
   this->MinVal[2] = b[2];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::SetMaxDataBounds(const double* b)
 {
   this->MaxVal[0] = b[0];
@@ -106,7 +90,7 @@ void vtkKdNode::SetMaxDataBounds(const double* b)
   this->MaxVal[2] = b[2];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::GetBounds(double* b) const
 {
   b[0] = this->Min[0];
@@ -117,7 +101,7 @@ void vtkKdNode::GetBounds(double* b) const
   b[5] = this->Max[2];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::SetDataBounds(double x1, double x2, double y1, double y2, double z1, double z2)
 {
   this->MinVal[0] = x1;
@@ -128,7 +112,7 @@ void vtkKdNode::SetDataBounds(double x1, double x2, double y1, double y2, double
   this->MaxVal[2] = z2;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::SetDataBounds(float* v)
 {
   int x;
@@ -216,7 +200,7 @@ void vtkKdNode::SetDataBounds(float* v)
     newbounds[0], newbounds[1], newbounds[2], newbounds[3], newbounds[4], newbounds[5]);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::GetDataBounds(double* b) const
 {
   b[0] = this->MinVal[0];
@@ -227,7 +211,7 @@ void vtkKdNode::GetDataBounds(double* b) const
   b[5] = this->MaxVal[2];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkKdNode::GetDivisionPosition()
 {
   if (this->Dim == 3)
@@ -246,25 +230,25 @@ double vtkKdNode::GetDivisionPosition()
   return left->GetMaxBounds()[this->Dim];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Distance (squared) from any point anywhere to the boundary of spatial region
 //
 double vtkKdNode::GetDistance2ToBoundary(double x, double y, double z, int useDataBounds = 0)
 {
-  return this->_GetDistance2ToBoundary(x, y, z, nullptr, 0, useDataBounds);
+  return this->GetDistance2ToBoundaryPrivate(x, y, z, nullptr, 0, useDataBounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Distance (squared) from any point anywhere to the boundary of spatial
 // region, and give me the point on the boundary closest to this point.
 //
 double vtkKdNode::GetDistance2ToBoundary(
   double x, double y, double z, double* p, int useDataBounds = 0)
 {
-  return this->_GetDistance2ToBoundary(x, y, z, p, 0, useDataBounds);
+  return this->GetDistance2ToBoundaryPrivate(x, y, z, p, 0, useDataBounds);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The point is inside the region, and I want the distance (squared)
 // to the closest "interior" wall, one that is not an outer boundary of
 // the entire space.
@@ -272,10 +256,10 @@ double vtkKdNode::GetDistance2ToBoundary(
 
 double vtkKdNode::GetDistance2ToInnerBoundary(double x, double y, double z)
 {
-  return this->_GetDistance2ToBoundary(x, y, z, nullptr, 1, 0);
+  return this->GetDistance2ToBoundaryPrivate(x, y, z, nullptr, 1, 0);
 }
 
-double vtkKdNode::_GetDistance2ToBoundary(double x, double y, double z, // from this point
+double vtkKdNode::GetDistance2ToBoundaryPrivate(double x, double y, double z, // from this point
   double* p,             // set to point on boundary that is closest
   int innerBoundaryOnly, // ignore boundaries on "outside"
   int useDataBounds = 0) // use bounds of data within region instead
@@ -538,7 +522,7 @@ double vtkKdNode::_GetDistance2ToBoundary(double x, double y, double z, // from 
   return minDistance;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::AddChildNodes(vtkKdNode* left, vtkKdNode* right)
 {
   this->DeleteChildNodes();
@@ -556,7 +540,7 @@ void vtkKdNode::AddChildNodes(vtkKdNode* left, vtkKdNode* right)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::DeleteChildNodes()
 {
   if (this->GetLeft())
@@ -572,7 +556,7 @@ void vtkKdNode::DeleteChildNodes()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkKdNode::IntersectsBox(
   double x0, double x1, double y0, double y1, double z0, double z1, int useDataBounds = 0)
 {
@@ -600,7 +584,7 @@ int vtkKdNode::IntersectsBox(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkKdNode::IntersectsSphere2(
   double x, double y, double z, double rSquared, int useDataBounds = 0)
 {
@@ -621,7 +605,7 @@ int vtkKdNode::IntersectsSphere2(
   return 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkKdNode::ContainsBox(
   double x0, double x1, double y0, double y1, double z0, double z1, int useDataBounds = 0)
 {
@@ -649,7 +633,7 @@ int vtkKdNode::ContainsBox(
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkKdNode::ContainsPoint(double x, double y, double z, int useDataBounds = 0)
 {
   double *min, *max;
@@ -675,7 +659,7 @@ vtkTypeBool vtkKdNode::ContainsPoint(double x, double y, double z, int useDataBo
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkKdNode::IntersectsRegion(vtkPlanesIntersection* pi, int useDataBounds)
 {
   double x0, x1, y0, y1, z0, z1;
@@ -719,7 +703,7 @@ int vtkKdNode::IntersectsRegion(vtkPlanesIntersection* pi, int useDataBounds)
   return intersects;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkKdNode::IntersectsCell(vtkCell* cell, int useDataBounds, int cellRegion, double* bounds)
 {
   vtkIdType i;
@@ -894,7 +878,7 @@ int vtkKdNode::IntersectsCell(vtkCell* cell, int useDataBounds, int cellRegion, 
   return intersects;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::PrintNode(int depth)
 {
   if ((depth < 0) || (depth > 19))
@@ -922,7 +906,7 @@ void vtkKdNode::PrintNode(int depth)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::PrintVerboseNode(int depth)
 {
   int i;
@@ -973,7 +957,7 @@ void vtkKdNode::PrintVerboseNode(int depth)
   cout << static_cast<void*>(this->Right) << ", up " << static_cast<void*>(this->Up) << endl;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKdNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -993,3 +977,4 @@ void vtkKdNode::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "MaxVal: " << this->MaxVal[0] << " " << this->MaxVal[1] << " " << this->MaxVal[2]
      << endl;
 }
+VTK_ABI_NAMESPACE_END

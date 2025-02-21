@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNonOverlappingAMRLevelIdScalars.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkNonOverlappingAMRLevelIdScalars.h"
 
 #include "vtkCellData.h"
@@ -25,14 +13,15 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkNonOverlappingAMRLevelIdScalars);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNonOverlappingAMRLevelIdScalars::vtkNonOverlappingAMRLevelIdScalars() {}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNonOverlappingAMRLevelIdScalars::~vtkNonOverlappingAMRLevelIdScalars() {}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNonOverlappingAMRLevelIdScalars::AddColorLevels(
   vtkUniformGridAMR* input, vtkUniformGridAMR* output)
 {
@@ -44,6 +33,10 @@ void vtkNonOverlappingAMRLevelIdScalars::AddColorLevels(
 
   for (unsigned int levelIdx = 0; levelIdx < numLevels; levelIdx++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     unsigned int numDS = input->GetNumberOfDataSets(levelIdx);
     output->SetNumberOfDataSets(levelIdx, numDS);
 
@@ -72,7 +65,7 @@ void vtkNonOverlappingAMRLevelIdScalars::AddColorLevels(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Map ids into attribute data
 int vtkNonOverlappingAMRLevelIdScalars::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -98,7 +91,7 @@ int vtkNonOverlappingAMRLevelIdScalars::RequestData(vtkInformation* vtkNotUsed(r
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGrid* vtkNonOverlappingAMRLevelIdScalars::ColorLevel(vtkUniformGrid* input, int group)
 {
   vtkUniformGrid* output = 0;
@@ -118,8 +111,9 @@ vtkUniformGrid* vtkNonOverlappingAMRLevelIdScalars::ColorLevel(vtkUniformGrid* i
   return output;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNonOverlappingAMRLevelIdScalars::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

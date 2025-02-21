@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSobelGradientMagnitudePass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSobelGradientMagnitudePass.h"
 #include "vtkObjectFactory.h"
@@ -32,7 +20,7 @@
 
 // to be able to dump intermediate passes into png files for debugging.
 // only for vtkSobelGradientMagnitudePass developers.
-//#define VTK_SOBEL_PASS_DEBUG
+// #define VTK_SOBEL_PASS_DEBUG
 
 #ifdef VTK_SOBEL_BLUR_PASS_DEBUG
 #include "vtkImageExtractComponents.h"
@@ -45,9 +33,10 @@
 #include "vtkSobelGradientMagnitudePass2FS.h"
 #include "vtkTextureObjectVS.h" // a pass through shader
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSobelGradientMagnitudePass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSobelGradientMagnitudePass::vtkSobelGradientMagnitudePass()
 {
   this->FrameBufferObject = nullptr;
@@ -58,7 +47,7 @@ vtkSobelGradientMagnitudePass::vtkSobelGradientMagnitudePass()
   this->Program2 = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSobelGradientMagnitudePass::~vtkSobelGradientMagnitudePass()
 {
   if (this->FrameBufferObject != nullptr)
@@ -79,13 +68,13 @@ vtkSobelGradientMagnitudePass::~vtkSobelGradientMagnitudePass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSobelGradientMagnitudePass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -272,7 +261,7 @@ void vtkSobelGradientMagnitudePass::Render(const vtkRenderState* s)
   glFinish();
 #endif
 
-  if (!this->Program1->Program || this->Program1->Program->GetCompiled() != true)
+  if (!this->Program1->Program || !this->Program1->Program->GetCompiled())
   {
     vtkErrorMacro("Couldn't build the shader program. At this point , it can be an error in a "
                   "shader or a driver bug.");
@@ -365,6 +354,7 @@ void vtkSobelGradientMagnitudePass::Render(const vtkRenderState* s)
 
   // 4. Render in original FB (from renderstate in arg)
 
+  this->FrameBufferObject->RemoveColorAttachments(2);
   ostate->PopFramebufferBindings();
 
   // has something changed that would require us to recreate the shaders?
@@ -400,7 +390,7 @@ void vtkSobelGradientMagnitudePass::Render(const vtkRenderState* s)
   glFinish();
 #endif
 
-  if (!this->Program2->Program || this->Program2->Program->GetCompiled() != true)
+  if (!this->Program2->Program || !this->Program2->Program->GetCompiled())
   {
     vtkErrorMacro("Couldn't build the shader program. At this point , it can be an error in a "
                   "shader or a driver bug.");
@@ -459,7 +449,7 @@ void vtkSobelGradientMagnitudePass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -507,3 +497,4 @@ void vtkSobelGradientMagnitudePass::ReleaseGraphicsResources(vtkWindow* w)
     this->Gy1 = nullptr;
   }
 }
+VTK_ABI_NAMESPACE_END

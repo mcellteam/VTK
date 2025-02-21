@@ -1,21 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestAVIWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test of vtkAVIWriter
 // .SECTION Description
 //
 
+#include "vtkIOMovieConfigure.h"
+
+#ifdef VTK_USE_VIDEO_FOR_WINDOWS
 #include "vtkAVIWriter.h"
 #include "vtkImageCast.h"
 #include "vtkImageData.h"
@@ -23,9 +14,13 @@
 #include "vtkImageMapToColors.h"
 #include "vtkLookupTable.h"
 #include "vtksys/SystemTools.hxx"
+#else
+#include "vtkTesting.h"
+#endif
 
 int TestAVIWriter(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 {
+#ifdef VTK_USE_VIDEO_FOR_WINDOWS
   int err = 0;
   int cc = 0;
   int exists = 0;
@@ -95,4 +90,7 @@ int TestAVIWriter(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
   // err == 0 means test passes...
   //
   return err;
+#else
+  return VTK_SKIP_RETURN_CODE;
+#endif
 }

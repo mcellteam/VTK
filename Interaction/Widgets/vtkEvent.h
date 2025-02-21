@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEvent.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkEvent
  * @brief   a complete specification of a VTK event including all modifiers
@@ -26,6 +14,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderWindowInteractor;
 
 class VTKINTERACTIONWIDGETS_EXPORT vtkEvent : public vtkObject
@@ -36,13 +25,13 @@ public:
    */
   static vtkEvent* New();
 
-  //@{
+  ///@{
   /**
    * Standard macros.
    */
   vtkTypeMacro(vtkEvent, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Ways to specify modifiers to VTK events. These can be logical OR'd to
@@ -57,45 +46,47 @@ public:
     AltModifier = 4
   };
 
-  //@{
+  ///@{
   /**
    * Set the modifier for the event.
    */
   vtkSetMacro(EventId, unsigned long);
   vtkGetMacro(EventId, unsigned long);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the modifier for the event.
    */
   vtkSetMacro(Modifier, int);
   vtkGetMacro(Modifier, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the KeyCode for the event.
+   * Default is 0.
    */
   vtkSetMacro(KeyCode, char);
   vtkGetMacro(KeyCode, char);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the repease count for the event.
    */
   vtkSetMacro(RepeatCount, int);
   vtkGetMacro(RepeatCount, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the complex key symbol (compound key strokes) for the event.
+   * Default is nullptr.
    */
   vtkSetStringMacro(KeySym);
   vtkGetStringMacro(KeySym);
-  //@}
+  ///@}
 
   /**
    * Convenience method computes the event modifier from an interactor.
@@ -106,8 +97,8 @@ public:
    * Used to compare whether two events are equal. Takes into account
    * the EventId as well as the various modifiers.
    */
-  bool operator==(vtkEvent*);
-  bool operator==(unsigned long VTKEvent); // event with no modifiers
+  bool operator==(vtkEvent*) const;
+  bool operator==(unsigned long VTKEvent) const; // event with no modifiers
 
 protected:
   vtkEvent();
@@ -124,4 +115,5 @@ private:
   void operator=(const vtkEvent&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

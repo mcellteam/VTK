@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSeedWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSeedWidget.h"
 
 #include "vtkCallbackCommand.h"
@@ -30,6 +18,7 @@
 #include <iterator>
 #include <list>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSeedWidget);
 
 // The vtkSeedList is a PIMPLed list<T>.
@@ -38,7 +27,7 @@ class vtkSeedList : public std::list<vtkHandleWidget*>
 };
 typedef std::list<vtkHandleWidget*>::iterator vtkSeedListIterator;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSeedWidget::vtkSeedWidget()
 {
   this->ManagesCursor = 1;
@@ -61,7 +50,7 @@ vtkSeedWidget::vtkSeedWidget()
   this->Defining = 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::DeleteSeed(int i)
 {
   if (this->Seeds->size() <= static_cast<size_t>(i))
@@ -86,7 +75,7 @@ void vtkSeedWidget::DeleteSeed(int i)
   w->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSeedWidget::~vtkSeedWidget()
 {
   // Loop over all seeds releasing their observers and deleting them
@@ -97,7 +86,7 @@ vtkSeedWidget::~vtkSeedWidget()
   delete this->Seeds;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHandleWidget* vtkSeedWidget::GetSeed(int i)
 {
   if (this->Seeds->size() <= static_cast<size_t>(i))
@@ -109,7 +98,7 @@ vtkHandleWidget* vtkSeedWidget::GetSeed(int i)
   return *iter;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -118,7 +107,7 @@ void vtkSeedWidget::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::SetEnabled(int enabling)
 {
   this->Superclass::SetEnabled(enabling);
@@ -139,7 +128,7 @@ void vtkSeedWidget::SetEnabled(int enabling)
 }
 
 // The following methods are the callbacks that the seed widget responds to.
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::AddPointAction(vtkAbstractWidget* w)
 {
   vtkSeedWidget* self = reinterpret_cast<vtkSeedWidget*>(w);
@@ -203,7 +192,7 @@ void vtkSeedWidget::AddPointAction(vtkAbstractWidget* w)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::CompletedAction(vtkAbstractWidget* w)
 {
   vtkSeedWidget* self = reinterpret_cast<vtkSeedWidget*>(w);
@@ -215,7 +204,7 @@ void vtkSeedWidget::CompletedAction(vtkAbstractWidget* w)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::CompleteInteraction()
 {
   this->WidgetState = vtkSeedWidget::PlacedSeeds;
@@ -223,14 +212,14 @@ void vtkSeedWidget::CompleteInteraction()
   this->Defining = 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::RestartInteraction()
 {
   this->WidgetState = vtkSeedWidget::Start;
   this->Defining = 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::MoveAction(vtkAbstractWidget* w)
 {
   vtkSeedWidget* self = reinterpret_cast<vtkSeedWidget*>(w);
@@ -262,7 +251,7 @@ void vtkSeedWidget::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkSeedWidget* self = reinterpret_cast<vtkSeedWidget*>(w);
@@ -284,7 +273,7 @@ void vtkSeedWidget::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::DeleteAction(vtkAbstractWidget* w)
 {
   vtkSeedWidget* self = reinterpret_cast<vtkSeedWidget*>(w);
@@ -308,7 +297,7 @@ void vtkSeedWidget::DeleteAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::SetProcessEvents(vtkTypeBool pe)
 {
   this->Superclass::SetProcessEvents(pe);
@@ -320,7 +309,7 @@ void vtkSeedWidget::SetProcessEvents(vtkTypeBool pe)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::SetInteractor(vtkRenderWindowInteractor* rwi)
 {
   this->Superclass::SetInteractor(rwi);
@@ -331,7 +320,7 @@ void vtkSeedWidget::SetInteractor(vtkRenderWindowInteractor* rwi)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::SetCurrentRenderer(vtkRenderer* ren)
 {
   this->Superclass::SetCurrentRenderer(ren);
@@ -347,7 +336,7 @@ void vtkSeedWidget::SetCurrentRenderer(vtkRenderer* ren)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Programmatically create a new handle.
 vtkHandleWidget* vtkSeedWidget::CreateNewHandle()
 {
@@ -383,7 +372,7 @@ vtkHandleWidget* vtkSeedWidget::CreateNewHandle()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSeedWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -391,3 +380,4 @@ void vtkSeedWidget::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "WidgetState: " << this->WidgetState << endl;
 }
+VTK_ABI_NAMESPACE_END

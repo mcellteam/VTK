@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSpheres.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSpheres
  * @brief   implicit function for a set of spheres
@@ -35,6 +23,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkImplicitFunction.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSphere;
 class vtkPoints;
 class vtkDataArray;
@@ -42,23 +31,23 @@ class vtkDataArray;
 class VTKCOMMONDATAMODEL_EXPORT vtkSpheres : public vtkImplicitFunction
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation, type information, and printing.
    */
   static vtkSpheres* New();
   vtkTypeMacro(vtkSpheres, vtkImplicitFunction);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Evaluate spheres equations. Return largest value when evaluating all
    * sphere equations.
    */
   using vtkImplicitFunction::EvaluateFunction;
   double EvaluateFunction(double x[3]) override;
-  //@}
+  ///@}
 
   /**
    * Evaluate spheres gradient. Gradients point towards the outside of the
@@ -66,22 +55,22 @@ public:
    */
   void EvaluateGradient(double x[3], double n[3]) override;
 
-  //@{
+  ///@{
   /**
    * Specify a list of points defining sphere centers.
    */
   virtual void SetCenters(vtkPoints*);
   vtkGetObjectMacro(Centers, vtkPoints);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a list of radii for the spheres. There is a one-to-one
    * correspondence between sphere points and sphere radii.
    */
   void SetRadii(vtkDataArray* radii);
   vtkGetObjectMacro(Radii, vtkDataArray);
-  //@}
+  ///@}
 
   /**
    * Return the number of spheres in the set of spheres.
@@ -116,4 +105,5 @@ private:
   void operator=(const vtkSpheres&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

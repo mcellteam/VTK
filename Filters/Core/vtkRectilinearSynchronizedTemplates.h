@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRectilinearSynchronizedTemplates.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRectilinearSynchronizedTemplates
  * @brief   generate isosurface from rectilinear grid
@@ -35,6 +23,7 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRectilinearGrid;
 class vtkDataArray;
 
@@ -51,7 +40,7 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of normals. Normal computation is fairly
    * expensive in both time and storage. If the output data will be
@@ -61,9 +50,9 @@ public:
   vtkSetMacro(ComputeNormals, vtkTypeBool);
   vtkGetMacro(ComputeNormals, vtkTypeBool);
   vtkBooleanMacro(ComputeNormals, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of gradients. Gradient computation is
    * fairly expensive in both time and storage. Note that if
@@ -75,16 +64,16 @@ public:
   vtkSetMacro(ComputeGradients, vtkTypeBool);
   vtkGetMacro(ComputeGradients, vtkTypeBool);
   vtkBooleanMacro(ComputeGradients, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of scalars.
    */
   vtkSetMacro(ComputeScalars, vtkTypeBool);
   vtkGetMacro(ComputeScalars, vtkTypeBool);
   vtkBooleanMacro(ComputeScalars, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Set a particular contour value at contour number i. The index i ranges
@@ -140,15 +129,15 @@ public:
     this->ContourValues->GenerateValues(numContours, rangeStart, rangeEnd);
   }
 
-  //@{
+  ///@{
   /**
    * Set/get which component of the scalar array to contour on; defaults to 0.
    */
   vtkSetMacro(ArrayComponent, int);
   vtkGetMacro(ArrayComponent, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this is enabled (by default), the output will be triangles
    * otherwise, the output will be the intersection polygons
@@ -156,7 +145,7 @@ public:
   vtkSetMacro(GenerateTriangles, vtkTypeBool);
   vtkGetMacro(GenerateTriangles, vtkTypeBool);
   vtkBooleanMacro(GenerateTriangles, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Compute the spacing between this point and its 6 neighbors.  This method
@@ -194,4 +183,5 @@ private:
 extern int VTK_RECTILINEAR_SYNCHONIZED_TEMPLATES_TABLE_1[];
 extern int VTK_RECTILINEAR_SYNCHONIZED_TEMPLATES_TABLE_2[];
 
+VTK_ABI_NAMESPACE_END
 #endif

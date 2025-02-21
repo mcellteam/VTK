@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNIFTIImageReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkNIFTIImageReader
  * @brief   Read NIfTI-1 and NIfTI-2 medical image files
@@ -38,22 +26,26 @@
 #include "vtkIOImageModule.h" // For export macro
 #include "vtkImageReader2.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkNIFTIImageHeader;
 class vtkMatrix4x4;
+VTK_ABI_NAMESPACE_END
 
 struct nifti_1_header;
+
+VTK_ABI_NAMESPACE_BEGIN
 
 //----------------------------------------------------------------------------
 class VTKIOIMAGE_EXPORT vtkNIFTIImageReader : public vtkImageReader2
 {
 public:
-  //@{
+  ///@{
   /**
    * Static method for construction.
    */
   static vtkNIFTIImageReader* New();
   vtkTypeMacro(vtkNIFTIImageReader, vtkImageReader2);
-  //@}
+  ///@}
 
   /**
    * Print information about this object.
@@ -73,9 +65,9 @@ public:
   /**
    * Return true if this reader can read the given file.
    */
-  int CanReadFile(const char* filename) override;
+  int CanReadFile(VTK_FILEPATH const char* filename) override;
 
-  //@{
+  ///@{
   /**
    * Read the time dimension as scalar components (default: Off).
    * If this is on, then each time point will be stored as a component in
@@ -86,7 +78,7 @@ public:
   vtkGetMacro(TimeAsVector, bool);
   vtkSetMacro(TimeAsVector, bool);
   vtkBooleanMacro(TimeAsVector, bool);
-  //@}
+  ///@}
 
   /**
    * Get the time dimension that was stored in the NIFTI header.
@@ -104,7 +96,7 @@ public:
   double GetRescaleSlope() { return this->RescaleSlope; }
   double GetRescaleIntercept() { return this->RescaleIntercept; }
 
-  //@{
+  ///@{
   /**
    * Read planar RGB (separate R, G, and B planes), rather than packed RGB.
    * The NIFTI format should always use packed RGB.  The Analyze format,
@@ -115,7 +107,7 @@ public:
   vtkGetMacro(PlanarRGB, bool);
   vtkSetMacro(PlanarRGB, bool);
   vtkBooleanMacro(PlanarRGB, bool);
-  //@}
+  ///@}
 
   /**
    * QFac gives the slice order in the NIFTI file versus the VTK image.
@@ -185,7 +177,7 @@ protected:
    * The check will succeed if the filename ends in ".gz", and if the
    * extension matches after removing the ".gz".
    */
-  static bool CheckExtension(const char* fname, const char* ext);
+  static bool CheckExtension(const char* filename, const char* ext);
 
   /**
    * Make a new filename by replacing extension "ext1" with "ext2".
@@ -195,7 +187,7 @@ protected:
    * If the file exists, a new string is returned that must be
    * deleted by the caller.  Otherwise, the return value is nullptr.
    */
-  static char* ReplaceExtension(const char* fname, const char* ext1, const char* ext2);
+  static char* ReplaceExtension(const char* filename, const char* ext1, const char* ext2);
 
   /**
    * Check the version of the header.
@@ -212,26 +204,26 @@ protected:
    */
   bool TimeAsVector;
 
-  //@{
+  ///@{
   /**
    * Information for rescaling data to quantitative units.
    */
   double RescaleIntercept;
   double RescaleSlope;
-  //@}
+  ///@}
 
   /**
    * Is -1 if VTK slice order is opposite to NIFTI slice order, +1 otherwise.
    */
   double QFac;
 
-  //@{
+  ///@{
   /**
    * The orientation matrices for the NIFTI file.
    */
   vtkMatrix4x4* QFormMatrix;
   vtkMatrix4x4* SFormMatrix;
-  //@}
+  ///@}
 
   /**
    * The dimensions of the NIFTI file.
@@ -258,4 +250,5 @@ private:
   void operator=(const vtkNIFTIImageReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkNIFTIImageReader_h

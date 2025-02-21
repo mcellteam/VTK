@@ -1,31 +1,21 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOutputWindow.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOutputWindow.h"
-#include "vtkToolkits.h"
 #if defined(_WIN32) && !defined(VTK_USE_X)
 #include "vtkWin32OutputWindow.h"
 #endif
-#if defined(ANDROID)
+#if defined(__ANDROID__) || defined(ANDROID)
 #include "vtkAndroidOutputWindow.h"
 #endif
 
 #include "vtkCommand.h"
 #include "vtkLogger.h"
 #include "vtkObjectFactory.h"
+#include "vtkSmartPointer.h"
 
+#include <mutex>
 #include <sstream>
+#include <thread>
 
 namespace
 {
@@ -34,11 +24,11 @@ namespace
 template <class T>
 class vtkScopedSet
 {
-  T* Ptr;
+  std::atomic<T>* Ptr;
   T OldVal;
 
 public:
-  vtkScopedSet(T* ptr, const T& newval)
+  vtkScopedSet(std::atomic<T>* ptr, const T& newval)
     : Ptr(ptr)
     , OldVal(*ptr)
   {
@@ -48,9 +38,10 @@ public:
 };
 }
 
-//----------------------------------------------------------------------------
-vtkOutputWindow* vtkOutputWindow::Instance = nullptr;
-static unsigned int vtkOutputWindowCleanupCounter = 0;
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
+static std::mutex InstanceLock; // XXX(c++17): use a `shared_mutex`
+static vtkSmartPointer<vtkOutputWindow> vtkOutputWindowGlobalInstance;
 
 // helps accessing private members in vtkOutputWindow.
 class vtkOutputWindowPrivateAccessor
@@ -114,8 +105,6 @@ void vtkOutputWindowDisplayDebugText(const char* message)
 void vtkOutputWindowDisplayErrorText(
   const char* fname, int lineno, const char* message, vtkObject* sourceObj)
 {
-  vtkLogger::Log(vtkLogger::VERBOSITY_ERROR, fname, lineno, message);
-
   std::ostringstream vtkmsg;
   vtkmsg << "ERROR: In " << fname << ", line " << lineno << "\n" << message << "\n\n";
   if (sourceObj && sourceObj->HasObserver(vtkCommand::ErrorEvent))
@@ -124,6 +113,7 @@ void vtkOutputWindowDisplayErrorText(
   }
   else if (auto win = vtkOutputWindow::GetInstance())
   {
+    vtkLogger::Log(vtkLogger::VERBOSITY_ERROR, fname, lineno, message);
     vtkOutputWindowPrivateAccessor helper_raii(win);
     win->DisplayErrorText(vtkmsg.str().c_str());
   }
@@ -132,8 +122,6 @@ void vtkOutputWindowDisplayErrorText(
 void vtkOutputWindowDisplayWarningText(
   const char* fname, int lineno, const char* message, vtkObject* sourceObj)
 {
-  vtkLogger::Log(vtkLogger::VERBOSITY_WARNING, fname, lineno, message);
-
   std::ostringstream vtkmsg;
   vtkmsg << "Warning: In " << fname << ", line " << lineno << "\n" << message << "\n\n";
   if (sourceObj && sourceObj->HasObserver(vtkCommand::WarningEvent))
@@ -142,6 +130,7 @@ void vtkOutputWindowDisplayWarningText(
   }
   else if (auto win = vtkOutputWindow::GetInstance())
   {
+    vtkLogger::Log(vtkLogger::VERBOSITY_WARNING, fname, lineno, message);
     vtkOutputWindowPrivateAccessor helper_raii(win);
     win->DisplayWarningText(vtkmsg.str().c_str());
   }
@@ -174,27 +163,13 @@ void vtkOutputWindowDisplayDebugText(
   }
 }
 
-vtkOutputWindowCleanup::vtkOutputWindowCleanup()
-{
-  ++vtkOutputWindowCleanupCounter;
-}
-
-vtkOutputWindowCleanup::~vtkOutputWindowCleanup()
-{
-  if (--vtkOutputWindowCleanupCounter == 0)
-  {
-    // Destroy any remaining output window.
-    vtkOutputWindow::SetInstance(nullptr);
-  }
-}
-
 vtkObjectFactoryNewMacro(vtkOutputWindow);
 vtkOutputWindow::vtkOutputWindow()
 {
   this->PromptUser = false;
   this->CurrentMessageType = MESSAGE_TYPE_TEXT;
   this->DisplayMode = vtkOutputWindow::DEFAULT;
-  this->InStandardMacros = false;
+  this->InStandardMacros = 0;
 }
 
 vtkOutputWindow::~vtkOutputWindow() = default;
@@ -203,7 +178,8 @@ void vtkOutputWindow::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
-  os << indent << "vtkOutputWindow Single instance = " << (void*)vtkOutputWindow::Instance << endl;
+  os << indent << "vtkOutputWindow Single instance = " << (void*)vtkOutputWindowGlobalInstance
+     << endl;
   os << indent << "Prompt User: " << (this->PromptUser ? "On\n" : "Off\n");
   os << indent << "DisplayMode: ";
   switch (this->DisplayMode)
@@ -282,7 +258,7 @@ void vtkOutputWindow::DisplayText(const char* txt)
     }
     if (c == 'q')
     {
-      this->PromptUser = 0;
+      this->PromptUser = false;
     }
   }
 
@@ -327,73 +303,58 @@ void vtkOutputWindow::DisplayDebugText(const char* txt)
 // Return the single instance of the vtkOutputWindow
 vtkOutputWindow* vtkOutputWindow::GetInstance()
 {
-  if (!vtkOutputWindow::Instance)
+  // Check if we have an instance already.
   {
+    std::unique_lock<std::mutex> lock(InstanceLock);
+    // std::shared_lock lock(InstanceLock); // XXX(c++17)
+    (void)lock;
+
+    if (vtkOutputWindowGlobalInstance)
+    {
+      return vtkOutputWindowGlobalInstance;
+    }
+  }
+
+  {
+    std::unique_lock<std::mutex> lock(InstanceLock);
+    (void)lock;
+
+    // Another thread may have raced us here; if it already exists, use it.
+    if (vtkOutputWindowGlobalInstance)
+    {
+      return vtkOutputWindowGlobalInstance;
+    }
+
     // Try the factory first
-    vtkOutputWindow::Instance =
-      (vtkOutputWindow*)vtkObjectFactory::CreateInstance("vtkOutputWindow");
+    vtkOutputWindowGlobalInstance.TakeReference(
+      (vtkOutputWindow*)vtkObjectFactory::CreateInstance("vtkOutputWindow"));
     // if the factory did not provide one, then create it here
-    if (!vtkOutputWindow::Instance)
+    if (!vtkOutputWindowGlobalInstance)
     {
 #if defined(_WIN32) && !defined(VTK_USE_X)
-      vtkOutputWindow::Instance = vtkWin32OutputWindow::New();
+      vtkOutputWindowGlobalInstance.TakeReference(vtkWin32OutputWindow::New());
 #elif defined(ANDROID)
-      vtkOutputWindow::Instance = vtkAndroidOutputWindow::New();
+      vtkOutputWindowGlobalInstance.TakeReference(vtkAndroidOutputWindow::New());
 #else
-      vtkOutputWindow::Instance = vtkOutputWindow::New();
+      vtkOutputWindowGlobalInstance.TakeReference(vtkOutputWindow::New());
 #endif
     }
   }
+
   // return the instance
-  return vtkOutputWindow::Instance;
+  return vtkOutputWindowGlobalInstance;
 }
 
 void vtkOutputWindow::SetInstance(vtkOutputWindow* instance)
 {
-  if (vtkOutputWindow::Instance == instance)
+  std::unique_lock<std::mutex> lock(InstanceLock);
+  (void)lock;
+
+  if (vtkOutputWindowGlobalInstance == instance)
   {
     return;
   }
-  // preferably this will be nullptr
-  if (vtkOutputWindow::Instance)
-  {
-    vtkOutputWindow::Instance->Delete();
-  }
-  vtkOutputWindow::Instance = instance;
-  if (!instance)
-  {
-    return;
-  }
-  // user will call ->Delete() after setting instance
-  instance->Register(nullptr);
-}
 
-#if !defined(VTK_LEGACY_REMOVE)
-void vtkOutputWindow::SetUseStdErrorForAllMessages(bool val)
-{
-  VTK_LEGACY_REPLACED_BODY(
-    vtkOutputWindow::SetUseStdErrorForAllMessages, "VTK 9.0", vtkOutputWindow::SetDisplayMode);
-  this->SetDisplayMode(val ? ALWAYS_STDERR : DEFAULT);
+  vtkOutputWindowGlobalInstance = vtk::MakeSmartPointer(instance);
 }
-
-bool vtkOutputWindow::GetUseStdErrorForAllMessages()
-{
-  VTK_LEGACY_REPLACED_BODY(
-    vtkOutputWindow::GetUseStdErrorForAllMessages, "VTK 9.0", vtkOutputWindow::GetDisplayMode);
-  return this->DisplayMode == ALWAYS_STDERR;
-}
-
-void vtkOutputWindow::UseStdErrorForAllMessagesOn()
-{
-  VTK_LEGACY_REPLACED_BODY(
-    vtkOutputWindow::UseStdErrorForAllMessagesOn, "VTK 9.0", vtkOutputWindow::SetDisplayMode);
-  this->SetDisplayMode(ALWAYS_STDERR);
-}
-
-void vtkOutputWindow::UseStdErrorForAllMessagesOff()
-{
-  VTK_LEGACY_REPLACED_BODY(
-    vtkOutputWindow::UseStdErrorForAllMessagesOff, "VTK 9.0", vtkOutputWindow::SetDisplayMode);
-  this->SetDisplayMode(DEFAULT);
-}
-#endif
+VTK_ABI_NAMESPACE_END

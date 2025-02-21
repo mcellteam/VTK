@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkBezierInterpolation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
 #include "vtkBezierInterpolation.h"
 #include <array>
 #include <functional>
@@ -24,15 +13,12 @@
 #include "vtkObjectFactory.h"
 #include "vtkPoints.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 #include <numeric> // std::accumulate
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBezierInterpolation);
 
-vtkBezierInterpolation::vtkBezierInterpolation()
-  : vtkHigherOrderInterpolation()
-{
-}
+vtkBezierInterpolation::vtkBezierInterpolation() = default;
 
 vtkBezierInterpolation::~vtkBezierInterpolation() = default;
 
@@ -47,7 +33,7 @@ static constexpr vtkIdType binomials[]{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0
   7, 1, 0, 0, 0, 1, 8, 28, 56, 70, 56, 28, 8, 1, 0, 0, 1, 9, 36, 84, 126, 126, 84, 36, 9, 1, 0, 1,
   10, 45, 120, 210, 252, 210, 120, 45, 10, 1 };
 
-static vtkIdType BinomialCoefficient(const int n, int k)
+static vtkIdType BinomialCoefficient(int n, int k)
 {
   if (n <= 10)
   {
@@ -74,12 +60,12 @@ static vtkIdType BinomialCoefficient(const int n, int k)
   }
 }
 
-static vtkIdType NumberOfSimplexFunctions(const int dim, const int deg)
+static vtkIdType NumberOfSimplexFunctions(int dim, int deg)
 {
   return BinomialCoefficient(dim + deg, dim);
 }
 
-static vtkVector3i unflattenTri(const int deg, const vtkIdType flat)
+static vtkVector3i unflattenTri(int deg, vtkIdType flat)
 {
   int d = deg;
   int j = 0;
@@ -94,7 +80,7 @@ static vtkVector3i unflattenTri(const int deg, const vtkIdType flat)
   return { i, j, d - i - j };
 }
 
-static vtkVector3i unflattenTetrahedron(const int deg, const vtkIdType flat)
+static vtkVector3i unflattenTetrahedron(int deg, vtkIdType flat)
 {
   int n_before_this_level = 0;
   int level = 0;
@@ -116,7 +102,7 @@ static vtkVector3i unflattenTetrahedron(const int deg, const vtkIdType flat)
   return { cv_tri[0], cv_tri[1], level };
 }
 
-int vtkBezierInterpolation::flattenSimplex(const int dim, const int deg, const vtkVector3i coord)
+int vtkBezierInterpolation::FlattenSimplex(int dim, int deg, vtkVector3i coord)
 {
   switch (dim)
   {
@@ -131,15 +117,14 @@ int vtkBezierInterpolation::flattenSimplex(const int dim, const int deg, const v
       {
         num_before_level += NumberOfSimplexFunctions(2, deg - i);
       }
-      return num_before_level + flattenSimplex(2, deg - coord[2], coord);
+      return num_before_level + FlattenSimplex(2, deg - coord[2], coord);
     }
     default:
       throw "flattenSimplex unsupported dim";
   }
 }
 
-vtkVector3i vtkBezierInterpolation::unflattenSimplex(
-  const int dim, const int deg, const vtkIdType flat)
+vtkVector3i vtkBezierInterpolation::UnFlattenSimplex(int dim, int deg, vtkIdType flat)
 {
   switch (dim)
   {
@@ -152,8 +137,7 @@ vtkVector3i vtkBezierInterpolation::unflattenSimplex(
   }
 }
 
-void iterateSimplex(
-  const int dim, const int deg, std::function<void(const vtkVector3i, const int)> callback)
+void iterateSimplex(int dim, int deg, std::function<void(vtkVector3i, int)> callback)
 {
   switch (dim)
   {
@@ -169,7 +153,7 @@ void iterateSimplex(
     {
       for (int i = 0, nfuncs = ((deg + 1) * (deg + 2) / 2); i < nfuncs; ++i)
       {
-        callback(vtkBezierInterpolation::unflattenSimplex(2, deg, i), i);
+        callback(vtkBezierInterpolation::UnFlattenSimplex(2, deg, i), i);
       }
     }
     break;
@@ -177,7 +161,7 @@ void iterateSimplex(
     {
       for (int i = 0, nfuncs = ((deg + 1) * (deg + 2) * (deg + 3) / 6); i < nfuncs; ++i)
       {
-        callback(vtkBezierInterpolation::unflattenSimplex(3, deg, i), i);
+        callback(vtkBezierInterpolation::UnFlattenSimplex(3, deg, i), i);
       }
     }
     break;
@@ -185,8 +169,8 @@ void iterateSimplex(
 }
 
 // FIXME this could be greatly optimized
-void vtkBezierInterpolation::deCasteljauSimplex(
-  const int dim, const int deg, const double pcoords[3], double* weights)
+void vtkBezierInterpolation::DeCasteljauSimplex(
+  int dim, int deg, const double pcoords[3], double* weights)
 {
   const int basis_func_n = NumberOfSimplexFunctions(dim, deg);
 
@@ -211,17 +195,20 @@ void vtkBezierInterpolation::deCasteljauSimplex(
     {
       const int sub_degree = d - 1;
       const int sub_degree_length = NumberOfSimplexFunctions(dim, sub_degree);
-      iterateSimplex(dim, sub_degree, [&](const vtkVector3i sub_degree_coord, const int sub_index) {
-        iterateSimplex(
-          dim, lin_degree, [&](const vtkVector3i lin_degree_coord, const int lin_index) {
-            const vtkVector3i one_higher_coord = { sub_degree_coord[0] + lin_degree_coord[0],
-              sub_degree_coord[1] + lin_degree_coord[1],
-              sub_degree_coord[2] + lin_degree_coord[2] };
-            const int idx = flattenSimplex(dim, sub_degree + 1, one_higher_coord);
-            shape_funcs[lin_index] = coeffs[idx] * linear_basis[lin_index];
-          });
-        sub_coeffs[sub_index] = std::accumulate(shape_funcs.begin(), shape_funcs.end(), 0.);
-      });
+      iterateSimplex(dim, sub_degree,
+        [&](vtkVector3i sub_degree_coord, int sub_index)
+        {
+          iterateSimplex(dim, lin_degree,
+            [&](vtkVector3i lin_degree_coord, int lin_index)
+            {
+              const vtkVector3i one_higher_coord = { sub_degree_coord[0] + lin_degree_coord[0],
+                sub_degree_coord[1] + lin_degree_coord[1],
+                sub_degree_coord[2] + lin_degree_coord[2] };
+              const int idx = FlattenSimplex(dim, sub_degree + 1, one_higher_coord);
+              shape_funcs[lin_index] = coeffs[idx] * linear_basis[lin_index];
+            });
+          sub_coeffs[sub_index] = std::accumulate(shape_funcs.begin(), shape_funcs.end(), 0.);
+        });
       for (int i = 0; i < sub_degree_length; ++i)
       {
         coeffs[i] = sub_coeffs[i];
@@ -231,30 +218,29 @@ void vtkBezierInterpolation::deCasteljauSimplex(
   }
 }
 
-void vtkBezierInterpolation::deCasteljauSimplexDeriv(
-  const int dim, const int deg, const double pcoords[3], double* weights)
+void vtkBezierInterpolation::DeCasteljauSimplexDeriv(
+  int dim, int deg, const double pcoords[3], double* weights)
 {
   const int num_funcs = NumberOfSimplexFunctions(dim, deg - 1);
   std::vector<double> evals(num_funcs);
-  deCasteljauSimplex(dim, deg - 1, pcoords, &evals[0]);
+  DeCasteljauSimplex(dim, deg - 1, pcoords, evals.data());
   for (int idim = 0; idim < dim; ++idim)
   {
     for (int ifunc = 0; ifunc < num_funcs; ++ifunc)
     {
-      const vtkVector3i coord = unflattenSimplex(dim, deg - 1, ifunc);
+      const vtkVector3i coord = UnFlattenSimplex(dim, deg - 1, ifunc);
       vtkVector3i next_coord = coord;
       next_coord[idim] += 1;
 
-      const int flat_coord = flattenSimplex(dim, deg, coord);
-      const int flat_next_coord = flattenSimplex(dim, deg, next_coord);
+      const int flat_coord = FlattenSimplex(dim, deg, coord);
+      const int flat_next_coord = FlattenSimplex(dim, deg, next_coord);
       weights[(num_funcs * idim) + ifunc] = deg * (evals[flat_next_coord] - evals[flat_coord]);
     }
   }
 }
 
 /// Evaluate 1-D shape functions for the given \a order at the given \a pcoord (in [0,1]).
-void vtkBezierInterpolation::EvaluateShapeFunctions(
-  const int order, const double pcoord, double* shape)
+void vtkBezierInterpolation::EvaluateShapeFunctions(int order, const double pcoord, double* shape)
 {
   const double u1 = (1.0 - pcoord);
   const double u2 = pcoord;
@@ -279,12 +265,12 @@ void vtkBezierInterpolation::EvaluateShapeFunctions(
 /// Evaluate 1-D shape functions and their derivatives for the given \a order at the given \a pcoord
 /// (in [0,1]).
 void vtkBezierInterpolation::EvaluateShapeAndGradient(
-  const int order, const double pcoord, double* shape, double* derivs)
+  int order, const double pcoord, double* shape, double* derivs)
 {
   std::vector<double> shape_deriv(order + 1);
 
   EvaluateShapeFunctions(order, pcoord, shape);
-  EvaluateShapeFunctions(order - 1, pcoord, &shape_deriv[0]);
+  EvaluateShapeFunctions(order - 1, pcoord, shape_deriv.data());
 
   for (int ifunc_l = 0; ifunc_l <= order; ++ifunc_l)
   {
@@ -321,7 +307,7 @@ int vtkBezierInterpolation::Tensor2ShapeFunctions(
 
 // Quadrilateral shape-function derivatives
 int vtkBezierInterpolation::Tensor2ShapeDerivatives(
-  const int order[2], const double pcoords[2], double* derivs)
+  const int order[2], const double pcoords[3], double* derivs)
 {
   return vtkHigherOrderInterpolation::Tensor2ShapeDerivatives(
     order, pcoords, derivs, vtkBezierInterpolation::EvaluateShapeAndGradient);
@@ -351,7 +337,7 @@ void vtkBezierInterpolation::Tensor3EvaluateDerivative(const int order[3], const
 
 //// Wedge shape function computation
 void vtkBezierInterpolation::WedgeShapeFunctions(
-  const int order[3], const vtkIdType numberOfPoints, const double pcoords[3], double* shape)
+  const int order[3], vtkIdType numberOfPoints, const double pcoords[3], double* shape)
 {
   static vtkNew<vtkBezierTriangle> tri;
   vtkHigherOrderInterpolation::WedgeShapeFunctions(
@@ -360,14 +346,14 @@ void vtkBezierInterpolation::WedgeShapeFunctions(
 
 /// Wedge shape-function derivative evaluation
 void vtkBezierInterpolation::WedgeShapeDerivatives(
-  const int order[3], const vtkIdType numberOfPoints, const double pcoords[3], double* derivs)
+  const int order[3], vtkIdType numberOfPoints, const double pcoords[3], double* derivs)
 {
   static vtkNew<vtkBezierTriangle> tri;
   vtkHigherOrderInterpolation::WedgeShapeDerivatives(
     order, numberOfPoints, pcoords, derivs, *tri, vtkBezierInterpolation::EvaluateShapeAndGradient);
 }
 
-void vtkBezierInterpolation::WedgeEvaluate(const int order[3], const vtkIdType numberOfPoints,
+void vtkBezierInterpolation::WedgeEvaluate(const int order[3], vtkIdType numberOfPoints,
   const double* pcoords, double* fieldVals, int fieldDim, double* fieldAtPCoords)
 {
   static vtkNew<vtkBezierTriangle> tri;
@@ -382,3 +368,4 @@ void vtkBezierInterpolation::WedgeEvaluateDerivative(const int order[3], const d
   this->vtkHigherOrderInterpolation::WedgeEvaluateDerivative(order, pcoords, points, fieldVals,
     fieldDim, fieldDerivs, *tri, vtkBezierInterpolation::EvaluateShapeAndGradient);
 }
+VTK_ABI_NAMESPACE_END

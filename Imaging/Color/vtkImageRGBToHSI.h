@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageRGBToHSI.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageRGBToHSI
  * @brief   Converts RGB components to HSI.
@@ -27,6 +15,7 @@
 #include "vtkImagingColorModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCOLOR_EXPORT vtkImageRGBToHSI : public vtkThreadedImageAlgorithm
 {
 public:
@@ -34,7 +23,7 @@ public:
   vtkTypeMacro(vtkImageRGBToHSI, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Hue is an angle. Maximum specifies when it maps back to 0.  HueMaximum
    * defaults to 255 instead of 2PI, because unsigned char is expected as
@@ -42,11 +31,11 @@ public:
    */
   vtkSetMacro(Maximum, double);
   vtkGetMacro(Maximum, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageRGBToHSI();
-  ~vtkImageRGBToHSI() override {}
+  ~vtkImageRGBToHSI() override = default;
 
   double Maximum;
 
@@ -57,4 +46,5 @@ private:
   void operator=(const vtkImageRGBToHSI&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

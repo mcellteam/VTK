@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolygonalSurfaceContourLineInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPolygonalSurfaceContourLineInterpolator
  * @brief   Contour interpolator for to place points on polygonal surfaces.
@@ -43,6 +31,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPolyDataContourLineInterpolator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDijkstraGraphGeodesicPath;
 class vtkIdList;
 
@@ -50,13 +39,13 @@ class VTKINTERACTIONWIDGETS_EXPORT vtkPolygonalSurfaceContourLineInterpolator
   : public vtkPolyDataContourLineInterpolator
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkPolygonalSurfaceContourLineInterpolator, vtkPolyDataContourLineInterpolator);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   static vtkPolygonalSurfaceContourLineInterpolator* New();
 
@@ -77,7 +66,7 @@ public:
   int UpdateNode(vtkRenderer*, vtkContourRepresentation*, double* vtkNotUsed(node),
     int vtkNotUsed(idx)) override;
 
-  //@{
+  ///@{
   /**
    * Height offset at which points may be placed on the polygonal surface.
    * If you specify a non-zero value here, be sure to have computed vertex
@@ -86,13 +75,13 @@ public:
    */
   vtkSetMacro(DistanceOffset, double);
   vtkGetMacro(DistanceOffset, double);
-  //@}
+  ///@}
 
   /**
    * Get the contour point ids. These point ids correspond to those on the
    * polygonal surface
    */
-  void GetContourPointIds(vtkContourRepresentation* rep, vtkIdList* idList);
+  void GetContourPointIds(vtkContourRepresentation* rep, vtkIdList* ids);
 
 protected:
   vtkPolygonalSurfaceContourLineInterpolator();
@@ -116,4 +105,5 @@ private:
   vtkDijkstraGraphGeodesicPath* DijkstraGraphGeodesicPath;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayMaterial.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOSPRayMaterialHelpers
  * @brief   convert vtk appearance controls to ospray materials
@@ -36,23 +24,28 @@
 
 #include "RTWrapper/RTWrapper.h" // for handle types
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 class vtkOSPRayRendererNode;
+VTK_ABI_NAMESPACE_END
 
 namespace vtkOSPRayMaterialHelpers
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 /**
  * Helper function to make a 2d OSPRay Texture.
  * Was promoted from OSPRay because of deprecation there.
  */
 OSPTexture NewTexture2D(RTW::Backend* backend, const osp::vec2i& size, const OSPTextureFormat type,
-  void* data, const uint32_t _flags, size_t sizeOf);
+  void* data, const uint32_t _flags);
 
 /**
- * Manufacture an ospray texture from a 2d vtkImageData
+ * Manufacture an ospray texture from a 2d vtkImageData.
+ * isSRGB can be set to true if the image is 8-bits and sRGB encoded.
  */
-OSPTexture VTKToOSPTexture(RTW::Backend* backend, vtkImageData* vColorTextureMap);
+OSPTexture VTKToOSPTexture(
+  RTW::Backend* backend, vtkImageData* vColorTextureMap, bool isSRGB = false);
 
 /**
  * Construct a set of ospray materials for all of the material names.
@@ -72,6 +65,7 @@ OSPMaterial MakeMaterial(vtkOSPRayRendererNode* orn, OSPRenderer oRenderer, std:
  */
 OSPMaterial NewMaterial(vtkOSPRayRendererNode* orn, OSPRenderer oRenderer, std::string ospMatName);
 
+VTK_ABI_NAMESPACE_END
 }
 #endif
 // VTK-HeaderTest-Exclude: vtkOSPRayMaterialHelpers.h

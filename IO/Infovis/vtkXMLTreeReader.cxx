@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLTreeReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkXMLTreeReader.h"
 
@@ -34,6 +18,7 @@
 #include VTKLIBXML2_HEADER(parser.h)
 #include VTKLIBXML2_HEADER(tree.h)
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLTreeReader);
 
 const char* vtkXMLTreeReader::TagNameField = ".tagname";
@@ -45,9 +30,9 @@ vtkXMLTreeReader::vtkXMLTreeReader()
   this->XMLString = nullptr;
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
-  this->ReadCharData = 0;
-  this->ReadTagName = 1;
-  this->MaskArrays = 0;
+  this->ReadCharData = false;
+  this->ReadTagName = true;
+  this->MaskArrays = false;
   this->EdgePedigreeIdArrayName = nullptr;
   this->SetEdgePedigreeIdArrayName("edge id");
   this->VertexPedigreeIdArrayName = nullptr;
@@ -217,6 +202,12 @@ int vtkXMLTreeReader::RequestData(
 
   // Get the root element node
   xmlNode* rootElement = xmlDocGetRootElement(doc);
+  if (!rootElement)
+  {
+    vtkErrorMacro(<< "Could not get root element of document.");
+    return 0;
+  }
+
   vtkXMLTreeReaderProcessElement(builder, -1, rootElement, this->ReadCharData, this->MaskArrays);
 
   xmlFreeDoc(doc);
@@ -227,7 +218,7 @@ int vtkXMLTreeReader::RequestData(
     vtkStringArray* stringArr = vtkArrayDownCast<vtkStringArray>(data->GetAbstractArray(i));
     if (stringArr && (stringArr->GetNumberOfTuples() < builder->GetNumberOfVertices()))
     {
-      stringArr->InsertValue(builder->GetNumberOfVertices() - 1, vtkStdString(""));
+      stringArr->InsertValue(builder->GetNumberOfVertices() - 1, vtkStdString());
     }
   }
 
@@ -299,3 +290,4 @@ int vtkXMLTreeReader::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

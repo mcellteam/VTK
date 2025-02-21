@@ -1,20 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCompositer
- * @brief   Super class for composite algorthms.
+ * @brief   Super class for composite algorithms.
  *
  *
  * vtkCompositer operates in multiple processes.  Each compositer has
@@ -32,6 +20,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingParallelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiProcessController;
 class vtkCompositer;
 class vtkDataArray;
@@ -52,30 +41,30 @@ public:
   virtual void CompositeBuffer(
     vtkDataArray* pBuf, vtkFloatArray* zBuf, vtkDataArray* pTmp, vtkFloatArray* zTmp);
 
-  //@{
+  ///@{
   /**
    * Access to the controller.
    */
   virtual void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * A hack to get a sub world until I can get communicators working.
    */
   vtkSetMacro(NumberOfProcesses, int);
   vtkGetMacro(NumberOfProcesses, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods that allocate and delete memory with special MPIPro calls.
    */
   static void DeleteArray(vtkDataArray* da);
   static void ResizeFloatArray(vtkFloatArray* fa, int numComp, vtkIdType size);
   static void ResizeUnsignedCharArray(vtkUnsignedCharArray* uca, int numComp, vtkIdType size);
-  //@}
+  ///@}
 
 protected:
   vtkCompositer();
@@ -89,4 +78,5 @@ private:
   void operator=(const vtkCompositer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

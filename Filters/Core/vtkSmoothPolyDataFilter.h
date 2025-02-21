@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSmoothPolyDataFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSmoothPolyDataFilter
  * @brief   adjust point positions using Laplacian smoothing
@@ -84,10 +72,12 @@
  * the surface may shrink towards the centroid. Enabling FeatureEdgeSmoothing
  * helps reduce this effect, but cannot entirely eliminate it. You may also
  * wish to try vtkWindowedSincPolyDataFilter. It does a better job of
- * minimizing shrinkage.
+ * minimizing shrinkage. Another option is vtkConstrainedSmoothingFilter
+ * which limits the distance that points can move.
  *
  * @sa
- * vtkWindowedSincPolyDataFilter vtkDecimate vtkDecimatePro
+ * vtkWindowedSincPolyDataFilter vtkConstrainedSmoothingFilter
+ * vtkDecimate vtkDecimatePro
  */
 
 #ifndef vtkSmoothPolyDataFilter_h
@@ -95,15 +85,14 @@
 
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
+#include <memory> // For std::unique_ptr<>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSmoothPoints;
 
 class VTKFILTERSCORE_EXPORT vtkSmoothPolyDataFilter : public vtkPolyDataAlgorithm
 {
 public:
-  vtkTypeMacro(vtkSmoothPolyDataFilter, vtkPolyDataAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent) override;
-
   /**
    * Construct object with number of iterations 20; relaxation factor .01;
    * feature edge smoothing turned off; feature
@@ -113,24 +102,33 @@ public:
    */
   static vtkSmoothPolyDataFilter* New();
 
-  //@{
+  ///@{
+  /**
+   * Standard methods to obtain type information, and print the
+   * state of a class instance.
+   */
+  vtkTypeMacro(vtkSmoothPolyDataFilter, vtkPolyDataAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
+  ///@}
+
+  ///@{
   /**
    * Specify a convergence criterion for the iteration
    * process. Smaller numbers result in more smoothing iterations.
    */
   vtkSetClampMacro(Convergence, double, 0.0, 1.0);
   vtkGetMacro(Convergence, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the number of iterations for Laplacian smoothing,
    */
   vtkSetClampMacro(NumberOfIterations, int, 0, VTK_INT_MAX);
   vtkGetMacro(NumberOfIterations, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the relaxation factor for Laplacian smoothing. As in all
    * iterative methods, the stability of the process is sensitive to
@@ -140,62 +138,62 @@ public:
    */
   vtkSetMacro(RelaxationFactor, double);
   vtkGetMacro(RelaxationFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off smoothing along sharp interior edges.
    */
   vtkSetMacro(FeatureEdgeSmoothing, vtkTypeBool);
   vtkGetMacro(FeatureEdgeSmoothing, vtkTypeBool);
   vtkBooleanMacro(FeatureEdgeSmoothing, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the feature angle for sharp edge identification.
    */
   vtkSetClampMacro(FeatureAngle, double, 0.0, 180.0);
   vtkGetMacro(FeatureAngle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the edge angle to control smoothing along edges (either interior
    * or boundary).
    */
   vtkSetClampMacro(EdgeAngle, double, 0.0, 180.0);
   vtkGetMacro(EdgeAngle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the smoothing of vertices on the boundary of the mesh.
    */
   vtkSetMacro(BoundarySmoothing, vtkTypeBool);
   vtkGetMacro(BoundarySmoothing, vtkTypeBool);
   vtkBooleanMacro(BoundarySmoothing, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the generation of scalar distance values.
    */
   vtkSetMacro(GenerateErrorScalars, vtkTypeBool);
   vtkGetMacro(GenerateErrorScalars, vtkTypeBool);
   vtkBooleanMacro(GenerateErrorScalars, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the generation of error vectors.
    */
   vtkSetMacro(GenerateErrorVectors, vtkTypeBool);
   vtkGetMacro(GenerateErrorVectors, vtkTypeBool);
   vtkBooleanMacro(GenerateErrorVectors, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the source object which is used to constrain smoothing. The
    * source defines a surface that the input (as it is smoothed) is
@@ -203,9 +201,9 @@ public:
    */
   void SetSourceData(vtkPolyData* source);
   vtkPolyData* GetSource();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -213,11 +211,11 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkSmoothPolyDataFilter();
-  ~vtkSmoothPolyDataFilter() override {}
+  ~vtkSmoothPolyDataFilter() override;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
@@ -233,11 +231,12 @@ protected:
   vtkTypeBool GenerateErrorVectors;
   int OutputPointsPrecision;
 
-  vtkSmoothPoints* SmoothPoints;
+  std::unique_ptr<vtkSmoothPoints> SmoothPoints;
 
 private:
   vtkSmoothPolyDataFilter(const vtkSmoothPolyDataFilter&) = delete;
   void operator=(const vtkSmoothPolyDataFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

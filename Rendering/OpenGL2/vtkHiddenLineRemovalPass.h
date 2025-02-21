@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHiddenLineRemovalPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkHiddenLineRemovalPass
@@ -27,13 +15,16 @@
 
 #include "vtkOpenGLRenderPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
 #include <vector> // For std::vector!
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkProp;
 class vtkViewport;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkHiddenLineRemovalPass : public vtkOpenGLRenderPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkHiddenLineRemovalPass
+  : public vtkOpenGLRenderPass
 {
 public:
   static vtkHiddenLineRemovalPass* New();
@@ -59,4 +50,5 @@ private:
   void operator=(const vtkHiddenLineRemovalPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkHiddenLineRemovalPass_h

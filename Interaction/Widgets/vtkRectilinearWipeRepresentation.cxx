@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRectilinearWipeRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRectilinearWipeRepresentation.h"
 #include "vtkActor2D.h"
 #include "vtkCellArray.h"
@@ -30,12 +18,13 @@
 #include "vtkProperty2D.h"
 #include "vtkRenderer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRectilinearWipeRepresentation);
 
 vtkCxxSetObjectMacro(vtkRectilinearWipeRepresentation, RectilinearWipe, vtkImageRectilinearWipe);
 vtkCxxSetObjectMacro(vtkRectilinearWipeRepresentation, ImageActor, vtkImageActor);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearWipeRepresentation::vtkRectilinearWipeRepresentation()
 {
   this->RectilinearWipe = nullptr;
@@ -72,7 +61,7 @@ vtkRectilinearWipeRepresentation::vtkRectilinearWipeRepresentation()
   this->WipeActor->SetProperty(this->Property);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearWipeRepresentation::~vtkRectilinearWipeRepresentation()
 {
   if (this->RectilinearWipe)
@@ -92,7 +81,7 @@ vtkRectilinearWipeRepresentation::~vtkRectilinearWipeRepresentation()
   this->Property->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearWipeRepresentation::ComputeInteractionState(int X, int Y, int vtkNotUsed(modify))
 {
   this->InteractionState = vtkRectilinearWipeRepresentation::Outside;
@@ -153,7 +142,7 @@ int vtkRectilinearWipeRepresentation::ComputeInteractionState(int X, int Y, int 
   return this->InteractionState;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Record the current event position, and the rectilinear wipe position.
 void vtkRectilinearWipeRepresentation::StartWidgetInteraction(double startEventPos[2])
 {
@@ -170,7 +159,7 @@ void vtkRectilinearWipeRepresentation::StartWidgetInteraction(double startEventP
   this->StartWipePosition[1] = static_cast<double>(pos[1]);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Based on the displacement vector (computed in display coordinates) and
 // the cursor state (which corresponds to which part of the widget has been
 // selected), the widget points are modified.
@@ -228,7 +217,7 @@ void vtkRectilinearWipeRepresentation::WidgetInteraction(double newEventPos[2])
   this->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRectilinearWipeRepresentation::BuildRepresentation()
 {
   if (!this->RectilinearWipe || !this->ImageActor)
@@ -416,43 +405,46 @@ void vtkRectilinearWipeRepresentation::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRectilinearWipeRepresentation::GetActors2D(vtkPropCollection* pc)
 {
-  this->WipeActor->GetActors2D(pc);
+  if (pc != nullptr && this->GetVisibility())
+  {
+    this->WipeActor->GetActors2D(pc);
+  }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRectilinearWipeRepresentation::ReleaseGraphicsResources(vtkWindow* win)
 {
   this->WipeActor->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearWipeRepresentation::RenderOverlay(vtkViewport* viewport)
 {
   return this->WipeActor->RenderOverlay(viewport);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearWipeRepresentation::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   return this->WipeActor->RenderOpaqueGeometry(viewport);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearWipeRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
 {
   return this->WipeActor->RenderTranslucentPolygonalGeometry(viewport);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkRectilinearWipeRepresentation::HasTranslucentPolygonalGeometry()
 {
   return this->WipeActor->HasTranslucentPolygonalGeometry();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRectilinearWipeRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -488,3 +480,4 @@ void vtkRectilinearWipeRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Tolerance: " << this->Tolerance << "\n";
 }
+VTK_ABI_NAMESPACE_END

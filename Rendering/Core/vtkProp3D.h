@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProp3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkProp3D
  * @brief   represents an 3D object for placement in a rendered scene
@@ -33,14 +21,19 @@
 #ifndef vtkProp3D_h
 #define vtkProp3D_h
 
+#include "vtkNew.h" // for ivar
 #include "vtkProp.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWeakPointer.h"         // For vtkWeakPointer
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
+class vtkLinearTransform;
+class vtkMatrix4x4;
 class vtkRenderer;
 class vtkTransform;
-class vtkLinearTransform;
 
-class VTKRENDERINGCORE_EXPORT vtkProp3D : public vtkProp
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkProp3D : public vtkProp
 {
 public:
   vtkTypeMacro(vtkProp3D, vtkProp);
@@ -51,7 +44,7 @@ public:
    */
   void ShallowCopy(vtkProp* prop) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get/Add the position of the Prop3D in world coordinates.
    */
@@ -67,15 +60,15 @@ public:
       this->Modified();
       this->IsIdentity = 0;
     }
-  };
-  //@}
+  }
+  ///@}
 
   virtual void SetPosition(double pos[3]) { this->SetPosition(pos[0], pos[1], pos[2]); }
   vtkGetVectorMacro(Position, double, 3);
   void AddPosition(double deltaPosition[3]);
   void AddPosition(double deltaX, double deltaY, double deltaZ);
 
-  //@{
+  ///@{
   /**
    * Set/Get the origin of the Prop3D. This is the point about which all
    * rotations take place.
@@ -92,12 +85,12 @@ public:
       this->Modified();
       this->IsIdentity = 0;
     }
-  };
+  }
   virtual void SetOrigin(const double pos[3]) { this->SetOrigin(pos[0], pos[1], pos[2]); }
   vtkGetVectorMacro(Origin, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale of the actor. Scaling in performed independently on the
    * X, Y and Z axis. A scale of zero is illegal and will be replaced with one.
@@ -114,17 +107,17 @@ public:
       this->Modified();
       this->IsIdentity = 0;
     }
-  };
+  }
   virtual void SetScale(double scale[3]) { this->SetScale(scale[0], scale[1], scale[2]); }
   vtkGetVectorMacro(Scale, double, 3);
-  //@}
+  ///@}
 
   /**
    * Method to set the scale isotropically
    */
   void SetScale(double s) { this->SetScale(s, s, s); }
 
-  //@{
+  ///@{
   /**
    * In addition to the instance variables such as position and orientation,
    * you can add an additional transformation for your own use.  This
@@ -137,39 +130,55 @@ public:
    * UserTransform, concatenated with the UserMatrix if the UserMatrix
    * is present.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   void SetUserTransform(vtkLinearTransform* transform);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   vtkGetObjectMacro(UserTransform, vtkLinearTransform);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The UserMatrix can be used in place of UserTransform.
    */
   void SetUserMatrix(vtkMatrix4x4* matrix);
   vtkMatrix4x4* GetUserMatrix();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return a reference to the Prop3D's 4x4 composite matrix.
    * Get the matrix from the position, origin, scale and orientation This
    * matrix is cached, so multiple GetMatrix() calls will be efficient.
    */
-  virtual void GetMatrix(vtkMatrix4x4* m);
-  virtual void GetMatrix(double m[16]);
-  //@}
+  virtual void GetMatrix(vtkMatrix4x4* result);
+  virtual void GetMatrix(double result[16]);
+  ///@}
+
+  ///@{
+  /**
+   * Return a reference to the Prop3D's Model to World matrix.
+   * This method takes into account the coordinate system the prop is in.
+   */
+  virtual void GetModelToWorldMatrix(vtkMatrix4x4* result);
+  ///@}
+
+  /**
+   * Set the position, scale, orientation from a provided model to world matrix.
+   * If the prop is in a coordinate system other than world, then ren must be non-null
+   */
+  virtual void SetPropertiesFromModelToWorldMatrix(vtkMatrix4x4* modelToWorld);
 
   /**
    * Return a reference to the Prop3D's composite transform.
    */
 
-  //@{
+  ///@{
   /**
    * Get the bounds for this Prop3D as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
    */
   void GetBounds(double bounds[6]);
   double* GetBounds() VTK_SIZEHINT(6) override = 0;
-  //@}
+  ///@}
 
   /**
    * Get the center of the bounding box in world coordinates.
@@ -245,7 +254,7 @@ public:
    */
   void SetOrientation(double orientation[3]);
 
-  //@{
+  ///@{
   /**
    * Returns the orientation of the Prop3D as s vector of X,Y and Z rotation.
    * The ordering in which these rotations must be done to generate the
@@ -254,7 +263,7 @@ public:
    */
   double* GetOrientation() VTK_SIZEHINT(3);
   void GetOrientation(double orentation[3]);
-  //@}
+  ///@}
 
   /**
    * Returns the WXYZ orientation of the Prop3D.
@@ -305,12 +314,14 @@ public:
    */
   vtkMTimeType GetUserTransformMatrixMTime();
 
+  ///@{
   /**
    * Generate the matrix based on ivars
    */
   virtual void ComputeMatrix();
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get a pointer to an internal vtkMatrix4x4. that represents
    */
@@ -319,14 +330,55 @@ public:
     this->ComputeMatrix();
     return this->Matrix;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Is the matrix for this actor identity
    */
-  vtkGetMacro(IsIdentity, int);
-  //@}
+  vtkGetMacro(IsIdentity, vtkTypeBool);
+  ///@}
+
+  ///@{
+  /**
+   * Specify the coordinate system that this prop is relative to.
+   * This defaults to WORLD but can be set to PHYSICAL which for
+   * VirtualReality is the physical space (aka room) the viewer
+   * is in (in meters). When set to device the CoordinateSystemDevice
+   * is used to place the prop relative to that device (such as a HMD
+   * or controller)
+   */
+  enum CoordinateSystems
+  {
+    WORLD = 0,
+    PHYSICAL = 1,
+    DEVICE = 2
+  };
+  void SetCoordinateSystemToWorld() { this->SetCoordinateSystem(WORLD); }
+  void SetCoordinateSystemToPhysical() { this->SetCoordinateSystem(PHYSICAL); }
+  void SetCoordinateSystemToDevice() { this->SetCoordinateSystem(DEVICE); }
+  void SetCoordinateSystem(CoordinateSystems val);
+  vtkGetMacro(CoordinateSystem, CoordinateSystems);
+  const char* GetCoordinateSystemAsString();
+  ///@}
+
+  ///@{
+  /**
+   * Specify the Renderer that the prop3d is relative to when the
+   * coordinate system is set to PHYSICAL or DEVICE
+   */
+  void SetCoordinateSystemRenderer(vtkRenderer* ren);
+  vtkRenderer* GetCoordinateSystemRenderer();
+  ///@}
+
+  ///@{
+  /**
+   * Specify the device to be used when the coordinate system is set
+   * to DEVICE. Defaults to vtkEventDataDevice::HeadMountedDisplay.
+   */
+  vtkSetMacro(CoordinateSystemDevice, int);
+  vtkGetMacro(CoordinateSystemDevice, int);
+  ///@}
 
 protected:
   vtkProp3D();
@@ -344,11 +396,17 @@ protected:
   vtkTransform* Transform;
   double Bounds[6];
   vtkProp3D* CachedProp3D; // support the PokeMatrix() method
-  int IsIdentity;
+  vtkTypeBool IsIdentity;
+
+  int CoordinateSystemDevice;
+  CoordinateSystems CoordinateSystem = WORLD;
+  vtkWeakPointer<vtkRenderer> CoordinateSystemRenderer;
+  vtkNew<vtkMatrix4x4> TempMatrix4x4;
 
 private:
   vtkProp3D(const vtkProp3D&) = delete;
   void operator=(const vtkProp3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

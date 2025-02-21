@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSynchronizeTimeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSynchronizeTimeFilter.h"
 
@@ -24,25 +12,33 @@
 #include <algorithm>
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSynchronizeTimeFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkSynchronizeTimeFilter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+  os << indent << "RelativeTolerance: " << this->RelativeTolerance << endl;
+}
+
+//------------------------------------------------------------------------------
 vtkSynchronizeTimeFilter::vtkSynchronizeTimeFilter()
 {
   this->SetNumberOfInputPorts(2);
   this->RelativeTolerance = 0.00001;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSynchronizeTimeFilter::~vtkSynchronizeTimeFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSynchronizeTimeFilter::SetSourceConnection(vtkAlgorithmOutput* algOutput)
 {
   this->SetInputConnection(1, algOutput);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkSynchronizeTimeFilter::GetInputTimeValue(double outputTimeValue)
 {
   double inputTimeValue = outputTimeValue;
@@ -60,7 +56,7 @@ double vtkSynchronizeTimeFilter::GetInputTimeValue(double outputTimeValue)
   return inputTimeValue;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkSynchronizeTimeFilter::GetOutputTimeValue(double inputTimeValue)
 {
   double outputTimeValue = inputTimeValue;
@@ -78,7 +74,7 @@ double vtkSynchronizeTimeFilter::GetOutputTimeValue(double inputTimeValue)
   return outputTimeValue;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSynchronizeTimeFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -132,7 +128,7 @@ int vtkSynchronizeTimeFilter::RequestInformation(vtkInformation* vtkNotUsed(requ
     vtkInformation* outInfo = outputVector->GetInformationObject(0);
     double timeRange[2] = { this->OutputTimeStepValues[0],
       this->OutputTimeStepValues[numberOfTimeSteps - 1] };
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &this->OutputTimeStepValues[0],
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), this->OutputTimeStepValues.data(),
       numberOfTimeSteps);
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
   }
@@ -146,7 +142,7 @@ int vtkSynchronizeTimeFilter::RequestInformation(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSynchronizeTimeFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -172,7 +168,7 @@ int vtkSynchronizeTimeFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(req
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSynchronizeTimeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -189,5 +185,8 @@ int vtkSynchronizeTimeFilter::RequestData(vtkInformation* vtkNotUsed(request),
     double outputTimeValue = this->GetOutputTimeValue(timeValue);
     output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), outputTimeValue);
   }
+
+  this->CheckAbort();
   return 1;
 }
+VTK_ABI_NAMESPACE_END

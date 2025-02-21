@@ -1,25 +1,14 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSPHQuarticKernel.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSPHQuarticKernel.h"
 #include "vtkAbstractPointLocator.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSPHQuarticKernel);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSPHQuarticKernel::vtkSPHQuarticKernel()
 {
   this->CutoffFactor = 2.5;
@@ -38,10 +27,10 @@ vtkSPHQuarticKernel::vtkSPHQuarticKernel()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSPHQuarticKernel::~vtkSPHQuarticKernel() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // At this point, the spatial step, the dimension of the kernel, and the cutoff
 // factor should be known.
 void vtkSPHQuarticKernel::Initialize(
@@ -64,8 +53,9 @@ void vtkSPHQuarticKernel::Initialize(
   this->Superclass::Initialize(loc, ds, attr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSPHQuarticKernel::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,23 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    UnitTestHausdorffDistancePointSetFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
+#include "vtkExecutive.h"
 #include "vtkHausdorffDistancePointSetFilter.h"
 #include "vtkMathUtilities.h"
 #include "vtkMinimalStandardRandomSequence.h"
 #include "vtkPolyData.h"
 #include "vtkSmartPointer.h"
 #include "vtkSphereSource.h"
+#include "vtkTestErrorObserver.h"
 
 int UnitTestHausdorffDistancePointSetFilter(int, char*[])
 {
@@ -73,18 +63,36 @@ int UnitTestHausdorffDistancePointSetFilter(int, char*[])
       }
     }
   }
+
   // Now test some error conditions
+  vtkNew<vtkTest::ErrorObserver> errorObserver;
+  int errorStatus = 0;
+
   auto emptyPoints = vtkSmartPointer<vtkPolyData>::New();
   {
     auto hausdorffDistance = vtkSmartPointer<vtkHausdorffDistancePointSetFilter>::New();
+    hausdorffDistance->GetExecutive()->AddObserver(vtkCommand::ErrorEvent, errorObserver);
     hausdorffDistance->Update();
+    errorStatus += errorObserver->CheckErrorMessage("returned failure for request: vtkInformation");
     hausdorffDistance->SetInputData(0, emptyPoints);
   }
   {
     auto hausdorffDistance = vtkSmartPointer<vtkHausdorffDistancePointSetFilter>::New();
+    hausdorffDistance->GetExecutive()->AddObserver(vtkCommand::ErrorEvent, errorObserver);
     hausdorffDistance->Update();
+    errorStatus += errorObserver->CheckErrorMessage("returned failure for request: vtkInformation");
     hausdorffDistance->SetInputData(1, emptyPoints);
   }
+  if (errorStatus)
+  {
+    std::cout << "Failed" << std::endl;
+    ++status;
+  }
+  else
+  {
+    std::cout << "Passed" << std::endl;
+  }
+
   // Exercise some standard methods
   {
     auto hausdorffDistance = vtkSmartPointer<vtkHausdorffDistancePointSetFilter>::New();
@@ -95,7 +103,7 @@ int UnitTestHausdorffDistancePointSetFilter(int, char*[])
       std::cout << "ERROR: IsA should be vtkHausdorffDistancePointSetFilter, but is "
                 << newHaus->GetClassName() << std::endl;
     }
-    if (!newHaus->IsTypeOf("vtkPointSetAlgorithm"))
+    if (!vtkHausdorffDistancePointSetFilter::IsTypeOf("vtkPointSetAlgorithm"))
     {
       ++status;
       std::cout << "ERROR: " << newHaus->GetClassName()

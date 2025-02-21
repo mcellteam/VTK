@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReduceTable.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkReduceTable
  * @brief   combine some of the rows of a table
@@ -43,6 +31,7 @@
 #include <set>    // For ivar
 #include <vector> // For ivar
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkVariant;
 
 class VTKINFOVISCORE_EXPORT vtkReduceTable : public vtkTableAlgorithm
@@ -52,7 +41,7 @@ public:
   vtkTypeMacro(vtkReduceTable, vtkTableAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the column that will be used to reduce the input table.
    * Any rows sharing a value in this column will be collapsed into
@@ -60,25 +49,25 @@ public:
    */
   vtkGetMacro(IndexColumn, vtkIdType);
   vtkSetMacro(IndexColumn, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the method that should be used to combine numerical
    * values.
    */
   vtkGetMacro(NumericalReductionMethod, int);
   vtkSetMacro(NumericalReductionMethod, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the method that should be used to combine non-numerical
    * values.
    */
   vtkGetMacro(NonNumericalReductionMethod, int);
   vtkSetMacro(NonNumericalReductionMethod, int);
-  //@}
+  ///@}
 
   /**
    * Get the method that should be used to combine the values within
@@ -156,7 +145,7 @@ protected:
 
   vtkIdType IndexColumn;
   std::set<vtkVariant> IndexValues;
-  std::map<vtkVariant, std::vector<vtkIdType> > NewRowToOldRowsMap;
+  std::map<vtkVariant, std::vector<vtkIdType>> NewRowToOldRowsMap;
   std::map<vtkIdType, int> ColumnReductionMethods;
 
   int NumericalReductionMethod;
@@ -167,4 +156,5 @@ private:
   void operator=(const vtkReduceTable&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBiQuadraticTriangle.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) EDF - www.edf.fr
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBiQuadraticTriangle
  * @brief   cell represents a parabolic, isoparametric triangle
@@ -29,10 +18,9 @@
  * vtkTriangle vtkQuadraticTriangle
  * vtkBiQuadraticQuad vtkBiQuadraticQuadraticWedge vtkBiQuadraticQuadraticHexahedron
  * @par Thanks:
- * <verbatim>
+ * @verbatim
  * This file has been developed by Oxalya - www.oxalya.com
- * Copyright (c) EDF - www.edf.fr
- * </verbatim>
+ * @endverbatim
  */
 
 #ifndef vtkBiQuadraticTriangle_h
@@ -41,6 +29,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkNonLinearCell.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkQuadraticEdge;
 class vtkTriangle;
 class vtkDoubleArray;
@@ -52,7 +41,7 @@ public:
   vtkTypeMacro(vtkBiQuadraticTriangle, vtkNonLinearCell);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Implement the vtkCell API. See the vtkCell API for descriptions
    * of these methods.
@@ -63,7 +52,7 @@ public:
   int GetNumberOfFaces() override { return 0; }
   vtkCell* GetEdge(int edgeId) override;
   vtkCell* GetFace(int) override { return nullptr; }
-  //@}
+  ///@}
 
   int CellBoundary(int subId, const double pcoords[3], vtkIdList* pts) override;
   void Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
@@ -72,7 +61,7 @@ public:
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
   double* GetParametricCoords() override;
@@ -106,7 +95,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[7]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[14]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -119,7 +108,7 @@ public:
   {
     vtkBiQuadraticTriangle::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
+  ///@}
 
 protected:
   vtkBiQuadraticTriangle();
@@ -141,4 +130,5 @@ inline int vtkBiQuadraticTriangle::GetParametricCenter(double pcoords[3])
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

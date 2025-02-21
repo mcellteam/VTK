@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPProjectSphereFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPProjectSphereFilter.h"
 
 #include "vtkCommunicator.h"
@@ -21,21 +9,22 @@
 
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPProjectSphereFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPProjectSphereFilter::vtkPProjectSphereFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPProjectSphereFilter::~vtkPProjectSphereFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPProjectSphereFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPProjectSphereFilter::ComputePointsClosestToCenterLine(
   double minDist2ToCenterLine, vtkIdList* polePointIds)
 {
@@ -54,7 +43,7 @@ void vtkPProjectSphereFilter::ComputePointsClosestToCenterLine(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkPProjectSphereFilter::GetZTranslation(vtkPointSet* input)
 {
   double localMax = this->Superclass::GetZTranslation(input);
@@ -69,3 +58,4 @@ double vtkPProjectSphereFilter::GetZTranslation(vtkPointSet* input)
 
   return globalMax;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,38 +1,27 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSegYTraceReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSegYTraceReader.h"
 #include "vtkSegYIOUtils.h"
 
 #include <iostream>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkSegYTraceReader::vtkSegYTraceReader()
 {
   this->XCoordinate = 72;
   this->YCoordinate = 76;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYTraceReader::SetXYCoordBytePositions(int x, int y)
 {
   this->XCoordinate = x;
   this->YCoordinate = y;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYTraceReader::PrintTraceHeader(std::istream& in, int startPos)
 {
   int traceSequenceNumberInLine =
@@ -79,7 +68,7 @@ void vtkSegYTraceReader::PrintTraceHeader(std::istream& in, int startPos)
   std::cout << "coordinateUnits: " << coordinateUnits << std::endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYTraceReader::ReadTrace(
   std::streamoff& startPos, std::istream& in, int formatCode, vtkSegYTrace* trace)
 {
@@ -98,7 +87,7 @@ void vtkSegYTraceReader::ReadTrace(
   trace->SampleInterval =
     vtkSegYIOUtils::Instance()->readShortInteger(startPos + traceHeaderBytesPos.SampleInterval, in);
 
-  in.seekg(startPos + 240, in.beg);
+  in.seekg(startPos + 240, std::istream::beg);
   float value;
   switch (formatCode)
   {
@@ -132,13 +121,12 @@ void vtkSegYTraceReader::ReadTrace(
       break;
     default:
       std::cerr << "Data sample format code " << formatCode << " not supported." << std::endl;
-      value = 0;
   }
 
   startPos += 240 + this->GetTraceSize(numSamples, formatCode);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYTraceReader::ReadInlineCrossline(std::streamoff& startPos, std::istream& in,
   int formatCode, int* inlineNumber, int* crosslineNumber, int* xCoord, int* yCoord,
   short* coordMultiplier)
@@ -157,7 +145,7 @@ void vtkSegYTraceReader::ReadInlineCrossline(std::streamoff& startPos, std::istr
   startPos += 240 + this->GetTraceSize(numSamples, formatCode);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSegYTraceReader::GetTraceSize(int numSamples, int formatCode)
 {
   if (formatCode == 1 || formatCode == 2 || formatCode == 4 || formatCode == 5)
@@ -175,3 +163,4 @@ int vtkSegYTraceReader::GetTraceSize(int numSamples, int formatCode)
   std::cerr << "Unsupported data format code : " << formatCode << std::endl;
   return -1;
 }
+VTK_ABI_NAMESPACE_END

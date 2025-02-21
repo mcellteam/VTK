@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLRenderTimerLog.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkOpenGLRenderTimerLog_h
 #define vtkOpenGLRenderTimerLog_h
@@ -22,6 +10,7 @@
 #include <deque> // for deque!
 #include <queue> // for queue!
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLRenderTimer;
 
 /**
@@ -57,12 +46,12 @@ public:
   vtkTypeMacro(vtkOpenGLRenderTimerLog, vtkRenderTimerLog);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  bool IsSupported() override;
+  bool IsSupported() VTK_FUTURE_CONST override;
 
   /**
    * Overridden to do support check before returning.
    */
-  bool GetLoggingEnabled() override { return this->DoLogging(); }
+  bool GetLoggingEnabled() VTK_FUTURE_CONST override { return this->DoLogging(); }
 
   void MarkFrame() override;
 
@@ -104,7 +93,7 @@ protected:
   vtkOpenGLRenderTimerLog();
   ~vtkOpenGLRenderTimerLog() override;
 
-  bool DoLogging();
+  bool DoLogging() VTK_FUTURE_CONST;
 
   Frame Convert(const OGLFrame& oglFrame);
   Event Convert(const OGLEvent& oglEvent);
@@ -133,4 +122,5 @@ private:
   void operator=(const vtkOpenGLRenderTimerLog&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkOpenGLRenderTimerLog_h

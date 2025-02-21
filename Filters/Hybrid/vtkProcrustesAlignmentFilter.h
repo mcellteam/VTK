@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProcrustesAlignmentFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkProcrustesAlignmentFilter
  * @brief   aligns a set of pointsets together
@@ -55,6 +43,7 @@
 #include "vtkFiltersHybridModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLandmarkTransform;
 class vtkPointSet;
 class vtkPoints;
@@ -74,23 +63,23 @@ public:
    */
   static vtkProcrustesAlignmentFilter* New();
 
-  //@{
+  ///@{
   /**
    * Get the internal landmark transform. Use it to constrain the number of
    * degrees of freedom of the alignment (i.e. rigid body, similarity, etc.).
    * The default is a similarity alignment.
    */
   vtkGetObjectMacro(LandmarkTransform, vtkLandmarkTransform);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the estimated mean point cloud
    */
   vtkGetObjectMacro(MeanPoints, vtkPoints);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When on, the initial alignment is to the centroid
    * of the cohort curves.  When off, the alignment is to the
@@ -100,9 +89,9 @@ public:
   vtkSetMacro(StartFromCentroid, bool);
   vtkGetMacro(StartFromCentroid, bool);
   vtkBooleanMacro(StartFromCentroid, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -114,7 +103,7 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkProcrustesAlignmentFilter();
@@ -137,4 +126,5 @@ private:
   void operator=(const vtkProcrustesAlignmentFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

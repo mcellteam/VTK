@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPExodusIIReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPExodusIIReader.h"
 
 #include "vtkAppendCompositeDataLeaves.h"
@@ -29,6 +12,7 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkIntArray.h"
+#include "vtkLogger.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
@@ -51,6 +35,7 @@
 #undef DBG_PEXOIIRDR
 #define vtkPExodusIIReaderMAXPATHLEN 2048
 
+VTK_ABI_NAMESPACE_BEGIN
 static const int objTypes[] = { vtkExodusIIReader::EDGE_BLOCK, vtkExodusIIReader::FACE_BLOCK,
   vtkExodusIIReader::ELEM_BLOCK, vtkExodusIIReader::NODE_SET, vtkExodusIIReader::EDGE_SET,
   vtkExodusIIReader::FACE_SET, vtkExodusIIReader::SIDE_SET, vtkExodusIIReader::ELEM_SET,
@@ -73,11 +58,8 @@ vtkStandardNewMacro(vtkPExodusIIReader);
 class vtkPExodusIIReaderUpdateProgress : public vtkCommand
 {
 public:
-  vtkTypeMacro(
-    vtkPExodusIIReaderUpdateProgress, vtkCommand) static vtkPExodusIIReaderUpdateProgress* New()
-  {
-    return new vtkPExodusIIReaderUpdateProgress;
-  }
+  vtkTypeMacro(vtkPExodusIIReaderUpdateProgress, vtkCommand)
+  static vtkPExodusIIReaderUpdateProgress* New() { return new vtkPExodusIIReaderUpdateProgress; }
   void SetReader(vtkPExodusIIReader* r) { Reader = r; }
   void SetIndex(int i) { Index = i; }
 
@@ -87,7 +69,7 @@ protected:
     Reader = nullptr;
     Index = 0;
   }
-  ~vtkPExodusIIReaderUpdateProgress() override {}
+  ~vtkPExodusIIReaderUpdateProgress() override = default;
 
   void Execute(vtkObject*, unsigned long event, void* callData) override
   {
@@ -108,7 +90,7 @@ protected:
   int Index;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Instantiate object with nullptr filename.
 vtkPExodusIIReader::vtkPExodusIIReader()
@@ -135,7 +117,7 @@ vtkPExodusIIReader::vtkPExodusIIReader()
   this->VariableCacheSize = 100;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPExodusIIReader::~vtkPExodusIIReader()
 {
   this->SetController(nullptr);
@@ -168,26 +150,13 @@ vtkPExodusIIReader::~vtkPExodusIIReader()
   delete[] this->MultiFileName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPExodusIIReader::SetController(vtkMultiProcessController* c)
 {
-  if (this->Controller == c)
-  {
-    return;
-  }
-
-  this->Modified();
+  vtkSetObjectBodyMacro(Controller, vtkMultiProcessController, c);
 
   if (this->Controller)
   {
-    this->Controller->UnRegister(this);
-  }
-
-  this->Controller = c;
-
-  if (this->Controller)
-  {
-    this->Controller->Register(this);
     this->ProcRank = this->Controller->GetLocalProcessId();
     this->ProcSize = this->Controller->GetNumberOfProcesses();
   }
@@ -199,7 +168,7 @@ void vtkPExodusIIReader::SetController(vtkMultiProcessController* c)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPExodusIIReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -253,47 +222,31 @@ int vtkPExodusIIReader::RequestInformation(
       }
     }
 
-    int numFiles = this->NumberOfFileNames;
-    if (numFiles <= 1)
+    // Read meta-data from 1st file.
+    // Previously, this went over all files. This was unnecessary.
+    // First file will have all necessary information.
+    // Otherwise we end up with bugs like paraview/paraview#20559
+    // and paraview/paraview#20558 when the files have no arrays at all.
+
+    if (this->NumberOfFileNames > 1)
     {
-      numFiles = this->NumberOfFiles;
+      strcpy(this->MultiFileName, this->FileNames[0]);
+      if (this->GetGenerateFileIdArray())
+      {
+        vtkPExodusIIReader::DetermineFileId(this->FileNames[0]);
+      }
     }
-
-    // Go through the filenames and see if any of them actually have data
-    // in them. It's possible that some of them don't and if they don't
-    // we won't have the proper information generated.
-    int reader_idx = 0;
-    for (int fileIndex = 0; fileIndex < numFiles; ++fileIndex, ++reader_idx)
+    else if (this->FilePattern)
     {
-      if (this->NumberOfFileNames > 1)
-      {
-        strcpy(this->MultiFileName, this->FileNames[fileIndex]);
-        if (this->GetGenerateFileIdArray())
-        {
-          vtkPExodusIIReader::DetermineFileId(this->FileNames[fileIndex]);
-        }
-      }
-      else if (this->FilePattern)
-      {
-        snprintf(this->MultiFileName, vtkPExodusIIReaderMAXPATHLEN, this->FilePattern,
-          this->FilePrefix, fileIndex);
-      }
-      char* nm = new char[strlen(this->MultiFileName) + 1];
-      strcpy(nm, this->MultiFileName);
-      delete[] this->FileName;
-      this->FileName = nm;
-      nm = nullptr;
+      snprintf(
+        this->MultiFileName, vtkPExodusIIReaderMAXPATHLEN, this->FilePattern, this->FilePrefix, 0);
+    }
+    delete[] this->FileName;
+    this->FileName = vtksys::SystemTools::DuplicateString(this->MultiFileName);
 
-      // Read in info based on this->FileName
-      requestInformationRetVal =
-        this->Superclass::RequestInformation(request, inputVector, outputVector);
-
-      if (this->Metadata->ArrayInfo.size())
-      {
-        // We have a file with actual data in it
-        break;
-      }
-    } // loop over file names
+    // Read in info based on this->FileName
+    requestInformationRetVal =
+      this->Superclass::RequestInformation(request, inputVector, outputVector);
   }
   this->Controller->Broadcast(&requestInformationRetVal, 1, 0);
   if (!requestInformationRetVal)
@@ -328,7 +281,7 @@ int vtkPExodusIIReader::RequestInformation(
     timeRange[0] = commonTimes[0];
 
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &commonTimes[0], numTimes);
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), commonTimes.data(), numTimes);
   }
 
   if (this->CurrentFilePrefix)
@@ -352,7 +305,7 @@ int vtkPExodusIIReader::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPExodusIIReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -463,11 +416,11 @@ int vtkPExodusIIReader::RequestData(vtkInformation* vtkNotUsed(request),
 
   // If this is the first execution, we need to initialize the arrays
   // that store the number of points/cells output by each reader
-  if (this->NumberOfCellsPerFile.size() == 0)
+  if (this->NumberOfCellsPerFile.empty())
   {
     this->NumberOfCellsPerFile.resize(max - min + 1, 0);
   }
-  if (this->NumberOfPointsPerFile.size() == 0)
+  if (this->NumberOfPointsPerFile.empty())
   {
     this->NumberOfPointsPerFile.resize(max - min + 1, 0);
   }
@@ -683,7 +636,7 @@ int vtkPExodusIIReader::RequestData(vtkInformation* vtkNotUsed(request),
       append->AddInput( subgrid );
       subgrid->Delete();
     }
-#else  // 0
+#else // 0
     append->AddInputConnection(this->ReaderList[reader_idx]->GetOutputPort());
 #endif // 0
   }
@@ -692,7 +645,7 @@ int vtkPExodusIIReader::RequestData(vtkInformation* vtkNotUsed(request),
   if (append->GetNumberOfInputConnections(0) != 0)
   {
     append->Update();
-    output->ShallowCopy(append->GetOutput());
+    output->CompositeShallowCopy(append->GetOutput());
   }
 
   // I've copied append's output to the 'output' so delete append
@@ -714,7 +667,7 @@ int vtkPExodusIIReader::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPExodusIIReader::SetFileRange(int min, int max)
 {
   if (min == this->FileRange[0] && max == this->FileRange[1])
@@ -726,14 +679,17 @@ void vtkPExodusIIReader::SetFileRange(int min, int max)
   this->NumberOfFiles = max - min + 1;
   this->Modified();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPExodusIIReader::SetFileName(const char* name)
 {
+  vtkLogScopeF(TRACE, "%s: SetFileName(%s)", vtkLogIdentifier(this), name);
   this->SetFileNames(1, &name);
 }
 
 void vtkPExodusIIReader::SetFileNames(int nfiles, const char** names)
 {
+  vtkLogScopeF(TRACE, "%s: SetFileNames(%d, %s)", vtkLogIdentifier(this), nfiles,
+    nfiles > 0 ? names[0] : "nullptr");
   // If I have an old list of filename delete them
   if (this->FileNames)
   {
@@ -760,7 +716,7 @@ void vtkPExodusIIReader::SetFileNames(int nfiles, const char** names)
   this->Superclass::SetFileName(names[0]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPExodusIIReader::DetermineFileId(const char* file)
 {
   // Assume the file number is the last digits found in the file name.
@@ -932,7 +888,7 @@ int vtkPExodusIIReader::DeterminePattern(const char* file)
   return VTK_OK;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPExodusIIReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   vtkExodusIIReader::PrintSelf(os, indent);
@@ -1007,7 +963,7 @@ static bool BroadcastRecvString(vtkMultiProcessController* ctrl, std::vector<cha
   if (len)
   {
     str.resize(len);
-    ctrl->Broadcast(&str[0], len, 0);
+    ctrl->Broadcast(str.data(), len, 0);
     return true;
   }
   return false;
@@ -1024,7 +980,7 @@ static void BroadcastDoubleVector(
   }
   if (len)
   {
-    controller->Broadcast(&dvec[0], len, 0);
+    controller->Broadcast(dvec.data(), len, 0);
   }
 }
 
@@ -1039,11 +995,11 @@ static void BroadcastIntVector(
   }
   if (len)
   {
-    controller->Broadcast(&ivec[0], len, 0);
+    controller->Broadcast(ivec.data(), len, 0);
   }
 }
 
-static void BroadcastString(vtkMultiProcessController* controller, vtkStdString& str, int rank)
+static void BroadcastString(vtkMultiProcessController* controller, std::string& str, int rank)
 {
   unsigned long len = static_cast<unsigned long>(str.size()) + 1;
   controller->Broadcast(&len, 1, 0);
@@ -1053,14 +1009,14 @@ static void BroadcastString(vtkMultiProcessController* controller, vtkStdString&
     {
       std::vector<char> tmp;
       tmp.resize(len);
-      controller->Broadcast(&(tmp[0]), len, 0);
-      str = &tmp[0];
+      controller->Broadcast(tmp.data(), len, 0);
+      str = tmp.data();
     }
     else
     {
       const char* start = str.c_str();
       std::vector<char> tmp(start, start + len);
-      controller->Broadcast(&tmp[0], len, 0);
+      controller->Broadcast(tmp.data(), len, 0);
     }
   }
 }
@@ -1072,8 +1028,7 @@ static void BroadcastStringVector(
   controller->Broadcast(&len, 1, 0);
   if (rank)
     svec.resize(len);
-  std::vector<vtkStdString>::iterator it;
-  for (it = svec.begin(); it != svec.end(); ++it)
+  for (auto it = svec.begin(); it != svec.end(); ++it)
   {
     BroadcastString(controller, *it, rank);
   }
@@ -1201,13 +1156,13 @@ static void BroadcastArrayInfoVector(vtkMultiProcessController* controller,
 }
 
 static void BroadcastSortedObjectIndices(
-  vtkMultiProcessController* controller, std::map<int, std::vector<int> >& oidx, int rank)
+  vtkMultiProcessController* controller, std::map<int, std::vector<int>>& oidx, int rank)
 {
   unsigned long len = static_cast<unsigned long>(oidx.size());
   controller->Broadcast(&len, 1, 0);
   if (rank == 0)
   {
-    std::map<int, std::vector<int> >::iterator it;
+    std::map<int, std::vector<int>>::iterator it;
     int tmp;
     for (it = oidx.begin(); it != oidx.end(); ++it)
     {
@@ -1231,14 +1186,14 @@ static void BroadcastSortedObjectIndices(
 }
 
 static void BroadcastArrayInfoMap(vtkMultiProcessController* controller,
-  std::map<int, std::vector<vtkExodusIIReaderPrivate::ArrayInfoType> >& oidx, int rank)
+  std::map<int, std::vector<vtkExodusIIReaderPrivate::ArrayInfoType>>& oidx, int rank)
 {
   unsigned long len = static_cast<unsigned long>(oidx.size());
   controller->Broadcast(&len, 1, 0);
   if (rank == 0)
   {
     int tmp;
-    std::map<int, std::vector<vtkExodusIIReaderPrivate::ArrayInfoType> >::iterator it;
+    std::map<int, std::vector<vtkExodusIIReaderPrivate::ArrayInfoType>>::iterator it;
     for (it = oidx.begin(); it != oidx.end(); ++it)
     {
       tmp = it->first;
@@ -1298,14 +1253,14 @@ static void BroadcastBlockInfoVector(vtkMultiProcessController* controller,
 }
 
 static void BroadcastBlockInfoMap(vtkMultiProcessController* controller,
-  std::map<int, std::vector<vtkExodusIIReaderPrivate::BlockInfoType> >& binfo, int rank)
+  std::map<int, std::vector<vtkExodusIIReaderPrivate::BlockInfoType>>& binfo, int rank)
 {
   unsigned long len = static_cast<unsigned long>(binfo.size());
   controller->Broadcast(&len, 1, 0);
   int tmp;
   if (rank == 0)
   {
-    std::map<int, std::vector<vtkExodusIIReaderPrivate::BlockInfoType> >::iterator it;
+    std::map<int, std::vector<vtkExodusIIReaderPrivate::BlockInfoType>>::iterator it;
     for (it = binfo.begin(); it != binfo.end(); ++it)
     {
       tmp = it->first;
@@ -1341,14 +1296,14 @@ static void BroadcastSetInfoVector(vtkMultiProcessController* controller,
 }
 
 static void BroadcastSetInfoMap(vtkMultiProcessController* controller,
-  std::map<int, std::vector<vtkExodusIIReaderPrivate::SetInfoType> >& sinfo, int rank)
+  std::map<int, std::vector<vtkExodusIIReaderPrivate::SetInfoType>>& sinfo, int rank)
 {
   unsigned long len = static_cast<unsigned long>(sinfo.size());
   controller->Broadcast(&len, 1, 0);
   int tmp;
   if (rank == 0)
   {
-    std::map<int, std::vector<vtkExodusIIReaderPrivate::SetInfoType> >::iterator it;
+    std::map<int, std::vector<vtkExodusIIReaderPrivate::SetInfoType>>::iterator it;
     for (it = sinfo.begin(); it != sinfo.end(); ++it)
     {
       tmp = it->first;
@@ -1384,14 +1339,14 @@ static void BroadcastMapInfoVector(vtkMultiProcessController* controller,
 }
 
 static void BroadcastMapInfoMap(vtkMultiProcessController* controller,
-  std::map<int, std::vector<vtkExodusIIReaderPrivate::MapInfoType> >& minfo, int rank)
+  std::map<int, std::vector<vtkExodusIIReaderPrivate::MapInfoType>>& minfo, int rank)
 {
   unsigned long len = static_cast<unsigned long>(minfo.size());
   controller->Broadcast(&len, 1, 0);
   int tmp;
   if (rank == 0)
   {
-    std::map<int, std::vector<vtkExodusIIReaderPrivate::MapInfoType> >::iterator it;
+    std::map<int, std::vector<vtkExodusIIReaderPrivate::MapInfoType>>::iterator it;
     for (it = minfo.begin(); it != minfo.end(); ++it)
     {
       tmp = it->first;
@@ -1485,14 +1440,16 @@ void vtkPExodusIIReader::Broadcast(vtkMultiProcessController* ctrl)
       std::vector<char> tmp;
       delete[] this->FilePattern;
       delete[] this->FilePrefix;
-      // this->SetFilePattern( BroadcastRecvString( ctrl, tmp ) ? &tmp[0] : 0 ); // XXX Bad set
-      // this->SetFilePrefix(  BroadcastRecvString( ctrl, tmp ) ? &tmp[0] : 0 ); // XXX Bad set
+      // XXX Bad set for these two calls
+      // this->SetFilePattern( BroadcastRecvString( ctrl, tmp ) ? tmp.data() : nullptr );
+      // this->SetFilePrefix(  BroadcastRecvString( ctrl, tmp ) ? tmp.data() : nullptr );
       this->FilePattern =
-        BroadcastRecvString(ctrl, tmp) ? vtksys::SystemTools::DuplicateString(&tmp[0]) : nullptr;
+        BroadcastRecvString(ctrl, tmp) ? vtksys::SystemTools::DuplicateString(tmp.data()) : nullptr;
       this->FilePrefix =
-        BroadcastRecvString(ctrl, tmp) ? vtksys::SystemTools::DuplicateString(&tmp[0]) : nullptr;
+        BroadcastRecvString(ctrl, tmp) ? vtksys::SystemTools::DuplicateString(tmp.data()) : nullptr;
     }
     ctrl->Broadcast(this->FileRange, 2, 0);
     ctrl->Broadcast(&this->NumberOfFiles, 1, 0);
   }
 }
+VTK_ABI_NAMESPACE_END

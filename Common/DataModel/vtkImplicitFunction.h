@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitFunction.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImplicitFunction
  * @brief   abstract interface for implicit functions
@@ -53,6 +41,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 
 class vtkAbstractTransform;
@@ -69,7 +58,7 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Evaluate function at position x-y-z and return value. Point x[3] is
    * transformed through transform (if provided).
@@ -81,9 +70,9 @@ public:
     double xyz[3] = { x, y, z };
     return this->FunctionValue(xyz);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Evaluate function gradient at position x-y-z and pass back vector. Point
    * x[3] is transformed through transform (if provided).
@@ -99,9 +88,9 @@ public:
     double xyz[3] = { x, y, z };
     return this->FunctionGradient(xyz);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a transformation to apply to input points before
    * executing the implicit function.
@@ -109,9 +98,9 @@ public:
   virtual void SetTransform(vtkAbstractTransform*);
   virtual void SetTransform(const double elements[16]);
   vtkGetObjectMacro(Transform, vtkAbstractTransform);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Evaluate function at position x-y-z and return value.  You should
    * generally not call this method directly, you should use
@@ -125,7 +114,7 @@ public:
     double xyz[3] = { x, y, z };
     return this->EvaluateFunction(xyz);
   }
-  //@}
+  ///@}
 
   /**
    * Evaluate function gradient at position x-y-z and pass back vector.
@@ -147,4 +136,5 @@ private:
   void operator=(const vtkImplicitFunction&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

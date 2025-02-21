@@ -1,20 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPriorityQueue.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPriorityQueue.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPriorityQueue);
 
 // Instantiate priority queue with default size and extension size of 1000.
@@ -32,11 +21,6 @@ vtkPriorityQueue::vtkPriorityQueue()
 void vtkPriorityQueue::Allocate(vtkIdType sz, vtkIdType ext)
 {
   this->ItemLocation->Allocate(sz, ext);
-  for (vtkIdType i = 0; i < sz; i++)
-  {
-    this->ItemLocation->SetValue(i, -1);
-  }
-
   this->Size = (sz > 0 ? sz : 1);
   delete[] this->Array;
   this->Array = new vtkPriorityQueue::Item[sz];
@@ -70,18 +54,14 @@ void vtkPriorityQueue::Insert(double priority, vtkIdType id)
   }
   this->Array[this->MaxId].priority = priority;
   this->Array[this->MaxId].id = id;
-  if (id >= this->ItemLocation->GetSize()) // might have to resize and initialize
-  {
-    vtkIdType oldSize = this->ItemLocation->GetSize();
-    this->ItemLocation->InsertValue(id, this->MaxId);
-    for (i = oldSize; i < this->ItemLocation->GetSize(); i++)
-    {
-      this->ItemLocation->SetValue(i, -1);
-    }
-    this->ItemLocation->SetValue(id, this->MaxId);
-  }
 
-  this->ItemLocation->InsertValue(id, this->MaxId);
+  vtkIdType oldMaxId = this->ItemLocation->GetMaxId();
+  this->ItemLocation->InsertValue(id, this->MaxId); // this does allocation
+  for (i = oldMaxId + 1; i < id; i++)
+  {
+    // initialize previously unused elements
+    this->ItemLocation->SetValue(i, -1);
+  }
 
   // now begin percolating towards top of tree
   for (i = this->MaxId;
@@ -187,7 +167,7 @@ vtkIdType vtkPriorityQueue::Pop(vtkIdType location, double& priority)
 }
 
 // Protected method reallocates queue.
-vtkPriorityQueue::Item* vtkPriorityQueue::Resize(const vtkIdType sz)
+vtkPriorityQueue::Item* vtkPriorityQueue::Resize(vtkIdType sz)
 {
   vtkPriorityQueue::Item* newArray;
   vtkIdType newSize;
@@ -225,11 +205,6 @@ vtkPriorityQueue::Item* vtkPriorityQueue::Resize(const vtkIdType sz)
 void vtkPriorityQueue::Reset()
 {
   this->MaxId = -1;
-
-  for (int i = 0; i <= this->ItemLocation->GetMaxId(); i++)
-  {
-    this->ItemLocation->SetValue(i, -1);
-  }
   this->ItemLocation->Reset();
 }
 
@@ -241,3 +216,4 @@ void vtkPriorityQueue::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Size: " << this->Size << "\n";
   os << indent << "Extend size: " << this->Extend << "\n";
 }
+VTK_ABI_NAMESPACE_END

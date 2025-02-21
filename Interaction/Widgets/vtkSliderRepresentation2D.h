@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSliderRepresentation2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSliderRepresentation2D
  * @brief   provide the representation for a vtkSliderWidget with a 3D skin
@@ -33,6 +21,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkSliderRepresentation.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 class vtkCellArray;
 class vtkPolyData;
@@ -57,13 +46,13 @@ public:
    */
   static vtkSliderRepresentation2D* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for the class.
    */
   vtkTypeMacro(vtkSliderRepresentation2D, vtkSliderRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Position the first end point of the slider. Note that this point is an
@@ -85,48 +74,48 @@ public:
    */
   vtkCoordinate* GetPoint2Coordinate();
 
-  //@{
+  ///@{
   /**
    * Specify the label text for this widget. If the value is not set, or set
    * to the empty string "", then the label text is not displayed.
    */
   void SetTitleText(const char*) override;
   const char* GetTitleText() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the slider properties. The properties of the slider when selected
    * and unselected can be manipulated.
    */
   vtkGetObjectMacro(SliderProperty, vtkProperty2D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the properties for the tube and end caps.
    */
   vtkGetObjectMacro(TubeProperty, vtkProperty2D);
   vtkGetObjectMacro(CapProperty, vtkProperty2D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the selection property. This property is used to modify the appearance of
    * selected objects (e.g., the slider).
    */
   vtkGetObjectMacro(SelectedProperty, vtkProperty2D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the properties for the label and title text.
    */
   vtkGetObjectMacro(LabelProperty, vtkTextProperty);
   vtkGetObjectMacro(TitleProperty, vtkTextProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to interface with the vtkSliderWidget. The PlaceWidget() method
    * assumes that the parameter bounds[6] specifies the location in display space
@@ -137,17 +126,17 @@ public:
   void StartWidgetInteraction(double eventPos[2]) override;
   void WidgetInteraction(double newEventPos[2]) override;
   void Highlight(int) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods supporting the rendering process.
    */
-  void GetActors2D(vtkPropCollection*) override;
-  void ReleaseGraphicsResources(vtkWindow*) override;
-  int RenderOverlay(vtkViewport*) override;
-  int RenderOpaqueGeometry(vtkViewport*) override;
-  //@}
+  void GetActors2D(vtkPropCollection* propCollection) override;
+  void ReleaseGraphicsResources(vtkWindow* window) override;
+  int RenderOverlay(vtkViewport* viewport) override;
+  int RenderOpaqueGeometry(vtkViewport* viewport) override;
+  ///@}
 
 protected:
   vtkSliderRepresentation2D();
@@ -204,4 +193,5 @@ private:
   void operator=(const vtkSliderRepresentation2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestHigherOrderCell.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericCell.h"
 #include "vtkPoints.h"
 
@@ -29,11 +17,11 @@ static unsigned char HigherOrderCell[][depth] = {
     VTK_TRIQUADRATIC_HEXAHEDRON, VTK_NUMBER_OF_CELL_TYPES },
   { VTK_WEDGE, VTK_QUADRATIC_WEDGE, VTK_QUADRATIC_LINEAR_WEDGE, VTK_BIQUADRATIC_QUADRATIC_WEDGE,
     VTK_NUMBER_OF_CELL_TYPES },
-  { VTK_PYRAMID, VTK_QUADRATIC_PYRAMID, VTK_NUMBER_OF_CELL_TYPES, VTK_NUMBER_OF_CELL_TYPES,
+  { VTK_PYRAMID, VTK_QUADRATIC_PYRAMID, VTK_TRIQUADRATIC_PYRAMID, VTK_NUMBER_OF_CELL_TYPES,
     VTK_NUMBER_OF_CELL_TYPES }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Simply set the points to the pcoords coordinate
 // and the point id to the natural order
 void InitializeACell(vtkCell* cell)
@@ -52,7 +40,7 @@ void InitializeACell(vtkCell* cell)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // c1 is the reference cell. In the test this is the linear cell
 // and thus c2 is the higher order one. We need to check that result on c1
 // are consistent with result on c2 (but we cannot say anything after that)
@@ -87,7 +75,7 @@ int CompareHigherOrderCell(vtkCell* c1, vtkCell* c2)
   return rval;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestHigherOrderCell(int, char*[])
 {
   int rval = 0;
@@ -97,6 +85,12 @@ int TestHigherOrderCell(int, char*[])
     cerr << "Problem in the test" << endl;
     return 1;
   }
+
+  auto isQuadraticWedge = [](int cellType) -> bool
+  {
+    return (cellType == VTK_QUADRATIC_LINEAR_WEDGE) ||
+      (cellType == VTK_BIQUADRATIC_QUADRATIC_WEDGE) || (cellType == VTK_QUADRATIC_WEDGE);
+  };
 
   const unsigned char* orderCell;
   const unsigned int nCells = sizeof(HigherOrderCell) / depth;
@@ -155,12 +149,16 @@ int TestHigherOrderCell(int, char*[])
           vtkCell* c2 = cell->GetEdge(e);
           cerr << "Doing Edge: #" << e << " comp:" << linCell->GetCellType() << " vs "
                << cell->GetCellType() << endl;
-          rval += CompareHigherOrderCell(c1, c2);
+          if (cell->GetCellType() != VTK_TRIQUADRATIC_PYRAMID)
+          {
+            rval += CompareHigherOrderCell(c1, c2);
+          }
           vtkCell* qc1 = quadCell->GetEdge(e);
           cerr << "Doing Edge: #" << e << " comp:" << quadCell->GetCellType() << " vs "
                << cell->GetCellType() << endl;
           if (cell->GetCellType() != VTK_QUADRATIC_LINEAR_QUAD &&
-            cell->GetCellType() != VTK_QUADRATIC_LINEAR_WEDGE)
+            cell->GetCellType() != VTK_QUADRATIC_LINEAR_WEDGE &&
+            cell->GetCellType() != VTK_TRIQUADRATIC_PYRAMID)
           {
             rval += CompareHigherOrderCell(qc1, c2);
           }
@@ -172,7 +170,8 @@ int TestHigherOrderCell(int, char*[])
           vtkCell* f2 = cell->GetFace(f);
           cerr << "Doing Face: #" << f << " comp:" << linCell->GetCellType() << " vs "
                << cell->GetCellType() << endl;
-          if (cell->GetCellType() != VTK_QUADRATIC_LINEAR_WEDGE)
+          if ((!isQuadraticWedge(cell->GetCellType())) &&
+            cell->GetCellType() != VTK_TRIQUADRATIC_PYRAMID)
           {
             rval += CompareHigherOrderCell(f1, f2);
           }
@@ -180,7 +179,8 @@ int TestHigherOrderCell(int, char*[])
           cerr << "Doing Face: #" << f << " comp:" << quadCell->GetCellType() << " vs "
                << cell->GetCellType() << endl;
           if (cell->GetCellType() != VTK_QUADRATIC_LINEAR_QUAD &&
-            cell->GetCellType() != VTK_QUADRATIC_LINEAR_WEDGE)
+            (!isQuadraticWedge(cell->GetCellType())) &&
+            cell->GetCellType() != VTK_TRIQUADRATIC_PYRAMID)
           {
             rval += CompareHigherOrderCell(qf1, f2);
           }

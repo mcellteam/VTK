@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPStreamGeometry.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "TestVectorFieldSource.h"
 #include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
@@ -66,7 +54,11 @@ int TestPStreamGeometry(int argc, char* argv[])
   int numProcs = c->GetNumberOfProcesses();
   int myRank = c->GetLocalProcessId();
   if (numProcs != 4)
-    return EXIT_SUCCESS;
+  {
+    std::cerr << "Test requires 4 processes." << std::endl;
+    c->Finalize();
+    return EXIT_FAILURE;
+  }
 
   int size(5);
   vtkNew<TestVectorFieldSource> imageSource;

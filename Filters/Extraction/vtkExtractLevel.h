@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractLevel.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractLevel
  * @brief   extract levels between min and max from a
@@ -27,6 +15,7 @@
 #include "vtkFiltersExtractionModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSEXTRACTION_EXPORT vtkExtractLevel : public vtkMultiBlockDataSetAlgorithm
 {
 public:
@@ -34,7 +23,7 @@ public:
   vtkTypeMacro(vtkExtractLevel, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Select the levels that should be extracted. All other levels will have no
    * datasets in them.
@@ -42,7 +31,7 @@ public:
   void AddLevel(unsigned int level);
   void RemoveLevel(unsigned int level);
   void RemoveAllLevels();
-  //@}
+  ///@}
 
 protected:
   vtkExtractLevel();
@@ -64,4 +53,5 @@ private:
   vtkSet* Levels;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

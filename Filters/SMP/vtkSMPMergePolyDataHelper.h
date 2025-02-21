@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSMPMergePolyDataHelper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSMPMergePolyDataHelper
  * @brief   Utility class for merging poly data in parallel
@@ -24,11 +12,11 @@
 #ifndef vtkSMPMergePolyDataHelper_h
 #define vtkSMPMergePolyDataHelper_h
 
-#include "vtkConfigure.h"
 #include "vtkFiltersSMPModule.h"
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 class vtkSMPMergePoints;
 class vtkIdList;
@@ -36,7 +24,7 @@ class vtkIdList;
 class VTKFILTERSSMP_EXPORT vtkSMPMergePolyDataHelper
 {
 public:
-  //@{
+  ///@{
   /**
    * This is the data structure needed by the MergePolyData function.
    * Each input is represented by a polydata (Input), a locator generated
@@ -56,7 +44,7 @@ public:
     vtkIdList* LineConnOffsets;
     vtkIdList* PolyCellOffsets;
     vtkIdList* PolyConnOffsets;
-    //@}
+    ///@}
 
     InputData(vtkPolyData* input, vtkSMPMergePoints* locator, vtkIdList* vertCellOffsets,
       vtkIdList* vertConnOffsets, vtkIdList* lineCellOffsets, vtkIdList* lineConnOffsets,
@@ -91,5 +79,6 @@ private:
   void operator=(const vtkSMPMergePolyDataHelper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkSMPMergePolyDataHelper.h

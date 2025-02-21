@@ -1,35 +1,30 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkOpenGLRenderer.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLRenderer.h"
 
 #include "vtkOpenGLHelper.h"
 
 #include "vtkCellArray.h"
+#include "vtkDataArray.h"
+#include "vtkDataArrayRange.h"
 #include "vtkDepthPeelingPass.h"
 #include "vtkDualDepthPeelingPass.h"
 #include "vtkFloatArray.h"
 #include "vtkHardwareSelector.h"
 #include "vtkHiddenLineRemovalPass.h"
+#include "vtkImageData.h"
 #include "vtkLight.h"
 #include "vtkLightCollection.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
+#include "vtkOpaquePass.h"
 #include "vtkOpenGLCamera.h"
 #include "vtkOpenGLError.h"
 #include "vtkOpenGLFXAAFilter.h"
+#include "vtkOpenGLQuadHelper.h"
+#include "vtkOpenGLRenderUtilities.h"
 #include "vtkOpenGLRenderWindow.h"
+#include "vtkOpenGLShaderCache.h"
 #include "vtkOpenGLState.h"
 #include "vtkOrderIndependentTranslucentPass.h"
 #include "vtkPBRIrradianceTexture.h"
@@ -42,9 +37,13 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkRenderPass.h"
 #include "vtkRenderState.h"
 #include "vtkRenderTimerLog.h"
+#include "vtkSSAOPass.h"
 #include "vtkShaderProgram.h"
+#include "vtkShaderProperty.h"
 #include "vtkShadowMapBakerPass.h"
 #include "vtkShadowMapPass.h"
+#include "vtkSphericalHarmonics.h"
+#include "vtkTable.h"
 #include "vtkTexture.h"
 #include "vtkTextureObject.h"
 #include "vtkTexturedActor2D.h"
@@ -52,9 +51,11 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkTransform.h"
 #include "vtkTranslucentPass.h"
 #include "vtkTrivialProducer.h"
+#include "vtkUniforms.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkVolumetricPass.h"
 
+#include <iterator>
 #include <vtksys/RegularExpression.hxx>
 
 #include <cassert>
@@ -64,16 +65,18 @@ PURPOSE.  See the above copyright notice for more information.
 #include <sstream>
 #include <string>
 
-#if defined(__APPLE__) && !defined(VTK_OPENGL_HAS_OSMESA)
+#if defined(__APPLE__)
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLRenderer);
 
 vtkOpenGLRenderer::vtkOpenGLRenderer()
 {
   this->FXAAFilter = nullptr;
   this->DepthPeelingPass = nullptr;
+  this->SSAOPass = nullptr;
   this->TranslucentPass = nullptr;
   this->ShadowMapPass = nullptr;
   this->DepthPeelingHigherLayer = 0;
@@ -81,9 +84,91 @@ vtkOpenGLRenderer::vtkOpenGLRenderer()
   this->LightingCount = -1;
   this->LightingComplexity = -1;
 
-  this->EnvMapLookupTable = nullptr;
-  this->EnvMapIrradiance = nullptr;
-  this->EnvMapPrefiltered = nullptr;
+  this->UseSphericalHarmonics = true;
+
+  // Prepare a quadrilateral for the textured/gradient background actor.
+  this->BackgroundGradientActor = vtk::TakeSmartPointer(vtkTexturedActor2D::New());
+  this->BackgroundTextureActor = vtk::TakeSmartPointer(vtkTexturedActor2D::New());
+  this->BackgroundMapper = vtk::TakeSmartPointer(vtkPolyDataMapper2D::New());
+  this->BackgroundQuad = vtk::TakeSmartPointer(vtkPolyData::New());
+
+  vtkNew<vtkPoints> points;
+  // rest of the points depend on the size of viewport. they are initialized in Clear() method.
+  this->BackgroundQuad->SetPoints(points);
+
+  vtkNew<vtkCellArray> tris;
+  tris->InsertNextCell({ 0, 1, 2 });
+  tris->InsertNextCell({ 0, 2, 3 });
+  this->BackgroundQuad->SetPolys(tris);
+
+  vtkNew<vtkFloatArray> tcoords;
+  float tmp[2];
+  tmp[0] = 0;
+  tmp[1] = 0;
+  tcoords->SetNumberOfComponents(2);
+  tcoords->SetNumberOfTuples(4);
+  tcoords->SetTuple(0, tmp);
+  tmp[0] = 1.0;
+  tcoords->SetTuple(1, tmp);
+  tmp[1] = 1.0;
+  tcoords->SetTuple(2, tmp);
+  tmp[0] = 0.0;
+  tcoords->SetTuple(3, tmp);
+  this->BackgroundQuad->GetPointData()->SetTCoords(tcoords);
+
+  this->BackgroundGradientActor->SetMapper(this->BackgroundMapper);
+  auto shaderProperty = this->BackgroundGradientActor->GetShaderProperty();
+  // get rid of conflicting replacements from vtkOpenGLPolyDataMapper2D.
+  shaderProperty->AddFragmentShaderReplacement("//VTK::Color::Dec", true, "", false);
+  shaderProperty->AddFragmentShaderReplacement("//VTK::Color::Impl", true, "", false);
+
+  // add gradient parameters as uniforms.
+  shaderProperty->AddFragmentShaderReplacement("//VTK::CustomUniforms::Dec",
+    /*replaceFirst=*/true,
+    R"(
+uniform bool dither;
+uniform int gradientMode;
+uniform vec3 stopColors[2];
+// Granularity of dither noise set to very small number 0.5 / 255.0 to ensure any shift in color due to dither noise is minimal
+const highp float DITHERING_GRANULARITY = 0.001960784313725;
+float generateRandom (vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123); }
+#define GRADIENT_VERTICAL 0
+#define GRADIENT_HORIZONTAL 1
+#define GRADIENT_RADIAL_VIEWPORT_FARTHEST_SIDE 2
+#define GRADIENT_RADIAL_VIEWPORT_FARTHEST_CORNER 3
+  )",
+    /*replaceAll=*/false);
+
+  // map texture coordinate value into the gradient color function.
+  shaderProperty->AddFragmentShaderReplacement("//VTK::TCoord::Impl",
+    /*replaceFirst=*/true,
+    R"(
+float value = 0.0;
+if(gradientMode == GRADIENT_VERTICAL)
+{
+  value = tcoordVCVSOutput.t;
+}
+else if(gradientMode == GRADIENT_HORIZONTAL)
+{
+  value = tcoordVCVSOutput.s;
+}
+else if(gradientMode == GRADIENT_RADIAL_VIEWPORT_FARTHEST_SIDE)
+{
+  value = clamp(length(tcoordVCVSOutput - vec2(0.5f, 0.5f)) * 2.0f, 0.0f, 1.0f);
+}
+else if(gradientMode == GRADIENT_RADIAL_VIEWPORT_FARTHEST_CORNER)
+{
+  value = length(tcoordVCVSOutput - vec2(0.5f, 0.5f)) * sqrt(2.0f);
+}
+gl_FragData[0] = vec4(mix(stopColors[0].xyz, stopColors[1].xyz, value), 1.0);
+if (dither) {
+float noise = mix(-DITHERING_GRANULARITY, DITHERING_GRANULARITY, generateRandom(tcoordVCVSOutput));
+gl_FragData[0].xyz += vec3(noise);
+}
+)",
+    /*replaceAll=*/false);
+
+  this->BackgroundTextureActor->SetMapper(this->BackgroundMapper);
 }
 
 // Ask lights to load themselves into graphics pipeline.
@@ -124,7 +209,7 @@ int vtkOpenGLRenderer::UpdateLights()
     }
   }
 
-  if (this->GetUseImageBasedLighting() && this->GetEnvironmentTexture() && lightingComplexity == 0)
+  if (this->GetUseImageBasedLighting() && lightingComplexity == 0)
   {
     lightingComplexity = 1;
   }
@@ -212,7 +297,7 @@ int vtkOpenGLRenderer::UpdateLights()
   return this->LightingCount;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Is rendering at translucent geometry stage using depth peeling and
 // rendering a layer other than the first one? (Boolean value)
@@ -223,19 +308,62 @@ int vtkOpenGLRenderer::GetDepthPeelingHigherLayer()
   return this->DepthPeelingHigherLayer;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Concrete open gl render method.
 void vtkOpenGLRenderer::DeviceRender()
 {
   vtkTimerLog::MarkStartEvent("OpenGL Dev Render");
 
-  bool computeIBLTextures = !(this->Pass && this->Pass->IsA("vtkOSPRayPass")) &&
-    this->UseImageBasedLighting && this->EnvironmentTexture;
+  bool computeIBLTextures =
+    !(this->Pass && this->Pass->IsA("vtkOSPRayPass")) && this->UseImageBasedLighting;
   if (computeIBLTextures)
   {
     this->GetEnvMapLookupTable()->Load(this);
-    this->GetEnvMapIrradiance()->Load(this);
     this->GetEnvMapPrefiltered()->Load(this);
+
+    // Complex logic here, different possibilities:
+    // - UseSH is ON, EnvTex is provided but is not compatible, fallback to irradiance
+    // - UseSH is ON and SH are provided, EnvTex is not, just use the SH as is
+    // - UseSH is ON, SH and EnvTex are provided and compatible, check the MTime to recompute SH
+    // - UseSH is ON, SH is not provided, EnvTex is compatible, compute SH
+    // - UseSH is ON, SH is not provided, EnvTex is compatible but empty, error out
+    // - UseSH is OFF, use irradiance
+    bool useSH = this->UseSphericalHarmonics;
+    if (useSH && this->EnvironmentTexture && this->EnvironmentTexture->GetCubeMap())
+    {
+      vtkWarningMacro(
+        "Cannot compute spherical harmonics of a cubemap, falling back to irradiance texture");
+      useSH = false;
+    }
+
+    if (useSH)
+    {
+      vtkImageData* img = nullptr;
+      if (this->EnvironmentTexture)
+      {
+        img = this->EnvironmentTexture->GetInput();
+      }
+
+      if (img &&
+        (!this->SphericalHarmonics || img->GetMTime() > this->SphericalHarmonics->GetMTime()))
+      {
+        vtkNew<vtkSphericalHarmonics> sh;
+        sh->SetInputData(img);
+        sh->Update();
+        this->SphericalHarmonics = vtkFloatArray::SafeDownCast(
+          vtkTable::SafeDownCast(sh->GetOutputDataObject(0))->GetColumn(0));
+      }
+
+      if (!this->SphericalHarmonics)
+      {
+        vtkErrorMacro("Cannot compute spherical harmonics without an image data texture");
+        return;
+      }
+    }
+    else
+    {
+      this->GetEnvMapIrradiance()->Load(this);
+    }
   }
 
   if (this->Pass != nullptr)
@@ -416,7 +544,7 @@ int vtkOpenGLRenderer::UpdateGeometry(vtkFrameBufferObjectBase* fbo)
   return this->NumberOfPropsRendered;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTexture* vtkOpenGLRenderer::GetCurrentTexturedBackground()
 {
   if (!this->GetRenderWindow()->GetStereoRender() && this->BackgroundTexture)
@@ -438,7 +566,7 @@ vtkTexture* vtkOpenGLRenderer::GetCurrentTexturedBackground()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::DeviceRenderOpaqueGeometry(vtkFrameBufferObjectBase* fbo)
 {
   // Do we need hidden line removal?
@@ -456,11 +584,32 @@ void vtkOpenGLRenderer::DeviceRenderOpaqueGeometry(vtkFrameBufferObjectBase* fbo
   }
   else
   {
-    this->Superclass::DeviceRenderOpaqueGeometry();
+    if (this->UseSSAO)
+    {
+      if (!this->SSAOPass)
+      {
+        this->SSAOPass = vtkSSAOPass::New();
+        vtkNew<vtkOpaquePass> opaqueP;
+        this->SSAOPass->SetDelegatePass(opaqueP);
+      }
+      vtkRenderState s(this);
+      s.SetPropArrayAndCount(this->PropArray, this->PropArrayCount);
+      s.SetFrameBuffer(fbo);
+      this->SSAOPass->SetRadius(this->SSAORadius);
+      this->SSAOPass->SetBias(this->SSAOBias);
+      this->SSAOPass->SetKernelSize(this->SSAOKernelSize);
+      this->SSAOPass->SetBlur(this->SSAOBlur);
+      this->SSAOPass->Render(&s);
+      this->NumberOfPropsRendered += this->SSAOPass->GetNumberOfRenderedProps();
+    }
+    else
+    {
+      this->Superclass::DeviceRenderOpaqueGeometry();
+    }
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Render translucent polygonal geometry. Default implementation just call
 // UpdateTranslucentPolygonalGeometry().
@@ -566,12 +715,34 @@ void vtkOpenGLRenderer::DeviceRenderTranslucentPolygonalGeometry(vtkFrameBufferO
   vtkOpenGLCheckErrorMacro("failed after DeviceRenderTranslucentPolygonalGeometry");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
+namespace
+{
+vtkSmartPointer<vtkDataArray> MakeQuadPointsFromViewportSize(int size[2])
+{
+  std::vector<float> corners = {
+    // clang-format off
+    0, 0, 0,
+    static_cast<float>(size[0]), 0, 0,
+    static_cast<float>(size[0]), static_cast<float>(size[1]), 0,
+    0, static_cast<float>(size[1]), 0
+    // clang-format on
+  };
+  auto data = vtk::TakeSmartPointer(vtkFloatArray::New());
+  data->SetNumberOfComponents(3);
+  data->SetNumberOfTuples(4);
+  auto range = vtk::DataArrayValueRange(data);
+  std::copy(corners.begin(), corners.end(), range.begin());
+  return data;
+}
+}
+
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::Clear()
 {
   vtkOpenGLClearErrorMacro();
@@ -598,87 +769,46 @@ void vtkOpenGLRenderer::Clear()
   ostate->vtkglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
   ostate->vtkglClear(clear_mask);
 
-  // If gradient background is turned on, draw it now.
-  if (!this->Transparent() && (this->GradientBackground || this->TexturedBackground))
+  if (!this->Transparent() &&
+    (this->GradientBackground ||
+      (this->TexturedBackground && this->GetCurrentTexturedBackground())))
   {
     int size[2];
     size[0] = this->GetSize()[0];
     size[1] = this->GetSize()[1];
 
-    double tile_viewport[4];
-    this->GetRenderWindow()->GetTileViewport(tile_viewport);
-
-    vtkNew<vtkTexturedActor2D> actor;
-    vtkNew<vtkPolyDataMapper2D> mapper;
-    vtkNew<vtkPolyData> polydata;
-    vtkNew<vtkPoints> points;
-    points->SetNumberOfPoints(4);
-    points->SetPoint(0, 0, 0, 0);
-    points->SetPoint(1, size[0], 0, 0);
-    points->SetPoint(2, size[0], size[1], 0);
-    points->SetPoint(3, 0, size[1], 0);
-    polydata->SetPoints(points);
-
-    vtkNew<vtkCellArray> tris;
-    tris->InsertNextCell(3);
-    tris->InsertCellPoint(0);
-    tris->InsertCellPoint(1);
-    tris->InsertCellPoint(2);
-    tris->InsertNextCell(3);
-    tris->InsertCellPoint(0);
-    tris->InsertCellPoint(2);
-    tris->InsertCellPoint(3);
-    polydata->SetPolys(tris);
+    // readjust the corner coordinates to span entire tile viewport.
+    this->BackgroundQuad->GetPoints()->SetData(::MakeQuadPointsFromViewportSize(size));
 
     vtkNew<vtkTrivialProducer> prod;
-    prod->SetOutput(polydata);
+    prod->SetOutput(this->BackgroundQuad);
 
-    // Set some properties.
-    mapper->SetInputConnection(prod->GetOutputPort());
-    actor->SetMapper(mapper);
+    vtkSmartPointer<vtkTexturedActor2D> actor = nullptr;
+    this->BackgroundMapper->SetInputConnection(prod->GetOutputPort());
 
     if (this->TexturedBackground && this->GetCurrentTexturedBackground())
     {
+      actor = this->BackgroundTextureActor;
       this->GetCurrentTexturedBackground()->InterpolateOn();
       actor->SetTexture(this->GetCurrentTexturedBackground());
-
-      vtkNew<vtkFloatArray> tcoords;
-      float tmp[2];
-      tmp[0] = 0;
-      tmp[1] = 0;
-      tcoords->SetNumberOfComponents(2);
-      tcoords->SetNumberOfTuples(4);
-      tcoords->SetTuple(0, tmp);
-      tmp[0] = 1.0;
-      tcoords->SetTuple(1, tmp);
-      tmp[1] = 1.0;
-      tcoords->SetTuple(2, tmp);
-      tmp[0] = 0.0;
-      tcoords->SetTuple(3, tmp);
-      polydata->GetPointData()->SetTCoords(tcoords);
     }
-    else // gradient
+    else if (this->GradientBackground)
     {
-      vtkNew<vtkUnsignedCharArray> colors;
-      float tmp[4];
-      tmp[0] = this->Background[0] * 255;
-      tmp[1] = this->Background[1] * 255;
-      tmp[2] = this->Background[2] * 255;
-      tmp[3] = 255;
-      colors->SetNumberOfComponents(4);
-      colors->SetNumberOfTuples(4);
-      colors->SetTuple(0, tmp);
-      colors->SetTuple(1, tmp);
-      tmp[0] = this->Background2[0] * 255;
-      tmp[1] = this->Background2[1] * 255;
-      tmp[2] = this->Background2[2] * 255;
-      colors->SetTuple(2, tmp);
-      colors->SetTuple(3, tmp);
-      polydata->GetPointData()->SetScalars(colors);
+      actor = this->BackgroundGradientActor;
+      auto* shaderProperty = actor->GetShaderProperty();
+      float stopColors[2][3] = {};
+      std::copy(this->Background, this->Background + 3, &stopColors[0][0]);
+      std::copy(this->Background2, this->Background2 + 3, &stopColors[1][0]);
+      auto* fragmentUniforms = shaderProperty->GetFragmentCustomUniforms();
+      fragmentUniforms->SetUniformi("dither", this->DitherGradient);
+      fragmentUniforms->SetUniformi("gradientMode", static_cast<int>(this->GradientMode));
+      fragmentUniforms->SetUniform3fv("stopColors", 2, stopColors);
     }
-
-    ostate->vtkglDisable(GL_DEPTH_TEST);
-    actor->RenderOverlay(this);
+    if (actor != nullptr)
+    {
+      ostate->vtkglDisable(GL_DEPTH_TEST);
+      actor->RenderOverlay(this);
+    }
   }
 
   ostate->vtkglEnable(GL_DEPTH_TEST);
@@ -700,6 +830,10 @@ void vtkOpenGLRenderer::ReleaseGraphicsResources(vtkWindow* w)
   {
     this->DepthPeelingPass->ReleaseGraphicsResources(w);
   }
+  if (w && this->SSAOPass)
+  {
+    this->SSAOPass->ReleaseGraphicsResources(w);
+  }
   if (w && this->TranslucentPass)
   {
     this->TranslucentPass->ReleaseGraphicsResources(w);
@@ -712,7 +846,10 @@ void vtkOpenGLRenderer::ReleaseGraphicsResources(vtkWindow* w)
   {
     this->EnvMapIrradiance->ReleaseGraphicsResources(w);
   }
-
+  if (w && this->EnvMapLookupTable)
+  {
+    this->EnvMapLookupTable->ReleaseGraphicsResources(w);
+  }
   if (w && this->EnvMapPrefiltered)
   {
     this->EnvMapPrefiltered->ReleaseGraphicsResources(w);
@@ -747,42 +884,23 @@ vtkOpenGLRenderer::~vtkOpenGLRenderer()
     this->DepthPeelingPass = nullptr;
   }
 
+  if (this->SSAOPass)
+  {
+    this->SSAOPass->Delete();
+    this->SSAOPass = nullptr;
+  }
+
   if (this->TranslucentPass)
   {
     this->TranslucentPass->Delete();
     this->TranslucentPass = nullptr;
   }
-
-  if (this->EnvMapLookupTable)
-  {
-    this->EnvMapLookupTable->Delete();
-    this->EnvMapLookupTable = nullptr;
-  }
-
-  if (this->EnvMapIrradiance)
-  {
-    this->EnvMapIrradiance->Delete();
-    this->EnvMapIrradiance = nullptr;
-  }
-
-  if (this->EnvMapPrefiltered)
-  {
-    this->EnvMapPrefiltered->Delete();
-    this->EnvMapPrefiltered = nullptr;
-  }
 }
-
-#ifndef VTK_LEGACY_REMOVE
-bool vtkOpenGLRenderer::HaveApplePrimitiveIdBug()
-{
-  return false;
-}
-#endif
 
 //------------------------------------------------------------------------------
 bool vtkOpenGLRenderer::HaveAppleQueryAllocationBug()
 {
-#if defined(__APPLE__) && !defined(VTK_OPENGL_HAS_OSMESA)
+#if defined(__APPLE__)
   enum class QueryAllocStatus
   {
     NotChecked,
@@ -1031,19 +1149,25 @@ void vtkOpenGLRenderer::UpdateLightingUniforms(vtkShaderProgram* program)
   program->SetUniformGroupUpdateTime(vtkShaderProgram::LightingGroup, ltime);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::SetUserLightTransform(vtkTransform* transform)
 {
   this->UserLightTransform = transform;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransform* vtkOpenGLRenderer::GetUserLightTransform()
 {
   return this->UserLightTransform;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkFloatArray* vtkOpenGLRenderer::GetSphericalHarmonics()
+{
+  return this->SphericalHarmonics;
+}
+
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::SetEnvironmentTexture(vtkTexture* texture, bool isSRGB)
 {
   this->Superclass::SetEnvironmentTexture(texture);
@@ -1065,32 +1189,33 @@ void vtkOpenGLRenderer::SetEnvironmentTexture(vtkTexture* texture, bool isSRGB)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPBRLUTTexture* vtkOpenGLRenderer::GetEnvMapLookupTable()
 {
   if (!this->EnvMapLookupTable)
   {
-    this->EnvMapLookupTable = vtkPBRLUTTexture::New();
+    this->EnvMapLookupTable = vtkSmartPointer<vtkPBRLUTTexture>::New();
   }
   return this->EnvMapLookupTable;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPBRIrradianceTexture* vtkOpenGLRenderer::GetEnvMapIrradiance()
 {
   if (!this->EnvMapIrradiance)
   {
-    this->EnvMapIrradiance = vtkPBRIrradianceTexture::New();
+    this->EnvMapIrradiance = vtkSmartPointer<vtkPBRIrradianceTexture>::New();
   }
   return this->EnvMapIrradiance;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPBRPrefilterTexture* vtkOpenGLRenderer::GetEnvMapPrefiltered()
 {
   if (!this->EnvMapPrefiltered)
   {
-    this->EnvMapPrefiltered = vtkPBRPrefilterTexture::New();
+    this->EnvMapPrefiltered = vtkSmartPointer<vtkPBRPrefilterTexture>::New();
   }
   return this->EnvMapPrefiltered;
 }
+VTK_ABI_NAMESPACE_END

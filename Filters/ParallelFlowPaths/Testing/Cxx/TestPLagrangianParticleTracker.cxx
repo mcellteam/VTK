@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPLagrangianParticleTracker.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkActor.h"
 #include "vtkCamera.h"
 #include "vtkCellData.h"
@@ -172,6 +160,7 @@ void MainPLagrangianParticleTracker(vtkMultiProcessController* controller, void*
   tracker->SetIntegrationModel(integrationModel);
   tracker->SetInputData(waveletImg);
   tracker->SetStepFactor(0.1);
+  tracker->ForcePManualShiftOn();
   tracker->SetSourceData(seedPD);
   // Show tracker result
   vtkNew<vtkPolyDataMapper> trackerMapper;

@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStrahlerMetric.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-//-------------------------------------------------------------------------
-// Copyright 2008 Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//-------------------------------------------------------------------------
-//
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkStrahlerMetric
  * @brief   compute Strahler metric for a tree
@@ -47,6 +30,7 @@
 #include "vtkFiltersStatisticsModule.h" // For export macro
 #include "vtkTreeAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFloatArray;
 
 class VTKFILTERSSTATISTICS_EXPORT vtkStrahlerMetric : public vtkTreeAlgorithm
@@ -56,16 +40,16 @@ public:
   vtkTypeMacro(vtkStrahlerMetric, vtkTreeAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the name of the array in which the Strahler values will
    * be stored within the output vertex data.
    * Default is "Strahler"
    */
   vtkSetStringMacro(MetricArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get setting of normalize flag.  If this is set, the
    * Strahler values are scaled into the range [0..1].
@@ -74,14 +58,14 @@ public:
   vtkSetMacro(Normalize, vtkTypeBool);
   vtkGetMacro(Normalize, vtkTypeBool);
   vtkBooleanMacro(Normalize, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the maximum strahler value for the tree.
    */
   vtkGetMacro(MaxStrahler, float);
-  //@}
+  ///@}
 
 protected:
   vtkStrahlerMetric();
@@ -100,4 +84,5 @@ private:
   void operator=(const vtkStrahlerMetric&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

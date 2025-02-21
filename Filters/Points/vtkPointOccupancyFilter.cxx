@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointOccupancyFilter.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPointOccupancyFilter.h"
 
 #include "vtkImageData.h"
@@ -27,14 +15,15 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPointOccupancyFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm. Operator() processes templated points.
 template <typename T>
 struct ComputeOccupancy
@@ -107,7 +96,7 @@ struct ComputeOccupancy
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointOccupancyFilter::vtkPointOccupancyFilter()
 {
   this->SampleDimensions[0] = 100;
@@ -129,17 +118,17 @@ vtkPointOccupancyFilter::vtkPointOccupancyFilter()
   this->OccupiedValue = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointOccupancyFilter::~vtkPointOccupancyFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointOccupancyFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPointSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointOccupancyFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -173,7 +162,7 @@ int vtkPointOccupancyFilter::RequestInformation(vtkInformation* vtkNotUsed(reque
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the size of the sample bounding box automatically from the
 // input data.
 void vtkPointOccupancyFilter::ComputeModelBounds(
@@ -207,7 +196,7 @@ void vtkPointOccupancyFilter::ComputeModelBounds(
   output->SetSpacing(this->Spacing);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the dimensions of the sampling volume
 void vtkPointOccupancyFilter::SetSampleDimensions(int i, int j, int k)
 {
@@ -220,7 +209,7 @@ void vtkPointOccupancyFilter::SetSampleDimensions(int i, int j, int k)
   this->SetSampleDimensions(dim);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointOccupancyFilter::SetSampleDimensions(int dim[3])
 {
   int dataDim, i;
@@ -260,7 +249,7 @@ void vtkPointOccupancyFilter::SetSampleDimensions(int dim[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Produce the output data
 int vtkPointOccupancyFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -326,7 +315,7 @@ int vtkPointOccupancyFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointOccupancyFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -342,3 +331,4 @@ void vtkPointOccupancyFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Empty Value: " << this->EmptyValue << "\n";
   os << indent << "Occupied Value: " << this->OccupiedValue << "\n";
 }
+VTK_ABI_NAMESPACE_END

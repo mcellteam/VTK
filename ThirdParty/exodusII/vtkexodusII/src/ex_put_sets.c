@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 
 #include "exodusII.h"     // for ex_set, ex_err, etc
@@ -53,20 +26,22 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
   size_t start[1];
   int    cur_num_sets;
   char   errmsg[MAX_ERR_LENGTH];
-  int *  sets_to_define = NULL;
-  char * numentryptr    = NULL;
-  char * entryptr       = NULL;
-  char * extraptr       = NULL;
-  char * idsptr         = NULL;
-  char * statptr        = NULL;
-  char * numdfptr       = NULL;
-  char * factptr        = NULL;
+  int   *sets_to_define = NULL;
+  char  *numentryptr    = NULL;
+  char  *entryptr       = NULL;
+  char  *extraptr       = NULL;
+  char  *idsptr         = NULL;
+  char  *statptr        = NULL;
+  char  *numdfptr       = NULL;
+  char  *factptr        = NULL;
 
   int int_type;
 
   EX_FUNC_ENTER();
 
-  ex__check_valid_file_id(exoid, __func__);
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   if (!(sets_to_define = malloc(set_count * sizeof(int)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
@@ -84,7 +59,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
   */
   for (i = 0; i < set_count; i++) {
     /* first check if any sets are specified */
-    if ((status = nc_inq_dimid(exoid, ex__dim_num_objects(sets[i].type), &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(sets[i].type), &dimid)) != NC_NOERR) {
       if (status == NC_EBADDIM) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss defined for file id %d",
                  ex_name_of_object(sets[i].type), exoid);
@@ -108,7 +83,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
       sets_to_define[i] = -1;
     }
     else {
-      status = ex__id_lkup(exoid, sets[i].type, sets[i].id);
+      status = exi_id_lkup(exoid, sets[i].type, sets[i].id);
       if (status != -EX_LOOKUPFAIL) { /* found the side set id, so set is already defined... */
         sets_to_define[i] = 0;
       }
@@ -134,14 +109,14 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
       }
 
       if (sets_to_define[i] > 0) {
-        /*   NOTE: ex__inc_file_item finds the current number of sets defined
+        /*   NOTE: exi_inc_file_item finds the current number of sets defined
              for a specific file and returns that value incremented. */
-        cur_num_sets      = ex__inc_file_item(exoid, ex__get_counter_list(sets[i].type));
+        cur_num_sets      = exi_inc_file_item(exoid, exi_get_counter_list(sets[i].type));
         set_id_ndx        = cur_num_sets + 1;
         sets_to_define[i] = set_id_ndx;
       }
       else {
-        cur_num_sets      = ex__get_file_item(exoid, ex__get_counter_list(sets[i].type));
+        cur_num_sets      = exi_get_file_item(exoid, exi_get_counter_list(sets[i].type));
         set_id_ndx        = cur_num_sets - set_count + i + 1;
         sets_to_define[i] = set_id_ndx;
       }
@@ -227,7 +202,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
         }
         goto error_ret; /* exit define mode and return */
       }
-      ex__compress_variable(exoid, varid, 1);
+      exi_compress_variable(exoid, varid, 1);
 
       if (extraptr) {
         if ((status = nc_def_var(exoid, extraptr, int_type, 1, dims, &varid)) != NC_NOERR) {
@@ -245,7 +220,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
           }
           goto error_ret; /* exit define mode and return */
         }
-        ex__compress_variable(exoid, varid, 1);
+        exi_compress_variable(exoid, varid, 1);
       }
 
       /* Create distribution factors variable if required */
@@ -293,12 +268,14 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
           }
           goto error_ret; /* exit define mode and return */
         }
-        ex__compress_variable(exoid, varid, 2);
+        exi_compress_variable(exoid, varid, 2);
       }
     }
 
     /* leave define mode  */
-    if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
+      ex_err_fn(exoid, __func__, errmsg, status);
       free(sets_to_define);
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -404,6 +381,6 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
 error_ret:
   free(sets_to_define);
 
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

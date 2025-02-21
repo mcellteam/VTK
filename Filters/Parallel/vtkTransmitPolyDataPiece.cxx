@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransmitPolyDataPiece.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTransmitPolyDataPiece.h"
 
 #include "vtkCellData.h"
@@ -24,11 +12,12 @@
 #include "vtkPolyData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTransmitPolyDataPiece);
 
 vtkCxxSetObjectMacro(vtkTransmitPolyDataPiece, Controller, vtkMultiProcessController);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransmitPolyDataPiece::vtkTransmitPolyDataPiece()
 {
   this->CreateGhostCells = 1;
@@ -38,13 +27,13 @@ vtkTransmitPolyDataPiece::vtkTransmitPolyDataPiece()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransmitPolyDataPiece::~vtkTransmitPolyDataPiece()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTransmitPolyDataPiece::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -79,7 +68,7 @@ int vtkTransmitPolyDataPiece::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransmitPolyDataPiece::RootExecute(
   vtkPolyData* input, vtkPolyData* output, vtkInformation* outInfo)
 {
@@ -116,7 +105,7 @@ void vtkTransmitPolyDataPiece::RootExecute(
   extract->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransmitPolyDataPiece::SatelliteExecute(int, vtkPolyData* output, vtkInformation* outInfo)
 {
   vtkPolyData* tmp = vtkPolyData::New();
@@ -138,7 +127,7 @@ void vtkTransmitPolyDataPiece::SatelliteExecute(int, vtkPolyData* output, vtkInf
   tmp->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransmitPolyDataPiece::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -147,3 +136,4 @@ void vtkTransmitPolyDataPiece::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Controller: (" << this->Controller << ")\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkIOSRenderWindow.mm
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLRenderWindow.h"
 
@@ -19,13 +7,16 @@ PURPOSE.  See the above copyright notice for more information.
 #import "vtkIOSRenderWindow.h"
 #import "vtkIdList.h"
 #import "vtkObjectFactory.h"
+#import "vtkOpenGLFramebufferObject.h"
+#import "vtkOpenGLState.h"
 #import "vtkRenderWindowInteractor.h"
 #import "vtkRendererCollection.h"
 
 #import <sstream>
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkIOSRenderWindow);
 
 //----------------------------------------------------------------------------
@@ -38,12 +29,27 @@ vtkIOSRenderWindow::vtkIOSRenderWindow()
   this->ForceMakeCurrent = 0;
   this->OnScreenInitialized = 0;
   this->OffScreenInitialized = 0;
-  // it seems that LEFT/RIGHT cause issues on IOS so we just use
-  // generic BACK/FRONT
-  this->BackLeftBuffer = static_cast<unsigned int>(GL_BACK);
-  this->BackRightBuffer = static_cast<unsigned int>(GL_BACK);
-  this->FrontLeftBuffer = static_cast<unsigned int>(GL_FRONT);
-  this->FrontRightBuffer = static_cast<unsigned int>(GL_FRONT);
+  this->SetFrameBlitModeToBlitToCurrent();
+}
+
+void vtkIOSRenderWindow::BlitDisplayFramebuffersToHardware()
+{
+  auto ostate = this->GetState();
+  ostate->PushFramebufferBindings();
+  this->DisplayFramebuffer->Bind(GL_READ_FRAMEBUFFER);
+  this->GetState()->vtkglViewport(0, 0, this->Size[0], this->Size[1]);
+  this->GetState()->vtkglScissor(0, 0, this->Size[0], this->Size[1]);
+
+  this->GetState()->vtkglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+  this->DisplayFramebuffer->ActivateReadBuffer(0);
+  this->GetState()->vtkglDrawBuffer(this->DoubleBuffer ? GL_BACK : GL_FRONT);
+
+  // recall Blit upper right corner is exclusive of the range
+  this->GetState()->vtkglBlitFramebuffer(0, 0, this->Size[0], this->Size[1], 0, 0, this->Size[0],
+    this->Size[1], GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+  this->GetState()->PopFramebufferBindings();
 }
 
 //----------------------------------------------------------------------------
@@ -139,38 +145,21 @@ void vtkIOSRenderWindow::SetWindowName(const char* _arg)
 //----------------------------------------------------------------------------
 bool vtkIOSRenderWindow::InitializeFromCurrentContext()
 {
-  // NSOpenGLContext *currentContext = [NSOpenGLContext currentContext];
-  // if (currentContext != NULL)
-  //   {
-  //   UIView *currentView = [currentContext view];
-  //   if (currentView != NULL)
-  //     {
-  //     UIWindow *window = [currentView window];
-  //     this->SetWindowId(currentView);
-  //     this->SetRootWindow(window);
-  //     this->SetContextId((void*)currentContext);
-  //     this->OpenGLInit();
-  //     this->OwnContext = 0;
-  //     return true;
-  //     }
-  //   }
+  // NSOpenGLContext* currentContext = [NSOpenGLContext currentContext];
+  // if (currentContext != nullptr)
+  // {
+  //   this->SetContextId(currentContext);
+  //   this->SetPixelFormat([currentContext pixelFormat]);
+  //
+  //   return this->Superclass::InitializeFromCurrentContext();
+  //}
   return false;
 }
 
 //----------------------------------------------------------------------------
-int vtkIOSRenderWindow::GetEventPending()
+vtkTypeBool vtkIOSRenderWindow::GetEventPending()
 {
   return 0;
-}
-
-//----------------------------------------------------------------------------
-// Initialize the rendering process.
-void vtkIOSRenderWindow::Start()
-{
-  this->Initialize();
-
-  // set the current window
-  this->MakeCurrent();
 }
 
 //----------------------------------------------------------------------------
@@ -187,16 +176,6 @@ void vtkIOSRenderWindow::MakeCurrent()
 // Tells if this window is the current OpenGL context for the calling thread.
 bool vtkIOSRenderWindow::IsCurrent()
 {
-  return true;
-}
-
-//----------------------------------------------------------------------------
-bool vtkIOSRenderWindow::IsDrawable()
-{
-  // you must initialize it first
-  // else it always evaluates false
-  this->Initialize();
-
   return true;
 }
 
@@ -239,7 +218,7 @@ int vtkIOSRenderWindow::SupportsOpenGL()
 }
 
 //----------------------------------------------------------------------------
-int vtkIOSRenderWindow::IsDirect()
+vtkTypeBool vtkIOSRenderWindow::IsDirect()
 {
   this->MakeCurrent();
   if (!this->GetContextId() || !this->GetPixelFormat())
@@ -250,21 +229,13 @@ int vtkIOSRenderWindow::IsDirect()
 }
 
 //----------------------------------------------------------------------------
-void vtkIOSRenderWindow::SetSize(int* a)
+void vtkIOSRenderWindow::SetSize(int width, int height)
 {
-  this->SetSize(a[0], a[1]);
-}
-
-//----------------------------------------------------------------------------
-void vtkIOSRenderWindow::SetSize(int x, int y)
-{
-  static int resizing = 0;
-
-  if ((this->Size[0] != x) || (this->Size[1] != y) || (this->GetParentId()))
+  if ((this->Size[0] != width) || (this->Size[1] != height) || this->GetParentId())
   {
     this->Modified();
-    this->Size[0] = x;
-    this->Size[1] = y;
+    this->Size[0] = width;
+    this->Size[1] = height;
   }
 }
 
@@ -275,17 +246,9 @@ void vtkIOSRenderWindow::SetForceMakeCurrent()
 }
 
 //----------------------------------------------------------------------------
-void vtkIOSRenderWindow::SetPosition(int* a)
-{
-  this->SetPosition(a[0], a[1]);
-}
-
-//----------------------------------------------------------------------------
 void vtkIOSRenderWindow::SetPosition(int x, int y)
 {
-  static int resizing = 0;
-
-  if ((this->Position[0] != x) || (this->Position[1] != y) || (this->GetParentId()))
+  if ((this->Position[0] != x) || (this->Position[1] != y) || this->GetParentId())
   {
     this->Modified();
     this->Position[0] = x;
@@ -329,8 +292,6 @@ void vtkIOSRenderWindow::SetupPalette(void*)
 // Initialize the window for rendering.
 void vtkIOSRenderWindow::CreateAWindow()
 {
-  static unsigned count = 1;
-
   this->CreateGLContext();
 
   this->MakeCurrent();
@@ -366,7 +327,7 @@ void vtkIOSRenderWindow::DestroyOffScreenWindow() {}
 // Get the current size of the window.
 int* vtkIOSRenderWindow::GetSize()
 {
-  // if we aren't mapped then just return the ivar
+  // if we aren't mapped then just return call super
   if (!this->Mapped)
   {
     return this->Superclass::GetSize();
@@ -379,7 +340,9 @@ int* vtkIOSRenderWindow::GetSize()
 // Get the current size of the screen in pixels.
 int* vtkIOSRenderWindow::GetScreenSize()
 {
-  return this->Size;
+  // TODO: use UISceen to actually determine screen size.
+
+  return this->ScreenSize;
 }
 
 //----------------------------------------------------------------------------
@@ -415,7 +378,7 @@ void vtkIOSRenderWindow::SetStereoCapableWindow(vtkTypeBool capable)
 // Set the preferred window size to full screen.
 void vtkIOSRenderWindow::PrefFullScreen()
 {
-  int* size = this->GetScreenSize();
+  const int* size = this->GetScreenSize();
   vtkWarningMacro(<< "Can only set FullScreen before showing window: " << size[0] << 'x' << size[1]
                   << ".");
 }
@@ -581,3 +544,4 @@ void vtkIOSRenderWindow::SetCurrentCursor(int shape)
   }
   this->Superclass::SetCurrentCursor(shape);
 }
+VTK_ABI_NAMESPACE_END

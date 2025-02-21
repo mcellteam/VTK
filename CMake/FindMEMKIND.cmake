@@ -1,6 +1,3 @@
-# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
-
 #[=======================================================================[.rst:
 FindMEMKIND
 ---------
@@ -29,17 +26,18 @@ This module will set the following variables in your project:
 
 #]=======================================================================]
 include(CMakeFindDependencyMacro)
-find_dependency(PkgConfig)
 
 # Look for the header file.
 find_path(MEMKIND_INCLUDE_DIR
   NAMES memkind.h
   DOC "memkind include directory")
+mark_as_advanced(MEMKIND_INCLUDE_DIR)
 
 # Look for the library.
 find_library(MEMKIND_LIBRARY
   NAMES memkind libmemkind
-  DOX "memkind library")
+  DOC "memkind library")
+mark_as_advanced(MEMKIND_LIBRARY)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(MEMKIND
@@ -47,17 +45,14 @@ find_package_handle_standard_args(MEMKIND
 
 # Copy the results to the output variables and target.
 if(MEMKIND_FOUND)
-  set(MEMKIND_LIBRARIES ${MEMKIND_LIBRARY})
-  set(MEMKIND_INCLUDE_DIRS ${MEMKIND_INCLUDE_DIR})
+  set(MEMKIND_LIBRARIES "${MEMKIND_LIBRARY}")
+  set(MEMKIND_INCLUDE_DIRS "${MEMKIND_INCLUDE_DIR}")
 
   if(NOT TARGET MEMKIND::MEMKIND)
     add_library(MEMKIND::MEMKIND UNKNOWN IMPORTED)
     set_target_properties(MEMKIND::MEMKIND PROPERTIES
       IMPORTED_LINK_INTERFACE_LANGUAGES "C"
       IMPORTED_LOCATION "${MEMKIND_LIBRARY}"
-      IMPORTED_IMPLIB "${MEMKIND_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES "${MEMKIND_INCLUDE_DIRS}")
   endif()
 endif()
-
-mark_as_advanced(MEMKIND_INCLUDE_DIR MEMKIND_LIBRARY)

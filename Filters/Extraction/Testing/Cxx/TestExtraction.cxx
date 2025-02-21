@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestExtraction.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This tests vtkSelection and vtkExtractSelection.
 //
 // The command line arguments are:
@@ -1131,7 +1119,7 @@ int TestExtraction(int argc, char* argv[])
   cam->SetViewUp(0,1,0);
   renderer->SetActiveCamera(cam);
   */
-  int retVal = vtkRegressionTestImageThreshold(renwin, 85);
+  int retVal = vtkRegressionTestImageThreshold(renwin, 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     rwi->Start();

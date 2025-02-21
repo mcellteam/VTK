@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVolume.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVolume
  * @brief   represents a volume (data & properties) in a rendered scene
@@ -33,7 +21,9 @@
 
 #include "vtkProp3D.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkPropCollection;
 class vtkVolumeCollection;
@@ -41,7 +31,7 @@ class vtkWindow;
 class vtkVolumeProperty;
 class vtkAbstractVolumeMapper;
 
-class VTKRENDERINGCORE_EXPORT vtkVolume : public vtkProp3D
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkVolume : public vtkProp3D
 {
 public:
   vtkTypeMacro(vtkVolume, vtkProp3D);
@@ -54,21 +44,21 @@ public:
    */
   static vtkVolume* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the volume mapper.
    */
   void SetMapper(vtkAbstractVolumeMapper* mapper);
   vtkGetObjectMacro(Mapper, vtkAbstractVolumeMapper);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the volume property.
    */
   virtual void SetProperty(vtkVolumeProperty* property);
   virtual vtkVolumeProperty* GetProperty();
-  //@}
+  ///@}
 
   /**
    * For some exporters and other other operations we must be
@@ -82,7 +72,7 @@ public:
    */
   void Update();
 
-  //@{
+  ///@{
   /**
    * Get the bounds - either all six at once
    * (xmin, xmax, ymin, ymax, zmin, zmax) or one at a time.
@@ -95,7 +85,7 @@ public:
   double GetMaxYBound();
   double GetMinZBound();
   double GetMaxZBound();
-  //@}
+  ///@}
 
   /**
    * Return the MTime also considering the property etc.
@@ -259,4 +249,5 @@ private:
   void operator=(const vtkVolume&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

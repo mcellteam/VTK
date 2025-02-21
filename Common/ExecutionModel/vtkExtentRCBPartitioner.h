@@ -1,22 +1,8 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkExtentRCBPartitioner.h
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtentRCBPartitioner
- *
- *
- *  This method partitions a global extent to N partitions where N is a user
+ * @brief   This method partitions a global extent to N partitions where N is a user
  *  supplied parameter.
  */
 
@@ -29,6 +15,7 @@
 #include <string>  // For std::string
 #include <vector>  // For STL vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONEXECUTIONMODEL_EXPORT vtkExtentRCBPartitioner : public vtkObject
 {
 public:
@@ -36,19 +23,19 @@ public:
   vtkTypeMacro(vtkExtentRCBPartitioner, vtkObject);
   void PrintSelf(ostream& oss, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of requested partitions
    */
-  void SetNumberOfPartitions(const int N)
+  void SetNumberOfPartitions(int N)
   {
     assert("pre: Number of partitions requested must be > 0" && (N >= 0));
     this->Reset();
     this->NumberOfPartitions = N;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the global extent array to be partitioned.
    * The global extent is packed as follows:
@@ -68,31 +55,31 @@ public:
   {
     this->SetGlobalExtent(ext[0], ext[1], ext[2], ext[3], ext[4], ext[5]);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * On/Off DuplicateNodes between partitions. Default is On.
    */
   vtkSetMacro(DuplicateNodes, vtkTypeBool);
   vtkGetMacro(DuplicateNodes, vtkTypeBool);
   vtkBooleanMacro(DuplicateNodes, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get macro for the number of ghost layers.
    */
   vtkSetMacro(NumberOfGhostLayers, int);
   vtkGetMacro(NumberOfGhostLayers, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the number of extents.
    */
   vtkGetMacro(NumExtents, int);
-  //@}
+  ///@}
 
   /**
    * Partitions the extent
@@ -102,13 +89,13 @@ public:
   /**
    * Returns the extent of the partition corresponding to the given ID.
    */
-  void GetPartitionExtent(const int idx, int ext[6]);
+  void GetPartitionExtent(int idx, int ext[6]);
 
 protected:
   vtkExtentRCBPartitioner();
   ~vtkExtentRCBPartitioner() override;
 
-  //@{
+  ///@{
   /**
    * Resets the partitioner to the initial state, all previous partition
    * extents are cleared.
@@ -119,7 +106,7 @@ protected:
     this->NumExtents = 0;
     this->ExtentIsPartitioned = false;
   }
-  //@}
+  ///@}
 
   /**
    * Given an extent, this method will create ghost layers on each side of
@@ -128,13 +115,13 @@ protected:
    */
   void ExtendGhostLayers(int ext[6]);
 
-  //@{
+  ///@{
   /**
    * Givent an extent and the min/max of the dimension we are looking at, this
    * method will produce a ghosted extent which is clamped within the given
    * global extent
    */
-  void GetGhostedExtent(int ext[6], const int minIdx, const int maxIdx)
+  void GetGhostedExtent(int ext[6], int minIdx, int maxIdx)
   {
     ext[minIdx] -= this->NumberOfGhostLayers;
     ext[maxIdx] += this->NumberOfGhostLayers;
@@ -143,7 +130,7 @@ protected:
     ext[maxIdx] =
       (ext[maxIdx] > this->GlobalExtent[maxIdx]) ? this->GlobalExtent[maxIdx] : ext[maxIdx];
   }
-  //@}
+  ///@}
 
   /**
    * Gets the structured data-description based on the givenn global extent
@@ -153,7 +140,7 @@ protected:
   /**
    * Returns the extent at the position corresponding to idx.
    */
-  void GetExtent(const int idx, int ext[6]);
+  void GetExtent(int idx, int ext[6]);
 
   /**
    * Adds the extent to the end of the list of partitioned extents
@@ -164,7 +151,7 @@ protected:
    * Replaces the extent at the position indicated by idx with the provided
    * extent.
    */
-  void ReplaceExtent(const int idx, int ext[6]);
+  void ReplaceExtent(int idx, int ext[6]);
 
   /**
    * Splits the extent along the given dimension.
@@ -222,4 +209,5 @@ private:
   void operator=(const vtkExtentRCBPartitioner&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* VTKEXTENTRCBPARTITIONER_H_ */

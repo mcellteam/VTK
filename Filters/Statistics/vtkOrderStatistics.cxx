@@ -1,27 +1,11 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkOrderStatistics.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
-#include "vtkToolkits.h"
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkOrderStatistics.h"
 #include "vtkStatisticsAlgorithmPrivate.h"
 
+#include "vtkDataSetAttributes.h"
 #include "vtkDoubleArray.h"
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
@@ -29,8 +13,10 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkMath.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkObjectFactory.h"
+#include "vtkSMPTools.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
+#include "vtkUnsignedCharArray.h"
 #include "vtkVariantArray.h"
 
 #include <cmath>
@@ -39,9 +25,48 @@ PURPOSE.  See the above copyright notice for more information.
 #include <set>
 #include <vector>
 
+namespace
+{
+//==============================================================================
+struct GhostsCounter
+{
+  GhostsCounter(vtkUnsignedCharArray* ghosts, unsigned char ghostsToSkip)
+    : Ghosts(ghosts)
+    , GhostsToSkip(ghostsToSkip)
+    , GlobalNumberOfGhosts(0)
+  {
+  }
+
+  void Initialize() { this->NumberOfGhosts.Local() = 0; }
+
+  void operator()(vtkIdType startId, vtkIdType endId)
+  {
+    vtkIdType& numberOfGhosts = this->NumberOfGhosts.Local();
+    for (vtkIdType id = startId; id < endId; ++id)
+    {
+      numberOfGhosts += (this->Ghosts->GetValue(id) & this->GhostsToSkip) != 0;
+    }
+  }
+
+  void Reduce()
+  {
+    for (vtkIdType numberOfGhosts : this->NumberOfGhosts)
+    {
+      this->GlobalNumberOfGhosts += numberOfGhosts;
+    }
+  }
+
+  vtkUnsignedCharArray* Ghosts;
+  unsigned char GhostsToSkip;
+  vtkIdType GlobalNumberOfGhosts;
+  vtkSMPThreadLocal<vtkIdType> NumberOfGhosts;
+};
+} // anonymous namespace
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOrderStatistics);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOrderStatistics::vtkOrderStatistics()
 {
   this->QuantileDefinition = vtkOrderStatistics::InverseCDFAveragedSteps;
@@ -53,12 +78,15 @@ vtkOrderStatistics::vtkOrderStatistics()
 
   this->AssessNames->SetNumberOfValues(1);
   this->AssessNames->SetValue(0, "Quantile");
+
+  this->NumberOfGhosts = 0;
+  this->GhostsToSkip = 0xff;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOrderStatistics::~vtkOrderStatistics() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOrderStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -68,7 +96,30 @@ void vtkOrderStatistics::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "MaximumHistogramSize: " << this->MaximumHistogramSize << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkOrderStatistics::RequestData(
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+{
+  if (vtkTable* inData = vtkTable::GetData(inputVector[INPUT_DATA], 0))
+  {
+    vtkUnsignedCharArray* ghosts = inData->GetRowData()->GetGhostArray();
+
+    if (ghosts)
+    {
+      ::GhostsCounter counter(ghosts, this->GhostsToSkip);
+      vtkSMPTools::For(0, ghosts->GetNumberOfValues(), counter);
+      this->NumberOfGhosts = counter.GlobalNumberOfGhosts;
+    }
+    else
+    {
+      this->NumberOfGhosts = 0;
+    }
+  }
+
+  return this->Superclass::RequestData(request, inputVector, outputVector);
+}
+
+//------------------------------------------------------------------------------
 void vtkOrderStatistics::SetQuantileDefinition(int qd)
 {
   switch (qd)
@@ -86,7 +137,7 @@ void vtkOrderStatistics::SetQuantileDefinition(int qd)
   this->Modified();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkOrderStatistics::SetParameter(
   const char* parameter, int vtkNotUsed(index), vtkVariant value)
 {
@@ -107,7 +158,7 @@ bool vtkOrderStatistics::SetParameter(
   return false;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOrderStatistics::Learn(
   vtkTable* inData, vtkTable* vtkNotUsed(inParameters), vtkMultiBlockDataSet* outMeta)
 {
@@ -121,22 +172,24 @@ void vtkOrderStatistics::Learn(
     return;
   }
 
+  vtkUnsignedCharArray* ghosts = inData->GetRowData()->GetGhostArray();
+
   // Loop over requests
   vtkIdType nRow = inData->GetNumberOfRows();
-  for (std::set<std::set<vtkStdString> >::iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one column of interest (if there are others, they are ignored)
     std::set<vtkStdString>::const_iterator it = rit->begin();
-    vtkStdString col = *it;
-    if (!inData->GetColumnByName(col))
+    std::string const& col = *it;
+    if (!inData->GetColumnByName(col.c_str()))
     {
-      vtkWarningMacro("InData table does not have a column " << col.c_str() << ". Ignoring it.");
+      vtkWarningMacro("InData table does not have a column " << col << ". Ignoring it.");
       continue;
     }
 
     // Get hold of data for this variable
-    vtkAbstractArray* vals = inData->GetColumnByName(col);
+    vtkAbstractArray* vals = inData->GetColumnByName(col.c_str());
 
     // Create histogram table for this variable
     vtkTable* histogramTab = vtkTable::New();
@@ -169,7 +222,7 @@ void vtkOrderStatistics::Learn(
     }
     else
     {
-      vtkWarningMacro("Unsupported data type for column " << col.c_str() << ". Ignoring it.");
+      vtkWarningMacro("Unsupported data type for column " << col << ". Ignoring it.");
 
       continue;
     }
@@ -189,7 +242,10 @@ void vtkOrderStatistics::Learn(
       std::map<double, vtkIdType> histogram;
       for (vtkIdType r = 0; r < nRow; ++r)
       {
-        ++histogram[dvals->GetTuple1(r)];
+        if (!ghosts || !(ghosts->GetValue(r) & this->GhostsToSkip))
+        {
+          ++histogram[dvals->GetTuple1(r)];
+        }
       }
 
       // If maximum size was requested, make sure it is satisfied
@@ -215,6 +271,10 @@ void vtkOrderStatistics::Learn(
           double quantum;
           for (vtkIdType r = 0; r < nRow; ++r)
           {
+            if (ghosts && (ghosts->GetValue(r) & this->GhostsToSkip))
+            {
+              continue;
+            }
             reading = dvals->GetTuple1(r);
             quantum = mini + std::round((reading - mini) / width) * width;
             ++histogram[quantum];
@@ -243,7 +303,10 @@ void vtkOrderStatistics::Learn(
       std::map<vtkStdString, vtkIdType> histogram;
       for (vtkIdType r = 0; r < nRow; ++r)
       {
-        ++histogram[svals->GetValue(r)];
+        if (!ghosts || !(ghosts->GetValue(r) & this->GhostsToSkip))
+        {
+          ++histogram[svals->GetValue(r)];
+        }
       }
 
       // Store histogram
@@ -264,7 +327,10 @@ void vtkOrderStatistics::Learn(
       std::map<vtkVariant, vtkIdType> histogram;
       for (vtkIdType r = 0; r < nRow; ++r)
       {
-        ++histogram[vvals->GetVariantValue(r)];
+        if (!ghosts || !(ghosts->GetValue(r) & this->GhostsToSkip))
+        {
+          ++histogram[vvals->GetVariantValue(r)];
+        }
       }
 
       // Store histogram
@@ -278,7 +344,7 @@ void vtkOrderStatistics::Learn(
     } // else if ( vals->IsA("vtkVariantArray") )
     else
     {
-      vtkWarningMacro("Unsupported data type for column " << col.c_str() << ". Ignoring it.");
+      vtkWarningMacro("Unsupported data type for column " << col << ". Ignoring it.");
 
       continue;
     } // else
@@ -295,7 +361,7 @@ void vtkOrderStatistics::Learn(
   } // rit
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 {
   if (!inMeta || inMeta->GetNumberOfBlocks() < 1)
@@ -333,7 +399,7 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
     if (q.rem)
     {
       // General case
-      stringCol->InsertNextValue(vtkStdString(vtkVariant(i * dq).ToString() + "-quantile").c_str());
+      stringCol->InsertNextValue((vtkVariant(i * dq).ToString() + "-quantile").c_str());
     }
     else
     {
@@ -356,8 +422,7 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
           stringCol->InsertNextValue("Maximum");
           break;
         default:
-          stringCol->InsertNextValue(
-            vtkStdString(vtkVariant(i * dq).ToString() + "-quantile").c_str());
+          stringCol->InsertNextValue((vtkVariant(i * dq).ToString() + "-quantile").c_str());
           break;
       }
     }
@@ -406,13 +471,13 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
     cardinalityTab->InsertNextRow(row);
 
     // Find or create column of probability mass function of histogram table
-    vtkStdString probaName("P");
+    std::string probaName("P");
     vtkDoubleArray* probaCol;
-    vtkAbstractArray* abstrCol = histogramTab->GetColumnByName(probaName);
+    vtkAbstractArray* abstrCol = histogramTab->GetColumnByName(probaName.c_str());
     if (!abstrCol)
     {
       probaCol = vtkDoubleArray::New();
-      probaCol->SetName(probaName);
+      probaCol->SetName(probaName.c_str());
       probaCol->SetNumberOfTuples(nRowHist);
       histogramTab->AddColumn(probaCol);
       probaCol->Delete();
@@ -434,7 +499,7 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
     }
 
     // Storage for quantile indices
-    std::vector<std::pair<vtkIdType, vtkIdType> > quantileIndices;
+    std::vector<std::pair<vtkIdType, vtkIdType>> quantileIndices;
     std::pair<vtkIdType, vtkIdType> qIdxPair;
 
     // First quantile index is always 0 with no jump (corresponding to the first and the smallest
@@ -524,7 +589,7 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 
       // Create column for quantiles of the same type as the values
       vtkDataArray* quantCol = vtkDataArray::CreateDataArray(dvals->GetDataType());
-      quantCol->SetName(varName);
+      quantCol->SetName(varName.c_str());
       quantCol->SetNumberOfTuples(this->NumberOfIntervals + 1);
       quantileTab->AddColumn(quantCol);
       quantCol->Delete();
@@ -534,7 +599,7 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
       {
         // Compute and store quantile values
         vtkIdType k = 0;
-        for (std::vector<std::pair<vtkIdType, vtkIdType> >::iterator qit = quantileIndices.begin();
+        for (std::vector<std::pair<vtkIdType, vtkIdType>>::iterator qit = quantileIndices.begin();
              qit != quantileIndices.end(); ++qit, ++k)
         {
           // Retrieve data values from rank into histogram and interpolate
@@ -548,7 +613,7 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
       {
         // Compute and store quantile values
         vtkIdType k = 0;
-        for (std::vector<std::pair<vtkIdType, vtkIdType> >::iterator qit = quantileIndices.begin();
+        for (std::vector<std::pair<vtkIdType, vtkIdType>>::iterator qit = quantileIndices.begin();
              qit != quantileIndices.end(); ++qit, ++k)
         {
           // Retrieve data value from rank into histogram
@@ -566,18 +631,18 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 
       // Create column for quantiles of the same type as the values
       vtkStringArray* quantCol = vtkStringArray::New();
-      quantCol->SetName(varName);
+      quantCol->SetName(varName.c_str());
       quantCol->SetNumberOfTuples(this->NumberOfIntervals + 1);
       quantileTab->AddColumn(quantCol);
       quantCol->Delete();
 
       // Compute and store quantile values
       vtkIdType k = 0;
-      for (std::vector<std::pair<vtkIdType, vtkIdType> >::iterator qit = quantileIndices.begin();
+      for (std::vector<std::pair<vtkIdType, vtkIdType>>::iterator qit = quantileIndices.begin();
            qit != quantileIndices.end(); ++qit, ++k)
       {
         // Retrieve data value from rank into histogram
-        vtkStdString Qp = svals->GetValue(qit->first);
+        std::string Qp = svals->GetValue(qit->first);
 
         // Store quantile value
         quantCol->SetValue(k, Qp);
@@ -590,14 +655,14 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 
       // Create column for quantiles of the same type as the values
       vtkVariantArray* quantCol = vtkVariantArray::New();
-      quantCol->SetName(varName);
+      quantCol->SetName(varName.c_str());
       quantCol->SetNumberOfTuples(this->NumberOfIntervals + 1);
       quantileTab->AddColumn(quantCol);
       quantCol->Delete();
 
       // Compute and store quantile values
       vtkIdType k = 0;
-      for (std::vector<std::pair<vtkIdType, vtkIdType> >::iterator qit = quantileIndices.begin();
+      for (std::vector<std::pair<vtkIdType, vtkIdType>>::iterator qit = quantileIndices.begin();
            qit != quantileIndices.end(); ++qit, ++k)
       {
         // Retrieve data value from rank into histogram
@@ -609,8 +674,8 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
     } // else if ( vals->IsA("vtkVariantArray") )
     else
     {
-      vtkWarningMacro("Unsupported data type for column "
-        << varName.c_str() << ". Cannot calculate quantiles for it.");
+      vtkWarningMacro(
+        "Unsupported data type for column " << varName << ". Cannot calculate quantiles for it.");
 
       continue;
     } // else
@@ -636,7 +701,7 @@ void vtkOrderStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   quantileTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOrderStatistics::Test(vtkTable* inData, vtkMultiBlockDataSet* inMeta, vtkTable* outMeta)
 {
   if (!inMeta)
@@ -679,42 +744,41 @@ void vtkOrderStatistics::Test(vtkTable* inData, vtkMultiBlockDataSet* inMeta, vt
 
   // Prepare storage for quantiles and model CDFs
   vtkIdType nQuant = quantileTab->GetNumberOfRows();
-  std::vector<vtkStdString> quantiles(nQuant);
+  std::vector<std::string> quantiles(nQuant);
 
   // Loop over requests
   vtkIdType nRowData = inData->GetNumberOfRows();
   double inv_nq = 1. / nQuant;
   double inv_card = 1. / nRowData;
   double sqrt_card = sqrt(static_cast<double>(nRowData));
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one column of interest (if there are others, they are ignored)
     std::set<vtkStdString>::const_iterator it = rit->begin();
-    vtkStdString varName = *it;
-    if (!inData->GetColumnByName(varName))
+    std::string const& varName = *it;
+    if (!inData->GetColumnByName(varName.c_str()))
     {
-      vtkWarningMacro(
-        "InData table does not have a column " << varName.c_str() << ". Ignoring it.");
+      vtkWarningMacro("InData table does not have a column " << varName << ". Ignoring it.");
       continue;
     }
 
     // Find the quantile column that corresponds to the variable of the request
-    vtkAbstractArray* quantCol = quantileTab->GetColumnByName(varName);
+    vtkAbstractArray* quantCol = quantileTab->GetColumnByName(varName.c_str());
     if (!quantCol)
     {
       vtkWarningMacro(
-        "Quantile table table does not have a column " << varName.c_str() << ". Ignoring it.");
+        "Quantile table table does not have a column " << varName << ". Ignoring it.");
       continue;
     }
 
     // First iterate over all observations to calculate empirical PDF
-    typedef std::map<vtkStdString, double> CDF;
+    typedef std::map<std::string, double> CDF;
     CDF cdfEmpirical;
     for (vtkIdType j = 0; j < nRowData; ++j)
     {
       // Read observation and update PDF
-      cdfEmpirical[inData->GetValueByName(j, varName).ToString()] += inv_card;
+      cdfEmpirical[inData->GetValueByName(j, varName.c_str()).ToString()] += inv_card;
     }
 
     // Now integrate to obtain empirical CDF
@@ -728,8 +792,7 @@ void vtkOrderStatistics::Test(vtkTable* inData, vtkMultiBlockDataSet* inMeta, vt
     // Sanity check: verify that empirical CDF = 1
     if (fabs(sum - 1.) > 1.e-6)
     {
-      vtkWarningMacro(
-        "Incorrect empirical CDF for variable:" << varName.c_str() << ". Ignoring it.");
+      vtkWarningMacro("Incorrect empirical CDF for variable:" << varName << ". Ignoring it.");
 
       continue;
     }
@@ -738,12 +801,12 @@ void vtkOrderStatistics::Test(vtkTable* inData, vtkMultiBlockDataSet* inMeta, vt
     for (vtkIdType i = 0; i < nQuant; ++i)
     {
       // Read quantile and update CDF
-      quantiles[i] = quantileTab->GetValueByName(i, varName).ToString();
+      quantiles[i] = quantileTab->GetValueByName(i, varName.c_str()).ToString();
 
       // Update empirical CDF if new value found (with unknown ECDF)
       std::pair<CDF::iterator, bool> result =
-        cdfEmpirical.insert(std::pair<vtkStdString, double>(quantiles[i], -1));
-      if (result.second == true)
+        cdfEmpirical.insert(std::pair<std::string, double>(quantiles[i], -1));
+      if (result.second)
       {
         CDF::iterator eit = result.first;
         // Check if new value has no predecessor, in which case CDF = 0
@@ -803,7 +866,7 @@ void vtkOrderStatistics::Test(vtkTable* inData, vtkMultiBlockDataSet* inMeta, vt
   statCol->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class DataArrayQuantizer : public vtkStatisticsAlgorithm::AssessFunctor
 {
 public:
@@ -840,7 +903,7 @@ public:
   }
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class StringArrayQuantizer : public vtkStatisticsAlgorithm::AssessFunctor
 {
 public:
@@ -857,7 +920,7 @@ public:
   {
     result->SetNumberOfValues(1);
 
-    vtkStdString sval = this->Data->GetValue(id);
+    std::string sval = this->Data->GetValue(id);
     if (sval < this->Quantiles->GetValue(0))
     {
       // sval is smaller than lower bound
@@ -877,7 +940,7 @@ public:
   }
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class VariantArrayQuantizer : public vtkStatisticsAlgorithm::AssessFunctor
 {
 public:
@@ -914,7 +977,7 @@ public:
   }
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOrderStatistics::SelectAssessFunctor(
   vtkTable* outData, vtkDataObject* inMetaDO, vtkStringArray* rowNames, AssessFunctor*& dfunc)
 {
@@ -939,21 +1002,20 @@ void vtkOrderStatistics::SelectAssessFunctor(
   }
 
   // Retrieve name of variable of the request
-  vtkStdString varName = rowNames->GetValue(0);
+  std::string varName = rowNames->GetValue(0);
 
   // Grab the data for the requested variable
-  vtkAbstractArray* vals = outData->GetColumnByName(varName);
+  vtkAbstractArray* vals = outData->GetColumnByName(varName.c_str());
   if (!vals)
   {
     return;
   }
 
   // Find the quantile column that corresponds to the variable of the request
-  vtkAbstractArray* quantiles = quantileTab->GetColumnByName(varName);
+  vtkAbstractArray* quantiles = quantileTab->GetColumnByName(varName.c_str());
   if (!quantiles)
   {
-    vtkWarningMacro(
-      "Quantile table table does not have a column " << varName.c_str() << ". Ignoring it.");
+    vtkWarningMacro("Quantile table table does not have a column " << varName << ". Ignoring it.");
     return;
   }
 
@@ -973,7 +1035,8 @@ void vtkOrderStatistics::SelectAssessFunctor(
   else
   {
     vtkWarningMacro("Unsupported (data,quantiles) type for column "
-      << varName.c_str() << ": data type is " << vals->GetClassName() << " and quantiles type is "
+      << varName << ": data type is " << vals->GetClassName() << " and quantiles type is "
       << quantiles->GetClassName() << ". Ignoring it.");
   }
 }
+VTK_ABI_NAMESPACE_END

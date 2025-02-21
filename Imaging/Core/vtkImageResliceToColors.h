@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageResliceToColors.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageResliceToColors
  * @brief   Reslice and produce color scalars.
@@ -34,6 +22,7 @@
 #include "vtkImageReslice.h"
 #include "vtkImagingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkScalarsToColors;
 
 class VTKIMAGINGCORE_EXPORT vtkImageResliceToColors : public vtkImageReslice
@@ -44,7 +33,7 @@ public:
 
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set a lookup table to apply to the data.  Use the Range,
    * VectorMode, and VectorComponents of the table to control
@@ -54,9 +43,9 @@ public:
    */
   virtual void SetLookupTable(vtkScalarsToColors* table);
   vtkGetObjectMacro(LookupTable, vtkScalarsToColors);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the output format, the default is RGBA.
    */
@@ -66,7 +55,7 @@ public:
   void SetOutputFormatToRGB() { this->OutputFormat = VTK_RGB; }
   void SetOutputFormatToLuminanceAlpha() { this->OutputFormat = VTK_LUMINANCE_ALPHA; }
   void SetOutputFormatToLuminance() { this->OutputFormat = VTK_LUMINANCE; }
-  //@}
+  ///@}
 
   /**
    * Bypass the color mapping operation and output the scalar
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkImageResliceToColors&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

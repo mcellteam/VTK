@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkWidgetTestingMacros_h
 #define vtkWidgetTestingMacros_h
 
@@ -25,6 +27,7 @@
 
 /// tests basic vtkObject methods
 #define EXERCISE_BASIC_OBJECT_METHODS(object)                                                      \
+  do                                                                                               \
   {                                                                                                \
     if (object == nullptr)                                                                         \
     {                                                                                              \
@@ -34,43 +37,47 @@
     object->Print(std::cout);                                                                      \
     std::cout << "Name of Class = " << object->GetClassName() << std::endl;                        \
     std::cout << "Name of Superclass = " << object->Superclass::GetClassName() << std::endl;       \
-  }
+  } while (false)
 
 /// test object by calling Set on the variable with false, true, 0, 1, On, Off
 #define TEST_SET_GET_BOOLEAN(object, variable)                                                     \
-  object->Set##variable(false);                                                                    \
-  object->Set##variable(true);                                                                     \
-  if (object->Get##variable() != 1)                                                                \
+  do                                                                                               \
   {                                                                                                \
-    std::cerr << "Error in Set/Get" #variable << ", Get" #variable << " is "                       \
-              << object->Get##variable() << " instead of 1" << std::endl;                          \
-    return EXIT_FAILURE;                                                                           \
-  }                                                                                                \
-  object->Set##variable(false);                                                                    \
-  if (object->Get##variable() != 0)                                                                \
-  {                                                                                                \
-    std::cerr << "Error in Set/Get" #variable << ", Get" #variable << " is "                       \
-              << object->Get##variable() << " instead of 0" << std::endl;                          \
-    return EXIT_FAILURE;                                                                           \
-  }                                                                                                \
-  object->variable##On();                                                                          \
-  if (object->Get##variable() != 1)                                                                \
-  {                                                                                                \
-    std::cerr << "Error in On/Get" #variable << ", Get" #variable << " is "                        \
-              << object->Get##variable() << " instead of 1" << std::endl;                          \
-    return EXIT_FAILURE;                                                                           \
-  }                                                                                                \
-  object->variable##Off();                                                                         \
-  if (object->Get##variable() != 0)                                                                \
-  {                                                                                                \
-    std::cerr << "Error in Off/Get" #variable << ", Get" #variable << " is "                       \
-              << object->Get##variable() << " instead of 0" << std::endl;                          \
-    return EXIT_FAILURE;                                                                           \
-  }
+    object->Set##variable(false);                                                                  \
+    object->Set##variable(true);                                                                   \
+    if (object->Get##variable() != 1)                                                              \
+    {                                                                                              \
+      std::cerr << "Error in Set/Get" #variable << ", Get" #variable << " is "                     \
+                << object->Get##variable() << " instead of 1" << std::endl;                        \
+      return EXIT_FAILURE;                                                                         \
+    }                                                                                              \
+    object->Set##variable(false);                                                                  \
+    if (object->Get##variable() != 0)                                                              \
+    {                                                                                              \
+      std::cerr << "Error in Set/Get" #variable << ", Get" #variable << " is "                     \
+                << object->Get##variable() << " instead of 0" << std::endl;                        \
+      return EXIT_FAILURE;                                                                         \
+    }                                                                                              \
+    object->variable##On();                                                                        \
+    if (object->Get##variable() != 1)                                                              \
+    {                                                                                              \
+      std::cerr << "Error in On/Get" #variable << ", Get" #variable << " is "                      \
+                << object->Get##variable() << " instead of 1" << std::endl;                        \
+      return EXIT_FAILURE;                                                                         \
+    }                                                                                              \
+    object->variable##Off();                                                                       \
+    if (object->Get##variable() != 0)                                                              \
+    {                                                                                              \
+      std::cerr << "Error in Off/Get" #variable << ", Get" #variable << " is "                     \
+                << object->Get##variable() << " instead of 0" << std::endl;                        \
+      return EXIT_FAILURE;                                                                         \
+    }                                                                                              \
+  } while (false)
 
 /// test an integer variable on the object by setting it to input value using Set, and
 /// testing it via the Get
 #define TEST_SET_GET_INT(object, variable, value)                                                  \
+  do                                                                                               \
   {                                                                                                \
     object->Set##variable(value);                                                                  \
     if (object->Get##variable() != value)                                                          \
@@ -78,13 +85,14 @@
       std::cerr << "Error in Set/Get" #variable << " using value " << value << std::endl;          \
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
-  }
+  } while (false)
 
 /// Test an integer variable on object over the range, calls test set get in
 /// with min - epsilon, min, min + epsilon, (min+max)/2, max - epsilon, max,
 /// max + epsilon, where first and last test should report errors
 /// epsilon defined as 1
 #define TEST_SET_GET_INT_RANGE(object, variable, min, max)                                         \
+  do                                                                                               \
   {                                                                                                \
     int epsilon = 1;                                                                               \
     int val = min - epsilon;                                                                       \
@@ -101,11 +109,12 @@
     TEST_SET_GET_INT(object, variable, val);                                                       \
     val = max + epsilon;                                                                           \
     TEST_SET_GET_INT(object, variable, val);                                                       \
-  }
+  } while (false)
 
 /// test a double variable on the object by setting it to input value using Set, and
 /// testing it via the Get
 #define TEST_SET_GET_DOUBLE(object, variable, value)                                               \
+  do                                                                                               \
   {                                                                                                \
     object->Set##variable(value);                                                                  \
     if (object->Get##variable() != value)                                                          \
@@ -114,13 +123,14 @@
                 << object->Get##variable() << "'" << std::endl;                                    \
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
-  }
+  } while (false)
 
 /// Test a double variable on object over the range, calls test set get in
 /// with min - epsilon, min, min + epsilon, (min+max)/2, max - epsilon, max,
 /// max + epsilon, where first and last test should report errors
 /// epsilon set to 1.0
 #define TEST_SET_GET_DOUBLE_RANGE(object, variable, min, max)                                      \
+  do                                                                                               \
   {                                                                                                \
     double epsilon = 1.0;                                                                          \
     double val = min - epsilon;                                                                    \
@@ -137,11 +147,12 @@
     TEST_SET_GET_DOUBLE(object, variable, val);                                                    \
     val = max + epsilon;                                                                           \
     TEST_SET_GET_DOUBLE(object, variable, val);                                                    \
-  }
+  } while (false)
 
 /// test a vector variable on the object by setting it to a the values x, y, z
 /// passed in using Set, and testing it via the Get
 #define TEST_SET_GET_VECTOR3_DOUBLE(object, variable, x, y, z)                                     \
+  do                                                                                               \
   {                                                                                                \
     object->Set##variable(x, y, z);                                                                \
     double* val = object->Get##variable();                                                         \
@@ -150,11 +161,12 @@
       std::cerr << "Error in Set/Get" #variable << std::endl;                                      \
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
-  }
+  } while (false)
 
 /// test a vector variable on the object by setting it to a the values x, y
 /// passed in using Set, and testing it via the Get
 #define TEST_SET_GET_VECTOR2(object, variable, x, y)                                               \
+  do                                                                                               \
   {                                                                                                \
     object->Set##variable(x, y);                                                                   \
     int* val = object->Get##variable();                                                            \
@@ -163,7 +175,7 @@
       std::cerr << "Error in Set/Get" #variable << std::endl;                                      \
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
-  }
+  } while (false)
 
 /// test an integer  vector2 variable on the object over the range, calls test set get in
 /// with min - epsilon, min, min + epsilon, (min+max)/2, max - epsilon, max,
@@ -171,6 +183,7 @@
 /// three elements are set to the same thing each time.
 /// epsilon set to 1
 #define TEST_SET_GET_VECTOR2_INT_RANGE(object, variable, min, max)                                 \
+  do                                                                                               \
   {                                                                                                \
     int epsilon = 1;                                                                               \
     TEST_SET_GET_VECTOR2(object, variable, min - epsilon, min - epsilon);                          \
@@ -181,7 +194,7 @@
     TEST_SET_GET_VECTOR2(object, variable, max - epsilon, max - epsilon);                          \
     TEST_SET_GET_VECTOR2(object, variable, max, max);                                              \
     TEST_SET_GET_VECTOR2(object, variable, max + epsilon, max + epsilon);                          \
-  }
+  } while (false)
 
 /// test a double vector2 variable on the object over the range, calls test set get in
 /// with min - epsilon, min, min + epsilon, (min+max)/2, max - epsilon, max,
@@ -189,6 +202,7 @@
 /// three elements are set to the same thing each time.
 /// epsilon set to 1.0
 #define TEST_SET_GET_VECTOR2_DOUBLE_RANGE(object, variable, min, max)                              \
+  do                                                                                               \
   {                                                                                                \
     double epsilon = 1.0;                                                                          \
     TEST_SET_GET_VECTOR2(object, variable, min - epsilon, min - epsilon);                          \
@@ -199,7 +213,7 @@
     TEST_SET_GET_VECTOR2(object, variable, max - epsilon, max - epsilon);                          \
     TEST_SET_GET_VECTOR2(object, variable, max, max);                                              \
     TEST_SET_GET_VECTOR2(object, variable, max + epsilon, max + epsilon);                          \
-  }
+  } while (false)
 
 /// Test a double vector variable on object over the range, calls test set get in
 /// with min - epsilon, min, min + epsilon, (min+max)/2, max - epsilon, max,
@@ -207,6 +221,7 @@
 /// three elements are set to the same thing each time.
 /// epsilon set to 1.0
 #define TEST_SET_GET_VECTOR3_DOUBLE_RANGE(object, variable, min, max)                              \
+  do                                                                                               \
   {                                                                                                \
     double epsilon = 1.0;                                                                          \
     TEST_SET_GET_VECTOR3_DOUBLE(object, variable, min - epsilon, min - epsilon, min - epsilon);    \
@@ -217,10 +232,11 @@
     TEST_SET_GET_VECTOR3_DOUBLE(object, variable, max - epsilon, max - epsilon, max - epsilon);    \
     TEST_SET_GET_VECTOR3_DOUBLE(object, variable, max, max, max);                                  \
     TEST_SET_GET_VECTOR3_DOUBLE(object, variable, max + epsilon, max + epsilon, max + epsilon);    \
-  }
+  } while (false)
 
 /// test a string variable on the object by calling Set/Get
 #define TEST_SET_GET_STRING(object, variable)                                                      \
+  do                                                                                               \
   {                                                                                                \
     const char* originalStringPointer = object->Get##variable();                                   \
     std::string originalString;                                                                    \
@@ -256,10 +272,11 @@
     {                                                                                              \
       object->Set##variable(nullptr);                                                              \
     }                                                                                              \
-  }
+  } while (false)
 
 /// test a char variable on the object by calling Set/Get
 #define TEST_SET_GET_CHAR(object, variable)                                                        \
+  do                                                                                               \
   {                                                                                                \
     const char originalChar = object->Get##variable();                                             \
     object->Set##variable('t');                                                                    \
@@ -275,10 +292,11 @@
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
     object->Set##variable(originalChar);                                                           \
-  }
+  } while (false)
 
 /// test vtkInteractorObserver methods
 #define EXERCISE_BASIC_INTERACTOR_OBSERVER_METHODS(object)                                         \
+  do                                                                                               \
   {                                                                                                \
     EXERCISE_BASIC_OBJECT_METHODS(object);                                                         \
     vtkSmartPointer<vtkRenderer> ren1 = vtkSmartPointer<vtkRenderer>::New();                       \
@@ -368,10 +386,11 @@
                                                                                                    \
     object->GrabFocus(nullptr, nullptr);                                                           \
     object->ReleaseFocus();                                                                        \
-  }
+  } while (false)
 
 /// test vtkAbstractWidget methods
 #define EXERCISE_BASIC_ABSTRACT_METHODS(object)                                                    \
+  do                                                                                               \
   {                                                                                                \
     EXERCISE_BASIC_INTERACTOR_OBSERVER_METHODS(object);                                            \
     TEST_SET_GET_BOOLEAN(object, ProcessEvents);                                                   \
@@ -387,18 +406,20 @@
       std::cerr << "Error, parent is not null." << std::endl;                                      \
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
-  }
+  } while (false)
 
 /// test vtkBorderWidget methods
 #define EXERCISE_BASIC_BORDER_METHODS(object)                                                      \
+  do                                                                                               \
   {                                                                                                \
     EXERCISE_BASIC_ABSTRACT_METHODS(object);                                                       \
     TEST_SET_GET_BOOLEAN(object, Selectable);                                                      \
     TEST_SET_GET_BOOLEAN(object, Resizable);                                                       \
-  }
+  } while (false)
 
 /// test vtkHoverWidget methods, timer duration is clamped so range macro will fail
 #define EXERCISE_BASIC_HOVER_METHODS(object)                                                       \
+  do                                                                                               \
   {                                                                                                \
     EXERCISE_BASIC_ABSTRACT_METHODS(object);                                                       \
     TEST_SET_GET_INT(object, TimerDuration, 1);                                                    \
@@ -406,10 +427,11 @@
     TEST_SET_GET_INT(object, TimerDuration, 50000);                                                \
     TEST_SET_GET_INT(object, TimerDuration, 99999);                                                \
     TEST_SET_GET_INT(object, TimerDuration, 100000);                                               \
-  }
+  } while (false)
 
 /// test vtkProp methods
 #define EXERCISE_BASIC_PROP_METHODS(className, object)                                             \
+  do                                                                                               \
   {                                                                                                \
     EXERCISE_BASIC_OBJECT_METHODS(object);                                                         \
     vtkSmartPointer<vtkPropCollection> propCollection = vtkSmartPointer<vtkPropCollection>::New(); \
@@ -466,9 +488,10 @@
     std::cout << "RenderTimeMultiplier = " << object->GetRenderTimeMultiplier() << std::endl;      \
     std::cout << "SupportsSelection = " << object->GetSupportsSelection() << std::endl;            \
     std::cout << "NumberOfConsumers = " << object->GetNumberOfConsumers() << std::endl;            \
-  }
+  } while (false)
 
 #define NOT_DEFINED_CONSUMERS_FAIL()                                                               \
+  do                                                                                               \
   {                                                                                                \
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();                            \
     object->AddConsumer(actor);                                                                    \
@@ -495,9 +518,13 @@
       std::cerr << "Failed get consumer check for an invalid consumer number 0." << std::endl;     \
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
-  }
+  } while (false)
 
 /// test vtkWidgetRepresentation methods
+// XXX(fixme): For some reason, wrapping this in a `do {} while (false)` block
+// ends up failing the test. Opening the `do` block *after* `ren1` is declared
+// works though. Why adding `ren1` into the scope makes the test change
+// behavior is unknown. Leaving as a "tarbomb"-style macro for now.
 #define EXERCISE_BASIC_REPRESENTATION_METHODS(className, object)                                   \
   std::cout << "Creating a renderer and a default widget..." << std::endl;                         \
   vtkSmartPointer<vtkCamera> cam1 = vtkSmartPointer<vtkCamera>::New();                             \
@@ -517,8 +544,6 @@
     std::cerr << "Failure in GetRenderer." << std::endl;                                           \
     return EXIT_FAILURE;                                                                           \
   }                                                                                                \
-                                                                                                   \
-  object->BuildRepresentation();                                                                   \
                                                                                                    \
   double bounds[6] = { -1.0, 0.0, -10.0, 10.0, -5.0, 2.0 };                                        \
   object->PlaceWidget(bounds);                                                                     \
@@ -551,10 +576,11 @@
   object->SetPlaceFactor(0.5);                                                                     \
   object->SetHandleSize(0.05);                                                                     \
   std::cout << "Done basic rep methods" << std::endl;                                              \
-  EXERCISE_BASIC_PROP_METHODS(className, object);
+  EXERCISE_BASIC_PROP_METHODS(className, object)
 
 /// test vtkAngleRepresentation methods
 #define EXERCISE_BASIC_ANGLE_REPRESENTATION_METHODS(className, object)                             \
+  do                                                                                               \
   {                                                                                                \
     vtkSmartPointer<vtkPointHandleRepresentation2D> phandle0 =                                     \
       vtkSmartPointer<vtkPointHandleRepresentation2D>::New();                                      \
@@ -629,10 +655,11 @@
     double e[2] = { 5.0, 1.0 };                                                                    \
     object->CenterWidgetInteraction(e);                                                            \
     EXERCISE_BASIC_REPRESENTATION_METHODS(className, object);                                      \
-  }
+  } while (false)
 
 /// test vtkBorderRepresentation methods
 #define EXERCISE_BASIC_BORDER_REPRESENTATION_METHODS(className, object)                            \
+  do                                                                                               \
   {                                                                                                \
     EXERCISE_BASIC_REPRESENTATION_METHODS(className, object);                                      \
                                                                                                    \
@@ -730,27 +757,11 @@
                                                                                                    \
     int interactionState = object->ComputeInteractionState(10, 10);                                \
     std::cout << "Interaction state = " << interactionState << std::endl;                          \
-  }
-
-/// test vtkAngleRepresentation methods
-#define EXERCISE_BASIC_IMPLICIT_PLANE_REPRESENTATION_METHODS(className, object)                    \
-  {                                                                                                \
-    EXERCISE_BASIC_REPRESENTATION_METHODS(className, object);                                      \
-                                                                                                   \
-    TEST_SET_GET_VECTOR3_DOUBLE_RANGE(node1, Origin, -100, 100);                                   \
-    TEST_SET_GET_VECTOR3_DOUBLE_RANGE(node1, Normal, -1, 1);                                       \
-    TEST_SET_GET_BOOLEAN(node1, NormalToXAxis);                                                    \
-    TEST_SET_GET_BOOLEAN(node1, NormalToYAxis);                                                    \
-    TEST_SET_GET_BOOLEAN(node1, NormalToZAxis);                                                    \
-    TEST_SET_GET_BOOLEAN(node1, Tubing);                                                           \
-    TEST_SET_GET_BOOLEAN(node1, DrawPlane);                                                        \
-    TEST_SET_GET_BOOLEAN(node1, OutlineTranslation);                                               \
-    TEST_SET_GET_BOOLEAN(node1, OutsideBounds);                                                    \
-    TEST_SET_GET_BOOLEAN(node1, ScaleEnabled);                                                     \
-  }
+  } while (false)
 
 /// test objects that have Property and SelectedProperty set/get, with vtkProperty
 #define TEST_SET_GET_PROPERTY(object, variable)                                                    \
+  do                                                                                               \
   {                                                                                                \
     vtkSmartPointer<vtkProperty> prop1 = vtkSmartPointer<vtkProperty>::New();                      \
     double colour[3] = { 0.2, 0.3, 0.4 };                                                          \
@@ -775,12 +786,13 @@
                 << ", " << col[2] << std::endl;                                                    \
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
-  }
+  } while (false)
 
 /// test vtkHandleRepresentation methods
 /// these don't work well in isolation, seg faults when try to get/set display
 /// and world positions.
 #define EXERCISE_BASIC_HANDLE_REPRESENTATION_METHODS(className, object)                            \
+  do                                                                                               \
   {                                                                                                \
     EXERCISE_BASIC_REPRESENTATION_METHODS(className, object);                                      \
                                                                                                    \
@@ -871,10 +883,11 @@
     }                                                                                              \
     flag = object->CheckConstraint(ren3, posToCheck);                                              \
     std::cout << "Check Constraint after setting point placer = " << flag << std::endl;            \
-  }
+  } while (false)
 
 /// test vtkAbstractPolygonalHandleRepresentation3D methods
 #define EXERCISE_BASIC_ABSTRACT_POLYGONAL_HANDLE_REPRESENTATION3D_METHODS(className, object)       \
+  do                                                                                               \
   {                                                                                                \
     EXERCISE_BASIC_HANDLE_REPRESENTATION_METHODS(className, object);                               \
                                                                                                    \
@@ -912,5 +925,5 @@
     object->SetUniformScale(35.44);                                                                \
                                                                                                    \
     TEST_SET_GET_BOOLEAN(object, HandleVisibility);                                                \
-  }
+  } while (false)
 #endif

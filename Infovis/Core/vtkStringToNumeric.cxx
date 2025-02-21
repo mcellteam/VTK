@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStringToNumeric.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkStringToNumeric.h"
 
@@ -33,9 +17,9 @@
 #include "vtkPointData.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
-#include "vtkUnicodeStringArray.h"
 #include "vtkVariant.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStringToNumeric);
 
 vtkStringToNumeric::vtkStringToNumeric()
@@ -58,12 +42,7 @@ int vtkStringToNumeric::CountItemsToConvert(vtkFieldData* fieldData)
   {
     vtkAbstractArray* array = fieldData->GetAbstractArray(arr);
     vtkStringArray* stringArray = vtkArrayDownCast<vtkStringArray>(array);
-    vtkUnicodeStringArray* unicodeArray = vtkArrayDownCast<vtkUnicodeStringArray>(array);
-    if (!stringArray && !unicodeArray)
-    {
-      continue;
-    }
-    else
+    if (stringArray)
     {
       count += array->GetNumberOfTuples() * array->GetNumberOfComponents();
     }
@@ -152,39 +131,26 @@ void vtkStringToNumeric::ConvertArrays(vtkFieldData* fieldData)
   {
     vtkStringArray* stringArray =
       vtkArrayDownCast<vtkStringArray>(fieldData->GetAbstractArray(arr));
-    vtkUnicodeStringArray* unicodeArray =
-      vtkArrayDownCast<vtkUnicodeStringArray>(fieldData->GetAbstractArray(arr));
-    if (!stringArray && !unicodeArray)
+    if (!stringArray)
     {
       continue;
     }
 
-    vtkIdType numTuples, numComps;
-    vtkStdString arrayName;
-    if (stringArray)
-    {
-      numTuples = stringArray->GetNumberOfTuples();
-      numComps = stringArray->GetNumberOfComponents();
-      arrayName = stringArray->GetName();
-    }
-    else
-    {
-      numTuples = unicodeArray->GetNumberOfTuples();
-      numComps = unicodeArray->GetNumberOfComponents();
-      arrayName = unicodeArray->GetName();
-    }
+    vtkIdType numTuples = stringArray->GetNumberOfTuples();
+    vtkIdType numComps = stringArray->GetNumberOfComponents();
+    std::string arrayName = stringArray->GetName();
 
     // Set up the output array
     vtkDoubleArray* doubleArray = vtkDoubleArray::New();
     doubleArray->SetNumberOfComponents(numComps);
     doubleArray->SetNumberOfTuples(numTuples);
-    doubleArray->SetName(arrayName);
+    doubleArray->SetName(arrayName.c_str());
 
     // Set up the output array
     vtkIntArray* intArray = vtkIntArray::New();
     intArray->SetNumberOfComponents(numComps);
     intArray->SetNumberOfTuples(numTuples);
-    intArray->SetName(arrayName);
+    intArray->SetName(arrayName.c_str());
 
     // Convert the strings to time point values
     bool allInteger = true;
@@ -198,20 +164,12 @@ void vtkStringToNumeric::ConvertArrays(vtkFieldData* fieldData)
           static_cast<double>(this->ItemsConverted) / static_cast<double>(this->ItemsToConvert));
       }
 
-      vtkStdString str;
-      if (stringArray)
-      {
-        str = stringArray->GetValue(i);
-      }
-      else
-      {
-        str = unicodeArray->GetValue(i).utf8_str();
-      }
+      std::string str = stringArray->GetValue(i);
 
       if (this->TrimWhitespacePriorToNumericConversion)
       {
         size_t startPos = str.find_first_not_of(" \n\t\r");
-        if (startPos == vtkStdString::npos)
+        if (startPos == std::string::npos)
         {
           str = "";
         }
@@ -225,7 +183,7 @@ void vtkStringToNumeric::ConvertArrays(vtkFieldData* fieldData)
       bool ok;
       if (allInteger)
       {
-        if (str.length() == 0)
+        if (str.empty())
         {
           intArray->SetValue(i, this->DefaultIntegerValue);
           doubleArray->SetValue(i, this->DefaultDoubleValue);
@@ -245,7 +203,7 @@ void vtkStringToNumeric::ConvertArrays(vtkFieldData* fieldData)
       }
       if (!allInteger)
       {
-        if (str.length() == 0)
+        if (str.empty())
         {
           doubleArray->SetValue(i, this->DefaultDoubleValue);
           continue;
@@ -280,7 +238,7 @@ void vtkStringToNumeric::ConvertArrays(vtkFieldData* fieldData)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkStringToNumeric::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -292,7 +250,7 @@ vtkTypeBool vtkStringToNumeric::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStringToNumeric::RequestDataObject(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -335,3 +293,4 @@ void vtkStringToNumeric::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "TrimWhitespacePriorToNumericConversion: "
      << (this->TrimWhitespacePriorToNumericConversion ? "on" : "off") << endl;
 }
+VTK_ABI_NAMESPACE_END

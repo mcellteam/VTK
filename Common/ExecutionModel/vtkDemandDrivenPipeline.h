@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDemandDrivenPipeline.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDemandDrivenPipeline
  * @brief   Executive supporting on-demand execution.
@@ -26,7 +14,9 @@
 
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkExecutive.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractArray;
 class vtkDataArray;
 class vtkDataSetAttributes;
@@ -45,7 +35,7 @@ class vtkInformationUnsignedLongKey;
 /// that information objects use and what each key should be used for.
 ///
 
-class VTKCOMMONEXECUTIONMODEL_EXPORT vtkDemandDrivenPipeline : public vtkExecutive
+class VTKCOMMONEXECUTIONMODEL_EXPORT VTK_MARSHALAUTO vtkDemandDrivenPipeline : public vtkExecutive
 {
 public:
   static vtkDemandDrivenPipeline* New();
@@ -65,32 +55,32 @@ public:
   int ComputePipelineMTime(vtkInformation* request, vtkInformationVector** inInfoVec,
     vtkInformationVector* outInfoVec, int requestFromOutputPort, vtkMTimeType* mtime) override;
 
-  //@{
+  ///@{
   /**
    * Bring the algorithm's outputs up-to-date.  Returns 1 for success
    * and 0 for failure.
    */
   vtkTypeBool Update() override;
   vtkTypeBool Update(int port) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the PipelineMTime for this exective.
    */
   vtkGetMacro(PipelineMTime, vtkMTimeType);
-  //@}
+  ///@}
 
   /**
    * Set whether the given output port releases data when it is
    * consumed.  Returns 1 if the value changes and 0 otherwise.
    */
-  virtual int SetReleaseDataFlag(int port, int n);
+  virtual int SetReleaseDataFlag(int port, vtkTypeBool n);
 
   /**
    * Get whether the given output port releases data when it is consumed.
    */
-  virtual int GetReleaseDataFlag(int port);
+  virtual vtkTypeBool GetReleaseDataFlag(int port);
 
   /**
    * Bring the PipelineMTime up to date.
@@ -233,4 +223,5 @@ private:
   void operator=(const vtkDemandDrivenPipeline&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

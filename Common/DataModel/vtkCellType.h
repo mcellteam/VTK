@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCellType.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCellType
  * @brief   define types of cells
@@ -25,6 +13,8 @@
 
 #ifndef vtkCellType_h
 #define vtkCellType_h
+
+#include "vtkABINamespace.h"
 
 // To add a new cell type, define a new integer type flag here, then
 // create a subclass of vtkCell to implement the proper behavior. You
@@ -40,6 +30,7 @@
 // unsigned char array. Therefore, the maximum encoding number for a cell type
 // is 255.
 
+VTK_ABI_NAMESPACE_BEGIN
 typedef enum
 {
   // Linear cells
@@ -72,6 +63,7 @@ typedef enum
   VTK_QUADRATIC_PYRAMID = 27,
   VTK_BIQUADRATIC_QUAD = 28,
   VTK_TRIQUADRATIC_HEXAHEDRON = 29,
+  VTK_TRIQUADRATIC_PYRAMID = 37,
   VTK_QUADRATIC_LINEAR_QUAD = 30,
   VTK_QUADRATIC_LINEAR_WEDGE = 31,
   VTK_BIQUADRATIC_QUADRATIC_WEDGE = 32,
@@ -126,5 +118,6 @@ typedef enum
   VTK_NUMBER_OF_CELL_TYPES
 } VTKCellType;
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkCellType.h

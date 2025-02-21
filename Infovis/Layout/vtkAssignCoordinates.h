@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAssignCoordinates.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkAssignCoordinates
  * @brief   Given two(or three) arrays take the values
@@ -34,6 +18,7 @@
 #include "vtkInfovisLayoutModule.h" // For export macro
 #include "vtkPassInputTypeAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKINFOVISLAYOUT_EXPORT vtkAssignCoordinates : public vtkPassInputTypeAlgorithm
 {
 public:
@@ -42,36 +27,36 @@ public:
   vtkTypeMacro(vtkAssignCoordinates, vtkPassInputTypeAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the x coordinate array name.
    */
   vtkSetStringMacro(XCoordArrayName);
   vtkGetStringMacro(XCoordArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the y coordinate array name.
    */
   vtkSetStringMacro(YCoordArrayName);
   vtkGetStringMacro(YCoordArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the z coordinate array name.
    */
   vtkSetStringMacro(ZCoordArrayName);
   vtkGetStringMacro(ZCoordArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set if you want a random jitter
    */
   vtkSetMacro(Jitter, bool);
-  //@}
+  ///@}
 
 protected:
   vtkAssignCoordinates();
@@ -90,4 +75,5 @@ private:
   void operator=(const vtkAssignCoordinates&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUncertaintyTubeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkUncertaintyTubeFilter.h"
 
 #include "vtkCellArray.h"
@@ -27,6 +15,7 @@
 #include "vtkPolyData.h"
 #include "vtkPolyLine.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkUncertaintyTubeFilter);
 
 //
@@ -69,12 +58,17 @@ public:
   vtkIdType Extend;    // grow array by this amount
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTubePoint::vtkTubePoint() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTubePoint& vtkTubePoint::operator=(const vtkTubePoint& hp)
 {
+  if (this == &hp)
+  {
+    return *this;
+  }
+
   for (int i = 0; i < 3; i++)
   {
     this->X[i] = hp.X[i];
@@ -89,7 +83,7 @@ vtkTubePoint& vtkTubePoint::operator=(const vtkTubePoint& hp)
   return *this;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTubeArray::vtkTubeArray()
 {
   this->MaxId = -1;
@@ -98,7 +92,7 @@ vtkTubeArray::vtkTubeArray()
   this->Extend = 5000;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTubePoint* vtkTubeArray::Resize(vtkIdType sz)
 {
   vtkTubePoint* newArray;
@@ -127,7 +121,7 @@ vtkTubePoint* vtkTubeArray::Resize(vtkIdType sz)
   return this->Array;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with initial starting position (0,0,0); integration step
 // length 0.2; step length 0.01; forward integration; terminal eigenvalue 0.0;
 // number of sides 6; radius 0.5; and logarithmic scaling off.
@@ -138,13 +132,13 @@ vtkUncertaintyTubeFilter::vtkUncertaintyTubeFilter()
   this->NumberOfSides = 12;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUncertaintyTubeFilter::~vtkUncertaintyTubeFilter()
 {
   delete[] this->Tubes;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double IntersectEllipse(double vector[3], double v[3])
 {
   double a = vector[0];
@@ -165,7 +159,7 @@ static double IntersectEllipse(double vector[3], double v[3])
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkUncertaintyTubeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -227,6 +221,10 @@ int vtkUncertaintyTubeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   double* normal;
   for (k = 0, inLines->InitTraversal(); inLines->GetNextCell(npts, pts); k++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     singlePolyline->Reset();                   // avoid instantiation
     singlePolyline->InsertNextCell(npts, pts); // avoid crossing confusion
     if (!vtkPolyLine::GenerateSlidingNormals(inPts, singlePolyline, newNormals))
@@ -304,7 +302,7 @@ int vtkUncertaintyTubeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return retval;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkUncertaintyTubeFilter::BuildTubes(
   vtkPointData* pd, vtkPointData* outPD, vtkCellData* cd, vtkCellData* outCD, vtkPolyData* output)
 {
@@ -342,6 +340,11 @@ int vtkUncertaintyTubeFilter::BuildTubes(
   //
   for (cellId = 0; cellId < this->NumberOfTubes; cellId++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
+
     if ((numPts = this->Tubes[cellId].GetNumberOfPoints()) < 2)
     {
       continue;
@@ -413,10 +416,11 @@ int vtkUncertaintyTubeFilter::BuildTubes(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUncertaintyTubeFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Number Of Sides: " << this->NumberOfSides << "\n";
 }
+VTK_ABI_NAMESPACE_END

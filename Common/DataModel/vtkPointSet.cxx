@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointSet.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPointSet.h"
 
 #include "vtkCell.h"
@@ -21,6 +9,7 @@
 #include "vtkGenericCell.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkObjectFactory.h"
 #include "vtkPointLocator.h"
 #include "vtkPointSetCellIterator.h"
 #include "vtkStaticCellLocator.h"
@@ -28,13 +17,15 @@
 
 #include "vtkSmartPointer.h"
 
-#define VTK_CREATE(type, name) vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
+VTK_ABI_NAMESPACE_BEGIN
+vtkStandardNewMacro(vtkPointSet);
+vtkStandardExtendedNewMacro(vtkPointSet);
 
 vtkCxxSetObjectMacro(vtkPointSet, Points, vtkPoints);
 vtkCxxSetObjectMacro(vtkPointSet, PointLocator, vtkAbstractPointLocator);
 vtkCxxSetObjectMacro(vtkPointSet, CellLocator, vtkAbstractCellLocator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointSet::vtkPointSet()
 {
   this->Editable = false;
@@ -43,20 +34,15 @@ vtkPointSet::vtkPointSet()
   this->CellLocator = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointSet::~vtkPointSet()
 {
   this->Cleanup();
-
-  if (this->PointLocator != nullptr)
-  {
-    cout << "DELETING LOCATOR: PointSet: " << this << " locator: " << this->PointLocator << "\n";
-  }
   this->SetPointLocator(nullptr);
   this->SetCellLocator(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Copy the geometric structure of an input point set object.
 void vtkPointSet::CopyStructure(vtkDataSet* ds)
 {
@@ -77,7 +63,7 @@ void vtkPointSet::CopyStructure(vtkDataSet* ds)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::Cleanup()
 {
   if (this->Points)
@@ -87,7 +73,7 @@ void vtkPointSet::Cleanup()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::Initialize()
 {
   vtkDataSet::Initialize();
@@ -104,7 +90,7 @@ void vtkPointSet::Initialize()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::ComputeBounds()
 {
   if (this->Points)
@@ -124,7 +110,7 @@ void vtkPointSet::ComputeBounds()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkPointSet::GetMTime()
 {
   vtkMTimeType dsTime = vtkDataSet::GetMTime();
@@ -144,7 +130,7 @@ vtkMTimeType vtkPointSet::GetMTime()
   return dsTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::BuildPointLocator()
 {
   if (!this->Points)
@@ -166,14 +152,13 @@ void vtkPointSet::BuildPointLocator()
   }
   else if (this->Points->GetMTime() > this->PointLocator->GetMTime())
   {
-    cout << "Building supplied point locator\n";
     this->PointLocator->SetDataSet(this);
   }
 
   this->PointLocator->BuildLocator();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Build the cell locator (if needed)
 void vtkPointSet::BuildCellLocator()
 {
@@ -192,8 +177,6 @@ void vtkPointSet::BuildCellLocator()
     {
       this->CellLocator = vtkStaticCellLocator::New();
     }
-    this->CellLocator->Register(this);
-    this->CellLocator->Delete();
     this->CellLocator->SetDataSet(this);
   }
   else if (this->Points->GetMTime() > this->CellLocator->GetMTime())
@@ -204,7 +187,7 @@ void vtkPointSet::BuildCellLocator()
   this->CellLocator->BuildLocator();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPointSet::FindPoint(double x[3])
 {
   if (!this->Points)
@@ -220,7 +203,7 @@ vtkIdType vtkPointSet::FindPoint(double x[3])
   return this->PointLocator->FindClosestPoint(x);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This FindCell() method is based on using a locator (either point or
 // cell). In this application, point locators are typically faster to build
 // and operate on than cell locator, yet do not always produce the correct
@@ -236,19 +219,26 @@ vtkIdType vtkPointSet::FindPoint(double x[3])
 vtkIdType vtkPointSet::FindCell(double x[3], vtkCell* cell, vtkGenericCell* gencell,
   vtkIdType cellId, double tol2, int& subId, double pcoords[3], double* weights)
 {
-  VTK_CREATE(vtkClosestPointStrategy, strategy);
+  vtkNew<vtkClosestPointStrategy> strategy;
   strategy->Initialize(this);
   return strategy->FindCell(x, cell, gencell, cellId, tol2, subId, pcoords, weights);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPointSet::FindCell(double x[3], vtkCell* cell, vtkIdType cellId, double tol2,
   int& subId, double pcoords[3], double* weights)
 {
   return this->FindCell(x, cell, nullptr, cellId, tol2, subId, pcoords, weights);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkCell* vtkPointSet::GetCell(vtkIdType)
+{
+  this->GenericCell->SetCellTypeToEmptyCell();
+  return this->GenericCell;
+}
+
+//------------------------------------------------------------------------------
 vtkCellIterator* vtkPointSet::NewCellIterator()
 {
   vtkPointSetCellIterator* iter = vtkPointSetCellIterator::New();
@@ -256,7 +246,7 @@ vtkCellIterator* vtkPointSet::NewCellIterator()
   return iter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::Squeeze()
 {
   if (this->Points)
@@ -266,7 +256,7 @@ void vtkPointSet::Squeeze()
   vtkDataSet::Squeeze();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::ReportReferences(vtkGarbageCollector* collector)
 {
   this->Superclass::ReportReferences(collector);
@@ -274,7 +264,7 @@ void vtkPointSet::ReportReferences(vtkGarbageCollector* collector)
   vtkGarbageCollectorReport(collector, this->CellLocator, "CellLocator");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned long vtkPointSet::GetActualMemorySize()
 {
   unsigned long size = this->vtkDataSet::GetActualMemorySize();
@@ -285,7 +275,7 @@ unsigned long vtkPointSet::GetActualMemorySize()
   return size;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::ShallowCopy(vtkDataObject* dataObject)
 {
   vtkPointSet* pointSet = vtkPointSet::SafeDownCast(dataObject);
@@ -300,7 +290,7 @@ void vtkPointSet::ShallowCopy(vtkDataObject* dataObject)
   this->vtkDataSet::ShallowCopy(dataObject);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::DeepCopy(vtkDataObject* dataObject)
 {
   vtkPointSet* pointSet = vtkPointSet::SafeDownCast(dataObject);
@@ -328,19 +318,19 @@ void vtkPointSet::DeepCopy(vtkDataObject* dataObject)
   this->vtkDataSet::DeepCopy(dataObject);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointSet* vtkPointSet::GetData(vtkInformation* info)
 {
   return info ? vtkPointSet::SafeDownCast(info->Get(DATA_OBJECT())) : nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointSet* vtkPointSet::GetData(vtkInformationVector* v, int i)
 {
   return vtkPointSet::GetData(v->GetInformationObject(i));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointSet::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -351,15 +341,4 @@ void vtkPointSet::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "PointLocator: " << this->PointLocator << "\n";
   os << indent << "CellLocator: " << this->CellLocator << "\n";
 }
-
-//----------------------------------------------------------------------------
-void vtkPointSet::Register(vtkObjectBase* o)
-{
-  this->RegisterInternal(o, 1);
-}
-
-//----------------------------------------------------------------------------
-void vtkPointSet::UnRegister(vtkObjectBase* o)
-{
-  this->UnRegisterInternal(o, 1);
-}
+VTK_ABI_NAMESPACE_END

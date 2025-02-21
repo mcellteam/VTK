@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiBlockPLOT3DReaderInternals.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkMultiBlockPLOT3DReaderInternals_h
 #define vtkMultiBlockPLOT3DReaderInternals_h
 
@@ -24,17 +12,8 @@
 #include <exception>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiProcessController;
-
-#ifdef _WIN64
-#define vtk_fseek _fseeki64
-#define vtk_ftell _ftelli64
-#define vtk_off_t __int64
-#else
-#define vtk_fseek fseek
-#define vtk_ftell ftell
-#define vtk_off_t long
-#endif
 
 struct vtkMultiBlockPLOT3DReaderInternals
 {
@@ -47,13 +26,13 @@ struct vtkMultiBlockPLOT3DReaderInternals
   };
 
   std::vector<Dims> Dimensions;
-  std::vector<vtkSmartPointer<vtkStructuredGrid> > Blocks;
+  std::vector<vtkSmartPointer<vtkStructuredGrid>> Blocks;
 
   struct InternalSettings
   {
     int BinaryFile;
     int ByteOrder;
-    int HasByteCount;
+    vtkTypeBool HasByteCount;
     int MultiGrid;
     int NumberOfDimensions;
     int Precision; // in bytes
@@ -79,7 +58,7 @@ struct vtkMultiBlockPLOT3DReaderInternals
   }
 
   int ReadInts(FILE* fp, int n, int* val);
-  void CheckBinaryFile(FILE* fp, size_t fileSize);
+  int CheckBinaryFile(FILE* fp, size_t fileSize);
   int CheckByteOrder(FILE* fp);
   int CheckByteCount(FILE* fp);
   int CheckMultiGrid(FILE* fp);
@@ -100,6 +79,7 @@ struct vtkMultiBlockPLOT3DReaderInternals
     postskip = nPtsInPlane * (wextent[5] - extent[5]);
   }
 };
+VTK_ABI_NAMESPACE_END
 
 namespace
 {
@@ -108,6 +88,7 @@ class Plot3DException : public std::exception
 };
 }
 
+VTK_ABI_NAMESPACE_BEGIN
 // Description:
 // vtkMultiBlockPLOT3DReaderRecord represents a data record in the file. For
 // binary Plot3D files with record separators (i.e. leading and trailing length
@@ -158,7 +139,7 @@ public:
   // 2. offset is same as the start offset for this record.
   bool AtStart(vtkTypeUInt64 offset)
   {
-    return (this->SubRecords.size() == 0 || this->SubRecords.front().HeaderOffset == offset);
+    return (this->SubRecords.empty() || this->SubRecords.front().HeaderOffset == offset);
   }
 
   // Description:
@@ -167,8 +148,8 @@ public:
   // 2. offset is at the end of this record i.e. the start of the next record.
   bool AtEnd(vtkTypeUInt64 offset)
   {
-    return (this->SubRecords.size() == 0 ||
-      (this->SubRecords.back().FooterOffset + sizeof(int) == offset));
+    return (
+      this->SubRecords.empty() || (this->SubRecords.back().FooterOffset + sizeof(int) == offset));
   }
 
   // Description:
@@ -180,7 +161,7 @@ public:
   // When reading between file offsets \c start and  \c (start + length) from the file, if it has
   // any sub-record separators, this method splits the read into chunks so that it skips the
   // sub-record separators. The returned value is a vector of pairs (offset, length-in-bytes).
-  static std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64> > GetChunksToRead(
+  static std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64>> GetChunksToRead(
     vtkTypeUInt64 start, vtkTypeUInt64 length, const std::vector<vtkTypeUInt64>& markers);
 
   // Description:
@@ -190,12 +171,14 @@ public:
   // length.
   vtkTypeUInt64 GetLengthWithSeparators(vtkTypeUInt64 start, vtkTypeUInt64 length) const;
 
-  std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64> > GetChunksToRead(
+  std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64>> GetChunksToRead(
     vtkTypeUInt64 start, vtkTypeUInt64 length) const
   {
-    return this->GetChunksToRead(start, length, this->GetSubRecordSeparators(start, length));
+    return vtkMultiBlockPLOT3DReaderRecord::GetChunksToRead(
+      start, length, this->GetSubRecordSeparators(start, length));
   }
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkMultiBlockPLOT3DReaderInternals.h

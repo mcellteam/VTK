@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageCorrelation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageCorrelation
  * @brief   Correlation imageof the two inputs.
@@ -30,6 +18,7 @@
 #include "vtkImagingGeneralModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGGENERAL_EXPORT vtkImageCorrelation : public vtkThreadedImageAlgorithm
 {
 public:
@@ -37,14 +26,14 @@ public:
   vtkTypeMacro(vtkImageCorrelation, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Determines how the input is interpreted (set of 2d slices ...).
    * The default is 2.
    */
   vtkSetClampMacro(Dimensionality, int, 2, 3);
   vtkGetMacro(Dimensionality, int);
-  //@}
+  ///@}
 
   /**
    * Set the input image.
@@ -58,7 +47,7 @@ public:
 
 protected:
   vtkImageCorrelation();
-  ~vtkImageCorrelation() override {}
+  ~vtkImageCorrelation() override = default;
 
   int Dimensionality;
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
@@ -73,4 +62,5 @@ private:
   void operator=(const vtkImageCorrelation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

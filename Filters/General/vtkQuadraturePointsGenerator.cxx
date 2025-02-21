@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadraturePointsGenerator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkQuadraturePointsGenerator.h"
 
@@ -27,14 +15,11 @@
 #include "vtkInformation.h"
 #include "vtkInformationQuadratureSchemeDefinitionVectorKey.h"
 #include "vtkInformationVector.h"
-#include "vtkIntArray.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 #include "vtkType.h"
-#include "vtkUnstructuredGrid.h"
-#include "vtkUnstructuredGridAlgorithm.h"
 
 #include "vtkQuadraturePointsUtilities.hxx"
 #include "vtkQuadratureSchemeDefinition.h"
@@ -44,43 +29,43 @@
 
 using std::ostringstream;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkQuadraturePointsGenerator);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadraturePointsGenerator::vtkQuadraturePointsGenerator()
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadraturePointsGenerator::~vtkQuadraturePointsGenerator() = default;
 
-//-----------------------------------------------------------------------------
-int vtkQuadraturePointsGenerator::FillInputPortInformation(
-  int vtkNotUsed(port), vtkInformation* info)
+//------------------------------------------------------------------------------
+int vtkQuadraturePointsGenerator::FillOutputPortInformation(int, vtkInformation* info)
 {
-  info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkUnstructuredGrid");
+  info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraturePointsGenerator::RequestData(
   vtkInformation*, vtkInformationVector** input, vtkInformationVector* output)
 {
   vtkDataObject* tmpDataObj;
   // Get the input.
   tmpDataObj = input[0]->GetInformationObject(0)->Get(vtkDataObject::DATA_OBJECT());
-  vtkUnstructuredGrid* usgIn = vtkUnstructuredGrid::SafeDownCast(tmpDataObj);
+  vtkDataSet* datasetIn = vtkDataSet::SafeDownCast(tmpDataObj);
   // Get the output.
   tmpDataObj = output->GetInformationObject(0)->Get(vtkDataObject::DATA_OBJECT());
   vtkPolyData* pdOut = vtkPolyData::SafeDownCast(tmpDataObj);
 
   // Quick sanity check.
-  if (usgIn == nullptr || pdOut == nullptr || usgIn->GetNumberOfCells() == 0 ||
-    usgIn->GetNumberOfPoints() == 0 || usgIn->GetCellData() == nullptr ||
-    usgIn->GetCellData()->GetNumberOfArrays() == 0)
+  if (datasetIn == nullptr || pdOut == nullptr || datasetIn->GetNumberOfCells() == 0 ||
+    datasetIn->GetNumberOfPoints() == 0 || datasetIn->GetCellData() == nullptr ||
+    datasetIn->GetCellData()->GetNumberOfArrays() == 0)
   {
     vtkErrorMacro("Filter data has not been configured correctly. Aborting.");
     return 1;
@@ -88,7 +73,7 @@ int vtkQuadraturePointsGenerator::RequestData(
 
   // Generate points for the selected data array.
   // user specified the offsets array.
-  this->Generate(usgIn, this->GetInputArrayToProcess(0, input), pdOut);
+  this->Generate(datasetIn, this->GetInputArrayToProcess(0, input), pdOut);
 
   return 1;
 }
@@ -99,8 +84,9 @@ namespace
 struct GenerateWorker
 {
   template <typename OffsetArrayT>
-  void operator()(OffsetArrayT* offsetArray, vtkDataArray* data, vtkUnstructuredGrid* usgIn,
-    vtkPolyData* pdOut, std::vector<vtkQuadratureSchemeDefinition*>& dict)
+  void operator()(OffsetArrayT* offsetArray, vtkDataArray* data, vtkDataSet* usgIn,
+    vtkPolyData* pdOut, std::vector<vtkQuadratureSchemeDefinition*>& dict,
+    vtkQuadraturePointsGenerator* self)
   {
     const auto offsets = vtk::DataArrayValueRange<1>(offsetArray);
 
@@ -112,6 +98,10 @@ struct GenerateWorker
 
     for (vtkIdType cellId = 0; cellId < numCells; cellId++)
     {
+      if (self->CheckAbort())
+      {
+        break;
+      }
       vtkIdType offset = static_cast<vtkIdType>(offsets[cellId]);
 
       if (offset != previous + 1)
@@ -176,9 +166,9 @@ struct GenerateWorker
 
 } // end anon namespace
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraturePointsGenerator::GenerateField(
-  vtkUnstructuredGrid* usgIn, vtkDataArray* data, vtkDataArray* offsets, vtkPolyData* pdOut)
+  vtkDataSet* datasetIn, vtkDataArray* data, vtkDataArray* offsets, vtkPolyData* pdOut)
 {
   vtkInformation* info = offsets->GetInformation();
   vtkInformationQuadratureSchemeDefinitionVectorKey* key =
@@ -205,19 +195,27 @@ int vtkQuadraturePointsGenerator::GenerateField(
   using Dispatcher = vtkArrayDispatch::DispatchByValueType<Integrals>;
 
   GenerateWorker worker;
-  if (!Dispatcher::Execute(offsets, worker, data, usgIn, pdOut, dict))
+  if (!Dispatcher::Execute(offsets, worker, data, datasetIn, pdOut, dict, this))
   { // Fallback to slow path for other arrays:
-    worker(offsets, data, usgIn, pdOut, dict);
+    worker(offsets, data, datasetIn, pdOut, dict, this);
   }
 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
-int vtkQuadraturePointsGenerator::Generate(
-  vtkUnstructuredGrid* usgIn, vtkDataArray* offsets, vtkPolyData* pdOut)
+//------------------------------------------------------------------------------
+int vtkQuadraturePointsGenerator::GenerateField(
+  vtkUnstructuredGrid* usgIn, vtkDataArray* data, vtkDataArray* offsets, vtkPolyData* pdOut)
 {
-  if (usgIn == nullptr || offsets == nullptr || pdOut == nullptr)
+  vtkDataSet* datasetIn = usgIn;
+  return this->GenerateField(datasetIn, data, offsets, pdOut);
+}
+
+//------------------------------------------------------------------------------
+int vtkQuadraturePointsGenerator::Generate(
+  vtkDataSet* datasetIn, vtkDataArray* offsets, vtkPolyData* pdOut)
+{
+  if (datasetIn == nullptr || offsets == nullptr || pdOut == nullptr)
   {
     vtkErrorMacro("configuration error");
     return 0;
@@ -253,20 +251,20 @@ int vtkQuadraturePointsGenerator::Generate(
   key->GetRange(info, dict.data(), 0, 0, dictSize);
 
   // Grab the point set.
-  vtkDataArray* X = usgIn->GetPoints()->GetData();
+  vtkDataArray* X = datasetIn->GetPoints()->GetData();
 
   // Create the result array.
   vtkDoubleArray* qPts = vtkDoubleArray::New();
-  vtkIdType nCells = usgIn->GetNumberOfCells();
+  vtkIdType nCells = datasetIn->GetNumberOfCells();
   qPts->Allocate(3 * nCells); // Expect at least one point per cell
   qPts->SetNumberOfComponents(3);
 
   // For all cells interpolate.
   using Dispatcher = vtkArrayDispatch::Dispatch;
   vtkQuadraturePointsUtilities::InterpolateWorker worker;
-  if (!Dispatcher::Execute(X, worker, usgIn, nCells, dict, qPts))
+  if (!Dispatcher::Execute(X, worker, datasetIn, nCells, dict, qPts, this))
   { // fall back to slow path:
-    worker(X, usgIn, nCells, dict, qPts);
+    worker(X, datasetIn, nCells, dict, qPts, this);
   }
 
   // Add the interpolated quadrature points to the output
@@ -295,10 +293,14 @@ int vtkQuadraturePointsGenerator::Generate(
   va->Delete();
 
   // then loop over all fields to map the field array to the points
-  int nArrays = usgIn->GetFieldData()->GetNumberOfArrays();
+  int nArrays = datasetIn->GetFieldData()->GetNumberOfArrays();
   for (int i = 0; i < nArrays; ++i)
   {
-    vtkDataArray* array = usgIn->GetFieldData()->GetArray(i);
+    if (this->CheckAbort())
+    {
+      break;
+    }
+    vtkDataArray* array = datasetIn->GetFieldData()->GetArray(i);
     if (array == nullptr)
       continue;
 
@@ -321,14 +323,23 @@ int vtkQuadraturePointsGenerator::Generate(
       continue;
     }
 
-    this->GenerateField(usgIn, array, offsets, pdOut);
+    this->GenerateField(datasetIn, array, offsets, pdOut);
   }
 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkQuadraturePointsGenerator::Generate(
+  vtkUnstructuredGrid* usgIn, vtkDataArray* offsets, vtkPolyData* pdOut)
+{
+  vtkDataSet* datasetIn = usgIn;
+  return this->Generate(datasetIn, offsets, pdOut);
+}
+
+//------------------------------------------------------------------------------
 void vtkQuadraturePointsGenerator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

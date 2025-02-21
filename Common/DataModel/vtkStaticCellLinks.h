@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStaticCellLinks.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkStaticCellLinks
  * @brief   object represents upward pointers from points
@@ -47,29 +35,26 @@
 #include "vtkCommonDataModelModule.h"   // For export macro
 #include "vtkStaticCellLinksTemplate.h" // For implementations
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkCellArray;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkStaticCellLinks : public vtkAbstractCellLinks
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation, type manipulation and printing.
    */
   static vtkStaticCellLinks* New();
   vtkTypeMacro(vtkStaticCellLinks, vtkAbstractCellLinks);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
-   * Build the link list array. Satisfy the superclass API.
+   * Build the link list array from the input dataset.
    */
-  void BuildLinks(vtkDataSet* ds) override
-  {
-    this->Impl->SetSequentialProcessing(this->SequentialProcessing);
-    this->Impl->BuildLinks(ds);
-  }
+  void BuildLinks() override;
 
   /**
    * Get the number of cells using the point specified by ptId.
@@ -87,10 +72,28 @@ public:
    */
   vtkIdType* GetCells(vtkIdType ptId) { return this->Impl->GetCells(ptId); }
 
+  ///@{
+  /**
+   * Select all cells with a point degree in the range [minDegree,maxDegree).
+   * The degree is the number of cells using a point. The selection is
+   * indicated through the provided unsigned char array, with a non-zero
+   * value indicates selection. The memory allocated for cellSelection must
+   * be the maximum cell id referenced in the links.
+   */
+  void SelectCells(vtkIdType minMaxDegree[2], unsigned char* cellSelection) override
+  {
+    this->Impl->SelectCells(minMaxDegree, cellSelection);
+  }
+  ///@}
+
   /**
    * Make sure any previously created links are cleaned up.
    */
-  void Initialize() override { this->Impl->Initialize(); }
+  void Initialize() override
+  {
+    this->Impl->Initialize();
+    this->Modified();
+  }
 
   /**
    * Reclaim any unused memory.
@@ -113,10 +116,18 @@ public:
   unsigned long GetActualMemorySize() override { return this->Impl->GetActualMemorySize(); }
 
   /**
-   * Standard DeepCopy method.  Since this object contains no reference
-   * to other objects, there is no ShallowCopy.
+   * Standard DeepCopy method.
+   *
+   * Before you shallow copy, make sure to call SetDataSet()
    */
-  void DeepCopy(vtkAbstractCellLinks* src) override { this->Impl->DeepCopy(src); }
+  void DeepCopy(vtkAbstractCellLinks* src) override;
+
+  /**
+   * Standard ShallowCopy method.
+   *
+   * Before you shallow copy, make sure to call SetDataSet()
+   */
+  void ShallowCopy(vtkAbstractCellLinks* src) override;
 
 protected:
   vtkStaticCellLinks();
@@ -129,4 +140,5 @@ private:
   void operator=(const vtkStaticCellLinks&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

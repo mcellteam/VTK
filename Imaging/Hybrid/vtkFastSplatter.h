@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFastSplatter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFastSplatter
  * @brief   A splatter optimized for splatting single kernels.
@@ -48,6 +33,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingHybridModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGHYBRID_EXPORT vtkFastSplatter : public vtkImageAlgorithm
 {
 public:
@@ -55,7 +41,7 @@ public:
   static vtkFastSplatter* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set / get the (xmin,xmax, ymin,ymax, zmin,zmax) bounding box in which
    * the sampling is performed. If any of the (min,max) bounds values are
@@ -64,15 +50,15 @@ public:
    */
   vtkSetVector6Macro(ModelBounds, double);
   vtkGetVectorMacro(ModelBounds, double, 6);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the dimensions of the output image
    */
   vtkSetVector3Macro(OutputDimensions, int);
   vtkGetVector3Macro(OutputDimensions, int);
-  //@}
+  ///@}
 
   enum
   {
@@ -82,7 +68,7 @@ public:
     FreezeScaleLimit
   };
 
-  //@{
+  ///@{
   /**
    * Set/get the way voxel values will be limited.  If this is set to None (the
    * default), the output can have arbitrarily large values.  If set to clamp,
@@ -95,9 +81,9 @@ public:
   void SetLimitModeToClamp() { this->SetLimitMode(ClampLimit); }
   void SetLimitModeToScale() { this->SetLimitMode(ScaleLimit); }
   void SetLimitModeToFreezeScale() { this->SetLimitMode(FreezeScaleLimit); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * See the LimitMode method.
    */
@@ -105,15 +91,15 @@ public:
   vtkGetMacro(MinValue, double);
   vtkSetMacro(MaxValue, double);
   vtkGetMacro(MaxValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This returns the number of points splatted (as opposed to
    * discarded for being outside the image) during the previous pass.
    */
   vtkGetMacro(NumberOfPointsSplatted, int);
-  //@}
+  ///@}
 
   /**
    * Convenience function for connecting the splat algorithm source.
@@ -273,4 +259,5 @@ void vtkFastSplatterFrozenScale(
   }
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkFastSplatter_h

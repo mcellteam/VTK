@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkClientServerCompositePass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkClientServerCompositePass.h"
 
 #include "vtkMultiProcessController.h"
@@ -19,11 +7,12 @@
 #include "vtkRenderState.h"
 #include "vtkSynchronizedRenderers.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkClientServerCompositePass);
 vtkCxxSetObjectMacro(vtkClientServerCompositePass, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkClientServerCompositePass, RenderPass, vtkRenderPass);
 vtkCxxSetObjectMacro(vtkClientServerCompositePass, PostProcessingRenderPass, vtkRenderPass);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkClientServerCompositePass::vtkClientServerCompositePass()
 {
   this->Controller = nullptr;
@@ -33,7 +22,7 @@ vtkClientServerCompositePass::vtkClientServerCompositePass()
   this->ProcessIsServer = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkClientServerCompositePass::~vtkClientServerCompositePass()
 {
   this->SetController(nullptr);
@@ -41,7 +30,7 @@ vtkClientServerCompositePass::~vtkClientServerCompositePass()
   this->SetPostProcessingRenderPass(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClientServerCompositePass::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->Superclass::ReleaseGraphicsResources(w);
@@ -55,7 +44,7 @@ void vtkClientServerCompositePass::ReleaseGraphicsResources(vtkWindow* w)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClientServerCompositePass::Render(const vtkRenderState* s)
 {
   if (!this->ServerSideRendering || this->ProcessIsServer)
@@ -115,7 +104,7 @@ void vtkClientServerCompositePass::Render(const vtkRenderState* s)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClientServerCompositePass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -151,3 +140,4 @@ void vtkClientServerCompositePass::PrintSelf(ostream& os, vtkIndent indent)
     os << this->PostProcessingRenderPass << endl;
   }
 }
+VTK_ABI_NAMESPACE_END

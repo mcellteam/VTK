@@ -1,27 +1,17 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEnSightMasterServerReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkEnSightMasterServerReader.h"
 
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
+#include "vtkPlatform.h" // for VTK_MAXPATH
 #include "vtksys/FStream.hxx"
 
 #include <string>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkEnSightMasterServerReader);
 
 static int vtkEnSightMasterServerReaderStartsWith(const char* str1, const char* str2)
@@ -33,7 +23,7 @@ static int vtkEnSightMasterServerReaderStartsWith(const char* str1, const char* 
   return !strncmp(str1, str2, strlen(str2));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEnSightMasterServerReader::vtkEnSightMasterServerReader()
 {
   this->PieceCaseFileName = nullptr;
@@ -41,13 +31,13 @@ vtkEnSightMasterServerReader::vtkEnSightMasterServerReader()
   this->CurrentPiece = -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEnSightMasterServerReader::~vtkEnSightMasterServerReader()
 {
   this->SetPieceCaseFileName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEnSightMasterServerReader::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -79,7 +69,7 @@ int vtkEnSightMasterServerReader::RequestData(
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEnSightMasterServerReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -91,7 +81,7 @@ int vtkEnSightMasterServerReader::RequestInformation(vtkInformation* vtkNotUsed(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEnSightMasterServerReader::DetermineFileName(int piece)
 {
   if (!this->CaseFileName)
@@ -108,7 +98,7 @@ int vtkEnSightMasterServerReader::DetermineFileName(int piece)
       sfilename += "/";
     }
     sfilename += this->CaseFileName;
-    vtkDebugMacro("full path to case file: " << sfilename.c_str());
+    vtkDebugMacro("full path to case file: " << sfilename);
   }
   else
   {
@@ -118,7 +108,7 @@ int vtkEnSightMasterServerReader::DetermineFileName(int piece)
   this->IS = new vtksys::ifstream(sfilename.c_str(), ios::in);
   if (this->IS->fail())
   {
-    vtkErrorMacro("Unable to open file: " << sfilename.c_str());
+    vtkErrorMacro("Unable to open file: " << sfilename);
     delete this->IS;
     this->IS = nullptr;
     return 0;
@@ -180,7 +170,7 @@ int vtkEnSightMasterServerReader::DetermineFileName(int piece)
   return VTK_OK;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEnSightMasterServerReader::CanReadFile(const char* fname)
 {
   // We may have to read quite a few lines of the file to do this test
@@ -197,7 +187,7 @@ int vtkEnSightMasterServerReader::CanReadFile(const char* fname)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEnSightMasterServerReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -205,5 +195,6 @@ void vtkEnSightMasterServerReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent
      << "Piece Case File name: " << (this->PieceCaseFileName ? this->PieceCaseFileName : "<none>")
      << endl;
-  os << indent << "Maximum numbe of pieces: " << this->MaxNumberOfPieces << endl;
+  os << indent << "Maximum number of pieces: " << this->MaxNumberOfPieces << endl;
 }
+VTK_ABI_NAMESPACE_END

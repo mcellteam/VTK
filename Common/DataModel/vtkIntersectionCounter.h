@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkIntersectionCounter
  * @brief   Fast simple class for dealing with ray intersections
@@ -26,10 +28,11 @@
 
 // class VTKCOMMONDATAMODEL_EXPORT vtkIntersectionCounter
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIntersectionCounter
 {
 public:
-  //@{
+  ///@{
   /**
    * This tolerance must be converted to parametric space. Here tol is the
    * tolerance in world coordinates; length is the ray length.
@@ -42,7 +45,7 @@ public:
   {
     this->Tolerance = (length > 0.0 ? (tol / length) : 0.0);
   }
-  //@}
+  ///@}
 
   /**
    * Set/Get the intersection tolerance.
@@ -104,5 +107,6 @@ protected:
 
 }; // vtkIntersectionCounter
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkIntersectionCounter.h

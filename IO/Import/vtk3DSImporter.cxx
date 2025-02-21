@@ -1,24 +1,14 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtk3DSImporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtk3DSImporter.h"
 
 #include "vtkActor.h"
+#include "vtkActorCollection.h"
 #include "vtkByteSwap.h"
 #include "vtkCamera.h"
 #include "vtkCellArray.h"
 #include "vtkLight.h"
+#include "vtkLightCollection.h"
 #include "vtkObjectFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
@@ -30,7 +20,9 @@
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtk3DSImporter);
+VTK_ABI_NAMESPACE_END
 
 // Silence warning like
 // "dereferencing type-punned pointer will break strict-aliasing rules"
@@ -111,6 +103,8 @@ static float read_float(vtk3DSImporter* importer);
 static void read_point(vtk3DSImporter* importer, vtk3DSVector v);
 static char* read_string(vtk3DSImporter* importer);
 
+VTK_ABI_NAMESPACE_BEGIN
+
 vtk3DSImporter::vtk3DSImporter()
 {
   this->OmniList = nullptr;
@@ -146,13 +140,12 @@ void vtk3DSImporter::ImportEnd()
   this->FileFD = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtk3DSImporter::GetOutputsDescription()
 {
   std::stringstream ss;
   size_t idx = 0;
-  for (auto mesh = this->MeshList; mesh != (vtk3DSMesh*)nullptr;
-       mesh = (vtk3DSMesh*)mesh->next, idx++)
+  for (auto mesh = this->MeshList; mesh != nullptr; mesh = (vtk3DSMesh*)mesh->next, idx++)
   {
     if (mesh->aPolyData)
     {
@@ -191,8 +184,10 @@ void vtk3DSImporter::ImportActors(vtkRenderer* renderer)
   vtkPolyData* polyData;
   vtkActor* actor;
 
+  this->ActorCollection->RemoveAllItems();
+
   // walk the list of meshes, creating actors
-  for (mesh = this->MeshList; mesh != (vtk3DSMesh*)nullptr; mesh = (vtk3DSMesh*)mesh->next)
+  for (mesh = this->MeshList; mesh != nullptr; mesh = (vtk3DSMesh*)mesh->next)
   {
     if (mesh->faces == 0)
     {
@@ -223,6 +218,7 @@ void vtk3DSImporter::ImportActors(vtkRenderer* renderer)
     material = (vtk3DSMatProp*)VTK_LIST_FIND(this->MatPropList, mesh->mtl[0]->name);
     actor->SetProperty(material->aProperty);
     renderer->AddActor(actor);
+    this->ActorCollection->AddItem(actor);
   }
 }
 
@@ -264,8 +260,7 @@ void vtk3DSImporter::ImportCameras(vtkRenderer* renderer)
   vtk3DSCamera* camera;
 
   // walk the list of cameras and create vtk cameras
-  for (camera = this->CameraList; camera != (vtk3DSCamera*)nullptr;
-       camera = (vtk3DSCamera*)camera->next)
+  for (camera = this->CameraList; camera != nullptr; camera = (vtk3DSCamera*)camera->next)
   {
     camera->aCamera = aCamera = vtkCamera::New();
     aCamera->SetPosition(camera->pos[0], camera->pos[1], camera->pos[2]);
@@ -284,8 +279,10 @@ void vtk3DSImporter::ImportLights(vtkRenderer* renderer)
   vtk3DSSpotLight* spotLight;
   vtkLight* aLight;
 
+  this->LightCollection->RemoveAllItems();
+
   // just walk the list of omni lights, creating vtk lights
-  for (omniLight = this->OmniList; omniLight != (vtk3DSOmniLight*)nullptr;
+  for (omniLight = this->OmniList; omniLight != nullptr;
        omniLight = (vtk3DSOmniLight*)omniLight->next)
   {
     omniLight->aLight = aLight = vtkLight::New();
@@ -293,11 +290,12 @@ void vtk3DSImporter::ImportLights(vtkRenderer* renderer)
     aLight->SetFocalPoint(0, 0, 0);
     aLight->SetColor(omniLight->col.red, omniLight->col.green, omniLight->col.blue);
     renderer->AddLight(aLight);
+    this->LightCollection->AddItem(aLight);
     vtkDebugMacro(<< "Importing Omni Light: " << omniLight->name);
   }
 
   // now walk the list of spot lights, creating vtk lights
-  for (spotLight = this->SpotLightList; spotLight != (vtk3DSSpotLight*)nullptr;
+  for (spotLight = this->SpotLightList; spotLight != nullptr;
        spotLight = (vtk3DSSpotLight*)spotLight->next)
   {
     spotLight->aLight = aLight = vtkLight::New();
@@ -307,6 +305,7 @@ void vtk3DSImporter::ImportLights(vtkRenderer* renderer)
     aLight->SetColor(spotLight->col.red, spotLight->col.green, spotLight->col.blue);
     aLight->SetConeAngle(spotLight->falloff);
     renderer->AddLight(aLight);
+    this->LightCollection->AddItem(aLight);
     vtkDebugMacro(<< "Importing Spot Light: " << spotLight->name);
   }
 }
@@ -319,7 +318,7 @@ void vtk3DSImporter::ImportProperties(vtkRenderer* vtkNotUsed(renderer))
   vtk3DSMatProp* m;
 
   // just walk the list of material properties, creating vtk properties
-  for (m = this->MatPropList; m != (vtk3DSMatProp*)nullptr; m = (vtk3DSMatProp*)m->next)
+  for (m = this->MatPropList; m != nullptr; m = (vtk3DSMatProp*)m->next)
   {
     if (m->self_illum)
     {
@@ -367,6 +366,109 @@ void vtk3DSImporter::ImportProperties(vtkRenderer* vtkNotUsed(renderer))
   }
 }
 
+vtk3DSImporter::~vtk3DSImporter()
+{
+  vtk3DSOmniLight* omniLight;
+  vtk3DSSpotLight* spotLight;
+
+  // walk the light list and delete vtk objects
+  for (omniLight = this->OmniList; omniLight != nullptr;
+       omniLight = (vtk3DSOmniLight*)omniLight->next)
+  {
+    omniLight->aLight->Delete();
+  }
+  VTK_LIST_KILL(this->OmniList);
+
+  // walk the spot light list and delete vtk objects
+  for (spotLight = this->SpotLightList; spotLight != nullptr;
+       spotLight = (vtk3DSSpotLight*)spotLight->next)
+  {
+    spotLight->aLight->Delete();
+  }
+  VTK_LIST_KILL(this->SpotLightList);
+
+  vtk3DSCamera* camera;
+  // walk the camera list and delete vtk objects
+  for (camera = this->CameraList; camera != nullptr; camera = (vtk3DSCamera*)camera->next)
+  {
+    camera->aCamera->Delete();
+  }
+  VTK_LIST_KILL(this->CameraList);
+
+  // walk the mesh list and delete malloced datra and vtk objects
+  vtk3DSMesh* mesh;
+  for (mesh = this->MeshList; mesh != nullptr; mesh = (vtk3DSMesh*)mesh->next)
+  {
+    if (mesh->anActor != nullptr)
+    {
+      mesh->anActor->Delete();
+    }
+    if (mesh->aMapper != nullptr)
+    {
+      mesh->aMapper->Delete();
+    }
+    if (mesh->aNormals != nullptr)
+    {
+      mesh->aNormals->Delete();
+    }
+    if (mesh->aStripper != nullptr)
+    {
+      mesh->aStripper->Delete();
+    }
+    if (mesh->aPoints != nullptr)
+    {
+      mesh->aPoints->Delete();
+    }
+    if (mesh->aCellArray != nullptr)
+    {
+      mesh->aCellArray->Delete();
+    }
+    if (mesh->aPolyData != nullptr)
+    {
+      mesh->aPolyData->Delete();
+    }
+    if (mesh->vertex)
+    {
+      free(mesh->vertex);
+    }
+    if (mesh->face)
+    {
+      free(mesh->face);
+    }
+    if (mesh->mtl)
+    {
+      free(mesh->mtl);
+    }
+  }
+
+  // then delete the list structure
+
+  VTK_LIST_KILL(this->MeshList);
+  VTK_LIST_KILL(this->MaterialList);
+
+  // objects allocated in Material Property List
+  vtk3DSMatProp* m;
+  // just walk the list of material properties, deleting vtk properties
+  for (m = this->MatPropList; m != nullptr; m = (vtk3DSMatProp*)m->next)
+  {
+    m->aProperty->Delete();
+  }
+
+  // then delete the list structure
+  VTK_LIST_KILL(this->MatPropList);
+
+  delete[] this->FileName;
+}
+
+void vtk3DSImporter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+  os << indent << "File Name: " << (this->FileName ? this->FileName : "(none)") << "\n";
+
+  os << indent << "Compute Normals: " << (this->ComputeNormals ? "On\n" : "Off\n");
+}
+VTK_ABI_NAMESPACE_END
+
 /* Insert a new node into the list */
 static void list_insert(vtk3DSList** root, vtk3DSList* new_node)
 {
@@ -378,7 +480,7 @@ static void list_insert(vtk3DSList** root, vtk3DSList* new_node)
 static void* list_find(vtk3DSList** root, const char* name)
 {
   vtk3DSList* p;
-  for (p = *root; p != (vtk3DSList*)nullptr; p = (vtk3DSList*)p->next)
+  for (p = *root; p != nullptr; p = (vtk3DSList*)p->next)
   {
     if (strcmp(p->name, name) == 0)
     {
@@ -393,7 +495,7 @@ static void list_kill(vtk3DSList** root)
 {
   vtk3DSList* temp;
 
-  while (*root != (vtk3DSList*)nullptr)
+  while (*root != nullptr)
   {
     temp = *root;
     *root = (vtk3DSList*)(*root)->next;
@@ -471,6 +573,7 @@ static vtk3DSMesh* create_mesh(char* name, int vertices, int faces)
   else
   {
     new_mesh->face = (vtk3DSFace*)malloc(faces * sizeof(*new_mesh->face));
+    // NOLINTNEXTLINE(bugprone-sizeof-expression)
     new_mesh->mtl = (vtk3DSMaterial**)malloc(faces * sizeof(*new_mesh->mtl));
   }
 
@@ -792,7 +895,8 @@ static void parse_face_array(vtk3DSImporter* importer, vtk3DSMesh* mesh, vtk3DSC
 
   mesh->faces = read_word(importer);
   mesh->face = (vtk3DSFace*)malloc(mesh->faces * sizeof(*(mesh->face)));
-  mesh->mtl = (vtk3DSMaterial**)malloc(mesh->faces * sizeof(*(mesh->mtl)));
+  // NOLINTNEXTLINE(bugprone-sizeof-expression)
+  mesh->mtl = (vtk3DSMaterial**)malloc(mesh->faces * sizeof(*mesh->mtl));
 
   for (i = 0; i < mesh->faces; i++)
   {
@@ -825,7 +929,7 @@ static void parse_face_array(vtk3DSImporter* importer, vtk3DSMesh* mesh, vtk3DSC
 
   for (i = 0; i < mesh->faces; i++)
   {
-    if (mesh->mtl[i] == (vtk3DSMaterial*)nullptr)
+    if (mesh->mtl[i] == nullptr)
     {
       mesh->mtl[i] = update_materials(importer, "Default", 0);
     }
@@ -1221,107 +1325,4 @@ static void cleanup_name(char* name)
   strcpy(name, tmp);
 
   free(tmp);
-}
-
-vtk3DSImporter::~vtk3DSImporter()
-{
-  vtk3DSOmniLight* omniLight;
-  vtk3DSSpotLight* spotLight;
-
-  // walk the light list and delete vtk objects
-  for (omniLight = this->OmniList; omniLight != (vtk3DSOmniLight*)nullptr;
-       omniLight = (vtk3DSOmniLight*)omniLight->next)
-  {
-    omniLight->aLight->Delete();
-  }
-  VTK_LIST_KILL(this->OmniList);
-
-  // walk the spot light list and delete vtk objects
-  for (spotLight = this->SpotLightList; spotLight != (vtk3DSSpotLight*)nullptr;
-       spotLight = (vtk3DSSpotLight*)spotLight->next)
-  {
-    spotLight->aLight->Delete();
-  }
-  VTK_LIST_KILL(this->SpotLightList);
-
-  vtk3DSCamera* camera;
-  // walk the camera list and delete vtk objects
-  for (camera = this->CameraList; camera != (vtk3DSCamera*)nullptr;
-       camera = (vtk3DSCamera*)camera->next)
-  {
-    camera->aCamera->Delete();
-  }
-  VTK_LIST_KILL(this->CameraList);
-
-  // walk the mesh list and delete malloced datra and vtk objects
-  vtk3DSMesh* mesh;
-  for (mesh = this->MeshList; mesh != (vtk3DSMesh*)nullptr; mesh = (vtk3DSMesh*)mesh->next)
-  {
-    if (mesh->anActor != nullptr)
-    {
-      mesh->anActor->Delete();
-    }
-    if (mesh->aMapper != nullptr)
-    {
-      mesh->aMapper->Delete();
-    }
-    if (mesh->aNormals != nullptr)
-    {
-      mesh->aNormals->Delete();
-    }
-    if (mesh->aStripper != nullptr)
-    {
-      mesh->aStripper->Delete();
-    }
-    if (mesh->aPoints != nullptr)
-    {
-      mesh->aPoints->Delete();
-    }
-    if (mesh->aCellArray != nullptr)
-    {
-      mesh->aCellArray->Delete();
-    }
-    if (mesh->aPolyData != nullptr)
-    {
-      mesh->aPolyData->Delete();
-    }
-    if (mesh->vertex)
-    {
-      free(mesh->vertex);
-    }
-    if (mesh->face)
-    {
-      free(mesh->face);
-    }
-    if (mesh->mtl)
-    {
-      free(mesh->mtl);
-    }
-  }
-
-  // then delete the list structure
-
-  VTK_LIST_KILL(this->MeshList);
-  VTK_LIST_KILL(this->MaterialList);
-
-  // objects allocated in Material Property List
-  vtk3DSMatProp* m;
-  // just walk the list of material properties, deleting vtk properties
-  for (m = this->MatPropList; m != (vtk3DSMatProp*)nullptr; m = (vtk3DSMatProp*)m->next)
-  {
-    m->aProperty->Delete();
-  }
-
-  // then delete the list structure
-  VTK_LIST_KILL(this->MatPropList);
-
-  delete[] this->FileName;
-}
-
-void vtk3DSImporter::PrintSelf(ostream& os, vtkIndent indent)
-{
-  this->Superclass::PrintSelf(os, indent);
-  os << indent << "File Name: " << (this->FileName ? this->FileName : "(none)") << "\n";
-
-  os << indent << "Compute Normals: " << (this->ComputeNormals ? "On\n" : "Off\n");
 }

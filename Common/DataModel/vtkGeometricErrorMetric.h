@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeometricErrorMetric.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGeometricErrorMetric
  * @brief   Objects that compute
@@ -31,6 +19,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkGenericSubdivisionErrorMetric.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGenericDataSet;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkGeometricErrorMetric : public vtkGenericSubdivisionErrorMetric
@@ -42,22 +31,22 @@ public:
    */
   static vtkGeometricErrorMetric* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK type and error macros.
    */
   vtkTypeMacro(vtkGeometricErrorMetric, vtkGenericSubdivisionErrorMetric);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return the squared absolute geometric accuracy. See
    * SetAbsoluteGeometricTolerance() for details.
    * \post positive_result: result>0
    */
   vtkGetMacro(AbsoluteGeometricTolerance, double);
-  //@}
+  ///@}
 
   /**
    * Set the geometric accuracy with a squared absolute value.
@@ -139,4 +128,5 @@ private:
   void operator=(const vtkGeometricErrorMetric&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

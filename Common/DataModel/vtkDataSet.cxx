@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSet.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDataSet.h"
 
 #include "vtkBezierCurve.h"
@@ -30,35 +18,31 @@
 #include "vtkIdList.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkLagrangeHexahedron.h"
-#include "vtkLagrangeQuadrilateral.h"
-#include "vtkLagrangeWedge.h"
 #include "vtkMath.h"
 #include "vtkPointData.h"
+#include "vtkPoints.h"
+#include "vtkSMPTools.h"
 #include "vtkSmartPointer.h"
 #include "vtkStructuredData.h"
 
 #include <cmath>
+#include <set>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor with default bounds (0,1, 0,1, 0,1).
+VTK_ABI_NAMESPACE_BEGIN
 vtkDataSet::vtkDataSet()
 {
   vtkMath::UninitializeBounds(this->Bounds);
   // Observer for updating the cell/point ghost arrays pointers
   this->DataObserver = vtkCallbackCommand::New();
-  this->DataObserver->SetCallback(&vtkDataSet::OnDataModified);
   this->DataObserver->SetClientData(this);
 
   this->PointData = vtkPointData::New();
-  this->PointGhostArray = nullptr;
-  this->PointGhostArrayCached = false;
   // when point data is modified, we update the point data ghost array cache
   this->PointData->AddObserver(vtkCommand::ModifiedEvent, this->DataObserver);
 
   this->CellData = vtkCellData::New();
-  this->CellGhostArray = nullptr;
-  this->CellGhostArrayCached = false;
   // when cell data is modified, we update the cell data ghost array cache
   this->CellData->AddObserver(vtkCommand::ModifiedEvent, this->DataObserver);
 
@@ -66,7 +50,7 @@ vtkDataSet::vtkDataSet()
   this->ScalarRange[1] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet::~vtkDataSet()
 {
   this->PointData->RemoveObserver(this->DataObserver);
@@ -78,18 +62,22 @@ vtkDataSet::~vtkDataSet()
   this->DataObserver->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::Initialize()
 {
   // We don't modify ourselves because the "ReleaseData" methods depend upon
   // no modification when initialized.
   vtkDataObject::Initialize();
 
+  if (this->TempPoints)
+  {
+    this->TempPoints->Initialize();
+  }
   this->CellData->Initialize();
   this->PointData->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::CopyAttributes(vtkDataSet* ds)
 {
   this->GetPointData()->PassData(ds->GetPointData());
@@ -97,7 +85,7 @@ void vtkDataSet::CopyAttributes(vtkDataSet* ds)
   this->GetFieldData()->PassData(ds->GetFieldData());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellIterator* vtkDataSet::NewCellIterator()
 {
   vtkDataSetCellIterator* iter = vtkDataSetCellIterator::New();
@@ -105,37 +93,102 @@ vtkCellIterator* vtkDataSet::NewCellIterator()
   return iter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+struct ComputeBoundsFunctor
+{
+  vtkDataSet* DataSet;
+  vtkSMPThreadLocal<std::array<double, 6>> TLBounds;
+  std::array<double, 6> Bounds{};
+
+  ComputeBoundsFunctor(vtkDataSet* dataset)
+    : DataSet(dataset)
+  {
+  }
+
+  void Initialize()
+  {
+    auto& bounds = this->TLBounds.Local();
+    bounds[0] = bounds[2] = bounds[4] = VTK_DOUBLE_MAX;
+    bounds[1] = bounds[3] = bounds[5] = VTK_DOUBLE_MIN;
+  }
+
+  void operator()(vtkIdType begin, vtkIdType end)
+  {
+    double x[3];
+    uint8_t j;
+    auto& bounds = this->TLBounds.Local();
+    for (vtkIdType pointId = begin; pointId < end; ++pointId)
+    {
+      this->DataSet->GetPoint(pointId, x);
+      for (j = 0; j < 3; j++)
+      {
+        if (x[j] < bounds[2 * j])
+        {
+          bounds[2 * j] = x[j];
+        }
+        if (x[j] > bounds[2 * j + 1])
+        {
+          bounds[2 * j + 1] = x[j];
+        }
+      }
+    }
+  }
+
+  void Reduce()
+  {
+    this->Bounds[0] = this->Bounds[2] = this->Bounds[4] = VTK_DOUBLE_MAX;
+    this->Bounds[1] = this->Bounds[3] = this->Bounds[5] = VTK_DOUBLE_MIN;
+    for (const auto& bounds : this->TLBounds)
+    {
+      for (uint8_t j = 0; j < 3; j++)
+      {
+        if (bounds[2 * j] < this->Bounds[2 * j])
+        {
+          this->Bounds[2 * j] = bounds[2 * j];
+        }
+        if (bounds[2 * j + 1] > this->Bounds[2 * j + 1])
+        {
+          this->Bounds[2 * j + 1] = bounds[2 * j + 1];
+        }
+      }
+    }
+  }
+};
+
+//------------------------------------------------------------------------------
+vtkPoints* vtkDataSet::GetPoints()
+{
+  vtkWarningMacro("GetPoints() called on a dataset that does not define GetPoints."
+                  "Don't modify this object.");
+  this->TempPoints = vtkSmartPointer<vtkPoints>::New();
+  vtkNew<vtkDoubleArray> array;
+  array->SetNumberOfComponents(3);
+  array->SetNumberOfTuples(this->GetNumberOfPoints());
+  vtkSMPTools::For(0, this->GetNumberOfPoints(),
+    [&](vtkIdType begin, vtkIdType end)
+    {
+      double x[3];
+      for (vtkIdType pointId = begin; pointId < end; ++pointId)
+      {
+        this->GetPoint(pointId, x);
+        array->SetTypedTuple(pointId, x);
+      }
+    });
+  this->TempPoints->SetData(array);
+  return this->TempPoints;
+}
+
+//------------------------------------------------------------------------------
 // Compute the data bounding box from data points.
 void vtkDataSet::ComputeBounds()
 {
-  int j;
-  vtkIdType i;
-  double* x;
-
   if (this->GetMTime() > this->ComputeTime)
   {
     if (this->GetNumberOfPoints())
     {
-      x = this->GetPoint(0);
-      this->Bounds[0] = this->Bounds[1] = x[0];
-      this->Bounds[2] = this->Bounds[3] = x[1];
-      this->Bounds[4] = this->Bounds[5] = x[2];
-      for (i = 1; i < this->GetNumberOfPoints(); i++)
-      {
-        x = this->GetPoint(i);
-        for (j = 0; j < 3; j++)
-        {
-          if (x[j] < this->Bounds[2 * j])
-          {
-            this->Bounds[2 * j] = x[j];
-          }
-          if (x[j] > this->Bounds[2 * j + 1])
-          {
-            this->Bounds[2 * j + 1] = x[j];
-          }
-        }
-      }
+      ComputeBoundsFunctor functor(this);
+      vtkSMPTools::For(0, this->GetNumberOfPoints(), functor);
+      std::copy(functor.Bounds.begin(), functor.Bounds.end(), this->Bounds);
     }
     else
     {
@@ -145,7 +198,7 @@ void vtkDataSet::ComputeBounds()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Compute the range of the scalars and cache it into ScalarRange
 // only if the cache became invalid (ScalarRangeComputeTime).
@@ -157,21 +210,29 @@ void vtkDataSet::ComputeScalarRange()
     ptScalars = this->PointData->GetScalars();
     cellScalars = this->CellData->GetScalars();
 
+    vtkUnsignedCharArray* ptGhosts = this->PointData->GetGhostArray();
+    const unsigned char* ptGhostsPtr = ptGhosts ? ptGhosts->GetPointer(0) : nullptr;
+    unsigned char ptGhostsToSkip = this->PointData->GetGhostsToSkip();
+
+    vtkUnsignedCharArray* cellGhosts = this->CellData->GetGhostArray();
+    const unsigned char* cellGhostsPtr = cellGhosts ? cellGhosts->GetPointer(0) : nullptr;
+    unsigned char cellGhostsToSkip = this->CellData->GetGhostsToSkip();
+
+    double r1[2], r2[2];
     if (ptScalars && cellScalars)
     {
-      double r1[2], r2[2];
-      ptScalars->GetRange(r1, 0);
-      cellScalars->GetRange(r2, 0);
+      ptScalars->GetRange(r1, 0, ptGhostsPtr, ptGhostsToSkip);
+      cellScalars->GetRange(r2, 0, cellGhostsPtr, cellGhostsToSkip);
       this->ScalarRange[0] = (r1[0] < r2[0] ? r1[0] : r2[0]);
       this->ScalarRange[1] = (r1[1] > r2[1] ? r1[1] : r2[1]);
     }
     else if (ptScalars)
     {
-      ptScalars->GetRange(this->ScalarRange, 0);
+      ptScalars->GetRange(this->ScalarRange, 0, ptGhostsPtr, ptGhostsToSkip);
     }
     else if (cellScalars)
     {
-      cellScalars->GetRange(this->ScalarRange, 0);
+      cellScalars->GetRange(this->ScalarRange, 0, cellGhostsPtr, cellGhostsToSkip);
     }
     else
     {
@@ -182,7 +243,7 @@ void vtkDataSet::ComputeScalarRange()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::GetScalarRange(double range[2])
 {
   this->ComputeScalarRange();
@@ -190,14 +251,14 @@ void vtkDataSet::GetScalarRange(double range[2])
   range[1] = this->ScalarRange[1];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkDataSet::GetScalarRange()
 {
   this->ComputeScalarRange();
   return this->ScalarRange;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return a pointer to the geometry bounding box in the form
 // (xmin,xmax, ymin,ymax, zmin,zmax).
 double* vtkDataSet::GetBounds()
@@ -206,7 +267,7 @@ double* vtkDataSet::GetBounds()
   return this->Bounds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::GetBounds(double bounds[6])
 {
   this->ComputeBounds();
@@ -216,7 +277,7 @@ void vtkDataSet::GetBounds(double bounds[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the center of the bounding box.
 double* vtkDataSet::GetCenter()
 {
@@ -228,7 +289,7 @@ double* vtkDataSet::GetCenter()
   return this->Center;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::GetCenter(double center[3])
 {
   this->ComputeBounds();
@@ -238,9 +299,16 @@ void vtkDataSet::GetCenter(double center[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the length of the diagonal of the bounding box.
 double vtkDataSet::GetLength()
+{
+  return std::sqrt(this->GetLength2());
+}
+
+//------------------------------------------------------------------------------
+// Return the squared length of the diagonal of the bounding box.
+double vtkDataSet::GetLength2()
 {
   if (this->GetNumberOfPoints() == 0)
   {
@@ -253,14 +321,13 @@ double vtkDataSet::GetLength()
   this->ComputeBounds();
   for (i = 0; i < 3; i++)
   {
-    diff = static_cast<double>(this->Bounds[2 * i + 1]) - static_cast<double>(this->Bounds[2 * i]);
+    diff = this->Bounds[2 * i + 1] - this->Bounds[2 * i];
     l += diff * diff;
   }
-  diff = sqrt(l);
-  return diff;
+  return l;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkDataSet::GetMTime()
 {
   vtkMTimeType mtime, result;
@@ -274,7 +341,7 @@ vtkMTimeType vtkDataSet::GetMTime()
   return (mtime > result ? mtime : result);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkDataSet::FindAndGetCell(double x[3], vtkCell* cell, vtkIdType cellId, double tol2,
   int& subId, double pcoords[3], double* weights)
 {
@@ -290,11 +357,10 @@ vtkCell* vtkDataSet::FindAndGetCell(double x[3], vtkCell* cell, vtkIdType cellId
   return cell;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::GetCellNeighbors(vtkIdType cellId, vtkIdList* ptIds, vtkIdList* cellIds)
 {
-  vtkIdType i, numPts;
-  vtkIdList* otherCells = vtkIdList::New();
+  vtkNew<vtkIdList> otherCells;
   otherCells->Allocate(VTK_CELL_SIZE);
 
   // load list with candidate cells, remove current cell
@@ -304,34 +370,203 @@ void vtkDataSet::GetCellNeighbors(vtkIdType cellId, vtkIdList* ptIds, vtkIdList*
   // now perform multiple intersections on list
   if (cellIds->GetNumberOfIds() > 0)
   {
-    for (numPts = ptIds->GetNumberOfIds(), i = 1; i < numPts; i++)
+    for (vtkIdType numPts = ptIds->GetNumberOfIds(), i = 1; i < numPts; i++)
     {
       this->GetPointCells(ptIds->GetId(i), otherCells);
-      cellIds->IntersectWith(*otherCells);
+      cellIds->IntersectWith(otherCells);
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+int vtkDataSet::GetCellNumberOfFaces(
+  vtkIdType cellId, unsigned char& cellType, vtkGenericCell* cell)
+{
+  cellType = static_cast<unsigned char>(this->GetCellType(cellId));
+  switch (cellType)
+  {
+    case VTK_EMPTY_CELL:
+    case VTK_VERTEX:
+    case VTK_POLY_VERTEX:
+    case VTK_LINE:
+    case VTK_POLY_LINE:
+    case VTK_TRIANGLE:
+    case VTK_TRIANGLE_STRIP:
+    case VTK_POLYGON:
+    case VTK_PIXEL:
+    case VTK_QUAD:
+    case VTK_QUADRATIC_EDGE:
+    case VTK_QUADRATIC_TRIANGLE:
+    case VTK_QUADRATIC_QUAD:
+    case VTK_QUADRATIC_POLYGON:
+    case VTK_BIQUADRATIC_QUAD:
+    case VTK_QUADRATIC_LINEAR_QUAD:
+    case VTK_BIQUADRATIC_TRIANGLE:
+    case VTK_CUBIC_LINE:
+    case VTK_PARAMETRIC_CURVE:
+    case VTK_PARAMETRIC_SURFACE:
+    case VTK_PARAMETRIC_TRI_SURFACE:
+    case VTK_PARAMETRIC_QUAD_SURFACE:
+    case VTK_HIGHER_ORDER_EDGE:
+    case VTK_HIGHER_ORDER_TRIANGLE:
+    case VTK_HIGHER_ORDER_QUAD:
+    case VTK_HIGHER_ORDER_POLYGON:
+    case VTK_LAGRANGE_CURVE:
+    case VTK_LAGRANGE_TRIANGLE:
+    case VTK_LAGRANGE_QUADRILATERAL:
+    case VTK_BEZIER_CURVE:
+    case VTK_BEZIER_TRIANGLE:
+    case VTK_BEZIER_QUADRILATERAL:
+      return 0;
+
+    case VTK_TETRA:
+    case VTK_QUADRATIC_TETRA:
+    case VTK_PARAMETRIC_TETRA_REGION:
+    case VTK_HIGHER_ORDER_TETRAHEDRON:
+    case VTK_LAGRANGE_TETRAHEDRON:
+    case VTK_BEZIER_TETRAHEDRON:
+      return 4;
+
+    case VTK_PYRAMID:
+    case VTK_QUADRATIC_PYRAMID:
+    case VTK_TRIQUADRATIC_PYRAMID:
+    case VTK_HIGHER_ORDER_PYRAMID:
+    case VTK_WEDGE:
+    case VTK_QUADRATIC_WEDGE:
+    case VTK_QUADRATIC_LINEAR_WEDGE:
+    case VTK_BIQUADRATIC_QUADRATIC_WEDGE:
+    case VTK_HIGHER_ORDER_WEDGE:
+    case VTK_LAGRANGE_WEDGE:
+    case VTK_BEZIER_WEDGE:
+      return 5;
+
+    case VTK_VOXEL:
+    case VTK_HEXAHEDRON:
+    case VTK_QUADRATIC_HEXAHEDRON:
+    case VTK_TRIQUADRATIC_HEXAHEDRON:
+    case VTK_HIGHER_ORDER_HEXAHEDRON:
+    case VTK_PARAMETRIC_HEX_REGION:
+    case VTK_BIQUADRATIC_QUADRATIC_HEXAHEDRON:
+    case VTK_LAGRANGE_HEXAHEDRON:
+    case VTK_BEZIER_HEXAHEDRON:
+      return 6;
+
+    case VTK_PENTAGONAL_PRISM:
+      return 7;
+
+    case VTK_HEXAGONAL_PRISM:
+      return 8;
+
+    case VTK_CONVEX_POINT_SET:
+    case VTK_POLYHEDRON:
+    default:
+      this->GetCell(cellId, cell);
+      return cell->GetNumberOfFaces();
+  }
+}
+
+namespace
+{
+class DistinctCellTypesWorker
+{
+public:
+  DistinctCellTypesWorker(vtkDataSet* ds)
+    : DS(ds)
+  {
+    if (ds && ds->GetNumberOfCells() > 0)
+    {
+      // initialize internal data structures
+      vtkNew<vtkGenericCell> cell;
+      ds->GetCell(0, cell);
     }
   }
 
-  otherCells->Delete();
+  vtkDataSet* DS;
+  std::set<unsigned char> DistinctCellTypes;
+
+  // Thread-local storage
+  vtkSMPThreadLocal<std::set<unsigned char>> LocalDistinctCellTypes;
+
+  void Initialize() {}
+
+  void operator()(vtkIdType begin, vtkIdType end)
+  {
+    if (!this->DS)
+    {
+      return;
+    }
+    auto& localDistinctCellTypes = this->LocalDistinctCellTypes.Local();
+
+    for (vtkIdType idx = begin; idx < end; ++idx)
+    {
+      unsigned char cellType = static_cast<unsigned char>(this->DS->GetCellType(idx));
+      localDistinctCellTypes.insert(cellType);
+    }
+  }
+
+  void Reduce()
+  {
+    this->DistinctCellTypes.clear();
+    for (const auto& distinctCellTypes : this->LocalDistinctCellTypes)
+    {
+      this->DistinctCellTypes.insert(distinctCellTypes.begin(), distinctCellTypes.end());
+    }
+  }
+};
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::GetCellTypes(vtkCellTypes* types)
 {
-  vtkIdType cellId, numCells = this->GetNumberOfCells();
-  unsigned char type;
-
-  types->Reset();
-  for (cellId = 0; cellId < numCells; cellId++)
+  DistinctCellTypesWorker worker(this);
+  vtkSMPTools::For(0, this->GetNumberOfCells(), worker);
+  if (types)
   {
-    type = this->GetCellType(cellId);
-    if (!types->IsType(type))
+    types->Reset();
+    types->Allocate(static_cast<vtkIdType>(worker.DistinctCellTypes.size()));
+    for (const auto& distinctCellType : worker.DistinctCellTypes)
     {
-      types->InsertNextType(type);
+      types->InsertNextType(distinctCellType);
     }
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkDataSet::GetCellPoints(
+  vtkIdType cellId, vtkIdType& npts, vtkIdType const*& pts, vtkIdList* ptIds)
+{
+  this->GetCellPoints(cellId, ptIds);
+  npts = ptIds->GetNumberOfIds();
+  pts = ptIds->GetPointer(0);
+}
+
+//------------------------------------------------------------------------------
+int vtkDataSet::GetMaxSpatialDimension()
+{
+  vtkNew<vtkCellTypes> cellTypes;
+  this->GetCellTypes(cellTypes);
+  int maxDim = 0;
+  for (vtkIdType i = 0; i < cellTypes->GetNumberOfTypes(); ++i)
+  {
+    maxDim = std::max(vtkCellTypes::GetDimension(cellTypes->GetCellType(i)), maxDim);
+  }
+  return maxDim;
+}
+
+//------------------------------------------------------------------------------
+int vtkDataSet::GetMinSpatialDimension()
+{
+  vtkNew<vtkCellTypes> cellTypes;
+  this->GetCellTypes(cellTypes);
+  int minDim = 3;
+  for (vtkIdType i = 0; i < cellTypes->GetNumberOfTypes(); ++i)
+  {
+    minDim = std::min(vtkCellTypes::GetDimension(cellTypes->GetCellType(i)), minDim);
+  }
+  return minDim;
+}
+
+//------------------------------------------------------------------------------
 void vtkDataSet::SetCellOrderAndRationalWeights(vtkIdType cellId, vtkGenericCell* cell)
 {
   switch (cell->GetCellType())
@@ -341,57 +576,27 @@ void vtkDataSet::SetCellOrderAndRationalWeights(vtkIdType cellId, vtkGenericCell
     {
       vtkHigherOrderQuadrilateral* cellBezier =
         dynamic_cast<vtkHigherOrderQuadrilateral*>(cell->GetRepresentativeCell());
-      if (GetCellData()->SetActiveAttribute(
-            "HigherOrderDegrees", vtkDataSetAttributes::AttributeTypes::HIGHERORDERDEGREES) != -1)
-      {
-        double degs[3];
-        vtkDataArray* v = GetCellData()->GetHigherOrderDegrees();
-        v->GetTuple(cellId, degs);
-        cellBezier->SetOrder(degs[0], degs[1]);
-      }
-      else
-      {
-        vtkIdType numPts = cell->PointIds->GetNumberOfIds();
-        cellBezier->SetUniformOrderFromNumPoints(numPts);
-      }
+      // Set the degrees
+      cellBezier->SetOrderFromCellData(
+        this->GetCellData(), cell->PointIds->GetNumberOfIds(), cellId);
       break;
     }
     case VTK_LAGRANGE_WEDGE:
     {
-      vtkIdType numPts = cell->PointIds->GetNumberOfIds();
       vtkHigherOrderWedge* cellBezier =
         dynamic_cast<vtkHigherOrderWedge*>(cell->GetRepresentativeCell());
-      if (GetCellData()->SetActiveAttribute(
-            "HigherOrderDegrees", vtkDataSetAttributes::AttributeTypes::HIGHERORDERDEGREES) != -1)
-      {
-        double degs[3];
-        vtkDataArray* v = GetCellData()->GetHigherOrderDegrees();
-        v->GetTuple(cellId, degs);
-        cellBezier->SetOrder(degs[0], degs[1], degs[2], numPts);
-      }
-      else
-      {
-        cellBezier->SetUniformOrderFromNumPoints(numPts);
-      }
+      // Set the degrees
+      cellBezier->SetOrderFromCellData(
+        this->GetCellData(), cell->PointIds->GetNumberOfIds(), cellId);
       break;
     }
     case VTK_LAGRANGE_HEXAHEDRON:
     {
       vtkHigherOrderHexahedron* cellBezier =
         dynamic_cast<vtkHigherOrderHexahedron*>(cell->GetRepresentativeCell());
-      if (GetCellData()->SetActiveAttribute(
-            "HigherOrderDegrees", vtkDataSetAttributes::AttributeTypes::HIGHERORDERDEGREES) != -1)
-      {
-        double degs[3];
-        vtkDataArray* v = GetCellData()->GetHigherOrderDegrees();
-        v->GetTuple(cellId, degs);
-        cellBezier->SetOrder(degs[0], degs[1], degs[2]);
-      }
-      else
-      {
-        vtkIdType numPts = cell->PointIds->GetNumberOfIds();
-        cellBezier->SetUniformOrderFromNumPoints(numPts);
-      }
+      // Set the degrees
+      cellBezier->SetOrderFromCellData(
+        this->GetCellData(), cell->PointIds->GetNumberOfIds(), cellId);
       break;
     }
 
@@ -401,32 +606,10 @@ void vtkDataSet::SetCellOrderAndRationalWeights(vtkIdType cellId, vtkGenericCell
       vtkIdType numPts = cell->PointIds->GetNumberOfIds();
       vtkBezierQuadrilateral* cellBezier =
         dynamic_cast<vtkBezierQuadrilateral*>(cell->GetRepresentativeCell());
-
       // Set the degrees
-      if (GetCellData()->SetActiveAttribute(
-            "HigherOrderDegrees", vtkDataSetAttributes::AttributeTypes::HIGHERORDERDEGREES) != -1)
-      {
-        double degs[3];
-        vtkDataArray* v = GetCellData()->GetHigherOrderDegrees();
-        v->GetTuple(cellId, degs);
-        cellBezier->SetOrder(degs[0], degs[1]);
-      }
-      else
-      {
-        cellBezier->SetUniformOrderFromNumPoints(numPts);
-      }
-
+      cellBezier->SetOrderFromCellData(this->GetCellData(), numPts, cellId);
       // Set the weights
-      if (GetPointData()->SetActiveAttribute(
-            "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
-      {
-        cellBezier->GetRationalWeights()->SetNumberOfTuples(numPts);
-        vtkDataArray* v = GetPointData()->GetRationalWeights();
-        for (int i = 0; i < numPts; i++)
-        {
-          cellBezier->GetRationalWeights()->SetValue(i, v->GetTuple1(cell->PointIds->GetId(i)));
-        }
-      }
+      cellBezier->SetRationalWeightsFromPointData(GetPointData(), numPts);
       break;
     }
     case VTK_BEZIER_HEXAHEDRON:
@@ -434,117 +617,43 @@ void vtkDataSet::SetCellOrderAndRationalWeights(vtkIdType cellId, vtkGenericCell
       vtkIdType numPts = cell->PointIds->GetNumberOfIds();
       vtkBezierHexahedron* cellBezier =
         dynamic_cast<vtkBezierHexahedron*>(cell->GetRepresentativeCell());
-
       // Set the degrees
-      if (GetCellData()->SetActiveAttribute(
-            "HigherOrderDegrees", vtkDataSetAttributes::AttributeTypes::HIGHERORDERDEGREES) != -1)
-      {
-        double degs[3];
-        vtkDataArray* v = GetCellData()->GetHigherOrderDegrees();
-        v->GetTuple(cellId, degs);
-        cellBezier->SetOrder(degs[0], degs[1], degs[2]);
-      }
-      else
-      {
-        cellBezier->SetUniformOrderFromNumPoints(numPts);
-      }
-
+      cellBezier->SetOrderFromCellData(this->GetCellData(), numPts, cellId);
       // Set the weights
-      if (GetPointData()->SetActiveAttribute(
-            "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
-      {
-        cellBezier->GetRationalWeights()->SetNumberOfTuples(numPts);
-        vtkDataArray* v = GetPointData()->GetRationalWeights();
-        for (int i = 0; i < numPts; i++)
-        {
-          cellBezier->GetRationalWeights()->SetValue(i, v->GetTuple1(cell->PointIds->GetId(i)));
-        }
-      }
+      cellBezier->SetRationalWeightsFromPointData(GetPointData(), numPts);
       break;
     }
     case VTK_BEZIER_WEDGE:
     {
       vtkIdType numPts = cell->PointIds->GetNumberOfIds();
       vtkBezierWedge* cellBezier = dynamic_cast<vtkBezierWedge*>(cell->GetRepresentativeCell());
-
       // Set the degrees
-      if (GetCellData()->SetActiveAttribute(
-            "HigherOrderDegrees", vtkDataSetAttributes::AttributeTypes::HIGHERORDERDEGREES) != -1)
-      {
-        double degs[3];
-        vtkDataArray* v = GetCellData()->GetHigherOrderDegrees();
-        v->GetTuple(cellId, degs);
-        cellBezier->SetOrder(degs[0], degs[1], degs[2], numPts);
-      }
-      else
-      {
-        cellBezier->SetUniformOrderFromNumPoints(numPts);
-      }
-
+      cellBezier->SetOrderFromCellData(this->GetCellData(), numPts, cellId);
       // Set the weights
-      if (GetPointData()->SetActiveAttribute(
-            "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
-      {
-        cellBezier->GetRationalWeights()->SetNumberOfTuples(numPts);
-        vtkDataArray* v = GetPointData()->GetRationalWeights();
-        for (int i = 0; i < numPts; i++)
-        {
-          cellBezier->GetRationalWeights()->SetValue(i, v->GetTuple1(cell->PointIds->GetId(i)));
-        }
-      }
+      cellBezier->SetRationalWeightsFromPointData(GetPointData(), numPts);
       break;
     }
 
     case VTK_BEZIER_CURVE:
     {
-      if (GetPointData()->SetActiveAttribute(
-            "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
-      {
-        vtkIdType numPts = cell->PointIds->GetNumberOfIds();
-        vtkBezierCurve* cellBezier = dynamic_cast<vtkBezierCurve*>(cell->GetRepresentativeCell());
-
-        cellBezier->GetRationalWeights()->SetNumberOfTuples(numPts);
-        vtkDataArray* v = GetPointData()->GetRationalWeights();
-        for (int i = 0; i < numPts; i++)
-        {
-          cellBezier->GetRationalWeights()->SetValue(i, v->GetTuple1(cell->PointIds->GetId(i)));
-        }
-      }
+      vtkIdType numPts = cell->PointIds->GetNumberOfIds();
+      vtkBezierCurve* cellBezier = dynamic_cast<vtkBezierCurve*>(cell->GetRepresentativeCell());
+      cellBezier->SetRationalWeightsFromPointData(GetPointData(), numPts);
       break;
     }
     case VTK_BEZIER_TRIANGLE:
     {
-      if (GetPointData()->SetActiveAttribute(
-            "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
-      {
-        vtkIdType numPts = cell->PointIds->GetNumberOfIds();
-        vtkBezierTriangle* cellBezier =
-          dynamic_cast<vtkBezierTriangle*>(cell->GetRepresentativeCell());
-
-        cellBezier->GetRationalWeights()->SetNumberOfTuples(numPts);
-        vtkDataArray* v = GetPointData()->GetRationalWeights();
-        for (int i = 0; i < numPts; i++)
-        {
-          cellBezier->GetRationalWeights()->SetValue(i, v->GetTuple1(cell->PointIds->GetId(i)));
-        }
-      }
+      vtkIdType numPts = cell->PointIds->GetNumberOfIds();
+      vtkBezierTriangle* cellBezier =
+        dynamic_cast<vtkBezierTriangle*>(cell->GetRepresentativeCell());
+      cellBezier->SetRationalWeightsFromPointData(GetPointData(), numPts);
       break;
     }
     case VTK_BEZIER_TETRAHEDRON:
     {
-      if (GetPointData()->SetActiveAttribute(
-            "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
-      {
-        vtkIdType numPts = cell->PointIds->GetNumberOfIds();
-        vtkBezierTetra* cellBezier = dynamic_cast<vtkBezierTetra*>(cell->GetRepresentativeCell());
-
-        cellBezier->GetRationalWeights()->SetNumberOfTuples(numPts);
-        vtkDataArray* v = GetPointData()->GetRationalWeights();
-        for (int i = 0; i < numPts; i++)
-        {
-          cellBezier->GetRationalWeights()->SetValue(i, v->GetTuple1(cell->PointIds->GetId(i)));
-        }
-      }
+      vtkIdType numPts = cell->PointIds->GetNumberOfIds();
+      vtkBezierTetra* cellBezier = dynamic_cast<vtkBezierTetra*>(cell->GetRepresentativeCell());
+      cellBezier->SetRationalWeightsFromPointData(GetPointData(), numPts);
       break;
     }
     default:
@@ -552,35 +661,37 @@ void vtkDataSet::SetCellOrderAndRationalWeights(vtkIdType cellId, vtkGenericCell
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Default implementation. This is very slow way to compute this information.
 // Subclasses should override this method for efficiency.
 void vtkDataSet::GetCellBounds(vtkIdType cellId, double bounds[6])
 {
-  vtkGenericCell* cell = vtkGenericCell::New();
-
+  vtkNew<vtkGenericCell> cell;
   this->GetCell(cellId, cell);
   cell->GetBounds(bounds);
-  cell->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::Squeeze()
 {
   this->CellData->Squeeze();
   this->PointData->Squeeze();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned long vtkDataSet::GetActualMemorySize()
 {
   unsigned long size = this->vtkDataObject::GetActualMemorySize();
   size += this->PointData->GetActualMemorySize();
   size += this->CellData->GetActualMemorySize();
+  if (this->TempPoints)
+  {
+    size += this->TempPoints->GetActualMemorySize();
+  }
   return size;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::ShallowCopy(vtkDataObject* dataObject)
 {
   vtkDataSet* dataSet = vtkDataSet::SafeDownCast(dataObject);
@@ -595,7 +706,7 @@ void vtkDataSet::ShallowCopy(vtkDataObject* dataObject)
   this->vtkDataObject::ShallowCopy(dataObject);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::DeepCopy(vtkDataObject* dataObject)
 {
   vtkDataSet* dataSet = vtkDataSet::SafeDownCast(dataObject);
@@ -611,7 +722,7 @@ void vtkDataSet::DeepCopy(vtkDataObject* dataObject)
   this->vtkDataObject::DeepCopy(dataObject);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This copies all the local variables (but not objects).
 void vtkDataSet::InternalDataSetCopy(vtkDataSet* src)
 {
@@ -629,7 +740,7 @@ void vtkDataSet::InternalDataSetCopy(vtkDataSet* src)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataSet::CheckAttributes()
 {
   vtkIdType numPts, numCells;
@@ -702,7 +813,7 @@ int vtkDataSet::CheckAttributes()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSet::GenerateGhostArray(int zeroExt[6], bool cellOnly)
 {
   // Make sure this is a structured data set.
@@ -742,7 +853,7 @@ void vtkDataSet::GenerateGhostArray(int zeroExt[6], bool cellOnly)
     {
       ghostPoints.TakeReference(vtkUnsignedCharArray::New());
       ghostPoints->SetName(vtkDataSetAttributes::GhostArrayName());
-      ghostPoints->SetNumberOfTuples(vtkStructuredData::GetNumberOfPoints(extent));
+      ghostPoints->SetNumberOfValues(vtkStructuredData::GetNumberOfPoints(extent));
       ghostPoints->FillValue(0);
       this->PointData->AddArray(ghostPoints);
     }
@@ -781,7 +892,7 @@ void vtkDataSet::GenerateGhostArray(int zeroExt[6], bool cellOnly)
           { // Special case for last tile.
             di = i - zeroExt[1] + 1;
           }
-          // Compute Manhatten distance.
+          // Compute Manhattan distance.
           dist = di;
           if (dj > dist)
           {
@@ -811,7 +922,7 @@ void vtkDataSet::GenerateGhostArray(int zeroExt[6], bool cellOnly)
   {
     ghostCells.TakeReference(vtkUnsignedCharArray::New());
     ghostCells->SetName(vtkDataSetAttributes::GhostArrayName());
-    ghostCells->SetNumberOfTuples(vtkStructuredData::GetNumberOfCells(extent));
+    ghostCells->SetNumberOfValues(vtkStructuredData::GetNumberOfCells(extent));
     ghostCells->FillValue(0);
     this->CellData->AddArray(ghostCells);
   }
@@ -838,7 +949,7 @@ void vtkDataSet::GenerateGhostArray(int zeroExt[6], bool cellOnly)
 
   // Loop
   for (k = extent[4]; k < extent[5]; ++k)
-  { // Determine the Manhatten distances to zero extent.
+  { // Determine the Manhattan distances to zero extent.
     dk = 0;
     if (k < zeroExt[4])
     {
@@ -870,7 +981,7 @@ void vtkDataSet::GenerateGhostArray(int zeroExt[6], bool cellOnly)
         {
           di = i - zeroExt[1] + 1;
         }
-        // Compute Manhatten distance.
+        // Compute Manhattan distance.
         dist = di;
         if (dj > dist)
         {
@@ -892,19 +1003,19 @@ void vtkDataSet::GenerateGhostArray(int zeroExt[6], bool cellOnly)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkDataSet::GetData(vtkInformation* info)
 {
   return info ? vtkDataSet::SafeDownCast(info->Get(DATA_OBJECT())) : nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkDataSet::GetData(vtkInformationVector* v, int i)
 {
   return vtkDataSet::GetData(v->GetInformationObject(i));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFieldData* vtkDataSet::GetAttributesAsFieldData(int type)
 {
   switch (type)
@@ -917,7 +1028,7 @@ vtkFieldData* vtkDataSet::GetAttributesAsFieldData(int type)
   return this->Superclass::GetAttributesAsFieldData(type);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkDataSet::GetNumberOfElements(int type)
 {
   switch (type)
@@ -930,7 +1041,22 @@ vtkIdType vtkDataSet::GetNumberOfElements(int type)
   return this->Superclass::GetNumberOfElements(type);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkMTimeType vtkDataSet::GetMeshMTime()
+{
+  return this->GetMTime();
+}
+
+//------------------------------------------------------------------------------
+vtkIdType vtkDataSet::GetCellSize(vtkIdType cellId)
+{
+  // We allocate a new id list each time so this method is thread-safe
+  vtkNew<vtkIdList> pointIds;
+  this->GetCellPoints(cellId, pointIds);
+  return pointIds->GetNumberOfIds();
+}
+
+//------------------------------------------------------------------------------
 void vtkDataSet::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -952,128 +1078,96 @@ void vtkDataSet::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Compute Time: " << this->ComputeTime.GetMTime() << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDataSet::HasAnyGhostPoints()
 {
-  return IsAnyBitSet(this->GetPointGhostArray(), vtkDataSetAttributes::DUPLICATEPOINT);
+  return this->PointData->HasAnyGhostBitSet(vtkDataSetAttributes::DUPLICATEPOINT);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDataSet::HasAnyGhostCells()
 {
-  return IsAnyBitSet(this->GetCellGhostArray(), vtkDataSetAttributes::DUPLICATECELL);
+  return this->CellData->HasAnyGhostBitSet(vtkDataSetAttributes::DUPLICATECELL);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnsignedCharArray* vtkDataSet::GetPointGhostArray()
 {
-  if (!this->PointGhostArrayCached)
+  return this->PointData->GetGhostArray();
+}
+
+//------------------------------------------------------------------------------
+vtkUnsignedCharArray* vtkDataSet::GetGhostArray(int attributeType)
+{
+  if (attributeType == POINT)
   {
-    this->PointGhostArray = vtkArrayDownCast<vtkUnsignedCharArray>(
-      this->GetPointData()->GetArray(vtkDataSetAttributes::GhostArrayName()));
-    this->PointGhostArrayCached = true;
+    return this->GetPointGhostArray();
   }
-  assert(this->PointGhostArray ==
-    vtkArrayDownCast<vtkUnsignedCharArray>(
-      this->GetPointData()->GetArray(vtkDataSetAttributes::GhostArrayName())));
-  return this->PointGhostArray;
-}
-
-//----------------------------------------------------------------------------
-void vtkDataSet::UpdatePointGhostArrayCache()
-{
-  this->PointGhostArray = vtkArrayDownCast<vtkUnsignedCharArray>(
-    this->GetPointData()->GetArray(vtkDataSetAttributes::GhostArrayName()));
-  this->PointGhostArrayCached = true;
-}
-
-//----------------------------------------------------------------------------
-vtkUnsignedCharArray* vtkDataSet::AllocatePointGhostArray()
-{
-  if (!this->GetPointGhostArray())
+  else if (attributeType == CELL)
   {
-    vtkUnsignedCharArray* ghosts = vtkUnsignedCharArray::New();
-    ghosts->SetName(vtkDataSetAttributes::GhostArrayName());
-    ghosts->SetNumberOfComponents(1);
-    ghosts->SetNumberOfTuples(this->GetNumberOfPoints());
-    ghosts->FillValue(0);
-    this->GetPointData()->AddArray(ghosts);
-    ghosts->Delete();
-    this->PointGhostArray = ghosts;
-    this->PointGhostArrayCached = true;
+    return this->GetCellGhostArray();
   }
-  return this->PointGhostArray;
-}
-
-//----------------------------------------------------------------------------
-vtkUnsignedCharArray* vtkDataSet::GetCellGhostArray()
-{
-  if (!this->CellGhostArrayCached)
+  else
   {
-    this->CellGhostArray = vtkArrayDownCast<vtkUnsignedCharArray>(
-      this->GetCellData()->GetArray(vtkDataSetAttributes::GhostArrayName()));
-    this->CellGhostArrayCached = true;
+    vtkErrorMacro("Invalid attribute type for ghost arrays: " << attributeType);
+    return nullptr;
   }
-  assert(this->CellGhostArray ==
-    vtkArrayDownCast<vtkUnsignedCharArray>(
-      this->GetCellData()->GetArray(vtkDataSetAttributes::GhostArrayName())));
-  return this->CellGhostArray;
 }
 
-//----------------------------------------------------------------------------
-void vtkDataSet::UpdateCellGhostArrayCache()
+//------------------------------------------------------------------------------
+bool vtkDataSet::SupportsGhostArray(int type)
 {
-  this->CellGhostArray = vtkArrayDownCast<vtkUnsignedCharArray>(
-    this->GetCellData()->GetArray(vtkDataSetAttributes::GhostArrayName()));
-  this->CellGhostArrayCached = true;
-}
-
-//----------------------------------------------------------------------------
-vtkUnsignedCharArray* vtkDataSet::AllocateCellGhostArray()
-{
-  if (!this->GetCellGhostArray())
+  if (type == POINT || type == CELL)
   {
-    vtkUnsignedCharArray* ghosts = vtkUnsignedCharArray::New();
-    ghosts->SetName(vtkDataSetAttributes::GhostArrayName());
-    ghosts->SetNumberOfComponents(1);
-    ghosts->SetNumberOfTuples(this->GetNumberOfCells());
-    ghosts->FillValue(0);
-    this->GetCellData()->AddArray(ghosts);
-    ghosts->Delete();
-    this->CellGhostArray = ghosts;
-    this->CellGhostArrayCached = true;
-  }
-  return this->CellGhostArray;
-}
-
-//----------------------------------------------------------------------------
-bool vtkDataSet::IsAnyBitSet(vtkUnsignedCharArray* a, int bitFlag)
-{
-  if (a)
-  {
-    for (vtkIdType i = 0; i < a->GetNumberOfTuples(); ++i)
-    {
-      if (a->GetValue(i) & bitFlag)
-      {
-        return true;
-      }
-    }
+    return true;
   }
   return false;
 }
 
-//----------------------------------------------------------------------------
-void vtkDataSet::OnDataModified(vtkObject* source, unsigned long, void* clientdata, void*)
+//------------------------------------------------------------------------------
+vtkUnsignedCharArray* vtkDataSet::AllocatePointGhostArray()
 {
-  // update the point/cell pointers to ghost data arrays.
-  vtkDataSet* This = static_cast<vtkDataSet*>(clientdata);
-  if (source == This->GetPointData())
+  if (!this->GetPointGhostArray())
   {
-    This->UpdatePointGhostArrayCache();
+    vtkNew<vtkUnsignedCharArray> ghosts;
+    ghosts->SetName(vtkDataSetAttributes::GhostArrayName());
+    ghosts->SetNumberOfValues(this->GetNumberOfPoints());
+    ghosts->FillValue(0);
+    this->GetPointData()->AddArray(ghosts);
   }
-  else
-  {
-    assert(source == This->GetCellData());
-    This->UpdateCellGhostArrayCache();
-  }
+  return this->GetPointGhostArray();
 }
+
+//------------------------------------------------------------------------------
+vtkUnsignedCharArray* vtkDataSet::GetCellGhostArray()
+{
+  return this->CellData->GetGhostArray();
+}
+
+//------------------------------------------------------------------------------
+vtkUnsignedCharArray* vtkDataSet::AllocateCellGhostArray()
+{
+  if (!this->GetCellGhostArray())
+  {
+    vtkNew<vtkUnsignedCharArray> ghosts;
+    ghosts->SetName(vtkDataSetAttributes::GhostArrayName());
+    ghosts->SetNumberOfValues(this->GetNumberOfCells());
+    ghosts->FillValue(0);
+    this->GetCellData()->AddArray(ghosts);
+  }
+  return this->GetCellGhostArray();
+}
+
+//------------------------------------------------------------------------------
+vtkMTimeType vtkDataSet::GetGhostCellsTime()
+{
+  vtkMTimeType time = 0;
+  if (auto ghostcells = this->GetCellGhostArray())
+  {
+    time = ghostcells->GetMTime();
+  }
+
+  return time;
+}
+
+VTK_ABI_NAMESPACE_END

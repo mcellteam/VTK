@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #import "MyWindowController.h"
 
 #import "BasicVTKView.h"
@@ -51,7 +53,10 @@
   BasicVTKView* thisView = [self leftView];
 
   // Explicitly enable HiDPI/Retina (this is the default anyway).
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   [thisView setWantsBestResolutionOpenGLSurface:YES];
+#pragma clang diagnostic pop
 
   [thisView initializeVTKSupport];
 
@@ -61,7 +66,7 @@
   vtkSmartPointer<vtkInteractorStyleSwitch> intStyle =
     vtkSmartPointer<vtkInteractorStyleSwitch>::New();
   intStyle->SetCurrentStyleToTrackballCamera();
-  [thisView getInteractor] -> SetInteractorStyle(intStyle);
+  [thisView getInteractor]->SetInteractorStyle(intStyle);
 
   // Create a cone, see the "VTK User's Guide" for details
   vtkSmartPointer<vtkConeSource> cone = vtkSmartPointer<vtkConeSource>::New();
@@ -75,7 +80,7 @@
   vtkSmartPointer<vtkActor> coneActor = vtkSmartPointer<vtkActor>::New();
   coneActor->SetMapper(coneMapper);
 
-  [thisView getRenderer] -> AddActor(coneActor);
+  [thisView getRenderer]->AddActor(coneActor);
 
   // Create a text actor.
   NSString* string = @"日本語";
@@ -91,7 +96,7 @@
   vtkCoordinate* coord = textActor->GetPositionCoordinate();
   coord->SetCoordinateSystemToWorld();
   coord->SetValue(0.0, 0.5, 0.0);
-  [thisView getRenderer] -> AddViewProp(textActor);
+  [thisView getRenderer]->AddViewProp(textActor);
 
   // Tell the system that the view needs to be redrawn
   [thisView setNeedsDisplay:YES];
@@ -104,7 +109,10 @@
 
   // Explicitly disable HiDPI/Retina as a demonstration of the difference.
   // One might want to disable it to reduce memory usage / increase performance.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   [thisView setWantsBestResolutionOpenGLSurface:NO];
+#pragma clang diagnostic pop
 
   [thisView initializeVTKSupport];
 
@@ -114,7 +122,7 @@
   vtkSmartPointer<vtkInteractorStyleSwitch> intStyle =
     vtkSmartPointer<vtkInteractorStyleSwitch>::New();
   intStyle->SetCurrentStyleToTrackballCamera();
-  [thisView getInteractor] -> SetInteractorStyle(intStyle);
+  [thisView getInteractor]->SetInteractorStyle(intStyle);
 
   // Create a cylinder, see the "VTK User's Guide" for details
   vtkSmartPointer<vtkCylinderSource> cylinder = vtkSmartPointer<vtkCylinderSource>::New();
@@ -126,7 +134,7 @@
   vtkSmartPointer<vtkActor> cylinderActor = vtkSmartPointer<vtkActor>::New();
   cylinderActor->SetMapper(cylinderMapper);
 
-  [thisView getRenderer] -> AddActor(cylinderActor);
+  [thisView getRenderer]->AddActor(cylinderActor);
 
   // Create a text actor.
   NSString* string = @"日本語";
@@ -142,7 +150,7 @@
   vtkCoordinate* coord = textActor->GetPositionCoordinate();
   coord->SetCoordinateSystemToWorld();
   coord->SetValue(0.3, 0.5, 0.0);
-  [thisView getRenderer] -> AddViewProp(textActor);
+  [thisView getRenderer]->AddViewProp(textActor);
 
   // Tell the system that the view needs to be redrawn
   [thisView setNeedsDisplay:YES];
@@ -155,7 +163,10 @@
 
   // Explicitly enable HiDPI/Retina (this is required when using CAOpenGLLayer, otherwise the view
   // will be 1/4 size on Retina).
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   [thisView setWantsBestResolutionOpenGLSurface:YES];
+#pragma clang diagnostic pop
 
   [thisView initializeVTKSupport];
   [thisView initializeLayerSupport];
@@ -166,7 +177,7 @@
   vtkSmartPointer<vtkInteractorStyleSwitch> intStyle =
     vtkSmartPointer<vtkInteractorStyleSwitch>::New();
   intStyle->SetCurrentStyleToTrackballCamera();
-  [thisView renderWindowInteractor] -> SetInteractorStyle(intStyle);
+  [thisView renderWindowInteractor]->SetInteractorStyle(intStyle);
 
   // Create a cylinder, see the "VTK User's Guide" for details
   vtkSmartPointer<vtkCylinderSource> cylinder = vtkSmartPointer<vtkCylinderSource>::New();
@@ -178,7 +189,7 @@
   vtkSmartPointer<vtkActor> cylinderActor = vtkSmartPointer<vtkActor>::New();
   cylinderActor->SetMapper(cylinderMapper);
 
-  [thisView renderer] -> AddActor(cylinderActor);
+  [thisView renderer]->AddActor(cylinderActor);
 
   // Create a text actor.
   NSString* string = @"日本語";
@@ -194,7 +205,7 @@
   vtkCoordinate* coord = textActor->GetPositionCoordinate();
   coord->SetCoordinateSystemToWorld();
   coord->SetValue(0.3, 0.5, 0.0);
-  [thisView renderer] -> AddViewProp(textActor);
+  [thisView renderer]->AddViewProp(textActor);
 
   // Tell the system that the view needs to be redrawn
   [thisView setNeedsDisplay:YES];

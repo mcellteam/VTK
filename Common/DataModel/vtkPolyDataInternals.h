@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataInternals.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class vtkPolyDataInternals
@@ -57,8 +45,6 @@
 #ifndef vtkPolyDataInternals_h
 #define vtkPolyDataInternals_h
 
-#ifndef __VTK_WRAP__ // Don't wrap this class.
-
 #include "vtkCommonDataModelModule.h" // For export macro
 
 #include "vtkCellType.h"
@@ -70,6 +56,7 @@
 
 namespace vtkPolyData_detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 static constexpr vtkTypeUInt64 CELLID_MASK = 0x0fffffffffffffffull;
 static constexpr vtkTypeUInt64 SHIFTED_TYPE_INDEX_MASK = 0xf000000000000000ull;
@@ -156,7 +143,10 @@ struct VTKCOMMONDATAMODEL_EXPORT TaggedCellId
   TaggedCellId() noexcept = default;
 
   // Create a TaggedCellId from a cellId and cell type (e.g. VTK_TRIANGLE).
-  TaggedCellId(vtkIdType cellId, VTKCellType cellType) noexcept : Value(Encode(cellId, cellType)) {}
+  TaggedCellId(vtkIdType cellId, VTKCellType cellType) noexcept
+    : Value(Encode(cellId, cellType))
+  {
+  }
 
   TaggedCellId(const TaggedCellId&) noexcept = default;
   TaggedCellId(TaggedCellId&&) noexcept = default;
@@ -233,11 +223,31 @@ public:
 
   void SetCapacity(vtkIdType numCells) { this->Map.reserve(static_cast<std::size_t>(numCells)); }
 
+  void SetNumberOfCells(vtkIdType numCells)
+  {
+    this->Map.resize(static_cast<std::size_t>(numCells));
+  }
+
   TaggedCellId& GetTag(vtkIdType cellId) { return this->Map[static_cast<std::size_t>(cellId)]; }
 
   const TaggedCellId& GetTag(vtkIdType cellId) const
   {
     return this->Map[static_cast<std::size_t>(cellId)];
+  }
+
+  // Caller must ValidateCellType first.
+  void InsertCell(vtkIdType globalCellId, vtkIdType cellId, VTKCellType cellType)
+  {
+    this->Map[globalCellId] = TaggedCellId(cellId, cellType);
+  }
+
+  // Caller must ValidateCellType and ValidateCellId first.
+  // useful for reusing the target lookup from cellType and then calling
+  // TaggedCellId::SetCellId later.
+  TaggedCellId& InsertCell(vtkIdType globalCellId, VTKCellType cellType)
+  {
+    this->Map[globalCellId] = TaggedCellId(vtkIdType(0), cellType);
+    return this->Map[globalCellId];
   }
 
   // Caller must ValidateCellType first.
@@ -281,9 +291,9 @@ private:
   CellMap& operator=(const CellMap&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 } // end namespace vtkPolyData_detail
 
-#endif // __VTK_WRAP__
 #endif // vtkPolyDataInternals.h
 
 // VTK-HeaderTest-Exclude: vtkPolyDataInternals.h

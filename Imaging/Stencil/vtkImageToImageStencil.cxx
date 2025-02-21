@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageToImageStencil.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageToImageStencil.h"
 
 #include "vtkDataArray.h"
@@ -25,19 +13,20 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageToImageStencil);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageToImageStencil::vtkImageToImageStencil()
 {
   this->UpperThreshold = VTK_FLOAT_MAX;
   this->LowerThreshold = -VTK_FLOAT_MAX;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageToImageStencil::~vtkImageToImageStencil() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageToImageStencil::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -47,13 +36,13 @@ void vtkImageToImageStencil::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "LowerThreshold: " << this->LowerThreshold << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageToImageStencil::SetInputData(vtkImageData* input)
 {
   this->SetInputDataInternal(0, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkImageToImageStencil::GetInput()
 {
   if (this->GetNumberOfInputConnections(0) < 1)
@@ -64,7 +53,7 @@ vtkImageData* vtkImageToImageStencil::GetInput()
   return vtkImageData::SafeDownCast(this->GetExecutive()->GetInputData(0, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values greater than or equal to the value match.
 void vtkImageToImageStencil::ThresholdByUpper(double thresh)
 {
@@ -76,7 +65,7 @@ void vtkImageToImageStencil::ThresholdByUpper(double thresh)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values less than or equal to the value match.
 void vtkImageToImageStencil::ThresholdByLower(double thresh)
 {
@@ -88,7 +77,7 @@ void vtkImageToImageStencil::ThresholdByLower(double thresh)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values in a range (inclusive) match
 void vtkImageToImageStencil::ThresholdBetween(double lower, double upper)
 {
@@ -100,7 +89,7 @@ void vtkImageToImageStencil::ThresholdBetween(double lower, double upper)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToImageStencil::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -174,7 +163,7 @@ int vtkImageToImageStencil::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToImageStencil::RequestInformation(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -198,14 +187,14 @@ int vtkImageToImageStencil::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToImageStencil::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkImageData");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToImageStencil::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -240,3 +229,4 @@ int vtkImageToImageStencil::RequestUpdateExtent(
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), extent, 6);
   return 1;
 }
+VTK_ABI_NAMESPACE_END

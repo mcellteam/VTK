@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDensifyPolyData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkDensifyPolyData.h"
 
@@ -27,7 +15,8 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDensifyPolyDataInternals
 {
 public:
@@ -175,6 +164,11 @@ public:
     // the pointers.
     Polygon& operator=(const Polygon& p)
     {
+      if (this == &p)
+      {
+        return *this;
+      }
+
       // start afresh
       this->Clear();
 
@@ -291,7 +285,7 @@ public:
         t.Verts[3 * id2], t.Verts[3 * id2 + 1], t.Verts[3 * id2 + 2], centroid[0], centroid[1],
         centroid[2] };
       vtkIdType vertIds[3] = { t.VertIds[id1], t.VertIds[id2], id3 };
-      polygons.push_back(Polygon(verts, 3, vertIds, t.NumVerts, t.VertIds));
+      polygons.emplace_back(verts, 3, vertIds, t.NumVerts, t.VertIds);
     }
 
     this->NumPoints++;
@@ -321,20 +315,20 @@ private:
   PolygonsType::iterator PolygonsIterator;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkDensifyPolyData);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDensifyPolyData::vtkDensifyPolyData()
 {
   this->NumberOfSubdivisions = 1;
   this->SetNumberOfInputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDensifyPolyData::~vtkDensifyPolyData() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDensifyPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -395,6 +389,11 @@ int vtkDensifyPolyData::RequestData(vtkInformation* vtkNotUsed(request),
 
   for (inputPolys->InitTraversal(); inputPolys->GetNextCell(npts, ptIds); cellId++)
   { // for every cell
+
+    if (this->CheckAbort())
+    {
+      break;
+    }
 
     // Make sure that the polygon is a planar polygon.
     int cellType = input->GetCellType(cellId);
@@ -509,7 +508,7 @@ int vtkDensifyPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDensifyPolyData::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -523,10 +522,11 @@ int vtkDensifyPolyData::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDensifyPolyData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Number of Subdivisions: " << this->NumberOfSubdivisions << endl;
 }
+VTK_ABI_NAMESPACE_END

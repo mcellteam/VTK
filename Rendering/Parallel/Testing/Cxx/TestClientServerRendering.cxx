@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    TestClientServerRendering.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 // Tests client-server rendering using the vtkClientServerCompositePass.
 
 #include "vtkActor.h"
@@ -80,27 +69,27 @@ private:
 
 protected:
   MyProcess();
-  ~MyProcess();
+  ~MyProcess() override;
   int ImageReductionFactor;
   vtkMultiProcessController* Controller;
 };
 
 vtkStandardNewMacro(MyProcess);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 MyProcess::MyProcess()
 {
   this->ImageReductionFactor = 1;
   this->Controller = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 MyProcess::~MyProcess()
 {
   this->SetController(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void MyProcess::CreatePipeline(vtkRenderer* renderer)
 {
   double bounds[] = { -0.5, .5, -0.5, .5, -0.5, 0.5 };
@@ -130,7 +119,7 @@ void MyProcess::CreatePipeline(vtkRenderer* renderer)
   sphere->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void MyProcess::SetupRenderPasses(vtkRenderer* renderer)
 {
   // the rendering passes
@@ -181,7 +170,7 @@ void MyProcess::SetupRenderPasses(vtkRenderer* renderer)
   csPass->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool MyProcess::Execute(int argc, char** argv)
 {
   vtkRenderWindow* renWin = vtkRenderWindow::New();
@@ -191,7 +180,7 @@ bool MyProcess::Execute(int argc, char** argv)
   // enable alpha bit-planes.
   renWin->AlphaBitPlanesOn();
 
-  // use double bufferring.
+  // use double buffering.
   renWin->DoubleBufferOn();
 
   // don't waste time swapping buffers unless needed.
@@ -249,7 +238,7 @@ bool MyProcess::Execute(int argc, char** argv)
 
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
   int image_reduction_factor = 1;

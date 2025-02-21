@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMCubesWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMCubesWriter
  * @brief   write binary marching cubes file
@@ -37,6 +25,7 @@
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkDataArray;
 class vtkPoints;
@@ -49,29 +38,29 @@ public:
   vtkTypeMacro(vtkMCubesWriter, vtkWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/get file name of marching cubes limits file.
    */
-  vtkSetStringMacro(LimitsFileName);
-  vtkGetStringMacro(LimitsFileName);
-  //@}
+  vtkSetFilePathMacro(LimitsFileName);
+  vtkGetFilePathMacro(LimitsFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkPolyData* GetInput();
   vtkPolyData* GetInput(int port);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify file name of vtk polygon data file to write.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
 protected:
   vtkMCubesWriter();
@@ -93,4 +82,5 @@ private:
   void operator=(const vtkMCubesWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

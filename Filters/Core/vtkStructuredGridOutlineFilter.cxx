@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStructuredGridOutlineFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStructuredGridOutlineFilter.h"
 
 #include "vtkCellArray.h"
@@ -22,9 +10,16 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStructuredGridOutlineFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkStructuredGridOutlineFilter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 // ComputeDivisionExtents has done most of the work for us.
 // Now just connect the points.
 int vtkStructuredGridOutlineFilter::RequestData(vtkInformation* vtkNotUsed(request),
@@ -82,6 +77,10 @@ int vtkStructuredGridOutlineFilter::RequestData(vtkInformation* vtkNotUsed(reque
 
   for (i = 0; i < 12; i++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     // Find the start of this edge, the length of this edge, and increment.
     xInc = 1;
     yInc = ext[1] - ext[0] + 1;
@@ -252,3 +251,4 @@ int vtkStructuredGridOutlineFilter::FillInputPortInformation(int, vtkInformation
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkStructuredGrid");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

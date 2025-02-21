@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageResliceToColors.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageResliceToColors.h"
 
 #include "vtkImageData.h"
@@ -34,10 +22,11 @@
 #include <climits>
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageResliceToColors);
 vtkCxxSetObjectMacro(vtkImageResliceToColors, LookupTable, vtkScalarsToColors);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageResliceToColors::vtkImageResliceToColors()
 {
   this->HasConvertScalars = 1;
@@ -47,7 +36,7 @@ vtkImageResliceToColors::vtkImageResliceToColors()
   this->Bypass = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageResliceToColors::~vtkImageResliceToColors()
 {
   if (this->LookupTable)
@@ -60,7 +49,7 @@ vtkImageResliceToColors::~vtkImageResliceToColors()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResliceToColors::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -78,7 +67,7 @@ void vtkImageResliceToColors::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Bypass: " << (this->Bypass ? "On\n" : "Off\n");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImageResliceToColors::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -92,7 +81,7 @@ vtkMTimeType vtkImageResliceToColors::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResliceToColors::SetBypass(int bypass)
 {
   bypass = (bypass != 0);
@@ -112,7 +101,7 @@ void vtkImageResliceToColors::SetBypass(int bypass)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageResliceToColors::ConvertScalarInfo(int& scalarType, int& numComponents)
 {
   switch (this->OutputFormat)
@@ -150,7 +139,7 @@ int vtkImageResliceToColors::ConvertScalarInfo(int& scalarType, int& numComponen
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageResliceToColors::ConvertScalars(void* inPtr, void* outPtr, int inputType,
   int inputComponents, int count, int vtkNotUsed(idX), int vtkNotUsed(idY), int vtkNotUsed(idZ),
   int vtkNotUsed(threadId))
@@ -172,3 +161,4 @@ void vtkImageResliceToColors::ConvertScalars(void* inPtr, void* outPtr, int inpu
       inputComponents, this->OutputFormat);
   }
 }
+VTK_ABI_NAMESPACE_END

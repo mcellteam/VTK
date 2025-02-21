@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPythonOverload.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * Created in June 2010 by David Gobbi, originally in vtkPythonUtil.
  *
@@ -23,6 +11,8 @@
  */
 
 #include "vtkPythonOverload.h"
+#include "PyVTKReference.h"
+#include "vtkABINamespace.h"
 #include "vtkPythonUtil.h"
 
 #include "vtkObject.h"
@@ -30,12 +20,13 @@
 #include <algorithm>
 #include <vector>
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Enums for vtkPythonOverload::CheckArg().
 // Values between VTK_PYTHON_GOOD_MATCH and VTK_PYTHON_NEEDS_CONVERSION
 // are reserved for checking how many generations a vtkObject arg is from
 // the requested arg type.
 
+VTK_ABI_NAMESPACE_BEGIN
 enum vtkPythonArgPenalties
 {
   VTK_PYTHON_EXACT_MATCH = 0,
@@ -44,7 +35,7 @@ enum vtkPythonArgPenalties
   VTK_PYTHON_INCOMPATIBLE = 65535
 };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // A helper struct for CallMethod
 class vtkPythonOverloadHelper
 {
@@ -122,7 +113,7 @@ bool vtkPythonOverloadHelper::next(const char** format, const char** classname)
 
   // check if the parameter has extended type information
   char c = *m_format;
-  if (c == '0' || c == 'V' || c == 'W' || c == 'Q' || c == 'E' || c == 'A' || c == 'P')
+  if (c == '0' || c == 'V' || c == 'W' || c == 'Q' || c == 'E' || c == 'A' || c == 'P' || c == 'T')
   {
     *classname = m_classname;
 
@@ -190,7 +181,7 @@ bool vtkPythonOverloadHelper::betterthan(const vtkPythonOverloadHelper* other)
   return (iter1 != other->m_tiebreakers.rend());
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // If tmpi > VTK_INT_MAX, then penalize types of int size or smaller
 
 static int vtkPythonIntPenalty(PY_LONG_LONG tmpi, int penalty, char format)
@@ -241,67 +232,16 @@ static int vtkPythonIntPenalty(PY_LONG_LONG tmpi, int penalty, char format)
   return penalty;
 }
 
-#ifdef VTK_PY3K
-//--------------------------------------------------------------------
-// Check if a unicode string is ascii, which makes it more suitable
-// as a match for "char *" or "std::string".
-
-static int vtkPythonStringPenalty(PyObject* u, char format, int penalty)
-{
-#if PY_VERSION_HEX > 0x03030000
-  int ascii = 0;
-  if (PyUnicode_READY(u) != -1)
-  {
-    if (PyUnicode_KIND(u) == PyUnicode_1BYTE_KIND)
-    {
-      Py_UCS1* cp = PyUnicode_1BYTE_DATA(u);
-      Py_ssize_t l = PyUnicode_GET_LENGTH(u);
-      Py_UCS1 c = 0;
-      for (int i = 0; i < l; i++)
-      {
-        c |= cp[i];
-      }
-      ascii = ((c & 0x80) == 0);
-    }
-  }
-  else
-  {
-    PyErr_Clear();
-  }
-#else
-  PyObject* ascii = PyUnicode_AsASCIIString(u);
-  if (ascii == 0)
-  {
-    PyErr_Clear();
-  }
-  else
-  {
-    Py_DECREF(ascii);
-  }
-#endif
-
-  if ((format == 'u') ^ (ascii == 0))
-  {
-    if (penalty < VTK_PYTHON_GOOD_MATCH)
-    {
-      penalty = VTK_PYTHON_GOOD_MATCH;
-    }
-    else
-    {
-      penalty++;
-    }
-  }
-
-  return penalty;
-}
-#endif
-
-#ifdef VTK_PY3K
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Check if object supports conversion to integer
 
 static bool vtkPythonCanConvertToInt(PyObject* arg)
 {
+#if PY_VERSION_HEX >= 0x030A0000
+  unaryfunc asint = (unaryfunc)PyType_GetSlot(Py_TYPE(arg), Py_nb_int);
+  unaryfunc asindex = (unaryfunc)PyType_GetSlot(Py_TYPE(arg), Py_nb_index);
+  return (asint || asindex);
+#else
   // Python 3.8 deprecated implicit conversions via __int__, so we must
   // check for the existence of the __int__ and __index__ slots ourselves
   // instead of simply attempting a conversion.
@@ -311,10 +251,10 @@ static bool vtkPythonCanConvertToInt(PyObject* arg)
 #else
   return (nb && nb->nb_int);
 #endif
-}
 #endif
+}
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This must check the same format chars that are used by
 // vtkWrapPython_ArgCheckString() in vtkWrapPythonOverload.c.
 //
@@ -374,10 +314,8 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
     case 'L':
     case 'i':
     case 'I':
-#ifdef VTK_PY3K
     case 'k':
     case 'K':
-#endif
       // integer types
       if (PyBool_Check(arg))
       {
@@ -387,24 +325,8 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
           penalty++;
         }
       }
-#ifndef VTK_PY3K
-      else if (PyInt_Check(arg))
-      {
-#if VTK_SIZEOF_LONG == VTK_SIZEOF_INT
-        if (*format != 'i')
-        {
-          penalty = VTK_PYTHON_GOOD_MATCH;
-        }
-#else
-        penalty = vtkPythonIntPenalty(PyInt_AsLong(arg), penalty, *format);
-#endif
-      }
-#endif /* VTK_PY3K */
       else if (PyLong_Check(arg))
       {
-#ifndef VTK_PY3K
-        penalty = VTK_PYTHON_GOOD_MATCH;
-#endif
         PY_LONG_LONG tmpi = PyLong_AsLongLong(arg);
         if (PyErr_Occurred())
         {
@@ -414,24 +336,15 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
 
         penalty = vtkPythonIntPenalty(tmpi, penalty, *format);
       }
-      else // not PyInt or PyLong
+      else // not PyLong
       {
         if (level == 0)
         {
           penalty = VTK_PYTHON_NEEDS_CONVERSION;
-#ifdef VTK_PY3K
           if (!vtkPythonCanConvertToInt(arg))
           {
             penalty = VTK_PYTHON_INCOMPATIBLE;
           }
-#else
-          long tmpi = PyInt_AsLong(arg);
-          if (tmpi == -1 || PyErr_Occurred())
-          {
-            PyErr_Clear();
-            penalty = VTK_PYTHON_INCOMPATIBLE;
-          }
-#endif
         }
         else
         {
@@ -439,40 +352,6 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
         }
       }
       break;
-
-#ifndef VTK_PY3K
-    case 'k':
-    case 'K':
-      if (!PyLong_Check(arg))
-      {
-        penalty = VTK_PYTHON_GOOD_MATCH;
-        if (!PyInt_Check(arg))
-        {
-          if (level == 0)
-          {
-            penalty = VTK_PYTHON_NEEDS_CONVERSION;
-#ifdef VTK_PY3K
-            if (!vtkPythonCanConvertToInt(arg))
-            {
-              penalty = VTK_PYTHON_INCOMPATIBLE;
-            }
-#else
-            PyLong_AsLongLong(arg);
-            if (PyErr_Occurred())
-            {
-              PyErr_Clear();
-              penalty = VTK_PYTHON_INCOMPATIBLE;
-            }
-#endif
-          }
-          else
-          {
-            penalty = VTK_PYTHON_INCOMPATIBLE;
-          }
-        }
-      }
-      break;
-#endif
 
     case 'f':
     case 'd':
@@ -505,11 +384,7 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
 
     case 'c':
       // penalize chars, they must be converted from strings
-#if PY_VERSION_HEX >= 0x03030000
       if (PyUnicode_Check(arg) && PyUnicode_GetLength(arg) == 1)
-#else
-      if (PyUnicode_Check(arg) && PyUnicode_GetSize(arg) == 1)
-#endif
       {
         penalty = VTK_PYTHON_NEEDS_CONVERSION;
       }
@@ -534,37 +409,18 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
           penalty = VTK_PYTHON_INCOMPATIBLE;
         }
       }
-#ifdef Py_USING_UNICODE
-      else if (PyUnicode_Check(arg))
-      {
-#ifdef VTK_PY3K
-        penalty = vtkPythonStringPenalty(arg, *format, penalty);
-#else
-        penalty = VTK_PYTHON_NEEDS_CONVERSION;
-#endif
-      }
-#endif
-      else if (!PyBytes_Check(arg) && !PyByteArray_Check(arg))
+      else if (!PyUnicode_Check(arg) && !PyBytes_Check(arg) && !PyByteArray_Check(arg))
       {
         penalty = VTK_PYTHON_INCOMPATIBLE;
+#if PY_VERSION_HEX >= 0x03060000
+        // pathlike objects can be converted to strings
+        if (PyObject_HasAttrString(arg, "__fspath__"))
+        {
+          penalty = VTK_PYTHON_NEEDS_CONVERSION;
+        }
+#endif
       }
       break;
-
-#ifdef Py_USING_UNICODE
-    case 'u':
-      // unicode string
-      if (!PyUnicode_Check(arg))
-      {
-        penalty = VTK_PYTHON_INCOMPATIBLE;
-      }
-#ifdef VTK_PY3K
-      else
-      {
-        penalty = vtkPythonStringPenalty(arg, *format, penalty);
-      }
-#endif
-      break;
-#endif
 
     case 'v':
       // memory buffer (void pointer)
@@ -574,7 +430,7 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
         penalty = VTK_PYTHON_NEEDS_CONVERSION;
       }
       // make sure that arg can act as a buffer
-      else if (Py_TYPE(arg)->tp_as_buffer == nullptr)
+      else if (!PyObject_CheckBuffer(arg))
       {
         penalty = VTK_PYTHON_INCOMPATIBLE;
       }
@@ -604,17 +460,37 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
         }
         else if (PyVTKObject_Check(arg))
         {
-          PyVTKClass* info = vtkPythonUtil::FindClass(classname);
-          PyTypeObject* pytype = (info ? info->py_type : nullptr);
+          PyTypeObject* pytype = vtkPythonUtil::FindBaseTypeObject(classname);
+          if (pytype == nullptr)
+          {
+            // This branch is taken for templated classes, since their Python
+            // class name differs from their vtkObjectBase ClassName, and the
+            // latter is what is needed for FindBaseTypeObject().
+            const char* vtkname = vtkPythonUtil::VTKClassName(classname);
+            if (vtkname != nullptr)
+            {
+              pytype = vtkPythonUtil::FindBaseTypeObject(vtkname);
+            }
+          }
           if (Py_TYPE(arg) != pytype)
           {
             // Check superclasses
-            PyTypeObject* basetype = Py_TYPE(arg)->tp_base;
+            PyTypeObject* basetype =
+#if PY_VERSION_HEX >= 0x030A0000
+              (PyTypeObject*)PyType_GetSlot(Py_TYPE(arg), Py_tp_base)
+#else
+              Py_TYPE(arg)->tp_base
+#endif
+              ;
             penalty = VTK_PYTHON_GOOD_MATCH;
             while (basetype && basetype != pytype)
             {
               penalty++;
+#if PY_VERSION_HEX >= 0x030A0000
+              basetype = (PyTypeObject*)PyType_GetSlot(basetype, Py_tp_base);
+#else
               basetype = basetype->tp_base;
+#endif
             }
             if (!basetype)
             {
@@ -645,12 +521,22 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
         if (Py_TYPE(arg) != pytype)
         {
           // Check superclasses
-          PyTypeObject* basetype = Py_TYPE(arg)->tp_base;
+          PyTypeObject* basetype =
+#if PY_VERSION_HEX >= 0x030A0000
+            (PyTypeObject*)PyType_GetSlot(Py_TYPE(arg), Py_tp_base)
+#else
+            Py_TYPE(arg)->tp_base
+#endif
+            ;
           penalty = VTK_PYTHON_GOOD_MATCH;
           while (basetype && basetype != pytype)
           {
             penalty++;
+#if PY_VERSION_HEX >= 0x030A0000
+            basetype = (PyTypeObject*)PyType_GetSlot(basetype, Py_tp_base);
+#else
             basetype = basetype->tp_base;
+#endif
           }
           if (!basetype)
           {
@@ -686,12 +572,22 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
         if (Py_TYPE(arg) != pytype)
         {
           // Check superclasses
-          PyTypeObject* basetype = Py_TYPE(arg)->tp_base;
+          PyTypeObject* basetype =
+#if PY_VERSION_HEX >= 0x030A0000
+            (PyTypeObject*)PyType_GetSlot(Py_TYPE(arg), Py_tp_base)
+#else
+            Py_TYPE(arg)->tp_base
+#endif
+            ;
           penalty = VTK_PYTHON_GOOD_MATCH;
           while (basetype && basetype != pytype)
           {
             penalty++;
+#if PY_VERSION_HEX >= 0x030A0000
+            basetype = (PyTypeObject*)PyType_GetSlot(basetype, Py_tp_base);
+#else
             basetype = basetype->tp_base;
+#endif
           }
           if (!basetype)
           {
@@ -750,7 +646,7 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
         {
           classname++;
         }
-        if (PyInt_Check(arg))
+        if (PyLong_Check(arg))
         {
           PyTypeObject* pytype = vtkPythonUtil::FindEnum(classname);
           if (pytype && PyObject_TypeCheck(arg, pytype))
@@ -824,6 +720,38 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
       }
       break;
 
+    case 'T':
+      // std::vector<T>
+      if (PySequence_Check(arg))
+      {
+        Py_ssize_t m = PySequence_Size(arg);
+        if (m > 0)
+        {
+          // if sequence is not empty, check the type of its contents
+          PyObject* sarg = PySequence_GetItem(arg, 0);
+          if (classname[0] == '*')
+          {
+            // for vector of pointers, check vtkObjectBase class type
+            penalty = vtkPythonOverload::CheckArg(sarg, "V", classname);
+          }
+          else
+          {
+            penalty = vtkPythonOverload::CheckArg(sarg, classname, "");
+          }
+          Py_DECREF(sarg);
+        }
+        // always consider PySequence to std::vector as a conversion
+        if (penalty < VTK_PYTHON_NEEDS_CONVERSION)
+        {
+          penalty = VTK_PYTHON_NEEDS_CONVERSION;
+        }
+      }
+      else
+      {
+        penalty = VTK_PYTHON_INCOMPATIBLE;
+      }
+      break;
+
     default:
       vtkGenericWarningMacro("Unrecognized arg format character " << format[0]);
       penalty = VTK_PYTHON_INCOMPATIBLE;
@@ -839,7 +767,7 @@ int vtkPythonOverload::CheckArg(PyObject* arg, const char* format, const char* n
   return penalty;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Call the overloaded method that is the best match for the arguments.
 // The first arg is name of the class that the methods belong to, it
 // is there for potential diagnostic usage but is currently unused.
@@ -858,7 +786,7 @@ PyObject* vtkPythonOverload::CallMethod(PyMethodDef* methods, PyObject* self, Py
 
     const char* format = nullptr;
     const char* classname = nullptr;
-    bool selfIsClass = 0;
+    bool selfIsClass = false;
     int sig;
 
     // Is self a type object, rather than an instance?  If so, then the
@@ -900,10 +828,10 @@ PyObject* vtkPythonOverload::CallMethod(PyMethodDef* methods, PyObject* self, Py
     // 2) other conversions third, e.g. double to int
 
     // Loop through args
-    Py_ssize_t n = PyTuple_GET_SIZE(args);
+    Py_ssize_t n = PyTuple_Size(args);
     for (Py_ssize_t i = 0; i < n; i++)
     {
-      PyObject* arg = PyTuple_GET_ITEM(args, i);
+      PyObject* arg = PyTuple_GetItem(args, i);
 
       for (sig = 0; sig < nsig; sig++)
       {
@@ -973,7 +901,14 @@ PyObject* vtkPythonOverload::CallMethod(PyMethodDef* methods, PyObject* self, Py
 
   if (meth)
   {
-    return meth->ml_meth(self, args);
+    PyObject* func = PyCFunction_New(meth, self);
+    PyObject* sobj = nullptr;
+    if (func)
+    {
+      sobj = PyObject_Call(func, args, nullptr);
+      Py_DECREF(func);
+    }
+    return sobj;
   }
 
   PyErr_SetString(PyExc_TypeError, "arguments do not match any overloaded methods");
@@ -981,7 +916,7 @@ PyObject* vtkPythonOverload::CallMethod(PyMethodDef* methods, PyObject* self, Py
   return nullptr;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Look through the a batch of constructor methods to see if any of
 // them take the provided argument.
 
@@ -1001,7 +936,7 @@ PyMethodDef* vtkPythonOverload::FindConversionMethod(PyMethodDef* methods, PyObj
     if (meth->ml_doc[0] != '-')
     {
       // If meth only takes one arg
-      helper.initialize(0, meth->ml_doc);
+      helper.initialize(false, meth->ml_doc);
       if (helper.next(&format, &classname) && !helper.next(&dummy1, &dummy2))
       {
         // If the constructor accepts the arg without
@@ -1024,6 +959,11 @@ PyMethodDef* vtkPythonOverload::FindConversionMethod(PyMethodDef* methods, PyObj
 
   // if matchCount > 1, there was ambiguity, but we silently use
   // the first match that was found instead of raising an error
+  if (matchCount > 1)
+  {
+    // TODO: possible warning?
+  }
 
   return method;
 }
+VTK_ABI_NAMESPACE_END

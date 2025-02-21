@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCameraInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCameraInterpolator
  * @brief   interpolate a series of cameras to update a new camera
@@ -52,6 +40,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCamera;
 class vtkCameraList;
 class vtkTupleInterpolator;
@@ -73,14 +62,14 @@ public:
    */
   int GetNumberOfCameras();
 
-  //@{
+  ///@{
   /**
    * Obtain some information about the interpolation range. The numbers
    * returned are undefined if the list of cameras is empty.
    */
   double GetMinimumT();
   double GetMaximumT();
-  //@}
+  ///@}
 
   /**
    * Clear the list of cameras.
@@ -118,7 +107,7 @@ public:
     INTERPOLATION_TYPE_MANUAL
   };
 
-  //@{
+  ///@{
   /**
    * These are convenience methods to switch between linear and spline
    * interpolation. The methods simply forward the request for linear or
@@ -134,9 +123,9 @@ public:
   void SetInterpolationTypeToLinear() { this->SetInterpolationType(INTERPOLATION_TYPE_LINEAR); }
   void SetInterpolationTypeToSpline() { this->SetInterpolationType(INTERPOLATION_TYPE_SPLINE); }
   void SetInterpolationTypeToManual() { this->SetInterpolationType(INTERPOLATION_TYPE_MANUAL); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the position portion
    * of the camera. Note that you can modify the behavior of the interpolator
@@ -145,9 +134,9 @@ public:
    */
   virtual void SetPositionInterpolator(vtkTupleInterpolator*);
   vtkGetObjectMacro(PositionInterpolator, vtkTupleInterpolator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the focal point portion
    * of the camera. Note that you can modify the behavior of the interpolator
@@ -156,9 +145,9 @@ public:
    */
   virtual void SetFocalPointInterpolator(vtkTupleInterpolator*);
   vtkGetObjectMacro(FocalPointInterpolator, vtkTupleInterpolator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the view up portion
    * of the camera. Note that you can modify the behavior of the interpolator
@@ -167,9 +156,9 @@ public:
    */
   virtual void SetViewUpInterpolator(vtkTupleInterpolator*);
   vtkGetObjectMacro(ViewUpInterpolator, vtkTupleInterpolator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the view angle portion
    * of the camera. Note that you can modify the behavior of the interpolator
@@ -178,9 +167,9 @@ public:
    */
   virtual void SetViewAngleInterpolator(vtkTupleInterpolator*);
   vtkGetObjectMacro(ViewAngleInterpolator, vtkTupleInterpolator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the parallel scale portion
    * of the camera. Note that you can modify the behavior of the interpolator
@@ -189,9 +178,9 @@ public:
    */
   virtual void SetParallelScaleInterpolator(vtkTupleInterpolator*);
   vtkGetObjectMacro(ParallelScaleInterpolator, vtkTupleInterpolator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the clipping range portion
    * of the camera. Note that you can modify the behavior of the interpolator
@@ -200,7 +189,7 @@ public:
    */
   virtual void SetClippingRangeInterpolator(vtkTupleInterpolator*);
   vtkGetObjectMacro(ClippingRangeInterpolator, vtkTupleInterpolator);
-  //@}
+  ///@}
 
   /**
    * Override GetMTime() because we depend on the interpolators which may be
@@ -236,4 +225,5 @@ private:
   void operator=(const vtkCameraInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

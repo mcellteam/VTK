@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDepthPeelingPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDepthPeelingPass
  * @brief   Implement Depth Peeling for use within a framebuffer pass
@@ -24,7 +12,7 @@
  * polygons in the view direction.
  *
  * This pass expects an initialized depth buffer and color buffer.
- * Initialized buffers means they have been cleared with farest z-value and
+ * Initialized buffers means they have been cleared with farthest z-value and
  * background color/gradient/transparent color.
  * An opaque pass may have been performed right after the initialization.
  *
@@ -52,15 +40,17 @@
 
 #include "vtkOpenGLRenderPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 #include <vector>                      // STL Header
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLFramebufferObject;
 class vtkTextureObject;
 class vtkOpenGLRenderWindow;
 class vtkOpenGLState;
 class vtkOpenGLQuadHelper;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkDepthPeelingPass : public vtkOpenGLRenderPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkDepthPeelingPass : public vtkOpenGLRenderPass
 {
 public:
   static vtkDepthPeelingPass* New();
@@ -80,7 +70,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Delegate for rendering the translucent polygonal geometry.
    * If it is NULL, nothing will be rendered and a warning will be emitted.
@@ -89,9 +79,9 @@ public:
    */
   vtkGetObjectMacro(TranslucentPass, vtkRenderPass);
   virtual void SetTranslucentPass(vtkRenderPass* translucentPass);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * In case of use of depth peeling technique for rendering translucent
    * material, define the threshold under which the algorithm stops to
@@ -103,9 +93,9 @@ public:
    */
   vtkSetClampMacro(OcclusionRatio, double, 0.0, 0.5);
   vtkGetMacro(OcclusionRatio, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * In case of depth peeling, define the maximum number of peeling layers.
    * Initial value is 4. A special value of 0 means no maximum limit.
@@ -113,7 +103,7 @@ public:
    */
   vtkSetMacro(MaximumNumberOfPeels, int);
   vtkGetMacro(MaximumNumberOfPeels, int);
-  //@}
+  ///@}
 
   // vtkOpenGLRenderPass virtuals:
   bool PostReplaceShaderValues(std::string& vertexShader, std::string& geometryShader,
@@ -147,7 +137,7 @@ protected:
   vtkRenderPass* TranslucentPass;
   vtkTimeStamp CheckTime;
 
-  //@{
+  ///@{
   /**
    * Cache viewport values for depth peeling.
    */
@@ -155,7 +145,7 @@ protected:
   int ViewportY;
   int ViewportWidth;
   int ViewportHeight;
-  //@}
+  ///@}
 
   /**
    * In case of use of depth peeling technique for rendering translucent
@@ -206,4 +196,5 @@ private:
   void operator=(const vtkDepthPeelingPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

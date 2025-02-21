@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageNoiseSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageNoiseSource
  * @brief   Create an image filled with noise.
@@ -30,6 +18,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingSourcesModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGSOURCES_EXPORT vtkImageNoiseSource : public vtkImageAlgorithm
 {
 public:
@@ -37,7 +26,7 @@ public:
   vtkTypeMacro(vtkImageNoiseSource, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the minimum and maximum values for the generated noise.
    */
@@ -45,9 +34,9 @@ public:
   vtkGetMacro(Minimum, double);
   vtkSetMacro(Maximum, double);
   vtkGetMacro(Maximum, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set how large of an image to generate.
    */
@@ -56,11 +45,11 @@ public:
   {
     this->SetWholeExtent(ext[0], ext[1], ext[2], ext[3], ext[4], ext[5]);
   }
-  //@}
+  ///@}
 
 protected:
   vtkImageNoiseSource();
-  ~vtkImageNoiseSource() override {}
+  ~vtkImageNoiseSource() override = default;
 
   double Minimum;
   double Maximum;
@@ -74,4 +63,5 @@ private:
   void operator=(const vtkImageNoiseSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

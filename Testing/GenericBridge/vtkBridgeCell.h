@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBridgeCell.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBridgeCell
  * @brief   Implementation of vtkGenericAdaptorCell
@@ -28,6 +16,7 @@
 #include "vtkBridgeExport.h" //for module export macro
 #include "vtkGenericAdaptorCell.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCell;
 class vtkBridgeDataSet;
 class vtkBridgeCellIterator;
@@ -147,7 +136,7 @@ public:
    */
   void GetBoundaryIterator(vtkGenericCellIterator* boundaries, int dim = -1) override;
 
-  //@{
+  ///@{
   /**
    * Number of cells (dimension>boundary->GetDimension()) of the dataset
    * that share the boundary `boundary' of `this'.
@@ -160,7 +149,7 @@ public:
    */
   int CountNeighbors(vtkGenericAdaptorCell* boundary) override;
   void CountEdgeNeighbors(int* sharing) override;
-  //@}
+  ///@}
 
   /**
    * Put into `neighbors' the cells (dimension>boundary->GetDimension())
@@ -400,7 +389,7 @@ public:
    */
   double* GetParametricCoords() override;
 #if 0
-  //@{
+  ///@{
   /**
    * Tessellate the cell if it is not linear or if at least one attribute of
    * `attributes' is not linear. The output are linear cells of the same
@@ -421,9 +410,9 @@ public:
   // For the internals of the tessellation algorithm (the hash table in particular)
   int IsFaceOnBoundary(vtkIdType faceId) override;
   int IsOnBoundary() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Put into `id' the list of ids the point of the cell.
    * \pre id_exists: id!=0
@@ -438,7 +427,7 @@ public:
                                vtkPointData *pd,
                                vtkCellData *cd );
 #endif
-  //@}
+  ///@}
 
   /**
    * Return the ids of the vertices defining face `faceId'.
@@ -532,4 +521,5 @@ private:
   void operator=(const vtkBridgeCell&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

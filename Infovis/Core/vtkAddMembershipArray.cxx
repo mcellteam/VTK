@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAddMembershipArray.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkAddMembershipArray.h"
 
@@ -44,10 +28,11 @@
 #include "vtkVariant.h"
 #include "vtkVariantArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAddMembershipArray);
 vtkCxxSetObjectMacro(vtkAddMembershipArray, InputValues, vtkAbstractArray);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAddMembershipArray::vtkAddMembershipArray()
 {
   this->FieldType = -1;
@@ -58,14 +43,14 @@ vtkAddMembershipArray::vtkAddMembershipArray()
   this->SetNumberOfInputPorts(3);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAddMembershipArray::~vtkAddMembershipArray()
 {
   this->SetOutputArrayName(nullptr);
   this->SetInputArrayName(nullptr);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAddMembershipArray::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -89,7 +74,7 @@ int vtkAddMembershipArray::FillInputPortInformation(int port, vtkInformation* in
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAddMembershipArray::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -251,7 +236,7 @@ int vtkAddMembershipArray::RequestData(
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAddMembershipArray::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -276,3 +261,4 @@ void vtkAddMembershipArray::PrintSelf(ostream& os, vtkIndent indent)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

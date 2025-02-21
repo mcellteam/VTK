@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlot3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPlot3D
@@ -29,41 +17,44 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkContextItem.h"
-#include "vtkNew.h"          // Needed to hold vtkNew ivars
-#include "vtkSmartPointer.h" // Needed to hold SP ivars
-#include "vtkVector.h"       // For Points ivar
-#include <vector>            // For ivars
+#include "vtkNew.h"           // Needed to hold vtkNew ivars
+#include "vtkSmartPointer.h"  // Needed to hold SP ivars
+#include "vtkVector.h"        // For Points ivar
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
+#include <vector>             // For ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkChartXYZ;
 class vtkDataArray;
 class vtkIdTypeArray;
+class vtkPoints;
 class vtkTable;
 class vtkUnsignedCharArray;
 class vtkPen;
 
-class VTKCHARTSCORE_EXPORT vtkPlot3D : public vtkContextItem
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPlot3D : public vtkContextItem
 {
 public:
   vtkTypeMacro(vtkPlot3D, vtkContextItem);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/get the vtkPen object that controls how this plot draws (out)lines.
    */
   void SetPen(vtkPen* pen);
   vtkPen* GetPen();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the vtkPen object that controls how this plot draws (out)lines.
    */
   void SetSelectionPen(vtkPen* pen);
   vtkPen* GetSelectionPen();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the input to the plot.
    */
@@ -74,7 +65,7 @@ public:
     const vtkStdString& zName, const vtkStdString& colorName);
   virtual void SetInputData(
     vtkTable* input, vtkIdType xColumn, vtkIdType yColumn, vtkIdType zColumn);
-  //@}
+  ///@}
 
   /**
    * Set the color of each point in the plot.  The input is a single component
@@ -86,15 +77,21 @@ public:
   /**
    * Get all the data points within this plot.
    */
+  vtkPoints* GetVTKPoints() { return this->Points; }
+
+  /**
+   * Get a copy of all the data points.
+   * TODO: Maybe deprecate this function, remove it and rename GetVTKPoints -> GetPoints.
+   */
   std::vector<vtkVector3f> GetPoints();
 
-  //@{
+  ///@{
   /**
    * Get/set the chart for this plot.
    */
   vtkGetObjectMacro(Chart, vtkChartXYZ);
   virtual void SetChart(vtkChartXYZ* chart);
-  //@}
+  ///@}
 
   /**
    * Get the label for the X axis.
@@ -116,13 +113,13 @@ public:
    */
   std::vector<vtkVector3f> GetDataBounds() { return this->DataBounds; }
 
-  //@{
+  ///@{
   /**
    * Set/get the selection array for the plot.
    */
   virtual void SetSelection(vtkIdTypeArray* id);
   virtual vtkIdTypeArray* GetSelection();
-  //@}
+  ///@}
 
 protected:
   vtkPlot3D();
@@ -172,7 +169,7 @@ protected:
   /**
    * The data points read in during SetInputData().
    */
-  std::vector<vtkVector3f> Points;
+  vtkNew<vtkPoints> Points;
 
   /**
    * When the points were last built.
@@ -199,4 +196,5 @@ private:
   void operator=(const vtkPlot3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPlot3D_h

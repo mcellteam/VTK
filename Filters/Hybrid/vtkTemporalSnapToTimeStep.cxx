@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTemporalSnapToTimeStep.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTemporalSnapToTimeStep.h"
 
 #include "vtkDataObject.h"
@@ -22,19 +10,20 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTemporalSnapToTimeStep);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTemporalSnapToTimeStep::vtkTemporalSnapToTimeStep()
 {
   this->HasDiscrete = 0;
   this->SnapMode = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTemporalSnapToTimeStep::~vtkTemporalSnapToTimeStep() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkTemporalSnapToTimeStep::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -48,7 +37,7 @@ vtkTypeBool vtkTemporalSnapToTimeStep::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Change the information
 int vtkTemporalSnapToTimeStep::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -68,7 +57,7 @@ int vtkTemporalSnapToTimeStep::RequestInformation(vtkInformation* vtkNotUsed(req
   {
     int numTimes = inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
     this->InputTimeValues.resize(numTimes);
-    inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &this->InputTimeValues[0]);
+    inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), this->InputTimeValues.data());
     this->HasDiscrete = 1;
   }
 
@@ -83,7 +72,7 @@ int vtkTemporalSnapToTimeStep::RequestInformation(vtkInformation* vtkNotUsed(req
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method simply copies by reference the input data to the output.
 int vtkTemporalSnapToTimeStep::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -109,10 +98,12 @@ int vtkTemporalSnapToTimeStep::RequestData(vtkInformation* vtkNotUsed(request),
     }
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTemporalSnapToTimeStep::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -181,11 +172,12 @@ int vtkTemporalSnapToTimeStep::RequestUpdateExtent(vtkInformation* vtkNotUsed(re
 
   return 1;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTemporalSnapToTimeStep::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "SnapMode: " << this->SnapMode << endl;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_END

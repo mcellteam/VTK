@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAffineWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAffineWidget.h"
 #include "vtkAffineRepresentation2D.h"
 #include "vtkCallbackCommand.h"
@@ -25,9 +13,10 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAffineWidget);
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAffineWidget::vtkAffineWidget()
 {
   // Set the initial state
@@ -48,16 +37,16 @@ vtkAffineWidget::vtkAffineWidget()
     this, vtkAffineWidget::ModifyEventAction);
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAffineWidget::~vtkAffineWidget() = default;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineWidget::SetEnabled(int enabling)
 {
   this->Superclass::SetEnabled(enabling);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -66,9 +55,14 @@ void vtkAffineWidget::CreateDefaultRepresentation()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineWidget::SetCursor(int cState)
 {
+  if (!this->ManagesCursor)
+  {
+    return;
+  }
+
   switch (cState)
   {
     case vtkAffineRepresentation::ScaleNE:
@@ -112,7 +106,7 @@ void vtkAffineWidget::SetCursor(int cState)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineWidget::SelectAction(vtkAbstractWidget* w)
 {
   vtkAffineWidget* self = reinterpret_cast<vtkAffineWidget*>(w);
@@ -148,7 +142,7 @@ void vtkAffineWidget::SelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineWidget::MoveAction(vtkAbstractWidget* w)
 {
   vtkAffineWidget* self = reinterpret_cast<vtkAffineWidget*>(w);
@@ -184,7 +178,7 @@ void vtkAffineWidget::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineWidget::ModifyEventAction(vtkAbstractWidget* w)
 {
   vtkAffineWidget* self = reinterpret_cast<vtkAffineWidget*>(w);
@@ -203,7 +197,7 @@ void vtkAffineWidget::ModifyEventAction(vtkAbstractWidget* w)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineWidget::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkAffineWidget* self = reinterpret_cast<vtkAffineWidget*>(w);
@@ -236,9 +230,10 @@ void vtkAffineWidget::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

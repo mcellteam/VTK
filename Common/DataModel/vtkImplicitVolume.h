@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitVolume.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImplicitVolume
  * @brief   treat a volume as if it were an implicit function
@@ -43,6 +31,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkImplicitFunction.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 class vtkImageData;
 
@@ -65,43 +54,43 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Evaluate the ImplicitVolume. This returns the interpolated scalar value
    * at x[3].
    */
   using vtkImplicitFunction::EvaluateFunction;
   double EvaluateFunction(double x[3]) override;
-  //@}
+  ///@}
 
   /**
    * Evaluate ImplicitVolume gradient.
    */
   void EvaluateGradient(double x[3], double n[3]) override;
 
-  //@{
+  ///@{
   /**
    * Specify the volume for the implicit function.
    */
   virtual void SetVolume(vtkImageData*);
   vtkGetObjectMacro(Volume, vtkImageData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the function value to use for points outside of the dataset.
    */
   vtkSetMacro(OutValue, double);
   vtkGetMacro(OutValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the function gradient to use for points outside of the dataset.
    */
   vtkSetVector3Macro(OutGradient, double);
   vtkGetVector3Macro(OutGradient, double);
-  //@}
+  ///@}
 
 protected:
   vtkImplicitVolume();
@@ -118,4 +107,5 @@ private:
   void operator=(const vtkImplicitVolume&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

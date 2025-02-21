@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ExampleDataArrayRangeDispatch.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // This file provides some examples of how to use the ArrayDispatch system
 // with the DataArrayRange utilities to create high performance algorithms that
@@ -75,7 +63,7 @@ struct FillImpl
 // Adds all values in Range into Sum.
 struct SumImpl
 {
-  double Sum{ 0 };
+  double Sum{ 0.0 };
 
   template <typename ArrayType>
   void operator()(ArrayType* array)
@@ -84,7 +72,7 @@ struct SumImpl
 
     // The cbegin/cend methods return constant iterators that prevent the data
     // they point at from being modified.
-    this->Sum = std::accumulate(range.cbegin(), range.cend(), 0);
+    this->Sum = std::accumulate(range.cbegin(), range.cend(), 0.0);
   }
 };
 

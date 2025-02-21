@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLImageDataReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLImageDataReader
  * @brief   Read VTK XML ImageData files.
@@ -32,6 +20,7 @@
 #include "vtkIOXMLModule.h" // For export macro
 #include "vtkXMLStructuredDataReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 
 class VTKIOXML_EXPORT vtkXMLImageDataReader : public vtkXMLStructuredDataReader
@@ -41,13 +30,13 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkXMLImageDataReader* New();
 
-  //@{
+  ///@{
   /**
    * Get the reader's output.
    */
   vtkImageData* GetOutput();
   vtkImageData* GetOutput(int idx);
-  //@}
+  ///@}
 
   /**
    * For the specified port, copy the information this reader sets up in
@@ -79,4 +68,5 @@ private:
   void operator=(const vtkXMLImageDataReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

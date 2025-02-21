@@ -1,22 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWidgetEvent.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWidgetEvent.h"
 #include "vtkObjectFactory.h"
 
 // this list should only contain the initial, contiguous
 // set of events and should not include UserEvent
+VTK_ABI_NAMESPACE_BEGIN
 static const char* vtkWidgetEventStrings[] = {
   "NoEvent",
   "Select",
@@ -38,12 +27,13 @@ static const char* vtkWidgetEventStrings[] = {
   "TimedOut",
   "ModifyEvent",
   "Reset",
+  "HoverLeave",
   nullptr,
 };
 
 vtkStandardNewMacro(vtkWidgetEvent);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkWidgetEvent::GetStringFromEventId(unsigned long event)
 {
   static unsigned long numevents = 0;
@@ -67,7 +57,7 @@ const char* vtkWidgetEvent::GetStringFromEventId(unsigned long event)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned long vtkWidgetEvent::GetEventIdFromString(const char* event)
 {
   unsigned long i;
@@ -82,9 +72,10 @@ unsigned long vtkWidgetEvent::GetEventIdFromString(const char* event)
   return vtkWidgetEvent::NoEvent;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWidgetEvent::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

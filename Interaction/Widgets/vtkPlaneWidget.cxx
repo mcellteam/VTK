@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlaneWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPlaneWidget.h"
 
 #include "vtkActor.h"
@@ -39,12 +27,12 @@
 #include "vtkSphereSource.h"
 #include "vtkTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPlaneWidget);
 
 vtkCxxSetObjectMacro(vtkPlaneWidget, PlaneProperty, vtkProperty);
 
 vtkPlaneWidget::vtkPlaneWidget()
-  : vtkPolyDataSourceWidget()
 {
   this->State = vtkPlaneWidget::Start;
   this->EventCallbackCommand->SetCallback(vtkPlaneWidget::ProcessEvents);
@@ -1204,7 +1192,7 @@ void vtkPlaneWidget::Rotate(int X, int Y, double* p1, double* p2, double* vpn)
   {
     return;
   }
-  int* size = this->CurrentRenderer->GetSize();
+  const int* size = this->CurrentRenderer->GetSize();
   double l2 = (X - this->Interactor->GetLastEventPosition()[0]) *
       (X - this->Interactor->GetLastEventPosition()[0]) +
     (Y - this->Interactor->GetLastEventPosition()[1]) *
@@ -1684,3 +1672,4 @@ void vtkPlaneWidget::UpdatePlacement()
   this->PlaneSource->Update();
   this->PositionHandles();
 }
+VTK_ABI_NAMESPACE_END

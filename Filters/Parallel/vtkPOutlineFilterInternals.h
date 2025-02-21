@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPOutlineFilterInternals.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPOutlineFilterInternals
  * @brief   create wireframe outline (or corners) for arbitrary data set
@@ -19,6 +7,9 @@
  * vtkPOutlineFilterInternals has common code for vtkOutlineFilter and
  * vtkOutlineCornerFilter. It assumes the filter is operated in a data parallel
  * pipeline.
+ *
+ * This class does not inherit from vtkObject and is not intended to be used
+ * outside of VTK.
  */
 
 #ifndef vtkPOutlineFilterInternals_h
@@ -28,6 +19,7 @@
 #include "vtkFiltersParallelModule.h" // For export macro
 #include <vector>                     // needed for std::vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBoundingBox;
 class vtkDataObject;
 class vtkDataObjectTree;
@@ -43,12 +35,34 @@ class vtkUniformGridAMR;
 class VTKFILTERSPARALLEL_EXPORT vtkPOutlineFilterInternals
 {
 public:
-  vtkPOutlineFilterInternals();
-  virtual ~vtkPOutlineFilterInternals();
-  void SetController(vtkMultiProcessController*);
+  vtkPOutlineFilterInternals() = default;
+  virtual ~vtkPOutlineFilterInternals() = default;
+
+  /**
+   * Behave like a vtkAlgorithm::RequestData and compute the outline geometry
+   * based on the parameters and provided inputs.
+   * Intended to be called in vtkOutlineCornerFilter::RequestData and in
+   * vtkOutlineFilter::RequestData.
+   */
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  void SetCornerFactor(double cornerFactor);
+
+  /**
+   * Set the controller to be used.
+   * Default is nullptr.
+   */
+  void SetController(vtkMultiProcessController*);
+
+  /**
+   * Set whether or not to generate a corner outline.
+   * Default is false.
+   */
   void SetIsCornerSource(bool value);
+
+  /**
+   * Set the corner factor to use when creating corner outline.
+   * Default is 0.2.
+   */
+  void SetCornerFactor(double cornerFactor);
 
 private:
   vtkPOutlineFilterInternals(const vtkPOutlineFilterInternals&) = delete;
@@ -61,13 +75,15 @@ private:
   int RequestData(vtkGraph* graph, vtkPolyData* output);
 
   void CollectCompositeBounds(vtkDataObject* input);
+  vtkSmartPointer<vtkPolyData> GenerateOutlineGeometry(double bounds[6]);
 
   std::vector<vtkBoundingBox> BoundsList;
-  vtkMultiProcessController* Controller;
+  vtkMultiProcessController* Controller = nullptr;
 
-  bool IsCornerSource;
-  double CornerFactor;
+  bool IsCornerSource = false;
+  double CornerFactor = 0.2;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkPOutlineFilterInternals.h

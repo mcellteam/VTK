@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationObjectBaseVectorKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationObjectBaseVectorKey.h"
 #include "vtkInformation.h" // For vtkErrorWithObjectMacro
 #include "vtkSmartPointer.h"
@@ -19,21 +7,22 @@
 #include <vector>
 
 //============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformationObjectBaseVectorValue : public vtkObjectBase
 {
 public:
-  typedef std::vector<vtkSmartPointer<vtkObjectBase> > VectorType;
+  typedef std::vector<vtkSmartPointer<vtkObjectBase>> VectorType;
 
   vtkBaseTypeMacro(vtkInformationObjectBaseVectorValue, vtkObjectBase);
-  std::vector<vtkSmartPointer<vtkObjectBase> >& GetVector() { return this->Vector; }
+  std::vector<vtkSmartPointer<vtkObjectBase>>& GetVector() { return this->Vector; }
 
 private:
-  std::vector<vtkSmartPointer<vtkObjectBase> > Vector;
+  std::vector<vtkSmartPointer<vtkObjectBase>> Vector;
 };
 
 //============================================================================
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationObjectBaseVectorKey::vtkInformationObjectBaseVectorKey(
   const char* name, const char* location, const char* requiredClass)
   : vtkInformationKey(name, location)
@@ -42,16 +31,16 @@ vtkInformationObjectBaseVectorKey::vtkInformationObjectBaseVectorKey(
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationObjectBaseVectorKey::~vtkInformationObjectBaseVectorKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationObjectBaseVectorValue* vtkInformationObjectBaseVectorKey::GetObjectBaseVector(
   vtkInformation* info)
 {
@@ -72,7 +61,7 @@ vtkInformationObjectBaseVectorValue* vtkInformationObjectBaseVectorKey::GetObjec
   return base;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkInformationObjectBaseVectorKey::ValidateDerivedType(
   vtkInformation* info, vtkObjectBase* aValue)
 {
@@ -89,7 +78,7 @@ bool vtkInformationObjectBaseVectorKey::ValidateDerivedType(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::Append(vtkInformation* info, vtkObjectBase* aValue)
 {
   if (!this->ValidateDerivedType(info, aValue))
@@ -104,10 +93,10 @@ void vtkInformationObjectBaseVectorKey::Append(vtkInformation* info, vtkObjectBa
     aValue->Register(base);
   }
   //
-  base->GetVector().push_back(aValue);
+  base->GetVector().emplace_back(aValue);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::Set(vtkInformation* info, vtkObjectBase* aValue, int i)
 {
   if (!this->ValidateDerivedType(info, aValue))
@@ -126,7 +115,7 @@ void vtkInformationObjectBaseVectorKey::Set(vtkInformation* info, vtkObjectBase*
   base->GetVector()[i] = aValue;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::Remove(vtkInformation* info, vtkObjectBase* val)
 {
   if (!this->ValidateDerivedType(info, val))
@@ -148,7 +137,7 @@ void vtkInformationObjectBaseVectorKey::Remove(vtkInformation* info, vtkObjectBa
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::Remove(vtkInformation* info, int idx)
 {
   typedef vtkInformationObjectBaseVectorValue::VectorType Vector;
@@ -168,7 +157,7 @@ void vtkInformationObjectBaseVectorKey::Remove(vtkInformation* info, int idx)
   vector.erase(vector.begin() + idx);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::SetRange(
   vtkInformation* info, vtkObjectBase** sourceVec, int from, int to, int n)
 {
@@ -199,7 +188,7 @@ void vtkInformationObjectBaseVectorKey::SetRange(
 //     (base!=nullptr && !base->GetVector().empty())?(&base->GetVector()[0]):0;
 // }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::GetRange(
   vtkInformation* info, vtkObjectBase** dest, int from, int to, int n)
 {
@@ -221,7 +210,7 @@ void vtkInformationObjectBaseVectorKey::GetRange(
     return;
   }
 
-  // limit copy to whats there.
+  // limit copy to what's there.
   if (n > m - from + 1)
   {
     vtkErrorWithObjectMacro(info, "Copy past the end of the vector has been requested.");
@@ -235,7 +224,7 @@ void vtkInformationObjectBaseVectorKey::GetRange(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkObjectBase* vtkInformationObjectBaseVectorKey::Get(vtkInformation* info, int idx)
 {
   vtkInformationObjectBaseVectorValue* base =
@@ -251,7 +240,7 @@ vtkObjectBase* vtkInformationObjectBaseVectorKey::Get(vtkInformation* info, int 
   return base->GetVector()[idx];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationObjectBaseVectorKey::Size(vtkInformation* info)
 {
   vtkInformationObjectBaseVectorValue* base =
@@ -260,21 +249,21 @@ int vtkInformationObjectBaseVectorKey::Size(vtkInformation* info)
   return (base == nullptr ? 0 : static_cast<int>(base->GetVector().size()));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::Resize(vtkInformation* info, int size)
 {
   vtkInformationObjectBaseVectorValue* base = this->GetObjectBaseVector(info);
   base->GetVector().resize(size);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::Clear(vtkInformation* info)
 {
   vtkInformationObjectBaseVectorValue* base = this->GetObjectBaseVector(info);
   base->GetVector().clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::ShallowCopy(vtkInformation* source, vtkInformation* dest)
 {
   vtkInformationObjectBaseVectorValue* sourceBase =
@@ -293,7 +282,7 @@ void vtkInformationObjectBaseVectorKey::ShallowCopy(vtkInformation* source, vtkI
   destBase->GetVector() = sourceBase->GetVector();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationObjectBaseVectorKey::Print(ostream& os, vtkInformation* info)
 {
   vtkIndent indent;
@@ -327,3 +316,4 @@ void vtkInformationObjectBaseVectorKey::Print(ostream& os, vtkInformation* info)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

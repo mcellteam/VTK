@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMetaImageReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMetaImageReader
  * @brief   read binary UNC meta image data
@@ -68,6 +56,8 @@ namespace vtkmetaio
 class MetaImage;
 } // forward declaration
 
+VTK_ABI_NAMESPACE_BEGIN
+
 class VTKIOIMAGE_EXPORT vtkMetaImageReader : public vtkImageReader2
 {
 public:
@@ -90,7 +80,7 @@ public:
   double* GetImagePositionPatient() { return this->GetDataOrigin(); }
   int GetNumberOfComponents() { return this->GetNumberOfScalarComponents(); }
   int GetPixelRepresentation() { return this->GetDataScalarType(); }
-  int GetDataByteOrder(void) override;
+  int GetDataByteOrder() override;
 
   vtkGetMacro(RescaleSlope, double);
   vtkGetMacro(RescaleOffset, double);
@@ -112,7 +102,7 @@ public:
    * Test whether the file with the given name can be read by this
    * reader.
    */
-  int CanReadFile(const char* name) override;
+  int CanReadFile(VTK_FILEPATH const char* name) override;
 
 protected:
   vtkMetaImageReader();
@@ -122,7 +112,7 @@ protected:
   // and should be hidden from the user...but then the getsettest fails.
   /*virtual void SetFilePrefix(const char * arg)
     { vtkImageReader2::SetFilePrefix(arg); }
-  virtual void SetFilePattern(const char * arg)
+  virtual void SetFilePattern(VTK_FILEPATH const char * arg)
     { vtkImageReader2::SetFilePattern(arg); }
   virtual void SetDataScalarType(int type)
     { vtkImageReader2::SetDataScalarType(type); }
@@ -162,10 +152,10 @@ protected:
   vtkSetMacro(FileLowerLeft, int);
   virtual void ComputeInternalFileName(int slice)
     { vtkImageReader2::ComputeInternalFileName(slice); }
-  vtkGetStringMacro(InternalFileName);
-  const char * GetDataByteOrderAsString(void)
+  vtkGetFilePathMacro(InternalFileName);
+  const char * GetDataByteOrderAsString()
     { return vtkImageReader2::GetDataByteOrderAsString(); }
-  unsigned long GetHeaderSize(void)
+  unsigned long GetHeaderSize()
     { return vtkImageReader2::GetHeaderSize(); }*/
 
   void ExecuteInformation() override;
@@ -198,4 +188,5 @@ private:
   char AnatomicalOrientation[255];
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

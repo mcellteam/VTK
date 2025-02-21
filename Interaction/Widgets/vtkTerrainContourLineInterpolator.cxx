@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTerrainContourLineInterpolator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTerrainContourLineInterpolator.h"
 
 #include "vtkCellArray.h"
@@ -22,9 +10,10 @@
 #include "vtkPoints.h"
 #include "vtkProjectedTerrainPath.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTerrainContourLineInterpolator);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTerrainContourLineInterpolator::vtkTerrainContourLineInterpolator()
 {
   this->ImageData = nullptr;
@@ -34,14 +23,14 @@ vtkTerrainContourLineInterpolator::vtkTerrainContourLineInterpolator()
   this->Projector->SetProjectionModeToHug();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTerrainContourLineInterpolator::~vtkTerrainContourLineInterpolator()
 {
   this->SetImageData(nullptr);
   this->Projector->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTerrainContourLineInterpolator::SetImageData(vtkImageData* image)
 {
   if (this->ImageData != image)
@@ -61,7 +50,7 @@ void vtkTerrainContourLineInterpolator::SetImageData(vtkImageData* image)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTerrainContourLineInterpolator::InterpolateLine(
   vtkRenderer*, vtkContourRepresentation* rep, int idx1, int idx2)
 {
@@ -136,14 +125,14 @@ int vtkTerrainContourLineInterpolator::InterpolateLine(
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTerrainContourLineInterpolator::UpdateNode(
   vtkRenderer*, vtkContourRepresentation*, double* vtkNotUsed(node), int vtkNotUsed(idx))
 {
   return 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTerrainContourLineInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -160,3 +149,4 @@ void vtkTerrainContourLineInterpolator::PrintSelf(ostream& os, vtkIndent indent)
     this->Projector->PrintSelf(os, indent.GetNextIndent());
   }
 }
+VTK_ABI_NAMESPACE_END

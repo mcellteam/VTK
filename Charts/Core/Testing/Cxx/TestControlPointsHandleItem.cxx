@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestLinePlot.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAxis.h"
 #include "vtkChartXY.h"
@@ -670,7 +658,7 @@ static const char* TestControlPointsHandleItemLog = "# StreamVersion 1\n"
                                                     "LeaveEvent 489 -5 0 0 0 0 0\n"
                                                     "TimerEvent 489 -5 0 0 0 0 0\n";
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestControlPointsHandleItem(int, char*[])
 {
   // Set up a 2D scene, add an XY chart to it

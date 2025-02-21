@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericProbeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericProbeFilter.h"
 
 #include "vtkCell.h"
@@ -30,29 +18,30 @@
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericProbeFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericProbeFilter::vtkGenericProbeFilter()
 {
   this->ValidPoints = vtkIdTypeArray::New();
   this->SetNumberOfInputPorts(2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericProbeFilter::~vtkGenericProbeFilter()
 {
   this->ValidPoints->Delete();
   this->ValidPoints = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericProbeFilter::SetSourceData(vtkGenericDataSet* input)
 {
   this->SetInputData(1, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericDataSet* vtkGenericProbeFilter::GetSource()
 {
   if (this->GetNumberOfInputConnections(1) < 1)
@@ -63,7 +52,7 @@ vtkGenericDataSet* vtkGenericProbeFilter::GetSource()
   return vtkGenericDataSet::SafeDownCast(this->GetExecutive()->GetInputData(1, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericProbeFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -85,7 +74,7 @@ int vtkGenericProbeFilter::RequestInformation(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericProbeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -167,7 +156,7 @@ int vtkGenericProbeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   cout << "tol2=" << tol2 << endl;
   // Loop over all input points, interpolating source data
   //
-  int abort = 0;
+  bool abort = false;
 
   // Need to use source to create a cellIt since this class is virtual
   vtkGenericCellIterator* cellIt = source->NewCellIterator();
@@ -178,7 +167,7 @@ int vtkGenericProbeFilter::RequestData(vtkInformation* vtkNotUsed(request),
     if (!(ptId % progressInterval))
     {
       this->UpdateProgress(static_cast<double>(ptId) / numPts);
-      abort = GetAbortExecute();
+      abort = CheckAbort();
     }
 
     // Get the xyz coordinate of the point in the input dataset
@@ -225,7 +214,7 @@ int vtkGenericProbeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericProbeFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   vtkGenericDataSet* source = this->GetSource();
@@ -236,7 +225,7 @@ void vtkGenericProbeFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ValidPoints: " << this->ValidPoints << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericProbeFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -253,3 +242,4 @@ int vtkGenericProbeFilter::FillInputPortInformation(int port, vtkInformation* in
   }
   return 1;
 }
+VTK_ABI_NAMESPACE_END

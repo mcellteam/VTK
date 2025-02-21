@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSelectVisiblePoints.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSelectVisiblePoints
  * @brief   extract points that are visible (based on z-buffer calculation)
@@ -48,6 +36,7 @@
 #include "vtkPolyDataAlgorithm.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkMatrix4x4;
 
@@ -63,7 +52,7 @@ public:
    */
   static vtkSelectVisiblePoints* New();
 
-  //@{
+  ///@{
   /**
    * Specify the renderer in which the visibility computation is to be
    * performed.
@@ -77,9 +66,9 @@ public:
     }
   }
   vtkRenderer* GetRenderer() { return this->Renderer; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the flag which enables selection in a rectangular display
    * region.
@@ -87,18 +76,18 @@ public:
   vtkSetMacro(SelectionWindow, vtkTypeBool);
   vtkGetMacro(SelectionWindow, vtkTypeBool);
   vtkBooleanMacro(SelectionWindow, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the selection window in display coordinates. You must specify
    * a rectangular region using (xmin,xmax,ymin,ymax).
    */
   vtkSetVector4Macro(Selection, int);
   vtkGetVectorMacro(Selection, int, 4);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the flag which enables inverse selection; i.e., invisible points
    * are selected.
@@ -106,9 +95,9 @@ public:
   vtkSetMacro(SelectInvisible, vtkTypeBool);
   vtkGetMacro(SelectInvisible, vtkTypeBool);
   vtkBooleanMacro(SelectInvisible, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a tolerance in normalized display coordinate system
    * to use to determine whether a point is visible. A
@@ -117,9 +106,9 @@ public:
    */
   vtkSetClampMacro(Tolerance, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a tolerance in world coordinate system
    * to use to determine whether a point is visible.
@@ -129,7 +118,7 @@ public:
    */
   vtkSetClampMacro(ToleranceWorld, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(ToleranceWorld, double);
-  //@}
+  ///@}
 
   /**
    * Requires the renderer to be set. Populates the composite perspective transform
@@ -171,4 +160,5 @@ private:
   void operator=(const vtkSelectVisiblePoints&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderLargeImage.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRenderLargeImage
  * @brief   Use tiling to generate a large rendering
@@ -26,6 +14,7 @@
 #include "vtkFiltersHybridModule.h" // For export macro
 #include "vtkImageData.h"           // makes things a bit easier
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkActor2DCollection;
 class vtkCollection;
@@ -38,25 +27,25 @@ public:
   vtkTypeMacro(vtkRenderLargeImage, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The magnification of the current render window
    */
   vtkSetMacro(Magnification, int);
   vtkGetMacro(Magnification, int);
-  //@}
+  ///@}
 
   /**
    * Indicates what renderer to get the pixel data from.
    */
   virtual void SetInput(vtkRenderer*);
 
-  //@{
+  ///@{
   /**
    * Returns which renderer is being used as the source for the pixel data.
    */
   vtkGetObjectMacro(Input, vtkRenderer);
-  //@}
+  ///@}
 
   /**
    * Get the output data object for a port on this algorithm.
@@ -96,4 +85,5 @@ private:
   void operator=(const vtkRenderLargeImage&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

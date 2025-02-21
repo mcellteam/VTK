@@ -86,6 +86,10 @@ vtk_add_test_cxx(vtkIOImageCxxTests tests
     "DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/vtk.png}")
 
 vtk_add_test_cxx(vtkIOImageCxxTests tests
+  TestTGAReader.cxx,NO_OUTPUT
+    "DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/vtk.tga}")
+
+vtk_add_test_cxx(vtkIOImageCxxTests tests
   TestPNGReaderReadFromMemory.cxx,NO_OUTPUT
     "DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/vtk.png}")
 
@@ -129,6 +133,8 @@ set(all_tests
   ${data_tests}
   ${tests}
   )
+
 vtk_test_cxx_executable(vtkIOImageCxxTests all_tests
+  DISABLE_FLOATING_POINT_EXCEPTIONS
   RENDERING_FACTORY
-)
+  )

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransformToGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTransformToGrid.h"
 
 #include "vtkAbstractTransform.h"
@@ -22,11 +10,12 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTransformToGrid);
 
 vtkCxxSetObjectMacro(vtkTransformToGrid, Input, vtkAbstractTransform);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransformToGrid::vtkTransformToGrid()
 {
   this->Input = nullptr;
@@ -46,13 +35,13 @@ vtkTransformToGrid::vtkTransformToGrid()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransformToGrid::~vtkTransformToGrid()
 {
   this->SetInput(static_cast<vtkAbstractTransform*>(nullptr));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformToGrid::PrintSelf(ostream& os, vtkIndent indent)
 {
   int i;
@@ -90,7 +79,7 @@ void vtkTransformToGrid::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "DisplacementShift: " << this->DisplacementShift << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method returns the largest data that can be generated.
 void vtkTransformToGrid::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
@@ -114,7 +103,7 @@ void vtkTransformToGrid::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkDataObject::SetPointDataActiveScalarInfo(outInfo, this->GridScalarType, 3);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the maximum absolute displacement of the transform over
 // the entire grid extent -- this is extremely robust and extremely
 // inefficient, it should be possible to do much better than this.
@@ -170,7 +159,7 @@ static void vtkTransformToGridMinMax(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformToGrid::UpdateShiftScale()
 {
   int gridType = this->GridScalarType;
@@ -238,7 +227,7 @@ void vtkTransformToGrid::UpdateShiftScale()
   this->ShiftScaleTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // macros to ensure proper round-to-nearest behaviour
 
 inline void vtkGridRound(double val, unsigned char& rnd)
@@ -268,10 +257,10 @@ inline void vtkGridRound(double val, float& rnd)
 
 inline void vtkGridRound(double val, double& rnd)
 {
-  rnd = (double)(val);
+  rnd = val;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkTransformToGridExecute(vtkTransformToGrid* self, vtkImageData* grid, T* gridPtr,
   int extent[6], double shift, double scale, int id)
@@ -300,8 +289,9 @@ void vtkTransformToGridExecute(vtkTransformToGrid* self, vtkImageData* grid, T* 
   unsigned long target =
     (unsigned long)((extent[5] - extent[4] + 1) * (extent[3] - extent[2] + 1) / 50.0);
   target++;
+  bool abort = false;
 
-  for (int k = extent[4]; k <= extent[5]; k++)
+  for (int k = extent[4]; k <= extent[5] && !abort; k++)
   {
     point[2] = k * spacing[2] + origin[2];
     T* gridPtr1 = gridPtr0;
@@ -314,6 +304,11 @@ void vtkTransformToGridExecute(vtkTransformToGrid* self, vtkImageData* grid, T* 
         if (count % target == 0)
         {
           self->UpdateProgress(count / (50.0 * target));
+          if (self->CheckAbort())
+          {
+            abort = true;
+            break;
+          }
         }
         count++;
       }
@@ -344,7 +339,7 @@ void vtkTransformToGridExecute(vtkTransformToGrid* self, vtkImageData* grid, T* 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformToGrid::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -391,7 +386,7 @@ void vtkTransformToGrid::RequestData(vtkInformation* vtkNotUsed(request),
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkTransformToGrid::GetMTime()
 {
   vtkMTimeType mtime = this->Superclass::GetMTime();
@@ -408,7 +403,7 @@ vtkMTimeType vtkTransformToGrid::GetMTime()
   return mtime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkTransformToGrid::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -448,7 +443,7 @@ vtkTypeBool vtkTransformToGrid::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkTransformToGrid::GetOutput()
 {
   return vtkImageData::SafeDownCast(this->GetOutputDataObject(0));
@@ -460,3 +455,4 @@ int vtkTransformToGrid::FillOutputPortInformation(int vtkNotUsed(port), vtkInfor
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkImageData");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

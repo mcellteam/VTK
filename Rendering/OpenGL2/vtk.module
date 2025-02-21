@@ -5,21 +5,33 @@ LIBRARY_NAME
 IMPLEMENTABLE
 KIT
   VTK::OpenGL
+GROUPS
+  Rendering
 IMPLEMENTS
   VTK::RenderingCore
+SPDX_LICENSE_IDENTIFIER
+  BSD-3-Clause
+SPDX_COPYRIGHT_TEXT
+  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
 DEPENDS
   VTK::CommonCore
   VTK::CommonDataModel
+  VTK::FiltersGeneral
+  VTK::IOImage
   VTK::RenderingCore
+  VTK::RenderingHyperTreeGrid
   VTK::RenderingUI
-  VTK::glew
+  VTK::glad
 PRIVATE_DEPENDS
+  VTK::CommonColor
   VTK::CommonExecutionModel
   VTK::CommonMath
   VTK::CommonSystem
   VTK::CommonTransforms
-  VTK::opengl
+  VTK::ImagingCore
+  VTK::RenderingFreeType
   VTK::vtksys
+  VTK::nlohmannjson
 TEST_DEPENDS
   VTK::CommonSystem
   VTK::FiltersExtraction
@@ -27,6 +39,7 @@ TEST_DEPENDS
   VTK::FiltersGeometry
   VTK::FiltersProgrammable
   VTK::FiltersSources
+  VTK::FiltersTexture
   VTK::IOExodus
   VTK::IOExport
   VTK::IOImage
@@ -37,8 +50,10 @@ TEST_DEPENDS
   VTK::ImagingGeneral
   VTK::ImagingSources
   VTK::InteractionStyle
+  VTK::glad
   VTK::RenderingAnnotation
   VTK::RenderingFreeType
   VTK::RenderingImage
   VTK::TestingCore
   VTK::TestingRendering
+INCLUDE_MARSHAL

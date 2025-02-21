@@ -1,29 +1,18 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBrush.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkBrush.h"
 
 #include "vtkImageData.h"
 #include "vtkObjectFactory.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBrush);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBrush::vtkBrush()
   : BrushColor(0, 0, 0, 255)
 {
@@ -32,7 +21,7 @@ vtkBrush::vtkBrush()
   this->TextureProperties = vtkBrush::Nearest | vtkBrush::Stretch;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBrush::~vtkBrush()
 {
   if (this->Texture)
@@ -42,7 +31,7 @@ vtkBrush::~vtkBrush()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetColorF(double color[3])
 {
   this->Color[0] = static_cast<unsigned char>(color[0] * 255.0);
@@ -50,7 +39,7 @@ void vtkBrush::SetColorF(double color[3])
   this->Color[2] = static_cast<unsigned char>(color[2] * 255.0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetColorF(double r, double g, double b)
 {
   this->Color[0] = static_cast<unsigned char>(r * 255.0);
@@ -58,7 +47,7 @@ void vtkBrush::SetColorF(double r, double g, double b)
   this->Color[2] = static_cast<unsigned char>(b * 255.0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetColorF(double r, double g, double b, double a)
 {
   this->Color[0] = static_cast<unsigned char>(r * 255.0);
@@ -67,19 +56,19 @@ void vtkBrush::SetColorF(double r, double g, double b, double a)
   this->Color[3] = static_cast<unsigned char>(a * 255.0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetOpacityF(double a)
 {
   this->Color[3] = static_cast<unsigned char>(a * 255.0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkBrush::GetOpacityF()
 {
   return this->Color[3] / 255.0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetColor(unsigned char color[3])
 {
   this->Color[0] = color[0];
@@ -87,7 +76,7 @@ void vtkBrush::SetColor(unsigned char color[3])
   this->Color[2] = color[2];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetColor(unsigned char r, unsigned char g, unsigned char b)
 {
   this->Color[0] = r;
@@ -95,7 +84,7 @@ void vtkBrush::SetColor(unsigned char r, unsigned char g, unsigned char b)
   this->Color[2] = b;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
   this->Color[0] = r;
@@ -104,25 +93,25 @@ void vtkBrush::SetColor(unsigned char r, unsigned char g, unsigned char b, unsig
   this->Color[3] = a;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetColor(const vtkColor4ub& color)
 {
   this->BrushColor = color;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetOpacity(unsigned char a)
 {
   this->Color[3] = a;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned char vtkBrush::GetOpacity()
 {
   return this->Color[3];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::GetColorF(double color[4])
 {
   for (int i = 0; i < 4; ++i)
@@ -131,7 +120,7 @@ void vtkBrush::GetColorF(double color[4])
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::GetColor(unsigned char color[4])
 {
   for (int i = 0; i < 4; ++i)
@@ -140,19 +129,19 @@ void vtkBrush::GetColor(unsigned char color[4])
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkColor4ub vtkBrush::GetColorObject()
 {
   return this->BrushColor;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::SetTexture(vtkImageData* image)
 {
   vtkSetObjectBodyMacro(Texture, vtkImageData, image);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::DeepCopy(vtkBrush* brush)
 {
   if (!brush)
@@ -164,7 +153,7 @@ void vtkBrush::DeepCopy(vtkBrush* brush)
   this->SetTexture(brush->Texture);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBrush::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -173,3 +162,4 @@ void vtkBrush::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Texture: " << reinterpret_cast<void*>(this->Texture) << endl;
   os << indent << "Texture Properties: " << this->TextureProperties << endl;
 }
+VTK_ABI_NAMESPACE_END

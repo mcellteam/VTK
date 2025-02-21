@@ -1,21 +1,14 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeDataReader.cxx
+// VTK_DEPRECATED_IN_9_5_0()
+#define VTK_DEPRECATION_LEVEL 0
 
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkCompositeDataReader.h"
 
 #include "vtkAMRBox.h"
 #include "vtkAMRInformation.h"
+#include "vtkDataAssembly.h"
 #include "vtkDataObjectTypes.h"
 #include "vtkDoubleArray.h"
 #include "vtkFieldData.h"
@@ -32,6 +25,7 @@
 #include "vtkPartitionedDataSet.h"
 #include "vtkPartitionedDataSetCollection.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkStringArray.h"
 #include "vtkUniformGrid.h"
 
 #include <sstream>
@@ -40,39 +34,40 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositeDataReader);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataReader::vtkCompositeDataReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataReader::~vtkCompositeDataReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataSet* vtkCompositeDataReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataSet* vtkCompositeDataReader::GetOutput(int idx)
 {
   return vtkCompositeDataSet::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataReader::SetOutput(vtkCompositeDataSet* output)
 {
   this->GetExecutive()->SetOutputData(0, output);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataReader::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkCompositeDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkCompositeDataReader::CreateOutput(vtkDataObject* currentOutput)
 {
   if (this->GetFileName() == nullptr &&
@@ -98,7 +93,7 @@ vtkDataObject* vtkCompositeDataReader::CreateOutput(vtkDataObject* currentOutput
   return vtkDataObjectTypes::NewDataObject(outputType);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataReader::ReadOutputType()
 {
   char line[256];
@@ -161,7 +156,7 @@ int vtkCompositeDataReader::ReadOutputType()
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataReader::ReadMeshSimple(const std::string& fname, vtkDataObject* output)
 {
   if (!this->OpenVTKFile(fname.c_str()) || !this->ReadHeader(fname.c_str()))
@@ -171,7 +166,6 @@ int vtkCompositeDataReader::ReadMeshSimple(const std::string& fname, vtkDataObje
 
   vtkMultiBlockDataSet* mb = vtkMultiBlockDataSet::SafeDownCast(output);
   vtkMultiPieceDataSet* mp = vtkMultiPieceDataSet::SafeDownCast(output);
-  vtkHierarchicalBoxDataSet* hb = vtkHierarchicalBoxDataSet::SafeDownCast(output);
   vtkOverlappingAMR* oamr = vtkOverlappingAMR::SafeDownCast(output);
   vtkNonOverlappingAMR* noamr = vtkNonOverlappingAMR::SafeDownCast(output);
   vtkPartitionedDataSet* pd = vtkPartitionedDataSet::SafeDownCast(output);
@@ -196,10 +190,6 @@ int vtkCompositeDataReader::ReadMeshSimple(const std::string& fname, vtkDataObje
   {
     this->ReadCompositeData(mp);
   }
-  else if (hb)
-  {
-    this->ReadCompositeData(hb);
-  }
   else if (oamr)
   {
     this->ReadCompositeData(oamr);
@@ -217,10 +207,17 @@ int vtkCompositeDataReader::ReadMeshSimple(const std::string& fname, vtkDataObje
     this->ReadCompositeData(pdc);
   }
 
+  // Try to read field data for each data type
+  if (this->ReadString(line) && strncmp(this->LowerCase(line), "field", 5) == 0)
+  {
+    vtkSmartPointer<vtkFieldData> fd = vtkSmartPointer<vtkFieldData>::Take(this->ReadFieldData());
+    output->SetFieldData(fd);
+  }
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositeDataReader::ReadCompositeData(vtkMultiBlockDataSet* mb)
 {
   char line[256];
@@ -287,24 +284,18 @@ bool vtkCompositeDataReader::ReadCompositeData(vtkMultiBlockDataSet* mb)
     }
   }
 
-  if (this->ReadString(line) && strncmp(this->LowerCase(line), "field", 5) == 0)
-  {
-    vtkSmartPointer<vtkFieldData> fd = vtkSmartPointer<vtkFieldData>::Take(this->ReadFieldData());
-    mb->SetFieldData(fd);
-  }
-
   return true;
 }
 
-//----------------------------------------------------------------------------
-bool vtkCompositeDataReader::ReadCompositeData(vtkHierarchicalBoxDataSet* hb)
+//------------------------------------------------------------------------------
+bool vtkCompositeDataReader::ReadCompositeData(vtkHierarchicalBoxDataSet* amr)
 {
-  (void)hb;
+  (void)amr;
   vtkErrorMacro("This isn't supported yet.");
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositeDataReader::ReadCompositeData(vtkOverlappingAMR* oamr)
 {
   char line[256];
@@ -361,7 +352,7 @@ bool vtkCompositeDataReader::ReadCompositeData(vtkOverlappingAMR* oamr)
   }
 
   // initialize the AMR.
-  oamr->Initialize(num_levels, &blocksPerLevel[0]);
+  oamr->Initialize(num_levels, blocksPerLevel.data());
   oamr->SetGridDescription(description);
   oamr->SetOrigin(origin);
   for (int cc = 0; cc < num_levels; cc++)
@@ -468,15 +459,15 @@ bool vtkCompositeDataReader::ReadCompositeData(vtkOverlappingAMR* oamr)
   return true;
 }
 
-//----------------------------------------------------------------------------
-bool vtkCompositeDataReader::ReadCompositeData(vtkNonOverlappingAMR* hb)
+//------------------------------------------------------------------------------
+bool vtkCompositeDataReader::ReadCompositeData(vtkNonOverlappingAMR* amr)
 {
-  (void)hb;
+  (void)amr;
   vtkErrorMacro("This isn't supported yet.");
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositeDataReader::ReadCompositeData(vtkMultiPieceDataSet* mp)
 {
   char line[256];
@@ -545,7 +536,7 @@ bool vtkCompositeDataReader::ReadCompositeData(vtkMultiPieceDataSet* mp)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositeDataReader::ReadCompositeData(vtkPartitionedDataSet* mp)
 {
   char line[256];
@@ -586,6 +577,14 @@ bool vtkCompositeDataReader::ReadCompositeData(vtkPartitionedDataSet* mp)
     // eat up the "\n" and other whitespace at the end of CHILD <type>.
     this->ReadLine(line);
 
+    // if "line" has text enclosed in [] then that's the composite name.
+    vtksys::RegularExpression regEx("\\s*\\[(.*)\\]");
+    if (regEx.find(line))
+    {
+      std::string name = regEx.match(1);
+      mp->GetMetaData(cc)->Set(vtkCompositeDataSet::NAME(), name.c_str());
+    }
+
     if (type != -1)
     {
       vtkDataObject* child = this->ReadChild();
@@ -607,7 +606,7 @@ bool vtkCompositeDataReader::ReadCompositeData(vtkPartitionedDataSet* mp)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositeDataReader::ReadCompositeData(vtkPartitionedDataSetCollection* mp)
 {
   char line[256];
@@ -648,6 +647,14 @@ bool vtkCompositeDataReader::ReadCompositeData(vtkPartitionedDataSetCollection* 
     // eat up the "\n" and other whitespace at the end of CHILD <type>.
     this->ReadLine(line);
 
+    // if "line" has text enclosed in [] then that's the composite name.
+    vtksys::RegularExpression regEx("\\s*\\[(.*)\\]");
+    if (regEx.find(line))
+    {
+      std::string name = regEx.match(1);
+      mp->GetMetaData(cc)->Set(vtkCompositeDataSet::NAME(), name.c_str());
+    }
+
     if (type != -1)
     {
       vtkPartitionedDataSet* child = vtkPartitionedDataSet::SafeDownCast(this->ReadChild());
@@ -665,11 +672,42 @@ bool vtkCompositeDataReader::ReadCompositeData(vtkPartitionedDataSetCollection* 
       this->ReadString(line);
     }
   }
+  if (!this->ReadString(line))
+  {
+    vtkErrorMacro("Failed to read DATAASSEMBLY");
+    return false;
+  }
+
+  if (strncmp(this->LowerCase(line), "dataassembly", strlen("dataassembly")) != 0)
+  {
+    vtkErrorMacro("Failed to read DATAASSEMBLY. Instead got " << line);
+    return false;
+  }
+
+  unsigned int hasDataAssembly = 0;
+  if (!this->Read(&hasDataAssembly))
+  {
+    vtkErrorMacro("Failed to read if it has DATAASSEMBLY.");
+    return false;
+  }
+  if (hasDataAssembly > 0)
+  {
+    auto dataAssemblyArray =
+      vtk::TakeSmartPointer(vtkStringArray::SafeDownCast(this->ReadArray("string", 1, 1)));
+    if (!dataAssemblyArray)
+    {
+      vtkErrorMacro("Failed to read the DATAASSEMBLY.");
+      return false;
+    }
+    vtkNew<vtkDataAssembly> dataAssembly;
+    dataAssembly->InitializeFromXML(dataAssemblyArray->GetValue(0).c_str());
+    mp->SetDataAssembly(dataAssembly);
+  }
 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkCompositeDataReader::ReadChild()
 {
   // This is tricky. Simplistically speaking, we need to read the string for the
@@ -758,8 +796,9 @@ vtkDataObject* vtkCompositeDataReader::ReadChild()
   return child;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

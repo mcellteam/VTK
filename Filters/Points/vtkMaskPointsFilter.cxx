@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMaskPointsFilter.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMaskPointsFilter.h"
 
 #include "vtkArrayDispatch.h"
@@ -25,14 +13,15 @@
 #include "vtkSMPTools.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMaskPointsFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm
 struct ExtractPoints
 {
@@ -55,42 +44,44 @@ struct ExtractPoints
     const vtkIdType zD = dims[2];
     const vtkIdType xyD = dims[0] * dims[1];
 
-    vtkSMPTools::For(0, numPts, [&](vtkIdType ptId, vtkIdType endPtId) {
-      const auto pts = vtk::DataArrayTupleRange<3>(ptArray, ptId, endPtId);
-      using PtCRefT = typename decltype(pts)::ConstTupleReferenceType;
-
-      vtkIdType* map = pointMap + ptId;
-
-      // MSVC 2015 x64 ICEs when this loop is written using std::transform,
-      // so we'll work around that by using a for-range loop:
-      for (PtCRefT pt : pts)
+    vtkSMPTools::For(0, numPts,
+      [&](vtkIdType ptId, vtkIdType endPtId)
       {
-        const int i = static_cast<int>(((pt[0] - bX) * fX));
-        const int j = static_cast<int>(((pt[1] - bY) * fY));
-        const int k = static_cast<int>(((pt[2] - bZ) * fZ));
+        const auto pts = vtk::DataArrayTupleRange<3>(ptArray, ptId, endPtId);
+        using PtCRefT = typename decltype(pts)::ConstTupleReferenceType;
 
-        // If not inside image then skip
-        if (i < 0 || i >= xD || j < 0 || j >= yD || k < 0 || k >= zD)
+        vtkIdType* map = pointMap + ptId;
+
+        // MSVC 2015 x64 ICEs when this loop is written using std::transform,
+        // so we'll work around that by using a for-range loop:
+        for (PtCRefT pt : pts)
         {
-          *map++ = -1;
+          const int i = static_cast<int>(((pt[0] - bX) * fX));
+          const int j = static_cast<int>(((pt[1] - bY) * fY));
+          const int k = static_cast<int>(((pt[2] - bZ) * fZ));
+
+          // If not inside image then skip
+          if (i < 0 || i >= xD || j < 0 || j >= yD || k < 0 || k >= zD)
+          {
+            *map++ = -1;
+          }
+          else if (mask[i + j * xD + k * xyD] != emptyValue)
+          {
+            *map++ = 1;
+          }
+          else
+          {
+            *map++ = -1;
+          }
         }
-        else if (mask[i + j * xD + k * xyD] != emptyValue)
-        {
-          *map++ = 1;
-        }
-        else
-        {
-          *map++ = -1;
-        }
-      }
-    });
+      });
   }
 }; // ExtractPoints
 
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMaskPointsFilter::vtkMaskPointsFilter()
 {
   this->SetNumberOfInputPorts(2);
@@ -99,10 +90,10 @@ vtkMaskPointsFilter::vtkMaskPointsFilter()
   this->Mask = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMaskPointsFilter::~vtkMaskPointsFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMaskPointsFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -118,19 +109,19 @@ int vtkMaskPointsFilter::FillInputPortInformation(int port, vtkInformation* info
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMaskPointsFilter::SetMaskConnection(vtkAlgorithmOutput* algOutput)
 {
   this->SetInputConnection(1, algOutput);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMaskPointsFilter::SetMaskData(vtkDataObject* input)
 {
   this->SetInputData(1, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkMaskPointsFilter::GetMask()
 {
   if (this->GetNumberOfInputConnections(1) < 1)
@@ -141,7 +132,7 @@ vtkDataObject* vtkMaskPointsFilter::GetMask()
   return this->GetExecutive()->GetInputData(1, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Traverse all the input points and extract points that are contained within
 // the mask.
 int vtkMaskPointsFilter::FilterPoints(vtkPointSet* input)
@@ -173,7 +164,7 @@ int vtkMaskPointsFilter::FilterPoints(vtkPointSet* input)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Due to the second input, retrieve it and then invoke the superclass
 // RequestData.
 int vtkMaskPointsFilter::RequestData(
@@ -200,7 +191,7 @@ int vtkMaskPointsFilter::RequestData(
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMaskPointsFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -230,7 +221,7 @@ int vtkMaskPointsFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMaskPointsFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -254,10 +245,11 @@ int vtkMaskPointsFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMaskPointsFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Empty Value: " << this->EmptyValue << "\n";
 }
+VTK_ABI_NAMESPACE_END

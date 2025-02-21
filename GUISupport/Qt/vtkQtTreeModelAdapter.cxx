@@ -1,22 +1,7 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
-  Program:   Visualization Toolkit
-  Module:    vtkQtTreeModelAdapter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
 #include "vtkQtTreeModelAdapter.h"
 
 #include "vtkAdjacentVertexIterator.h"
@@ -30,10 +15,8 @@
 #include "vtkSelection.h"
 #include "vtkSelectionNode.h"
 #include "vtkSmartPointer.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTree.h"
-#include "vtkUnicodeStringArray.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkVariantArray.h"
 
@@ -48,6 +31,7 @@
 #include <set>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkQtTreeModelAdapter::vtkQtTreeModelAdapter(QObject* p, vtkTree* t)
   : vtkQtAbstractModelAdapter(p)
 {
@@ -151,7 +135,7 @@ void vtkQtTreeModelAdapter::setTree(vtkTree* t)
     {
       tempSGMacroVar->UnRegister(nullptr);
     }
-    emit reset();
+    Q_EMIT reset();
   }
 
   // Okay it's the same pointer but the contents
@@ -173,13 +157,12 @@ void vtkQtTreeModelAdapter::treeModified()
     this->GenerateVTKIndexToQtModelIndex(root, this->createIndex(0, 0, static_cast<int>(root)));
   }
   this->TreeMTime = this->Tree->GetMTime();
-  emit reset();
+  Q_EMIT reset();
 }
 
 // Description:
 // Selection conversion from VTK land to Qt land
-vtkSelection* vtkQtTreeModelAdapter::QModelIndexListToVTKIndexSelection(
-  const QModelIndexList qmil) const
+vtkSelection* vtkQtTreeModelAdapter::QModelIndexListToVTKIndexSelection(QModelIndexList qmil) const
 {
   // Create vtk index selection
   vtkSelection* IndexSelection = vtkSelection::New(); // Caller needs to delete
@@ -250,7 +233,7 @@ void vtkQtTreeModelAdapter::GenerateVTKIndexToQtModelIndex(
   it->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QVariant vtkQtTreeModelAdapterArrayValue(vtkAbstractArray* arr, vtkIdType i, vtkIdType j)
 {
   int comps = arr->GetNumberOfComponents();
@@ -261,12 +244,7 @@ QVariant vtkQtTreeModelAdapterArrayValue(vtkAbstractArray* arr, vtkIdType i, vtk
 
   if (vtkStringArray* const data = vtkArrayDownCast<vtkStringArray>(arr))
   {
-    return QVariant(data->GetValue(i * comps + j));
-  }
-
-  if (vtkUnicodeStringArray* const data = vtkArrayDownCast<vtkUnicodeStringArray>(arr))
-  {
-    return QVariant(QString::fromUtf8(data->GetValue(i * comps + j).utf8_str()));
+    return QVariant(data->GetValue(i * comps + j).c_str());
   }
 
   if (vtkVariantArray* const data = vtkArrayDownCast<vtkVariantArray>(arr))
@@ -300,7 +278,7 @@ QVariant vtkQtTreeModelAdapter::data(const QModelIndex& idx, int role) const
   vtkAbstractArray* arr = this->Tree->GetVertexData()->GetAbstractArray(column);
   if (role == Qt::DisplayRole)
   {
-    return QString::fromUtf8(arr->GetVariantValue(vertex).ToUnicodeString().utf8_str()).trimmed();
+    return QString::fromUtf8(arr->GetVariantValue(vertex).ToString().c_str()).trimmed();
   }
   else if (role == Qt::UserRole)
   {
@@ -348,7 +326,7 @@ QVariant vtkQtTreeModelAdapter::data(const QModelIndex& idx, int role) const
       }
       return QVariant(pixmap);
     }
-    else if (role == Qt::TextColorRole)
+    else if (role == Qt::ForegroundRole)
     {
       // return QVariant(QColor(rgb[0],rgb[1],rgb[2]));
     }
@@ -362,7 +340,7 @@ bool vtkQtTreeModelAdapter::setData(const QModelIndex& idx, const QVariant& valu
   if (role == Qt::DecorationRole)
   {
     this->IndexToDecoration[idx] = value;
-    emit this->dataChanged(idx, idx);
+    Q_EMIT this->dataChanged(idx, idx);
     return true;
   }
   return false;
@@ -547,7 +525,7 @@ QMimeData* vtkQtTreeModelAdapter::mimeData(const QModelIndexList& indexes) const
 {
   // Only supports dragging single item right now ...
 
-  if (indexes.size() == 0)
+  if (indexes.empty())
   {
     return nullptr;
   }
@@ -578,3 +556,4 @@ Qt::DropActions vtkQtTreeModelAdapter::supportedDragActions() const
 {
   return Qt::CopyAction;
 }
+VTK_ABI_NAMESPACE_END

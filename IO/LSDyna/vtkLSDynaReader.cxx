@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLSDynaReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 // NOTE TO DEVELOPERS: ========================================================
 //
@@ -71,8 +56,9 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkUnstructuredGrid.h"
-#include "vtkVectorOperators.h"
+#include "vtkVector.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLSDynaReader);
 
 // Names of vtkDataArrays provided with grid:
@@ -96,6 +82,9 @@ vtkStandardNewMacro(vtkLSDynaReader);
 #define LS_ARRAYNAME_ACCELERATION "Acceleration"
 #define LS_ARRAYNAME_PRESSURE "Pressure"
 #define LS_ARRAYNAME_VORTICITY "Vorticity"
+#define LS_ARRAYNAME_VORTICITY_X "Vorticity_X"
+#define LS_ARRAYNAME_VORTICITY_Y "Vorticity_Y"
+#define LS_ARRAYNAME_VORTICITY_Z "Vorticity_Z"
 #define LS_ARRAYNAME_RESULTANTVORTICITY "ResVorticity"
 #define LS_ARRAYNAME_ENSTROPHY "Enstrophy"
 #define LS_ARRAYNAME_HELICITY "Helicity"
@@ -137,21 +126,17 @@ vtkStandardNewMacro(vtkLSDynaReader);
 #define LS_MDLOPT_POINT 1
 #define LS_MDLOPT_CELL 2
 
-#ifdef VTK_LSDYNA_DBG_MULTIBLOCK
-static void vtkDebugMultiBlockStructure(vtkIndent indent, vtkMultiGroupDataSet* mbds);
-#endif // VTK_LSDYNA_DBG_MULTIBLOCK
-
 namespace
 {
-static const char* vtkLSDynaCellTypes[] = { "Point", "Beam", "Shell", "Thick Shell", "Solid",
-  "Rigid Body", "Road Surface" };
+const char* vtkLSDynaCellTypes[] = { "Point", "Beam", "Shell", "Thick Shell", "Solid", "Rigid Body",
+  "Road Surface" };
 
 // Read in lines until one that's
 // - not empty, and
 // - not a comment
 // is encountered. Return with that text stored in \a line.
 // If an error or EOF is hit, return 0. Otherwise, return 1.
-static int vtkLSNextSignificantLine(istream& deck, std::string& line)
+int vtkLSNextSignificantLine(istream& deck, std::string& line)
 {
   while (deck.good())
   {
@@ -164,7 +149,7 @@ static int vtkLSNextSignificantLine(istream& deck, std::string& line)
   return 0;
 }
 
-static void vtkLSTrimWhitespace(std::string& line)
+void vtkLSTrimWhitespace(std::string& line)
 {
   std::string::size_type llen = line.length();
   while (llen &&
@@ -183,7 +168,7 @@ static void vtkLSTrimWhitespace(std::string& line)
   line = line.substr(nameStart, llen - nameStart);
 }
 
-static void vtkLSDowncaseFirstWord(std::string& downcased, const std::string& line)
+void vtkLSDowncaseFirstWord(std::string& downcased, const std::string& line)
 {
   std::string::size_type i;
   std::string::value_type chr;
@@ -240,7 +225,7 @@ struct Converter
 template <int cellLength>
 struct Converter<8, 4, cellLength>
 {
-  // specilization of 64bit machine and 32bit file
+  // specialization of 64bit machine and 32bit file
   // so we have to copy each item individually
   vtkIdType* convert(int* buff, const vtkIdType& size)
   {
@@ -256,7 +241,7 @@ struct Converter<8, 4, cellLength>
 template <int cellLength>
 struct Converter<4, 8, cellLength>
 {
-  // specilization for reading 64 bit files on a 32 bit machine
+  // specialization for reading 64 bit files on a 32 bit machine
   // which means reading the bottom half of the long long
   vtkIdType* convert(int* buff, const vtkIdType& size)
   {
@@ -724,7 +709,7 @@ void vtkLSDynaReader::SetDatabaseDirectory(const char* f)
     }
     return;
   }
-  if (strcmp(this->P->Fam.GetDatabaseDirectory().c_str(), f))
+  if (this->P->Fam.GetDatabaseDirectory() != f)
   {
     this->P->Reset();
     this->SetInputDeck(nullptr);
@@ -734,19 +719,10 @@ void vtkLSDynaReader::SetDatabaseDirectory(const char* f)
   }
 }
 
-#if defined(VTK_LEGACY_REMOVE)
 std::string vtkLSDynaReader::GetDatabaseDirectory()
 {
   return this->P->Fam.GetDatabaseDirectory();
 }
-#else
-const char* vtkLSDynaReader::GetDatabaseDirectory()
-{
-  static thread_local std::string surrogate;
-  surrogate = this->P->Fam.GetDatabaseDirectory();
-  return surrogate.c_str();
-}
-#endif
 
 int vtkLSDynaReader::IsDatabaseValid()
 {
@@ -798,20 +774,11 @@ void vtkLSDynaReader::SetFileName(const char* f)
   }
 }
 
-#if defined(VTK_LEGACY_REMOVE)
 std::string vtkLSDynaReader::GetFileName()
 {
   std::string filename = this->P->Fam.GetDatabaseDirectory() + "/d3plot";
   return filename;
 }
-#else
-const char* vtkLSDynaReader::GetFileName()
-{
-  static thread_local std::string surrogate;
-  surrogate = this->P->Fam.GetDatabaseDirectory() + "/d3plot";
-  return surrogate.c_str();
-}
-#endif
 
 char* vtkLSDynaReader::GetTitle()
 {
@@ -1615,19 +1582,19 @@ int vtkLSDynaReader::ReadHeaderInformation(int curAdapt)
   { // OK, we don't have all the vector components... maybe we have some of them?
     if (itmp & 4)
     {
-      p->AddPointArray(LS_ARRAYNAME_VORTICITY "_X", 1, 1);
+      p->AddPointArray(LS_ARRAYNAME_VORTICITY_X, 1, 1);
       p->StateSize += p->NumberOfNodes * p->Fam.GetWordSize();
       p->Dict["cfdXVort"] = 1;
     }
     if (itmp & 8)
     {
-      p->AddPointArray(LS_ARRAYNAME_VORTICITY "_Y", 1, 1);
+      p->AddPointArray(LS_ARRAYNAME_VORTICITY_Y, 1, 1);
       p->StateSize += p->NumberOfNodes * p->Fam.GetWordSize();
       p->Dict["cfdYVort"] = 1;
     }
     if (itmp & 16)
     {
-      p->AddPointArray(LS_ARRAYNAME_VORTICITY "_Z", 1, 1);
+      p->AddPointArray(LS_ARRAYNAME_VORTICITY_Z, 1, 1);
       p->StateSize += p->NumberOfNodes * p->Fam.GetWordSize();
       p->Dict["cfdZVort"] = 1;
     }
@@ -2119,7 +2086,7 @@ int vtkLSDynaReader::ReadHeaderInformation(int curAdapt)
 
         for (int g = 0; g < numGroups; ++g)
         {
-          snprintf(ctmp, sizeof(ctmp), LS_ARRAYNAME_VOLUME_FRACTION_FMT, static_cast<int>(g + 1));
+          snprintf(ctmp, sizeof(ctmp), LS_ARRAYNAME_VOLUME_FRACTION_FMT, g + 1);
           p->AddCellArray(LSDynaMetaData::SHELL, ctmp, 1, 1);
           extraValues--;
         }
@@ -2129,7 +2096,7 @@ int vtkLSDynaReader::ReadHeaderInformation(int curAdapt)
 
         for (int g = 0; hasMass && (g < numGroups); ++g)
         {
-          snprintf(ctmp, sizeof(ctmp), LS_ARRAYNAME_SPECIES_MASS_FMT, static_cast<int>(g + 1));
+          snprintf(ctmp, sizeof(ctmp), LS_ARRAYNAME_SPECIES_MASS_FMT, g + 1);
           p->AddCellArray(LSDynaMetaData::SHELL, ctmp, 1, 1);
           extraValues--;
         }
@@ -2295,7 +2262,7 @@ int vtkLSDynaReader::ReadHeaderInformation(int curAdapt)
 
         for (int g = 0; g < numGroups; ++g)
         {
-          snprintf(ctmp, sizeof(ctmp), LS_ARRAYNAME_VOLUME_FRACTION_FMT, static_cast<int>(g + 1));
+          snprintf(ctmp, sizeof(ctmp), LS_ARRAYNAME_VOLUME_FRACTION_FMT, g + 1);
           p->AddCellArray(LSDynaMetaData::SOLID, ctmp, 1, 1);
           extraValues--;
         }
@@ -2305,7 +2272,7 @@ int vtkLSDynaReader::ReadHeaderInformation(int curAdapt)
 
         for (int g = 0; hasMass && (g < numGroups); ++g)
         {
-          snprintf(ctmp, sizeof(ctmp), LS_ARRAYNAME_SPECIES_MASS_FMT, static_cast<int>(g + 1));
+          snprintf(ctmp, sizeof(ctmp), LS_ARRAYNAME_SPECIES_MASS_FMT, g + 1);
           p->AddCellArray(LSDynaMetaData::SOLID, ctmp, 1, 1);
           extraValues--;
         }
@@ -2484,8 +2451,8 @@ int vtkLSDynaReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 
   // Every output object has all the time steps.
   vtkInformation* outInfo = oinfo->GetInformationObject(0);
-  outInfo->Set(
-    vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &p->TimeValues[0], (int)p->TimeValues.size());
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), p->TimeValues.data(),
+    (int)p->TimeValues.size());
   double timeRange[2];
   timeRange[0] = p->TimeValues[0];
   timeRange[1] = p->TimeValues[p->TimeValues.size() - 1];
@@ -2494,7 +2461,7 @@ int vtkLSDynaReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ReadTopology()
 {
   bool readTopology = false;
@@ -2562,7 +2529,7 @@ int vtkLSDynaReader::ReadNodes()
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ReadUserIds()
 {
   // Below here is code that runs when user node or element numbers are present
@@ -2587,19 +2554,19 @@ int vtkLSDynaReader::ReadUserIds()
   // FIXME: This won't work if Rigid Body and Shell elements are interleaved (which I now believe
   // they are)
   this->Parts->ReadCellUserIds(
+    LSDynaMetaData::SOLID, this->GetCellArrayStatus(LSDynaMetaData::SOLID, LS_ARRAYNAME_USERID));
+  this->Parts->ReadCellUserIds(
     LSDynaMetaData::BEAM, this->GetCellArrayStatus(LSDynaMetaData::BEAM, LS_ARRAYNAME_USERID));
   this->Parts->ReadCellUserIds(
     LSDynaMetaData::SHELL, this->GetCellArrayStatus(LSDynaMetaData::SHELL, LS_ARRAYNAME_USERID));
   this->Parts->ReadCellUserIds(LSDynaMetaData::THICK_SHELL,
     this->GetCellArrayStatus(LSDynaMetaData::THICK_SHELL, LS_ARRAYNAME_USERID));
-  this->Parts->ReadCellUserIds(
-    LSDynaMetaData::SOLID, this->GetCellArrayStatus(LSDynaMetaData::SOLID, LS_ARRAYNAME_USERID));
   this->Parts->ReadCellUserIds(LSDynaMetaData::RIGID_BODY,
     this->GetCellArrayStatus(LSDynaMetaData::RIGID_BODY, LS_ARRAYNAME_USERID));
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ReadDeletion()
 {
   enum LSDynaMetaData::LSDYNA_TYPES validCellTypes[4] = { LSDynaMetaData::SOLID,
@@ -2669,7 +2636,7 @@ int vtkLSDynaReader::ReadDeletion()
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLSDynaReader::ReadDeletionArray(vtkUnsignedCharArray* arr, const int& pos, const int& size)
 {
   // setup to do a block read, way faster than converting each
@@ -2701,7 +2668,7 @@ void vtkLSDynaReader::ReadDeletionArray(vtkUnsignedCharArray* arr, const int& po
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ReadState(vtkIdType step)
 {
   // remember C style return so zero is pass
@@ -2723,7 +2690,7 @@ int vtkLSDynaReader::ReadState(vtkIdType step)
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ReadNodeStateInfo(vtkIdType step)
 {
   LSDynaMetaData* p = this->P;
@@ -2743,9 +2710,9 @@ int vtkLSDynaReader::ReadNodeStateInfo(vtkIdType step)
     LS_ARRAYNAME_VELOCITY,
     LS_ARRAYNAME_ACCELERATION,
     LS_ARRAYNAME_PRESSURE,
-    LS_ARRAYNAME_VORTICITY "_X",
-    LS_ARRAYNAME_VORTICITY "_Y",
-    LS_ARRAYNAME_VORTICITY "_Z",
+    LS_ARRAYNAME_VORTICITY_X,
+    LS_ARRAYNAME_VORTICITY_Y,
+    LS_ARRAYNAME_VORTICITY_Z,
     LS_ARRAYNAME_RESULTANTVORTICITY,
     LS_ARRAYNAME_ENSTROPHY,
     LS_ARRAYNAME_HELICITY,
@@ -2814,7 +2781,7 @@ int vtkLSDynaReader::ReadNodeStateInfo(vtkIdType step)
         aComponents[nvnum] = 3;
         aNames[nvnum] = LS_ARRAYNAME_VORTICITY;
       }
-      names.push_back(aNames[nvnum]);
+      names.emplace_back(aNames[nvnum]);
       cmps.push_back(aComponents[nvnum] == -1 ? p->Dimensionality : aComponents[nvnum]);
       vppt += cmps.back();
     }
@@ -2837,7 +2804,7 @@ int vtkLSDynaReader::ReadNodeStateInfo(vtkIdType step)
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ReadCellStateInfo(vtkIdType vtkNotUsed(step))
 {
 
@@ -2890,7 +2857,7 @@ int vtkLSDynaReader::ReadCellStateInfo(vtkIdType vtkNotUsed(step))
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLSDynaReader::ReadCellProperties(const int& type, const int& numTuples)
 {
   LSDynaMetaData::LSDYNA_TYPES t = static_cast<LSDynaMetaData::LSDYNA_TYPES>(type);
@@ -2938,12 +2905,15 @@ int vtkLSDynaReader::ReadSPHState(vtkIdType vtkNotUsed(step))
   p->Fam.SkipWords(p->SPHStateOffset);
 
 #define VTK_LS_SPHARRAY(cond, celltype, arrayname, numComps)                                       \
-  if ((cond) && this->GetCellArrayStatus(celltype, arrayname))                                     \
+  do                                                                                               \
   {                                                                                                \
-    this->Parts->AddProperty(celltype, arrayname, startPos, numComps);                             \
-  }                                                                                                \
-  if (cond)                                                                                        \
-    startPos += (numComps);
+    if ((cond) && this->GetCellArrayStatus(celltype, arrayname))                                   \
+    {                                                                                              \
+      this->Parts->AddProperty(celltype, arrayname, startPos, numComps);                           \
+    }                                                                                              \
+    if (cond)                                                                                      \
+      startPos += (numComps);                                                                      \
+  } while (false)
 
   // Smooth Particle ========================================================
 
@@ -3122,31 +3092,34 @@ void vtkLSDynaReader::ResetPartInfo()
   int arbitraryMaterials = p->Dict["NSORT"] < 0 ? 1 : 0;
 
 #define VTK_LSDYNA_PARTLABEL(dict, fmt)                                                            \
-  N = p->Dict[dict];                                                                               \
-  for (i = 0; i < N; ++i, ++mat)                                                                   \
+  do                                                                                               \
   {                                                                                                \
-    if (arbitraryMaterials)                                                                        \
+    N = p->Dict[dict];                                                                             \
+    for (i = 0; i < N; ++i, ++mat)                                                                 \
     {                                                                                              \
-      if (mat < static_cast<int>(p->MaterialsOrdered.size()))                                      \
+      if (arbitraryMaterials)                                                                      \
       {                                                                                            \
-        realMat = p->MaterialsOrdered[mat - 1];                                                    \
+        if (mat < static_cast<int>(p->MaterialsOrdered.size()))                                    \
+        {                                                                                          \
+          realMat = p->MaterialsOrdered[mat - 1];                                                  \
+        }                                                                                          \
+        else                                                                                       \
+        {                                                                                          \
+          realMat = mat;                                                                           \
+        }                                                                                          \
+        snprintf(partLabel, sizeof(partLabel), fmt " (Matl%d)", mat, realMat);                     \
       }                                                                                            \
       else                                                                                         \
       {                                                                                            \
         realMat = mat;                                                                             \
+        snprintf(partLabel, sizeof(partLabel), fmt, mat);                                          \
       }                                                                                            \
-      snprintf(partLabel, sizeof(partLabel), fmt " (Matl%d)", mat, realMat);                       \
+      p->PartNames.emplace_back(partLabel);                                                        \
+      p->PartIds.emplace_back(realMat);                                                            \
+      p->PartMaterials.emplace_back(mat);                                                          \
+      p->PartStatus.emplace_back(1);                                                               \
     }                                                                                              \
-    else                                                                                           \
-    {                                                                                              \
-      realMat = mat;                                                                               \
-      snprintf(partLabel, sizeof(partLabel), fmt, mat);                                            \
-    }                                                                                              \
-    p->PartNames.push_back(partLabel);                                                             \
-    p->PartIds.push_back(realMat);                                                                 \
-    p->PartMaterials.push_back(mat);                                                               \
-    p->PartStatus.push_back(1);                                                                    \
-  }
+  } while (false)
 
   VTK_LSDYNA_PARTLABEL("NUMMAT8", "Part%d"); // was "PartSolid%d
   VTK_LSDYNA_PARTLABEL("NUMMATT", "Part%d"); // was "PartThickShell%d
@@ -3392,8 +3365,7 @@ int vtkLSDynaReader::WriteInputDeckSummary(const char* fname)
 #endif // _WIN32
     {
       // OK, we have an absolute path, so it should be safe to write it out.
-      xmlSummary << "  <database path=\"" << dbDir.c_str() << "\" name=\"" << dbName.c_str()
-                 << "\"/>" << endl;
+      xmlSummary << "  <database path=\"" << dbDir << "\" name=\"" << dbName << "\"/>" << endl;
     }
   }
 
@@ -3401,7 +3373,7 @@ int vtkLSDynaReader::WriteInputDeckSummary(const char* fname)
   {
     xmlSummary << "  <part id=\"" << this->P->PartIds[p] << "\" material_id=\""
                << this->P->PartMaterials[p] << "\" status=\"" << this->P->PartStatus[p]
-               << "\"><name>" << this->P->PartNames[p].c_str() << "</name></part>" << endl;
+               << "\"><name>" << this->P->PartNames[p] << "</name></part>" << endl;
   }
 
   xmlSummary << "</lsdyna>" << endl;
@@ -3525,7 +3497,7 @@ int vtkLSDynaReader::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T>
 void vtkLSDynaReader::FillDeletionArray(T* buffer, vtkUnsignedCharArray* arr,
   const vtkIdType& start, const vtkIdType& numCells, const int& deathPos, const int& cellSize)
@@ -3542,7 +3514,7 @@ void vtkLSDynaReader::FillDeletionArray(T* buffer, vtkUnsignedCharArray* arr,
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <int wordSize, typename T>
 int vtkLSDynaReader::FillTopology(T* buff)
 {
@@ -3581,7 +3553,7 @@ int vtkLSDynaReader::FillTopology(T* buff)
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ReadConnectivityAndMaterial()
 {
   LSDynaMetaData* p = this->P;
@@ -3605,7 +3577,7 @@ int vtkLSDynaReader::ReadConnectivityAndMaterial()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T, int blockType, vtkIdType numWordsPerCell, vtkIdType cellLength>
 void vtkLSDynaReader::ReadBlockCellSizes()
 {
@@ -3643,7 +3615,7 @@ void vtkLSDynaReader::ReadBlockCellSizes()
   this->P->Fam.SkipWords(fileNumWordsPerCell * numCellsToSkipEnd);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T>
 int vtkLSDynaReader::FillPartSizes()
 {
@@ -3681,7 +3653,7 @@ int vtkLSDynaReader::FillPartSizes()
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ReadPartSizes()
 {
   LSDynaMetaData* p = this->P;
@@ -3702,7 +3674,7 @@ int vtkLSDynaReader::ReadPartSizes()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLSDynaReader::SetDeformedMesh(vtkTypeBool deformed)
 {
   if (this->DeformedMesh != deformed)
@@ -3745,7 +3717,7 @@ vtkSmartPointer<T> vtkComputeDifference(T* aArray, T* bArray)
 }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLSDynaReader::ComputeDeflectionAndUpdateGeometry(vtkUnstructuredGrid* ug)
 {
   // If LS_ARRAYNAME_DEFLECTION is preset then this computes the deflection.
@@ -3783,3 +3755,4 @@ int vtkLSDynaReader::ComputeDeflectionAndUpdateGeometry(vtkUnstructuredGrid* ug)
   }
   return EXIT_SUCCESS;
 }
+VTK_ABI_NAMESPACE_END

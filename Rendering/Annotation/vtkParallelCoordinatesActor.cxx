@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParallelCoordinatesActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParallelCoordinatesActor.h"
 
 #include "vtkAxisActor2D.h"
@@ -27,6 +15,7 @@
 #include "vtkViewport.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkParallelCoordinatesActor);
 
 vtkCxxSetObjectMacro(vtkParallelCoordinatesActor, LabelTextProperty, vtkTextProperty);
@@ -43,7 +32,7 @@ public:
 
 vtkStandardNewMacro(vtkParallelCoordinatesActorConnection);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object
 vtkParallelCoordinatesActor::vtkParallelCoordinatesActor()
 {
@@ -96,7 +85,7 @@ vtkParallelCoordinatesActor::vtkParallelCoordinatesActor()
     0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParallelCoordinatesActor::~vtkParallelCoordinatesActor()
 {
   this->TitleMapper->Delete();
@@ -123,7 +112,7 @@ vtkParallelCoordinatesActor::~vtkParallelCoordinatesActor()
   this->SetTitleTextProperty(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Free-up axes and related stuff
 void vtkParallelCoordinatesActor::Initialize()
 {
@@ -145,13 +134,13 @@ void vtkParallelCoordinatesActor::Initialize()
   this->N = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParallelCoordinatesActor::SetInputConnection(vtkAlgorithmOutput* ao)
 {
   this->ConnectionHolder->SetInputConnection(ao);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParallelCoordinatesActor::SetInputData(vtkDataObject* dobj)
 {
   vtkTrivialProducer* tp = vtkTrivialProducer::New();
@@ -160,13 +149,13 @@ void vtkParallelCoordinatesActor::SetInputData(vtkDataObject* dobj)
   tp->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkParallelCoordinatesActor::GetInput()
 {
   return this->ConnectionHolder->GetInputDataObject(0, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Plot scalar data for each input dataset.
 int vtkParallelCoordinatesActor::RenderOverlay(vtkViewport* viewport)
 {
@@ -195,7 +184,7 @@ int vtkParallelCoordinatesActor::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParallelCoordinatesActor::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   int renderedSomething = 0;
@@ -253,7 +242,7 @@ int vtkParallelCoordinatesActor::RenderOpaqueGeometry(vtkViewport* viewport)
     this->LabelTextProperty->GetMTime() > this->BuildTime ||
     this->TitleTextProperty->GetMTime() > this->BuildTime)
   {
-    int* size = viewport->GetSize();
+    const int* size = viewport->GetSize();
     int stringSize[2];
 
     vtkDebugMacro(<< "Rebuilding plot");
@@ -305,7 +294,7 @@ int vtkParallelCoordinatesActor::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkParallelCoordinatesActor::HasTranslucentPolygonalGeometry()
@@ -313,7 +302,7 @@ vtkTypeBool vtkParallelCoordinatesActor::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static inline int vtkParallelCoordinatesActorGetComponent(
   vtkFieldData* field, vtkIdType tuple, int component, double* val)
 {
@@ -333,8 +322,8 @@ static inline int vtkParallelCoordinatesActorGetComponent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
-int vtkParallelCoordinatesActor::PlaceAxes(vtkViewport* viewport, int* vtkNotUsed(size))
+//------------------------------------------------------------------------------
+int vtkParallelCoordinatesActor::PlaceAxes(vtkViewport* viewport, const int* vtkNotUsed(size))
 {
   vtkIdType i, j, k, ptId;
   vtkDataObject* input = this->GetInput();
@@ -572,7 +561,7 @@ int vtkParallelCoordinatesActor::PlaceAxes(vtkViewport* viewport, int* vtkNotUse
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -585,7 +574,7 @@ void vtkParallelCoordinatesActor::ReleaseGraphicsResources(vtkWindow* win)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParallelCoordinatesActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -629,3 +618,4 @@ void vtkParallelCoordinatesActor::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Label Format: " << this->LabelFormat << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProjectSphereFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkProjectSphereFilter.h"
 
 #include "vtkCell.h"
@@ -34,6 +22,7 @@
 
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 void ConvertXYZToLatLonDepth(double xyz[3], double lonLatDepth[3], double center[3])
@@ -62,7 +51,7 @@ void TransformVector(double* transformMatrix, data_type* data)
 
 vtkStandardNewMacro(vtkProjectSphereFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProjectSphereFilter::vtkProjectSphereFilter()
   : SplitLongitude(-180)
 {
@@ -71,10 +60,10 @@ vtkProjectSphereFilter::vtkProjectSphereFilter()
   this->TranslateZ = false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProjectSphereFilter::~vtkProjectSphereFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProjectSphereFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -87,7 +76,7 @@ void vtkProjectSphereFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "TranslateZ " << this->GetTranslateZ() << "\n";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkProjectSphereFilter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Remove(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE());
@@ -96,7 +85,7 @@ int vtkProjectSphereFilter::FillInputPortInformation(int vtkNotUsed(port), vtkIn
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkProjectSphereFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -128,7 +117,7 @@ int vtkProjectSphereFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProjectSphereFilter::TransformPointInformation(
   vtkPointSet* input, vtkPointSet* output, vtkIdList* polePointIds)
 {
@@ -142,13 +131,17 @@ void vtkProjectSphereFilter::TransformPointInformation(
   points->SetDataTypeToDouble();
   points->SetNumberOfPoints(input->GetNumberOfPoints());
 
-  double zTranslation = (this->TranslateZ == true ? this->GetZTranslation(input) : 0.);
+  double zTranslation = (this->TranslateZ ? this->GetZTranslation(input) : 0.);
 
   output->SetPoints(points.GetPointer());
   vtkIdType numberOfPoints = input->GetNumberOfPoints();
   double minDist2ToCenterLine = VTK_DOUBLE_MAX;
   for (vtkIdType i = 0; i < numberOfPoints; i++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     double coordIn[3], coordOut[3];
     input->GetPoint(i, coordIn);
     ConvertXYZToLatLonDepth(coordIn, coordOut, this->Center);
@@ -194,7 +187,7 @@ void vtkProjectSphereFilter::TransformPointInformation(
   this->ComputePointsClosestToCenterLine(minDist2ToCenterLine, polePointIds);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProjectSphereFilter::TransformCellInformation(
   vtkPointSet* input, vtkPointSet* output, vtkIdList* polePointIds)
 {
@@ -240,6 +233,10 @@ void vtkProjectSphereFilter::TransformCellInformation(
   vtkIdType mostPointsInCell = 0;
   for (vtkIdType cellId = 0; cellId < numberOfCells; cellId++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     bool onLeftBoundary = false;
     bool onRightBoundary = false;
     bool leftSideInterior = false;  // between SplitLongitude and SplitLongitude+90
@@ -276,7 +273,7 @@ void vtkProjectSphereFilter::TransformCellInformation(
       {
         middleInterior = true;
       }
-      if (polePointIds->IsId(cellPoints->GetId(pt)) != -1 && this->KeepPolePoints == false)
+      if (polePointIds->IsId(cellPoints->GetId(pt)) != -1 && !this->KeepPolePoints)
       {
         skipCell = true;
         skippedCells->InsertNextId(cellId);
@@ -375,6 +372,10 @@ void vtkProjectSphereFilter::TransformCellInformation(
   vtkIdType skipCounter = 0;
   for (vtkIdType cellId = 0; cellId < input->GetNumberOfCells(); cellId++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     if (skippedCells->IsId(cellId) != -1)
     {
       skippedCells->DeleteId(cellId);
@@ -385,12 +386,12 @@ void vtkProjectSphereFilter::TransformCellInformation(
     double parametricCenter[3];
     vtkCell* cell = input->GetCell(cellId);
     cell->GetParametricCenter(parametricCenter);
-    cell->EvaluateLocation(subId, parametricCenter, coord, &weights[0]);
+    cell->EvaluateLocation(subId, parametricCenter, coord, weights.data());
     this->TransformTensors(cellId - skipCounter, coord, output->GetCellData());
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProjectSphereFilter::TransformTensors(
   vtkIdType pointId, double* coord, vtkDataSetAttributes* dataArrays)
 {
@@ -418,7 +419,7 @@ void vtkProjectSphereFilter::TransformTensors(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkProjectSphereFilter::GetZTranslation(vtkPointSet* input)
 {
   double maxRadius2 = 0; // squared radius
@@ -435,7 +436,7 @@ double vtkProjectSphereFilter::GetZTranslation(vtkPointSet* input)
   return sqrt(maxRadius2);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProjectSphereFilter::SplitCell(vtkPointSet* input, vtkPointSet* output,
   vtkIdType inputCellId, vtkIncrementalPointLocator* locator, vtkCellArray* connectivity,
   int splitSide)
@@ -472,7 +473,7 @@ void vtkProjectSphereFilter::SplitCell(vtkPointSet* input, vtkPointSet* output,
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProjectSphereFilter::SetCellInformation(
   vtkUnstructuredGrid* output, vtkCell* cell, vtkIdType numberOfNewCells)
 {
@@ -553,3 +554,4 @@ void vtkProjectSphereFilter::SetCellInformation(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMergeDataObjectFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMergeDataObjectFilter
  * @brief   merge dataset and data object field to create dataset with attribute data
@@ -44,6 +32,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkMergeDataObjectFilter : public vtkDataSetAlgorithm
 {
 public:
@@ -51,15 +40,15 @@ public:
   vtkTypeMacro(vtkMergeDataObjectFilter, vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the data object to merge with the input dataset.
    */
   void SetDataObjectInputData(vtkDataObject* object);
   vtkDataObject* GetDataObject();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify where to place the field data during the merge process.  There
    * are three choices: the field data associated with the vtkDataObject
@@ -71,7 +60,7 @@ public:
   void SetOutputFieldToDataObjectField();
   void SetOutputFieldToPointDataField();
   void SetOutputFieldToCellDataField();
-  //@}
+  ///@}
 
 protected:
   vtkMergeDataObjectFilter();
@@ -88,4 +77,5 @@ private:
   void operator=(const vtkMergeDataObjectFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

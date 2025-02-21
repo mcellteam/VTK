@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLightingMapPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLightingMapPass
  * @brief   TO DO
@@ -33,17 +21,19 @@
 
 #include "vtkDefaultPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformationIntegerKey;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkLightingMapPass : public vtkDefaultPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkLightingMapPass : public vtkDefaultPass
 {
 public:
   static vtkLightingMapPass* New();
   vtkTypeMacro(vtkLightingMapPass, vtkDefaultPass);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the type of lighting render to perform
    */
@@ -54,7 +44,7 @@ public:
   };
   vtkSetMacro(RenderType, RenderMode);
   vtkGetMacro(RenderType, RenderMode);
-  //@}
+  ///@}
 
   /**
    * If this key exists on the PropertyKeys of a prop, the active scalar array
@@ -100,4 +90,5 @@ private:
   RenderMode RenderType;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,31 +1,26 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTextWidget.h"
 #include "vtkCommand.h"
 #include "vtkObjectFactory.h"
 #include "vtkTextRepresentation.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTextWidget);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextWidget::vtkTextWidget() = default;
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextWidget::~vtkTextWidget() = default;
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkTextWidget::SetRepresentation(vtkTextRepresentation* r)
+{
+  this->Superclass::SetWidgetRepresentation(r);
+}
+
+//------------------------------------------------------------------------------
 void vtkTextWidget::SetTextActor(vtkTextActor* textActor)
 {
   vtkTextRepresentation* textRep = reinterpret_cast<vtkTextRepresentation*>(this->WidgetRep);
@@ -42,7 +37,7 @@ void vtkTextWidget::SetTextActor(vtkTextActor* textActor)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextActor* vtkTextWidget::GetTextActor()
 {
   vtkTextRepresentation* textRep = reinterpret_cast<vtkTextRepresentation*>(this->WidgetRep);
@@ -56,7 +51,7 @@ vtkTextActor* vtkTextWidget::GetTextActor()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -65,8 +60,9 @@ void vtkTextWidget::CreateDefaultRepresentation()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

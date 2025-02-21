@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDijkstraImageContourLineInterpolator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDijkstraImageContourLineInterpolator.h"
 
 #include "vtkCellArray.h"
@@ -26,23 +14,24 @@
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDijkstraImageContourLineInterpolator);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDijkstraImageContourLineInterpolator ::vtkDijkstraImageContourLineInterpolator()
 {
   this->DijkstraImageGeodesicPath = vtkDijkstraImageGeodesicPath::New();
   this->CostImage = nullptr;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDijkstraImageContourLineInterpolator ::~vtkDijkstraImageContourLineInterpolator()
 {
   this->DijkstraImageGeodesicPath->Delete();
   this->CostImage = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDijkstraImageContourLineInterpolator::SetCostImage(vtkImageData* arg)
 {
   if (this->CostImage == arg)
@@ -57,7 +46,7 @@ void vtkDijkstraImageContourLineInterpolator::SetCostImage(vtkImageData* arg)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDijkstraImageContourLineInterpolator::InterpolateLine(
   vtkRenderer* vtkNotUsed(ren), vtkContourRepresentation* rep, int idx1, int idx2)
 {
@@ -138,10 +127,11 @@ int vtkDijkstraImageContourLineInterpolator::InterpolateLine(
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDijkstraImageContourLineInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "DijkstraImageGeodesicPath: " << this->DijkstraImageGeodesicPath << endl;
   os << indent << "CostImage: " << this->GetCostImage() << endl;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTubeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTubeFilter.h"
 
 #include "vtkCellArray.h"
@@ -27,6 +15,7 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTubeFilter);
 
 // Construct object with radius 0.5, radius variation turned off, the number
@@ -118,7 +107,7 @@ int vtkTubeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   const vtkIdType* ptsOrig = nullptr;
   vtkIdType offset = 0;
   vtkFloatArray* newTCoords = nullptr;
-  int abort = 0;
+  bool abort = false;
   vtkIdType inCellId;
   double oldRadius = 1.0;
 
@@ -200,7 +189,7 @@ int vtkTubeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   //
   if (inScalars)
   {
-    inScalars->GetRange(range, 0);
+    pd->GetRange(inScalars->GetName(), range, 0);
     if ((range[1] - range[0]) == 0.0)
     {
       if (this->VaryRadius == VTK_VARY_RADIUS_BY_SCALAR)
@@ -238,12 +227,19 @@ int vtkTubeFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkPolyLine* lineNormalGenerator = vtkPolyLine::New();
   // the line cellIds start after the last vert cellId
   inCellId = input->GetNumberOfVerts();
+  int checkAbortInterval = std::min(numLines / 10 + 1, (vtkIdType)1000);
+  int progressCounter = 0;
   for (inLines->InitTraversal(); inLines->GetNextCell(npts, ptsOrig) && !abort; inCellId++)
   {
     this->UpdateProgress((double)inCellId / numLines);
-    abort = this->GetAbortExecute();
+    if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      abort = this->CheckAbort();
+      break;
+    }
+    progressCounter++;
 
-    // Make a copy of point indices to avoid modfiying input polydata cells
+    // Make a copy of point indices to avoid modifying input polydata cells
     // while removing degenerate lines.
     if (npts < 2)
     {
@@ -265,7 +261,7 @@ int vtkTubeFilter::RequestData(vtkInformation* vtkNotUsed(request),
     {
       singlePolyline->Reset(); // avoid instantiation
       singlePolyline->InsertNextCell(npts, pts);
-      lineNormalGenerator->GenerateSlidingNormals(inPts, singlePolyline, inNormals);
+      vtkPolyLine::GenerateSlidingNormals(inPts, singlePolyline, inNormals);
     }
 
     // Generate the points around the polyline. The tube is not stripped
@@ -451,11 +447,16 @@ int vtkTubeFilter::GeneratePoints(vtkIdType offset, vtkIdType npts, const vtkIdT
     }
     else if (inVectors && this->VaryRadius == VTK_VARY_RADIUS_BY_VECTOR)
     {
-      sFactor = sqrt((double)maxSpeed / vtkMath::Norm(inVectors->GetTuple(pts[j])));
+      sFactor = sqrt(maxSpeed / vtkMath::Norm(inVectors->GetTuple(pts[j])));
       if (sFactor > this->RadiusFactor)
       {
         sFactor = this->RadiusFactor;
       }
+    }
+    else if (inVectors && this->VaryRadius == VTK_VARY_RADIUS_BY_VECTOR_NORM)
+    {
+      sFactor =
+        1.0 + (this->RadiusFactor - 1.0) * vtkMath::Norm(inVectors->GetTuple(pts[j])) / maxSpeed;
     }
     else if (inScalars && this->VaryRadius == VTK_VARY_RADIUS_BY_ABSOLUTE_SCALAR)
     {
@@ -786,9 +787,13 @@ const char* vtkTubeFilter::GetVaryRadiusAsString()
   {
     return "VaryRadiusByAbsoluteScalar";
   }
-  else
+  else if (this->VaryRadius == VTK_VARY_RADIUS_BY_VECTOR)
   {
     return "VaryRadiusByVector";
+  }
+  else
+  {
+    return "VaryRadiusByVectorNorm";
   }
 }
 
@@ -835,3 +840,4 @@ void vtkTubeFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Texture Length: " << this->TextureLength << endl;
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << endl;
 }
+VTK_ABI_NAMESPACE_END

@@ -177,10 +177,10 @@ HPDF_Dict_Write  (HPDF_Dict     dict,
 
             HPDF_Array_Clear (array);
 
-#ifndef LIBHPDF_HAVE_NOZLIB
+#ifdef LIBHPDF_HAVE_ZLIB
             if (dict->filter & HPDF_STREAM_FILTER_FLATE_DECODE)
                 HPDF_Array_AddName (array, "FlateDecode");
-#endif /* LIBHPDF_HAVE_NOZLIB */
+#endif /* LIBHPDF_HAVE_ZLIB */
 
             if (dict->filter & HPDF_STREAM_FILTER_DCT_DECODE)
                 HPDF_Array_AddName (array, "DCTDecode");
@@ -347,8 +347,10 @@ HPDF_Dict_Add  (HPDF_Dict        dict,
     if (header->obj_id & HPDF_OTYPE_INDIRECT) {
         HPDF_Proxy proxy = HPDF_Proxy_New (dict->mmgr, obj);
 
-        if (!proxy)
+        if (!proxy) {
+            HPDF_Obj_Free(dict->mmgr, obj);
             return HPDF_Error_GetCode (dict->error);
+        }
 
         element->value = proxy;
         proxy->header.obj_id |= HPDF_OTYPE_DIRECT;

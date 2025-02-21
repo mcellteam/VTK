@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <stdint.h>
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -47,6 +48,7 @@
 #define SEEK_END 2
 #endif
 
+#include "ncpathmgr.h"
 #include "ncio.h"
 #include "fbits.h"
 #include "rnd.h"
@@ -119,7 +121,7 @@ static off_t nc_get_filelen(const int fd) {
   off_t flen;
 
 #ifdef HAVE_FILE_LENGTH_I64
-  __int64 file_len = 0;
+  int64_t file_len = 0;
   if ((file_len = _filelengthi64(fd)) < 0) {
     return file_len;
   }
@@ -1622,10 +1624,10 @@ posixio_create(const char *path, int ioflags,
 	fSet(oflags, O_BINARY);
 #endif
 #ifdef vms
-	fd = open(path, oflags, NC_DEFAULT_CREAT_MODE, "ctx=stm");
+	fd = NCopen3(path, oflags, NC_DEFAULT_CREAT_MODE, "ctx=stm");
 #else
 	/* Should we mess with the mode based on NC_SHARE ?? */
-	fd = open(path, oflags, NC_DEFAULT_CREAT_MODE);
+	fd = NCopen3(path, oflags, NC_DEFAULT_CREAT_MODE);
 #endif
 #if 0
 	(void) fprintf(stderr, "ncio_create(): path=\"%s\"\n", path);
@@ -1633,7 +1635,7 @@ posixio_create(const char *path, int ioflags,
 #endif
 	if(fd < 0)
 	{
-		status = errno;
+		status = errno ? errno : ENOENT;
 		goto unwind_new;
 	}
 	*((int *)&nciop->fd) = fd; /* cast away const */
@@ -1760,13 +1762,13 @@ posixio_open(const char *path,
 #endif
 
 #ifdef vms
-	fd = open(path, oflags, 0, "ctx=stm");
+	fd = NCopen3(path, oflags, 0, "ctx=stm");
 #else
-	fd = open(path, oflags, 0);
+	fd = NCopen3(path, oflags, 0);
 #endif
 	if(fd < 0)
 	{
-		status = errno;
+		status = errno ? errno : ENOENT;
 		goto unwind_new;
 	}
 	*((int *)&nciop->fd) = fd; /* cast away const */
@@ -1828,7 +1830,7 @@ ncio_px_filesize(ncio *nciop, off_t *filesizep)
 		Use _filelengthi64 isntead. */
 #ifdef HAVE_FILE_LENGTH_I64
 
-	__int64 file_len = 0;
+	int64_t file_len = 0;
 	if( (file_len = _filelengthi64(nciop->fd)) < 0) {
 		return errno;
 	}

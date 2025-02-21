@@ -1,24 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParseExtras.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright (c) 2011 David Gobbi.
-
-  Contributed to the VisualizationToolkit by the author in May 2011
-  under the terms of the Visualization Toolkit 2008 copyright.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2011 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParseExtras.h"
 #include "vtkParseString.h"
 #include <assert.h>
@@ -251,13 +233,13 @@ static const char* vtkparse_string_replace(
     if (any_replaced)
     {
       /* return a string that was allocated with malloc */
-      if (result == result_store)
+      tmp = (char*)malloc(strlen(result) + 1);
+      strcpy(tmp, result);
+      cp = tmp;
+      if (result != result_store)
       {
-        tmp = (char*)malloc(strlen(result) + 1);
-        strcpy(tmp, result);
-        result = tmp;
+        free(result);
       }
-      cp = result;
     }
   }
 
@@ -336,7 +318,7 @@ void vtkParse_ExpandTypedef(ValueInfo* valinfo, ValueInfo* typedefinfo)
   pointers = (typedefinfo->Type & VTK_PARSE_POINTER_MASK);
   refbit = (valinfo->Type & VTK_PARSE_REF);
   qualifiers = (typedefinfo->Type & VTK_PARSE_CONST);
-  attributes = (valinfo->Type & VTK_PARSE_ATTRIBUTES);
+  attributes = valinfo->Attributes;
 
   /* handle const */
   if ((valinfo->Type & VTK_PARSE_CONST) != 0)
@@ -398,7 +380,8 @@ void vtkParse_ExpandTypedef(ValueInfo* valinfo, ValueInfo* typedefinfo)
   }
 
   /* put everything together */
-  valinfo->Type = (baseType | pointers | refbit | qualifiers | attributes);
+  valinfo->Attributes = attributes;
+  valinfo->Type = (baseType | pointers | refbit | qualifiers);
   valinfo->Class = classname;
   valinfo->Function = typedefinfo->Function;
 }
@@ -449,7 +432,7 @@ size_t vtkParse_BasicTypeFromString(
 {
   /* The various typedefs and types specific to VTK */
   static struct vtk_type_struct vtktypes[] = { { 12, "vtkStdString", VTK_PARSE_STRING },
-    { 16, "vtkUnicodeString", VTK_PARSE_UNICODE_STRING }, { 0, 0, 0 } };
+    { 0, 0, 0 } };
 
   /* Other typedefs and types */
   static struct vtk_type_struct stdtypes[] = { { 6, "size_t", VTK_PARSE_SIZE_T },
@@ -583,11 +566,6 @@ size_t vtkParse_BasicTypeFromString(
       classname = "void";
       base_bits = VTK_PARSE_VOID;
     }
-    else if (n == 7 && strncmp(cp, "__int64", n) == 0)
-    {
-      classname = "__int64";
-      base_bits = VTK_PARSE___INT64;
-    }
     else
     {
       /* if type already found, break */
@@ -697,9 +675,6 @@ size_t vtkParse_BasicTypeFromString(
         break;
       case VTK_PARSE_LONG_LONG:
         classname = "unsigned long long";
-        break;
-      case VTK_PARSE___INT64:
-        classname = "unsigned __int64";
         break;
     }
   }
@@ -834,6 +809,12 @@ size_t vtkParse_ValueInfoFromString(ValueInfo* data, StringCache* cache, const c
       {
         cp++;
       }
+    }
+
+    /* update count if all array sizes are integer literals */
+    if (count)
+    {
+      data->Count = count;
     }
   }
 
@@ -1304,8 +1285,8 @@ static int override_compatible(unsigned int t1, unsigned int t2)
 /* Compare two functions */
 int vtkParse_CompareFunctionSignature(const FunctionInfo* func1, const FunctionInfo* func2)
 {
-  ValueInfo* p1;
-  ValueInfo* p2;
+  const ValueInfo* p1;
+  const ValueInfo* p2;
   int j;
   int k;
   int match = 0;
@@ -1753,7 +1734,7 @@ const char** vtkParse_GetArrayTypes(void)
 {
   static const char* types[] = { "char", "signed char", "unsigned char", "short", "unsigned short",
     "int", "unsigned int", "long", "unsigned long", "long long", "unsigned long long", "float",
-    "double", "vtkStdString", "vtkUnicodeString", "vtkVariant", NULL };
+    "double", "vtkStdString", "vtkVariant", NULL };
 
   return types;
 }

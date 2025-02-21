@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTreeDifferenceFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkTreeDifferenceFilter
@@ -35,6 +23,7 @@
 #include "vtkSmartPointer.h" // For ivars
 #include <vector>            // For ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 class vtkTree;
 
@@ -45,7 +34,7 @@ public:
   vtkTypeMacro(vtkTreeDifferenceFilter, vtkGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the name of the identifier array in the trees' VertexData.
    * This array is used to find corresponding vertices in the two trees.
@@ -58,18 +47,18 @@ public:
    */
   vtkSetStringMacro(IdArrayName);
   vtkGetStringMacro(IdArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the name of the array that we're comparing between the two trees.
    * The named array must be a vtkDoubleArray.
    */
   vtkSetStringMacro(ComparisonArrayName);
   vtkGetStringMacro(ComparisonArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the name of a new vtkDoubleArray that will contain the results of
    * the comparison between the two trees.  This new array will be added to
@@ -79,9 +68,9 @@ public:
    */
   vtkSetStringMacro(OutputArrayName);
   vtkGetStringMacro(OutputArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether the comparison array is within the trees' vertex data or
    * not.  By default, we assume that the array to compare is within the trees'
@@ -89,7 +78,7 @@ public:
    */
   vtkSetMacro(ComparisonArrayIsVertexData, bool);
   vtkGetMacro(ComparisonArrayIsVertexData, bool);
-  //@}
+  ///@}
 
 protected:
   vtkTreeDifferenceFilter();
@@ -125,4 +114,5 @@ private:
   void operator=(const vtkTreeDifferenceFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

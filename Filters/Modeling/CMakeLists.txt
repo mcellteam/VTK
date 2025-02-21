@@ -13,6 +13,8 @@ set(classes
   vtkGraphGeodesicPath
   vtkHausdorffDistancePointSetFilter
   vtkHyperTreeGridOutlineFilter
+  vtkImageDataOutlineFilter
+  vtkImprintFilter
   vtkLinearCellExtrusionFilter
   vtkLinearExtrusionFilter
   vtkLinearSubdivisionFilter
@@ -35,3 +37,4 @@ set(classes
 
 vtk_module_add_module(VTK::FiltersModeling
   CLASSES ${classes})
+vtk_add_test_mangling(VTK::FiltersModeling)

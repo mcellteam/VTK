@@ -1,19 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    PyVTKMethodDescriptor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "PyVTKMethodDescriptor.h"
+#include "vtkABINamespace.h"
 #include "vtkPythonUtil.h"
 
 #include <structmember.h> // a python header
@@ -31,7 +20,7 @@
 #define PyDescr_NAME(x) (((PyDescrObject*)(x))->d_name)
 #endif
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // C API
 
 PyObject* PyVTKMethodDescriptor_New(PyTypeObject* pytype, PyMethodDef* meth)
@@ -43,7 +32,7 @@ PyObject* PyVTKMethodDescriptor_New(PyTypeObject* pytype, PyMethodDef* meth)
   {
     Py_XINCREF(pytype);
     PyDescr_TYPE(descr) = pytype;
-    PyDescr_NAME(descr) = PyString_InternFromString(meth->ml_name);
+    PyDescr_NAME(descr) = PyUnicode_InternFromString(meth->ml_name);
     descr->d_method = meth;
 
     if (!PyDescr_NAME(descr))
@@ -56,7 +45,7 @@ PyObject* PyVTKMethodDescriptor_New(PyTypeObject* pytype, PyMethodDef* meth)
   return (PyObject*)descr;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Object protocol
 
 static void PyVTKMethodDescriptor_Delete(PyObject* ob)
@@ -71,13 +60,8 @@ static void PyVTKMethodDescriptor_Delete(PyObject* ob)
 static PyObject* PyVTKMethodDescriptor_Repr(PyObject* ob)
 {
   PyMethodDescrObject* descr = (PyMethodDescrObject*)ob;
-#ifdef VTK_PY3K
-  return PyUnicode_FromFormat(
-    "<method \'%U\' of \'%s\' objects>", PyDescr_NAME(descr), PyDescr_TYPE(descr)->tp_name);
-#else
-  return PyString_FromFormat(
-    "<method \'%s\' of \'%s\' objects>", PyString_AS_STRING(descr->d_name), descr->d_type->tp_name);
-#endif
+  return PyUnicode_FromFormat("<method \'%U\' of \'%s\' objects>", PyDescr_NAME(descr),
+    vtkPythonUtil::GetTypeName(PyDescr_TYPE(descr)));
 }
 
 static int PyVTKMethodDescriptor_Traverse(PyObject* ob, visitproc visit, void* arg)
@@ -95,7 +79,7 @@ static PyObject* PyVTKMethodDescriptor_Call(PyObject* ob, PyObject* args, PyObje
 
   if (func)
   {
-    result = PyEval_CallObjectWithKeywords(func, args, kwds);
+    result = PyObject_Call(func, args, kwds);
     Py_DECREF(func);
   }
 
@@ -119,13 +103,9 @@ static PyObject* PyVTKMethodDescriptor_Get(PyObject* self, PyObject* obj, PyObje
     return PyCFunction_New(descr->d_method, obj);
   }
 
-#ifdef VTK_PY3K
   PyErr_Format(PyExc_TypeError, "descriptor '%U' for '%s' objects doesn't apply to '%s' object",
-    PyDescr_NAME(descr), PyDescr_TYPE(descr)->tp_name, Py_TYPE(obj)->tp_name);
-#else
-  PyErr_Format(PyExc_TypeError, "descriptor '%s' for '%s' objects doesn't apply to '%s' object",
-    PyString_AS_STRING(PyDescr_NAME(descr)), PyDescr_TYPE(descr)->tp_name, Py_TYPE(obj)->tp_name);
-#endif
+    PyDescr_NAME(descr), vtkPythonUtil::GetTypeName(PyDescr_TYPE(descr)),
+    vtkPythonUtil::GetTypeNameForObject(obj));
 
   return nullptr;
 }
@@ -140,31 +120,31 @@ static PyObject* PyVTKMethodDescriptor_GetDoc(PyObject* ob, void*)
     return Py_None;
   }
 
-  return PyString_FromString(descr->d_method->ml_doc);
+  return PyUnicode_FromString(descr->d_method->ml_doc);
 }
 
-static PyGetSetDef PyVTKMethodDescriptor_GetSet[] = {
 #if PY_VERSION_HEX >= 0x03070000
-  { "__doc__", PyVTKMethodDescriptor_GetDoc, nullptr, nullptr, nullptr },
+#define pystr(x) x
 #else
-  { const_cast<char*>("__doc__"), PyVTKMethodDescriptor_GetDoc, nullptr, nullptr, nullptr },
+#define pystr(x) const_cast<char*>(x)
 #endif
+
+static PyGetSetDef PyVTKMethodDescriptor_GetSet[] = {
+  { pystr("__doc__"), PyVTKMethodDescriptor_GetDoc, nullptr, nullptr, nullptr },
   { nullptr, nullptr, nullptr, nullptr, nullptr }
 };
 
 static PyMemberDef PyVTKMethodDescriptor_Members[] = {
-#if PY_VERSION_HEX >= 0x03070000
-  { "__objclass__", T_OBJECT, offsetof(PyDescrObject, d_type), READONLY, nullptr },
-  { "__name__", T_OBJECT, offsetof(PyDescrObject, d_name), READONLY, nullptr },
-#else
-  { const_cast<char*>("__objclass__"), T_OBJECT, offsetof(PyDescrObject, d_type), READONLY,
-    nullptr },
-  { const_cast<char*>("__name__"), T_OBJECT, offsetof(PyDescrObject, d_name), READONLY, nullptr },
-#endif
+  { pystr("__objclass__"), T_OBJECT, offsetof(PyDescrObject, d_type), READONLY, nullptr },
+  { pystr("__name__"), T_OBJECT, offsetof(PyDescrObject, d_name), READONLY, nullptr },
   { nullptr, 0, 0, 0, nullptr }
 };
 
-//--------------------------------------------------------------------
+#ifdef VTK_PYTHON_NEEDS_DEPRECATION_WARNING_SUPPRESSION
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+//------------------------------------------------------------------------------
 // clang-format off
 PyTypeObject PyVTKMethodDescriptor_Type = {
   PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -172,7 +152,14 @@ PyTypeObject PyVTKMethodDescriptor_Type = {
   sizeof(PyMethodDescrObject),             // tp_basicsize
   0,                                       // tp_itemsize
   PyVTKMethodDescriptor_Delete,            // tp_dealloc
+#if PY_VERSION_HEX >= 0x03080000
+  //Prior to Py3.8, this member was a function pointer,
+  //but as of Py3.8 it is an integer
+  //(and therefore incompatible with nullptr).
   0,                                       // tp_vectorcall_offset
+#else
+  nullptr,                                 // tp_print
+#endif
   nullptr,                                 // tp_getattr
   nullptr,                                 // tp_setattr
   nullptr,                                 // tp_compare

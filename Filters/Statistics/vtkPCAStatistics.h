@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkPCAStatistics.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2010 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2010 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkPCAStatistics
  * @brief   A class for multivariate principal component analysis
@@ -56,6 +40,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkFiltersStatisticsModule.h" // For export macro
 #include "vtkMultiCorrelativeStatistics.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 class vtkIdTypeArray;
 
@@ -89,7 +74,7 @@ public:
     NUM_BASIS_SCHEMES   //!< The number of schemes (not a valid scheme).
   };
 
-  //@{
+  ///@{
   /**
    * This determines how (or if) the covariance matrix \a cov is normalized before PCA.
 
@@ -116,9 +101,9 @@ public:
   vtkGetMacro(NormalizationScheme, int);
   virtual void SetNormalizationSchemeByName(const char* schemeName);
   virtual const char* GetNormalizationSchemeName(int scheme);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods allow you to set/get values used to normalize the covariance matrix before PCA.
    * The normalization values apply to all requests, so you do not specify a single
@@ -145,9 +130,9 @@ public:
    */
   virtual vtkTable* GetSpecifiedNormalization();
   virtual void SetSpecifiedNormalization(vtkTable*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the eigenvalues. The eigenvalues are ordered according from largest to smallest.
    * This function:
@@ -160,9 +145,9 @@ public:
   void GetEigenvalues(vtkDoubleArray*);
   double GetEigenvalue(int request, int i);
   double GetEigenvalue(int i);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the eigenvectors. The eigenvectors are ordered according to the magnitude of their
    * associated eigenvalues, sorted from largest to smallest. That is, eigenvector 0 corresponds
@@ -177,9 +162,9 @@ public:
   void GetEigenvectors(vtkDoubleArray* eigenvectors);
   void GetEigenvector(int i, vtkDoubleArray* eigenvector);
   void GetEigenvector(int request, int i, vtkDoubleArray* eigenvector);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This variable controls the dimensionality of output tuples in Assess operation.
    * Consider the case where you have requested a PCA on D columns.
@@ -211,9 +196,9 @@ public:
   vtkGetMacro(BasisScheme, int);
   virtual const char* GetBasisSchemeName(int schemeIndex);
   virtual void SetBasisSchemeByName(const char* schemeName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The number of basis vectors to use. See SetBasisScheme() for more information.
    * When FixedBasisSize <= 0 (the default), the fixed basis size scheme is equivalent to the full
@@ -221,9 +206,9 @@ public:
    */
   vtkSetMacro(FixedBasisSize, int);
   vtkGetMacro(FixedBasisSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The minimum energy the new basis should use, as a fraction. See SetBasisScheme() for more
    * information. When FixedBasisEnergy >= 1 (the default), the fixed basis energy scheme is
@@ -231,7 +216,7 @@ public:
    */
   vtkSetClampMacro(FixedBasisEnergy, double, 0., 1.);
   vtkGetMacro(FixedBasisEnergy, double);
-  //@}
+  ///@}
 
   /**
    * A convenience method (in particular for access from other applications) to
@@ -291,4 +276,5 @@ private:
   void operator=(const vtkPCAStatistics&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPCAStatistics_h

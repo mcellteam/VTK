@@ -1,23 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageCityBlockDistance.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageCityBlockDistance
  * @brief   1,2 or 3D distance map.
  *
  * vtkImageCityBlockDistance creates a distance map using the city block
- * (Manhatten) distance measure.  The input is a mask.  Zero values are
+ * (Manhattan) distance measure.  The input is a mask.  Zero values are
  * considered boundaries.  The output pixel is the minimum of the input pixel
  * and the distance to a boundary (or neighbor value + 1 unit).
  * distance values are calculated in pixels.
@@ -35,15 +23,17 @@
 #include "vtkImageDecomposeFilter.h"
 #include "vtkImagingGeneralModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGGENERAL_EXPORT vtkImageCityBlockDistance : public vtkImageDecomposeFilter
 {
 public:
   static vtkImageCityBlockDistance* New();
   vtkTypeMacro(vtkImageCityBlockDistance, vtkImageDecomposeFilter);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkImageCityBlockDistance();
-  ~vtkImageCityBlockDistance() override {}
+  ~vtkImageCityBlockDistance() override = default;
 
   int IterativeRequestUpdateExtent(vtkInformation* in, vtkInformation* out) override;
   int IterativeRequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
@@ -56,6 +46,5 @@ private:
   void operator=(const vtkImageCityBlockDistance&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageCityBlockDistance.h

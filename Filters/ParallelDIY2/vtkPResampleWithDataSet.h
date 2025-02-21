@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPResampleWithDataSet.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPResampleWithDataSet
  * points from another dataset.
@@ -28,6 +16,7 @@
 #include "vtkFiltersParallelDIY2Module.h" // For export macro
 #include "vtkResampleWithDataSet.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiProcessController;
 
 class VTKFILTERSPARALLELDIY2_EXPORT vtkPResampleWithDataSet : public vtkResampleWithDataSet
@@ -38,16 +27,16 @@ public:
 
   static vtkPResampleWithDataSet* New();
 
-  //@{
+  ///@{
   /**
    * By default this filter uses the global controller,
    * but this method can be used to set another instead.
    */
   virtual void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get if the filter should use Balanced Partitioning for fast lookup of
    * the input points. Balanced Partitioning partitions the points into similar
@@ -64,7 +53,7 @@ public:
   vtkSetMacro(UseBalancedPartitionForPointsLookup, bool);
   vtkGetMacro(UseBalancedPartitionForPointsLookup, bool);
   vtkBooleanMacro(UseBalancedPartitionForPointsLookup, bool);
-  //@}
+  ///@}
 
 protected:
   vtkPResampleWithDataSet();
@@ -81,4 +70,5 @@ private:
   void operator=(const vtkPResampleWithDataSet&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPResampleWithDataSet_h

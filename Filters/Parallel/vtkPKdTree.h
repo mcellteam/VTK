@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPKdTree.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPKdTree
@@ -48,6 +33,7 @@
 #include <string> // Instead of using char*
 #include <vector> // For automatic array memory management
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiProcessController;
 class vtkCommunicator;
 class vtkSubGroup;
@@ -100,15 +86,15 @@ public:
    */
   int CreateGlobalDataArrayBounds();
 
-  //@{
+  ///@{
   /**
    * Set/Get the communicator object
    */
   void SetController(vtkMultiProcessController* c);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The PKdTree class can assign spatial regions to processors after
    * building the k-d tree, using one of several partitioning criteria.
@@ -119,7 +105,7 @@ public:
    * automatically turns on RegionAssignment.
    */
   vtkGetMacro(RegionAssignment, int);
-  //@}
+  ///@}
 
   static const int NoRegionAssignment;
   static const int ContiguousAssignment;
@@ -154,14 +140,14 @@ public:
    * Returns the region assignment map where index is the region and value is
    * the processes id for that region.
    */
-  const int* GetRegionAssignmentMap() { return &this->RegionAssignmentMap[0]; }
+  const int* GetRegionAssignmentMap() { return this->RegionAssignmentMap.data(); }
 
-  //@{
+  ///@{
   /**
    * / Returns the number of regions in the region assignment map.
    */
   int GetRegionAssignmentMapLength() { return static_cast<int>(this->RegionAssignmentMap.size()); }
-  //@}
+  ///@}
 
   /**
    * Writes the list of region IDs assigned to the specified
@@ -240,7 +226,7 @@ public:
    */
   int GetRegionsCellCountForProcess(int ProcessId, int* count, int len);
 
-  //@{
+  ///@{
   /**
    * After regions have been assigned to processes, I may want to know
    * which cells I have that are in the regions assigned to a particular
@@ -272,7 +258,7 @@ public:
     int ProcessId, vtkDataSet* set, vtkIdList* inRegionCells, vtkIdList* onBoundaryCells);
   vtkIdType GetCellListsForProcessRegions(
     int ProcessId, vtkIdList* inRegionCells, vtkIdList* onBoundaryCells);
-  //@}
+  ///@}
 
   /**
    * Return a list of all processes in order from front to back given a
@@ -333,9 +319,9 @@ private:
   // basic tables - each region is the responsibility of one process, but
   //                one process may be assigned many regions
 
-  std::vector<int> RegionAssignmentMap;                // indexed by region ID
-  std::vector<std::vector<int> > ProcessAssignmentMap; // indexed by process ID
-  std::vector<int> NumRegionsAssigned;                 // indexed by process ID
+  std::vector<int> RegionAssignmentMap;               // indexed by region ID
+  std::vector<std::vector<int>> ProcessAssignmentMap; // indexed by process ID
+  std::vector<int> NumRegionsAssigned;                // indexed by process ID
 
   int UpdateRegionAssignment();
 
@@ -344,13 +330,13 @@ private:
 
   std::vector<char> DataLocationMap; // by process, by region
 
-  std::vector<int> NumProcessesInRegion;      // indexed by region ID
-  std::vector<std::vector<int> > ProcessList; // indexed by region ID
+  std::vector<int> NumProcessesInRegion;     // indexed by region ID
+  std::vector<std::vector<int>> ProcessList; // indexed by region ID
 
-  std::vector<int> NumRegionsInProcess;              // indexed by process ID
-  std::vector<std::vector<int> > ParallelRegionList; // indexed by process ID
+  std::vector<int> NumRegionsInProcess;             // indexed by process ID
+  std::vector<std::vector<int>> ParallelRegionList; // indexed by process ID
 
-  std::vector<std::vector<vtkIdType> > CellCountList; // indexed by region ID
+  std::vector<std::vector<vtkIdType>> CellCountList; // indexed by region ID
 
   std::vector<double> CellDataMin; // global range for data arrays
   std::vector<double> CellDataMax;
@@ -395,7 +381,7 @@ private:
   int AllCheckForFailure(int rc, const char* where, const char* how);
   void AllCheckParameters();
 
-  //@{
+  ///@{
   /**
    * Return the global bounds over all processes.  Returns true
    * if successful and false otherwise.
@@ -404,7 +390,7 @@ private:
   int DivideRegion(vtkKdNode* kd, int L, int level, int tag);
   int BreadthFirstDivide(double* bounds);
   void enQueueNode(vtkKdNode* kd, int L, int level, int tag);
-  //@}
+  ///@}
 
   int Select(int dim, int L, int R);
   void _select(int L, int R, int K, int dim);
@@ -477,4 +463,5 @@ private:
   void operator=(const vtkPKdTree&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkClipPolyData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkClipPolyData.h"
 
 #include "vtkCellArray.h"
@@ -32,10 +20,11 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkClipPolyData);
 vtkCxxSetObjectMacro(vtkClipPolyData, ClipFunction, vtkImplicitFunction);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with user-specified implicit function; InsideOut turned off; value
 // set to 0.0; and generate clip scalars turned off.
 vtkClipPolyData::vtkClipPolyData(vtkImplicitFunction* cf)
@@ -55,7 +44,7 @@ vtkClipPolyData::vtkClipPolyData(vtkImplicitFunction* cf)
   output2->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkClipPolyData::~vtkClipPolyData()
 {
   if (this->Locator)
@@ -66,7 +55,7 @@ vtkClipPolyData::~vtkClipPolyData()
   this->SetClipFunction(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If Clip functions is modified,
 // then this object is modified as well.
 vtkMTimeType vtkClipPolyData::GetMTime()
@@ -93,7 +82,7 @@ vtkPolyData* vtkClipPolyData::GetClippedOutput()
   return vtkPolyData::SafeDownCast(this->GetExecutive()->GetOutputData(1));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Clip through data generating surface.
 //
@@ -241,7 +230,7 @@ int vtkClipPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   cellScalars->Allocate(VTK_CELL_SIZE);
 
   // perform clipping on cells
-  int abort = 0;
+  bool abort = false;
   updateTime = numCells / 20 + 1; // update roughly every 5%
   cell = vtkGenericCell::New();
   for (cellId = 0; cellId < numCells && !abort; cellId++)
@@ -289,7 +278,7 @@ int vtkClipPolyData::RequestData(vtkInformation* vtkNotUsed(request),
     if (!(cellId % updateTime))
     {
       this->UpdateProgress(static_cast<double>(cellId) / numCells);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
     }
   } // for each cell
   cell->Delete();
@@ -368,7 +357,7 @@ int vtkClipPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By default,
 // an instance of vtkMergePoints is used.
 void vtkClipPolyData::SetLocator(vtkIncrementalPointLocator* locator)
@@ -393,7 +382,7 @@ void vtkClipPolyData::SetLocator(vtkIncrementalPointLocator* locator)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClipPolyData::CreateDefaultLocator()
 {
   if (this->Locator == nullptr)
@@ -402,7 +391,7 @@ void vtkClipPolyData::CreateDefaultLocator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClipPolyData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -432,3 +421,4 @@ void vtkClipPolyData::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

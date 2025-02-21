@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCPExodusIIElementBlock.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCPExodusIIElementBlock
  * @brief   Uses an Exodus II element block as a
@@ -34,6 +22,7 @@
 
 #include <string> // For std::string
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGenericCell;
 
 class VTKIOEXODUS_EXPORT vtkCPExodusIIElementBlockImpl : public vtkObject
@@ -57,6 +46,8 @@ public:
   vtkIdType GetNumberOfCells();
   int GetCellType(vtkIdType cellId);
   void GetCellPoints(vtkIdType cellId, vtkIdList* ptIds);
+  void GetFaceStream(vtkIdType cellId, vtkIdList* ptIds);
+  void GetPolyhedronFaces(vtkIdType cellId, vtkCellArray* faces);
   void GetPointCells(vtkIdType ptId, vtkIdList* cellIds);
   int GetMaxCellSize();
   void GetIdsOfCellsOfType(int type, vtkIdTypeArray* array);
@@ -68,8 +59,9 @@ public:
   vtkIdType InsertNextCell(int type, vtkIdList* ptIds);
   vtkIdType InsertNextCell(int type, vtkIdType npts, const vtkIdType ptIds[])
     VTK_SIZEHINT(ptIds, npts);
-  vtkIdType InsertNextCell(int type, vtkIdType npts, const vtkIdType ptIds[], vtkIdType nfaces,
-    const vtkIdType faces[]) VTK_SIZEHINT(ptIds, npts) VTK_SIZEHINT(faces, nfaces);
+  vtkIdType InsertNextCell(int type, vtkIdType npts, const vtkIdType ptIds[], vtkCellArray* faces)
+    VTK_SIZEHINT(ptIds, npts);
+
   void ReplaceCell(vtkIdType cellId, int npts, const vtkIdType pts[]) VTK_SIZEHINT(pts, npts);
 
 protected:
@@ -105,4 +97,5 @@ private:
 vtkMakeExportedMappedUnstructuredGrid(
   vtkCPExodusIIElementBlock, vtkCPExodusIIElementBlockImpl, VTKIOEXODUS_EXPORT);
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkCPExodusIIElementBlock_h

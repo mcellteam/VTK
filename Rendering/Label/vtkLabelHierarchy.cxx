@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLabelHierarchy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkLabelHierarchy.h"
 
@@ -72,9 +56,10 @@
 // in the VTK code base, this is one way to do it. Feel free to change it
 // if you have a better solution. But make sure it works on Borland 5.5...
 //
+VTK_ABI_NAMESPACE_BEGIN
 vtkLabelHierarchy* vtkLabelHierarchy::Implementation::Current;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkLabelHierarchyFrustumIterator - an iterator with no-initial processing
 //
 // An iterator that has no initial processing, but looks for possible
@@ -409,11 +394,9 @@ void vtkLabelHierarchyFrustumIterator::Next()
       }
       if (gotNode)
       {
-        int R2 = 0;
         for (int i = 0; i < 3; ++i)
         {
           this->IjkG[i] = this->Ijk0[i] + this->IjkS[i];
-          R2 += this->IjkS[i] * this->IjkS[i];
           if (this->IjkG[i] < 0 || this->IjkG[i] >= lvlMax)
           { // out of bounds
             gotNode = false;
@@ -440,7 +423,8 @@ void vtkLabelHierarchyFrustumIterator::Next()
           if (this->Level)
           {
             this->Path.resize(this->Level);
-            this->Hierarchy->GetPathForNodalCoordinates(&this->Path[0], this->IjkG, this->Level);
+            vtkLabelHierarchy::GetPathForNodalCoordinates(
+              this->Path.data(), this->IjkG, this->Level);
           }
           else
           {
@@ -453,8 +437,8 @@ void vtkLabelHierarchyFrustumIterator::Next()
             {
               vtkDebugMacro("l: " << this->Level << " i: " << this->IjkG[0]
                                   << " j: " << this->IjkG[1] << " k: " << this->IjkG[2] << " (");
-              for (std::vector<int>::iterator cit = this->Cursor._M_indices.begin();
-                   cit != this->Cursor._M_indices.end(); ++cit)
+              for (std::vector<int>::iterator cit = this->Cursor.m_indices.begin();
+                   cit != this->Cursor.m_indices.end(); ++cit)
               {
                 vtkDebugMacro(" " << *cit);
               }
@@ -516,7 +500,7 @@ bool vtkLabelHierarchyFrustumIterator::IsCursorInFrustum()
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkLabelHierarchyFullSortIterator - a simple up-front-sorting iterator
 //
 // An iterator that first sorts the octree nodes based on level and
@@ -606,7 +590,9 @@ void vtkLabelHierarchyFullSortIterator::Begin(vtkIdTypeArray* vtkNotUsed(lastPla
   s.push_back(root);
   int numNodes = 0;
   int numLeaf = 0;
+#ifndef NDEBUG
   int totalLeafDepth = 0;
+#endif
   size_t numLabels = 0;
   int maxLabels = 10000;
   while (!s.empty())
@@ -678,12 +664,16 @@ void vtkLabelHierarchyFullSortIterator::Begin(vtkIdTypeArray* vtkNotUsed(lastPla
     else
     {
       ++numLeaf;
+#ifndef NDEBUG
       totalLeafDepth += level;
+#endif
     }
   }
   vtkDebugMacro("max level is " << maxLevel);
   vtkDebugMacro("num nodes " << numNodes);
+  (void)numNodes;
   vtkDebugMacro("avg leaf depth " << static_cast<double>(totalLeafDepth) / numLeaf);
+  (void)numLeaf;
 
   this->NodesTraversed = 0;
   this->NodeIterator = this->NodeSet.begin();
@@ -774,7 +764,7 @@ vtkLabelHierarchyFullSortIterator::~vtkLabelHierarchyFullSortIterator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkLabelHierarchyQuadtreeIterator - a simple breadth-first iterator
 //
 // This iterator maintains a queue of nodes to be visited. When a node is
@@ -958,7 +948,7 @@ struct vtkQuadtreeNodeDistCompare
       da += va * va;
       db += vb * vb;
     }
-    return (da < db ? true : (da == db ? (a < b ? true : false) : false));
+    return da < db ? true : (da == db ? (a < b) : false);
   }
 };
 
@@ -1039,12 +1029,7 @@ bool vtkLabelHierarchyQuadtreeIterator::IsNodeInFrustum(NodePointer node)
     double dx = (eye[i] - x[i]);
     d += dx * dx;
   }
-  if (nodeSize * nodeSize < d * this->SizeLimit)
-  {
-    return false;
-  }
-
-  return true;
+  return nodeSize * nodeSize >= d * this->SizeLimit;
 }
 
 /**\brief Queue octree children for traversal after the current level has been traversed.
@@ -1094,7 +1079,7 @@ void vtkLabelHierarchyQuadtreeIterator::QueueChildren()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkLabelHierarchyOctreeQueueIterator - a simple breadth-first iterator
 //
 // This iterator maintains a queue of nodes to be visited. When a node is
@@ -1301,7 +1286,7 @@ struct vtkOctreeNodeDistCompare
       da += va * va;
       db += vb * vb;
     }
-    return (da < db ? true : (da == db ? (a < b ? true : false) : false));
+    return da < db ? true : (da == db ? (a < b) : false);
   }
 };
 
@@ -1420,12 +1405,7 @@ bool vtkLabelHierarchyOctreeQueueIterator::IsNodeInFrustum(NodePointer node)
     double dx = (eye[i] - x[i]);
     d += dx * dx;
   }
-  if (nodeSize * nodeSize < d * this->SizeLimit)
-  {
-    return false;
-  }
-
-  return true;
+  return nodeSize * nodeSize >= d * this->SizeLimit;
 }
 
 /**\brief Queue octree children for traversal after the current level has been traversed.
@@ -1487,7 +1467,7 @@ void vtkLabelHierarchyOctreeQueueIterator::QueueChildren()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkLabelHierarchy3DepthFirstIterator - a simple up-front-sorting iterator
 //
 // An iterator that first sorts the octree nodes based on level and
@@ -1524,7 +1504,7 @@ protected:
   vtkLabelHierarchy::Implementation::LabelSet::iterator LabelIterator;
   vtkLabelHierarchy::Implementation::HierarchyCursor3 Cursor;
   std::vector<int> Path;
-  std::vector<std::vector<int> >
+  std::vector<std::vector<int>>
     Order;             // visibility sorted order of children at each level of the tree.
   float BucketSize[2]; // size of label placer buckets in pixels
   double SizeLimit;    // square of smallest allowable distance-normalized octree node size.
@@ -1651,7 +1631,7 @@ void vtkLabelHierarchy3DepthFirstIterator::Next()
         {
           this->Order.back().push_back(i);
         }
-        this->ReorderChildrenForView(&(this->Order.back()[0]));
+        this->ReorderChildrenForView(this->Order.back().data());
         this->Cursor.down(this->Order.back()[0]);
         this->Path.push_back(0);
         if (this->IsNodeInFrustum())
@@ -1767,12 +1747,7 @@ bool vtkLabelHierarchy3DepthFirstIterator::IsNodeInFrustum()
     double dx = (eye[i] - x[i]);
     d += dx * dx;
   }
-  if (nodeSize * nodeSize < d * this->SizeLimit)
-  {
-    return false;
-  }
-
-  return true;
+  return nodeSize * nodeSize >= d * this->SizeLimit;
 }
 
 struct vtkDistNodeStruct
@@ -1823,7 +1798,7 @@ void vtkLabelHierarchy3DepthFirstIterator::ReorderChildrenForView(int* order)
   delete[] nodeDistances;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkLabelHierarchy
 
 vtkStandardNewMacro(vtkLabelHierarchy);
@@ -1919,7 +1894,7 @@ void vtkLabelHierarchy::SetPoints(vtkPoints* src)
 
   if (src)
   {
-    // this->ComputeHierarchy( this->CoincidentPts, this->CoincidenceMap );
+    this->ComputeHierarchy();
   }
 }
 
@@ -2624,3 +2599,4 @@ void vtkLabelHierarchy::GetAnchorFrustumPlanes(
   frustumPlanes[22] = 1.0;
   frustumPlanes[23] = VTK_DOUBLE_MAX;
 }
+VTK_ABI_NAMESPACE_END

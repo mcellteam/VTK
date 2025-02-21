@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayActorNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOSPRayActorNode.h"
 
 #include "vtkActor.h"
@@ -33,6 +21,7 @@
 
 #include "RTWrapper/RTWrapper.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationKeyMacro(vtkOSPRayActorNode, LUMINOSITY, Double);
 vtkInformationKeyMacro(vtkOSPRayActorNode, ENABLE_SCALING, Integer);
 vtkInformationKeyMacro(vtkOSPRayActorNode, SCALE_ARRAY_NAME, String);
@@ -41,22 +30,22 @@ vtkInformationKeyMacro(vtkOSPRayActorNode, SCALE_FUNCTION, ObjectBase);
 //============================================================================
 vtkStandardNewMacro(vtkOSPRayActorNode);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayActorNode::vtkOSPRayActorNode()
 {
   this->LastMapper = nullptr;
 }
 
-//----------------------------------------------------------------------------
-vtkOSPRayActorNode::~vtkOSPRayActorNode() {}
+//------------------------------------------------------------------------------
+vtkOSPRayActorNode::~vtkOSPRayActorNode() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayActorNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayActorNode::SetEnableScaling(int value, vtkActor* actor)
 {
   if (!actor)
@@ -71,7 +60,7 @@ void vtkOSPRayActorNode::SetEnableScaling(int value, vtkActor* actor)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOSPRayActorNode::GetEnableScaling(vtkActor* actor)
 {
   if (!actor)
@@ -90,7 +79,7 @@ int vtkOSPRayActorNode::GetEnableScaling(vtkActor* actor)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayActorNode::SetScaleArrayName(const char* arrayName, vtkActor* actor)
 {
   if (!actor)
@@ -105,7 +94,7 @@ void vtkOSPRayActorNode::SetScaleArrayName(const char* arrayName, vtkActor* acto
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayActorNode::SetScaleFunction(vtkPiecewiseFunction* scaleFunction, vtkActor* actor)
 {
   if (!actor)
@@ -120,7 +109,7 @@ void vtkOSPRayActorNode::SetScaleFunction(vtkPiecewiseFunction* scaleFunction, v
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayActorNode::SetLuminosity(double value, vtkProperty* property)
 {
   if (!property)
@@ -131,7 +120,7 @@ void vtkOSPRayActorNode::SetLuminosity(double value, vtkProperty* property)
   info->Set(vtkOSPRayActorNode::LUMINOSITY(), value);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkOSPRayActorNode::GetLuminosity(vtkProperty* property)
 {
   if (!property)
@@ -147,11 +136,15 @@ double vtkOSPRayActorNode::GetLuminosity(vtkProperty* property)
   return 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkOSPRayActorNode::GetMTime()
 {
   vtkMTimeType mtime = this->Superclass::GetMTime();
   vtkActor* act = (vtkActor*)this->GetRenderable();
+  if (!act)
+  {
+    return mtime;
+  }
   if (act->GetMTime() > mtime)
   {
     mtime = act->GetMTime();
@@ -248,3 +241,4 @@ vtkMTimeType vtkOSPRayActorNode::GetMTime()
   }
   return mtime;
 }
+VTK_ABI_NAMESPACE_END

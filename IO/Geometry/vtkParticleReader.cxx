@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParticleReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParticleReader.h"
 
 #include "vtkByteSwap.h"
 #include "vtkCellArray.h"
 #include "vtkDataArray.h"
 #include "vtkDoubleArray.h"
+#include "vtkEndian.h"
 #include "vtkFloatArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -35,6 +24,7 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkParticleReader);
 
 namespace
@@ -100,7 +90,7 @@ public:
 
     // We have data.
     std::stringstream is;
-    is << s.c_str();
+    is << s;
     is >> val[0] >> val[1] >> val[2] >> val[3];
 
     return 1;
@@ -116,7 +106,7 @@ int const quantum = 20;
 double hiToLowASCII = 0.1;
 
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParticleReader::vtkParticleReader()
   : FileName(nullptr)
   , File(nullptr)
@@ -131,7 +121,7 @@ vtkParticleReader::vtkParticleReader()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParticleReader::~vtkParticleReader()
 {
   delete this->File;
@@ -141,7 +131,7 @@ vtkParticleReader::~vtkParticleReader()
   this->FileName = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParticleReader::OpenFile()
 {
   if (!this->FileName)
@@ -168,7 +158,7 @@ void vtkParticleReader::OpenFile()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParticleReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -206,7 +196,7 @@ int vtkParticleReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParticleReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -264,7 +254,7 @@ int vtkParticleReader::RequestData(vtkInformation* vtkNotUsed(request),
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParticleReader::DetermineFileType()
 {
   // This function assumes that the file has been opened.
@@ -310,7 +300,6 @@ int vtkParticleReader::DetermineFileType()
   size_t zero = 0;
   size_t conventionalASCII = 0;
   size_t extendedASCII = 0;
-  size_t controlASCII = 0;
   size_t otherASCII = 0;
   for (size_t j = 0; j < s.size(); ++j)
   {
@@ -334,7 +323,6 @@ int vtkParticleReader::DetermineFileType()
     // Control characters.
     if (s[j] == '\n' || s[j] == '\r' || s[j] == '\t' || s[j] == '\f')
     {
-      controlASCII++;
       continue;
     }
     otherASCII++;
@@ -353,7 +341,7 @@ int vtkParticleReader::DetermineFileType()
   return FILE_TYPE_IS_BINARY;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParticleReader::ProduceOutputFromTextFileDouble(vtkInformationVector* outputVector)
 {
   // Get the size of the file.
@@ -429,7 +417,7 @@ int vtkParticleReader::ProduceOutputFromTextFileDouble(vtkInformationVector* out
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParticleReader::ProduceOutputFromTextFileFloat(vtkInformationVector* outputVector)
 {
   // Get the size of the file.
@@ -508,7 +496,7 @@ int vtkParticleReader::ProduceOutputFromTextFileFloat(vtkInformationVector* outp
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParticleReader::ProduceOutputFromBinaryFileDouble(vtkInformationVector* outputVector)
 {
 
@@ -685,7 +673,7 @@ int vtkParticleReader::ProduceOutputFromBinaryFileDouble(vtkInformationVector* o
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParticleReader::ProduceOutputFromBinaryFileFloat(vtkInformationVector* outputVector)
 {
 
@@ -861,7 +849,7 @@ int vtkParticleReader::ProduceOutputFromBinaryFileFloat(vtkInformationVector* ou
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParticleReader::DoProgressUpdate(size_t& bytesRead, size_t& fileLength)
 {
   if (bytesRead > this->Alliquot)
@@ -872,7 +860,7 @@ void vtkParticleReader::DoProgressUpdate(size_t& bytesRead, size_t& fileLength)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParticleReader::SetDataByteOrderToBigEndian()
 {
 #ifndef VTK_WORDS_BIGENDIAN
@@ -882,7 +870,7 @@ void vtkParticleReader::SetDataByteOrderToBigEndian()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParticleReader::SetDataByteOrderToLittleEndian()
 {
 #ifdef VTK_WORDS_BIGENDIAN
@@ -892,7 +880,7 @@ void vtkParticleReader::SetDataByteOrderToLittleEndian()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParticleReader::SetDataByteOrder(int byteOrder)
 {
   if (byteOrder == VTK_FILE_BYTE_ORDER_BIG_ENDIAN)
@@ -905,7 +893,7 @@ void vtkParticleReader::SetDataByteOrder(int byteOrder)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParticleReader::GetDataByteOrder()
 {
 #ifdef VTK_WORDS_BIGENDIAN
@@ -929,7 +917,7 @@ int vtkParticleReader::GetDataByteOrder()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkParticleReader::GetDataByteOrderAsString()
 {
 #ifdef VTK_WORDS_BIGENDIAN
@@ -953,7 +941,7 @@ const char* vtkParticleReader::GetDataByteOrderAsString()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParticleReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -992,3 +980,4 @@ void vtkParticleReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Alliquot: " << (unsigned int)this->Alliquot << "\n";
   os << indent << "Count: " << (unsigned int)this->Count << "\n";
 }
+VTK_ABI_NAMESPACE_END

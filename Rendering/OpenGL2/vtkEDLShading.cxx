@@ -1,17 +1,6 @@
-/*=========================================================================
-
-   Program: ParaView
-   Module:    vtkEDLShading.cxx
-
-  Copyright (c) Sandia Corporation, Kitware Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation, Kitware Inc
+// SPDX-License-Identifier: BSD-3-Clause
 /*----------------------------------------------------------------------
 Acknowledgement:
 This algorithm is the result of joint work by Electricité de France,
@@ -35,7 +24,7 @@ Ph.D. thesis of Christian BOUCHENY.
 #include "vtkRenderer.h"
 #include "vtkShaderProgram.h"
 #include "vtkTextureObject.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 #include <cassert>
 #include <sstream>
 #include <string>
@@ -45,8 +34,9 @@ Ph.D. thesis of Christian BOUCHENY.
 #include "vtkEDLShadeFS.h"
 #include "vtkTextureObjectVS.h"
 
-//#define VTK_EDL_SHADING_DEBUG
+// #define VTK_EDL_SHADING_DEBUG
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 void annotate(const std::string& str)
@@ -57,7 +47,7 @@ void annotate(const std::string& str)
 
 vtkStandardNewMacro(vtkEDLShading);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEDLShading::vtkEDLShading()
 {
 
@@ -75,20 +65,19 @@ vtkEDLShading::vtkEDLShading()
   // init neighbours in image space
   for (int c = 0; c < 8; c++)
   {
-    float x, y;
-    x = cos(2 * vtkMath::Pi() * float(c) / 8.);
-    y = sin(2 * vtkMath::Pi() * float(c) / 8.);
+    double x = cos(2.0 * vtkMath::Pi() * static_cast<double>(c) / 8.0);
+    double y = sin(2.0 * vtkMath::Pi() * static_cast<double>(c) / 8.0);
     this->EDLNeighbours[c][0] = x / sqrt(x * x + y * y);
     this->EDLNeighbours[c][1] = y / sqrt(x * x + y * y);
-    this->EDLNeighbours[c][2] = 0.;
-    this->EDLNeighbours[c][3] = 0.;
+    this->EDLNeighbours[c][2] = 0.0;
+    this->EDLNeighbours[c][3] = 0.0;
   }
   this->EDLLowResFactor = 2;
   this->Zn = 0.1;
   this->Zf = 1.0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEDLShading::~vtkEDLShading()
 {
   if (this->ProjectionFBO != nullptr)
@@ -133,7 +122,7 @@ vtkEDLShading::~vtkEDLShading()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEDLShading::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -149,7 +138,7 @@ void vtkEDLShading::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Initialize framebuffers and associated texture objects,
 // with link to render state s
@@ -292,7 +281,7 @@ void vtkEDLShading::EDLInitializeFramebuffers(vtkRenderState& s)
 
   vtkOpenGLCheckErrorMacro("failed after Initialize");
 }
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Initialize shaders
 //
@@ -331,7 +320,7 @@ void vtkEDLShading::EDLInitializeShaders(vtkOpenGLRenderWindow* renWin)
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Render EDL in full resolution
 //
@@ -420,7 +409,7 @@ bool vtkEDLShading::EDLShadeHigh(vtkRenderState& s, vtkOpenGLRenderWindow* renWi
   return true; // succeeded
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Render EDL in low resolution
 //
@@ -475,7 +464,7 @@ bool vtkEDLShading::EDLShadeLow(vtkRenderState& s, vtkOpenGLRenderWindow* renWin
   return true; // succeeded
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Bilateral Filter low resolution shaded image
 //
@@ -528,7 +517,7 @@ bool vtkEDLShading::EDLBlurLow(vtkRenderState& s, vtkOpenGLRenderWindow* renWin)
   return EDLIsFiltered;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Compose color and shaded images
 //
@@ -575,6 +564,8 @@ bool vtkEDLShading::EDLCompose(const vtkRenderState*, vtkOpenGLRenderWindow* ren
   // IMPORTANT since we enable depth writing hereafter
   ostate->vtkglDisable(GL_BLEND);
   ostate->vtkglEnable(GL_DEPTH_TEST);
+  vtkOpenGLState::ScopedglDepthFunc depthFuncState(ostate);
+  ostate->vtkglDepthFunc(GL_ALWAYS);
   // IMPORTANT : so that depth information is propagated
   ostate->vtkglDisable(GL_SCISSOR_TEST);
 
@@ -600,7 +591,7 @@ bool vtkEDLShading::EDLCompose(const vtkRenderState*, vtkOpenGLRenderWindow* ren
   return true;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -664,8 +655,6 @@ void vtkEDLShading::Render(const vtkRenderState* s)
       this->ProjectionColorTexture, this->ProjectionDepthTexture);
     annotate("End vtkEDLShading::RenderDelegate");
 
-    this->ProjectionFBO->UnBind();
-
     // system("PAUSE");
 
     //////////////////////////////////////////////////////
@@ -698,6 +687,9 @@ void vtkEDLShading::Render(const vtkRenderState* s)
       this->EDLBlurLow(s2, renWin);
       annotate("End vtkEDLShading::BlurLow");
     }
+    // Low-res processing reduces the viewport dimensions.
+    // Reset the viewport after to ensure that following passes get the right viewport size.
+    renWin->GetState()->vtkglViewport(this->Origin[0], this->Origin[1], this->Width, this->Height);
 #endif // EDL_LOW_RESOLUTION_ON
 
     //////////////////////////////////////////////////////
@@ -725,7 +717,7 @@ void vtkEDLShading::Render(const vtkRenderState* s)
   annotate("END vtkEDLShading::Render");
 }
 
-// --------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -784,3 +776,4 @@ void vtkEDLShading::ReleaseGraphicsResources(vtkWindow* w)
 
   this->Superclass::ReleaseGraphicsResources(w);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkClientServerSynchronizedRenderers.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkClientServerSynchronizedRenderers.h"
 
 #include "vtkMultiProcessController.h"
@@ -19,14 +8,15 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkClientServerSynchronizedRenderers);
-//----------------------------------------------------------------------------
-vtkClientServerSynchronizedRenderers::vtkClientServerSynchronizedRenderers() {}
+//------------------------------------------------------------------------------
+vtkClientServerSynchronizedRenderers::vtkClientServerSynchronizedRenderers() = default;
 
-//----------------------------------------------------------------------------
-vtkClientServerSynchronizedRenderers::~vtkClientServerSynchronizedRenderers() {}
+//------------------------------------------------------------------------------
+vtkClientServerSynchronizedRenderers::~vtkClientServerSynchronizedRenderers() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClientServerSynchronizedRenderers::MasterEndRender()
 {
   // receive image from slave.
@@ -44,7 +34,7 @@ void vtkClientServerSynchronizedRenderers::MasterEndRender()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClientServerSynchronizedRenderers::SlaveEndRender()
 {
   assert(this->ParallelController->IsA("vtkSocketController"));
@@ -65,8 +55,9 @@ void vtkClientServerSynchronizedRenderers::SlaveEndRender()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClientServerSynchronizedRenderers::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAngleRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAngleRepresentation
  * @brief   represent the vtkAngleWidget
@@ -32,19 +20,22 @@
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkWidgetRepresentation.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHandleRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkAngleRepresentation : public vtkWidgetRepresentation
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkAngleRepresentation
+  : public vtkWidgetRepresentation
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard VTK methods.
    */
   vtkTypeMacro(vtkAngleRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * This representation and all subclasses must keep an angle (in degrees)
@@ -52,7 +43,7 @@ public:
    */
   virtual double GetAngle() = 0;
 
-  //@{
+  ///@{
   /**
    * Methods to Set/Get the coordinates of the three points defining
    * this representation. Note that methods are available for both
@@ -67,9 +58,9 @@ public:
   virtual void GetPoint1DisplayPosition(double pos[3]) = 0;
   virtual void GetCenterDisplayPosition(double pos[3]) = 0;
   virtual void GetPoint2DisplayPosition(double pos[3]) = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This method is used to specify the type of handle representation to use
    * for the three internal vtkHandleWidgets within vtkAngleRepresentation.
@@ -82,18 +73,18 @@ public:
    */
   void SetHandleRepresentation(vtkHandleRepresentation* handle);
   void InstantiateHandleRepresentation();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the handle representations used for the vtkAngleRepresentation.
    */
   vtkGetObjectMacro(Point1Representation, vtkHandleRepresentation);
   vtkGetObjectMacro(CenterRepresentation, vtkHandleRepresentation);
   vtkGetObjectMacro(Point2Representation, vtkHandleRepresentation);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The tolerance representing the distance to the representation (in
    * pixels) in which the cursor is considered near enough to the end points
@@ -101,9 +92,9 @@ public:
    */
   vtkSetClampMacro(Tolerance, int, 1, 100);
   vtkGetMacro(Tolerance, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the format to use for labeling the angle. Note that an empty
    * string results in no label, or a format string without a "%" character
@@ -111,9 +102,18 @@ public:
    */
   vtkSetStringMacro(LabelFormat);
   vtkGetStringMacro(LabelFormat);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set the scale factor from degrees. The label will be defined in terms of the scaled space. For
+   * example, to use radians in the label set the scale factor to pi/180.
+   */
+  vtkSetMacro(Scale, double);
+  vtkGetMacro(Scale, double);
+  ///@}
+
+  ///@{
   /**
    * Special methods for turning off the rays and arc that define the cone
    * and arc of the angle.
@@ -127,7 +127,7 @@ public:
   vtkSetMacro(ArcVisibility, vtkTypeBool);
   vtkGetMacro(ArcVisibility, vtkTypeBool);
   vtkBooleanMacro(ArcVisibility, vtkTypeBool);
-  //@}
+  ///@}
 
   // Used to communicate about the state of the representation
   enum
@@ -138,7 +138,7 @@ public:
     NearP2
   };
 
-  //@{
+  ///@{
   /**
    * These are methods that satisfy vtkWidgetRepresentation's API.
    */
@@ -147,7 +147,8 @@ public:
   void StartWidgetInteraction(double e[2]) override;
   virtual void CenterWidgetInteraction(double e[2]);
   void WidgetInteraction(double e[2]) override;
-  //@}
+  void SetRenderer(vtkRenderer* ren) override;
+  ///@}
 
 protected:
   vtkAngleRepresentation();
@@ -160,7 +161,7 @@ protected:
   vtkHandleRepresentation* Point2Representation;
 
   // Selection tolerance for the handles
-  int Tolerance;
+  int Tolerance = 5;
 
   // Visibility of the various pieces of the representation
   vtkTypeBool Ray1Visibility;
@@ -170,9 +171,14 @@ protected:
   // Format for the label
   char* LabelFormat;
 
+  // Scale to change from degrees to the desired unit system (radians, fractions of pi) for
+  // displaying the angle
+  double Scale = 1.0;
+
 private:
   vtkAngleRepresentation(const vtkAngleRepresentation&) = delete;
   void operator=(const vtkAngleRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

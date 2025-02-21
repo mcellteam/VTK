@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPieceScalars.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPieceScalars
  * @brief   Sets all cell scalars from the update piece.
@@ -31,6 +19,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersParallelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFloatArray;
 class vtkIntArray;
 
@@ -49,7 +38,7 @@ public:
   void SetScalarModeToPointData() { this->SetCellScalarsFlag(0); }
   int GetScalarMode() { return this->CellScalarsFlag; }
 
-  // Dscription:
+  // Description:
   // This option uses a random mapping between pieces and scalar values.
   // The scalar values are chosen between 0 and 1.  By default, random mode is off.
   vtkSetMacro(RandomMode, vtkTypeBool);
@@ -75,4 +64,5 @@ private:
   void operator=(const vtkPieceScalars&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

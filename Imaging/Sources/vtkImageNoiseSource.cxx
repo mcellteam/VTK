@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageNoiseSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageNoiseSource.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageNoiseSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageNoiseSource::vtkImageNoiseSource()
 {
   this->Minimum = 0.0;
@@ -38,7 +27,7 @@ vtkImageNoiseSource::vtkImageNoiseSource()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageNoiseSource::SetWholeExtent(int xMin, int xMax, int yMin, int yMax, int zMin, int zMax)
 {
   int modified = 0;
@@ -78,7 +67,7 @@ void vtkImageNoiseSource::SetWholeExtent(int xMin, int xMax, int yMin, int yMax,
     this->Modified();
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageNoiseSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -125,3 +114,4 @@ void vtkImageNoiseSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Minimum: " << this->Minimum << "\n";
   os << indent << "Maximum: " << this->Maximum << "\n";
 }
+VTK_ABI_NAMESPACE_END

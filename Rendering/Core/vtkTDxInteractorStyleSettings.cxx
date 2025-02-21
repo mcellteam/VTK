@@ -1,24 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTDxInteractorStyleSettings.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkTDxInteractorStyleSettings.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTDxInteractorStyleSettings);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTDxInteractorStyleSettings::vtkTDxInteractorStyleSettings()
 {
   this->AngleSensitivity = 1.0;
@@ -30,10 +19,10 @@ vtkTDxInteractorStyleSettings::vtkTDxInteractorStyleSettings()
   this->TranslationZSensitivity = 1.0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTDxInteractorStyleSettings::~vtkTDxInteractorStyleSettings() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTDxInteractorStyleSettings::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -47,3 +36,4 @@ void vtkTDxInteractorStyleSettings::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "TranslationYSensitivity: " << this->TranslationYSensitivity << endl;
   os << indent << "TranslationZSensitivity: " << this->TranslationZSensitivity << endl;
 }
+VTK_ABI_NAMESPACE_END

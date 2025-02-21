@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ArrayAPI.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include <vtkDenseArray.h>
 #include <vtkSmartPointer.h>
@@ -28,6 +11,7 @@
 #include <stdexcept>
 
 #define test_expression(expression)                                                                \
+  do                                                                                               \
   {                                                                                                \
     if (!(expression))                                                                             \
     {                                                                                              \
@@ -35,7 +19,7 @@
       buffer << "Expression failed at line " << __LINE__ << ": " << #expression;                   \
       throw std::runtime_error(buffer.str());                                                      \
     }                                                                                              \
-  }
+  } while (false)
 
 int TestArrayAPI(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 {
@@ -63,18 +47,18 @@ int TestArrayAPI(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
     value_types.push_back(VTK_VARIANT);
 
     std::vector<vtkVariant> sample_values;
-    sample_values.push_back(static_cast<char>(1));
-    sample_values.push_back(static_cast<unsigned char>(2));
-    sample_values.push_back(static_cast<short>(3));
-    sample_values.push_back(static_cast<unsigned short>(4));
-    sample_values.push_back(static_cast<int>(5));
-    sample_values.push_back(static_cast<unsigned int>(6));
-    sample_values.push_back(static_cast<long>(7));
-    sample_values.push_back(static_cast<unsigned long>(8));
-    sample_values.push_back(static_cast<double>(9.0));
-    sample_values.push_back(static_cast<vtkIdType>(10));
-    sample_values.push_back(vtkStdString("11"));
-    sample_values.push_back(vtkVariant(12.0));
+    sample_values.emplace_back(static_cast<char>(1));
+    sample_values.emplace_back(static_cast<unsigned char>(2));
+    sample_values.emplace_back(static_cast<short>(3));
+    sample_values.emplace_back(static_cast<unsigned short>(4));
+    sample_values.emplace_back(static_cast<int>(5));
+    sample_values.emplace_back(static_cast<unsigned int>(6));
+    sample_values.emplace_back(static_cast<long>(7));
+    sample_values.emplace_back(static_cast<unsigned long>(8));
+    sample_values.emplace_back(static_cast<double>(9.0));
+    sample_values.emplace_back(static_cast<vtkIdType>(10));
+    sample_values.emplace_back(vtkStdString("11"));
+    sample_values.emplace_back(12.0);
 
     for (std::vector<int>::const_iterator storage_type = storage_types.begin();
          storage_type != storage_types.end(); ++storage_type)

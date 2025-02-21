@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleFlight.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkInteractorStyleFlight
@@ -38,12 +26,15 @@
 
 #include "vtkInteractionStyleModule.h" // For export macro
 #include "vtkInteractorStyle.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCamera;
 class vtkPerspectiveTransform;
 
 class CPIDControl;
 
-class VTKINTERACTIONSTYLE_EXPORT vtkInteractorStyleFlight : public vtkInteractorStyle
+class VTKINTERACTIONSTYLE_EXPORT VTK_MARSHALAUTO vtkInteractorStyleFlight
+  : public vtkInteractorStyle
 {
 public:
   static vtkInteractorStyleFlight* New();
@@ -56,48 +47,48 @@ public:
    */
   void JumpTo(double campos[3], double focpos[3]);
 
-  //@{
+  ///@{
   /**
    * Set the basic unit step size : by default 1/250 of bounding diagonal
    */
   vtkSetMacro(MotionStepSize, double);
   vtkGetMacro(MotionStepSize, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set acceleration factor when shift key is applied : default 10
    */
   vtkSetMacro(MotionAccelerationFactor, double);
   vtkGetMacro(MotionAccelerationFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the basic angular unit for turning : default 1 degree
    */
   vtkSetMacro(AngleStepSize, double);
   vtkGetMacro(AngleStepSize, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set angular acceleration when shift key is applied : default 5
    */
   vtkSetMacro(AngleAccelerationFactor, double);
   vtkGetMacro(AngleAccelerationFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Disable motion (temporarily - for viewing etc)
    */
   vtkSetMacro(DisableMotion, vtkTypeBool);
   vtkGetMacro(DisableMotion, vtkTypeBool);
   vtkBooleanMacro(DisableMotion, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When flying, apply a restorative force to the "Up" vector.
    * This is activated when the current 'up' is close to the actual 'up'
@@ -108,13 +99,13 @@ public:
   vtkSetMacro(RestoreUpVector, vtkTypeBool);
   vtkGetMacro(RestoreUpVector, vtkTypeBool);
   vtkBooleanMacro(RestoreUpVector, vtkTypeBool);
-  //@}
+  ///@}
 
   // Specify "up" (by default {0,0,1} but can be changed)
   vtkGetVectorMacro(DefaultUpVector, double, 3);
   vtkSetVectorMacro(DefaultUpVector, double, 3);
 
-  //@{
+  ///@{
   /**
    * Concrete implementation of Mouse event bindings for flight
    */
@@ -125,9 +116,9 @@ public:
   void OnMiddleButtonUp() override;
   void OnRightButtonDown() override;
   void OnRightButtonUp() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Concrete implementation of Keyboard event bindings for flight
    */
@@ -143,13 +134,13 @@ public:
   virtual void EndForwardFly();
   virtual void StartReverseFly();
   virtual void EndReverseFly();
-  //@}
+  ///@}
 
 protected:
   vtkInteractorStyleFlight();
   ~vtkInteractorStyleFlight() override;
 
-  //@{
+  ///@{
   /**
    * Routines used internally for computing motion and steering
    */
@@ -180,7 +171,7 @@ protected:
   double lYaw;
   double DeltaPitch;
   double lPitch;
-  //@}
+  ///@}
 
   CPIDControl* PID_Yaw;
   CPIDControl* PID_Pitch;
@@ -190,4 +181,5 @@ private:
   void operator=(const vtkInteractorStyleFlight&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

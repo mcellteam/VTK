@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitBoolean.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImplicitBoolean
  * @brief   implicit function consisting of boolean combinations of implicit functions
@@ -38,6 +26,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkImplicitFunction.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImplicitFunctionCollection;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkImplicitBoolean : public vtkImplicitFunction
@@ -59,13 +48,13 @@ public:
    */
   static vtkImplicitBoolean* New();
 
-  //@{
+  ///@{
   /**
    * Evaluate boolean combinations of implicit function using current operator.
    */
   using vtkImplicitFunction::EvaluateFunction;
   double EvaluateFunction(double x[3]) override;
-  //@}
+  ///@}
 
   /**
    * Evaluate gradient of boolean combination.
@@ -92,7 +81,7 @@ public:
    */
   vtkImplicitFunctionCollection* GetFunction() { return this->FunctionList; }
 
-  //@{
+  ///@{
   /**
    * Specify the type of boolean operation.
    */
@@ -103,7 +92,7 @@ public:
   void SetOperationTypeToDifference() { this->SetOperationType(VTK_DIFFERENCE); }
   void SetOperationTypeToUnionOfMagnitudes() { this->SetOperationType(VTK_UNION_OF_MAGNITUDES); }
   const char* GetOperationTypeAsString();
-  //@}
+  ///@}
 
 protected:
   vtkImplicitBoolean();
@@ -118,11 +107,10 @@ private:
   void operator=(const vtkImplicitBoolean&) = delete;
 };
 
-//@{
 /**
  * Return the boolean operation type as a descriptive character string.
  */
-inline const char* vtkImplicitBoolean::GetOperationTypeAsString(void)
+inline const char* vtkImplicitBoolean::GetOperationTypeAsString()
 {
   if (this->OperationType == VTK_UNION)
   {
@@ -141,6 +129,6 @@ inline const char* vtkImplicitBoolean::GetOperationTypeAsString(void)
     return "UnionOfMagnitudes";
   }
 }
-//@}
 
+VTK_ABI_NAMESPACE_END
 #endif

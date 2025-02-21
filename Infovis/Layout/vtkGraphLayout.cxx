@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphLayout.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkGraphLayout.h"
 
@@ -35,10 +19,11 @@
 #include "vtkPoints.h"
 #include "vtkTable.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGraphLayout);
 vtkCxxSetObjectMacro(vtkGraphLayout, Transform, vtkAbstractTransform);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkGraphLayout::vtkGraphLayout()
 {
@@ -55,7 +40,7 @@ vtkGraphLayout::vtkGraphLayout()
   this->EventForwarder->SetTarget(this);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkGraphLayout::~vtkGraphLayout()
 {
@@ -75,7 +60,7 @@ vtkGraphLayout::~vtkGraphLayout()
   this->EventForwarder->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkGraphLayout::SetLayoutStrategy(vtkGraphLayoutStrategy* strategy)
 {
@@ -108,7 +93,7 @@ void vtkGraphLayout::SetLayoutStrategy(vtkGraphLayoutStrategy* strategy)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkMTimeType vtkGraphLayout::GetMTime()
 {
@@ -123,7 +108,7 @@ vtkMTimeType vtkGraphLayout::GetMTime()
   return mTime;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkGraphLayout::IsLayoutComplete()
 {
@@ -137,7 +122,7 @@ int vtkGraphLayout::IsLayoutComplete()
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkGraphLayout::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -264,7 +249,7 @@ int vtkGraphLayout::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkGraphLayout::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -288,3 +273,4 @@ void vtkGraphLayout::PrintSelf(ostream& os, vtkIndent indent)
   }
   os << indent << "UseTransform: " << (this->UseTransform ? "True" : "False") << endl;
 }
+VTK_ABI_NAMESPACE_END

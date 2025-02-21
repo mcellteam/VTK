@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiPieceDataSet.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMultiPieceDataSet
  * @brief   composite dataset to encapsulates pieces of
@@ -26,18 +14,21 @@
  * In this case, these 4 pieces can be collected together using a
  * vtkMultiPieceDataSet.
  * Note that vtkMultiPieceDataSet is intended to be included in other composite
- * datasets eg. vtkMultiBlockDataSet, vtkHierarchicalBoxDataSet. Hence the lack
- * of algorithms producting vtkMultiPieceDataSet.
+ * datasets eg. vtkMultiBlockDataSet. Hence the lack
+ * of algorithms producing vtkMultiPieceDataSet.
  */
 
 #ifndef vtkMultiPieceDataSet_h
 #define vtkMultiPieceDataSet_h
 
-#include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkPartitionedDataSet.h"
 
+#include "vtkCommonDataModelModule.h" // For export macro
+#include "vtkWrappingHints.h"         // For VTK_MARSHALAUTO
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
-class VTKCOMMONDATAMODEL_EXPORT vtkMultiPieceDataSet : public vtkPartitionedDataSet
+class VTKCOMMONDATAMODEL_EXPORT VTK_MARSHALAUTO vtkMultiPieceDataSet : public vtkPartitionedDataSet
 {
 public:
   static vtkMultiPieceDataSet* New();
@@ -62,7 +53,7 @@ public:
    */
   unsigned int GetNumberOfPieces() { return this->GetNumberOfPartitions(); }
 
-  //@{
+  ///@{
   /**
    * Returns the piece at the given index.
    */
@@ -71,7 +62,7 @@ public:
   {
     return this->GetPartitionAsDataObject(pieceno);
   }
-  //@}
+  ///@}
 
   /**
    * Sets the data object as the given piece. The total number of pieces will
@@ -79,13 +70,13 @@ public:
    */
   void SetPiece(unsigned int pieceno, vtkDataObject* piece) { this->SetPartition(pieceno, piece); }
 
-  //@{
+  ///@{
   /**
    * Retrieve an instance of this class from an information object.
    */
   static vtkMultiPieceDataSet* GetData(vtkInformation* info);
   static vtkMultiPieceDataSet* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
 protected:
   vtkMultiPieceDataSet();
@@ -96,4 +87,5 @@ private:
   void operator=(const vtkMultiPieceDataSet&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

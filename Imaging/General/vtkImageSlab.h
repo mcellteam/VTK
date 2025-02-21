@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSlab.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageSlab
  * @brief   combine image slices to form a slab image
@@ -31,6 +19,7 @@
 #include "vtkImagingGeneralModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGGENERAL_EXPORT vtkImageSlab : public vtkThreadedImageAlgorithm
 {
 public:
@@ -38,7 +27,7 @@ public:
   vtkTypeMacro(vtkImageSlab, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the slice direction: zero for x, 1 for y, 2 for z.
    * The default is the Z direction.
@@ -48,18 +37,18 @@ public:
   void SetOrientationToY() { this->SetOrientation(1); }
   void SetOrientationToZ() { this->SetOrientation(2); }
   vtkGetMacro(Orientation, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the range of slices to combine. The default is to project
    * through all slices.
    */
   vtkSetVector2Macro(SliceRange, int);
   vtkGetVector2Macro(SliceRange, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the operation to use when combining slices.  The choices are
    * "Mean", "Sum", "Min", "Max".  The default is "Mean".
@@ -71,9 +60,9 @@ public:
   void SetOperationToSum() { this->SetOperation(VTK_IMAGE_SLAB_SUM); }
   vtkGetMacro(Operation, int);
   const char* GetOperationAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use trapezoid integration for slab computation.  This weighs the
    * first and last slices by half when doing sum and mean, as compared
@@ -83,9 +72,9 @@ public:
   vtkSetMacro(TrapezoidIntegration, vtkTypeBool);
   vtkBooleanMacro(TrapezoidIntegration, vtkTypeBool);
   vtkGetMacro(TrapezoidIntegration, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on multi-slice output.  Each slice of the output will be
    * a projection through the specified range of input slices, e.g.
@@ -96,9 +85,9 @@ public:
   vtkSetMacro(MultiSliceOutput, vtkTypeBool);
   vtkBooleanMacro(MultiSliceOutput, vtkTypeBool);
   vtkGetMacro(MultiSliceOutput, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the output scalar type to float or double, to avoid
    * potential overflow when doing a summation operation.
@@ -109,7 +98,7 @@ public:
   void SetOutputScalarTypeToDouble() { this->SetOutputScalarType(VTK_DOUBLE); }
   void SetOutputScalarTypeToInputScalarType() { this->SetOutputScalarType(0); }
   vtkGetMacro(OutputScalarType, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageSlab();
@@ -135,4 +124,5 @@ private:
   void operator=(const vtkImageSlab&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

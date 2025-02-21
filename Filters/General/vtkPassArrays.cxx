@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPassArrays.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-NVIDIA-USGov
 
 #include "vtkPassArrays.h"
 
@@ -33,12 +17,13 @@
 #include <utility>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPassArrays);
 
 namespace
 {
 // returns true if modified
-typedef std::vector<std::pair<int, std::string> > ArraysType;
+typedef std::vector<std::pair<int, std::string>> ArraysType;
 bool ClearArraysOfType(int type, ArraysType& arrays)
 {
   bool retVal = false;
@@ -86,7 +71,7 @@ void vtkPassArrays::AddArray(int fieldType, const char* name)
     return;
   }
   std::string n = name;
-  this->Implementation->Arrays.push_back(std::make_pair(fieldType, n));
+  this->Implementation->Arrays.emplace_back(fieldType, n);
   this->Modified();
 }
 
@@ -144,7 +129,7 @@ void vtkPassArrays::RemoveFieldDataArray(const char* name)
 
 void vtkPassArrays::ClearArrays()
 {
-  if (this->Implementation->Arrays.empty() == false)
+  if (!this->Implementation->Arrays.empty())
   {
     this->Modified();
   }
@@ -153,7 +138,7 @@ void vtkPassArrays::ClearArrays()
 
 void vtkPassArrays::ClearPointDataArrays()
 {
-  if (ClearArraysOfType(vtkDataObject::POINT, this->Implementation->Arrays) == true)
+  if (ClearArraysOfType(vtkDataObject::POINT, this->Implementation->Arrays))
   {
     this->Modified();
   }
@@ -161,7 +146,7 @@ void vtkPassArrays::ClearPointDataArrays()
 
 void vtkPassArrays::ClearCellDataArrays()
 {
-  if (ClearArraysOfType(vtkDataObject::CELL, this->Implementation->Arrays) == true)
+  if (ClearArraysOfType(vtkDataObject::CELL, this->Implementation->Arrays))
   {
     this->Modified();
   }
@@ -169,7 +154,7 @@ void vtkPassArrays::ClearCellDataArrays()
 
 void vtkPassArrays::ClearFieldDataArrays()
 {
-  if (ClearArraysOfType(vtkDataObject::FIELD, this->Implementation->Arrays) == true)
+  if (ClearArraysOfType(vtkDataObject::FIELD, this->Implementation->Arrays))
   {
     this->Modified();
   }
@@ -241,6 +226,10 @@ int vtkPassArrays::RequestData(
   itEnd = this->Implementation->Arrays.end();
   for (it = this->Implementation->Arrays.begin(); it != itEnd; ++it)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     if (this->UseFieldTypes)
     {
       // Make sure this is a field type we are interested in
@@ -287,10 +276,12 @@ int vtkPassArrays::RequestData(
     }
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkPassArrays::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -302,7 +293,7 @@ vtkTypeBool vtkPassArrays::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPassArrays::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -320,7 +311,7 @@ int vtkPassArrays::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPassArrays::RequestDataObject(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -357,3 +348,4 @@ void vtkPassArrays::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "RemoveArrays: " << (this->RemoveArrays ? "on" : "off") << endl;
   os << indent << "UseFieldTypes: " << (this->UseFieldTypes ? "on" : "off") << endl;
 }
+VTK_ABI_NAMESPACE_END

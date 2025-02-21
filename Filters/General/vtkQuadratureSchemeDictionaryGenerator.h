@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadratureSchemeDictionaryGenerator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkQuadratureSchemeDictionaryGenerator
  *
@@ -31,8 +19,10 @@
 #define vtkQuadratureSchemeDictionaryGenerator_h
 
 #include "vtkDataSetAlgorithm.h"
+#include "vtkDeprecation.h"          // For deprecation
 #include "vtkFiltersGeneralModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 class vtkUnstructuredGrid;
 class vtkInformation;
@@ -46,8 +36,6 @@ public:
   static vtkQuadratureSchemeDictionaryGenerator* New();
 
 protected:
-  int FillInputPortInformation(int port, vtkInformation* info) override;
-  int FillOutputPortInformation(int port, vtkInformation* info) override;
   int RequestData(
     vtkInformation* req, vtkInformationVector** input, vtkInformationVector* output) override;
   vtkQuadratureSchemeDictionaryGenerator();
@@ -57,14 +45,17 @@ private:
   vtkQuadratureSchemeDictionaryGenerator(const vtkQuadratureSchemeDictionaryGenerator&) = delete;
   void operator=(const vtkQuadratureSchemeDictionaryGenerator&) = delete;
 
-  //@{
+  ///@{
   /**
    * Generate definitions for each cell type found on the
    * input data set. The same definition will be used
    * for all point data arrays.
    */
+  int Generate(vtkDataSet* usgOut);
+  VTK_DEPRECATED_IN_9_4_0("Uses the vtkDataSet version instead.")
   int Generate(vtkUnstructuredGrid* usgOut);
-  //@}
+  ///@}
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

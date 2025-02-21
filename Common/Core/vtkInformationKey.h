@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationKey.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInformationKey
  * @brief   Superclass for vtkInformation keys.
@@ -33,6 +21,7 @@
 #include "vtkObject.h"           // Need vtkTypeMacro
 #include "vtkObjectBase.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformation;
 
 class VTKCOMMONCORE_EXPORT vtkInformationKey : public vtkObjectBase
@@ -40,16 +29,6 @@ class VTKCOMMONCORE_EXPORT vtkInformationKey : public vtkObjectBase
 public:
   vtkBaseTypeMacro(vtkInformationKey, vtkObjectBase);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-
-  /**
-   * Prevent normal vtkObject reference counting behavior.
-   */
-  void Register(vtkObjectBase*) override;
-
-  /**
-   * Prevent normal vtkObject reference counting behavior.
-   */
-  void UnRegister(vtkObjectBase*) override;
 
   /**
    * Get the name of the key.  This is not the type of the key, but
@@ -63,7 +42,7 @@ public:
    */
   const char* GetLocation();
 
-  //@{
+  ///@{
   /**
    * Key instances are static data that need to be created and
    * destroyed.  The constructor and destructor must be public.  The
@@ -73,7 +52,7 @@ public:
    */
   vtkInformationKey(const char* name, const char* location);
   ~vtkInformationKey() override;
-  //@}
+  ///@}
 
   /**
    * Copy the entry associated with this key from one information
@@ -105,13 +84,13 @@ public:
    */
   virtual void Report(vtkInformation* info, vtkGarbageCollector* collector);
 
-  //@{
+  ///@{
   /**
    * Print the key's value in an information object to a stream.
    */
   void Print(vtkInformation* info);
   virtual void Print(ostream& os, vtkInformation* info);
-  //@}
+  ///@}
 
   /**
    * This function is only relevant when the pertaining key
@@ -219,13 +198,23 @@ private:
 // definition in the header file.
 #define vtkInformationKeyMacro(CLASS, NAME, type)                                                  \
   static vtkInformation##type##Key* CLASS##_##NAME = new vtkInformation##type##Key(#NAME, #CLASS); \
-  vtkInformation##type##Key* CLASS::NAME() { return CLASS##_##NAME; }
+  vtkInformation##type##Key* CLASS::NAME()                                                         \
+  {                                                                                                \
+    return CLASS##_##NAME;                                                                         \
+  }
 #define vtkInformationKeySubclassMacro(CLASS, NAME, type, super)                                   \
   static vtkInformation##type##Key* CLASS##_##NAME = new vtkInformation##type##Key(#NAME, #CLASS); \
-  vtkInformation##super##Key* CLASS::NAME() { return CLASS##_##NAME; }
+  vtkInformation##super##Key* CLASS::NAME()                                                        \
+  {                                                                                                \
+    return CLASS##_##NAME;                                                                         \
+  }
 #define vtkInformationKeyRestrictedMacro(CLASS, NAME, type, required)                              \
   static vtkInformation##type##Key* CLASS##_##NAME =                                               \
     new vtkInformation##type##Key(#NAME, #CLASS, required);                                        \
-  vtkInformation##type##Key* CLASS::NAME() { return CLASS##_##NAME; }
+  vtkInformation##type##Key* CLASS::NAME()                                                         \
+  {                                                                                                \
+    return CLASS##_##NAME;                                                                         \
+  }
 
+VTK_ABI_NAMESPACE_END
 #endif

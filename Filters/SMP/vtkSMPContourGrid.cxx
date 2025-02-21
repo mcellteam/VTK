@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContourGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSMPContourGrid.h"
 
 #include "vtkCellArray.h"
@@ -42,9 +30,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSMPContourGrid);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with initial range (0,1) and single contour value
 // of 0.0.
 vtkSMPContourGrid::vtkSMPContourGrid()
@@ -52,10 +41,10 @@ vtkSMPContourGrid::vtkSMPContourGrid()
   this->MergePieces = true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSMPContourGrid::~vtkSMPContourGrid() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is to support parallel processing and potential polydata merging.
 namespace
 {
@@ -77,7 +66,7 @@ struct vtkLocalDataType
   }
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This functor uses thread local storage to create one vtkPolyData per
 // thread. Each execution of the functor adds to the vtkPolyData that is
 // local to the thread it is running on.
@@ -280,6 +269,8 @@ public:
     vtkNew<vtkIdList> pids;
     T range[2];
     vtkIdType cellid;
+    bool isFirst = vtkSMPTools::GetSingleThread();
+    vtkIdType checkAbortInterval = std::min((end - begin) / 10 + 1, (vtkIdType)1000);
 
     // If UseScalarTree is enabled at this point, we assume that a scalar
     // tree has been computed and thus the way cells are traversed changes.
@@ -289,6 +280,18 @@ public:
       // to invoking contour.
       for (cellid = begin; cellid < end; cellid++)
       {
+        if (cellid % checkAbortInterval == 0)
+        {
+          if (isFirst)
+          {
+            this->Filter->CheckAbort();
+          }
+          if (this->Filter->GetAbortOutput())
+          {
+            break;
+          }
+        }
+
         this->Input->GetCellPoints(cellid, pids);
         cs->SetNumberOfTuples(pids->GetNumberOfIds());
         this->InScalars->GetTuples(pids, cs);
@@ -375,12 +378,19 @@ public:
     { // scalar tree provided
       // The begin / end parameters to this function represent batches of candidate
       // cells.
-      vtkIdType numCellsContoured = 0;
       vtkScalarTree* scalarTree = this->Filter->GetScalarTree();
       const vtkIdType* cellIds;
       vtkIdType numCells;
       for (vtkIdType batchNum = begin; batchNum < end; ++batchNum)
       {
+        if (isFirst)
+        {
+          this->Filter->CheckAbort();
+        }
+        if (this->Filter->GetAbortOutput())
+        {
+          break;
+        }
         cellIds = scalarTree->GetCellBatch(batchNum, numCells);
         for (vtkIdType idx = 0; idx < numCells; ++idx)
         {
@@ -390,7 +400,6 @@ public:
           this->InScalars->GetTuples(pids, cs);
 
           // Okay let's grab the cell and contour it
-          numCellsContoured++;
           this->Input->GetCell(cellid, cell);
           vtkIdType begVertCellSize = vrts->GetNumberOfCells();
           vtkIdType begVertConnSize = vrts->GetNumberOfConnectivityIds();
@@ -481,7 +490,7 @@ public:
   }
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T>
 void DoContour(vtkSMPContourGrid* filter, vtkUnstructuredGrid* input, vtkIdType numCells,
   vtkDataArray* inScalars, int numContours, double* values, vtkDataObject* output)
@@ -521,9 +530,9 @@ void DoContour(vtkSMPContourGrid* filter, vtkUnstructuredGrid* input, vtkIdType 
     std::vector<vtkSMPMergePolyDataHelper::InputData> mpData;
     while (itr != end)
     {
-      mpData.push_back(vtkSMPMergePolyDataHelper::InputData((*itr).Output, (*itr).Locator,
-        (*itr).VertCellOffsets, (*itr).VertConnOffsets, (*itr).LineCellOffsets,
-        (*itr).LineConnOffsets, (*itr).PolyCellOffsets, (*itr).PolyConnOffsets));
+      mpData.emplace_back((*itr).Output, (*itr).Locator, (*itr).VertCellOffsets,
+        (*itr).VertConnOffsets, (*itr).LineCellOffsets, (*itr).LineConnOffsets,
+        (*itr).PolyCellOffsets, (*itr).PolyConnOffsets);
       ++itr;
     }
 
@@ -535,7 +544,7 @@ void DoContour(vtkSMPContourGrid* filter, vtkUnstructuredGrid* input, vtkIdType 
 
 } // end namespace
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSMPContourGrid::RequestDataObject(
   vtkInformation* vtkNotUsed(request), vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -563,7 +572,7 @@ int vtkSMPContourGrid::RequestDataObject(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSMPContourGrid::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -620,14 +629,14 @@ int vtkSMPContourGrid::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSMPContourGrid::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataObject");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkSMPContourGrid::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -640,10 +649,11 @@ vtkTypeBool vtkSMPContourGrid::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSMPContourGrid::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Merge Pieces: " << (this->MergePieces ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

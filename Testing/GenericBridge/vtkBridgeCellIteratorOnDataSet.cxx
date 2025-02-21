@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBridgeCellIteratorOnDataSet.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME vtkBridgeCellIteratorOnDataSet - Iterate over cells of a dataset.
 // .SECTION See Also
 // vtkBridgeCellIterator, vtkBridgeDataSet, vtkBridgeCellIteratorStrategy
@@ -26,15 +14,16 @@
 #include "vtkDataSet.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBridgeCellIteratorOnDataSet);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBridgeCellIteratorOnDataSet::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBridgeCellIteratorOnDataSet::vtkBridgeCellIteratorOnDataSet()
 {
   this->DataSet = nullptr;
@@ -44,7 +33,7 @@ vtkBridgeCellIteratorOnDataSet::vtkBridgeCellIteratorOnDataSet()
   //  this->DebugOn();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBridgeCellIteratorOnDataSet::~vtkBridgeCellIteratorOnDataSet()
 {
   if (this->DataSet != nullptr)
@@ -56,7 +45,7 @@ vtkBridgeCellIteratorOnDataSet::~vtkBridgeCellIteratorOnDataSet()
   this->Cell = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Move iterator to first position if any (loop initialization).
 void vtkBridgeCellIteratorOnDataSet::Begin()
@@ -65,7 +54,7 @@ void vtkBridgeCellIteratorOnDataSet::Begin()
   this->Next(); // skip cells of other dimensions
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Is there no cell at iterator position? (exit condition).
 vtkTypeBool vtkBridgeCellIteratorOnDataSet::IsAtEnd()
@@ -73,7 +62,7 @@ vtkTypeBool vtkBridgeCellIteratorOnDataSet::IsAtEnd()
   return (this->Id >= this->Size);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Cell at current position
 // \pre not_at_end: !IsAtEnd()
@@ -88,7 +77,7 @@ void vtkBridgeCellIteratorOnDataSet::GetCell(vtkGenericAdaptorCell* c)
   c2->Init(this->DataSet, this->Id);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Cell at current position.
 // NOT THREAD SAFE
@@ -105,7 +94,7 @@ vtkGenericAdaptorCell* vtkBridgeCellIteratorOnDataSet::GetCell()
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Move iterator to next position. (loop progression).
 // \pre not_at_end: !IsAtEnd()
@@ -135,7 +124,7 @@ void vtkBridgeCellIteratorOnDataSet::Next()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Used internally by vtkBridgeDataSet.
 // Iterate over cells of `ds' of some dimension `dim'.
@@ -151,3 +140,4 @@ void vtkBridgeCellIteratorOnDataSet::InitWithDataSet(vtkBridgeDataSet* ds, int d
   this->Size = ds->GetNumberOfCells();
   this->Id = this->Size; // at end
 }
+VTK_ABI_NAMESPACE_END

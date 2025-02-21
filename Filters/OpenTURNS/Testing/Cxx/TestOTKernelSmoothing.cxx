@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestOTKernelSmoothing.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDoubleArray.h"
 #include "vtkMathUtilities.h"
 #include "vtkMultiBlockDataSet.h"
@@ -23,7 +11,7 @@
 #include "vtkTestErrorObserver.h"
 
 #include <iostream>
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestOTKernelSmoothing(int, char*[])
 {
   vtkNew<vtkDoubleArray> arrFirstVariable;
@@ -69,8 +57,8 @@ int TestOTKernelSmoothing(int, char*[])
     return EXIT_FAILURE;
   }
 
-  double tablesValues[] = { 0.065402356109834025588, 0.064804433530837840527,
-    0.062203414353711072859 };
+  double tablesValues[] = { 0.064423254877735508517, 0.065363016055031350482,
+    0.062847537553276378031 };
   for (int i = 0; i < 3; i++)
   {
     vtkVariant tableValue = outputTable->GetValue(50, i);

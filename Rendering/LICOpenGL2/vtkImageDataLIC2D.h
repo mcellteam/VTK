@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageDataLIC2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageDataLIC2D
  *
@@ -39,6 +27,7 @@
 #include "vtkRenderingLICOpenGL2Module.h" // For export macro
 #include "vtkWeakPointer.h"               // needed for vtkWeakPointer.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderWindow;
 class vtkOpenGLRenderWindow;
 class vtkImageNoiseSource;
@@ -51,19 +40,19 @@ public:
   vtkTypeMacro(vtkImageDataLIC2D, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the context. Context must be a vtkOpenGLRenderWindow.
    * This does not increase the reference count of the
    * context to avoid reference loops.
-   * SetContext() may raise an error is the OpenGL context does not support the
+   * SetContext() may raise an error if the OpenGL context does not support the
    * required OpenGL extensions. Return 0 upon failure and 1 upon success.
    */
   int SetContext(vtkRenderWindow* context);
   vtkRenderWindow* GetContext();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Number of steps. Initial value is 20.
    * class invariant: Steps>0.
@@ -71,9 +60,9 @@ public:
    */
   vtkSetMacro(Steps, int);
   vtkGetMacro(Steps, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Step size.
    * Specify the step size as a unit of the cell length of the input vector
@@ -87,22 +76,22 @@ public:
    */
   vtkSetMacro(StepSize, double);
   vtkGetMacro(StepSize, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The magnification factor. Default is 1
    */
   vtkSetMacro(Magnification, int);
   vtkGetMacro(Magnification, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Check if the required OpenGL extensions / GPU are supported.
    */
   vtkGetMacro(OpenGLExtensionsSupported, int);
-  //@}
+  ///@}
 
   void TranslateInputExtent(const int* inExt, const int* inWholeExtent, int* outExt);
 
@@ -146,4 +135,5 @@ private:
   void operator=(const vtkImageDataLIC2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

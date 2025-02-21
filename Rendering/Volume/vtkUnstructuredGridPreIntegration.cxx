@@ -1,26 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridPreIntegration.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*
- * Copyright 2004 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2004 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkUnstructuredGridPreIntegration.h"
 
@@ -35,14 +15,15 @@
 #include <algorithm>
 #include <cmath>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkUnstructuredGridPreIntegration);
 
 vtkCxxSetObjectMacro(
   vtkUnstructuredGridPreIntegration, Integrator, vtkUnstructuredGridVolumeRayIntegrator);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkUnstructuredGridPreIntegration::vtkUnstructuredGridPreIntegration()
 {
@@ -91,7 +72,7 @@ void vtkUnstructuredGridPreIntegration::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "IncrementalPreIntegration: " << this->IncrementalPreIntegration << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 double vtkUnstructuredGridPreIntegration::GetIntegrationTableScalarShift(int component)
 {
@@ -113,7 +94,7 @@ float* vtkUnstructuredGridPreIntegration::GetPreIntegrationTable(int component)
   return this->IntegrationTable[component];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkUnstructuredGridPreIntegration::BuildPreIntegrationTables(vtkDataArray* scalars)
 {
@@ -344,7 +325,7 @@ void vtkUnstructuredGridPreIntegration::BuildPreIntegrationTables(vtkDataArray* 
   tmpFarIntersections->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkUnstructuredGridPreIntegration::Initialize(vtkVolume* volume, vtkDataArray* scalars)
 {
@@ -388,7 +369,7 @@ void vtkUnstructuredGridPreIntegration::Initialize(vtkVolume* volume, vtkDataArr
   this->BuildPreIntegrationTables(scalars);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkUnstructuredGridPreIntegration::Integrate(vtkDoubleArray* intersectionLengths,
   vtkDataArray* nearIntersections, vtkDataArray* farIntersections, float color[4])
@@ -422,3 +403,4 @@ void vtkUnstructuredGridPreIntegration::Integrate(vtkDoubleArray* intersectionLe
     color[3] += newcolor[3] * coef;
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParallelReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParallelReader
  * @brief   Superclass for algorithms that are parallel aware
@@ -31,6 +19,7 @@
 
 #include <string> // needed for std::string in the interface
 
+VTK_ABI_NAMESPACE_BEGIN
 struct vtkParallelReaderInternal;
 
 class VTKCOMMONEXECUTIONMODEL_EXPORT vtkParallelReader : public vtkReaderAlgorithm
@@ -45,7 +34,7 @@ public:
    * Note that the time values are either integers growing sequentially,
    * or are obtained from individual files as supported by the subclass.
    */
-  void AddFileName(const char* fname);
+  void AddFileName(VTK_FILEPATH const char* fname);
 
   /**
    * Removes all filenames stored by the reader.
@@ -60,15 +49,15 @@ public:
   /**
    * Returns a particular filename stored by the reader.
    */
-  const char* GetFileName(int i) const;
+  VTK_FILEPATH const char* GetFileName(int i) const;
 
   /**
    * Returns the filename that was last loaded by the reader.
    * This is set internally in ReadMesh()
    */
-  const char* GetCurrentFileName() const;
+  VTK_FILEPATH const char* GetCurrentFileName() const;
 
-  //@{
+  ///@{
   /**
    * This is the superclass API overridden by this class
    * to provide time support internally. Subclasses should
@@ -78,13 +67,11 @@ public:
   int ReadMesh(int piece, int npieces, int nghosts, int timestep, vtkDataObject* output) override;
   int ReadPoints(int piece, int npieces, int nghosts, int timestep, vtkDataObject* output) override;
   int ReadArrays(int piece, int npieces, int nghosts, int timestep, vtkDataObject* output) override;
-  //@}
+  ///@}
 
 protected:
   vtkParallelReader();
   ~vtkParallelReader() override;
-
-  vtkExecutive* CreateDefaultExecutive() override;
 
   /**
    * A subclass can override this method to provide an actual
@@ -130,4 +117,5 @@ private:
   vtkParallelReaderInternal* Internal;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

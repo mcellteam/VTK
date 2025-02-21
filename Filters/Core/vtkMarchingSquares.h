@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMarchingSquares.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMarchingSquares
  * @brief   generate isoline(s) from structured points set
@@ -44,6 +32,7 @@
 
 #include "vtkContourValues.h" // Passes calls to vtkContourValues
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 class vtkIncrementalPointLocator;
 
@@ -54,7 +43,7 @@ public:
   vtkTypeMacro(vtkMarchingSquares, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the i-j-k index range which define a plane on which to generate
    * contour lines. Using this ivar it is possible to input a 3D volume
@@ -64,9 +53,9 @@ public:
   vtkSetVectorMacro(ImageRange, int, 6);
   vtkGetVectorMacro(ImageRange, int, 6);
   void SetImageRange(int imin, int imax, int jmin, int jmax, int kmin, int kmax);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to set contour values
    */
@@ -78,7 +67,7 @@ public:
   vtkIdType GetNumberOfContours();
   void GenerateValues(int numContours, double range[2]);
   void GenerateValues(int numContours, double rangeStart, double rangeEnd);
-  //@}
+  ///@}
 
   /**
    * Because we delegate to vtkContourValues
@@ -182,4 +171,5 @@ inline void vtkMarchingSquares::GenerateValues(int numContours, double rangeStar
   this->ContourValues->GenerateValues(numContours, rangeStart, rangeEnd);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

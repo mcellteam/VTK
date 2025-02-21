@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoxWidget2.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBoxWidget2
  * @brief   3D widget for manipulating a box
@@ -95,11 +83,13 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBoxRepresentation;
 class vtkHandleWidget;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkBoxWidget2 : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkBoxWidget2 : public vtkAbstractWidget
 {
 public:
   /**
@@ -107,13 +97,13 @@ public:
    */
   static vtkBoxWidget2* New();
 
-  //@{
+  ///@{
   /**
    * Standard class methods for type information and printing.
    */
   vtkTypeMacro(vtkBoxWidget2, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -125,7 +115,7 @@ public:
     this->Superclass::SetWidgetRepresentation(reinterpret_cast<vtkWidgetRepresentation*>(r));
   }
 
-  //@{
+  ///@{
   /**
    * Control the behavior of the widget (i.e., how it processes
    * events). Translation, rotation, scaling and face movement can all be enabled and
@@ -146,7 +136,7 @@ public:
   vtkSetMacro(MoveFacesEnabled, vtkTypeBool);
   vtkGetMacro(MoveFacesEnabled, vtkTypeBool);
   vtkBooleanMacro(MoveFacesEnabled, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Create the default widget representation if one is not set. By default,
@@ -166,7 +156,7 @@ protected:
 
   // Manage the state of the widget
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Active
@@ -197,4 +187,5 @@ private:
   void operator=(const vtkBoxWidget2&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

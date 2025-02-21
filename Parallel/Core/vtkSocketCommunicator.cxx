@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSocketCommunicator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSocketCommunicator.h"
 
 #include "vtkClientSocket.h"
@@ -19,7 +7,6 @@
 #include "vtkObjectFactory.h"
 #include "vtkServerSocket.h"
 #include "vtkSocketController.h"
-#include "vtkStdString.h"
 #include "vtkTypeTraits.h"
 #include "vtksys/Encoding.hxx"
 #include "vtksys/FStream.hxx"
@@ -33,8 +20,9 @@
 // Uncomment the following line to help with debugging. When
 // ENABLE_SYNCHRONIZED_COMMUNICATION is defined, every Send() blocks until the
 // receive is successful.
-//#define ENABLE_SYNCHRONIZED_COMMUNICATION
+// #define ENABLE_SYNCHRONIZED_COMMUNICATION
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSocketCommunicator::vtkMessageBuffer
 {
 public:
@@ -57,7 +45,7 @@ public:
 
   void Push(int tag, int numchars, char* data)
   {
-    this->Buffer[tag].push_back(MessageType());
+    this->Buffer[tag].emplace_back();
     MessageType& msg = this->Buffer[tag].back();
     msg.insert(msg.end(), data, (data + numchars));
   }
@@ -75,10 +63,13 @@ public:
 };
 
 #define vtkSocketCommunicatorErrorMacro(msg)                                                       \
-  if (this->ReportErrors)                                                                          \
+  do                                                                                               \
   {                                                                                                \
-    vtkErrorMacro(msg);                                                                            \
-  }
+    if (this->ReportErrors)                                                                        \
+    {                                                                                              \
+      vtkErrorMacro(msg);                                                                          \
+    }                                                                                              \
+  } while (false)
 
 // The handshake checks that the client and server are using the same
 // version of this source file.  It first compares a fixed integer
@@ -87,11 +78,13 @@ public:
 // represent the CVS revision number of this file, so the value must
 // be larger than the last revision which used that strategy.
 #define vtkSocketCommunicatorHashId 100 /* MD5 */
+VTK_ABI_NAMESPACE_END
 #include "vtkSocketCommunicatorHash.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSocketCommunicator);
 vtkCxxSetObjectMacro(vtkSocketCommunicator, Socket, vtkClientSocket);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSocketCommunicator::vtkSocketCommunicator()
 {
   this->Socket = nullptr;
@@ -109,7 +102,7 @@ vtkSocketCommunicator::vtkSocketCommunicator()
   this->ReceivedMessageBuffer = new vtkSocketCommunicator::vtkMessageBuffer();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSocketCommunicator::~vtkSocketCommunicator()
 {
   this->SetSocket(nullptr);
@@ -118,7 +111,7 @@ vtkSocketCommunicator::~vtkSocketCommunicator()
   this->ReceivedMessageBuffer = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCommunicator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -154,7 +147,7 @@ void vtkSocketCommunicator::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ReportErrors: " << this->ReportErrors << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCommunicator::SetLogStream(ostream* stream)
 {
   if (this->LogStream != stream)
@@ -171,7 +164,7 @@ void vtkSocketCommunicator::SetLogStream(ostream* stream)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::GetIsConnected()
 {
   if (this->Socket)
@@ -181,25 +174,25 @@ int vtkSocketCommunicator::GetIsConnected()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCommunicator::SetNumberOfProcesses(int vtkNotUsed(num))
 {
   vtkErrorMacro("Can not change the number of processes.");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 ostream* vtkSocketCommunicator::GetLogStream()
 {
   return this->LogStream;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::LogToFile(const char* name)
 {
   return this->LogToFile(name, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::LogToFile(const char* name, int append)
 {
   // Close old logging file.
@@ -226,7 +219,7 @@ int vtkSocketCommunicator::LogToFile(const char* name, int append)
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::SendVoidArray(
   const void* data, vtkIdType length, int type, int remoteProcessId, int tag)
 {
@@ -244,12 +237,12 @@ int vtkSocketCommunicator::SendVoidArray(
     newData.resize(length);
     std::copy(reinterpret_cast<const vtkIdType*>(data),
       reinterpret_cast<const vtkIdType*>(data) + length, newData.begin());
-    return this->SendVoidArray(&newData[0], length, VTK_INT, remoteProcessId, tag);
+    return this->SendVoidArray(newData.data(), length, VTK_INT, remoteProcessId, tag);
   }
 #endif
 
   int typeSize;
-  vtkStdString typeName;
+  std::string typeName;
   switch (type)
   {
     vtkTemplateMacro(typeSize = sizeof(VTK_TT); typeName = vtkTypeTraits<VTK_TT>().SizedName());
@@ -271,14 +264,14 @@ int vtkSocketCommunicator::SendVoidArray(
   // in an integer, break up the array into pieces.
   while (length >= maxSend)
   {
-    if (!this->SendTagged(byteData, typeSize, maxSend, tag, typeName))
+    if (!this->SendTagged(byteData, typeSize, maxSend, tag, typeName.c_str()))
     {
       return 0;
     }
     byteData += maxSend * typeSize;
     length -= maxSend;
   }
-  if (!this->SendTagged(byteData, typeSize, length, tag, typeName))
+  if (!this->SendTagged(byteData, typeSize, length, tag, typeName.c_str()))
   {
     return 0;
   }
@@ -291,13 +284,7 @@ int vtkSocketCommunicator::SendVoidArray(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
-inline vtkIdType vtkSocketCommunicatorMin(vtkIdType a, vtkIdType b)
-{
-  return (a < b) ? a : b;
-}
-
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::ReceiveVoidArray(
   void* data, vtkIdType length, int type, int remoteProcessId, int tag)
 {
@@ -314,14 +301,14 @@ int vtkSocketCommunicator::ReceiveVoidArray(
   {
     std::vector<int> newData;
     newData.resize(length);
-    int retval = this->ReceiveVoidArray(&newData[0], length, VTK_INT, remoteProcessId, tag);
+    int retval = this->ReceiveVoidArray(newData.data(), length, VTK_INT, remoteProcessId, tag);
     std::copy(newData.begin(), newData.end(), reinterpret_cast<vtkIdType*>(data));
     return retval;
   }
 #endif
 
   int typeSize;
-  vtkStdString typeName;
+  std::string typeName;
   switch (type)
   {
     vtkTemplateMacro(typeSize = sizeof(VTK_TT); typeName = vtkTypeTraits<VTK_TT>().SizedName());
@@ -343,7 +330,7 @@ int vtkSocketCommunicator::ReceiveVoidArray(
   // in an integer, break up the array into pieces.
   int ret = 0;
   while (this->ReceiveTagged(
-    byteData, typeSize, vtkSocketCommunicatorMin(maxReceive, length), tag, typeName))
+    byteData, typeSize, std::min<vtkIdType>(maxReceive, length), tag, typeName.c_str()))
   {
     this->Count += this->TagMessageLength;
     byteData += this->TagMessageLength * typeSize;
@@ -383,7 +370,7 @@ int vtkSocketCommunicator::ReceiveVoidArray(
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::Handshake()
 {
   if (!this->Socket)
@@ -402,7 +389,7 @@ int vtkSocketCommunicator::Handshake()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::ServerSideHandshake()
 {
   this->IsServer = 1;
@@ -505,7 +492,7 @@ int vtkSocketCommunicator::ServerSideHandshake()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::ClientSideHandshake()
 {
   this->IsServer = 0;
@@ -611,7 +598,7 @@ int vtkSocketCommunicator::ClientSideHandshake()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::WaitForConnection(int port)
 {
   if (this->GetIsConnected())
@@ -631,7 +618,7 @@ int vtkSocketCommunicator::WaitForConnection(int port)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::WaitForConnection(vtkServerSocket* socket, unsigned long msec /*=0*/)
 {
   if (this->GetIsConnected())
@@ -659,7 +646,7 @@ int vtkSocketCommunicator::WaitForConnection(vtkServerSocket* socket, unsigned l
   return this->ServerSideHandshake();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCommunicator::CloseConnection()
 {
   if (this->Socket)
@@ -670,7 +657,7 @@ void vtkSocketCommunicator::CloseConnection()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::ConnectTo(const char* hostName, int port)
 {
 
@@ -695,7 +682,7 @@ int vtkSocketCommunicator::ConnectTo(const char* hostName, int port)
   return this->ClientSideHandshake();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::SendTagged(
   const void* data, int wordSize, int numWords, int tag, const char* logName)
 {
@@ -726,7 +713,7 @@ int vtkSocketCommunicator::SendTagged(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::ReceivedTaggedFromBuffer(
   void* data, int wordSize, int numWords, int tag, const char* logName)
 {
@@ -745,7 +732,7 @@ int vtkSocketCommunicator::ReceivedTaggedFromBuffer(
 
   // The static_cast is OK since we split messages > VTK_INT_MAX.
   this->TagMessageLength = static_cast<int>(message.size()) / wordSize;
-  memcpy(data, &message[0], message.size());
+  memcpy(data, message.data(), message.size());
   this->ReceivedMessageBuffer->Pop(tag);
 
   this->FixByteOrder(data, wordSize, numWords);
@@ -756,7 +743,7 @@ int vtkSocketCommunicator::ReceivedTaggedFromBuffer(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::ReceiveTagged(
   void* data, int wordSize, int numWords, int tag, const char* logName)
 {
@@ -832,7 +819,7 @@ int vtkSocketCommunicator::ReceiveTagged(
         // data.
         if (this->LogStream)
         {
-          *this->LogStream << "Bufferring last message (" << recvTag << ")" << endl;
+          *this->LogStream << "Buffering last message (" << recvTag << ")" << endl;
         }
         this->ReceivedMessageBuffer->Push(recvTag, length, ptr);
       }
@@ -868,7 +855,7 @@ int vtkSocketCommunicator::ReceiveTagged(
   return this->ReceivePartialTagged(data, wordSize, length / wordSize, tag, logName);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::ReceivePartialTagged(
   void* data, int wordSize, int numWords, int tag, const char* logName)
 {
@@ -889,7 +876,7 @@ int vtkSocketCommunicator::ReceivePartialTagged(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCommunicator::FixByteOrder(void* data, int wordSize, int numWords)
 {
   // Unless we're dealing with chars, then check byte ordering.
@@ -909,13 +896,13 @@ void vtkSocketCommunicator::FixByteOrder(void* data, int wordSize, int numWords)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSocketCommunicator::HasBufferredMessages()
 {
   return this->ReceivedMessageBuffer->HasBufferredMessages();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T, class OutType>
 void vtkSocketCommunicatorLogArray(ostream& os, T* array, int length, int max, OutType*)
 {
@@ -935,7 +922,7 @@ void vtkSocketCommunicatorLogArray(ostream& os, T* array, int length, int max, O
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCommunicator::LogTagged(
   const char* name, const void* data, int wordSize, int numWords, int tag, const char* logName)
 {
@@ -1031,7 +1018,7 @@ void vtkSocketCommunicator::LogTagged(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::CheckForErrorInternal(int id)
 {
   if (id == 0)
@@ -1052,7 +1039,7 @@ int vtkSocketCommunicator::CheckForErrorInternal(int id)
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCommunicator::Barrier()
 {
   int junk = 0;
@@ -1068,13 +1055,13 @@ void vtkSocketCommunicator::Barrier()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::BroadcastVoidArray(void* data, vtkIdType length, int type, int root)
 {
   return this->Superclass::BroadcastVoidArray(data, length, type, root);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::GatherVoidArray(const void*, void*, vtkIdType, int, int)
 {
   vtkErrorMacro("Collective operations not supported on sockets.");
@@ -1129,8 +1116,9 @@ int vtkSocketCommunicator::AllReduceVoidArray(const void*, void*, vtkIdType, int
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCommunicator::GetVersion()
 {
   return vtkSocketCommunicatorHashId;
 }
+VTK_ABI_NAMESPACE_END

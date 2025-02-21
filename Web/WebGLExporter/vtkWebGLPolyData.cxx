@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWebGLPolyData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkWebGLPolyData.h"
 
@@ -43,6 +31,7 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkWebGLPolyData);
 //*****************************************************************************
 class vtkWebGLPolyData::vtkInternal
@@ -298,7 +287,7 @@ void vtkWebGLPolyData::GenerateBinaryData()
     std::string localMD5;
     vtkWebGLExporter::ComputeMD5(
       (const unsigned char*)ss.str().c_str(), static_cast<int>(ss.str().size()), localMD5);
-    this->hasChanged = this->MD5.compare(localMD5) != 0;
+    this->hasChanged = this->MD5 != localMD5;
     this->MD5 = localMD5;
   }
   else
@@ -403,8 +392,7 @@ void vtkWebGLPolyData::GetLinesFromPolygon(
           case vtkScalarsToColors::MAGNITUDE:
             mag = 0;
             for (int w = 0; w < numberOfComponents; w++)
-              mag +=
-                (double)array->GetComponent(pointId, w) * (double)array->GetComponent(pointId, w);
+              mag += array->GetComponent(pointId, w) * array->GetComponent(pointId, w);
             mag = sqrt(mag);
             table->GetColor(mag, &rgb[0]);
             break;
@@ -658,7 +646,7 @@ void vtkWebGLPolyData::GetPolygonsFromCellData(
       case vtkScalarsToColors::MAGNITUDE:
         mag = 0;
         for (int w = 0; w < numberOfComponents; w++)
-          mag += (double)array->GetComponent(i, w) * (double)array->GetComponent(i, w);
+          mag += array->GetComponent(i, w) * array->GetComponent(i, w);
         mag = sqrt(mag);
         table->GetColor(mag, &color[0]);
         alpha = table->GetOpacity(mag);
@@ -738,7 +726,7 @@ void vtkWebGLPolyData::GetColorsFromPointData(
         case vtkScalarsToColors::MAGNITUDE:
           mag = 0;
           for (int w = 0; w < numberOfComponents; w++)
-            mag += (double)array->GetComponent(i, w) * (double)array->GetComponent(i, w);
+            mag += array->GetComponent(i, w) * array->GetComponent(i, w);
           mag = sqrt(mag);
           table->GetColor(mag, &rgb[0]);
           alpha = table->GetOpacity(mag);
@@ -792,3 +780,4 @@ void vtkWebGLPolyData::GetColorsFromPointData(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

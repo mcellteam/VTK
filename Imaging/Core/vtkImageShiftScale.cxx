@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageShiftScale.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageShiftScale.h"
 
 #include "vtkImageData.h"
@@ -21,9 +9,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageShiftScale);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageShiftScale::vtkImageShiftScale()
 {
   this->Shift = 0.0;
@@ -32,10 +21,10 @@ vtkImageShiftScale::vtkImageShiftScale()
   this->ClampOverflow = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageShiftScale::~vtkImageShiftScale() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageShiftScale::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -45,7 +34,7 @@ void vtkImageShiftScale::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ClampOverflow: " << (this->ClampOverflow ? "On" : "Off") << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageShiftScale::RequestInformation(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -58,7 +47,7 @@ int vtkImageShiftScale::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function template implements the filter for any type of data.
 // The last two arguments help the vtkTemplateMacro calls below
 // instantiate the proper input and output types.
@@ -123,7 +112,7 @@ void vtkImageShiftScaleExecute(vtkImageShiftScale* self, vtkImageData* inData,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkImageShiftScaleExecute1(
   vtkImageShiftScale* self, vtkImageData* inData, vtkImageData* outData, int outExt[6], int id, T*)
@@ -138,7 +127,7 @@ void vtkImageShiftScaleExecute1(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output data, and executes the filter
 // algorithm to fill the output from the input.
 // It just executes a switch statement to call the correct function for
@@ -158,3 +147,4 @@ void vtkImageShiftScale::ThreadedRequestData(vtkInformation*, vtkInformationVect
       return;
   }
 }
+VTK_ABI_NAMESPACE_END

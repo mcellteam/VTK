@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLContextDevice2DPrivate.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkOpenGL2ContextDevice2DPrivate
@@ -40,11 +28,10 @@
 #include "vtkColor.h"
 #include "vtkFreeTypeTools.h"
 #include "vtkGenericCell.h"
-#include "vtkStdString.h"
+#include "vtkOpenGLContextDeviceBufferObjectBuilder.h"
 #include "vtkTextProperty.h"
 #include "vtkTextRenderer.h"
 #include "vtkTexture.h"
-#include "vtkUnicodeString.h"
 #include "vtkUnsignedCharArray.h"
 
 #include <algorithm>
@@ -56,6 +43,7 @@
 // .SECTION Description
 // Creating and initializing a texture can be time consuming,
 // vtkTextureImageCache offers the ability to reuse them as much as possible.
+VTK_ABI_NAMESPACE_BEGIN
 template <class Key>
 class vtkTextureImageCache
 {
@@ -69,7 +57,7 @@ public:
     vtkTextRenderer::Metrics Metrics;
   };
 
-  //@{
+  ///@{
   /**
    * CacheElement associates a unique key to some cache.
    */
@@ -101,7 +89,7 @@ public:
       return this->first == other.first;
     }
   };
-  //@}
+  ///@}
 
   /**
    * Construct a texture image cache with a maximum number of texture of 50.
@@ -125,7 +113,7 @@ public:
    */
   CacheData& GetCacheData(const Key& key);
 
-  //@{
+  ///@{
   /**
    * Release all the OpenGL Pixel Buffer Object(PBO) associated with the
    * textures of the cache list.
@@ -138,10 +126,10 @@ public:
       it->second.Texture->ReleaseGraphicsResources(window);
     }
   }
-  //@}
+  ///@}
 
 protected:
-  //@{
+  ///@{
   /**
    * Add a new cache entry into the cache list. Enforce the MaxSize size of the
    * list by removing the least used cache if needed.
@@ -156,18 +144,18 @@ protected:
     this->Cache.push_front(CacheElement(key, cacheData));
     return this->Cache.begin()->second;
   }
-  //@}
+  ///@}
 
   /**
    * List of a pair of key and cache data.
    */
   std::list<CacheElement> Cache;
-  //@{
+  ///@{
   /**
    * Maximum size the cache list can be.
    */
   size_t MaxSize;
-  //@}
+  ///@}
 };
 
 template <class Key>
@@ -193,7 +181,7 @@ typename vtkTextureImageCache<Key>::CacheData& vtkTextureImageCache<Key>::GetCac
 template <class StringType>
 struct TextPropertyKey
 {
-  //@{
+  ///@{
   /**
    * Transform a text property into an unsigned long
    */
@@ -214,18 +202,27 @@ struct TextPropertyKey
     assert("Hash is really a uint32" && static_cast<size_t>(hash) == id);
 
     // Since we cache the text metrics (which includes orientation and alignment
-    // info), we'll need to store the alignment options, since
-    // MapTextPropertyToId intentionally ignores these:
+    // info), we'll need to store additional options, since MapTextPropertyToId
+    // intentionally ignores them.
+    // These include cell spacing and interior lines for multi cell text, as well
+    // as text justification.
     int tmp = tprop->GetJustification();
     hash = vtkFreeTypeTools::HashBuffer(&tmp, sizeof(int), hash);
     tmp = tprop->GetVerticalJustification();
     hash = vtkFreeTypeTools::HashBuffer(&tmp, sizeof(int), hash);
+    tmp = tprop->GetCellOffset();
+    hash = vtkFreeTypeTools::HashBuffer(&tmp, sizeof(int), hash);
+    tmp = tprop->GetInteriorLinesVisibility();
+    hash = vtkFreeTypeTools::HashBuffer(&tmp, sizeof(int), hash);
+    tmp = tprop->GetInteriorLinesWidth();
+    hash = vtkFreeTypeTools::HashBuffer(&tmp, sizeof(int), hash);
+    hash = vtkFreeTypeTools::HashBuffer(tprop->GetInteriorLinesColor(), 3 * sizeof(double), hash);
 
     return hash;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Creates a TextPropertyKey.
    */
@@ -241,7 +238,7 @@ struct TextPropertyKey
     this->Text = text;
     this->DPI = dpi;
   }
-  //@}
+  ///@}
 
   /**
    * Compares two TextPropertyKeys with each other. Returns true if they are
@@ -263,8 +260,7 @@ struct TextPropertyKey
   int DPI;
 };
 
-typedef TextPropertyKey<vtkStdString> UTF8TextPropertyKey;
-typedef TextPropertyKey<vtkUnicodeString> UTF16TextPropertyKey;
+typedef TextPropertyKey<std::string> UTF8TextPropertyKey;
 
 class vtkOpenGLContextDevice2D::Private
 {
@@ -309,7 +305,12 @@ public:
       this->SavedStencilTest = ostate->GetEnumState(GL_STENCIL_TEST);
       this->SavedBlend = ostate->GetEnumState(GL_BLEND);
       ostate->vtkglGetFloatv(GL_COLOR_CLEAR_VALUE, this->SavedClearColor);
+
+#ifdef GL_DRAW_BUFFER
       ostate->vtkglGetIntegerv(GL_DRAW_BUFFER, &this->SavedDrawBuffer);
+#else
+      this->SavedDrawBuffer = GL_BACK_LEFT;
+#endif
     }
   }
 
@@ -324,7 +325,8 @@ public:
 
       if (this->SavedDrawBuffer != GL_BACK_LEFT)
       {
-        glDrawBuffer(this->SavedDrawBuffer);
+        const GLenum bufs[1] = { static_cast<GLenum>(this->SavedDrawBuffer) };
+        ::glDrawBuffers(1, bufs);
       }
 
       ostate->vtkglClearColor(this->SavedClearColor[0], this->SavedClearColor[1],
@@ -493,14 +495,14 @@ public:
   bool GLSL;
   bool PowerOfTwoTextures;
 
-  //@{
+  ///@{
   /**
    * Cache for text images. Generating texture for strings is expensive,
    * we cache the textures here for a faster reuse.
    */
-  mutable vtkTextureImageCache<UTF16TextPropertyKey> TextTextureCache;
-  mutable vtkTextureImageCache<UTF8TextPropertyKey> MathTextTextureCache;
-  //@}
+  mutable vtkTextureImageCache<UTF8TextPropertyKey> TextTextureCache;
+  ///@}
+  vtkOpenGLContextDeviceBufferObjectBuilder BufferObjectBuilder;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -542,7 +544,7 @@ public:
     , NumPointsCell(0)
   {
     this->cache = new PolyDataCache();
-  };
+  }
 
   ~CellArrayHelper() { delete this->cache; }
 
@@ -566,7 +568,7 @@ public:
         this->DrawPolygons(polyData, scalarMode, x, y, scale);
         break;
     }
-  };
+  }
 
   void HandleEndFrame() { this->cache->SwapCaches(); }
 
@@ -689,7 +691,7 @@ private:
 
       this->CellColors->SetTuple(i, mappedColorId, this->Colors);
     }
-  };
+  }
 
   /**
    * Batch all of the line primitives in an array and draw them using
@@ -754,13 +756,14 @@ private:
       cellIter->Delete();
     }
 
-    if (cacheItem->Lines.size() > 0)
+    if (!cacheItem->Lines.empty())
     {
-      this->Device->DrawLines(&cacheItem->Lines[0], static_cast<int>(cacheItem->Lines.size() / 2),
+      this->Device->DrawLines(cacheItem->Lines.data(),
+        static_cast<int>(cacheItem->Lines.size() / 2),
         static_cast<unsigned char*>(cacheItem->LineColors->GetVoidPointer(0)),
         cacheItem->LineColors->GetNumberOfComponents());
     }
-  };
+  }
 
   /**
    * Pre-computes the total number of polygon vertices after converted into triangles.
@@ -784,7 +787,7 @@ private:
 
     cellIter->Delete();
     return numTriVert;
-  };
+  }
 
   /**
    * Convert all of the polygon primitives into triangles and draw them as a batch using
@@ -862,12 +865,12 @@ private:
       cellIter->Delete();
     }
 
-    if (cacheItem->PolyTri.size() > 0)
+    if (!cacheItem->PolyTri.empty())
     {
       this->Device->CoreDrawTriangles(cacheItem->PolyTri,
         static_cast<unsigned char*>(cacheItem->PolyColors->GetVoidPointer(0)), 4);
     }
-  };
+  }
 
   vtkOpenGLContextDevice2D* Device;
 
@@ -875,16 +878,17 @@ private:
   vtkIdType* PointIds;
   vtkUnsignedCharArray* Colors;
 
-  //@{
+  ///@{
   /**
    *  Current vtkPolyData cell.
    */
   vtkIdType NumPointsCell;
   std::vector<float> CellPoints;
   vtkNew<vtkUnsignedCharArray> CellColors;
-  //@}
+  ///@}
 
   PolyDataCache* cache;
 };
+VTK_ABI_NAMESPACE_END
 #endif // VTKOPENGLCONTEXTDEVICE2DPRIVATE_H
 // VTK-HeaderTest-Exclude: vtkOpenGLContextDevice2DPrivate.h

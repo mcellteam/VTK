@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQtLabelRenderStrategy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkQtLabelRenderStrategy.h"
 #include "vtkQtLabelRenderStrategyInternals.h"
 
@@ -41,11 +29,13 @@
 #include <QImage>
 #include <QMap>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPair>
 #include <QPixmap>
 #include <QTextDocument>
 #include <QTextStream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkQtLabelRenderStrategy);
 
 bool operator<(const vtkQtLabelMapEntry& a, const vtkQtLabelMapEntry& other)
@@ -73,7 +63,7 @@ bool operator<(const vtkQtLabelMapEntry& a, const vtkQtLabelMapEntry& other)
   return a.Font < other.Font;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtLabelRenderStrategy::vtkQtLabelRenderStrategy()
 {
   this->Implementation = new Internals();
@@ -103,7 +93,7 @@ vtkQtLabelRenderStrategy::vtkQtLabelRenderStrategy()
   this->Actor->SetMapper(this->Mapper);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtLabelRenderStrategy::~vtkQtLabelRenderStrategy()
 {
   delete this->Implementation->Painter;
@@ -126,7 +116,7 @@ void vtkQtLabelRenderStrategy::ReleaseGraphicsResources(vtkWindow* window)
 
 // double start_frame_time = 0;
 // int start_frame_iter = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::StartFrame()
 {
   // vtkTimerLog* timer = vtkTimerLog::New();
@@ -144,7 +134,7 @@ void vtkQtLabelRenderStrategy::StartFrame()
     return;
   }
 
-  int* size = this->Renderer->GetRenderWindow()->GetSize();
+  const int* size = this->Renderer->GetRenderWindow()->GetSize();
   int width = size[0];
   int height = size[1];
   // If the render window is not antialiased then the text should not be
@@ -178,9 +168,9 @@ void vtkQtLabelRenderStrategy::StartFrame()
 
 // double compute_bounds_time = 0;
 // int compute_bounds_iter = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::ComputeLabelBounds(
-  vtkTextProperty* tprop, vtkUnicodeString label, double bds[4])
+  vtkTextProperty* tprop, vtkStdString label, double bds[4])
 {
   if (!QApplication::instance())
   {
@@ -208,7 +198,7 @@ void vtkQtLabelRenderStrategy::ComputeLabelBounds(
     fontSpec.setStyleStrategy(QFont::NoAntialias);
   }
 
-  QString text = QString::fromUtf8(label.utf8_str());
+  QString text = QString::fromUtf8(label.c_str());
   QColor textColor =
     this->Implementation->TextPropertyToColor(tprop->GetColor(), tprop->GetOpacity());
   vtkQtLabelMapEntry key;
@@ -277,9 +267,9 @@ void vtkQtLabelRenderStrategy::ComputeLabelBounds(
 
 // double render_label_time = 0;
 // int render_label_iter = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::RenderLabel(
-  int x[2], vtkTextProperty* tprop, vtkUnicodeString label, int maxWidth)
+  int x[2], vtkTextProperty* tprop, vtkStdString label, int maxWidth)
 {
   if (!QApplication::instance())
   {
@@ -291,7 +281,7 @@ void vtkQtLabelRenderStrategy::RenderLabel(
   // timer->StartTimer();
 
   // Determine if we can render the label to fit the width
-  QString origText = QString::fromUtf8(label.utf8_str());
+  QString origText = QString::fromUtf8(label.c_str());
   QFont fontSpec = this->Implementation->TextPropertyToFont(tprop);
 
   // This is the recommended Qt way of controlling text antialiasing.
@@ -316,7 +306,7 @@ void vtkQtLabelRenderStrategy::RenderLabel(
   double rotation = -tprop->GetOrientation();
   QColor textColor =
     this->Implementation->TextPropertyToColor(tprop->GetColor(), tprop->GetOpacity());
-  int* size = this->Renderer->GetRenderWindow()->GetSize();
+  const int* size = this->Renderer->GetRenderWindow()->GetSize();
   double h = size[1] - 1;
   double line_offset = tprop->GetLineOffset();
   int shOff[2];
@@ -382,8 +372,8 @@ void vtkQtLabelRenderStrategy::RenderLabel(
   //  }
 }
 
-//----------------------------------------------------------------------------
-void vtkQtLabelRenderStrategy::RenderLabel(int x[2], vtkTextProperty* tprop, vtkUnicodeString label)
+//------------------------------------------------------------------------------
+void vtkQtLabelRenderStrategy::RenderLabel(int x[2], vtkTextProperty* tprop, vtkStdString label)
 {
   if (!QApplication::instance())
   {
@@ -400,7 +390,7 @@ void vtkQtLabelRenderStrategy::RenderLabel(int x[2], vtkTextProperty* tprop, vtk
   // vtkTimerLog* timer = vtkTimerLog::New();
   // timer->StartTimer();
 
-  QString text = QString::fromUtf8(label.utf8_str());
+  QString text = QString::fromUtf8(label.c_str());
   QFont fontSpec = this->Implementation->TextPropertyToFont(tprop);
 
   // This is the recommended Qt way of controlling text antialiasing.
@@ -499,7 +489,7 @@ void vtkQtLabelRenderStrategy::RenderLabel(int x[2], vtkTextProperty* tprop, vtk
       break;
   }
 
-  int* size = this->Renderer->GetRenderWindow()->GetSize();
+  const int* size = this->Renderer->GetRenderWindow()->GetSize();
   double h = size[1] - 1;
   double line_offset = tprop->GetLineOffset();
 
@@ -527,7 +517,7 @@ void vtkQtLabelRenderStrategy::RenderLabel(int x[2], vtkTextProperty* tprop, vtk
 
 // double end_frame_time = 0;
 // int end_frame_iter = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::EndFrame()
 {
   // vtkTimerLog* timer = vtkTimerLog::New();
@@ -542,8 +532,9 @@ void vtkQtLabelRenderStrategy::EndFrame()
   //  }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

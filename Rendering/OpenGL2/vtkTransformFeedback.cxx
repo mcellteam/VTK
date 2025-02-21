@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransformFeedback.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkTransformFeedback.h"
 
@@ -20,8 +8,9 @@
 #include "vtkOpenGLError.h"
 #include "vtkShaderProgram.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTransformFeedback);
 
 //------------------------------------------------------------------------------
@@ -54,7 +43,7 @@ void vtkTransformFeedback::ClearVaryings()
 //------------------------------------------------------------------------------
 void vtkTransformFeedback::AddVarying(VaryingRole role, const std::string& var)
 {
-  this->Varyings.push_back(VaryingMetaData(role, var));
+  this->Varyings.emplace_back(role, var);
   this->VaryingsBound = false;
 }
 
@@ -123,7 +112,7 @@ void vtkTransformFeedback::BindVaryings(vtkShaderProgram* prog)
   }
 
   glTransformFeedbackVaryings(static_cast<GLuint>(prog->GetHandle()),
-    static_cast<GLsizei>(vars.size()), &vars[0], static_cast<GLenum>(this->BufferMode));
+    static_cast<GLsizei>(vars.size()), vars.data(), static_cast<GLenum>(this->BufferMode));
 
   this->VaryingsBound = true;
 
@@ -245,7 +234,6 @@ void vtkTransformFeedback::ReleaseBufferData(bool freeBuffer)
 //------------------------------------------------------------------------------
 vtkTransformFeedback::vtkTransformFeedback()
   : VaryingsBound(false)
-  , Varyings()
   , NumberOfVertices(0)
   , BufferMode(GL_INTERLEAVED_ATTRIBS)
   , PrimitiveMode(GL_POINTS)
@@ -259,3 +247,4 @@ vtkTransformFeedback::~vtkTransformFeedback()
   this->ReleaseGraphicsResources();
   this->ReleaseBufferData();
 }
+VTK_ABI_NAMESPACE_END

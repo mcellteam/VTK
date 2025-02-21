@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEnSightReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkEnSightReader
  * @brief   superclass for EnSight file readers
@@ -22,12 +10,19 @@
 
 #include "vtkGenericEnSightReader.h"
 #include "vtkIOEnSightModule.h" // For export macro
+#include "vtkSmartPointer.h"    // for vtkSmartPointer
 
+#include <map>    // for std::map
+#include <vector> // for std::vector
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkDataSetCollection;
+class vtkDoubleArray;
 class vtkEnSightReaderCellIdsType;
 class vtkIdList;
 class vtkMultiBlockDataSet;
+class vtkTransform;
 
 class VTKIOENSIGHT_EXPORT vtkEnSightReader : public vtkGenericEnSightReader
 {
@@ -70,7 +65,9 @@ public:
     COMPLEX_SCALAR_PER_NODE = 8,
     COMPLEX_VECTOR_PER_NODE = 9,
     COMPLEX_SCALAR_PER_ELEMENT = 10,
-    COMPLEX_VECTOR_PER_ELEMENT = 11
+    COMPLEX_VECTOR_PER_ELEMENT = 11,
+    TENSOR_ASYM_PER_NODE = 12,
+    TENSOR_ASYM_PER_ELEMENT = 13
   };
 
   enum SectionTypeList
@@ -80,21 +77,29 @@ public:
     ELEMENT = 2
   };
 
-  //@{
+  ///@{
   /**
    * Get the Measured file name. Made public to allow access from
    * apps requiring detailed info about the Data contents
    */
-  vtkGetStringMacro(MeasuredFileName);
-  //@}
+  vtkGetFilePathMacro(MeasuredFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the Match file name. Made public to allow access from
    * apps requiring detailed info about the Data contents
    */
-  vtkGetStringMacro(MatchFileName);
-  //@}
+  vtkGetFilePathMacro(MatchFileName);
+  ///@}
+
+  ///@{
+  /**
+   * Get the rigid body file name. Made public to allow access from
+   * apps requiring detailed info about the Data contents
+   */
+  vtkGetFilePathMacro(RigidBodyFileName);
+  ///@}
 
 protected:
   vtkEnSightReader();
@@ -105,21 +110,28 @@ protected:
 
   void ClearForNewCaseFileName() override;
 
-  //@{
+  ///@{
   /**
    * Set the Measured file name.
    */
-  vtkSetStringMacro(MeasuredFileName);
-  //@}
+  vtkSetFilePathMacro(MeasuredFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the Match file name.
    */
-  vtkSetStringMacro(MatchFileName);
-  //@}
+  vtkSetFilePathMacro(MatchFileName);
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set the rigid body file name.
+   */
+  vtkSetFilePathMacro(RigidBodyFileName);
+  ///@}
+
+  ///@{
   /**
    * Read the case file.  If an error occurred, 0 is returned; otherwise 1.
    */
@@ -128,7 +140,9 @@ protected:
   int ReadCaseFileVariable(char* line);
   int ReadCaseFileTime(char* line);
   int ReadCaseFileFile(char* line);
-  //@}
+  int ReadCaseFileScripts(char* line);
+
+  ///@}
 
   // set in UpdateInformation to value returned from ReadCaseFile
   int CaseFileRead;
@@ -145,6 +159,33 @@ protected:
    */
   virtual int ReadMeasuredGeometryFile(
     const char* fileName, int timeStep, vtkMultiBlockDataSet* output) = 0;
+
+  /**
+   * Read the rigid body file.  If an error occurred, 0 is returned; otherwise 1.
+   *
+   * Note: only supported for EnSight Gold files
+   */
+  int ReadRigidBodyGeometryFile();
+
+  /**
+   * Read the euler parameter file for rigid body transformations.
+   * If an error occurred, 0 is returned; otherwise 1.
+   *
+   * Note: only supported for EnSight Gold files
+   */
+  int ReadRigidBodyEulerParameterFile(const char* path);
+
+  /**
+   * Helper method for reading matrices specified in rigid body files
+   */
+  int ReadRigidBodyMatrixLines(char* line, vtkTransform* transform, bool& applyToVectors);
+
+  /**
+   * Apply rigid body transforms to the specified part, if there are any.
+   *
+   * Note: only supported for EnSight Gold files
+   */
+  int ApplyRigidBodyTransforms(int partId, const char* name, vtkDataSet* output);
 
   /**
    * Read the variable files. If an error occurred, 0 is returned; otherwise 1.
@@ -167,6 +208,13 @@ protected:
     vtkMultiBlockDataSet* output, int measured = 0) = 0;
 
   /**
+   * Read asymmetric tensors per node for this dataset.  If an error occurred, 0 is
+   * returned; otherwise 1.
+   */
+  virtual int ReadAsymmetricTensorsPerNode(
+    const char* fileName, const char* description, int timeStep, vtkMultiBlockDataSet* output) = 0;
+
+  /**
    * Read tensors per node for this dataset.  If an error occurred, 0 is
    * returned; otherwise 1.
    */
@@ -185,6 +233,13 @@ protected:
    * returned; otherwise 1.
    */
   virtual int ReadVectorsPerElement(
+    const char* fileName, const char* description, int timeStep, vtkMultiBlockDataSet* output) = 0;
+
+  /**
+   * Read asymmetric tensors per element for this dataset.  If an error occurred, 0 is
+   * returned; otherwise 1.
+   */
+  virtual int ReadAsymmetricTensorsPerElement(
     const char* fileName, const char* description, int timeStep, vtkMultiBlockDataSet* output) = 0;
 
   /**
@@ -236,11 +291,6 @@ protected:
   int GetSectionType(const char* line);
 
   /**
-   * Replace the *'s in the filename with the given filename number.
-   */
-  void ReplaceWildcards(char* filename, int num);
-
-  /**
    * Remove leading blank spaces from a string.
    */
   void RemoveLeadingBlanks(char* line);
@@ -267,6 +317,7 @@ protected:
 
   char* MeasuredFileName;
   char* MatchFileName; // may not actually be necessary to read this file
+  char* RigidBodyFileName;
 
   // pointer to lists of vtkIdLists (cell ids per element type per part)
   vtkEnSightReaderCellIdsType* CellIds;
@@ -308,8 +359,8 @@ protected:
   int MeasuredTimeSet;
   int MeasuredFileSet;
 
-  float GeometryTimeValue;
-  float MeasuredTimeValue;
+  double GeometryTimeValue;
+  double MeasuredTimeValue;
 
   vtkTypeBool UseTimeSets;
   vtkSetMacro(UseTimeSets, vtkTypeBool);
@@ -333,9 +384,60 @@ protected:
 
   double ActualTimeValue;
 
+  // We support only version 2 of rigid body transform files for only ensight gold files,
+  // but it's implemented here, so we don't need to duplicate implementation for ASCII
+  // and binary readers (the erb and eet files are always in ASCII).
+  // For rigid body transforms, we need to track per part:
+  // 1. transforms to be applied before the Euler transformation
+  // 2. Information about which data to use in the Euler Transform file (eet file)
+  // 3. transforms to be applied after the Euler transformation
+  struct PartTransforms
+  {
+    // Pre and post transforms do not change over time
+    // We have to track each transform separately, because some transforms need to be
+    // applied to geometry and vectors, while others should only be applied to the geometry
+    std::vector<vtkSmartPointer<vtkTransform>> PreTransforms;
+    std::vector<bool> PreTransformsApplyToVectors;
+    std::vector<vtkSmartPointer<vtkTransform>> PostTransforms;
+    std::vector<bool> PostTransformsApplyToVectors;
+
+    // EnSight format requires specifying the eet file per part, but according to the user manual
+    // use of different eet files for the same dataset is not actually allowed
+    std::string EETFilename;
+
+    // title is related to, but not necessarily a part name. for instance, if you have 4 wheel parts
+    // there may only be a single "wheel" title that all wheel parts use, applying the same Euler
+    // rotation to all wheels
+    std::string EETTransTitle;
+  };
+
+  // rigid body files allows for using either part names or part Ids to specify
+  // transforms for parts;
+  bool UsePartNamesRB;
+
+  // keeps track of all transforms for each part
+  // if UsePartNamesRB == true, the key is the part name
+  // otherwise, the key name is the partId converted to a string
+  std::map<std::string, PartTransforms> RigidBodyTransforms;
+
+  // map time step to the Euler transform for a part
+  using TimeToEulerTransMapType = std::map<double, vtkSmartPointer<vtkTransform>>;
+
+  // map a title to all of its Euler transforms
+  using TitleToTimeStepMapType = std::map<std::string, TimeToEulerTransMapType>;
+
+  TitleToTimeStepMapType EulerTransformsMap;
+
+  // It's possible for an EnSight dataset to not contain transient data, except for the
+  // Euler transforms. In this case, we will populate EulerTimeSteps so we can use it for
+  // time information, instead of the usual time set
+  bool UseEulerTimeSteps;
+  vtkSmartPointer<vtkDoubleArray> EulerTimeSteps;
+
 private:
   vtkEnSightReader(const vtkEnSightReader&) = delete;
   void operator=(const vtkEnSightReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

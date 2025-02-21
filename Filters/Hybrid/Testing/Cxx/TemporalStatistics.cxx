@@ -1,26 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TemporalStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the
-  U.S. Government. Redistribution and use in source and binary forms, with
-  or without modification, are permitted provided that this Notice and any
-  statement of authorship are reproduced on all copies.
-*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkCamera.h"
 #include "vtkCompositeDataGeometryFilter.h"
@@ -36,10 +16,10 @@
 #include "vtkSmartPointer.h"
 #define VTK_CREATE(type, name) vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void ShowResult(vtkRenderer* renderer, vtkAlgorithmOutput* input, const char* arrayName);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TemporalStatistics(int argc, char* argv[])
 {
   // We have to use a composite pipeline to handle these composite data
@@ -98,7 +78,7 @@ int TemporalStatistics(int argc, char* argv[])
   return !retVal;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void ShowResult(vtkRenderer* renderer, vtkAlgorithmOutput* input, const char* arrayName)
 {
   // Set up rendering classes

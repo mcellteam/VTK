@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReebGraphSurfaceSkeletonFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkReebGraphSurfaceSkeletonFilter.h"
 
 #include "vtkContourFilter.h"
@@ -28,9 +16,10 @@
 #include "vtkTriangle.h"
 #include "vtkVariantArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkReebGraphSurfaceSkeletonFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReebGraphSurfaceSkeletonFilter::vtkReebGraphSurfaceSkeletonFilter()
 {
   this->SetNumberOfInputPorts(2);
@@ -39,10 +28,10 @@ vtkReebGraphSurfaceSkeletonFilter::vtkReebGraphSurfaceSkeletonFilter()
   this->NumberOfSmoothingIterations = 30;
 }
 
-//----------------------------------------------------------------------------
-vtkReebGraphSurfaceSkeletonFilter::~vtkReebGraphSurfaceSkeletonFilter() {}
+//------------------------------------------------------------------------------
+vtkReebGraphSurfaceSkeletonFilter::~vtkReebGraphSurfaceSkeletonFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphSurfaceSkeletonFilter::FillInputPortInformation(
   int portNumber, vtkInformation* info)
 {
@@ -60,7 +49,7 @@ int vtkReebGraphSurfaceSkeletonFilter::FillInputPortInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphSurfaceSkeletonFilter::FillOutputPortInformation(
   int vtkNotUsed(portNumber), vtkInformation* info)
 {
@@ -70,7 +59,7 @@ int vtkReebGraphSurfaceSkeletonFilter::FillOutputPortInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReebGraphSurfaceSkeletonFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -79,13 +68,13 @@ void vtkReebGraphSurfaceSkeletonFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Number of Smoothing Iterations: " << this->NumberOfSmoothingIterations << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTable* vtkReebGraphSurfaceSkeletonFilter::GetOutput()
 {
   return vtkTable::SafeDownCast(this->GetOutputDataObject(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphSurfaceSkeletonFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -110,7 +99,7 @@ int vtkReebGraphSurfaceSkeletonFilter::RequestData(vtkInformation* vtkNotUsed(re
     if (output)
     {
 
-      // Retrieve the information regarding the critical noes.
+      // Retrieve the information regarding the critical nodes.
       vtkDataArray* vertexInfo =
         vtkArrayDownCast<vtkDataArray>(inputGraph->GetVertexData()->GetAbstractArray("Vertex Ids"));
       if (!vertexInfo)
@@ -132,7 +121,7 @@ int vtkReebGraphSurfaceSkeletonFilter::RequestData(vtkInformation* vtkNotUsed(re
       inputGraph->GetEdges(eIt);
       std::pair<int, int> criticalNodeIds;
 
-      std::vector<std::vector<std::vector<double> > > skeleton;
+      std::vector<std::vector<std::vector<double>>> skeleton;
 
       do
       {
@@ -235,7 +224,7 @@ int vtkReebGraphSurfaceSkeletonFilter::RequestData(vtkInformation* vtkNotUsed(re
         double minValue = scalarField->GetComponent(criticalNodeIds.first, 0),
                maxValue = scalarField->GetComponent(criticalNodeIds.second, 0);
 
-        std::vector<std::vector<double> > arcSkeleton;
+        std::vector<std::vector<double>> arcSkeleton;
 
         // add the first critical point at the origin of the arc skeleton
         double* criticalPoint = (double*)malloc(sizeof(double) * 3);
@@ -311,7 +300,7 @@ int vtkReebGraphSurfaceSkeletonFilter::RequestData(vtkInformation* vtkNotUsed(re
         }
 
         // now do the smoothing of the arc skeleton
-        std::vector<std::vector<double> > smoothedArc;
+        std::vector<std::vector<double>> smoothedArc;
         for (int i = 0; i < NumberOfSmoothingIterations; i++)
         {
           smoothedArc.push_back(arcSkeleton[0]);
@@ -368,3 +357,4 @@ int vtkReebGraphSurfaceSkeletonFilter::RequestData(vtkInformation* vtkNotUsed(re
   }
   return 0;
 }
+VTK_ABI_NAMESPACE_END

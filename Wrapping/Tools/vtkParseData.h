@@ -1,24 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParseData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright (c) 2010 David Gobbi.
-
-  Contributed to the VisualizationToolkit by the author in May 2010
-  under the terms of the Visualization Toolkit 2008 copyright.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2010 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 /*
   Data structures used by vtkParse.
 */
@@ -26,6 +8,7 @@
 #ifndef vtkParseData_h
 #define vtkParseData_h
 
+#include "vtkParseAttributes.h"
 #include "vtkParseString.h"
 #include "vtkParseType.h"
 #include "vtkWrappingToolsModule.h"
@@ -38,7 +21,7 @@
 /**
  * Access flags
  */
-typedef enum _parse_access_t
+typedef enum parse_access_t_
 {
   VTK_ACCESS_PUBLIC = 0,
   VTK_ACCESS_PROTECTED = 1,
@@ -48,7 +31,7 @@ typedef enum _parse_access_t
 /**
  * Comment type constants
  */
-typedef enum _parse_dox_t
+typedef enum parse_dox_t_
 {
   DOX_COMMAND_OTHER = 0,
   DOX_COMMAND_DEF,
@@ -84,7 +67,7 @@ typedef enum _parse_dox_t
 /**
  * ItemType constants
  */
-typedef enum _parse_item_t
+typedef enum parse_item_t_
 {
   VTK_NAMESPACE_INFO = 1,
   VTK_CLASS_INFO = 2,
@@ -99,21 +82,31 @@ typedef enum _parse_item_t
 } parse_item_t;
 
 /**
+ * Marshalling code type constants
+ */
+typedef enum parse_marshal_t
+{
+  VTK_MARSHAL_NONE,
+  VTK_MARSHAL_AUTO_MODE,
+  VTK_MARSHAL_MANUAL_MODE
+} parse_marshal_t;
+
+/**
  * ItemInfo just contains an index
  */
-typedef struct _ItemInfo
+typedef struct ItemInfo_
 {
   parse_item_t Type;
   int Index;
 } ItemInfo;
 
 /* forward declarations */
-struct _ValueInfo;
-struct _FunctionInfo;
-struct _FileInfo;
-typedef struct _ValueInfo ValueInfo;
-typedef struct _FunctionInfo FunctionInfo;
-typedef struct _FileInfo FileInfo;
+struct ValueInfo_;
+struct FunctionInfo_;
+struct FileInfo_;
+typedef struct ValueInfo_ ValueInfo;
+typedef struct FunctionInfo_ FunctionInfo;
+typedef struct FileInfo_ FileInfo;
 
 /**
  * CommentInfo is for storing comments by category
@@ -121,7 +114,7 @@ typedef struct _FileInfo FileInfo;
  * for example class comments that come at the top of the header file
  * rather than immediately before the class that they document.
  */
-typedef struct _CommentInfo
+typedef struct CommentInfo_
 {
   parse_dox_t Type;
   const char* Comment;
@@ -131,7 +124,7 @@ typedef struct _CommentInfo
 /**
  * TemplateInfo holds template definitions
  */
-typedef struct _TemplateInfo
+typedef struct TemplateInfo_
 {
   int NumberOfParameters;
   ValueInfo** Parameters;
@@ -145,13 +138,14 @@ typedef struct _TemplateInfo
  * order to support dimensions that are sized according to
  * template parameter values or according to named constants.
  */
-struct _ValueInfo
+struct ValueInfo_
 {
   parse_item_t ItemType;
   parse_access_t Access;
   const char* Name;
   const char* Comment;
   const char* Value;       /* for vars or default parameters values */
+  unsigned int Attributes; /* as defined in vtkParseAttributes.h */
   unsigned int Type;       /* as defined in vtkParseType.h   */
   const char* Class;       /* classname for type */
   int Count;               /* total number of values, if known */
@@ -168,7 +162,7 @@ struct _ValueInfo
 /**
  * FunctionInfo is for functions and methods
  */
-struct _FunctionInfo
+struct FunctionInfo_
 {
   parse_item_t ItemType;
   parse_access_t Access;
@@ -179,23 +173,28 @@ struct _FunctionInfo
   TemplateInfo* Template; /* template parameters, or NULL */
   int NumberOfParameters;
   ValueInfo** Parameters;
-  ValueInfo* ReturnValue; /* NULL for constructors and destructors */
+  ValueInfo* ReturnValue;          /* NULL for constructors and destructors */
+  const char* MarshalPropertyName; /* optionally marshalled for the given property name */
+  const char* MarshalExcludeReason;
   int NumberOfPreconds;
-  const char** Preconds; /* preconditions */
-  const char* Macro;     /* the macro that defined this function */
-  const char* SizeHint;  /* hint the size e.g. for operator[] */
+  const char** Preconds;         /* preconditions */
+  const char* Macro;             /* the macro that defined this function */
+  const char* SizeHint;          /* hint the size e.g. for operator[] */
+  const char* DeprecatedReason;  /* reason for deprecation, or NULL */
+  const char* DeprecatedVersion; /* version of deprecation, or NULL */
   int IsOperator;
   int IsVariadic;
-  int IsLegacy;      /* marked as a legacy method or function */
-  int IsExcluded;    /* marked as excluded from wrapping */
-  int IsStatic;      /* methods only */
-  int IsVirtual;     /* methods only */
-  int IsPureVirtual; /* methods only */
-  int IsConst;       /* methods only */
-  int IsDeleted;     /* methods only */
-  int IsFinal;       /* methods only */
-  int IsOverride;    /* methods only */
-  int IsExplicit;    /* constructors only */
+  int IsExcluded;        /* marked as excluded from wrapping */
+  int IsDeprecated;      /* method or function has been deprecated */
+  int IsStatic;          /* methods only */
+  int IsVirtual;         /* methods only */
+  int IsPureVirtual;     /* methods only */
+  int IsConst;           /* methods only */
+  int IsDeleted;         /* methods only */
+  int IsFinal;           /* methods only */
+  int IsOverride;        /* methods only */
+  int IsMarshalExcluded; /* methods only */
+  int IsExplicit;        /* constructors only */
 #ifndef VTK_PARSE_LEGACY_REMOVE
   int NumberOfArguments;            /* legacy */
   unsigned int ArgTypes[MAX_ARGS];  /* legacy */
@@ -208,13 +207,14 @@ struct _FunctionInfo
   int ArrayFailure;                 /* legacy */
   int IsPublic;                     /* legacy */
   int IsProtected;                  /* legacy */
+  int IsLegacy;                     /* legacy */
 #endif
 };
 
 /**
  * UsingInfo is for using directives
  */
-typedef struct _UsingInfo
+typedef struct UsingInfo_
 {
   parse_item_t ItemType;
   parse_access_t Access;
@@ -226,39 +226,43 @@ typedef struct _UsingInfo
 /**
  * ClassInfo is for classes, structs, unions, and namespaces
  */
-typedef struct _ClassInfo
+typedef struct ClassInfo_
 {
-  parse_item_t ItemType;
-  parse_access_t Access;
   const char* Name;
   const char* Comment;
   TemplateInfo* Template;
-  int NumberOfSuperClasses;
   const char** SuperClasses;
-  int NumberOfItems;
   ItemInfo* Items;
-  int NumberOfClasses;
-  struct _ClassInfo** Classes;
-  int NumberOfFunctions;
+  struct ClassInfo_** Classes;
   FunctionInfo** Functions;
-  int NumberOfConstants;
   ValueInfo** Constants;
-  int NumberOfVariables;
   ValueInfo** Variables;
-  int NumberOfEnums;
-  struct _ClassInfo** Enums;
-  int NumberOfTypedefs;
+  struct ClassInfo_** Enums;
   ValueInfo** Typedefs;
-  int NumberOfUsings;
   UsingInfo** Usings;
-  int NumberOfNamespaces;
-  struct _ClassInfo** Namespaces;
-  int NumberOfComments;
+  struct ClassInfo_** Namespaces;
   CommentInfo** Comments;
+  const char* DeprecatedReason;
+  const char* DeprecatedVersion;
+  parse_item_t ItemType;
+  parse_access_t Access;
+  parse_marshal_t MarshalType;
+  int NumberOfSuperClasses;
+  int NumberOfItems;
+  int NumberOfClasses;
+  int NumberOfFunctions;
+  int NumberOfConstants;
+  int NumberOfVariables;
+  int NumberOfEnums;
+  int NumberOfTypedefs;
+  int NumberOfUsings;
+  int NumberOfNamespaces;
+  int NumberOfComments;
   int IsAbstract;
   int IsFinal;
   int HasDelete;
   int IsExcluded;
+  int IsDeprecated;
 } ClassInfo;
 
 /**
@@ -266,17 +270,17 @@ typedef struct _ClassInfo
  * For scoped enums, the constants are in the enum itself, but for
  * standard enums, the constants are at the same level as the enum.
  */
-typedef struct _ClassInfo EnumInfo;
+typedef struct ClassInfo_ EnumInfo;
 
 /**
  * Namespace is for namespaces
  */
-typedef struct _ClassInfo NamespaceInfo;
+typedef struct ClassInfo_ NamespaceInfo;
 
 /**
  * FileInfo is for header files
  */
-struct _FileInfo
+struct FileInfo_
 {
   const char* FileName;
   const char* NameComment;
@@ -285,7 +289,7 @@ struct _FileInfo
   const char* SeeAlso;
 
   int NumberOfIncludes;
-  struct _FileInfo** Includes;
+  struct FileInfo_** Includes;
   ClassInfo* MainClass;
   NamespaceInfo* Contents;
   StringCache* Strings;

@@ -1,23 +1,11 @@
-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiBlockPLOT3DReaderInternals.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMultiBlockPLOT3DReaderInternals.h"
 
 #include "vtkMultiProcessController.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 int vtkMultiBlockPLOT3DReaderInternals::ReadInts(FILE* fp, int n, int* val)
 {
   int retVal = static_cast<int>(fread(val, sizeof(int), n, fp));
@@ -32,7 +20,7 @@ int vtkMultiBlockPLOT3DReaderInternals::ReadInts(FILE* fp, int n, int* val)
   return retVal;
 }
 
-void vtkMultiBlockPLOT3DReaderInternals::CheckBinaryFile(FILE* fp, size_t fileSize)
+int vtkMultiBlockPLOT3DReaderInternals::CheckBinaryFile(FILE* fp, size_t fileSize)
 {
   rewind(fp);
   this->Settings.BinaryFile = 0;
@@ -41,13 +29,13 @@ void vtkMultiBlockPLOT3DReaderInternals::CheckBinaryFile(FILE* fp, size_t fileSi
   // a coordinate.
   if (fileSize < 12)
   {
-    return;
+    return 0;
   }
 
   char bytes[12];
   if (fread(bytes, 1, 12, fp) != 12)
   {
-    return;
+    return 0;
   }
   // Check the first 12 bytes. If we find non-ascii characters, then we
   // assume that it is binary.
@@ -57,9 +45,10 @@ void vtkMultiBlockPLOT3DReaderInternals::CheckBinaryFile(FILE* fp, size_t fileSi
           bytes[i] == '\n' || bytes[i] == '\t'))
     {
       this->Settings.BinaryFile = 1;
-      return;
+      return 1;
     }
   }
+  return 1;
 }
 
 int vtkMultiBlockPLOT3DReaderInternals::CheckByteOrder(FILE* fp)
@@ -385,7 +374,15 @@ size_t vtkMultiBlockPLOT3DReaderInternals::CalculateFileSizeForBlock(int precisi
   return size;
 }
 
-//-----------------------------------------------------------------------------
+#ifdef _WIN64
+#define vtk_fseek _fseeki64
+#define vtk_ftell _ftelli64
+#else
+#define vtk_fseek fseek
+#define vtk_ftell ftell
+#endif
+
+//------------------------------------------------------------------------------
 bool vtkMultiBlockPLOT3DReaderRecord::Initialize(FILE* fp, vtkTypeUInt64 offset,
   const vtkMultiBlockPLOT3DReaderInternals::InternalSettings& settings,
   vtkMultiProcessController* controller)
@@ -465,7 +462,8 @@ bool vtkMultiBlockPLOT3DReaderRecord::Initialize(FILE* fp, vtkTypeUInt64 offset,
     controller->Broadcast(&count, 1, 0);
     if (count > 0)
     {
-      controller->Broadcast(reinterpret_cast<vtkTypeUInt64*>(&this->SubRecords[0]), count * 2, 0);
+      controller->Broadcast(
+        reinterpret_cast<vtkTypeUInt64*>(this->SubRecords.data()), count * 2, 0);
     }
   }
   else
@@ -475,13 +473,14 @@ bool vtkMultiBlockPLOT3DReaderRecord::Initialize(FILE* fp, vtkTypeUInt64 offset,
     this->SubRecords.resize(count);
     if (count > 0)
     {
-      controller->Broadcast(reinterpret_cast<vtkTypeUInt64*>(&this->SubRecords[0]), count * 2, 0);
+      controller->Broadcast(
+        reinterpret_cast<vtkTypeUInt64*>(this->SubRecords.data()), count * 2, 0);
     }
   }
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMultiBlockPLOT3DReaderRecord::SubRecordSeparators
 vtkMultiBlockPLOT3DReaderRecord::GetSubRecordSeparators(
   vtkTypeUInt64 startOffset, vtkTypeUInt64 length) const
@@ -514,30 +513,30 @@ vtkMultiBlockPLOT3DReaderRecord::GetSubRecordSeparators(
   return markers;
 }
 
-//-----------------------------------------------------------------------------
-std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64> >
+//------------------------------------------------------------------------------
+std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64>>
 vtkMultiBlockPLOT3DReaderRecord::GetChunksToRead(
   vtkTypeUInt64 start, vtkTypeUInt64 length, const std::vector<vtkTypeUInt64>& markers)
 {
-  std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64> > chunks;
+  std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64>> chunks;
   for (size_t cc = 0; cc < markers.size(); ++cc)
   {
     if (start < markers[cc])
     {
       vtkTypeUInt64 chunksize = (markers[cc] - start);
-      chunks.push_back(std::pair<vtkTypeUInt64, vtkTypeUInt64>(start, chunksize));
+      chunks.emplace_back(start, chunksize);
       length -= chunksize;
     }
     start = markers[cc] + vtkMultiBlockPLOT3DReaderRecord::SubRecordSeparatorWidth;
   }
   if (length > 0)
   {
-    chunks.push_back(std::pair<vtkTypeUInt64, vtkTypeUInt64>(start, length));
+    chunks.emplace_back(start, length);
   }
   return chunks;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeUInt64 vtkMultiBlockPLOT3DReaderRecord::GetLengthWithSeparators(
   vtkTypeUInt64 start, vtkTypeUInt64 length) const
 {
@@ -545,3 +544,4 @@ vtkTypeUInt64 vtkMultiBlockPLOT3DReaderRecord::GetLengthWithSeparators(
     vtkMultiBlockPLOT3DReaderRecord::SubRecordSeparatorWidth +
     length;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractVectorComponents.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractVectorComponents
  * @brief   extract components of vector as separate scalars
@@ -29,6 +17,11 @@
  * This filter is unusual in that it creates multiple outputs.
  * If you use the GetOutput() method, you will be retrieving the x vector
  * component.
+ *
+ * @warning
+ * This class has been threaded with vtkSMPTools. Using TBB or other
+ * non-sequential type (set in the CMake variable
+ * VTK_SMP_IMPLEMENTATION_TYPE) may improve performance significantly.
  */
 
 #ifndef vtkExtractVectorComponents_h
@@ -37,6 +30,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersExtractionModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 
 class VTKFILTERSEXTRACTION_EXPORT vtkExtractVectorComponents : public vtkDataSetAlgorithm
@@ -77,7 +71,7 @@ public:
    */
   vtkDataSet* GetVzComponent();
 
-  //@{
+  ///@{
   /**
    * Determines whether the vector components will be put
    * in separate outputs or in the first output's field data
@@ -85,7 +79,7 @@ public:
   vtkSetMacro(ExtractToFieldData, vtkTypeBool);
   vtkGetMacro(ExtractToFieldData, vtkTypeBool);
   vtkBooleanMacro(ExtractToFieldData, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkExtractVectorComponents();
@@ -100,4 +94,5 @@ private:
   void operator=(const vtkExtractVectorComponents&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTkRenderWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTkRenderWidget
  * @brief   a Tk Widget for vtk rendering
@@ -40,10 +28,6 @@
 // call.
 #define USE_COMPOSITELESS_PHOTO_PUT_BLOCK
 #include "vtkTk.h"
-
-#ifndef VTK_PYTHON_BUILD
-#include "vtkTclUtil.h"
-#endif
 
 struct vtkTkRenderWidget
 {

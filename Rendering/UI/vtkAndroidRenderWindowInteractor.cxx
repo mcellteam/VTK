@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAndroidRenderWindowInteractor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -31,14 +19,15 @@
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "VTK", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "VTK", __VA_ARGS__))
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAndroidRenderWindowInteractor);
 
-void (*vtkAndroidRenderWindowInteractor::ClassExitMethod)(void*) = (void (*)(void*))nullptr;
-void* vtkAndroidRenderWindowInteractor::ClassExitMethodArg = (void*)nullptr;
+void (*vtkAndroidRenderWindowInteractor::ClassExitMethod)(void*) = (void (*)(void*)) nullptr;
+void* vtkAndroidRenderWindowInteractor::ClassExitMethodArg = nullptr;
 void (*vtkAndroidRenderWindowInteractor::ClassExitMethodArgDelete)(
-  void*) = (void (*)(void*))nullptr;
+  void*) = (void (*)(void*)) nullptr;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object so that light follows camera motion.
 vtkAndroidRenderWindowInteractor::vtkAndroidRenderWindowInteractor()
 {
@@ -255,10 +244,10 @@ vtkAndroidRenderWindowInteractor::vtkAndroidRenderWindowInteractor()
   this->KeyCodeToKeySymTable[AKEYCODE_3D_MODE] = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAndroidRenderWindowInteractor::~vtkAndroidRenderWindowInteractor() {}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAndroidRenderWindowInteractor::StartEventLoop()
 {
   this->StartedMessageLoop = 1;
@@ -272,7 +261,7 @@ void vtkAndroidRenderWindowInteractor::StartEventLoop()
     int events;
     struct android_poll_source* source;
 
-    ident = ALooper_pollAll(500, nullptr, &events, (void**)&source);
+    ident = ALooper_pollOnce(500, nullptr, &events, (void**)&source);
     if (ident == ALOOPER_POLL_TIMEOUT)
     {
       // just watch for resize events
@@ -516,7 +505,7 @@ int32_t vtkAndroidRenderWindowInteractor::HandleInput(AInputEvent* event)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAndroidRenderWindowInteractor::Initialize()
 {
   // make sure we have a RenderWindow and camera
@@ -537,7 +526,7 @@ void vtkAndroidRenderWindowInteractor::Initialize()
   // get the info we need from the RenderingWindow
   ren = this->RenderWindow;
 
-  if (ren->GetOwnWindow())
+  if (this->GetOwnWindow() && this->AndroidApplication != nullptr)
   {
     this->AndroidApplication->userData = this;
     this->AndroidApplication->onAppCmd = android_handle_cmd;
@@ -552,7 +541,7 @@ void vtkAndroidRenderWindowInteractor::Initialize()
       int events;
       struct android_poll_source* source;
 
-      if ((ident = ALooper_pollAll(-1, nullptr, &events, (void**)&source)) >= 0)
+      if ((ident = ALooper_pollOnce(-1, nullptr, &events, (void**)&source)) >= 0)
       {
         // Process this event.
         if (source != nullptr)
@@ -580,7 +569,7 @@ void vtkAndroidRenderWindowInteractor::Initialize()
   this->Size[1] = size[1];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAndroidRenderWindowInteractor::Enable()
 {
   if (this->Enabled)
@@ -591,7 +580,7 @@ void vtkAndroidRenderWindowInteractor::Enable()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAndroidRenderWindowInteractor::Disable()
 {
   if (!this->Enabled)
@@ -603,7 +592,7 @@ void vtkAndroidRenderWindowInteractor::Disable()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAndroidRenderWindowInteractor::TerminateApp(void)
 {
   if (this->AndroidApplication)
@@ -614,7 +603,7 @@ void vtkAndroidRenderWindowInteractor::TerminateApp(void)
   //  this->AndroidApplication->destroyRequested = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAndroidRenderWindowInteractor::InternalCreateTimer(
   int timerId, int vtkNotUsed(timerType), unsigned long duration)
 {
@@ -622,14 +611,14 @@ int vtkAndroidRenderWindowInteractor::InternalCreateTimer(
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAndroidRenderWindowInteractor::InternalDestroyTimer(int platformTimerId)
 {
   // todo
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the default function to be called when an interactor needs to exit.
 // This callback is overridden by an instance ExitMethod that is defined.
 void vtkAndroidRenderWindowInteractor::SetClassExitMethod(void (*f)(void*), void* arg)
@@ -651,7 +640,7 @@ void vtkAndroidRenderWindowInteractor::SetClassExitMethod(void (*f)(void*), void
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the arg delete method.  This is used to free user memory.
 void vtkAndroidRenderWindowInteractor::SetClassExitMethodArgDelete(void (*f)(void*))
 {
@@ -663,14 +652,14 @@ void vtkAndroidRenderWindowInteractor::SetClassExitMethodArgDelete(void (*f)(voi
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAndroidRenderWindowInteractor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "StartedMessageLoop: " << this->StartedMessageLoop << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAndroidRenderWindowInteractor::ExitCallback()
 {
   if (this->HasObserver(vtkCommand::ExitEvent))
@@ -684,3 +673,4 @@ void vtkAndroidRenderWindowInteractor::ExitCallback()
 
   this->TerminateApp();
 }
+VTK_ABI_NAMESPACE_END

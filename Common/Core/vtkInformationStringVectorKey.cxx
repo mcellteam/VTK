@@ -1,26 +1,14 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationStringVectorKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationStringVectorKey.h"
 
 #include "vtkInformation.h" // For vtkErrorWithObjectMacro
-#include "vtkStdString.h"
 
 #include <algorithm>
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationStringVectorKey ::vtkInformationStringVectorKey(
   const char* name, const char* location, int length)
   : vtkInformationKey(name, location)
@@ -29,16 +17,16 @@ vtkInformationStringVectorKey ::vtkInformationStringVectorKey(
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationStringVectorKey::~vtkInformationStringVectorKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationStringVectorKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkInformationStringVectorValue : public vtkObjectBase
 {
 public:
@@ -46,14 +34,14 @@ public:
   std::vector<std::string> Value;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationStringVectorKey::Append(vtkInformation* info, const char* value)
 {
   vtkInformationStringVectorValue* v =
     static_cast<vtkInformationStringVectorValue*>(this->GetAsObjectBase(info));
   if (v)
   {
-    v->Value.push_back(value);
+    v->Value.emplace_back(value);
   }
   else
   {
@@ -61,7 +49,7 @@ void vtkInformationStringVectorKey::Append(vtkInformation* info, const char* val
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationStringVectorKey::Set(vtkInformation* info, const char* value, int index)
 {
   vtkInformationStringVectorValue* oldv =
@@ -72,7 +60,7 @@ void vtkInformationStringVectorKey::Set(vtkInformation* info, const char* value,
     {
       while (static_cast<int>(oldv->Value.size()) <= index)
       {
-        oldv->Value.push_back("");
+        oldv->Value.emplace_back("");
       }
       oldv->Value[index] = value;
       // Since this sets a value without call SetAsObjectBase(),
@@ -87,7 +75,7 @@ void vtkInformationStringVectorKey::Set(vtkInformation* info, const char* value,
     v->InitializeObjectBase();
     while (static_cast<int>(v->Value.size()) <= index)
     {
-      v->Value.push_back("");
+      v->Value.emplace_back("");
     }
     v->Value[index] = value;
     this->SetAsObjectBase(info, v);
@@ -95,19 +83,19 @@ void vtkInformationStringVectorKey::Set(vtkInformation* info, const char* value,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationStringVectorKey::Append(vtkInformation* info, const std::string& value)
 {
   this->Append(info, value.c_str());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationStringVectorKey::Set(vtkInformation* info, const std::string& value, int idx)
 {
   this->Set(info, value.c_str(), idx);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkInformationStringVectorKey::Get(vtkInformation* info, int idx)
 {
   if (idx < 0 || idx >= this->Length(info))
@@ -119,7 +107,7 @@ const char* vtkInformationStringVectorKey::Get(vtkInformation* info, int idx)
   return v->Value[idx].c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationStringVectorKey::Length(vtkInformation* info)
 {
   vtkInformationStringVectorValue* v =
@@ -127,7 +115,7 @@ int vtkInformationStringVectorKey::Length(vtkInformation* info)
   return v ? static_cast<int>(v->Value.size()) : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationStringVectorKey::ShallowCopy(vtkInformation* from, vtkInformation* to)
 {
   int length = this->Length(from);
@@ -137,7 +125,7 @@ void vtkInformationStringVectorKey::ShallowCopy(vtkInformation* from, vtkInforma
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationStringVectorKey::Print(ostream& os, vtkInformation* info)
 {
   // Print the value.
@@ -152,3 +140,4 @@ void vtkInformationStringVectorKey::Print(ostream& os, vtkInformation* info)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

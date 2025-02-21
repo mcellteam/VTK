@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHeatmapItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHeatmapItem
  * @brief   A 2D graphics item for rendering a heatmap
@@ -37,6 +25,7 @@
 #include <set>               // For blank row support
 #include <vector>            // For row mapping
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 class vtkCategoryLegend;
 class vtkColorLegend;
@@ -69,7 +58,7 @@ public:
    */
   vtkStringArray* GetRowNames();
 
-  //@{
+  ///@{
   /**
    * Get/Set the name of the column that specifies the name
    * of this table's rows.  By default, we assume this
@@ -79,7 +68,7 @@ public:
    */
   vtkGetMacro(NameColumn, vtkStdString);
   vtkSetMacro(NameColumn, vtkStdString);
-  //@}
+  ///@}
 
   /**
    * Set which way the table should face within the visualization.
@@ -98,39 +87,39 @@ public:
    */
   double GetTextAngleForOrientation(int orientation);
 
-  //@{
+  ///@{
   /**
    * Set the position of the heatmap.
    */
   vtkSetVector2Macro(Position, float);
   void SetPosition(const vtkVector2f& pos);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get position of the heatmap.
    */
   vtkGetVector2Macro(Position, float);
   vtkVector2f GetPositionVector();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the height of the cells in our heatmap.
    * Default is 18 pixels.
    */
   vtkGetMacro(CellHeight, double);
   vtkSetMacro(CellHeight, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the width of the cells in our heatmap.
    * Default is 36 pixels.
    */
   vtkGetMacro(CellWidth, double);
   vtkSetMacro(CellWidth, double);
-  //@}
+  ///@}
 
   /**
    * Get the bounds for this item as (Xmin,Xmax,Ymin,Ymax).
@@ -148,14 +137,14 @@ public:
    */
   bool Paint(vtkContext2D* painter) override;
 
-  //@{
+  ///@{
   /**
    * Get the width of the largest row or column label drawn by this
    * heatmap.
    */
   vtkGetMacro(RowLabelWidth, float);
   vtkGetMacro(ColumnLabelWidth, float);
-  //@}
+  ///@}
 
   /**
    * Enum for Orientation.
@@ -294,7 +283,7 @@ private:
   double CellWidth;
   double CellHeight;
 
-  std::map<vtkIdType, std::pair<double, double> > ColumnRanges;
+  std::map<vtkIdType, std::pair<double, double>> ColumnRanges;
   std::vector<vtkIdType> SceneRowToTableRowMap;
   std::vector<vtkIdType> SceneColumnToTableColumnMap;
   std::set<std::string> BlankRows;
@@ -313,4 +302,5 @@ private:
   bool LegendPositionSet;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

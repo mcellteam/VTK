@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericDataObjectWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericDataObjectWriter.h"
 
 #include "vtkCompositeDataSet.h"
@@ -22,6 +10,7 @@
 #include "vtkGraphWriter.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
+#include "vtkLegacyCellGridWriter.h"
 #include "vtkObjectFactory.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataWriter.h"
@@ -38,6 +27,7 @@
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericDataObjectWriter);
 
 template <typename WriterT>
@@ -64,6 +54,9 @@ void vtkGenericDataObjectWriter::WriteData()
     case VTK_COMPOSITE_DATA_SET:
       vtkErrorMacro(<< "Cannot write composite data set");
       return;
+    case VTK_CELL_GRID:
+      writer = CreateWriter<vtkLegacyCellGridWriter>(input);
+      break;
     case VTK_DATA_OBJECT:
       vtkErrorMacro(<< "Cannot write data object");
       return;
@@ -129,6 +122,7 @@ void vtkGenericDataObjectWriter::WriteData()
     case VTK_UNIFORM_GRID:
       vtkErrorMacro(<< "Cannot write uniform grid");
       return;
+    case VTK_UNSTRUCTURED_GRID_BASE:
     case VTK_UNSTRUCTURED_GRID:
       writer = CreateWriter<vtkUnstructuredGridWriter>(input);
       break;
@@ -176,3 +170,4 @@ void vtkGenericDataObjectWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

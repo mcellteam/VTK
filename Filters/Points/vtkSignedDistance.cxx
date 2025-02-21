@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSignedDistance.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSignedDistance.h"
 
 #include "vtkAbstractPointLocator.h"
@@ -29,10 +17,11 @@
 #include "vtkStaticPointLocator.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSignedDistance);
 vtkCxxSetObjectMacro(vtkSignedDistance, Locator, vtkAbstractPointLocator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
@@ -140,7 +129,7 @@ struct SignedDistance
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with sample dimensions=(256,256,256), and so that model bounds are
 // automatically computed from the input.
 vtkSignedDistance::vtkSignedDistance()
@@ -163,13 +152,13 @@ vtkSignedDistance::vtkSignedDistance()
   this->Initialized = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSignedDistance::~vtkSignedDistance()
 {
   this->SetLocator(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize the filter for appending data. You must invoke the
 // StartAppend() method before doing successive Appends(). It's also a
 // good idea to manually specify the model bounds; otherwise the input
@@ -224,7 +213,7 @@ void vtkSignedDistance::StartAppend()
   this->Initialized = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Append a data set to the existing output. To use this function,
 // you'll have to invoke the StartAppend() method before doing
 // successive appends. It's also a good idea to specify the model
@@ -276,7 +265,7 @@ void vtkSignedDistance::Append(vtkPolyData* input)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Method completes the append process (does the capping if requested).
 void vtkSignedDistance::EndAppend()
 {
@@ -290,7 +279,7 @@ void vtkSignedDistance::EndAppend()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSignedDistance::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -323,7 +312,7 @@ int vtkSignedDistance::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSignedDistance::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -347,7 +336,7 @@ int vtkSignedDistance::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the i-j-k dimensions on which to sample the distance function.
 void vtkSignedDistance::SetDimensions(int i, int j, int k)
 {
@@ -360,7 +349,7 @@ void vtkSignedDistance::SetDimensions(int i, int j, int k)
   this->SetDimensions(dim);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSignedDistance::SetDimensions(const int dim[3])
 {
   int dataDim, i;
@@ -399,7 +388,7 @@ void vtkSignedDistance::SetDimensions(const int dim[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSignedDistance::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData");
@@ -407,7 +396,7 @@ int vtkSignedDistance::FillInputPortInformation(int vtkNotUsed(port), vtkInforma
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkSignedDistance::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -432,7 +421,7 @@ vtkTypeBool vtkSignedDistance::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSignedDistance::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -447,3 +436,4 @@ void vtkSignedDistance::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Locator: " << this->Locator << "\n";
 }
+VTK_ABI_NAMESPACE_END

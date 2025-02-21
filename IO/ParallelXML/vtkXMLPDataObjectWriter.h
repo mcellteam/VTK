@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPDataObjectWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLPDataObjectWriter
  * @brief   Write data in a parallel XML format.
@@ -31,6 +19,7 @@
 #include "vtkIOParallelXMLModule.h" // For export macro
 #include "vtkXMLWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCallbackCommand;
 class vtkMultiProcessController;
 
@@ -40,15 +29,15 @@ public:
   vtkTypeMacro(vtkXMLPDataObjectWriter, vtkXMLWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of pieces that are being written in parallel.
    */
   vtkSetMacro(NumberOfPieces, int);
   vtkGetMacro(NumberOfPieces, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the range of pieces assigned to this writer.
    */
@@ -56,25 +45,25 @@ public:
   vtkGetMacro(StartPiece, int);
   vtkSetMacro(EndPiece, int);
   vtkGetMacro(EndPiece, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the ghost level used for this writer's piece.
    */
   vtkSetMacro(GhostLevel, int);
   vtkGetMacro(GhostLevel, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set whether to use a subdirectory to store the pieces
    */
   vtkSetMacro(UseSubdirectory, bool);
   vtkGetMacro(UseSubdirectory, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set whether the writer should write the summary file that
    * refers to all of the pieces' individual files.
@@ -84,9 +73,9 @@ public:
   virtual void SetWriteSummaryFile(int flag);
   vtkGetMacro(WriteSummaryFile, int);
   vtkBooleanMacro(WriteSummaryFile, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Controller used to communicate data type of blocks.
    * By default, the global controller is used. If you want another
@@ -94,7 +83,7 @@ public:
    */
   virtual void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
   /**
    * Overridden to handle passing the CONTINUE_EXECUTING() flags to the
@@ -152,13 +141,13 @@ protected:
    */
   virtual void WritePPieceAttributes(int index);
 
-  //@{
+  ///@{
   /**
    * Methods for creating a filename for each piece in the dataset
    */
   char* CreatePieceFileName(int index, const char* path = nullptr);
   void SplitFileName();
-  //@}
+  ///@}
 
   /**
    * Callback registered with the InternalProgressObserver.
@@ -231,4 +220,5 @@ private:
   bool ContinuingExecution;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageWriter
  * @brief   Writes images to files.
@@ -29,6 +17,7 @@
 #include "vtkIOImageModule.h" // For export macro
 #include "vtkImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOIMAGE_EXPORT vtkImageWriter : public vtkImageAlgorithm
 {
 public:
@@ -36,35 +25,35 @@ public:
   vtkTypeMacro(vtkImageWriter, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify file name for the image file. You should specify either
    * a FileName or a FilePrefix. Use FilePrefix if the data is stored
    * in multiple files.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify file prefix for the image file(s).You should specify either
    * a FileName or FilePrefix. Use FilePrefix if the data is stored
    * in multiple files.
    */
-  vtkSetStringMacro(FilePrefix);
-  vtkGetStringMacro(FilePrefix);
-  //@}
+  vtkSetFilePathMacro(FilePrefix);
+  vtkGetFilePathMacro(FilePrefix);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The snprintf format used to build filename from FilePrefix and number.
    */
-  vtkSetStringMacro(FilePattern);
-  vtkGetStringMacro(FilePattern);
-  //@}
+  vtkSetFilePathMacro(FilePattern);
+  vtkGetFilePathMacro(FilePattern);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * What dimension are the files to be written. Usually this is 2, or 3.
    * If it is 2 and the input is a volume then the volume will be
@@ -72,7 +61,7 @@ public:
    */
   vtkSetMacro(FileDimensionality, int);
   vtkGetMacro(FileDimensionality, int);
-  //@}
+  ///@}
 
   /**
    * Set/Get the input object from the image pipeline.
@@ -82,6 +71,7 @@ public:
   /**
    * The main interface which triggers the writer to start.
    */
+  VTK_UNBLOCKTHREADS
   virtual void Write();
 
   void DeleteFiles();
@@ -129,4 +119,5 @@ private:
   void operator=(const vtkImageWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLSDynaReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkLSDynaReader
@@ -156,6 +141,7 @@
 #include "vtkMultiBlockDataSetAlgorithm.h"
 #include <string> // for method signature
 
+VTK_ABI_NAMESPACE_BEGIN
 class LSDynaMetaData;
 class vtkLSDynaPartCollection;
 class vtkPoints;
@@ -185,38 +171,30 @@ public:
   /**
    * Determine if the file can be read with this reader.
    */
-  virtual int CanReadFile(const char* fname);
+  virtual int CanReadFile(VTK_FILEPATH const char* fname);
 
-  //@{
+  ///@{
   /**
    * Get/Set the directory containing the LS-Dyna database and determine
    * whether it is valid.
    */
-  virtual void SetDatabaseDirectory(const std::string&);
-  virtual void SetDatabaseDirectory(const char*);
-#ifdef VTK_LEGACY_REMOVE
-  std::string GetDatabaseDirectory();
-#else
-  VTK_LEGACY(const char* GetDatabaseDirectory());
-#endif
+  virtual void SetDatabaseDirectory(VTK_FILEPATH const std::string&);
+  virtual void SetDatabaseDirectory(VTK_FILEPATH const char*);
+  VTK_FILEPATH std::string GetDatabaseDirectory();
   int IsDatabaseValid();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the filename. The Set/GetFileName() routines are actually
    * wrappers around the Set/GetDatabaseDirectory() members; the actual
    * filename you choose is irrelevant -- only the directory name is used.
    * This is done in order to accommodate ParaView.
    */
-  virtual void SetFileName(const std::string&);
-  virtual void SetFileName(const char*);
-#ifdef VTK_LEGACY_REMOVE
-  std::string GetFileName();
-#else
-  VTK_LEGACY(const char* GetFileName());
-#endif
-  //@}
+  virtual void SetFileName(VTK_FILEPATH const std::string&);
+  virtual void SetFileName(VTK_FILEPATH const char*);
+  VTK_FILEPATH std::string GetFileName();
+  ///@}
 
   /**
    * The title of the database is a 40 or 80 character text description
@@ -310,7 +288,7 @@ public:
    */
   vtkIdType GetNumberOfParticleCells();
 
-  //@{
+  ///@{
   /**
    * Retrieve information about the time extents of the LS-Dyna database.
    * Do not call these functions before setting the database directory and
@@ -322,9 +300,9 @@ public:
   double GetTimeValue(vtkIdType);
   vtkGetVector2Macro(TimeStepRange, int);
   vtkSetVector2Macro(TimeStepRange, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected subsets of the nodal
    * variables defined over the mesh.
@@ -337,9 +315,9 @@ public:
   int GetPointArrayStatus(const char* arrName);
   int GetNumberOfComponentsInPointArray(int arr);
   int GetNumberOfComponentsInPointArray(const char* arrName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Routines that allow the status of a cell variable to be adjusted or
    * queried independent of the output mesh.  The \a cellType parameter
@@ -354,9 +332,9 @@ public:
   int GetCellArrayStatus(int cellType, const char* arrName);
   int GetNumberOfComponentsInCellArray(int cellType, int arr);
   int GetNumberOfComponentsInCellArray(int cellType, const char* arrName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected subsets of the cell
    * variables defined over the mesh.
@@ -367,12 +345,12 @@ public:
   virtual void SetSolidArrayStatus(const char* arrName, int status);
   int GetSolidArrayStatus(int arr);
   int GetSolidArrayStatus(const char* arrName);
-  //@}
+  ///@}
 
   int GetNumberOfComponentsInSolidArray(int a);
   int GetNumberOfComponentsInSolidArray(const char* arrName);
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected subsets of the cell
    * variables defined over the mesh.
@@ -383,12 +361,12 @@ public:
   virtual void SetThickShellArrayStatus(const char* arrName, int status);
   int GetThickShellArrayStatus(int arr);
   int GetThickShellArrayStatus(const char* arrName);
-  //@}
+  ///@}
 
   int GetNumberOfComponentsInThickShellArray(int a);
   int GetNumberOfComponentsInThickShellArray(const char* arrName);
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected subsets of the cell
    * variables defined over the mesh.
@@ -399,12 +377,12 @@ public:
   virtual void SetShellArrayStatus(const char* arrName, int status);
   int GetShellArrayStatus(int arr);
   int GetShellArrayStatus(const char* arrName);
-  //@}
+  ///@}
 
   int GetNumberOfComponentsInShellArray(int a);
   int GetNumberOfComponentsInShellArray(const char* arrName);
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected subsets of the cell
    * variables defined over the mesh.
@@ -415,12 +393,12 @@ public:
   virtual void SetRigidBodyArrayStatus(const char* arrName, int status);
   int GetRigidBodyArrayStatus(int arr);
   int GetRigidBodyArrayStatus(const char* arrName);
-  //@}
+  ///@}
 
   int GetNumberOfComponentsInRigidBodyArray(int a);
   int GetNumberOfComponentsInRigidBodyArray(const char* arrName);
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected subsets of the cell
    * variables defined over the mesh.
@@ -431,12 +409,12 @@ public:
   virtual void SetRoadSurfaceArrayStatus(const char* arrName, int status);
   int GetRoadSurfaceArrayStatus(int arr);
   int GetRoadSurfaceArrayStatus(const char* arrName);
-  //@}
+  ///@}
 
   int GetNumberOfComponentsInRoadSurfaceArray(int a);
   int GetNumberOfComponentsInRoadSurfaceArray(const char* arrName);
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected subsets of the cell
    * variables defined over the mesh.
@@ -447,12 +425,12 @@ public:
   virtual void SetBeamArrayStatus(const char* arrName, int status);
   int GetBeamArrayStatus(int arr);
   int GetBeamArrayStatus(const char* arrName);
-  //@}
+  ///@}
 
   int GetNumberOfComponentsInBeamArray(int a);
   int GetNumberOfComponentsInBeamArray(const char* arrName);
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected subsets of the cell
    * variables defined over the mesh.
@@ -463,12 +441,12 @@ public:
   virtual void SetParticleArrayStatus(const char* arrName, int status);
   int GetParticleArrayStatus(int arr);
   int GetParticleArrayStatus(const char* arrName);
-  //@}
+  ///@}
 
   int GetNumberOfComponentsInParticleArray(int a);
   int GetNumberOfComponentsInParticleArray(const char* arrName);
 
-  //@{
+  ///@{
   /**
    * Should deflected coordinates be used, or should the mesh remain
    * undeflected?  By default, this is true but its value is ignored if the
@@ -477,9 +455,9 @@ public:
   void SetDeformedMesh(vtkTypeBool);
   vtkGetMacro(DeformedMesh, vtkTypeBool);
   vtkBooleanMacro(DeformedMesh, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Should dead cells be removed from the mesh?  Cells are marked dead by
    * setting the corresponding entry in the <b>cell</b> array "Death" to 0.
@@ -493,9 +471,9 @@ public:
   vtkSetMacro(RemoveDeletedCells, vtkTypeBool);
   vtkGetMacro(RemoveDeletedCells, vtkTypeBool);
   vtkBooleanMacro(RemoveDeletedCells, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Instead of removing the cells that are dead, hide them by setting
    * the array as the ghost levels arrays
@@ -503,9 +481,9 @@ public:
   vtkSetMacro(DeletedCellsAsGhostArray, vtkTypeBool);
   vtkGetMacro(DeletedCellsAsGhostArray, vtkTypeBool);
   vtkBooleanMacro(DeletedCellsAsGhostArray, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The name of the input deck corresponding to the current database.
    * This is used to determine the part names associated with each material ID.
@@ -519,9 +497,9 @@ public:
    */
   vtkSetStringMacro(InputDeck);
   vtkGetStringMacro(InputDeck);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods allow you to load only selected parts of the input.
    * If InputDeck points to a valid keyword file (or summary), then part
@@ -538,7 +516,7 @@ public:
   virtual void SetPartArrayStatus(const char* partName, int status);
   int GetPartArrayStatus(int arr);
   int GetPartArrayStatus(const char* partName);
-  //@}
+  ///@}
 
 protected:
   // holds all the parts and all the properties for each part
@@ -550,14 +528,14 @@ protected:
    */
   vtkTypeBool DeformedMesh;
 
-  //@{
+  ///@{
   /**
    * Should cells marked as deleted be removed from the mesh?
    * By default, this is true.
    */
   vtkTypeBool RemoveDeletedCells;
   vtkTypeBool DeletedCellsAsGhostArray;
-  //@}
+  ///@}
 
   /**
    * The range of time steps available within a database.
@@ -597,7 +575,7 @@ protected:
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
-  //@{
+  ///@{
   /**
    * These functions read various parts of the database.
    * The functions that take a vtkIdType argument must be passed
@@ -618,7 +596,7 @@ protected:
   virtual int ReadDeletion();
   virtual int ReadSPHState(vtkIdType);
   virtual int ComputeDeflectionAndUpdateGeometry(vtkUnstructuredGrid* grid);
-  //@}
+  ///@}
 
   /**
    * Resets the Part information to the default state
@@ -645,14 +623,14 @@ protected:
    */
   virtual int ReadUserMaterialIds();
 
-  //@{
+  ///@{
   /**
    * ReadInputDeck determines the type of file (keyword or XML summary) and
    * calls one of these two routines to read the file.
    */
   int ReadInputDeckXML(istream& deck);
   int ReadInputDeckKeywords(istream& deck);
-  //@}
+  ///@}
 
   /**
    * ReadInputDeckKeywords calls this function if it was successful in reading
@@ -1079,4 +1057,5 @@ inline int vtkLSDynaReader::GetPartArrayStatus(const char* partName)
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkLSDynaReader_h

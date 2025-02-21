@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkScalarBarActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkScalarBarActor.h"
 #include "vtkScalarBarActorInternal.h"
 
@@ -27,6 +15,7 @@
 #include "vtkMathTextUtilities.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
+#include "vtkPiecewiseFunction.h"
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper2D.h"
@@ -43,23 +32,25 @@
 #include "vtkWindow.h"
 
 #include <map>
-#include <set>
 #include <vector>
 
 #include <cstdio> // for snprintf
 
 #undef VTK_DBG_LAYOUT
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkScalarBarActor);
 
 vtkCxxSetObjectMacro(vtkScalarBarActor, LookupTable, vtkScalarsToColors);
+vtkCxxSetObjectMacro(vtkScalarBarActor, OpacityFunction, vtkPiecewiseFunction);
 vtkCxxSetObjectMacro(vtkScalarBarActor, AnnotationTextProperty, vtkTextProperty);
 vtkCxxSetObjectMacro(vtkScalarBarActor, LabelTextProperty, vtkTextProperty);
 vtkCxxSetObjectMacro(vtkScalarBarActor, TitleTextProperty, vtkTextProperty);
 vtkCxxSetObjectMacro(vtkScalarBarActor, BackgroundProperty, vtkProperty2D);
 vtkCxxSetObjectMacro(vtkScalarBarActor, FrameProperty, vtkProperty2D);
+vtkCxxSetObjectMacro(vtkScalarBarActor, CustomLabels, vtkDoubleArray);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object with 64 maximum colors; 5 labels; %%-#6.3g label
 // format, no title, and vertical orientation. The initial scalar bar
 // size is (0.05 x 0.8) of the viewport size.
@@ -67,6 +58,7 @@ vtkScalarBarActor::vtkScalarBarActor()
 {
   this->P = new vtkScalarBarActorInternal;
   this->LookupTable = nullptr;
+  this->OpacityFunction = nullptr;
   this->Position2Coordinate->SetValue(0.17, 0.8);
 
   this->PositionCoordinate->SetCoordinateSystemToNormalizedViewport();
@@ -265,9 +257,11 @@ vtkScalarBarActor::vtkScalarBarActor()
   this->DrawColorBar = 1;
   this->DrawTickLabels = 1;
   this->UnconstrainedFontSize = false;
+
+  this->ForceVerticalTitle = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -297,7 +291,7 @@ void vtkScalarBarActor::ReleaseGraphicsResources(vtkWindow* win)
   this->Texture->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::GetScalarBarRect(int rect[4], vtkViewport* viewport)
 {
   vtkCoordinate* origin = this->ScalarBarActor->GetPositionCoordinate();
@@ -312,7 +306,7 @@ void vtkScalarBarActor::GetScalarBarRect(int rect[4], vtkViewport* viewport)
   rect[3] = static_cast<int>(bounds[3] - bounds[2] + 0.5);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkScalarBarActor::~vtkScalarBarActor()
 {
   delete[] this->LabelFormat;
@@ -352,7 +346,12 @@ vtkScalarBarActor::~vtkScalarBarActor()
   this->ComponentTitle = nullptr;
 
   this->SetLookupTable(nullptr);
+  this->SetOpacityFunction(nullptr);
   this->SetAnnotationTextProperty(nullptr);
+  if (this->CustomLabels != nullptr)
+  {
+    this->CustomLabels->Delete();
+  }
   this->SetLabelTextProperty(nullptr);
   this->SetTitleTextProperty(nullptr);
   this->Texture->Delete();
@@ -369,7 +368,7 @@ vtkScalarBarActor::~vtkScalarBarActor()
   delete this->P;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkScalarBarActor::RenderOverlay(vtkViewport* viewport)
 {
   if (!this->RebuildLayoutIfNeeded(viewport))
@@ -471,7 +470,7 @@ int vtkScalarBarActor::RebuildLayoutIfNeeded(vtkViewport* viewport)
 {
   if (!this->LookupTable)
   {
-    vtkWarningMacro(<< "Need a mapper to render a scalar bar");
+    vtkWarningMacro(<< "Need a lookup table to render a scalar bar");
     return 0;
   }
 
@@ -524,7 +523,8 @@ int vtkScalarBarActor::RebuildLayoutIfNeeded(vtkViewport* viewport)
     this->LabelTextProperty->GetMTime() > this->BuildTime ||
     this->TitleTextProperty->GetMTime() > this->BuildTime ||
     this->BackgroundProperty->GetMTime() > this->BuildTime ||
-    this->FrameProperty->GetMTime() > this->BuildTime)
+    this->FrameProperty->GetMTime() > this->BuildTime ||
+    (this->OpacityFunction && this->OpacityFunction->GetMTime() > this->BuildTime))
 
   {
     this->RebuildLayout(viewport);
@@ -532,7 +532,7 @@ int vtkScalarBarActor::RebuildLayoutIfNeeded(vtkViewport* viewport)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkScalarBarActor::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   if (!this->RebuildLayoutIfNeeded(viewport))
@@ -602,7 +602,7 @@ int vtkScalarBarActor::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkScalarBarActor::HasTranslucentPolygonalGeometry()
@@ -613,7 +613,7 @@ vtkTypeBool vtkScalarBarActor::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -662,7 +662,10 @@ void vtkScalarBarActor::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ComponentTitle: " << (this->ComponentTitle ? this->ComponentTitle : "(none)")
      << "\n";
   os << indent << "Maximum Number Of Colors: " << this->MaximumNumberOfColors << "\n";
-  os << indent << "Number Of Labels: " << this->NumberOfLabels << "\n";
+  os << indent << "Number Of Automatic Labels: " << this->NumberOfLabels << "\n";
+  os << indent << "Number Of Custom Labels: "
+     << (this->CustomLabels != nullptr ? this->CustomLabels->GetNumberOfTuples() : 0) << "\n";
+  os << indent << "Using Custom Labels: " << (this->UseCustomLabels ? "On" : "Off") << "\n";
   os << indent << "Number Of Labels Built: " << this->NumberOfLabelsBuilt << "\n";
 
   os << indent << "Orientation: ";
@@ -719,7 +722,7 @@ void vtkScalarBarActor::PrintSelf(ostream& os, vtkIndent indent)
   this->FrameProperty->PrintSelf(os, indent.GetNextIndent());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ShallowCopy(vtkProp* prop)
 {
   vtkScalarBarActor* a = vtkScalarBarActor::SafeDownCast(prop);
@@ -734,6 +737,8 @@ void vtkScalarBarActor::ShallowCopy(vtkProp* prop)
     this->SetTitleTextProperty(a->GetTitleTextProperty());
     this->SetLabelFormat(a->GetLabelFormat());
     this->SetTitle(a->GetTitle());
+    this->SetCustomLabels(a->GetCustomLabels());
+    this->SetUseCustomLabels(a->GetUseCustomLabels());
     this->GetPositionCoordinate()->SetCoordinateSystem(
       a->GetPositionCoordinate()->GetCoordinateSystem());
     this->GetPositionCoordinate()->SetValue(a->GetPositionCoordinate()->GetValue());
@@ -750,7 +755,7 @@ void vtkScalarBarActor::ShallowCopy(vtkProp* prop)
   this->vtkActor2D::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::RebuildLayout(vtkViewport* viewport)
 {
   vtkDebugMacro(<< "Rebuilding subobjects");
@@ -840,13 +845,13 @@ void vtkScalarBarActor::DrawBoxes()
   AddBox(pts, lines, this->P->ScalarBarBox, this->P->TL);
   AddBox(pts, lines, this->P->NanBox, this->P->TL);
   AddBox(pts, lines, this->P->TitleBox, this->P->TL);
-  if (this->NumberOfLabels > 0)
+  if (this->NumberOfLabelsBuilt > 0)
   {
     AddBox(pts, lines, this->P->TickBox, this->P->TL);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ComputeFrame()
 {
   // get the viewport size in display coordinates
@@ -877,7 +882,7 @@ void vtkScalarBarActor::ComputeFrame()
   this->LastSize[1] = size[1];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ComputeScalarBarThickness()
 {
   // We do not set Size[1] (length), since the title bounds may encroach
@@ -910,7 +915,7 @@ void vtkScalarBarActor::ComputeScalarBarThickness()
       (nudge * (this->TextPosition == PrecedeScalarBar ? -1 : 1)));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ComputeSwatchPad()
 {
   if (this->P->NumNotes)
@@ -925,7 +930,7 @@ void vtkScalarBarActor::ComputeSwatchPad()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::LayoutNanSwatch()
 {
   // We don't have ScalarBarBox.Size[1] set yet; use the frame width instead.
@@ -962,7 +967,7 @@ void vtkScalarBarActor::LayoutNanSwatch()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::LayoutBelowRangeSwatch()
 {
   // We don't have ScalarBarBox.Size[1] set yet; use the frame width instead.
@@ -1005,7 +1010,7 @@ void vtkScalarBarActor::LayoutBelowRangeSwatch()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::LayoutAboveRangeSwatch()
 {
   // We don't have ScalarBarBox.Size[1] set yet; use the frame width instead.
@@ -1022,7 +1027,7 @@ void vtkScalarBarActor::LayoutAboveRangeSwatch()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::LayoutAboveRangeSwatchPosn()
 {
   if (this->Orientation == VTK_ORIENT_VERTICAL)
@@ -1065,7 +1070,7 @@ void vtkScalarBarActor::LayoutAboveRangeSwatchPosn()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::PrepareTitleText()
 {
   // Update actor with the latest title/subtitle
@@ -1099,7 +1104,7 @@ void vtkScalarBarActor::PrepareTitleText()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::LayoutTitle()
 {
   if (this->Title == nullptr || !strlen(this->Title))
@@ -1110,22 +1115,40 @@ void vtkScalarBarActor::LayoutTitle()
   }
 
   int targetWidth, targetHeight;
-  // Title spans entire width of frame at top, regardless of orientation.
-  targetWidth = static_cast<int>(this->P->Frame.Size[this->P->TL[0]]) - 2 * this->TextPad;
-  // Height is either: at most half the frame height or
-  // a fixed portion of the frame remaining after subtracting the
-  // scalar bar's thickness.
-  //
-  // When laid out horizontally, ticks share vertical space with title.
-  // We want the title to be larger (18pt vs 14pt).
-  targetHeight = static_cast<int>(
-    (this->Orientation == VTK_ORIENT_VERTICAL || this->LookupTable->GetIndexedLookup())
-      ? ceil(this->P->Frame.Size[this->P->TL[1]] / 2. - this->TextPad)
-      : (this->P->Frame.Size[0] - this->P->ScalarBarBox.Size[0] -
-          (this->TextPosition == SucceedScalarBar ? this->P->ScalarBarBox.Posn[this->P->TL[0]]
-                                                  : 0) -
-          this->TextPad) *
-        this->TitleRatio);
+  if (!this->ForceVerticalTitle)
+  {
+    // Title spans entire width of frame at top, regardless of orientation.
+    targetWidth = static_cast<int>(this->P->Frame.Size[this->P->TL[0]]) - 2 * this->TextPad;
+  }
+  else
+  {
+    targetWidth = static_cast<int>(
+      (this->P->Frame.Size[0] - this->P->ScalarBarBox.Size[0] - this->TextPad) * this->TitleRatio);
+  }
+
+  if (!this->ForceVerticalTitle)
+  {
+    // Height is either: at most half the frame height or
+    // a fixed portion of the frame remaining after subtracting the
+    // scalar bar's thickness.
+    //
+    // When laid out horizontally, ticks share vertical space with title.
+    // We want the title to be larger (18pt vs 14pt).
+    targetHeight = static_cast<int>(
+      (this->Orientation == VTK_ORIENT_VERTICAL || this->LookupTable->GetIndexedLookup())
+        ? ceil(this->P->Frame.Size[this->P->TL[1]] / 2. - this->TextPad)
+        : (this->P->Frame.Size[0] - this->P->ScalarBarBox.Size[0] -
+            (this->TextPosition == SucceedScalarBar ? this->P->ScalarBarBox.Posn[this->P->TL[0]]
+                                                    : 0) -
+            this->TextPad) *
+          this->TitleRatio);
+  }
+  else
+  {
+    targetHeight = static_cast<int>(this->P->Frame.Size[1] / 3.0);
+  }
+
+  this->TitleActor->SetOrientation(this->ForceVerticalTitle ? 90 : 0);
 
   if (this->UnconstrainedFontSize)
   {
@@ -1146,29 +1169,48 @@ void vtkScalarBarActor::LayoutTitle()
     this->P->TitleBox.Size[this->P->TL[i]] = static_cast<int>(ceil(titleSize[i]));
   }
 
-  this->P->TitleBox.Posn[0] =
-    this->P->Frame.Posn[0] + (this->P->Frame.Size[this->P->TL[0]] - titleSize[0]) / 2;
-  this->P->TitleBox.Posn[1] =
-    static_cast<int>(this->P->Frame.Posn[1] + this->P->Frame.Size[this->P->TL[1]]);
-  if (this->Orientation == VTK_ORIENT_VERTICAL ||
-    this->TextPosition == vtkScalarBarActor::SucceedScalarBar)
+  if (this->ForceVerticalTitle)
   {
-    this->P->TitleBox.Posn[1] -= this->P->TitleBox.Size[this->P->TL[1]] + this->TextPad +
-      static_cast<int>(this->FrameProperty->GetLineWidth());
+    this->P->TitleBox.Posn[0] = this->TextPosition == vtkScalarBarActor::PrecedeScalarBar
+      ? this->P->Frame.Posn[0]
+      : this->P->Frame.Posn[0] + this->P->Frame.Size[this->P->TL[0]] -
+        (this->P->TitleBox.Size[this->P->TL[0]] + this->TextPad);
+    this->P->TitleBox.Posn[1] = this->P->Frame.Posn[1] +
+      (this->P->Frame.Size[this->P->TL[1]] - this->P->TitleBox.Size[this->P->TL[1]]) / 2;
   }
   else
   {
-    this->P->TitleBox.Posn[1] = this->P->Frame.Posn[1] + this->TextPad -
-      static_cast<int>(this->FrameProperty->GetLineWidth());
+    this->P->TitleBox.Posn[0] =
+      this->P->Frame.Posn[0] + (this->P->Frame.Size[this->P->TL[0]] - titleSize[0]) / 2;
+    this->P->TitleBox.Posn[1] =
+      static_cast<int>(this->P->Frame.Posn[1] + this->P->Frame.Size[this->P->TL[1]]);
+    if (this->Orientation == VTK_ORIENT_VERTICAL ||
+      this->TextPosition == vtkScalarBarActor::SucceedScalarBar)
+    {
+      this->P->TitleBox.Posn[1] -= this->P->TitleBox.Size[this->P->TL[1]] + this->TextPad +
+        static_cast<int>(this->FrameProperty->GetLineWidth());
+    }
+    else
+    {
+      this->P->TitleBox.Posn[1] = this->P->Frame.Posn[1] + this->TextPad -
+        static_cast<int>(this->FrameProperty->GetLineWidth());
+    }
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ComputeScalarBarLength()
 {
-  this->P->ScalarBarBox.Size[1] = this->Orientation == VTK_ORIENT_VERTICAL
-    ? this->P->Frame.Size[1] - this->P->TitleBox.Size[1] - this->VerticalTitleSeparation
-    : this->P->Frame.Size[1];
+  if (!this->ForceVerticalTitle)
+  {
+    this->P->ScalarBarBox.Size[1] = this->Orientation == VTK_ORIENT_VERTICAL
+      ? this->P->Frame.Size[1] - this->P->TitleBox.Size[1] - this->VerticalTitleSeparation
+      : this->P->Frame.Size[1];
+  }
+  else
+  {
+    this->P->ScalarBarBox.Size[1] = this->P->Frame.Size[1];
+  }
 
   // The scalar bar does not include the Nan Swatch, the Below Range Swatch and
   // the Above Range Swatch.
@@ -1191,7 +1233,7 @@ void vtkScalarBarActor::ComputeScalarBarLength()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::LayoutTicks()
 {
   if (this->LookupTable->GetIndexedLookup())
@@ -1203,47 +1245,90 @@ void vtkScalarBarActor::LayoutTicks()
   // find the best size for the ticks
   const double* range = this->LookupTable->GetRange();
   char string[512];
-  double val;
+  double val, rng, offset;
   int i;
+  if (this->UseCustomLabels)
+  {
+    this->NumberOfLabelsBuilt =
+      this->CustomLabels != nullptr ? this->CustomLabels->GetNumberOfTuples() : 0;
+  }
+  else
+  {
+    this->NumberOfLabelsBuilt = this->NumberOfLabels;
+  }
 
   // TODO: this should be optimized, maybe by keeping a list of
   // allocated mappers, in order to avoid creation/destruction of
   // their underlying text properties (i.e. each time a mapper is
   // created, text properties are created and shallow-assigned a font size
   // which value might be "far" from the target font size).
-  this->P->TextActors.resize(this->NumberOfLabels);
+  this->P->TextActors.resize(this->NumberOfLabelsBuilt);
+  this->P->TextActorAnchors.resize(this->NumberOfLabelsBuilt);
 
   // Does this map have its scale set to log?
-  int isLogTable = this->LookupTable->UsingLogScale();
-
-  for (i = 0; i < this->NumberOfLabels; i++)
+  vtkTypeBool isLogTable = this->LookupTable->UsingLogScale();
+  if (isLogTable)
+  {
+    offset = log10(range[0]);
+    rng = (log10(range[1]) - offset);
+  }
+  else
+  {
+    offset = range[0];
+    rng = range[1] - offset;
+  }
+  for (i = 0; i < this->NumberOfLabelsBuilt; i++)
   {
     this->P->TextActors[i].TakeReference(vtkTextActor::New());
-
-    if (isLogTable)
+    // Get or compute the actual data value and its normalized position
+    if (this->UseCustomLabels)
     {
-      double lval;
-      if (this->NumberOfLabels > 1)
+      // We should be guaranteed above that this->CustomLabels is not null
+      // at this point (otherwise NumberOfLabelsBuilt == 0), but let's be extra
+      // careful
+      val = this->CustomLabels != nullptr ? this->CustomLabels->GetValue(i) : 1.0;
+      if (rng > 0)
       {
-        lval = log10(range[0]) +
-          static_cast<double>(i) / (this->NumberOfLabels - 1) * (log10(range[1]) - log10(range[0]));
+        if (isLogTable)
+        {
+          if (val > 0)
+          {
+            this->P->TextActorAnchors[i] = (log10(val) - offset) / rng;
+          }
+          else
+          {
+            this->P->TextActorAnchors[i] = -1.;
+          }
+        }
+        else
+        {
+          this->P->TextActorAnchors[i] = (val - offset) / rng;
+        }
+      }
+      else if (val == range[0])
+      {
+        this->P->TextActorAnchors[i] = 0.5;
       }
       else
       {
-        lval = log10(range[0]) + 0.5 * (log10(range[1]) - log10(range[0]));
+        this->P->TextActorAnchors[i] = -1.;
       }
-      val = pow(10.0, lval);
     }
     else
     {
-      if (this->NumberOfLabels > 1)
+      if (this->NumberOfLabelsBuilt > 1)
       {
-        val =
-          range[0] + static_cast<double>(i) / (this->NumberOfLabels - 1) * (range[1] - range[0]);
+        val = static_cast<double>(i) / (this->NumberOfLabelsBuilt - 1);
       }
       else
       {
-        val = range[0] + 0.5 * (range[1] - range[0]);
+        val = 0.5;
+      }
+      this->P->TextActorAnchors[i] = val;
+      val = offset + val * rng;
+      if (isLogTable)
+      {
+        val = pow(10., val);
       }
     }
 
@@ -1263,7 +1348,7 @@ void vtkScalarBarActor::LayoutTicks()
       this->PositionCoordinate);
   }
 
-  if (this->NumberOfLabels)
+  if (this->NumberOfLabelsBuilt > 0)
   {
     int labelSize[2];
     labelSize[0] = labelSize[1] = 0;
@@ -1279,6 +1364,11 @@ void vtkScalarBarActor::LayoutTicks()
       // lowered by box constraints, but we won't bother:
       this->P->TickBox.Size[1] = this->P->Frame.Size[1] - this->P->TitleBox.Size[1] -
         3 * this->TextPad - this->VerticalTitleSeparation;
+      if (this->ForceVerticalTitle)
+      {
+        this->P->TickBox.Size[0] -= this->P->TitleBox.Size[0];
+        this->P->TickBox.Size[1] += this->P->TitleBox.Size[1];
+      }
       // Tick box height also reduced by NaN swatch size, if present:
       if (this->DrawNanAnnotation)
       {
@@ -1299,6 +1389,10 @@ void vtkScalarBarActor::LayoutTicks()
       if (this->TextPosition == vtkScalarBarActor::PrecedeScalarBar)
       {
         this->P->TickBox.Posn[0] = this->TextPad;
+        if (this->ForceVerticalTitle)
+        {
+          this->P->TickBox.Posn[0] += this->P->TitleBox.Size[0];
+        }
       }
       else
       {
@@ -1306,9 +1400,8 @@ void vtkScalarBarActor::LayoutTicks()
       }
 
       targetWidth = this->P->TickBox.Size[0];
-      targetHeight =
-        static_cast<int>((this->P->TickBox.Size[1] - this->TextPad * (this->NumberOfLabels - 1)) /
-          this->NumberOfLabels);
+      targetHeight = (this->P->TickBox.Size[1] - this->TextPad * (this->NumberOfLabelsBuilt - 1)) /
+        this->NumberOfLabelsBuilt;
     }
     else
     { // NB. Size[1] = width, Size[0] = height
@@ -1327,16 +1420,15 @@ void vtkScalarBarActor::LayoutTicks()
       {
         this->P->TickBox.Posn[1] += this->P->ScalarBarBox.Size[0];
       }
-      targetWidth =
-        static_cast<int>((this->P->TickBox.Size[1] - this->TextPad * (this->NumberOfLabels - 1)) /
-          this->NumberOfLabels);
+      targetWidth = (this->P->TickBox.Size[1] - this->TextPad * (this->NumberOfLabelsBuilt - 1)) /
+        this->NumberOfLabelsBuilt;
       targetHeight = this->P->TickBox.Size[0];
     }
 
     if (!this->UnconstrainedFontSize)
     {
       vtkTextActor::SetMultipleConstrainedFontSize(this->P->Viewport, targetWidth, targetHeight,
-        this->P->TextActors.PointerArray(), this->NumberOfLabels, labelSize);
+        this->P->TextActors.PointerArray(), this->NumberOfLabelsBuilt, labelSize);
     }
 
     // Now adjust scalar bar size by the half-size of the first and last ticks
@@ -1356,10 +1448,9 @@ void vtkScalarBarActor::LayoutTicks()
       this->P->TickBox.Size[1] -= this->TextPad;
     }
   }
-  this->NumberOfLabelsBuilt = this->NumberOfLabels;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::LayoutForUnconstrainedFont()
 {
   if (this->UnconstrainedFontSize)
@@ -1408,7 +1499,7 @@ void vtkScalarBarActor::LayoutForUnconstrainedFont()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::LayoutAnnotations()
 {
   if (this->DrawAnnotations)
@@ -1420,7 +1511,7 @@ void vtkScalarBarActor::LayoutAnnotations()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ConfigureFrame()
 {
   // set frame structure
@@ -1479,7 +1570,7 @@ void vtkScalarBarActor::ConfigureFrame()
   frLines->InsertNextCell(5, bgIds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ConfigureScalarBar()
 {
   vtkScalarsToColors* lut = this->LookupTable;
@@ -1540,15 +1631,24 @@ void vtkScalarBarActor::ConfigureScalarBar()
     double rgbval;
     if (this->LookupTable->UsingLogScale())
     {
-      rgbval = log10(range[0]) + i * (log10(range[1]) - log10(range[0])) / this->P->NumColors;
+      rgbval =
+        log10(range[0]) + (i + 0.5) * (log10(range[1]) - log10(range[0])) / this->P->NumColors;
       rgbval = pow(10.0, rgbval);
     }
     else
     {
-      rgbval = range[0] + (range[1] - range[0]) * (i / static_cast<double>(this->P->NumColors));
+      rgbval =
+        range[0] + (range[1] - range[0]) * ((i + 0.5) / static_cast<double>(this->P->NumColors));
     }
     lut->GetColor(rgbval, rgba);
-    rgba[3] = lut->GetOpacity(rgbval);
+    if (this->OpacityFunction)
+    {
+      rgba[3] = this->OpacityFunction->GetValue(rgbval);
+    }
+    else
+    {
+      rgba[3] = lut->GetOpacity(rgbval);
+    }
     // write into array directly
     rgb = this->P->SwatchColors->GetPointer(nComponents * i);
     rgb[0] = static_cast<unsigned char>(rgba[0] * 255.);
@@ -1587,27 +1687,34 @@ void vtkScalarBarActor::ConfigureScalarBar()
   tc->SetTuple2(3, 0.0, barHeight / this->TextureGridWidth);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ConfigureTitle()
 {
-  this->TitleActor->SetPosition(
-    this->P->TitleBox.Posn[0] + this->P->TitleBox.Size[this->P->TL[0]] / 2,
-    this->TitleActor->GetTextProperty()->GetVerticalJustification() == VTK_TEXT_BOTTOM
-      ? this->P->TitleBox.Posn[1]
-      : this->P->TitleBox.Posn[1] + this->P->TitleBox.Size[this->P->TL[1]]);
+  if (!this->ForceVerticalTitle)
+  {
+    this->TitleActor->SetPosition(
+      this->P->TitleBox.Posn[0] + this->P->TitleBox.Size[this->P->TL[0]] / 2,
+      this->TitleActor->GetTextProperty()->GetVerticalJustification() == VTK_TEXT_BOTTOM
+        ? this->P->TitleBox.Posn[1]
+        : this->P->TitleBox.Posn[1] + this->P->TitleBox.Size[this->P->TL[1]]);
+  }
+  else
+  {
+    this->TitleActor->SetPosition(this->P->TitleBox.Posn[0],
+      this->P->TitleBox.Posn[1] + this->P->TitleBox.Size[this->P->TL[1]] / 2);
+  }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ConfigureTicks()
 {
-  double val;
+  double val, anchor;
   double sizeTextData[2];
   for (int i = 0; i < this->NumberOfLabelsBuilt; ++i)
   {
-    val = (this->NumberOfLabelsBuilt > 1 ? static_cast<double>(i) / (this->NumberOfLabelsBuilt - 1)
-                                         : 0.5) *
-        this->P->TickBox.Size[1] +
-      this->P->TickBox.Posn[this->P->TL[1]];
+    anchor = this->P->TextActorAnchors[i];
+    this->P->TextActors[i]->SetVisibility((anchor > -1e-6 && anchor < 1 + 1e-6));
+    val = anchor * this->P->TickBox.Size[1] + this->P->TickBox.Posn[this->P->TL[1]];
     this->P->TextActors[i]->GetSize(this->P->Viewport, sizeTextData);
     if (this->Orientation == VTK_ORIENT_VERTICAL)
     { // VERTICAL
@@ -1632,7 +1739,7 @@ void vtkScalarBarActor::ConfigureTicks()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ConfigureNanSwatch()
 {
   if (!this->DrawNanAnnotation)
@@ -1690,7 +1797,7 @@ void vtkScalarBarActor::ConfigureNanSwatch()
   rgb[3] = static_cast<unsigned char>(this->UseOpacity ? rgba[3] * 255. : 255.);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ConfigureAboveBelowRangeSwatch(bool above)
 {
   // Check above/below
@@ -1783,7 +1890,7 @@ void vtkScalarBarActor::ConfigureAboveBelowRangeSwatch(bool above)
   rgb[3] = static_cast<unsigned char>(this->UseOpacity ? rgba[3] * 255. : 255.);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::ConfigureAnnotations()
 {
   // I. Create an actor for each valid label.
@@ -1797,8 +1904,7 @@ void vtkScalarBarActor::ConfigureAnnotations()
   this->P->AnnotationAnchors.resize(numNotes);
   this->P->AnnotationColors.resize(numNotes);
   int i = 0;
-  std::map<double, vtkStdString>::iterator it;
-  for (it = this->P->Labels.begin(); it != this->P->Labels.end(); ++it, ++i)
+  for (auto it = this->P->Labels.begin(); it != this->P->Labels.end(); ++it, ++i)
   {
     this->P->AnnotationAnchors[i] = it->first;
     this->P->AnnotationColors[i] = this->P->LabelColors[it->first];
@@ -1947,7 +2053,7 @@ void vtkScalarBarActor::ConfigureAnnotations()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::FreeLayoutStorage()
 {
   // Delete previously constructed objects
@@ -1969,12 +2075,13 @@ void vtkScalarBarActor::FreeLayoutStorage()
   }
 
   this->P->TextActors.clear();
+  this->P->TextActorAnchors.clear();
   this->P->AnnotationLabels.clear();
   this->P->AnnotationAnchors.clear();
   this->P->AnnotationColors.clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarActor::SizeTitle(double* titleSize, int* size, vtkViewport* viewport)
 {
   titleSize[0] = titleSize[1] = 0;
@@ -2019,12 +2126,12 @@ void vtkScalarBarActor::SizeTitle(double* titleSize, int* size, vtkViewport* vie
   this->TitleActor->GetSize(viewport, titleSize);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkScalarBarActor::MapAnnotationLabels(
   vtkScalarsToColors* lkup, double start, double delta, const double* range)
 {
   int numNotes = lkup->GetNumberOfAnnotatedValues();
-  bool indexed = lkup->GetIndexedLookup() ? true : false;
+  bool indexed = lkup->GetIndexedLookup() != 0;
   bool vertical = (this->Orientation == VTK_ORIENT_VERTICAL);
   vtkColor4d fltCol;
   double drange = range[1] - range[0];
@@ -2038,7 +2145,7 @@ int vtkScalarBarActor::MapAnnotationLabels(
   {
     for (int i = 0; i < numNotes; ++i)
     {
-      vtkStdString label = lkup->GetAnnotation(i);
+      std::string label = lkup->GetAnnotation(i);
       lkup->GetAnnotationColor(lkup->GetAnnotatedValue(i), fltCol.GetData());
       double x;
       bool canPositionLabel = !label.empty();
@@ -2132,7 +2239,7 @@ int vtkScalarBarActor::MapAnnotationLabels(
   return static_cast<int>(this->P->Labels.size());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkScalarBarActor::PlaceAnnotationsVertically(double barX, double barY,
   double vtkNotUsed(barWidth), double barHeight, double vtkNotUsed(delta), double pad)
 {
@@ -2142,25 +2249,28 @@ int vtkScalarBarActor::PlaceAnnotationsVertically(double barX, double barY,
   }
 
 #define VTK_ANN_VLAYOUT(j, dir, delt)                                                              \
-  ctr = this->P->AnnotationAnchors[j];                                                             \
-  ll[0] = lpts->InsertNextPoint(xl0, ctr, 0.);                                                     \
-  this->P->AnnotationLabels[j]->GetSize(this->P->Viewport, tsz);                                   \
-  hh = (tsz[1] + pad) / 2.; /* label half-height, incl. padding */                                 \
-  if (((dir) < 0 && ctr + hh > dnCum) || ((dir) > 0 && ctr - hh < upCum))                          \
-    ctr = (delt) + (dir)*hh;                                                                       \
-  this->P->AnnotationLabels[j]->GetTextProperty()->SetJustification(                               \
-    this->TextPosition == PrecedeScalarBar ? VTK_TEXT_LEFT : VTK_TEXT_RIGHT);                      \
-  this->P->AnnotationLabels[j]->GetTextProperty()->SetVerticalJustificationToCentered();           \
-  this->P->AnnotationLabels[j]->SetPosition(barX +                                                 \
-      (this->TextPosition == PrecedeScalarBar ? 1 : -1) * (pad + this->AnnotationLeaderPadding),   \
-    ctr);                                                                                          \
-  ll[1] = lpts->InsertNextPoint(xl1, ctr, 0.);                                                     \
-  llines->InsertNextCell(2, ll);                                                                   \
-  llcolors->InsertNextTypedTuple(this->P->AnnotationColors[j].GetData());                          \
-  if (upCum < ctr + hh)                                                                            \
-    upCum = ctr + hh;                                                                              \
-  if (dnCum > ctr - hh)                                                                            \
-    dnCum = ctr - hh;
+  do                                                                                               \
+  {                                                                                                \
+    ctr = this->P->AnnotationAnchors[j];                                                           \
+    ll[0] = lpts->InsertNextPoint(xl0, ctr, 0.);                                                   \
+    this->P->AnnotationLabels[j]->GetSize(this->P->Viewport, tsz);                                 \
+    hh = (tsz[1] + pad) / 2.; /* label half-height, incl. padding */                               \
+    if (((dir) < 0 && ctr + hh > dnCum) || ((dir) > 0 && ctr - hh < upCum))                        \
+      ctr = (delt) + (dir)*hh;                                                                     \
+    this->P->AnnotationLabels[j]->GetTextProperty()->SetJustification(                             \
+      this->TextPosition == PrecedeScalarBar ? VTK_TEXT_LEFT : VTK_TEXT_RIGHT);                    \
+    this->P->AnnotationLabels[j]->GetTextProperty()->SetVerticalJustificationToCentered();         \
+    this->P->AnnotationLabels[j]->SetPosition(barX +                                               \
+        (this->TextPosition == PrecedeScalarBar ? 1 : -1) * (pad + this->AnnotationLeaderPadding), \
+      ctr);                                                                                        \
+    ll[1] = lpts->InsertNextPoint(xl1, ctr, 0.);                                                   \
+    llines->InsertNextCell(2, ll);                                                                 \
+    llcolors->InsertNextTypedTuple(this->P->AnnotationColors[j].GetData());                        \
+    if (upCum < ctr + hh)                                                                          \
+      upCum = ctr + hh;                                                                            \
+    if (dnCum > ctr - hh)                                                                          \
+      dnCum = ctr - hh;                                                                            \
+  } while (false)
 
   int numNotes = static_cast<int>(this->P->AnnotationLabels.size());
   vtkPoints* lpts = vtkPoints::New();
@@ -2239,7 +2349,7 @@ int vtkScalarBarActor::PlaceAnnotationsVertically(double barX, double barY,
   return numNotes;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct vtkScalarBarHLabelInfo
 {
   double X[2]; // padded left-right label bounds
@@ -2248,7 +2358,7 @@ struct vtkScalarBarHLabelInfo
   double Anchor[2]; // x-y coordinates of anchor point
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // A non-overlapping label placer for a horizontal array of annotated swatches.
 // When space is tight, It displaces labels vertically and uses broken leader
 // lines to relate labels back to swatches.
@@ -2273,7 +2383,7 @@ struct vtkScalarBarHLabelPlacer
     , Pad(pad)
     , LeaderPad(leaderPad)
     , Dir(dir < 0 ? -1. : 1.)
-    , HaveCtr(n % 2 ? true : false)
+    , HaveCtr(n % 2 != 0)
   {
     this->XBounds[0] = xmin;
     this->XBounds[1] = xmax;
@@ -2461,7 +2571,7 @@ struct vtkScalarBarHLabelPlacer
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**\brief Non-overlapping label placer for a horizontal array of swatches.
  *
  * A set of rules are enforced during layout:
@@ -2499,12 +2609,15 @@ int vtkScalarBarActor::PlaceAnnotationsHorizontally(
   }
 
 #define VTK_ANN_HLAYOUT(j, placer)                                                                 \
-  this->P->AnnotationLabels[j]->GetTextProperty()->SetJustification(                               \
-    (placer).Places[j].Justification);                                                             \
-  this->P->AnnotationLabels[j]->GetTextProperty()->SetVerticalJustification(                       \
-    (placer).Dir > 0 ? VTK_TEXT_BOTTOM : VTK_TEXT_TOP);                                            \
-  this->P->AnnotationLabels[j]->SetPosition((placer).Places[j].Anchor);                            \
-  (placer).AddBrokenLeader(j, lpts, llines, llcolors, this->P->AnnotationColors[j]);
+  do                                                                                               \
+  {                                                                                                \
+    this->P->AnnotationLabels[j]->GetTextProperty()->SetJustification(                             \
+      (placer).Places[j].Justification);                                                           \
+    this->P->AnnotationLabels[j]->GetTextProperty()->SetVerticalJustification(                     \
+      (placer).Dir > 0 ? VTK_TEXT_BOTTOM : VTK_TEXT_TOP);                                          \
+    this->P->AnnotationLabels[j]->SetPosition((placer).Places[j].Anchor);                          \
+    (placer).AddBrokenLeader(j, lpts, llines, llcolors, this->P->AnnotationColors[j]);             \
+  } while (false)
 
   int numNotes = static_cast<int>(this->P->AnnotationLabels.size());
   bool precede = this->TextPosition == vtkScalarBarActor::PrecedeScalarBar;
@@ -2537,7 +2650,6 @@ int vtkScalarBarActor::PlaceAnnotationsHorizontally(
   int ic = numNotes / 2;
   int lf, rt;
   double tsz[2];
-  vtkColor3ub leaderColor;
   if (2 * ic == numNotes)
   {
     lf = ic - 1;
@@ -2566,3 +2678,4 @@ int vtkScalarBarActor::PlaceAnnotationsHorizontally(
   llcolors->Delete();
   return numNotes;
 }
+VTK_ABI_NAMESPACE_END

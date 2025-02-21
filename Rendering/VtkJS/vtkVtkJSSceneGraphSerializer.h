@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVtkJSSceneGraphSerializer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVtkJSSceneGraphSerializer
  * @brief   Converts elements of a VTK scene graph into vtk-js elements
@@ -44,11 +32,11 @@
 #include "vtkObject.h"
 #include <vtk_jsoncpp.h> // For Json::Value
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkAlgorithm;
 class vtkCamera;
 class vtkCompositePolyDataMapper;
-class vtkCompositePolyDataMapper2;
 class vtkDataArray;
 class vtkDataObject;
 class vtkDataSet;
@@ -61,6 +49,8 @@ class vtkPolyData;
 class vtkProperty;
 class vtkRenderer;
 class vtkRenderWindow;
+class vtkTexture;
+class vtkTransform;
 class vtkViewNode;
 
 class VTKRENDERINGVTKJS_EXPORT vtkVtkJSSceneGraphSerializer : public vtkObject
@@ -70,57 +60,56 @@ public:
   vtkTypeMacro(vtkVtkJSSceneGraphSerializer, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Empty the contents of the scene and the reset the unique id generator.
    */
   void Reset();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access the Json description of the constructed scene. The returned object
    * is valid for the lifetime of this class.
    */
   const Json::Value& GetRoot() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access the data objects referenced in the constructed scene.
    */
   vtkIdType GetNumberOfDataObjects() const;
   Json::ArrayIndex GetDataObjectId(vtkIdType) const;
   vtkDataObject* GetDataObject(vtkIdType) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access the data arrays referenced in the constructed scene.
    */
   vtkIdType GetNumberOfDataArrays() const;
   std::string GetDataArrayId(vtkIdType) const;
   vtkDataArray* GetDataArray(vtkIdType) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add a scene graph node and its corresponding renderable to the scene.
    */
   virtual void Add(vtkViewNode*, vtkActor*);
   virtual void Add(vtkViewNode*, vtkCompositePolyDataMapper*);
-  virtual void Add(vtkViewNode*, vtkCompositePolyDataMapper2*);
   virtual void Add(vtkViewNode*, vtkGlyph3DMapper*);
   virtual void Add(vtkViewNode*, vtkMapper*);
   virtual void Add(vtkViewNode*, vtkRenderer*);
   virtual void Add(vtkViewNode*, vtkRenderWindow*);
-  //@}
+  ///@}
 
 protected:
   vtkVtkJSSceneGraphSerializer();
   ~vtkVtkJSSceneGraphSerializer() override;
 
-  //@{
+  ///@{
   /**
    * Translate from a VTK renderable to a vtk-js renderable.
    */
@@ -136,16 +125,18 @@ protected:
   virtual Json::Value ToJson(Json::Value&, vtkRenderer*);
   virtual Json::Value ToJson(Json::Value&, vtkAlgorithm*, vtkPolyData*);
   virtual Json::Value ToJson(Json::Value&, vtkProperty*);
+  virtual Json::Value ToJson(Json::Value&, vtkTexture*);
+  virtual Json::Value ToJson(Json::Value&, vtkTransform*);
   virtual Json::Value ToJson(vtkRenderWindow*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Associate a unique id with a given object. Subsequent calls to this method
    * with the same object will return the same unique id.
    */
   Json::ArrayIndex UniqueId(void* ptr = nullptr);
-  //@}
+  ///@}
 
   struct Internal;
   Internal* Internals;
@@ -156,10 +147,10 @@ private:
 
   virtual void Add(Json::Value*, vtkAlgorithm*);
 
-  template <typename CompositeMapper>
-  void Add(vtkViewNode* node, vtkDataObject* dataObject, CompositeMapper* mapper);
+  void Add(vtkViewNode* node, vtkDataObject* dataObject, vtkCompositePolyDataMapper* mapper);
 
   void extractRequiredFields(Json::Value& extractedFields, vtkMapper* mapper, vtkDataSet* dataSet);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

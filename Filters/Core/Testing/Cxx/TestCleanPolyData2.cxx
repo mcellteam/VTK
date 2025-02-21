@@ -1,21 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestCleanPolyData2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtkCellArray.h>
 #include <vtkCleanPolyData.h>
-#include <vtkMinimalStandardRandomSequence.h>
 #include <vtkSmartPointer.h>
 
 namespace
@@ -55,7 +42,7 @@ vtkSmartPointer<vtkPolyData> ConstructLines()
   // Construct a degenerate polyline
   ptIds[0] = 0;
   ptIds[1] = 1;
-  ptIds[3] = 1;
+  ptIds[2] = 1;
   degeneratedLines->InsertNextCell(3, ptIds);
 
   // Construct a polyline that is degenerate to a vertex ONLY if point merging is ON

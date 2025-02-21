@@ -1,22 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAMRDataInternals.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMRDataInternals.h"
 #include "vtkObjectFactory.h"
 #include "vtkUniformGrid.h"
 
+#include <algorithm>
 #include <cassert>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAMRDataInternals);
 
 vtkAMRDataInternals::Block::Block(unsigned int i, vtkUniformGrid* g)
@@ -25,7 +16,7 @@ vtkAMRDataInternals::Block::Block(unsigned int i, vtkUniformGrid* g)
   this->Grid = g;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkAMRDataInternals::vtkAMRDataInternals()
   : InternalIndex(nullptr)
@@ -52,13 +43,9 @@ void vtkAMRDataInternals::PrintSelf(ostream& os, vtkIndent indent)
 
 void vtkAMRDataInternals::Insert(unsigned int index, vtkUniformGrid* grid)
 {
-  this->Blocks.push_back(Block(index, grid));
-  int i = static_cast<int>(this->Blocks.size()) - 2;
-  while (i >= 0 && this->Blocks[i].Index > this->Blocks[i + 1].Index)
-  {
-    std::swap(this->Blocks[i], this->Blocks[i + 1]);
-    i--;
-  }
+  const auto it = std::lower_bound(this->Blocks.begin(), this->Blocks.end(), index,
+    [](const Block& block, unsigned int idx) { return block.Index < idx; });
+  this->Blocks.insert(it, Block(index, grid));
 }
 
 vtkUniformGrid* vtkAMRDataInternals::GetDataSet(unsigned int compositeIndex)
@@ -108,7 +95,7 @@ void vtkAMRDataInternals::GenerateIndex(bool force)
   }
 }
 
-void vtkAMRDataInternals::ShallowCopy(vtkObject* src)
+void vtkAMRDataInternals::CompositeShallowCopy(vtkObject* src)
 {
   if (src == this)
   {
@@ -122,3 +109,52 @@ void vtkAMRDataInternals::ShallowCopy(vtkObject* src)
 
   this->Modified();
 }
+
+void vtkAMRDataInternals::DeepCopy(vtkObject* src)
+{
+  if (src == this)
+  {
+    return;
+  }
+
+  if (vtkAMRDataInternals* hbds = vtkAMRDataInternals::SafeDownCast(src))
+  {
+    this->Blocks = hbds->Blocks;
+    for (auto& item : this->Blocks)
+    {
+      if (item.Grid)
+      {
+        auto clone = item.Grid->NewInstance();
+        clone->DeepCopy(item.Grid);
+        item.Grid.TakeReference(clone);
+      }
+    }
+  }
+
+  this->Modified();
+}
+
+void vtkAMRDataInternals::ShallowCopy(vtkObject* src)
+{
+  if (src == this)
+  {
+    return;
+  }
+
+  if (vtkAMRDataInternals* hbds = vtkAMRDataInternals::SafeDownCast(src))
+  {
+    this->Blocks = hbds->Blocks;
+    for (auto& item : this->Blocks)
+    {
+      if (item.Grid)
+      {
+        auto clone = item.Grid->NewInstance();
+        clone->ShallowCopy(item.Grid);
+        item.Grid.TakeReference(clone);
+      }
+    }
+  }
+
+  this->Modified();
+}
+VTK_ABI_NAMESPACE_END

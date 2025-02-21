@@ -1,25 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDiagonalMatrixSource.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkDiagonalMatrixSource.h"
+#include "vtkArrayData.h"
 #include "vtkDenseArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -27,11 +11,12 @@
 #include "vtkSmartPointer.h"
 #include "vtkSparseArray.h"
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDiagonalMatrixSource);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkDiagonalMatrixSource::vtkDiagonalMatrixSource()
   : ArrayType(DENSE)
@@ -49,7 +34,7 @@ vtkDiagonalMatrixSource::vtkDiagonalMatrixSource()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkDiagonalMatrixSource::~vtkDiagonalMatrixSource()
 {
@@ -57,7 +42,7 @@ vtkDiagonalMatrixSource::~vtkDiagonalMatrixSource()
   this->SetColumnLabel(nullptr);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkDiagonalMatrixSource::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -71,7 +56,7 @@ void vtkDiagonalMatrixSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ColumnLabel: " << (this->ColumnLabel ? this->ColumnLabel : "") << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkDiagonalMatrixSource::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
@@ -162,3 +147,4 @@ vtkArray* vtkDiagonalMatrixSource::GenerateSparseArray()
 
   return array;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageLogic.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageLogic.h"
 
 #include "vtkImageData.h"
@@ -23,9 +11,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageLogic);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageLogic::vtkImageLogic()
 {
   this->SetNumberOfInputPorts(2);
@@ -34,7 +23,7 @@ vtkImageLogic::vtkImageLogic()
   this->OutputTrueValue = 255;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 // Handles the one input operations
 template <class T>
@@ -91,7 +80,7 @@ void vtkImageLogicExecute1(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 // Handles the two input operations
 template <class T>
@@ -201,7 +190,7 @@ void vtkImageLogicExecute2(vtkImageLogic* self, vtkImageData* in1Data, vtkImageD
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output regions, and executes the filter
 // algorithm to fill the output from the inputs.
 // It just executes a switch statement to call the correct function for
@@ -272,7 +261,7 @@ void vtkImageLogic::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageLogic::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 1)
@@ -283,7 +272,7 @@ int vtkImageLogic::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageLogic::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -291,3 +280,4 @@ void vtkImageLogic::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Operation: " << this->Operation << "\n";
   os << indent << "OutputTrueValue: " << this->OutputTrueValue << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPanoramicProjectionPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPanoramicProjectionPass.h"
 
@@ -37,9 +25,10 @@
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPanoramicProjectionPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -60,7 +49,7 @@ void vtkPanoramicProjectionPass::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Angle: " << this->Angle << "\n";
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::Render(const vtkRenderState* s)
 {
   vtkOpenGLClearErrorMacro();
@@ -113,7 +102,7 @@ void vtkPanoramicProjectionPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::InitOpenGLResources(vtkOpenGLRenderWindow* renWin)
 {
   if (this->CubeMapTexture && this->CubeMapTexture->GetMTime() < this->MTime)
@@ -164,7 +153,7 @@ void vtkPanoramicProjectionPass::InitOpenGLResources(vtkOpenGLRenderWindow* renW
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::Project(vtkOpenGLRenderWindow* renWin)
 {
   if (this->QuadHelper && this->MTime > this->QuadHelper->ShaderChangeValue)
@@ -259,7 +248,7 @@ void vtkPanoramicProjectionPass::Project(vtkOpenGLRenderWindow* renWin)
   this->CubeMapTexture->Deactivate();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::RenderOnFace(const vtkRenderState* s, int faceIndex)
 {
   // We can cull the back face is angle is inferior to 2 * (pi - atan(sqrt(2))) radians
@@ -358,7 +347,7 @@ void vtkPanoramicProjectionPass::RenderOnFace(const vtkRenderState* s, int faceI
   r->SetActiveCamera(oldCamera);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->Superclass::ReleaseGraphicsResources(w);
@@ -377,3 +366,4 @@ void vtkPanoramicProjectionPass::ReleaseGraphicsResources(vtkWindow* w)
     this->CubeMapTexture = nullptr;
   }
 }
+VTK_ABI_NAMESPACE_END

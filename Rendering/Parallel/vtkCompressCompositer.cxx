@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompressCompositer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // This software and ancillary information known as vtk_ext (and
 // herein called "SOFTWARE") is made available under the terms
@@ -43,38 +31,41 @@
 #include "vtkFloatArray.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkToolkits.h"
 #include "vtkUnsignedCharArray.h"
 
 #include "vtkTimerLog.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompressCompositer);
 
 // Different pixel types to template.
-typedef struct
+struct vtkCharRGBType_t
 {
   unsigned char r;
   unsigned char g;
   unsigned char b;
-} vtkCharRGBType;
+};
+using vtkCharRGBType = struct vtkCharRGBType_t;
 
-typedef struct
+struct vtkCharRGBAType_t
 {
   unsigned char r;
   unsigned char g;
   unsigned char b;
   unsigned char a;
-} vtkCharRGBAType;
+};
+using vtkCharRGBAType = struct vtkCharRGBAType_t;
 
-typedef struct
+struct vtkFloatRGBAType_t
 {
   float r;
   float g;
   float b;
   float a;
-} vtkFloatRGBAType;
+};
+using vtkFloatRGBAType = struct vtkFloatRGBAType_t;
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompressCompositer::vtkCompressCompositer()
 {
   this->InternalPData = nullptr;
@@ -82,7 +73,7 @@ vtkCompressCompositer::vtkCompressCompositer()
   this->Timer = vtkTimerLog::New();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompressCompositer::~vtkCompressCompositer()
 {
   if (this->InternalPData)
@@ -100,7 +91,7 @@ vtkCompressCompositer::~vtkCompressCompositer()
   this->Timer = nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compress background pixels with runlength encoding.
 // z values above 1.0 mean: Repeat background for that many pixels.
 // We could easily compress inplace, but it works out better for buffer
@@ -158,7 +149,7 @@ int vtkCompressCompositerCompress(float* zIn, P* pIn, float* zOut, P* pOut, int 
   return length;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compress background pixels with runlength encoding.
 // z values above 1.0 mean: Repeat background for that many pixels.
 // We could easily compress inplace, but it works out better for buffer
@@ -212,7 +203,7 @@ void vtkCompressCompositer::Compress(
   vtkTimerLog::MarkEndEvent("Compress");
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //  z values above 1.0 mean: Repeat background for that many pixels.
 // Assume that the array has enough allocated space for the uncompressed.
 // In place/reverse order.
@@ -246,7 +237,7 @@ void vtkCompressCompositerUncompress(float* zIn, P* pIn, float* zOut, P* pOut, i
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compress background pixels with runlength encoding.
 // z values above 1.0 mean: Repeat background for that many pixels.
 // We could easily compress inplace, but it works out better for buffer
@@ -299,7 +290,7 @@ void vtkCompressCompositer::Uncompress(
   vtkTimerLog::MarkEndEvent("Uncompress");
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Can handle compositing compressed buffers.
 // z values above 1.0 mean: Repeat background for that many pixels.
 template <class P>
@@ -417,7 +408,7 @@ int vtkCompressCompositerCompositePair(
   return length3;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Can handle compositing compressed buffers.
 // z values above 1.0 mean: Repeat background for that many pixels.
 void vtkCompressCompositer::CompositeImagePair(vtkFloatArray* localZ, vtkDataArray* localP,
@@ -475,7 +466,7 @@ void vtkCompressCompositer::CompositeImagePair(vtkFloatArray* localZ, vtkDataArr
 
 #define vtkTCPow2(j) (1 << (j))
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline int vtkTCLog2(int j, int& exact)
 {
   int counter = 0;
@@ -492,7 +483,7 @@ inline int vtkTCLog2(int j, int& exact)
   return counter - 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompressCompositer::CompositeBuffer(
   vtkDataArray* pBuf, vtkFloatArray* zBuf, vtkDataArray* pTmp, vtkFloatArray* zTmp)
 {
@@ -541,8 +532,7 @@ void vtkCompressCompositer::CompositeBuffer(
       this->InternalZData = nullptr;
     }
     this->InternalZData = vtkFloatArray::New();
-    vtkCompositer::ResizeFloatArray(
-      static_cast<vtkFloatArray*>(this->InternalZData), 1, zBuf->GetSize());
+    vtkCompositer::ResizeFloatArray(this->InternalZData, 1, zBuf->GetSize());
   }
 
   // Compress the incoming buffers (in place operation).
@@ -641,8 +631,9 @@ void vtkCompressCompositer::CompositeBuffer(
   // cerr << "Composite " << " took " << time << " seconds.\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompressCompositer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

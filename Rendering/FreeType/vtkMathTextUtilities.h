@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMathTextUtilities.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMathTextUtilities
  * @brief   Abstract interface to equation rendering.
@@ -28,6 +16,7 @@
 #include "vtkRenderingFreeTypeModule.h" // For export macro
 #include "vtkTextRenderer.h"            // for metrics
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 class vtkPath;
 class vtkTextProperty;
@@ -117,7 +106,7 @@ public:
   virtual int GetConstrainedFontSize(
     const char* str, vtkTextProperty* tprop, int targetWidth, int targetHeight, int dpi);
 
-  //@{
+  ///@{
   /**
    * Set to true if the graphics implementation requires texture image dimensions
    * to be a power of two. Default is true, but this member will be set
@@ -125,7 +114,7 @@ public:
    */
   virtual bool GetScaleToPowerOfTwo() = 0;
   virtual void SetScaleToPowerOfTwo(bool scale) = 0;
-  //@}
+  ///@}
 
 protected:
   vtkMathTextUtilities();
@@ -135,13 +124,14 @@ private:
   vtkMathTextUtilities(const vtkMathTextUtilities&) = delete;
   void operator=(const vtkMathTextUtilities&) = delete;
 
-  //@{
+  ///@{
   /**
    * The singleton instance and the singleton cleanup instance
    */
   static vtkMathTextUtilities* Instance;
   static vtkMathTextUtilitiesCleanup Cleanup;
-  //@}
+  ///@}
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

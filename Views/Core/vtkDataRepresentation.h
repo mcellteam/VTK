@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkDataRepresentation
  * @brief   The superclass for all representations
@@ -52,7 +36,9 @@
 
 #include "vtkPassInputTypeAlgorithm.h"
 #include "vtkViewsCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"   // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAlgorithmOutput;
 class vtkAnnotationLayers;
 class vtkAnnotationLink;
@@ -63,7 +49,7 @@ class vtkTrivialProducer;
 class vtkView;
 class vtkViewTheme;
 
-class VTKVIEWSCORE_EXPORT vtkDataRepresentation : public vtkPassInputTypeAlgorithm
+class VTKVIEWSCORE_EXPORT VTK_MARSHALAUTO vtkDataRepresentation : public vtkPassInputTypeAlgorithm
 {
 public:
   static vtkDataRepresentation* New();
@@ -123,7 +109,7 @@ public:
   }
   void Annotate(vtkView* view, vtkAnnotationLayers* annotations, bool extend);
 
-  //@{
+  ///@{
   /**
    * Whether this representation is able to handle a selection.
    * Default is true.
@@ -131,7 +117,7 @@ public:
   vtkSetMacro(Selectable, bool);
   vtkGetMacro(Selectable, bool);
   vtkBooleanMacro(Selectable, bool);
-  //@}
+  ///@}
 
   /**
    * Updates the selection in the selection link and fires a selection
@@ -198,7 +184,7 @@ public:
   }
   virtual vtkAlgorithmOutput* GetInternalOutputPort(int port, int conn);
 
-  //@{
+  ///@{
   /**
    * Set the selection type produced by this view.
    * This should be one of the content type constants defined in
@@ -209,30 +195,30 @@ public:
    */
   vtkSetMacro(SelectionType, int);
   vtkGetMacro(SelectionType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If a VALUES selection, the arrays used to produce a selection.
    */
   virtual void SetSelectionArrayNames(vtkStringArray* names);
   vtkGetObjectMacro(SelectionArrayNames, vtkStringArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If a VALUES selection, the array used to produce a selection.
    */
   virtual void SetSelectionArrayName(const char* name);
   virtual const char* GetSelectionArrayName();
-  //@}
+  ///@}
 
   /**
    * Convert the selection to a type appropriate for sharing with other
    * representations through vtkAnnotationLink, possibly using the view.
    * For the superclass, we just return the same selection.
    * Subclasses may do something more fancy, like convert the selection
-   * from a frustrum to a list of pedigree ids.  If the selection cannot
+   * from a frustum to a list of pedigree ids.  If the selection cannot
    * be applied to this representation, return nullptr.
    */
   virtual vtkSelection* ConvertSelection(vtkView* view, vtkSelection* selection);
@@ -261,13 +247,13 @@ protected:
    */
   virtual void ProcessEvents(vtkObject* caller, unsigned long eventId, void* callData);
 
-  //@{
+  ///@{
   /**
    * The annotation link for this representation.
    */
   virtual void SetAnnotationLinkInternal(vtkAnnotationLink* link);
   vtkAnnotationLink* AnnotationLinkInternal;
-  //@}
+  ///@}
 
   // Whether its representation can handle a selection.
   bool Selectable;
@@ -324,4 +310,5 @@ private:
   Internals* Implementation;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

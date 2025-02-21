@@ -1,27 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkISIReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkISIReader.h"
 #include "vtkCommand.h"
 #include "vtkObjectFactory.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
 #include "vtkVariant.h"
@@ -30,13 +13,14 @@
 #include <map>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkISIReader);
 
 // Not all platforms support std::getline(istream&, std::string) so
 // we have to provide our own
 static istream& my_getline(istream& input, std::string& output, char delimiter = '\n');
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkISIReader::vtkISIReader()
   : FileName(nullptr)
@@ -49,7 +33,7 @@ vtkISIReader::vtkISIReader()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkISIReader::~vtkISIReader()
 {
@@ -57,7 +41,7 @@ vtkISIReader::~vtkISIReader()
   this->SetFileName(nullptr);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkISIReader::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -67,7 +51,7 @@ void vtkISIReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "MaxRecords: " << this->MaxRecords << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkISIReader::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
@@ -182,7 +166,7 @@ int vtkISIReader::RequestData(
   return 1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static istream& my_getline(istream& input, std::string& output, char delimiter)
 {
@@ -212,3 +196,4 @@ static istream& my_getline(istream& input, std::string& output, char delimiter)
 
   return input;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWidgetEventTranslator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWidgetEventTranslator
  * @brief   map VTK events into widget events
@@ -37,6 +25,7 @@
 #include "vtkObject.h"
 
 // Support PIMPL encapsulation of internal STL map
+VTK_ABI_NAMESPACE_BEGIN
 class vtkEventMap;
 class vtkRenderWindowInteractor;
 class vtkCallbackCommand;
@@ -53,15 +42,15 @@ public:
    */
   static vtkWidgetEventTranslator* New();
 
-  //@{
+  ///@{
   /**
    * Standard macros.
    */
   vtkTypeMacro(vtkWidgetEventTranslator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use these methods to create the translation from a VTK event to a widget
    * event. Specifying vtkWidgetEvent::NoEvent or an empty
@@ -73,9 +62,9 @@ public:
     const char* keySym, unsigned long widgetEvent);
   void SetTranslation(vtkEvent* VTKevent, unsigned long widgetEvent);
   void SetTranslation(unsigned long VTKEvent, vtkEventData* edata, unsigned long widgetEvent);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Translate a VTK event into a widget event. If no event mapping is found,
    * then the methods return vtkWidgetEvent::NoEvent or a nullptr string.
@@ -86,9 +75,9 @@ public:
     unsigned long VTKEvent, int modifier, char keyCode, int repeatCount, const char* keySym);
   unsigned long GetTranslation(unsigned long VTKEvent, vtkEventData* edata);
   unsigned long GetTranslation(vtkEvent* VTKEvent);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Remove translations for a binding.
    * Returns the number of translations removed.
@@ -99,7 +88,7 @@ public:
   int RemoveTranslation(vtkEventData* e);
   int RemoveTranslation(unsigned long VTKEvent);
   int RemoveTranslation(const char* VTKEvent);
-  //@}
+  ///@}
 
   /**
    * Clear all events from the translator (i.e., no events will be
@@ -107,13 +96,13 @@ public:
    */
   void ClearEvents();
 
-  //@{
+  ///@{
   /**
    * Add the events in the current translation table to the interactor.
    */
   void AddEventsToParent(vtkAbstractWidget*, vtkCallbackCommand*, float priority);
   void AddEventsToInteractor(vtkRenderWindowInteractor*, vtkCallbackCommand*, float priority);
-  //@}
+  ///@}
 
 protected:
   // Constructors/destructors made public for widgets to use
@@ -131,4 +120,5 @@ private:
   void operator=(const vtkWidgetEventTranslator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkWidgetEventTranslator_h */

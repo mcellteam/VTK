@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArray.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkArray.h"
 #include "vtkDenseArray.h"
@@ -30,15 +13,16 @@
 // Standard functions
 //
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkArray::vtkArray() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkArray::~vtkArray() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkArray::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -96,8 +80,6 @@ vtkArray* vtkArray::CreateArray(int StorageType, int ValueType)
           return vtkDenseArray<vtkIdType>::New();
         case VTK_STRING:
           return vtkDenseArray<vtkStdString>::New();
-        case VTK_UNICODE_STRING:
-          return vtkDenseArray<vtkUnicodeString>::New();
         case VTK_VARIANT:
           return vtkDenseArray<vtkVariant>::New();
       }
@@ -140,8 +122,6 @@ vtkArray* vtkArray::CreateArray(int StorageType, int ValueType)
           return vtkSparseArray<vtkIdType>::New();
         case VTK_STRING:
           return vtkSparseArray<vtkStdString>::New();
-        case VTK_UNICODE_STRING:
-          return vtkSparseArray<vtkUnicodeString>::New();
         case VTK_VARIANT:
           return vtkSparseArray<vtkVariant>::New();
       }
@@ -157,7 +137,7 @@ vtkArray* vtkArray::CreateArray(int StorageType, int ValueType)
   return nullptr;
 }
 
-void vtkArray::Resize(const CoordinateT i)
+void vtkArray::Resize(CoordinateT i)
 {
   this->Resize(vtkArrayExtents(vtkArrayRange(0, i)));
 }
@@ -167,7 +147,7 @@ void vtkArray::Resize(const vtkArrayRange& i)
   this->Resize(vtkArrayExtents(i));
 }
 
-void vtkArray::Resize(const CoordinateT i, const CoordinateT j)
+void vtkArray::Resize(CoordinateT i, CoordinateT j)
 {
   this->Resize(vtkArrayExtents(vtkArrayRange(0, i), vtkArrayRange(0, j)));
 }
@@ -177,7 +157,7 @@ void vtkArray::Resize(const vtkArrayRange& i, const vtkArrayRange& j)
   this->Resize(vtkArrayExtents(i, j));
 }
 
-void vtkArray::Resize(const CoordinateT i, const CoordinateT j, const CoordinateT k)
+void vtkArray::Resize(CoordinateT i, CoordinateT j, CoordinateT k)
 {
   this->Resize(vtkArrayExtents(vtkArrayRange(0, i), vtkArrayRange(0, j), vtkArrayRange(0, k)));
 }
@@ -210,7 +190,7 @@ vtkTypeUInt64 vtkArray::GetSize()
 void vtkArray::SetName(const vtkStdString& raw_name)
 {
   // Don't allow newlines in array names ...
-  vtkStdString name(raw_name);
+  std::string name(raw_name);
   name.erase(std::remove(name.begin(), name.end(), '\r'), name.end());
   name.erase(std::remove(name.begin(), name.end(), '\n'), name.end());
 
@@ -232,7 +212,7 @@ void vtkArray::SetDimensionLabel(DimensionT i, const vtkStdString& raw_label)
   }
 
   // Don't allow newlines in dimension labels ...
-  vtkStdString label(raw_label);
+  std::string label(raw_label);
   label.erase(std::remove(label.begin(), label.end(), '\r'), label.end());
   label.erase(std::remove(label.begin(), label.end(), '\n'), label.end());
 
@@ -250,3 +230,4 @@ vtkStdString vtkArray::GetDimensionLabel(DimensionT i)
 
   return this->InternalGetDimensionLabel(i);
 }
+VTK_ABI_NAMESPACE_END

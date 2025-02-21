@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageHistogramStatistics.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageHistogramStatistics
  * @brief   Compute statistics for an image
@@ -35,6 +23,7 @@
 #include "vtkImageHistogram.h"
 #include "vtkImagingStatisticsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageStencilData;
 class vtkIdTypeArray;
 
@@ -75,7 +64,7 @@ public:
    */
   double GetStandardDeviation() { return this->StandardDeviation; }
 
-  //@{
+  ///@{
   /**
    * Set the percentiles to use for automatic view range computation.
    * This allows one to compute a range that does not include outliers
@@ -85,9 +74,9 @@ public:
    */
   vtkSetVector2Macro(AutoRangePercentiles, double);
   vtkGetVector2Macro(AutoRangePercentiles, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set lower and upper expansion factors to apply to the auto range
    * that was computed from the AutoRangePercentiles.  Any outliers that
@@ -100,9 +89,9 @@ public:
    */
   vtkSetVector2Macro(AutoRangeExpansionFactors, double);
   vtkGetVector2Macro(AutoRangeExpansionFactors, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get an automatically computed view range for the image, for use
    * with the lookup table or image property that is used when viewing
@@ -111,7 +100,7 @@ public:
    * than the rest.
    */
   vtkGetVector2Macro(AutoRange, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageHistogramStatistics();
@@ -134,4 +123,5 @@ private:
   void operator=(const vtkImageHistogramStatistics&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

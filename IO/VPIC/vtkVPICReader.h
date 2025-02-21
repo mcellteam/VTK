@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVPICReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVPICReader
  * @brief   class for reading VPIC data files
@@ -32,15 +20,16 @@
 #include "vtkIOVPICModule.h" // For export macro
 #include "vtkImageAlgorithm.h"
 
+class VPICDataSet;
+class GridExchange;
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCallbackCommand;
 class vtkDataArraySelection;
 class vtkFloatArray;
 class vtkStdString;
 class vtkMultiProcessController;
 class vtkInformation;
-
-class VPICDataSet;
-class GridExchange;
 
 class VTKIOVPIC_EXPORT vtkVPICReader : public vtkImageAlgorithm
 {
@@ -49,45 +38,45 @@ public:
   vtkTypeMacro(vtkVPICReader, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify file name of VPIC data file to read.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the stride in each dimension
    */
   vtkSetVector3Macro(Stride, int);
   vtkGetVector3Macro(Stride, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the simulation file decomposition in each dimension
    */
   vtkSetVector2Macro(XExtent, int);
   vtkSetVector2Macro(YExtent, int);
   vtkSetVector2Macro(ZExtent, int);
-  //@}
+  ///@}
 
   // Get the full layout size in files for setting the range in GUI
   vtkGetVector2Macro(XLayout, int);
   vtkGetVector2Macro(YLayout, int);
   vtkGetVector2Macro(ZLayout, int);
 
-  //@{
+  ///@{
   /**
    * Get the reader's output
    */
   vtkImageData* GetOutput();
   vtkImageData* GetOutput(int index);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The following methods allow selective reading of solutions fields.
    * By default, ALL data fields on the nodes are read, but this can
@@ -99,7 +88,7 @@ public:
   void SetPointArrayStatus(const char* name, int status);
   void DisableAllPointArrays();
   void EnableAllPointArrays();
-  //@}
+  ///@}
 
 protected:
   vtkVPICReader();
@@ -148,7 +137,8 @@ protected:
   int ghostLevel0;         // Left plane number of ghosts
   int ghostLevel1;         // Right plane number of ghosts
 
-  // Controls initializing and querrying MPI
+  // Controls initializing and querying MPI
+  void SetMPIController(vtkMultiProcessController*);
   vtkMultiProcessController* MPIController;
 
   // Selected field of interest
@@ -173,4 +163,5 @@ private:
   void operator=(const vtkVPICReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

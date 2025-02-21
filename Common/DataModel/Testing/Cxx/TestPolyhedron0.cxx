@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPolyhedron.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkCellArray.h"
@@ -88,10 +76,7 @@ int TestPolyhedron0(int argc, char* argv[])
   ugrid0->SetPoints(poly->GetPoints());
   ugrid0->GetPointData()->DeepCopy(poly->GetPointData());
 
-  vtkNew<vtkIdTypeArray> legacyFaces;
-  faces->ExportLegacyFormat(legacyFaces);
-
-  ugrid0->InsertNextCell(VTK_POLYHEDRON, 8, pointIds, 6, legacyFaces->GetPointer(0));
+  ugrid0->InsertNextCell(VTK_POLYHEDRON, 8, pointIds, faces);
 
   vtkPolyhedron* polyhedron = static_cast<vtkPolyhedron*>(ugrid0->GetCell(0));
 

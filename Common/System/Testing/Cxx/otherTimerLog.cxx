@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    otherTimerLog.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // .NAME
 // .SECTION Description
@@ -39,11 +27,11 @@ void otherTimerLogTest(ostream& strm)
   strm << "Test vtkTimerLog Start" << endl;
   vtkTimerLog* timer1 = vtkTimerLog::New();
 
-  timer1->SetMaxEntries(8);
+  vtkTimerLog::SetMaxEntries(8);
   timer1->StartTimer();
   for (j = 0; j < 4; j++)
   {
-    timer1->FormatAndMarkEvent("%s%d", "start", j);
+    vtkTimerLog::FormatAndMarkEvent("%s%d", "start", j);
     for (i = 0; i < 10000000; i++)
     {
       a *= a;
@@ -53,27 +41,27 @@ void otherTimerLogTest(ostream& strm)
 #else
     Sleep(1000);
 #endif
-    timer1->InsertTimedEvent("Timed Event", .00001, 0);
-    timer1->FormatAndMarkEvent("%s%d", "end", j);
+    vtkTimerLog::InsertTimedEvent("Timed Event", .00001, 0);
+    vtkTimerLog::FormatAndMarkEvent("%s%d", "end", j);
   }
   timer1->StopTimer();
   strm << *timer1;
   strm << "GetElapsedTime: " << timer1->GetElapsedTime() << endl;
-  strm << "GetCPUTime: " << timer1->GetCPUTime() << endl;
-  timer1->DumpLog("timing");
-  timer1->DumpLogWithIndents(&cerr, 0);
-  timer1->ResetLog();
-  timer1->CleanupLog();
+  strm << "GetCPUTime: " << vtkTimerLog::GetCPUTime() << endl;
+  vtkTimerLog::DumpLog("timing");
+  vtkTimerLog::DumpLogWithIndents(&cerr, 0);
+  vtkTimerLog::ResetLog();
+  vtkTimerLog::CleanupLog();
   unlink("timing");
 
   cerr << "============== timer separator ================\n";
 
-  timer1->ResetLog();
-  timer1->SetMaxEntries(5);
+  vtkTimerLog::ResetLog();
+  vtkTimerLog::SetMaxEntries(5);
 
   for (j = 0; j < 4; j++)
   {
-    timer1->MarkStartEvent("Other");
+    vtkTimerLog::MarkStartEvent("Other");
     for (i = 0; i < 10000000; i++)
     {
       a *= a;
@@ -83,21 +71,21 @@ void otherTimerLogTest(ostream& strm)
 #else
     Sleep(1000);
 #endif
-    timer1->InsertTimedEvent("Other Timed Event", .00001, 0);
-    timer1->MarkEndEvent("Other");
+    vtkTimerLog::InsertTimedEvent("Other Timed Event", .00001, 0);
+    vtkTimerLog::MarkEndEvent("Other");
   }
   timer1->StopTimer();
   strm << *timer1;
   strm << "GetElapsedTime: " << timer1->GetElapsedTime() << endl;
-  strm << "GetCPUTime: " << timer1->GetCPUTime() << endl;
-  timer1->DumpLog("timing2");
-  timer1->DumpLogWithIndents(&cerr, 0);
+  strm << "GetCPUTime: " << vtkTimerLog::GetCPUTime() << endl;
+  vtkTimerLog::DumpLog("timing2");
+  vtkTimerLog::DumpLogWithIndents(&cerr, 0);
   timer1->PrintSelf(cerr, vtkIndent());
-  timer1->ResetLog();
-  timer1->CleanupLog();
+  vtkTimerLog::ResetLog();
+  vtkTimerLog::CleanupLog();
   unlink("timing2");
 
-  timer1->SetMaxEntries(50);
+  vtkTimerLog::SetMaxEntries(50);
 
   timer1->Delete();
   strm << "Test vtkTimerLog End" << endl;

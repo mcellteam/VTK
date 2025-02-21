@@ -1,24 +1,6 @@
-// -*- c++ -*-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPSLACReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkPSLACReader
@@ -38,6 +20,7 @@
 #include "vtkIOParallelNetCDFModule.h" // For export macro
 #include "vtkSLACReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiProcessController;
 
 class VTKIOPARALLELNETCDF_EXPORT vtkPSLACReader : public vtkSLACReader
@@ -47,7 +30,7 @@ public:
   static vtkPSLACReader* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The controller used to communicate partition data.  The number of pieces
    * requested must agree with the number of processes, the piece requested must
@@ -56,7 +39,7 @@ public:
    */
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
   virtual void SetController(vtkMultiProcessController*);
-  //@}
+  ///@}
 
 protected:
   vtkPSLACReader();
@@ -94,14 +77,14 @@ protected:
   class vtkInternal;
   vtkInternal* PInternal;
 
-  //@{
+  ///@{
   /**
    * The number of pieces and the requested piece to load.  Synonymous with
    * the number of processes and the local process id.
    */
   int NumberOfPieces;
   int RequestedPiece;
-  //@}
+  ///@}
 
   /**
    * The number of points defined in the mesh file.
@@ -113,7 +96,7 @@ protected:
    */
   vtkIdType NumberOfGlobalMidpoints;
 
-  //@{
+  ///@{
   /**
    * The start/end points read by the given process.
    */
@@ -128,19 +111,20 @@ protected:
       result = this->NumberOfGlobalPoints;
     return result;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Piece information from the last call.
    */
   int NumberOfPiecesCache;
   int RequestedPieceCache;
-  //@}
+  ///@}
 
 private:
   vtkPSLACReader(const vtkPSLACReader&) = delete;
   void operator=(const vtkPSLACReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPSLACReader_h

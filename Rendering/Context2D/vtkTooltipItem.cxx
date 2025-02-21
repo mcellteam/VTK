@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTooltipItem.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkTooltipItem.h"
 
@@ -28,12 +16,13 @@
 
 #include "vtkObjectFactory.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTooltipItem);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTooltipItem::vtkTooltipItem()
   : PositionVector(0, 0)
 {
@@ -49,7 +38,7 @@ vtkTooltipItem::vtkTooltipItem()
   this->Brush->SetColor(242, 242, 242);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTooltipItem::~vtkTooltipItem()
 {
   this->Pen->Delete();
@@ -57,19 +46,19 @@ vtkTooltipItem::~vtkTooltipItem()
   this->TextProperties->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTooltipItem::SetPosition(const vtkVector2f& pos)
 {
   this->PositionVector = pos;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVector2f vtkTooltipItem::GetPositionVector()
 {
   return this->PositionVector;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTooltipItem::SetText(const vtkStdString& text)
 {
   if (this->Text != text)
@@ -79,22 +68,22 @@ void vtkTooltipItem::SetText(const vtkStdString& text)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkTooltipItem::GetText()
 {
   return this->Text;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTooltipItem::Update() {}
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTooltipItem::Paint(vtkContext2D* painter)
 {
   // This is where everything should be drawn, or dispatched to other methods.
   vtkDebugMacro(<< "Paint event called in vtkTooltipItem.");
 
-  if (!this->Visible || !this->Text)
+  if (!this->Visible)
   {
     return false;
   }
@@ -126,13 +115,13 @@ bool vtkTooltipItem::Paint(vtkContext2D* painter)
   bounds[0] = vtkVector2f(
     this->PositionVector.GetX() - 5 / scale[0], this->PositionVector.GetY() - 3 / scale[1]);
   bounds[1].Set(bounds[1].GetX() + 10 / scale[0], bounds[1].GetY() + 10 / scale[1]);
-  // Pull the tooltip back in if it will go off the edge of the screen.
-  float maxX = (this->Scene->GetViewWidth() - position[0]) / scale[0];
+  // Pull the tooltip back in if it will go off the edge of the scene.
+  float maxX = (this->Scene->GetSceneWidth() - position[0]) / scale[0];
   if (bounds[0].GetX() >= maxX - bounds[1].GetX())
   {
     bounds[0].SetX(maxX - bounds[1].GetX());
   }
-  float maxY = (this->Scene->GetViewHeight() - position[1]) / scale[1];
+  float maxY = (this->Scene->GetSceneHeight() - position[1]) / scale[1];
   if (bounds[0].GetY() >= maxY - bounds[1].GetY())
   {
     bounds[0].SetY(maxY - bounds[1].GetY());
@@ -150,8 +139,9 @@ bool vtkTooltipItem::Paint(vtkContext2D* painter)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTooltipItem::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

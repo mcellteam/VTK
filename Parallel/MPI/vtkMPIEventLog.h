@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMPIEventLog.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMPIEventLog
  * @brief   Class for logging and timing.
@@ -36,6 +24,7 @@
 #include "vtkObject.h"
 #include "vtkParallelMPIModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKPARALLELMPI_EXPORT vtkMPIEventLog : public vtkObject
 {
 public:
@@ -59,7 +48,7 @@ public:
    */
   int SetDescription(const char* name, const char* desc);
 
-  //@{
+  ///@{
   /**
    * These methods have to be called once on all processors
    * before and after invoking any logging events.
@@ -67,16 +56,16 @@ public:
    * See mpe documentation for file formats.
    */
   static void InitializeLogging();
-  static void FinalizeLogging(const char* fileName);
-  //@}
+  static void FinalizeLogging(VTK_FILEPATH const char* fileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Issue start and stop events for this log entry.
    */
   void StartLogging();
   void StopLogging();
-  //@}
+  ///@}
 
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -94,4 +83,5 @@ private:
   void operator=(const vtkMPIEventLog&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

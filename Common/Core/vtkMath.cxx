@@ -1,27 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMath.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the
-  U.S. Government. Redistribution and use in source and binary forms, with
-  or without modification, are permitted provided that this Notice and any
-  statement of authorship are reproduced on all copies.
-
-  Contact: pppebay@sandia.gov,dcthomp@sandia.gov,
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkMath.h"
 
 #include "vtkBoxMuellerRandomSequence.h"
@@ -36,6 +15,7 @@
 #include <limits>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMath);
 
 class vtkMathInternal : public vtkObjectBase
@@ -82,7 +62,7 @@ vtkSmartPointer<vtkMathInternal> vtkMath::Internal = vtkSmartPointer<vtkMathInte
 // Some useful macros and functions
 //
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the lowest value "i" for which 2^i >= x
 int vtkMath::CeilLog2(vtkTypeUInt64 x)
 {
@@ -107,7 +87,7 @@ int vtkMath::CeilLog2(vtkTypeUInt64 x)
   return y;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Generate pseudo-random numbers distributed according to the uniform
 // distribution between 0.0 and 1.0.
 // This is used to provide portability across different systems.
@@ -117,7 +97,7 @@ double vtkMath::Random()
   return vtkMath::Internal->Uniform->GetValue();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize seed value. NOTE: Random() has the bad property that
 // the first random number returned after RandomSeed() is called
 // is proportional to the seed value! To help solve this, call
@@ -128,7 +108,7 @@ void vtkMath::RandomSeed(int s)
   vtkMath::Internal->Uniform->SetSeed(s);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the current seed used by the random number generator.
 int vtkMath::GetSeed()
@@ -136,28 +116,28 @@ int vtkMath::GetSeed()
   return vtkMath::Internal->Uniform->GetSeed();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::Random(double min, double max)
 {
   vtkMath::Internal->Uniform->Next();
   return vtkMath::Internal->Uniform->GetRangeValue(min, max);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::Gaussian()
 {
   vtkMath::Internal->Gaussian->Next();
   return vtkMath::Internal->Gaussian->GetValue();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::Gaussian(double mean, double std)
 {
   vtkMath::Internal->Gaussian->Next();
   return vtkMath::Internal->Gaussian->GetScaledValue(mean, std);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeInt64 vtkMath::Factorial(int N)
 {
   if (N > 20)
@@ -181,7 +161,7 @@ vtkTypeInt64 vtkMath::Factorial(int N)
   return r;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The number of combinations of n objects from a pool of m objects (m>n).
 vtkTypeInt64 vtkMath::Binomial(int m, int n)
 {
@@ -193,7 +173,7 @@ vtkTypeInt64 vtkMath::Binomial(int m, int n)
   return static_cast<vtkTypeInt64>(r);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Start iterating over "m choose n" objects.
 // This function returns an array of n integers, each from 0 to m-1.
 // These integers represent the n items chosen from the set [0,m[.
@@ -212,7 +192,7 @@ int* vtkMath::BeginCombination(int m, int n)
   return r;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given \a m, \a n, and a valid \a combination of \a n integers in
 // the range [0,m[, this function alters the integers into the next
 // combination in a sequence of all combinations of \a n items from
@@ -220,17 +200,17 @@ int* vtkMath::BeginCombination(int m, int n)
 // If the \a combination is the last item in the sequence on input,
 // then \a combination is unaltered and 0 is returned.
 // Otherwise, 1 is returned and \a combination is updated.
-int vtkMath::NextCombination(int m, int n, int* r)
+int vtkMath::NextCombination(int m, int n, int* combination)
 {
   int status = 0;
   for (int i = n - 1; i >= 0; --i)
   {
-    if (r[i] < m - n + i)
+    if (combination[i] < m - n + i)
     {
-      int j = r[i] + 1;
+      int j = combination[i] + 1;
       while (i < n)
       {
-        r[i++] = j++;
+        combination[i++] = j++;
       }
       status = 1;
       break;
@@ -239,15 +219,15 @@ int vtkMath::NextCombination(int m, int n, int* r)
   return status;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Free the "iterator" array created by vtkMath::BeginCombination.
 //
-void vtkMath::FreeCombination(int* r)
+void vtkMath::FreeCombination(int* combination)
 {
-  delete[] r;
+  delete[] combination;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a unit vector v1, find two other unit vectors v2 and v3 which
 // which form an orthonormal set.
 template <class T1, class T2, class T3>
@@ -332,11 +312,102 @@ void vtkMath::Perpendiculars(const float v1[3], float v2[3], float v3[3], double
   vtkMathPerpendiculars(v1, v2, v3, theta);
 }
 
-#define VTK_SMALL_NUMBER 1.0e-12
+//------------------------------------------------------------------------------
+// Solve linear equation Ax = b using Gaussian Elimination with Partial Pivoting
+// for a 2x2 system. If the matrix is found to be singular within a small numerical
+// tolerance close to machine precision then 0 is returned.
+vtkTypeBool vtkMath::SolveLinearSystemGEPP2x2(
+  double a00, double a01, double a10, double a11, double b0, double b1, double& x0, double& x1)
+{
+  // Check if any of the matrix coefficients is zero.
+  // If so then swap rows/columns to form an upper triangular matrix without
+  // having to use GEPP.
+  bool cols_swapped = false;
+  if ((a00 == 0) || (a01 == 0) || (a10 == 0) || (a11 == 0))
+  {
+    // zero in either row of the 2nd column?
+    if ((a01 == 0) || (a11 == 0))
+    {
+      // swap columns
+      std::swap(a00, a01);
+      std::swap(a10, a11);
+      cols_swapped = true;
+    }
+    // zero in a00?
+    if (a00 == 0)
+    {
+      // swap rows
+      std::swap(a00, a10);
+      std::swap(a01, a11);
+      std::swap(b0, b1);
+    }
+  }
+  else
+  {
+    // None of the matrix coefficients are exactly zero.
+    // Use GEPP to form upper triangular matrix, i.e. so that a10 == 0.
+    // Select pivot by looking at largest absolute value in a00, a10
+    if (std::abs(a00) < std::abs(a10))
+    {
+      // swap rows so largest coefficient in first column is in the first row
+      std::swap(a00, a10);
+      std::swap(a01, a11);
+      std::swap(b0, b1);
+    }
+    // a10 = 0;            // bookkeeping only, value is no longer required
+    const double f = -a10 / a00;
+    a11 += a01 * f;
+    b1 += b0 * f;
+  }
+  // Have now an exact zero in a10.
+  // Need to check for singularity by looking at a11.
+  // Note the choice of eps is reasonable but somewhat arbitrary.
+  static const double eps = 256 * std::numeric_limits<double>::epsilon();
+  if (std::abs(a11) < eps)
+  {
+    // matrix is singular within small numerical tolerance
+    return 0;
+  }
+  // Solve the triangular system
+  if (a11 != 0)
+  {
+    x1 = b1 / a11;
+  }
+  else
+  {
+    return 0;
+  }
+  if (a00 != 0)
+  {
+    x0 = (b0 - a01 * x1) / a00;
+  }
+  else
+  {
+    return 0;
+  }
+  // other failures in solution?
+  if (!std::isfinite(x0) || !std::isfinite(x1))
+  {
+    return 0;
+  }
+  // If necessary swap solution vector rows.
+  if (cols_swapped)
+  {
+    std::swap(x0, x1);
+  }
+  return 1;
+}
 
-//----------------------------------------------------------------------------
+namespace
+{
+constexpr double VTK_SMALL_NUMBER = 1.0e-12;
+constexpr int VTK_MAX_SCRATCH_ARRAY_SIZE = 10;
+constexpr int VTK_MAX_ROTATIONS = 20;
+}
+
+//------------------------------------------------------------------------------
 // Solve linear equations Ax = b using Crout's method. Input is square matrix A
-// and load vector x. Solution x is written over load vector. The dimension of
+// and load vector b. Solution x is written over load vector. The dimension of
 // the matrix is specified in size. If error is found, method returns a 0.
 vtkTypeBool vtkMath::SolveLinearSystem(double** A, double* x, int size)
 {
@@ -344,23 +415,7 @@ vtkTypeBool vtkMath::SolveLinearSystem(double** A, double* x, int size)
   //
   if (size == 2)
   {
-    double det = vtkMath::Determinant2x2(A[0][0], A[0][1], A[1][0], A[1][1]);
-
-    static const double eps = 256.0 * std::numeric_limits<double>::epsilon();
-
-    if (std::fabs(det) < eps)
-    {
-      // Unable to solve linear system
-      return 0;
-    }
-
-    double y[2];
-    y[0] = (A[1][1] * x[0] - A[0][1] * x[1]) / det;
-    y[1] = (-A[1][0] * x[0] + A[0][0] * x[1]) / det;
-
-    x[0] = y[0];
-    x[1] = y[1];
-    return 1;
+    return SolveLinearSystemGEPP2x2(A[0][0], A[0][1], A[1][0], A[1][1], x[0], x[1], x[0], x[1]);
   }
   else if (size == 1)
   {
@@ -380,8 +435,8 @@ vtkTypeBool vtkMath::SolveLinearSystem(double** A, double* x, int size)
 
   // Check on allocation of working vectors
   //
-  int *index, scratch[10];
-  index = (size < 10 ? scratch : new int[size]);
+  int *index, scratch[VTK_MAX_SCRATCH_ARRAY_SIZE];
+  index = (size <= VTK_MAX_SCRATCH_ARRAY_SIZE ? scratch : new int[size]);
 
   //
   // Factor and solve matrix
@@ -392,38 +447,27 @@ vtkTypeBool vtkMath::SolveLinearSystem(double** A, double* x, int size)
   }
   vtkMath::LUSolveLinearSystem(A, index, x, size);
 
-  if (size >= 10)
+  if (size > VTK_MAX_SCRATCH_ARRAY_SIZE)
   {
     delete[] index;
   }
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Invert input square matrix A into matrix AI. Note that A is modified during
 // the inversion. The size variable is the dimension of the matrix. Returns 0
 // if inverse not computed.
 vtkTypeBool vtkMath::InvertMatrix(double** A, double** AI, int size)
 {
-  int *index, iScratch[10];
-  double *column, dScratch[10];
-
-  // Check on allocation of working vectors
-  //
-  if (size <= 10)
-  {
-    index = iScratch;
-    column = dScratch;
-  }
-  else
-  {
-    index = new int[size];
-    column = new double[size];
-  }
+  int iScratch[VTK_MAX_SCRATCH_ARRAY_SIZE];
+  int* index = (size <= VTK_MAX_SCRATCH_ARRAY_SIZE ? iScratch : new int[size]);
+  double dScratch[VTK_MAX_SCRATCH_ARRAY_SIZE];
+  double* column = (size <= VTK_MAX_SCRATCH_ARRAY_SIZE ? dScratch : new double[size]);
 
   vtkTypeBool retVal = vtkMath::InvertMatrix(A, AI, size, index, column);
 
-  if (size > 10)
+  if (size > VTK_MAX_SCRATCH_ARRAY_SIZE)
   {
     delete[] index;
     delete[] column;
@@ -432,7 +476,7 @@ vtkTypeBool vtkMath::InvertMatrix(double** A, double** AI, int size)
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Factor linear equations Ax = b using LU decomposition A = LU where L is
 // lower triangular matrix and U is upper triangular matrix. Input is
 // square matrix A, integer array of pivot indices index[0->n-1], and size
@@ -440,8 +484,8 @@ vtkTypeBool vtkMath::InvertMatrix(double** A, double** AI, int size)
 // found, method returns 0.
 vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size)
 {
-  double scratch[10];
-  double* scale = (size < 10 ? scratch : new double[size]);
+  double scratch[VTK_MAX_SCRATCH_ARRAY_SIZE];
+  double* scale = (size <= VTK_MAX_SCRATCH_ARRAY_SIZE ? scratch : new double[size]);
 
   int i, j, k;
   int maxI = 0;
@@ -454,7 +498,7 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size)
   {
     for (largest = 0.0, j = 0; j < size; ++j)
     {
-      if ((temp2 = fabs(A[i][j])) > largest)
+      if ((temp2 = std::abs(A[i][j])) > largest)
       {
         largest = temp2;
       }
@@ -463,6 +507,10 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size)
     if (largest == 0.0)
     {
       vtkGenericWarningMacro(<< "Unable to factor linear system");
+      if (size > VTK_MAX_SCRATCH_ARRAY_SIZE)
+      {
+        delete[] scale;
+      }
       return 0;
     }
     scale[i] = 1.0 / largest;
@@ -493,7 +541,7 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size)
       }
       A[i][j] = sum;
 
-      if ((temp1 = scale[i] * fabs(sum)) >= largest)
+      if ((temp1 = scale[i] * std::abs(sum)) >= largest)
       {
         largest = temp1;
         maxI = i;
@@ -517,9 +565,13 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size)
     //
     index[j] = maxI;
 
-    if (fabs(A[j][j]) <= VTK_SMALL_NUMBER)
+    if (std::abs(A[j][j]) <= VTK_SMALL_NUMBER)
     {
       vtkGenericWarningMacro(<< "Unable to factor linear system");
+      if (size > VTK_MAX_SCRATCH_ARRAY_SIZE)
+      {
+        delete[] scale;
+      }
       return 0;
     }
 
@@ -533,7 +585,7 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size)
     }
   }
 
-  if (size >= 10)
+  if (size > VTK_MAX_SCRATCH_ARRAY_SIZE)
   {
     delete[] scale;
   }
@@ -541,7 +593,7 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Solve linear equations Ax = b using LU decomposition A = LU where L is
 // lower triangular matrix and U is upper triangular matrix. Input is
 // factored matrix A=LU, integer array of pivot indices index[0->n-1],
@@ -590,19 +642,11 @@ void vtkMath::LUSolveLinearSystem(double** A, int* index, double* x, int size)
   }
 }
 
-#undef VTK_SMALL_NUMBER
-
 #define VTK_ROTATE(a, i, j, k, l)                                                                  \
   g = a[i][j];                                                                                     \
   h = a[k][l];                                                                                     \
   a[i][j] = g - s * (h + g * tau);                                                                 \
   a[k][l] = h + s * (g - h * tau)
-
-#define VTK_MAX_ROTATIONS 20
-
-//#undef VTK_MAX_ROTATIONS
-
-//#define VTK_MAX_ROTATIONS 50
 
 // Jacobi iteration for the solution of eigenvectors/eigenvalues of a nxn
 // real symmetric matrix. Square nxn matrix a; size of matrix in n;
@@ -615,16 +659,9 @@ vtkTypeBool vtkJacobiN(T** a, int n, T* w, T** v)
 {
   int i, j, k, iq, ip, numPos;
   T tresh, theta, tau, t, sm, s, h, g, c, tmp;
-  T bspace[4], zspace[4];
-  T* b = bspace;
-  T* z = zspace;
-
-  // only allocate memory if the matrix is large
-  if (n > 4)
-  {
-    b = new T[n];
-    z = new T[n];
-  }
+  T bspace[VTK_MAX_SCRATCH_ARRAY_SIZE], zspace[VTK_MAX_SCRATCH_ARRAY_SIZE];
+  T* b = (n <= VTK_MAX_SCRATCH_ARRAY_SIZE) ? bspace : new T[n];
+  T* z = (n <= VTK_MAX_SCRATCH_ARRAY_SIZE) ? zspace : new T[n];
 
   // initialize
   for (ip = 0; ip < n; ip++)
@@ -649,7 +686,7 @@ vtkTypeBool vtkJacobiN(T** a, int n, T* w, T** v)
     {
       for (iq = ip + 1; iq < n; iq++)
       {
-        sm += fabs(a[ip][iq]);
+        sm += std::abs(a[ip][iq]);
       }
     }
     if (sm == 0.0)
@@ -670,24 +707,25 @@ vtkTypeBool vtkJacobiN(T** a, int n, T* w, T** v)
     {
       for (iq = ip + 1; iq < n; iq++)
       {
-        g = 100.0 * fabs(a[ip][iq]);
+        g = 100.0 * std::abs(a[ip][iq]);
 
         // after 4 sweeps
-        if (i > 3 && (fabs(w[ip]) + g) == fabs(w[ip]) && (fabs(w[iq]) + g) == fabs(w[iq]))
+        if (i > 3 && (std::abs(w[ip]) + g) == std::abs(w[ip]) &&
+          (std::abs(w[iq]) + g) == std::abs(w[iq]))
         {
           a[ip][iq] = 0.0;
         }
-        else if (fabs(a[ip][iq]) > tresh)
+        else if (std::abs(a[ip][iq]) > tresh)
         {
           h = w[iq] - w[ip];
-          if ((fabs(h) + g) == fabs(h))
+          if ((std::abs(h) + g) == std::abs(h))
           {
             t = (a[ip][iq]) / h;
           }
           else
           {
             theta = 0.5 * h / (a[ip][iq]);
-            t = 1.0 / (fabs(theta) + std::sqrt(1.0 + theta * theta));
+            t = 1.0 / (std::abs(theta) + std::sqrt(1.0 + theta * theta));
             if (theta < 0.0)
             {
               t = -t;
@@ -738,6 +776,11 @@ vtkTypeBool vtkJacobiN(T** a, int n, T* w, T** v)
   if (i >= VTK_MAX_ROTATIONS)
   {
     vtkGenericWarningMacro("vtkMath::Jacobi: Error extracting eigenfunctions");
+    if (n > VTK_MAX_SCRATCH_ARRAY_SIZE)
+    {
+      delete[] b;
+      delete[] z;
+    }
     return 0;
   }
 
@@ -766,7 +809,7 @@ vtkTypeBool vtkJacobiN(T** a, int n, T* w, T** v)
       }
     }
   }
-  // insure eigenvector consistency (i.e., Jacobi can compute vectors that
+  // ensure eigenvector consistency (i.e., Jacobi can compute vectors that
   // are negative of one another (.707,.707,0) and (-.707,-.707,0). This can
   // reek havoc in hyperstreamline/other stuff. We will select the most
   // positive eigenvector.
@@ -789,7 +832,7 @@ vtkTypeBool vtkJacobiN(T** a, int n, T* w, T** v)
     }
   }
 
-  if (n > 4)
+  if (n > VTK_MAX_SCRATCH_ARRAY_SIZE)
   {
     delete[] b;
     delete[] z;
@@ -798,21 +841,20 @@ vtkTypeBool vtkJacobiN(T** a, int n, T* w, T** v)
 }
 
 #undef VTK_ROTATE
-#undef VTK_MAX_ROTATIONS
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkMath::JacobiN(float** a, int n, float* w, float** v)
 {
   return vtkJacobiN(a, n, w, v);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkMath::JacobiN(double** a, int n, double* w, double** v)
 {
   return vtkJacobiN(a, n, w, v);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Jacobi iteration for the solution of eigenvectors/eigenvalues of a 3x3
 // real symmetric matrix. Square 3x3 matrix a; output eigenvalues in w;
 // and output eigenvectors in v. Resulting eigenvalues/vectors are sorted
@@ -822,13 +864,13 @@ vtkTypeBool vtkMath::Jacobi(float** a, float* w, float** v)
   return vtkMath::JacobiN(a, 3, w, v);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkMath::Jacobi(double** a, double* w, double** v)
 {
   return vtkMath::JacobiN(a, 3, w, v);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Estimate the condition number of a LU factored matrix. Used to judge the
 // accuracy of the solution. The matrix A must have been previously factored
 // using the method LUFactorLinearSystem. The condition number is the ratio
@@ -846,9 +888,9 @@ double vtkMath::EstimateMatrixCondition(const double* const* A, int size)
   {
     for (j = i; j < size; ++j)
     {
-      if (fabs(A[i][j]) > max)
+      if (std::abs(A[i][j]) > max)
       {
-        max = fabs(A[i][j]);
+        max = std::abs(A[i][j]);
       }
     }
   }
@@ -856,9 +898,9 @@ double vtkMath::EstimateMatrixCondition(const double* const* A, int size)
   // find the minimum diagonal value
   for (i = 0; i < size; ++i)
   {
-    if (fabs(A[i][i]) < min)
+    if (std::abs(A[i][i]) < min)
     {
-      min = fabs(A[i][i]);
+      min = std::abs(A[i][i]);
     }
   }
 
@@ -872,7 +914,7 @@ double vtkMath::EstimateMatrixCondition(const double* const* A, int size)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Solves for the least squares best fit matrix for the homogeneous equation X'M' = 0'.
 // Uses the method described on pages 40-41 of Computer Vision by
 // Forsyth and Ponce, which is that the solution is the eigenvector
@@ -959,9 +1001,7 @@ vtkTypeBool vtkMath::SolveHomogeneousLeastSquares(
   return 1;
 }
 
-static const double VTK_SMALL_NUMBER = 1.0e-12;
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Solves for the least squares best fit matrix for the equation X'M' = Y'.
 // Uses pseudoinverse to get the ordinary least squares.
 // The inputs and output are transposed matrices.
@@ -987,8 +1027,8 @@ vtkTypeBool vtkMath::SolveLeastSquares(int numberOfSamples, double** xt, int xOr
 
   int i, j, k;
 
-  bool someHomogeneous = 0;
-  bool allHomogeneous = 1;
+  bool someHomogeneous = false;
+  bool allHomogeneous = true;
   double** hmt = nullptr;
   vtkTypeBool homogRC = 0;
   int* homogenFlags = new int[yOrder];
@@ -1013,9 +1053,9 @@ vtkTypeBool vtkMath::SolveLeastSquares(int numberOfSamples, double** xt, int xOr
     {
       for (j = 0; j < yOrder; ++j)
       {
-        if (fabs(yt[i][j]) > VTK_SMALL_NUMBER)
+        if (std::abs(yt[i][j]) > VTK_SMALL_NUMBER)
         {
-          allHomogeneous = 0;
+          allHomogeneous = false;
           homogenFlags[j] = 0;
         }
       }
@@ -1035,7 +1075,7 @@ vtkTypeBool vtkMath::SolveLeastSquares(int numberOfSamples, double** xt, int xOr
     // any of them.
     if (allHomogeneous)
     {
-      someHomogeneous = 1;
+      someHomogeneous = true;
     }
     else
     {
@@ -1043,7 +1083,7 @@ vtkTypeBool vtkMath::SolveLeastSquares(int numberOfSamples, double** xt, int xOr
       {
         if (homogenFlags[j])
         {
-          someHomogeneous = 1;
+          someHomogeneous = true;
         }
       }
     }
@@ -1190,7 +1230,7 @@ vtkTypeBool vtkMath::SolveLeastSquares(int numberOfSamples, double** xt, int xOr
 // if inverse not computed.
 // -----------------------
 // For thread safe behavior, temporary arrays tmp1SIze and tmp2Size
-// of length size must be passsed in.
+// of length size must be passed in.
 vtkTypeBool vtkMath::InvertMatrix(
   double** A, double** AI, int size, int* tmp1Size, double* tmp2Size)
 {
@@ -1246,7 +1286,7 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size, doub
   {
     for (largest = 0.0, j = 0; j < size; ++j)
     {
-      if ((temp2 = fabs(A[i][j])) > largest)
+      if ((temp2 = std::abs(A[i][j])) > largest)
       {
         largest = temp2;
       }
@@ -1285,7 +1325,7 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size, doub
       }
       A[i][j] = sum;
 
-      if ((temp1 = tmpSize[i] * fabs(sum)) >= largest)
+      if ((temp1 = tmpSize[i] * std::abs(sum)) >= largest)
       {
         largest = temp1;
         maxI = i;
@@ -1298,9 +1338,7 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size, doub
     {
       for (k = 0; k < size; ++k)
       {
-        temp1 = A[maxI][k];
-        A[maxI][k] = A[j][k];
-        A[j][k] = temp1;
+        std::swap(A[maxI][k], A[j][k]);
       }
       tmpSize[maxI] = tmpSize[j];
     }
@@ -1309,7 +1347,7 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size, doub
     //
     index[j] = maxI;
 
-    if (fabs(A[j][j]) <= VTK_SMALL_NUMBER)
+    if (std::abs(A[j][j]) <= VTK_SMALL_NUMBER)
     {
       vtkGenericWarningMacro(<< "Unable to factor linear system");
       return 0;
@@ -1328,26 +1366,24 @@ vtkTypeBool vtkMath::LUFactorLinearSystem(double** A, int* index, int size, doub
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // All of the following methods are for dealing with 3x3 matrices
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // helper function, swap two 3-vectors
 template <class T>
 inline void vtkSwapVectors3(T v1[3], T v2[3])
 {
   for (int i = 0; i < 3; ++i)
   {
-    T tmp = v1[i];
-    v1[i] = v2[i];
-    v2[i] = tmp;
+    std::swap(v1[i], v2[i]);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Unrolled LU factorization of a 3x3 matrix with pivoting.
 template <class T>
 inline void vtkLUFactor3x3(T A[3][3], int index[3])
@@ -1360,12 +1396,12 @@ inline void vtkLUFactor3x3(T A[3][3], int index[3])
 
   for (i = 0; i < 3; ++i)
   {
-    largest = fabs(A[i][0]);
-    if ((tmp = fabs(A[i][1])) > largest)
+    largest = std::abs(A[i][0]);
+    if ((tmp = std::abs(A[i][1])) > largest)
     {
       largest = tmp;
     }
-    if ((tmp = fabs(A[i][2])) > largest)
+    if ((tmp = std::abs(A[i][2])) > largest)
     {
       largest = tmp;
     }
@@ -1375,14 +1411,14 @@ inline void vtkLUFactor3x3(T A[3][3], int index[3])
   // Loop over all columns using Crout's method
 
   // first column
-  largest = scale[0] * fabs(A[0][0]);
+  largest = scale[0] * std::abs(A[0][0]);
   maxI = 0;
-  if ((tmp = scale[1] * fabs(A[1][0])) >= largest)
+  if ((tmp = scale[1] * std::abs(A[1][0])) >= largest)
   {
     largest = tmp;
     maxI = 1;
   }
-  if ((tmp = scale[2] * fabs(A[2][0])) >= largest)
+  if ((tmp = scale[2] * std::abs(A[2][0])) >= largest)
   {
     maxI = 2;
   }
@@ -1399,9 +1435,9 @@ inline void vtkLUFactor3x3(T A[3][3], int index[3])
   // second column
   A[1][1] -= A[1][0] * A[0][1];
   A[2][1] -= A[2][0] * A[0][1];
-  largest = scale[1] * fabs(A[1][1]);
+  largest = scale[1] * std::abs(A[1][1]);
   maxI = 1;
-  if ((tmp = scale[2] * fabs(A[2][1])) >= largest)
+  if ((tmp = scale[2] * std::abs(A[2][1])) >= largest)
   {
     maxI = 2;
     vtkSwapVectors3(A[2], A[1]);
@@ -1416,19 +1452,19 @@ inline void vtkLUFactor3x3(T A[3][3], int index[3])
   index[2] = 2;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::LUFactor3x3(float A[3][3], int index[3])
 {
   vtkLUFactor3x3(A, index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::LUFactor3x3(double A[3][3], int index[3])
 {
   vtkLUFactor3x3(A, index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Backsubstitution with an LU-decomposed matrix.
 template <class T1, class T2>
 inline void vtkLUSolve3x3(const T1 A[3][3], const int index[3], T2 x[3])
@@ -1456,19 +1492,19 @@ inline void vtkLUSolve3x3(const T1 A[3][3], const int index[3], T2 x[3])
   x[0] = (x[0] - A[0][1] * x[1] - A[0][2] * x[2]) / A[0][0];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::LUSolve3x3(const float A[3][3], const int index[3], float x[3])
 {
   vtkLUSolve3x3(A, index, x);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::LUSolve3x3(const double A[3][3], const int index[3], double x[3])
 {
   vtkLUSolve3x3(A, index, x);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // this method solves Ay = x for y
 template <class T1, class T2, class T3>
 inline void vtkLinearSolve3x3(const T1 A[3][3], const T2 x[3], T3 y[3])
@@ -1510,19 +1546,19 @@ inline void vtkLinearSolve3x3(const T1 A[3][3], const T2 x[3], T3 y[3])
   y[2] = v3 / det;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::LinearSolve3x3(const float A[3][3], const float x[3], float y[3])
 {
   vtkLinearSolve3x3(A, x, y);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::LinearSolve3x3(const double A[3][3], const double x[3], double y[3])
 {
   vtkLinearSolve3x3(A, x, y);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3>
 inline void vtkMultiply3x3(const T1 A[3][3], const T2 v[3], T3 u[3])
 {
@@ -1535,19 +1571,19 @@ inline void vtkMultiply3x3(const T1 A[3][3], const T2 v[3], T3 u[3])
   u[2] = z;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Multiply3x3(const float A[3][3], const float v[3], float u[3])
 {
   vtkMultiply3x3(A, v, u);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Multiply3x3(const double A[3][3], const double v[3], double u[3])
 {
   vtkMultiply3x3(A, v, u);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T, class T2, class T3>
 inline void vtkMultiplyMatrix3x3(const T A[3][3], const T2 B[3][3], T3 C[3][3])
 {
@@ -1568,19 +1604,19 @@ inline void vtkMultiplyMatrix3x3(const T A[3][3], const T2 B[3][3], T3 C[3][3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Multiply3x3(const float A[3][3], const float B[3][3], float C[3][3])
 {
   vtkMultiplyMatrix3x3(A, B, C);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Multiply3x3(const double A[3][3], const double B[3][3], double C[3][3])
 {
   vtkMultiplyMatrix3x3(A, B, C);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::MultiplyMatrix(const double* const* A, const double* const* B, unsigned int rowA,
   unsigned int colA, unsigned int rowB, unsigned int colB, double** C)
 {
@@ -1608,7 +1644,7 @@ void vtkMath::MultiplyMatrix(const double* const* A, const double* const* B, uns
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2>
 inline void vtkTranspose3x3(const T1 A[3][3], T2 AT[3][3])
 {
@@ -1628,19 +1664,19 @@ inline void vtkTranspose3x3(const T1 A[3][3], T2 AT[3][3])
   AT[2][2] = A[2][2];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Transpose3x3(const float A[3][3], float AT[3][3])
 {
   vtkTranspose3x3(A, AT);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Transpose3x3(const double A[3][3], double AT[3][3])
 {
   vtkTranspose3x3(A, AT);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2>
 inline void vtkInvert3x3(const T1 A[3][3], T2 AI[3][3])
 {
@@ -1683,19 +1719,19 @@ inline void vtkInvert3x3(const T1 A[3][3], T2 AI[3][3])
   AI[2][2] = f3 / det;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Invert3x3(const float A[3][3], float AI[3][3])
 {
   vtkInvert3x3(A, AI);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Invert3x3(const double A[3][3], double AI[3][3])
 {
   vtkInvert3x3(A, AI);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 inline void vtkIdentity3x3(T A[3][3])
 {
@@ -1706,123 +1742,19 @@ inline void vtkIdentity3x3(T A[3][3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Identity3x3(float A[3][3])
 {
   vtkIdentity3x3(A);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Identity3x3(double A[3][3])
 {
   vtkIdentity3x3(A);
 }
 
-//----------------------------------------------------------------------------
-template <class T1, class T2>
-inline void vtkQuaternionToMatrix3x3(const T1 quat[4], T2 A[3][3])
-{
-  T2 ww = quat[0] * quat[0];
-  T2 wx = quat[0] * quat[1];
-  T2 wy = quat[0] * quat[2];
-  T2 wz = quat[0] * quat[3];
-
-  T2 xx = quat[1] * quat[1];
-  T2 yy = quat[2] * quat[2];
-  T2 zz = quat[3] * quat[3];
-
-  T2 xy = quat[1] * quat[2];
-  T2 xz = quat[1] * quat[3];
-  T2 yz = quat[2] * quat[3];
-
-  T2 rr = xx + yy + zz;
-  // normalization factor, just in case quaternion was not normalized
-  T2 f = 1 / (ww + rr);
-  T2 s = (ww - rr) * f;
-  f *= 2;
-
-  A[0][0] = xx * f + s;
-  A[1][0] = (xy + wz) * f;
-  A[2][0] = (xz - wy) * f;
-
-  A[0][1] = (xy - wz) * f;
-  A[1][1] = yy * f + s;
-  A[2][1] = (yz + wx) * f;
-
-  A[0][2] = (xz + wy) * f;
-  A[1][2] = (yz - wx) * f;
-  A[2][2] = zz * f + s;
-}
-
-//----------------------------------------------------------------------------
-void vtkMath::QuaternionToMatrix3x3(const float quat[4], float A[3][3])
-{
-  vtkQuaternionToMatrix3x3(quat, A);
-}
-
-//----------------------------------------------------------------------------
-void vtkMath::QuaternionToMatrix3x3(const double quat[4], double A[3][3])
-{
-  vtkQuaternionToMatrix3x3(quat, A);
-}
-
-//----------------------------------------------------------------------------
-//  The solution is based on
-//  Berthold K. P. Horn (1987),
-//  "Closed-form solution of absolute orientation using unit quaternions,"
-//  Journal of the Optical Society of America A, 4:629-642
-template <class T1, class T2>
-inline void vtkMatrix3x3ToQuaternion(const T1 A[3][3], T2 quat[4])
-{
-  T2 N[4][4];
-
-  // on-diagonal elements
-  N[0][0] = A[0][0] + A[1][1] + A[2][2];
-  N[1][1] = A[0][0] - A[1][1] - A[2][2];
-  N[2][2] = -A[0][0] + A[1][1] - A[2][2];
-  N[3][3] = -A[0][0] - A[1][1] + A[2][2];
-
-  // off-diagonal elements
-  N[0][1] = N[1][0] = A[2][1] - A[1][2];
-  N[0][2] = N[2][0] = A[0][2] - A[2][0];
-  N[0][3] = N[3][0] = A[1][0] - A[0][1];
-
-  N[1][2] = N[2][1] = A[1][0] + A[0][1];
-  N[1][3] = N[3][1] = A[0][2] + A[2][0];
-  N[2][3] = N[3][2] = A[2][1] + A[1][2];
-
-  T2 eigenvectors[4][4], eigenvalues[4];
-
-  // convert into format that JacobiN can use,
-  // then use Jacobi to find eigenvalues and eigenvectors
-  T2 *NTemp[4], *eigenvectorsTemp[4];
-  for (int i = 0; i < 4; ++i)
-  {
-    NTemp[i] = N[i];
-    eigenvectorsTemp[i] = eigenvectors[i];
-  }
-  vtkMath::JacobiN(NTemp, 4, eigenvalues, eigenvectorsTemp);
-
-  // the first eigenvector is the one we want
-  quat[0] = eigenvectors[0][0];
-  quat[1] = eigenvectors[1][0];
-  quat[2] = eigenvectors[2][0];
-  quat[3] = eigenvectors[3][0];
-}
-
-//----------------------------------------------------------------------------
-void vtkMath::Matrix3x3ToQuaternion(const float A[3][3], float quat[4])
-{
-  vtkMatrix3x3ToQuaternion(A, quat);
-}
-
-//----------------------------------------------------------------------------
-void vtkMath::Matrix3x3ToQuaternion(const double A[3][3], double quat[4])
-{
-  vtkMatrix3x3ToQuaternion(A, quat);
-}
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Multiplying two quaternions
 template <class T>
 inline void vtkQuaternionMultiplication(const T q1[4], const T q2[4], T q[4])
@@ -1853,18 +1785,19 @@ inline void vtkQuaternionMultiplication(const T q1[4], const T q2[4], T q[4])
   q[3] = wz + xy - yx + zw;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::MultiplyQuaternion(const float q1[4], const float q2[4], float q[4])
 {
   vtkQuaternionMultiplication(q1, q2, q);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::MultiplyQuaternion(const double q1[4], const double q2[4], double q[4])
 {
   vtkQuaternionMultiplication(q1, q2, q);
 }
 
+//----------------------------------------------------------------------------
 void vtkMath::RotateVectorByNormalizedQuaternion(const float v[3], const float q[4], float r[3])
 {
   float f = std::sqrt(q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
@@ -1953,7 +1886,7 @@ void vtkMath::RotateVectorByWXYZ(const double v[3], const double q[4], double r[
   r[2] = v[2] * cosT + crossKV[2] * sinT + q[3] * dotKV * (1.0 - cosT);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //  The orthogonalization is done via quaternions in order to avoid
 //  having to use a singular value decomposition algorithm.
 template <class T1, class T2>
@@ -1977,9 +1910,9 @@ inline void vtkOrthogonalize3x3(const T1 A[3][3], T2 B[3][3])
   // Loop over rows to get implicit scaling information
   for (i = 0; i < 3; ++i)
   {
-    T2 x1 = fabs(B[i][0]);
-    T2 x2 = fabs(B[i][1]);
-    T2 x3 = fabs(B[i][2]);
+    T2 x1 = std::abs(B[i][0]);
+    T2 x2 = std::abs(B[i][1]);
+    T2 x3 = std::abs(B[i][2]);
     largest = (x2 > x1 ? x2 : x1);
     largest = (x3 > largest ? x3 : largest);
     scale[i] = 1;
@@ -1990,9 +1923,9 @@ inline void vtkOrthogonalize3x3(const T1 A[3][3], T2 B[3][3])
   }
 
   // first column
-  T2 x1 = fabs(B[0][0]) * scale[0];
-  T2 x2 = fabs(B[1][0]) * scale[1];
-  T2 x3 = fabs(B[2][0]) * scale[2];
+  T2 x1 = std::abs(B[0][0]) * scale[0];
+  T2 x2 = std::abs(B[1][0]) * scale[1];
+  T2 x3 = std::abs(B[2][0]) * scale[2];
   index[0] = 0;
   largest = x1;
   if (x2 >= largest)
@@ -2011,8 +1944,8 @@ inline void vtkOrthogonalize3x3(const T1 A[3][3], T2 B[3][3])
   }
 
   // second column
-  T2 y2 = fabs(B[1][1]) * scale[1];
-  T2 y3 = fabs(B[2][1]) * scale[2];
+  T2 y2 = std::abs(B[1][1]) * scale[1];
+  T2 y3 = std::abs(B[2][1]) * scale[2];
   index[1] = 1;
   largest = y2;
   if (y3 >= largest)
@@ -2027,10 +1960,10 @@ inline void vtkOrthogonalize3x3(const T1 A[3][3], T2 B[3][3])
   // A quaternion can only describe a pure rotation, not
   // a rotation with a flip, therefore the flip must be
   // removed before the matrix is converted to a quaternion.
-  bool flip = 0;
+  bool flip = false;
   if (vtkDeterminant3x3(B) < 0)
   {
-    flip = 1;
+    flip = true;
     for (i = 0; i < 3; ++i)
     {
       B[0][i] = -B[0][i];
@@ -2069,19 +2002,19 @@ inline void vtkOrthogonalize3x3(const T1 A[3][3], T2 B[3][3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Orthogonalize3x3(const float A[3][3], float B[3][3])
 {
   vtkOrthogonalize3x3(A, B);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Orthogonalize3x3(const double A[3][3], double B[3][3])
 {
   vtkOrthogonalize3x3(A, B);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float vtkMath::Norm(const float* x, int n)
 {
   double sum = 0;
@@ -2093,7 +2026,7 @@ float vtkMath::Norm(const float* x, int n)
   return std::sqrt(sum);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::Norm(const double* x, int n)
 {
   double sum = 0;
@@ -2105,7 +2038,7 @@ double vtkMath::Norm(const double* x, int n)
   return std::sqrt(sum);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMath::ProjectVector(const float a[3], const float b[3], float projection[3])
 {
   float bSquared = vtkMath::Dot(b, b);
@@ -2129,7 +2062,7 @@ bool vtkMath::ProjectVector(const float a[3], const float b[3], float projection
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMath::ProjectVector(const double a[3], const double b[3], double projection[3])
 {
   double bSquared = vtkMath::Dot(b, b);
@@ -2146,14 +2079,13 @@ bool vtkMath::ProjectVector(const double a[3], const double b[3], double project
 
   for (int i = 0; i < 3; ++i)
   {
-    projection[i] = b[i];
+    projection[i] = b[i] * scale;
   }
-  vtkMath::MultiplyScalar(projection, scale);
 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMath::ProjectVector2D(const float a[2], const float b[2], float projection[2])
 {
   float bSquared = vtkMath::Dot2D(b, b);
@@ -2176,7 +2108,7 @@ bool vtkMath::ProjectVector2D(const float a[2], const float b[2], float projecti
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMath::ProjectVector2D(const double a[2], const double b[2], double projection[2])
 {
   double bSquared = vtkMath::Dot2D(b, b);
@@ -2199,7 +2131,7 @@ bool vtkMath::ProjectVector2D(const double a[2], const double b[2], double proje
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Extract the eigenvalues and eigenvectors from a 3x3 matrix.
 // The eigenvectors (the columns of V) will be normalized.
 // The eigenvectors are aligned optimally with the x, y, and z
@@ -2242,11 +2174,11 @@ inline void vtkDiagonalize3x3(const T1 A[3][3], T2 w[3], T2 V[3][3])
     if (w[(i + 1) % 3] == w[(i + 2) % 3]) // two eigenvalues are the same
     {
       // find maximum element of the independent eigenvector
-      maxVal = fabs(V[i][0]);
+      maxVal = std::abs(V[i][0]);
       maxI = 0;
       for (j = 1; j < 3; ++j)
       {
-        if (maxVal < (tmp = fabs(V[i][j])))
+        if (maxVal < (tmp = std::abs(V[i][j])))
         {
           maxVal = tmp;
           maxI = j;
@@ -2291,11 +2223,11 @@ inline void vtkDiagonalize3x3(const T1 A[3][3], T2 w[3], T2 V[3][3])
 
   // find the vector with the largest x element, make that vector
   // the first vector
-  maxVal = fabs(V[0][0]);
+  maxVal = std::abs(V[0][0]);
   maxI = 0;
   for (i = 1; i < 3; ++i)
   {
-    if (maxVal < (tmp = fabs(V[i][0])))
+    if (maxVal < (tmp = std::abs(V[i][0])))
     {
       maxVal = tmp;
       maxI = i;
@@ -2310,7 +2242,7 @@ inline void vtkDiagonalize3x3(const T1 A[3][3], T2 w[3], T2 V[3][3])
     vtkSwapVectors3(V[maxI], V[0]);
   }
   // do the same for the y element
-  if (fabs(V[1][1]) < fabs(V[2][1]))
+  if (std::abs(V[1][1]) < std::abs(V[2][1]))
   {
     tmp = w[2];
     w[2] = w[1];
@@ -2340,19 +2272,19 @@ inline void vtkDiagonalize3x3(const T1 A[3][3], T2 w[3], T2 V[3][3])
   vtkMath::Transpose3x3(V, V);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Diagonalize3x3(const float A[3][3], float w[3], float V[3][3])
 {
   vtkDiagonalize3x3(A, w, V);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::Diagonalize3x3(const double A[3][3], double w[3], double V[3][3])
 {
   vtkDiagonalize3x3(A, w, V);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Perform singular value decomposition on the matrix A:
 //    A = U * W * VT
 // where U and VT are orthogonal W is diagonal (the diagonal elements
@@ -2439,7 +2371,7 @@ inline void vtkSingularValueDecomposition3x3(const T1 A[3][3], T2 U[3][3], T2 w[
   {
     for (j = 0; j < 3; ++j)
     {
-      if ((tmp = fabs(B[i][j] - M[i][j])) > maxerr)
+      if ((tmp = std::abs(B[i][j] - M[i][j])) > maxerr)
       {
         maxerr = tmp;
       }
@@ -2450,21 +2382,21 @@ inline void vtkSingularValueDecomposition3x3(const T1 A[3][3], T2 U[3][3], T2 w[
   */
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::SingularValueDecomposition3x3(
   const float A[3][3], float U[3][3], float w[3], float VT[3][3])
 {
   vtkSingularValueDecomposition3x3(A, U, w, VT);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::SingularValueDecomposition3x3(
   const double A[3][3], double U[3][3], double w[3], double VT[3][3])
 {
   vtkSingularValueDecomposition3x3(A, U, w, VT);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::RGBToHSV(float r, float g, float b, float* h, float* s, float* v)
 {
   double dh, ds, dv;
@@ -2474,7 +2406,7 @@ void vtkMath::RGBToHSV(float r, float g, float b, float* h, float* s, float* v)
   *v = static_cast<float>(dv);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::RGBToHSV(double r, double g, double b, double* h, double* s, double* v)
 {
   const double onethird = 1.0 / 3.0;
@@ -2534,7 +2466,7 @@ void vtkMath::RGBToHSV(double r, double g, double b, double* h, double* s, doubl
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::HSVToRGB(float h, float s, float v, float* r, float* g, float* b)
 {
   double dr, dg, db;
@@ -2544,7 +2476,7 @@ void vtkMath::HSVToRGB(float h, float s, float v, float* r, float* g, float* b)
   *b = static_cast<float>(db);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::HSVToRGB(double h, double s, double v, double* r, double* g, double* b)
 {
   const double onethird = 1.0 / 3.0;
@@ -2600,7 +2532,7 @@ void vtkMath::HSVToRGB(double h, double s, double v, double* r, double* g, doubl
   *b *= v;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::LabToXYZ(double L, double a, double b, double* x, double* y, double* z)
 {
   // LAB to XYZ
@@ -2642,7 +2574,7 @@ void vtkMath::LabToXYZ(double L, double a, double b, double* x, double* y, doubl
   *z = ref_Z * var_Z; // ref_Z = 1.089
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::XYZToLab(double x, double y, double z, double* L, double* a, double* b)
 {
   const double ref_X = 0.9505;
@@ -2682,7 +2614,7 @@ void vtkMath::XYZToLab(double x, double y, double z, double* L, double* a, doubl
   *b = 200 * (var_Y - var_Z);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::XYZToRGB(double x, double y, double z, double* r, double* g, double* b)
 {
   // double ref_X = 0.9505;        //Observer = 2 deg Illuminant = D65
@@ -2758,7 +2690,7 @@ void vtkMath::XYZToRGB(double x, double y, double z, double* r, double* g, doubl
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::RGBToXYZ(double r, double g, double b, double* x, double* y, double* z)
 {
   // The following performs a "gamma correction" specified by the sRGB color
@@ -2800,7 +2732,7 @@ void vtkMath::RGBToXYZ(double r, double g, double b, double* x, double* y, doubl
   *z = r * 0.0193 + g * 0.1192 + b * 0.9505;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::RGBToLab(double red, double green, double blue, double* L, double* a, double* b)
 {
   double x, y, z;
@@ -2808,7 +2740,7 @@ void vtkMath::RGBToLab(double red, double green, double blue, double* L, double*
   vtkMath::XYZToLab(x, y, z, L, a, b);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::LabToRGB(double L, double a, double b, double* red, double* green, double* blue)
 {
   double x, y, z;
@@ -2816,7 +2748,7 @@ void vtkMath::LabToRGB(double L, double a, double b, double* red, double* green,
   vtkMath::XYZToRGB(x, y, z, red, green, blue);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::ClampValues(double* values, int nb_values, const double range[2])
 {
   if (!values || nb_values <= 0 || !range)
@@ -2832,7 +2764,7 @@ void vtkMath::ClampValues(double* values, int nb_values, const double range[2])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::ClampValues(
   const double* values, int nb_values, const double range[2], double* clamped_values)
 {
@@ -2850,7 +2782,7 @@ void vtkMath::ClampValues(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMath::GetScalarTypeFittingRange(
   double range_min, double range_max, double scale, double shift)
 {
@@ -2916,7 +2848,7 @@ int vtkMath::GetScalarTypeFittingRange(
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkMath::GetAdjustedScalarRange(vtkDataArray* array, int comp, double range[2])
 {
   if (!array || comp < 0 || comp >= array->GetNumberOfComponents())
@@ -2929,12 +2861,12 @@ vtkTypeBool vtkMath::GetAdjustedScalarRange(vtkDataArray* array, int comp, doubl
   switch (array->GetDataType())
   {
     case VTK_UNSIGNED_CHAR:
-      range[0] = static_cast<double>(array->GetDataTypeMin());
-      range[1] = static_cast<double>(array->GetDataTypeMax());
+      range[0] = array->GetDataTypeMin();
+      range[1] = array->GetDataTypeMax();
       break;
 
     case VTK_UNSIGNED_SHORT:
-      range[0] = static_cast<double>(array->GetDataTypeMin());
+      range[0] = array->GetDataTypeMin();
       if (range[1] <= 4095.0)
       {
         if (range[1] > VTK_UNSIGNED_CHAR_MAX)
@@ -2944,7 +2876,7 @@ vtkTypeBool vtkMath::GetAdjustedScalarRange(vtkDataArray* array, int comp, doubl
       }
       else
       {
-        range[1] = static_cast<double>(array->GetDataTypeMax());
+        range[1] = array->GetDataTypeMax();
       }
       break;
     default:
@@ -2955,7 +2887,7 @@ vtkTypeBool vtkMath::GetAdjustedScalarRange(vtkDataArray* array, int comp, doubl
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkMath::ExtentIsWithinOtherExtent(const int extent1[6], const int extent2[6])
 {
   if (!extent1 || !extent2)
@@ -2975,7 +2907,7 @@ vtkTypeBool vtkMath::ExtentIsWithinOtherExtent(const int extent1[6], const int e
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkTypeBool vtkMath::BoundsIsWithinOtherBounds(
   const double bounds1[6], const double bounds2[6], const double delta[3])
@@ -2986,25 +2918,8 @@ vtkTypeBool vtkMath::BoundsIsWithinOtherBounds(
   }
   for (int i = 0; i < 6; i += 2)
   {
-
     if (bounds1[i] + delta[i / 2] < bounds2[i] || bounds1[i] - delta[i / 2] > bounds2[i + 1] ||
       bounds1[i + 1] + delta[i / 2] < bounds2[i] || bounds1[i + 1] - delta[i / 2] > bounds2[i + 1])
-      return 0;
-  }
-  return 1;
-}
-
-//----------------------------------------------------------------------------
-vtkTypeBool vtkMath::PointIsWithinBounds(
-  const double point[3], const double bounds[6], const double delta[3])
-{
-  if (!point || !bounds || !delta)
-  {
-    return 0;
-  }
-  for (int i = 0; i < 3; ++i)
-  {
-    if (point[i] + delta[i] < bounds[2 * i] || point[i] - delta[i] > bounds[2 * i + 1])
     {
       return 0;
     }
@@ -3012,7 +2927,20 @@ vtkTypeBool vtkMath::PointIsWithinBounds(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkTypeBool vtkMath::PointIsWithinBounds(
+  const double point[3], const double bounds[6], const double delta[3])
+{
+  if (!point || !bounds || !delta)
+  {
+    return 0;
+  }
+  return /*i = 0*/ point[0] + delta[0] >= bounds[0] && point[0] - delta[0] <= bounds[1] &&
+    /*i = 1*/ point[1] + delta[1] >= bounds[2] && point[1] - delta[1] <= bounds[3] &&
+    /*i = 2*/ point[2] + delta[2] >= bounds[4] && point[2] - delta[2] <= bounds[5];
+}
+
+//------------------------------------------------------------------------------
 int vtkMath::PlaneIntersectsAABB(
   const double bounds[6], const double normal[3], const double point[3])
 {
@@ -3077,7 +3005,7 @@ int vtkMath::PlaneIntersectsAABB(
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::AngleBetweenVectors(const double v1[3], const double v2[3])
 {
   double cross[3];
@@ -3085,34 +3013,44 @@ double vtkMath::AngleBetweenVectors(const double v1[3], const double v2[3])
   return atan2(vtkMath::Norm(cross), vtkMath::Dot(v1, v2));
 }
 
-//----------------------------------------------------------------------------
-double vtkMath::GaussianAmplitude(const double variance, const double distanceFromMean)
+//------------------------------------------------------------------------------
+double vtkMath::SignedAngleBetweenVectors(
+  const double v1[3], const double v2[3], const double vn[3])
+{
+  double cross[3];
+  vtkMath::Cross(v1, v2, cross);
+  double angle = atan2(vtkMath::Norm(cross), vtkMath::Dot(v1, v2));
+  return vtkMath::Dot(cross, vn) >= 0 ? angle : -angle;
+}
+
+//------------------------------------------------------------------------------
+double vtkMath::GaussianAmplitude(double variance, double distanceFromMean)
 {
   return 1. / (std::sqrt(2. * vtkMath::Pi() * variance)) *
     exp(-(pow(distanceFromMean, 2)) / (2. * variance));
 }
 
-//----------------------------------------------------------------------------
-double vtkMath::GaussianAmplitude(const double mean, const double variance, const double position)
+//------------------------------------------------------------------------------
+double vtkMath::GaussianAmplitude(double mean, double variance, double position)
 {
   double distanceToMean = std::abs(mean - position);
   return GaussianAmplitude(variance, distanceToMean);
 }
 
-//----------------------------------------------------------------------------
-double vtkMath::GaussianWeight(const double variance, const double distanceFromMean)
+//------------------------------------------------------------------------------
+double vtkMath::GaussianWeight(double variance, double distanceFromMean)
 {
   return exp(-(pow(distanceFromMean, 2)) / (2. * variance));
 }
 
-//----------------------------------------------------------------------------
-double vtkMath::GaussianWeight(const double mean, const double variance, const double position)
+//------------------------------------------------------------------------------
+double vtkMath::GaussianWeight(double mean, double variance, double position)
 {
   double distanceToMean = std::abs(mean - position);
   return GaussianWeight(variance, distanceToMean);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::Solve3PointCircle(
   const double p1[3], const double p2[3], const double p3[3], double center[3])
 {
@@ -3149,7 +3087,7 @@ double vtkMath::Solve3PointCircle(
   return radius;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMath::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -3157,25 +3095,25 @@ void vtkMath::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Seed: " << vtkMath::Internal->Uniform->GetSeed() << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::Inf()
 {
   return std::numeric_limits<double>::infinity();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::NegInf()
 {
   return -std::numeric_limits<double>::infinity();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMath::Nan()
 {
   return std::numeric_limits<double>::quiet_NaN();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifndef VTK_MATH_ISINF_IS_INLINE
 vtkTypeBool vtkMath::IsInf(double x)
 {
@@ -3183,7 +3121,7 @@ vtkTypeBool vtkMath::IsInf(double x)
 }
 #endif
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifndef VTK_MATH_ISNAN_IS_INLINE
 vtkTypeBool vtkMath::IsNan(double x)
 {
@@ -3191,7 +3129,7 @@ vtkTypeBool vtkMath::IsNan(double x)
 }
 #endif
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifndef VTK_MATH_ISFINITE_IS_INLINE
 bool vtkMath::IsFinite(double x)
 {
@@ -3199,7 +3137,7 @@ bool vtkMath::IsFinite(double x)
 }
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMath::QuadraticRoot(double a, double b, double c, double min, double max, double* u)
 {
   if (a == 0.0) // then its close to 0
@@ -3260,3 +3198,4 @@ int vtkMath::QuadraticRoot(double a, double b, double c, double min, double max,
   }
   return 0;
 }
+VTK_ABI_NAMESPACE_END

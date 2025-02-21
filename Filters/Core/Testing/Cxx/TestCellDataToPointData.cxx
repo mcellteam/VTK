@@ -1,32 +1,63 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestCellDataToPointData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtkCellData.h>
 #include <vtkCellDataToPointData.h>
 #include <vtkDataArray.h>
 #include <vtkDataSet.h>
+#include <vtkDataSetSurfaceFilter.h>
 #include <vtkDataSetTriangleFilter.h>
 #include <vtkDoubleArray.h>
 #include <vtkImageData.h>
 #include <vtkPointData.h>
 #include <vtkPointDataToCellData.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkRTAnalyticSource.h>
 #include <vtkSmartPointer.h>
+#include <vtkStringArray.h>
 #include <vtkTestUtilities.h>
 #include <vtkThreshold.h>
 #include <vtkUnstructuredGrid.h>
+
+// Replaces the old `PCellDataToPointData` test
+int TestCellDataToPointDataPieceInvariant()
+{
+  int numberOfPieces = 2;
+
+  vtkNew<vtkRTAnalyticSource> wavelet;
+  vtkNew<vtkPointDataToCellData> pd2cd;
+  vtkNew<vtkCellDataToPointData> cd2pd;
+  vtkNew<vtkDataSetSurfaceFilter> toPolyData;
+  vtkNew<vtkPolyDataMapper> mapper;
+
+  pd2cd->SetInputConnection(wavelet->GetOutputPort());
+  cd2pd->SetInputConnection(pd2cd->GetOutputPort());
+  cd2pd->SetPieceInvariant(true);
+  toPolyData->SetInputConnection(cd2pd->GetOutputPort());
+
+  mapper->SetInputConnection(toPolyData->GetOutputPort());
+  mapper->SetNumberOfPieces(numberOfPieces);
+
+  int retVal = EXIT_SUCCESS;
+  for (int i = 0; i < numberOfPieces; ++i)
+  {
+    mapper->SetPiece(i);
+    mapper->Update();
+
+    vtkIdType correct = 5292;
+    if (vtkDataSet::SafeDownCast(cd2pd->GetOutput())->GetNumberOfPoints() != correct)
+    {
+      std::cerr << "Wrong number of grid points on piece " << i << ". Should be " << correct
+                << " but is " << vtkDataSet::SafeDownCast(cd2pd->GetOutput())->GetNumberOfPoints()
+                << std::endl;
+      retVal = EXIT_FAILURE;
+    }
+  }
+
+  return retVal;
+}
 
 int TestCellDataToPointData(int, char*[])
 {
@@ -139,5 +170,44 @@ int TestCellDataToPointData(int, char*[])
       return EXIT_FAILURE;
     }
   }
+
+  // set up a test to check that the cell data of the input is preserved
+  // vtkCellDataToPointData removed vtkStringArrays from cell data of the
+  // input data set which broke the pipeline concept
+  vtkSmartPointer<vtkPolyData> data = vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkPoints> pts = vtkSmartPointer<vtkPoints>::New();
+  data->SetPoints(pts);
+  data->Allocate();
+
+  vtkSmartPointer<vtkIdList> lst = vtkSmartPointer<vtkIdList>::New();
+  lst->InsertNextId(pts->InsertNextPoint(0, 0, 0));
+  data->InsertNextCell(VTK_VERTEX, lst);
+
+  vtkSmartPointer<vtkStringArray> array = vtkSmartPointer<vtkStringArray>::New();
+  array->SetName("test-strings");
+  array->InsertNextValue("A");
+  data->GetCellData()->AddArray(array);
+
+  vtkSmartPointer<vtkCellDataToPointData> c2p = vtkSmartPointer<vtkCellDataToPointData>::New();
+  c2p->SetInputData(data);
+  c2p->SetProcessAllArrays(true);
+  c2p->Update();
+
+  vtkStringArray* test =
+    vtkStringArray::SafeDownCast(data->GetCellData()->GetAbstractArray("test-strings"));
+  if (!test)
+  {
+    std::cerr << "vtkCellDataToPointData has removed string array from its input dataset."
+              << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  // Test PieceInvariant setting
+  if (TestCellDataToPointDataPieceInvariant() != EXIT_SUCCESS)
+  {
+    std::cerr << "Piece invariant test failed." << std::endl;
+    return EXIT_FAILURE;
+  }
+
   return EXIT_SUCCESS;
 }

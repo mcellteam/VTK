@@ -692,11 +692,7 @@ NCcoordck(NC3_INFO* ncp, const NC_var *varp, const size_t *coord)
 	{
 		if(*coord > X_UINT_MAX) /* rkr: bug fix from previous X_INT_MAX */
 			return NC_EINVALCOORDS; /* sanity check */
-#ifdef RELAX_COORD_BOUND
 		if(NC_readonly(ncp) && *coord > NC_get_numrecs(ncp))
-#else
-		if(NC_readonly(ncp) && *coord >= NC_get_numrecs(ncp))
-#endif
 		{
 			if(!NC_doNsync(ncp))
 				return NC_EINVALCOORDS;
@@ -706,11 +702,7 @@ NCcoordck(NC3_INFO* ncp, const NC_var *varp, const size_t *coord)
 				const int status = read_numrecs(ncp);
 				if(status != NC_NOERR)
 					return status;
-#ifdef RELAX_COORD_BOUND
 				if(*coord > NC_get_numrecs(ncp))
-#else
-				if(*coord >= NC_get_numrecs(ncp))
-#endif
 					return NC_EINVALCOORDS;
 			}
 		}
@@ -737,11 +729,7 @@ fprintf(stderr,"	NCcoordck: ip %p, *ip %ld, up %p, *up %lu\n",
 #endif /* CDEBUG */
 
 		/* cast needed for braindead systems with signed size_t */
-#ifdef RELAX_COORD_BOUND
 		if((unsigned long) *ip > (unsigned long) *up )
-#else
-		if((unsigned long) *ip >= (unsigned long) *up )
-#endif
 			return NC_EINVALCOORDS;
 	}
 
@@ -765,11 +753,9 @@ NCedgeck(const NC3_INFO* ncp, const NC_var *varp,
 
 	if(IS_RECVAR(varp))
 	{
-#ifdef RELAX_COORD_BOUND
 		if (NC_readonly(ncp) &&
                     (start[0] == NC_get_numrecs(ncp) && edges[0] > 0))
 			return(NC_EINVALCOORDS);
-#endif
 		start++;
 		edges++;
 		shp++;
@@ -777,10 +763,8 @@ NCedgeck(const NC3_INFO* ncp, const NC_var *varp,
 
 	for(; start < end; start++, edges++, shp++)
 	{
-#ifdef RELAX_COORD_BOUND
 		if ((unsigned long) *start == *shp && *edges > 0)
 			return(NC_EINVALCOORDS);
-#endif
 		/* cast needed for braindead systems with signed size_t */
 		if((unsigned long) *edges > *shp ||
 			(unsigned long) *start + (unsigned long) *edges > *shp)
@@ -845,6 +829,8 @@ putNCvx_char_char(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -900,6 +886,8 @@ putNCvx_schar_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -953,6 +941,8 @@ putNCvx_schar_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1008,6 +998,8 @@ putNCvx_schar_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1061,6 +1053,8 @@ putNCvx_schar_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1116,6 +1110,8 @@ putNCvx_schar_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1169,6 +1165,8 @@ putNCvx_schar_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1224,6 +1222,8 @@ putNCvx_schar_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1277,6 +1277,8 @@ putNCvx_schar_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1332,6 +1334,8 @@ putNCvx_schar_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1385,6 +1389,8 @@ putNCvx_schar_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1441,6 +1447,8 @@ putNCvx_short_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1494,6 +1502,8 @@ putNCvx_short_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1549,6 +1559,8 @@ putNCvx_short_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1602,6 +1614,8 @@ putNCvx_short_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1657,6 +1671,8 @@ putNCvx_short_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1710,6 +1726,8 @@ putNCvx_short_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1765,6 +1783,8 @@ putNCvx_short_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1818,6 +1838,8 @@ putNCvx_short_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1873,6 +1895,8 @@ putNCvx_short_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -1926,6 +1950,8 @@ putNCvx_short_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -1982,6 +2008,8 @@ putNCvx_int_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2035,6 +2063,8 @@ putNCvx_int_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2090,6 +2120,8 @@ putNCvx_int_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2143,6 +2175,8 @@ putNCvx_int_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2198,6 +2232,8 @@ putNCvx_int_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2251,6 +2287,8 @@ putNCvx_int_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2306,6 +2344,8 @@ putNCvx_int_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2359,6 +2399,8 @@ putNCvx_int_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2414,6 +2456,8 @@ putNCvx_int_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2467,6 +2511,8 @@ putNCvx_int_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2523,6 +2569,8 @@ putNCvx_float_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2576,6 +2624,8 @@ putNCvx_float_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2631,6 +2681,8 @@ putNCvx_float_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2684,6 +2736,8 @@ putNCvx_float_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2739,6 +2793,8 @@ putNCvx_float_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2792,6 +2848,8 @@ putNCvx_float_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2847,6 +2905,8 @@ putNCvx_float_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -2900,6 +2960,8 @@ putNCvx_float_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -2955,6 +3017,8 @@ putNCvx_float_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3008,6 +3072,8 @@ putNCvx_float_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3064,6 +3130,8 @@ putNCvx_double_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3117,6 +3185,8 @@ putNCvx_double_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3172,6 +3242,8 @@ putNCvx_double_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3225,6 +3297,8 @@ putNCvx_double_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3280,6 +3354,8 @@ putNCvx_double_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3333,6 +3409,8 @@ putNCvx_double_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3388,6 +3466,8 @@ putNCvx_double_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3441,6 +3521,8 @@ putNCvx_double_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3496,6 +3578,8 @@ putNCvx_double_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3549,6 +3633,8 @@ putNCvx_double_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3605,6 +3691,8 @@ putNCvx_uchar_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3658,6 +3746,8 @@ putNCvx_uchar_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3713,6 +3803,8 @@ putNCvx_uchar_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3766,6 +3858,8 @@ putNCvx_uchar_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3821,6 +3915,8 @@ putNCvx_uchar_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3874,6 +3970,8 @@ putNCvx_uchar_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -3929,6 +4027,8 @@ putNCvx_uchar_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -3982,6 +4082,8 @@ putNCvx_uchar_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4037,6 +4139,8 @@ putNCvx_uchar_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4090,6 +4194,8 @@ putNCvx_uchar_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4146,6 +4252,8 @@ putNCvx_ushort_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4199,6 +4307,8 @@ putNCvx_ushort_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4254,6 +4364,8 @@ putNCvx_ushort_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4307,6 +4419,8 @@ putNCvx_ushort_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4362,6 +4476,8 @@ putNCvx_ushort_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4415,6 +4531,8 @@ putNCvx_ushort_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4470,6 +4588,8 @@ putNCvx_ushort_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4523,6 +4643,8 @@ putNCvx_ushort_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4578,6 +4700,8 @@ putNCvx_ushort_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4631,6 +4755,8 @@ putNCvx_ushort_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4687,6 +4813,8 @@ putNCvx_uint_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4740,6 +4868,8 @@ putNCvx_uint_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4795,6 +4925,8 @@ putNCvx_uint_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4848,6 +4980,8 @@ putNCvx_uint_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -4903,6 +5037,8 @@ putNCvx_uint_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -4956,6 +5092,8 @@ putNCvx_uint_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5011,6 +5149,8 @@ putNCvx_uint_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5064,6 +5204,8 @@ putNCvx_uint_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5119,6 +5261,8 @@ putNCvx_uint_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5172,6 +5316,8 @@ putNCvx_uint_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5228,6 +5374,8 @@ putNCvx_longlong_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5281,6 +5429,8 @@ putNCvx_longlong_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5336,6 +5486,8 @@ putNCvx_longlong_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5389,6 +5541,8 @@ putNCvx_longlong_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5444,6 +5598,8 @@ putNCvx_longlong_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5497,6 +5653,8 @@ putNCvx_longlong_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5552,6 +5710,8 @@ putNCvx_longlong_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5605,6 +5765,8 @@ putNCvx_longlong_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5660,6 +5822,8 @@ putNCvx_longlong_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5713,6 +5877,8 @@ putNCvx_longlong_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5769,6 +5935,8 @@ putNCvx_ulonglong_schar(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5822,6 +5990,8 @@ putNCvx_ulonglong_uchar(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5877,6 +6047,8 @@ putNCvx_ulonglong_short(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -5930,6 +6102,8 @@ putNCvx_ulonglong_int(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -5985,6 +6159,8 @@ putNCvx_ulonglong_float(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -6038,6 +6214,8 @@ putNCvx_ulonglong_double(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -6093,6 +6271,8 @@ putNCvx_ulonglong_longlong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -6146,6 +6326,8 @@ putNCvx_ulonglong_ushort(NC3_INFO* ncp, const NC_var *varp,
 	int status = NC_NOERR;
 	void *xp;
         void *fillp=NULL;
+
+	NC_UNUSED(fillp);
 
 	if(nelems == 0)
 		return NC_NOERR;
@@ -6201,6 +6383,8 @@ putNCvx_ulonglong_uint(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -6255,6 +6439,8 @@ putNCvx_ulonglong_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 	void *xp;
         void *fillp=NULL;
 
+	NC_UNUSED(fillp);
+
 	if(nelems == 0)
 		return NC_NOERR;
 
@@ -6301,6 +6487,7 @@ putNCvx_ulonglong_ulonglong(NC3_INFO* ncp, const NC_var *varp,
 
 
 
+#if 0 /*unused*/
 static int
 getNCvx_char_char(const NC3_INFO* ncp, const NC_var *varp,
 		 const size_t *start, size_t nelems, char *value)
@@ -6341,6 +6528,7 @@ getNCvx_char_char(const NC3_INFO* ncp, const NC_var *varp,
 	return status;
 }
 
+#endif
 
 static int
 getNCvx_schar_schar(const NC3_INFO* ncp, const NC_var *varp,

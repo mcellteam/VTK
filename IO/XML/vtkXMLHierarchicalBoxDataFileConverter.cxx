@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLHierarchicalBoxDataFileConverter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLHierarchicalBoxDataFileConverter.h"
 
 #include "vtkBoundingBox.h"
@@ -34,8 +22,9 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLHierarchicalBoxDataFileConverter);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLHierarchicalBoxDataFileConverter::vtkXMLHierarchicalBoxDataFileConverter()
 {
   this->InputFileName = nullptr;
@@ -43,7 +32,7 @@ vtkXMLHierarchicalBoxDataFileConverter::vtkXMLHierarchicalBoxDataFileConverter()
   this->FilePath = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLHierarchicalBoxDataFileConverter::~vtkXMLHierarchicalBoxDataFileConverter()
 {
   this->SetInputFileName(nullptr);
@@ -51,7 +40,7 @@ vtkXMLHierarchicalBoxDataFileConverter::~vtkXMLHierarchicalBoxDataFileConverter(
   this->SetFilePath(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXMLHierarchicalBoxDataFileConverter::Convert()
 {
   if (!this->InputFileName)
@@ -100,7 +89,7 @@ bool vtkXMLHierarchicalBoxDataFileConverter::Convert()
   // specified as relative paths.
   std::string filePath = this->InputFileName;
   std::string::size_type pos = filePath.find_last_of("/\\");
-  if (pos != filePath.npos)
+  if (pos != std::string::npos)
   {
     filePath = filePath.substr(0, pos);
   }
@@ -177,7 +166,7 @@ bool vtkXMLHierarchicalBoxDataFileConverter::Convert()
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLDataElement* vtkXMLHierarchicalBoxDataFileConverter::ParseXML(const char* fname)
 {
   assert(fname);
@@ -195,12 +184,12 @@ vtkXMLDataElement* vtkXMLHierarchicalBoxDataFileConverter::ParseXML(const char* 
   return element;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLHierarchicalBoxDataFileConverter::GetOriginAndSpacing(
   vtkXMLDataElement* ePrimary, double origin[3], double*& spacing)
 {
   // Build list of filenames for all levels.
-  std::map<int, std::set<std::string> > filenames;
+  std::map<int, std::set<std::string>> filenames;
 
   for (int cc = 0; cc < ePrimary->GetNumberOfNestedElements(); cc++)
   {
@@ -226,11 +215,11 @@ int vtkXMLHierarchicalBoxDataFileConverter::GetOriginAndSpacing(
         if (file.c_str()[0] != '/' && file.c_str()[1] != ':')
         {
           std::string prefix = this->FilePath;
-          if (prefix.length())
+          if (!prefix.empty())
           {
             prefix += "/";
           }
-          file = prefix + file;
+          file.insert(0, prefix);
         }
         filenames[level].insert(file);
       }
@@ -267,7 +256,7 @@ int vtkXMLHierarchicalBoxDataFileConverter::GetOriginAndSpacing(
   }
 
   // Read 1 dataset from each level to get information about spacing.
-  for (std::map<int, std::set<std::string> >::iterator iter = filenames.begin();
+  for (std::map<int, std::set<std::string>>::iterator iter = filenames.begin();
        iter != filenames.end(); ++iter)
   {
     if (iter->second.empty())
@@ -290,7 +279,7 @@ int vtkXMLHierarchicalBoxDataFileConverter::GetOriginAndSpacing(
   return gridDescription;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLHierarchicalBoxDataFileConverter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -299,3 +288,4 @@ void vtkXMLHierarchicalBoxDataFileConverter::PrintSelf(ostream& os, vtkIndent in
   os << indent << "OutputFileName: " << (this->OutputFileName ? this->OutputFileName : "(none)")
      << endl;
 }
+VTK_ABI_NAMESPACE_END

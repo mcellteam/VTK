@@ -1,26 +1,11 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkExtractHistogram2D.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkExtractHistogram2D.h"
 //------------------------------------------------------------------------------
 #include "vtkArrayData.h"
 #include "vtkArrayIteratorIncludes.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkIdTypeArray.h"
 #include "vtkImageData.h"
 #include "vtkImageMedian3D.h"
@@ -35,6 +20,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkTimerLog.h"
 #include "vtkUnsignedIntArray.h"
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractHistogram2D);
 vtkCxxSetObjectMacro(vtkExtractHistogram2D, RowMask, vtkDataArray);
 //------------------------------------------------------------------------------
@@ -106,9 +92,9 @@ void vtkExtractHistogram2D::PrintSelf(ostream& os, vtkIndent indent)
 }
 //------------------------------------------------------------------------------
 void vtkExtractHistogram2D::Learn(
-  vtkTable* vtkNotUsed(inData), vtkTable* vtkNotUsed(inParameters), vtkMultiBlockDataSet* outMeta)
+  vtkTable* inData, vtkTable* vtkNotUsed(inParameters), vtkMultiBlockDataSet* outMeta)
 {
-  if (!outMeta)
+  if (!outMeta || !inData)
   {
     return;
   }
@@ -128,7 +114,7 @@ void vtkExtractHistogram2D::Learn(
     return;
   }
 
-  this->ComputeBinExtents(col1, col2);
+  this->ComputeBinExtents(inData->GetRowData(), col1, col2);
 
   // The primary statistics table
   vtkTable* primaryTab = vtkTable::New();
@@ -174,6 +160,10 @@ void vtkExtractHistogram2D::Learn(
   this->MaximumBinCount = 0;
   for (int i = 0; i < numValues; i++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     v1 = col1->GetComponent(i, this->ComponentsToProcess[0]);
     v2 = col2->GetComponent(i, this->ComponentsToProcess[1]);
 
@@ -251,10 +241,10 @@ int vtkExtractHistogram2D::GetInputArrays(vtkDataArray*& col1, vtkDataArray*& co
     vtkStdString colName;
 
     this->Internals->GetColumnForRequest(0, (this->SwapColumns != 0), colName);
-    col1 = vtkArrayDownCast<vtkDataArray>(inData->GetColumnByName(colName));
+    col1 = vtkArrayDownCast<vtkDataArray>(inData->GetColumnByName(colName.c_str()));
 
     this->Internals->GetColumnForRequest(0, (this->SwapColumns == 0), colName);
-    col2 = vtkArrayDownCast<vtkDataArray>(inData->GetColumnByName(colName));
+    col2 = vtkArrayDownCast<vtkDataArray>(inData->GetColumnByName(colName.c_str()));
   }
   else
   {
@@ -336,8 +326,9 @@ int vtkExtractHistogram2D::RequestInformation(vtkInformation* vtkNotUsed(request
   {
     return 0;
   }
+  vtkTable* inData = vtkTable::SafeDownCast(this->GetInputDataObject(0, 0));
 
-  this->ComputeBinExtents(col1, col2);
+  this->ComputeBinExtents(inData->GetRowData(), col1, col2);
 
   double bw[2] = { 0, 0 };
   double* hext = this->GetHistogramExtents();
@@ -354,7 +345,8 @@ int vtkExtractHistogram2D::RequestInformation(vtkInformation* vtkNotUsed(request
   return 1;
 }
 //------------------------------------------------------------------------------
-int vtkExtractHistogram2D::ComputeBinExtents(vtkDataArray* col1, vtkDataArray* col2)
+int vtkExtractHistogram2D::ComputeBinExtents(
+  vtkDataSetAttributes* rowData, vtkDataArray* col1, vtkDataArray* col2)
 {
   if (!col1 || !col2)
     return 0;
@@ -362,9 +354,10 @@ int vtkExtractHistogram2D::ComputeBinExtents(vtkDataArray* col1, vtkDataArray* c
   // update histogram extents, if necessary
   if (!this->UseCustomHistogramExtents)
   {
-    col1->GetRange(this->HistogramExtents, this->ComponentsToProcess[0]);
-    col2->GetRange(this->HistogramExtents + 2, this->ComponentsToProcess[1]);
+    rowData->GetRange(col1->GetName(), this->HistogramExtents, this->ComponentsToProcess[0]);
+    rowData->GetRange(col2->GetName(), this->HistogramExtents + 2, this->ComponentsToProcess[1]);
   }
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

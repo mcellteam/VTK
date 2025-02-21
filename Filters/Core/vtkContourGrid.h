@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContourGrid.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkContourGrid
  * @brief   generate isosurfaces/isolines from scalar values (specialized for unstructured grids)
@@ -58,6 +46,7 @@
 
 #include "vtkContourValues.h" // Needed for inline methods
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkEdgeTable;
 class vtkScalarTree;
 class vtkIncrementalPointLocator;
@@ -74,7 +63,7 @@ public:
    */
   static vtkContourGrid* New();
 
-  //@{
+  ///@{
   /**
    * Methods to set / get contour values.
    */
@@ -86,14 +75,14 @@ public:
   vtkIdType GetNumberOfContours();
   void GenerateValues(int numContours, double range[2]);
   void GenerateValues(int numContours, double rangeStart, double rangeEnd);
-  //@}
+  ///@}
 
   /**
    * Modified GetMTime Because we delegate to vtkContourValues
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of normals. Normal computation is fairly
    * expensive in both time and storage. If the output data will be
@@ -103,63 +92,45 @@ public:
   vtkSetMacro(ComputeNormals, vtkTypeBool);
   vtkGetMacro(ComputeNormals, vtkTypeBool);
   vtkBooleanMacro(ComputeNormals, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
-  /**
-   * Set/Get the computation of gradients. Gradient computation is
-   * fairly expensive in both time and storage. Note that if
-   * ComputeNormals is on, gradients will have to be calculated, but
-   * will not be stored in the output dataset.  If the output data
-   * will be processed by filters that modify topology or geometry, it
-   * may be wise to turn Normals and Gradients off.  @deprecated
-   * ComputeGradients is not used so these methods don't affect
-   * anything (VTK 6.0).
-   */
-#ifndef VTK_LEGACY_REMOVE
-  vtkSetMacro(ComputeGradients, vtkTypeBool);
-  vtkGetMacro(ComputeGradients, vtkTypeBool);
-  vtkBooleanMacro(ComputeGradients, vtkTypeBool);
-#endif
-  //@}
-
-  //@{
+  ///@{
   /**
    * Set/Get the computation of scalars.
    */
   vtkSetMacro(ComputeScalars, vtkTypeBool);
   vtkGetMacro(ComputeScalars, vtkTypeBool);
   vtkBooleanMacro(ComputeScalars, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable the use of a scalar tree to accelerate contour extraction.
    */
   vtkSetMacro(UseScalarTree, vtkTypeBool);
   vtkGetMacro(UseScalarTree, vtkTypeBool);
   vtkBooleanMacro(UseScalarTree, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the instance of vtkScalarTree to use. If not specified
    * and UseScalarTree is enabled, then a vtkSimpleScalarTree will be used.
    */
   void SetScalarTree(vtkScalarTree* sTree);
   vtkGetObjectMacro(ScalarTree, vtkScalarTree);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get a spatial locator for merging points. By default,
    * an instance of vtkMergePoints is used.
    */
   void SetLocator(vtkIncrementalPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this is enabled (by default), the output will be triangles otherwise,
    * the output may be represented by one or more polygons. WARNING: if the
@@ -170,7 +141,7 @@ public:
   vtkSetMacro(GenerateTriangles, vtkTypeBool);
   vtkGetMacro(GenerateTriangles, vtkTypeBool);
   vtkBooleanMacro(GenerateTriangles, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Create default locator. Used to create one when none is
@@ -178,7 +149,7 @@ public:
    */
   void CreateDefaultLocator();
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -186,7 +157,7 @@ public:
    */
   void SetOutputPointsPrecision(int precision);
   int GetOutputPointsPrecision() const;
-  //@}
+  ///@}
 
 protected:
   vtkContourGrid();
@@ -197,9 +168,6 @@ protected:
 
   vtkContourValues* ContourValues;
   vtkTypeBool ComputeNormals;
-#ifndef VTK_LEGACY_REMOVE
-  vtkTypeBool ComputeGradients;
-#endif
   vtkTypeBool ComputeScalars;
   vtkTypeBool GenerateTriangles;
 
@@ -288,4 +256,5 @@ inline void vtkContourGrid::GenerateValues(int numContours, double rangeStart, d
   this->ContourValues->GenerateValues(numContours, rangeStart, rangeEnd);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

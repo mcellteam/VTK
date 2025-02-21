@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSphereTreeFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkSphereTreeFilter
  * @brief represent a sphere tree as vtkPolyData
@@ -49,6 +37,7 @@
 #define VTK_SPHERE_TREE_LINE 2
 #define VTK_SPHERE_TREE_PLANE 3
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSphereTree;
 
 class VTKFILTERSCORE_EXPORT vtkSphereTreeFilter : public vtkPolyDataAlgorithm
@@ -59,23 +48,23 @@ public:
    */
   static vtkSphereTreeFilter* New();
 
-  //@{
+  ///@{
   /**
    * Standard type related macros and PrintSelf() method.
    */
   vtkTypeMacro(vtkSphereTreeFilter, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify and retrieve the sphere tree.
    */
   virtual void SetSphereTree(vtkSphereTree*);
   vtkGetObjectMacro(SphereTree, vtkSphereTree);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify what information this filter is to extract from the sphere
    * tree. Options include: spheres that make up one or more levels; spheres
@@ -91,9 +80,9 @@ public:
   void SetExtractionModeToLine() { this->SetExtractionMode(VTK_SPHERE_TREE_LINE); }
   void SetExtractionModeToPlane() { this->SetExtractionMode(VTK_SPHERE_TREE_PLANE); }
   const char* GetExtractionModeAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable or disable the building and generation of the sphere tree
    * hierarchy. The hierarchy represents different levels in the tree
@@ -102,9 +91,9 @@ public:
   vtkSetMacro(TreeHierarchy, bool);
   vtkGetMacro(TreeHierarchy, bool);
   vtkBooleanMacro(TreeHierarchy, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the level of the tree to extract (used when ExtractionMode is
    * set to Levels). A value of (-1) means all levels. Note that level 0 is
@@ -114,18 +103,18 @@ public:
    */
   vtkSetClampMacro(Level, int, -1, VTK_SHORT_MAX);
   vtkGetMacro(Level, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a point used to extract one or more leaf spheres. This method is
    * used when extracting spheres using a point, line, or plane.
    */
   vtkSetVector3Macro(Point, double);
   vtkGetVectorMacro(Point, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a line used to extract spheres (used when ExtractionMode is set
    * to Line). The Ray plus Point define an infinite line. The ray is a
@@ -133,16 +122,16 @@ public:
    */
   vtkSetVector3Macro(Ray, double);
   vtkGetVectorMacro(Ray, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a plane used to extract spheres (used when ExtractionMode is set
    * to Plane). The plane Normal plus Point define an infinite plane.
    */
   vtkSetVector3Macro(Normal, double);
   vtkGetVectorMacro(Normal, double, 3);
-  //@}
+  ///@}
 
   /**
    * Modified GetMTime because the sphere tree may have changed.
@@ -164,9 +153,12 @@ protected:
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
+  void ReportReferences(vtkGarbageCollector*) override;
+
 private:
   vtkSphereTreeFilter(const vtkSphereTreeFilter&) = delete;
   void operator=(const vtkSphereTreeFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

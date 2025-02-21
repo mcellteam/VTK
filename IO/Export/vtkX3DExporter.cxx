@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkX3DExporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen, Kristian Sons
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kristian Sons
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkX3DExporter.h"
 
 #include "vtkActor2D.h"
@@ -53,7 +42,8 @@
 using namespace vtkX3D;
 
 // forward declarations
-static bool vtkX3DExporterWriterUsingCellColors(vtkMapper* anActor);
+VTK_ABI_NAMESPACE_BEGIN
+static bool vtkX3DExporterWriterUsingCellColors(vtkMapper* mapper);
 static bool vtkX3DExporterWriterRenderFaceSet(int cellType, int representation, vtkPoints* points,
   vtkIdType cellOffset, vtkCellArray* cells, vtkUnsignedCharArray* colors, bool cell_colors,
   vtkDataArray* normals, bool cell_normals, vtkDataArray* tcoords, bool common_data_written,
@@ -67,10 +57,10 @@ static bool vtkX3DExporterWriterRenderVerts(vtkPoints* points, vtkCellArray* cel
 static bool vtkX3DExporterWriterRenderPoints(
   vtkPolyData* pd, vtkUnsignedCharArray* colors, bool cell_colors, vtkX3DExporterWriter* writer);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkX3DExporter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkX3DExporter::vtkX3DExporter()
 {
   this->Speed = 4.0;
@@ -82,14 +72,14 @@ vtkX3DExporter::vtkX3DExporter()
   this->OutputStringLength = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkX3DExporter::~vtkX3DExporter()
 {
   this->SetFileName(nullptr);
   delete[] this->OutputString;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkX3DExporter::WriteData()
 {
   vtkSmartPointer<vtkX3DExporterWriter> writer;
@@ -207,7 +197,7 @@ void vtkX3DExporter::WriteData()
   writer->StartNode(NavigationInfo);
   writer->SetField(type, "\"EXAMINE\" \"FLY\" \"ANY\"", true);
   writer->SetField(speed, static_cast<float>(this->Speed));
-  writer->SetField(headlight, this->HasHeadLight(ren) ? true : false);
+  writer->SetField(headlight, this->HasHeadLight(ren) != 0);
   writer->EndNode();
 
   writer->StartNode(DirectionalLight);
@@ -318,7 +308,7 @@ void vtkX3DExporter::WriteData()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkX3DExporter::WriteALight(vtkLight* aLight, vtkX3DExporterWriter* writer)
 {
   double *pos, *focus, *colord;
@@ -357,12 +347,12 @@ void vtkX3DExporter::WriteALight(vtkLight* aLight, vtkX3DExporterWriter* writer)
   // TODO: Check correct color
   writer->SetField(color, SFCOLOR, colord);
   writer->SetField(intensity, static_cast<float>(aLight->GetIntensity()));
-  writer->SetField(on, aLight->GetSwitch() ? true : false);
+  writer->SetField(on, aLight->GetSwitch() != 0);
   writer->EndNode();
   writer->Flush();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkX3DExporter::WriteAnActor(vtkActor* anActor, vtkX3DExporterWriter* writer, int index)
 {
   // see if the actor has a mapper. it could be an assembly
@@ -426,7 +416,7 @@ void vtkX3DExporter::WriteAnActor(vtkActor* anActor, vtkX3DExporterWriter* write
   writer->EndNode();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkX3DExporter::WriteAPiece(
   vtkPolyData* pd, vtkActor* anActor, vtkX3DExporterWriter* writer, int index)
 {
@@ -513,7 +503,6 @@ void vtkX3DExporter::WriteAPiece(
   {
     // If representation is points, then we don't have to render different cell
     // types in separate shapes, since the cells type no longer matter.
-    if (true)
     {
       writer->StartNode(Shape);
       this->WriteAnAppearance(anActor, writeEmissiveColor, writer);
@@ -586,7 +575,7 @@ void vtkX3DExporter::WriteAPiece(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkX3DExporter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -612,7 +601,7 @@ void vtkX3DExporter::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkX3DExporter::WriteATextActor2D(vtkActor2D* anTextActor2D, vtkX3DExporterWriter* writer)
 {
   char* ds;
@@ -849,8 +838,8 @@ void vtkX3DExporter::WriteATexture(vtkActor* anActor, vtkX3DExporterWriter* writ
   writer->EndNode();
 }
 
-//----------------------------------------------------------------------------
-int vtkX3DExporter::HasHeadLight(vtkRenderer* ren)
+//------------------------------------------------------------------------------
+vtkTypeBool vtkX3DExporter::HasHeadLight(vtkRenderer* ren)
 {
   // make sure we have a default light
   // if we don't then use a headlight
@@ -877,7 +866,7 @@ static bool vtkX3DExporterWriterUsingCellColors(vtkMapper* mapper)
   return (cellFlag == 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static bool vtkX3DExporterWriterRenderFaceSet(int cellType, int representation, vtkPoints* points,
   vtkIdType cellOffset, vtkCellArray* cells, vtkUnsignedCharArray* colors, bool cell_colors,
   vtkDataArray* normals, bool cell_normals, vtkDataArray* tcoords, bool common_data_written,
@@ -1211,7 +1200,7 @@ static bool vtkX3DExporterWriterRenderPoints(
   writer->EndNode(); // PointSet
   return true;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkX3DExporter::RegisterAndGetOutputString()
 {
   char* tmp = this->OutputString;
@@ -1221,3 +1210,4 @@ char* vtkX3DExporter::RegisterAndGetOutputString()
 
   return tmp;
 }
+VTK_ABI_NAMESPACE_END

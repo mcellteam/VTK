@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPostgreSQLToTableReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDoubleArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -26,16 +14,17 @@
 
 #include "vtkPostgreSQLToTableReader.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPostgreSQLToTableReader);
 
-//----------------------------------------------------------------------------
-vtkPostgreSQLToTableReader::vtkPostgreSQLToTableReader() {}
+//------------------------------------------------------------------------------
+vtkPostgreSQLToTableReader::vtkPostgreSQLToTableReader() = default;
 
-//----------------------------------------------------------------------------
-vtkPostgreSQLToTableReader::~vtkPostgreSQLToTableReader() {}
+//------------------------------------------------------------------------------
+vtkPostgreSQLToTableReader::~vtkPostgreSQLToTableReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPostgreSQLToTableReader::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -50,7 +39,7 @@ int vtkPostgreSQLToTableReader::RequestData(
     vtkErrorMacro(<< "Wrong type of database for this reader");
     return 1;
   }
-  if (this->TableName == "")
+  if (this->TableName.empty())
   {
     vtkErrorMacro(<< "No table selected");
     return 1;
@@ -92,7 +81,7 @@ int vtkPostgreSQLToTableReader::RequestData(
       vtkSmartPointer<vtkIntArray> column = vtkSmartPointer<vtkIntArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("int");
+      columnTypes.emplace_back("int");
     }
     else if ((columnType.find("double") != std::string::npos) ||
       (columnType.find("DOUBLE") != std::string::npos) ||
@@ -106,14 +95,14 @@ int vtkPostgreSQLToTableReader::RequestData(
       vtkSmartPointer<vtkDoubleArray> column = vtkSmartPointer<vtkDoubleArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("double");
+      columnTypes.emplace_back("double");
     }
     else
     {
       vtkSmartPointer<vtkStringArray> column = vtkSmartPointer<vtkStringArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("string");
+      columnTypes.emplace_back("string");
     }
   }
 
@@ -153,8 +142,9 @@ int vtkPostgreSQLToTableReader::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPostgreSQLToTableReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

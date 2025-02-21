@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSurfaceReconstructionFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSurfaceReconstructionFilter.h"
 
 #include "vtkFloatArray.h"
@@ -26,6 +14,7 @@
 #include "vtkPoints.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSurfaceReconstructionFilter);
 
 vtkSurfaceReconstructionFilter::vtkSurfaceReconstructionFilter()
@@ -107,7 +96,7 @@ static void vtkSRMultiply(double** m, double f, long nrl, long nrh, long ncl, lo
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSurfaceReconstructionFilter::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
@@ -129,7 +118,7 @@ int vtkSurfaceReconstructionFilter::RequestInformation(vtkInformation* vtkNotUse
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct SurfacePoint
 {
   double loc[3];
@@ -151,7 +140,7 @@ struct SurfacePoint
   }
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSurfaceReconstructionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -401,9 +390,9 @@ int vtkSurfaceReconstructionFilter::RequestData(vtkInformation* vtkNotUsed(reque
     if (this->SampleSpacing <= 0.0)
     {
       // spacing guessed as cube root of (volume divided by number of points)
-      this->SampleSpacing = pow(static_cast<double>(bounds[1] - bounds[0]) *
-          (bounds[3] - bounds[2]) * (bounds[5] - bounds[4]) / static_cast<double>(COUNT),
-        static_cast<double>(1.0 / 3.0));
+      this->SampleSpacing = pow((bounds[1] - bounds[0]) * (bounds[3] - bounds[2]) *
+          (bounds[5] - bounds[4]) / static_cast<double>(COUNT),
+        1.0 / 3.0);
 
       vtkDebugMacro(<< "Estimated sample spacing as: " << this->SampleSpacing);
     }
@@ -573,7 +562,7 @@ static double** vtkSRMatrix(long nrl, long nrh, long ncl, long nch)
 // free a double vector allocated with SRVector()
 static void vtkSRFreeVector(double* v, long nl, long vtkNotUsed(nh))
 {
-  delete[](v + nl - VTK_NR_END);
+  delete[] (v + nl - VTK_NR_END);
 }
 
 // free a double matrix allocated by Matrix()
@@ -581,8 +570,9 @@ static void vtkSRFreeMatrix(
   double** m, long nrl, long vtkNotUsed(nrh), long ncl, long vtkNotUsed(nch))
 
 {
-  delete[](m[nrl] + ncl - VTK_NR_END);
-  delete[](m + nrl - VTK_NR_END);
+  delete[] (m[nrl] + ncl - VTK_NR_END);
+  delete[] (m + nrl - VTK_NR_END);
 }
 
 #undef VTK_NR_END
+VTK_ABI_NAMESPACE_END

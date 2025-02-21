@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkKochanekSpline.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkKochanekSpline.h"
 
 #include "vtkObjectFactory.h"
@@ -19,9 +7,10 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkKochanekSpline);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct a KochanekSpline with the following defaults:
 // DefaultBias = 0,
 // DefaultTension = 0,
@@ -33,7 +22,7 @@ vtkKochanekSpline::vtkKochanekSpline()
   this->DefaultContinuity = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate a 1D Spline
 double vtkKochanekSpline::Evaluate(double t)
 {
@@ -85,7 +74,7 @@ double vtkKochanekSpline::Evaluate(double t)
     *(coefficients + index * 4));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute Kochanek Spline coefficients.
 void vtkKochanekSpline::Compute()
 {
@@ -181,7 +170,7 @@ void vtkKochanekSpline::Compute()
 
 #define VTK_EPSILON .0001
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the coefficients for a 1D spline
 void vtkKochanekSpline::Fit1D(int size, double* x, double* y, double tension, double bias,
   double continuity, double coefficients[][4], int leftConstraint, double leftValue,
@@ -342,7 +331,7 @@ void vtkKochanekSpline::Fit1D(int size, double* x, double* y, double tension, do
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKochanekSpline::DeepCopy(vtkSpline* s)
 {
   vtkKochanekSpline* spline = vtkKochanekSpline::SafeDownCast(s);
@@ -358,7 +347,7 @@ void vtkKochanekSpline::DeepCopy(vtkSpline* s)
   this->vtkSpline::DeepCopy(s);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKochanekSpline::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -366,3 +355,4 @@ void vtkKochanekSpline::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "DefaultTension: " << this->DefaultTension << "\n";
   os << indent << "DefaultContinuity: " << this->DefaultContinuity << "\n";
 }
+VTK_ABI_NAMESPACE_END

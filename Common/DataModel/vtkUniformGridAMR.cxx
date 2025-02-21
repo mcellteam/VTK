@@ -1,32 +1,22 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUniformGridAMR.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkUniformGridAMR.h"
 #include "vtkAMRDataInternals.h"
 #include "vtkAMRInformation.h"
 #include "vtkInformation.h"
 #include "vtkInformationKey.h"
 #include "vtkInformationVector.h"
+#include "vtkLegacy.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkType.h"
 #include "vtkUniformGrid.h"
 #include "vtkUniformGridAMRDataIterator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkUniformGridAMR);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGridAMR::vtkUniformGridAMR()
 {
   this->Bounds[0] = VTK_DOUBLE_MAX;
@@ -39,7 +29,7 @@ vtkUniformGridAMR::vtkUniformGridAMR()
   this->AMRData = vtkAMRDataInternals::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGridAMR::~vtkUniformGridAMR()
 {
   if (this->AMRInfo)
@@ -49,7 +39,7 @@ vtkUniformGridAMR::~vtkUniformGridAMR()
   this->AMRData->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::SetAMRInfo(vtkAMRInformation* amrInfo)
 {
   if (amrInfo == this->AMRInfo)
@@ -68,13 +58,32 @@ void vtkUniformGridAMR::SetAMRInfo(vtkAMRInformation* amrInfo)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkUniformGridAMR::SetAMRData(vtkAMRDataInternals* amrData)
+{
+  if (amrData == this->AMRData)
+  {
+    return;
+  }
+  if (this->AMRData)
+  {
+    this->AMRData->Delete();
+  }
+  this->AMRData = amrData;
+  if (this->AMRData)
+  {
+    this->AMRData->Register(this);
+  }
+  this->Modified();
+}
+
+//------------------------------------------------------------------------------
 vtkUniformGrid* vtkUniformGridAMR::GetDataSet(unsigned int level, unsigned int idx)
 {
   return this->AMRData->GetDataSet(this->GetCompositeIndex(level, idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataIterator* vtkUniformGridAMR::NewIterator()
 {
   vtkUniformGridAMRDataIterator* iter = vtkUniformGridAMRDataIterator::New();
@@ -82,13 +91,13 @@ vtkCompositeDataIterator* vtkUniformGridAMR::NewIterator()
   return iter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::Initialize()
 {
   this->Initialize(0, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::Initialize(int numLevels, const int* blocksPerLevel)
 {
   this->Bounds[0] = VTK_DOUBLE_MAX;
@@ -104,7 +113,7 @@ void vtkUniformGridAMR::Initialize(int numLevels, const int* blocksPerLevel)
   this->AMRData->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkUniformGridAMR::GetNumberOfLevels()
 {
   unsigned int nlev = 0;
@@ -115,7 +124,7 @@ unsigned int vtkUniformGridAMR::GetNumberOfLevels()
   return nlev;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkUniformGridAMR::GetTotalNumberOfBlocks()
 {
   unsigned int nblocks = 0;
@@ -126,8 +135,8 @@ unsigned int vtkUniformGridAMR::GetTotalNumberOfBlocks()
   return nblocks;
 }
 
-//----------------------------------------------------------------------------
-unsigned int vtkUniformGridAMR::GetNumberOfDataSets(const unsigned int level)
+//------------------------------------------------------------------------------
+unsigned int vtkUniformGridAMR::GetNumberOfDataSets(unsigned int level)
 {
   unsigned int ndata = 0;
   if (this->AMRInfo)
@@ -137,7 +146,7 @@ unsigned int vtkUniformGridAMR::GetNumberOfDataSets(const unsigned int level)
   return ndata;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::SetDataSet(unsigned int level, unsigned int idx, vtkUniformGrid* grid)
 {
   if (!grid)
@@ -152,9 +161,9 @@ void vtkUniformGridAMR::SetDataSet(unsigned int level, unsigned int idx, vtkUnif
 
   if (this->AMRInfo->GetGridDescription() < 0)
   {
-    this->AMRInfo->SetGridDescription(grid->GetGridDescription());
+    this->AMRInfo->SetGridDescription(grid->GetDataDescription());
   }
-  else if (grid->GetGridDescription() != this->AMRInfo->GetGridDescription())
+  else if (grid->GetDataDescription() != this->AMRInfo->GetGridDescription())
   {
     vtkErrorMacro("Inconsistent types of vtkUniformGrid");
     return;
@@ -179,17 +188,17 @@ void vtkUniformGridAMR::SetDataSet(unsigned int level, unsigned int idx, vtkUnif
   } // END for each dimension
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::SetDataSet(vtkCompositeDataIterator* compositeIter, vtkDataObject* dataObj)
 {
-  vtkUniformGridAMRDataIterator* itr = vtkUniformGridAMRDataIterator::SafeDownCast(compositeIter);
-  vtkUniformGrid* grid = vtkUniformGrid::SafeDownCast(dataObj);
-  int level = itr->GetCurrentLevel();
-  int id = itr->GetCurrentIndex();
-  this->SetDataSet(level, id, grid);
-};
+  if (auto amrIter = vtkUniformGridAMRDataIterator::SafeDownCast(compositeIter))
+  {
+    this->SetDataSet(amrIter->GetCurrentLevel(), amrIter->GetCurrentIndex(),
+      vtkUniformGrid::SafeDownCast(dataObj));
+  }
+}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::SetGridDescription(int gridDescription)
 {
   if (this->AMRInfo)
@@ -198,7 +207,7 @@ void vtkUniformGridAMR::SetGridDescription(int gridDescription)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkUniformGridAMR::GetGridDescription()
 {
   int desc = 0;
@@ -212,18 +221,15 @@ int vtkUniformGridAMR::GetGridDescription()
 //------------------------------------------------------------------------------
 vtkDataObject* vtkUniformGridAMR::GetDataSet(vtkCompositeDataIterator* compositeIter)
 {
-  vtkUniformGridAMRDataIterator* itr = vtkUniformGridAMRDataIterator::SafeDownCast(compositeIter);
-  if (!itr)
+  if (auto amrIter = vtkUniformGridAMRDataIterator::SafeDownCast(compositeIter))
   {
-    return nullptr;
+    return this->GetDataSet(amrIter->GetCurrentLevel(), amrIter->GetCurrentIndex());
   }
-  int level = itr->GetCurrentLevel();
-  int id = itr->GetCurrentIndex();
-  return this->GetDataSet(level, id);
+  return nullptr;
 }
 
-//----------------------------------------------------------------------------
-int vtkUniformGridAMR::GetCompositeIndex(const unsigned int level, const unsigned int index)
+//------------------------------------------------------------------------------
+int vtkUniformGridAMR::GetCompositeIndex(unsigned int level, unsigned int index)
 {
 
   if (level >= this->GetNumberOfLevels() || index >= this->GetNumberOfDataSets(level))
@@ -233,29 +239,91 @@ int vtkUniformGridAMR::GetCompositeIndex(const unsigned int level, const unsigne
   }
   return this->AMRInfo->GetIndex(level, index);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::GetLevelAndIndex(
   unsigned int compositeIdx, unsigned int& level, unsigned int& idx)
 {
   this->AMRInfo->ComputeIndexPair(compositeIdx, level, idx);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGridAMR* vtkUniformGridAMR::GetData(vtkInformation* info)
 {
   return info ? vtkUniformGridAMR::SafeDownCast(info->Get(DATA_OBJECT())) : nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGridAMR* vtkUniformGridAMR::GetData(vtkInformationVector* v, int i)
 {
   return vtkUniformGridAMR::GetData(v->GetInformationObject(i));
+}
+
+//------------------------------------------------------------------------------
+void vtkUniformGridAMR::CompositeShallowCopy(vtkCompositeDataSet* src)
+{
+  if (src == this)
+  {
+    return;
+  }
+
+  this->Superclass::CompositeShallowCopy(src);
+
+  if (vtkUniformGridAMR* hbds = vtkUniformGridAMR::SafeDownCast(src))
+  {
+    this->SetAMRInfo(hbds->GetAMRInfo());
+    this->AMRData->CompositeShallowCopy(hbds->GetAMRData());
+    memcpy(this->Bounds, hbds->Bounds, sizeof(double) * 6);
+  }
+
+  this->Modified();
+}
+
+//------------------------------------------------------------------------------
+void vtkUniformGridAMR::DeepCopy(vtkDataObject* src)
+{
+  if (src == this)
+  {
+    return;
+  }
+  auto mkhold = vtkMemkindRAII(this->GetIsInMemkind());
+  this->Superclass::DeepCopy(src);
+
+  if (vtkUniformGridAMR* hbds = vtkUniformGridAMR::SafeDownCast(src))
+  {
+    this->SetAMRInfo(nullptr);
+    this->AMRInfo = vtkAMRInformation::New();
+    this->AMRInfo->DeepCopy(hbds->GetAMRInfo());
+    this->SetAMRData(nullptr);
+    this->AMRData = vtkAMRDataInternals::New();
+    this->AMRData->DeepCopy(hbds->GetAMRData());
+    memcpy(this->Bounds, hbds->Bounds, sizeof(double) * 6);
+  }
+
+  this->Modified();
+}
+
+//------------------------------------------------------------------------------
+void vtkUniformGridAMR::CopyStructure(vtkCompositeDataSet* src)
+{
+  if (src == this)
+  {
+    return;
+  }
+
+  this->Superclass::CopyStructure(src);
+
+  if (vtkUniformGridAMR* hbds = vtkUniformGridAMR::SafeDownCast(src))
+  {
+    this->SetAMRInfo(hbds->GetAMRInfo());
+  }
+
+  this->Modified();
 }
 
 //------------------------------------------------------------------------------
@@ -279,49 +347,12 @@ void vtkUniformGridAMR::ShallowCopy(vtkDataObject* src)
 }
 
 //------------------------------------------------------------------------------
-void vtkUniformGridAMR::DeepCopy(vtkDataObject* src)
-{
-  if (src == this)
-  {
-    return;
-  }
-  auto mkhold = vtkMemkindRAII(this->GetIsInMemkind());
-  this->Superclass::DeepCopy(src);
-
-  if (vtkUniformGridAMR* hbds = vtkUniformGridAMR::SafeDownCast(src))
-  {
-    this->SetAMRInfo(nullptr);
-    this->AMRInfo = vtkAMRInformation::New();
-    this->AMRInfo->DeepCopy(hbds->GetAMRInfo());
-    memcpy(this->Bounds, hbds->Bounds, sizeof(double) * 6);
-  }
-
-  this->Modified();
-}
-
-//------------------------------------------------------------------------------
-void vtkUniformGridAMR::CopyStructure(vtkCompositeDataSet* src)
-{
-  if (src == this)
-  {
-    return;
-  }
-
-  if (vtkUniformGridAMR* hbds = vtkUniformGridAMR::SafeDownCast(src))
-  {
-    this->SetAMRInfo(hbds->GetAMRInfo());
-  }
-
-  this->Modified();
-}
-
-//----------------------------------------------------------------------------
 const double* vtkUniformGridAMR::GetBounds()
 {
   return !this->AMRData->Empty() ? this->Bounds : this->AMRInfo->GetBounds();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::GetBounds(double bounds[6])
 {
   const double* bb = this->GetBounds();
@@ -331,7 +362,7 @@ void vtkUniformGridAMR::GetBounds(double bounds[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::GetMin(double min[3])
 {
   const double* bb = this->GetBounds();
@@ -340,7 +371,7 @@ void vtkUniformGridAMR::GetMin(double min[3])
   min[2] = bb[4];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformGridAMR::GetMax(double max[3])
 {
   const double* bb = this->GetBounds();
@@ -348,3 +379,4 @@ void vtkUniformGridAMR::GetMax(double max[3])
   max[1] = bb[3];
   max[2] = bb[5];
 }
+VTK_ABI_NAMESPACE_END

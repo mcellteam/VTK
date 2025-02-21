@@ -1,20 +1,9 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkStructuredAMRNeighbor.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStructuredAMRNeighbor.h"
 #include "vtkStructuredExtent.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStructuredAMRNeighbor::vtkStructuredAMRNeighbor()
 {
   this->GridLevel = -1;
@@ -33,10 +22,9 @@ vtkStructuredAMRNeighbor::vtkStructuredAMRNeighbor()
   } // END for all dimensions
 }
 
-//-----------------------------------------------------------------------------
-vtkStructuredAMRNeighbor::vtkStructuredAMRNeighbor(const int gridLevel, const int neiID,
-  const int neighborLevel, int gridOverlap[6], int neiOverlap[6], int orient[3],
-  const int relationShip)
+//------------------------------------------------------------------------------
+vtkStructuredAMRNeighbor::vtkStructuredAMRNeighbor(int gridLevel, int neiID, int neighborLevel,
+  int gridOverlap[6], int neiOverlap[6], int orient[3], int relationShip)
 {
   this->GridLevel = gridLevel;
   this->NeighborID = neiID;
@@ -58,7 +46,7 @@ vtkStructuredAMRNeighbor::vtkStructuredAMRNeighbor(const int gridLevel, const in
   } // END for all dimensions
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredAMRNeighbor& vtkStructuredAMRNeighbor::operator=(const vtkStructuredAMRNeighbor& N)
 {
   if (this != &N)
@@ -89,7 +77,7 @@ vtkStructuredAMRNeighbor& vtkStructuredAMRNeighbor::operator=(const vtkStructure
   return *this;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkStructuredAMRNeighbor::GetRelationShipString()
 {
   std::string str;
@@ -124,8 +112,8 @@ std::string vtkStructuredAMRNeighbor::GetRelationShipString()
   return (str);
 }
 
-//-----------------------------------------------------------------------------
-void vtkStructuredAMRNeighbor::GetReceiveExtentOnGrid(const int ng, int gridExtent[6], int ext[6])
+//------------------------------------------------------------------------------
+void vtkStructuredAMRNeighbor::GetReceiveExtentOnGrid(int ng, int gridExtent[6], int ext[6])
 {
   for (int i = 0; i < 6; ++i)
   {
@@ -157,10 +145,9 @@ void vtkStructuredAMRNeighbor::GetReceiveExtentOnGrid(const int ng, int gridExte
   vtkStructuredExtent::Clamp(ext, gridExtent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStructuredAMRNeighbor::ComputeSendAndReceiveExtent(int gridRealExtent[6],
-  int* vtkNotUsed(gridGhostedExtent), int neiRealExtent[6], int* vtkNotUsed(WholeExtent),
-  const int N)
+  int* vtkNotUsed(gridGhostedExtent), int neiRealExtent[6], int* vtkNotUsed(WholeExtent), int N)
 {
 
   // TODO: Here we need to make sure that the send/rcv extent between a coarse
@@ -200,3 +187,4 @@ void vtkStructuredAMRNeighbor::ComputeSendAndReceiveExtent(int gridRealExtent[6]
   vtkStructuredExtent::Clamp(this->RcvExtent, neiRealExtent);
   vtkStructuredExtent::Clamp(this->SendExtent, gridRealExtent);
 }
+VTK_ABI_NAMESPACE_END

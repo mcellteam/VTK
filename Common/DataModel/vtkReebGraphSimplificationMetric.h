@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReebGraphSimplificationMetric.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkReebGraphSimplificationMetric
  * @brief   abstract class for custom Reeb graph
@@ -49,6 +37,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkDataArray;
 class vtkAbstractArray;
@@ -60,7 +49,7 @@ public:
   vtkTypeMacro(vtkReebGraphSimplificationMetric, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the lowest possible value for the custom metric space.
    * This value can be set prior to launching the Reeb graph simplification and
@@ -69,9 +58,9 @@ public:
    */
   vtkSetMacro(LowerBound, double);
   vtkGetMacro(LowerBound, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the highest possible value for the custom metric space.
    * This value can be set prior to launching the Reeb graph simplification and
@@ -80,7 +69,7 @@ public:
    */
   vtkSetMacro(UpperBound, double);
   vtkGetMacro(UpperBound, double);
-  //@}
+  ///@}
 
   /**
    * Function to implement in your simplification metric algorithm.
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkReebGraphSimplificationMetric&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

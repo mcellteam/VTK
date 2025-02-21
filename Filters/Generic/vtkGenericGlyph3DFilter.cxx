@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkGenericGlyph3DFilter.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericGlyph3DFilter.h"
 
 #include "vtkGenericAttribute.h"
@@ -36,6 +24,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkTrivialProducer.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericGlyph3DFilter);
 
 // Construct object with scaling on, scaling mode is by scalar value,
@@ -64,7 +53,7 @@ vtkGenericGlyph3DFilter::vtkGenericGlyph3DFilter()
   this->SetNumberOfInputPorts(2);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericGlyph3DFilter::~vtkGenericGlyph3DFilter()
 {
   delete[] this->PointIdsName;
@@ -73,7 +62,7 @@ vtkGenericGlyph3DFilter::~vtkGenericGlyph3DFilter()
   this->SetInputNormalsSelection(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericGlyph3DFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -414,7 +403,7 @@ int vtkGenericGlyph3DFilter::RequestData(vtkInformation* vtkNotUsed(request),
     if (!(inPtId % 10000))
     {
       this->UpdateProgress(static_cast<double>(inPtId) / numPts);
-      if (this->GetAbortExecute())
+      if (this->CheckAbort())
       {
         break;
       }
@@ -680,7 +669,7 @@ int vtkGenericGlyph3DFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Since indexing determines size of outputs, EstimatedWholeMemorySize is
 // truly an estimate.  Ignore Indexing (although for a best estimate we
 // should average the size of the sources instead of using 0).
@@ -699,7 +688,7 @@ int vtkGenericGlyph3DFilter::RequestInformation(vtkInformation* vtkNotUsed(reque
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a source object at a specified table location.
 void vtkGenericGlyph3DFilter::SetSourceData(int id, vtkPolyData* pd)
 {
@@ -740,7 +729,7 @@ void vtkGenericGlyph3DFilter::SetSourceData(int id, vtkPolyData* pd)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get a pointer to a source object at a specified table location.
 vtkPolyData* vtkGenericGlyph3DFilter::GetSource(int id)
 {
@@ -754,7 +743,7 @@ vtkPolyData* vtkGenericGlyph3DFilter::GetSource(int id)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericGlyph3DFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -825,7 +814,7 @@ void vtkGenericGlyph3DFilter::PrintSelf(ostream& os, vtkIndent indent)
      << (this->InputNormalsSelection ? this->InputNormalsSelection : "(none)") << "\n";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericGlyph3DFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -852,7 +841,7 @@ int vtkGenericGlyph3DFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericGlyph3DFilter ::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -869,3 +858,4 @@ int vtkGenericGlyph3DFilter ::FillInputPortInformation(int port, vtkInformation*
   }
   return 1;
 }
+VTK_ABI_NAMESPACE_END

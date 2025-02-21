@@ -1,25 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParseString.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright (c) 2012 David Gobbi.
-
-  Contributed to the VisualizationToolkit by the author in April 2012
-  under the terms of the Visualization Toolkit 2008 copyright.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2012 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParseString.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,7 +16,7 @@
  */
 
 /** Array for quick lookup of char types */
-const unsigned char parse_charbits[256] = {
+static const unsigned char parse_charbits[256] = {
   0,
   0,
   0,
@@ -371,12 +354,14 @@ size_t vtkParse_SkipId(const char* text)
 }
 
 /** A simple 32-bit hash function based on "djb2". */
-#define parse_hash_name(cp, h)                                                                     \
+#define parse_hash(cp, h, cond)                                                                    \
   h = 5381;                                                                                        \
   do                                                                                               \
   {                                                                                                \
     h = (h << 5) + h + (unsigned char)*cp++;                                                       \
-  } while (parse_chartype(*cp, CPRE_XID));
+  } while (cond)
+
+#define parse_hash_name(cp, h) parse_hash(cp, h, parse_chartype(*cp, CPRE_XID))
 
 unsigned int vtkParse_HashId(const char* cp)
 {
@@ -519,9 +504,9 @@ int vtkParse_NextToken(StringTokenizer* tokens)
       static const char* op_str_array[32] = { "compl", 0, 0, 0, 0, "bitor", "or", 0, 0, 0, 0,
         "not_eq", 0, "and_eq", 0, 0, 0, 0, 0, "xor_eq", 0, 0, "not", "bitand", "and", 0, 0, "or_eq",
         0, 0, "xor", 0 };
-      static unsigned char op_len_array[32] = { 5, 0, 0, 0, 0, 5, 2, 0, 0, 0, 0, 6, 0, 6, 0, 0, 0,
-        0, 0, 6, 0, 0, 3, 6, 3, 0, 0, 5, 0, 0, 3, 0 };
-      static int op_tok_array[32] = { '~', 0, 0, 0, 0, '|', TOK_OR, 0, 0, 0, 0, TOK_NE, 0,
+      static const unsigned char op_len_array[32] = { 5, 0, 0, 0, 0, 5, 2, 0, 0, 0, 0, 6, 0, 6, 0,
+        0, 0, 0, 0, 6, 0, 0, 3, 6, 3, 0, 0, 5, 0, 0, 3, 0 };
+      static const int op_tok_array[32] = { '~', 0, 0, 0, 0, '|', TOK_OR, 0, 0, 0, 0, TOK_NE, 0,
         TOK_AND_EQ, 0, 0, 0, 0, 0, TOK_XOR_EQ, 0, 0, '!', '&', TOK_AND, 0, 0, TOK_OR_EQ, 0, 0, '^',
         0 };
 
@@ -812,7 +797,7 @@ char* vtkParse_NewString(StringCache* cache, size_t n)
     cache->ChunkSize = 8176;
   }
 
-  // align next start position on an 8-byte boundary
+  /* align next start position on an 8-byte boundary */
   nextPosition = (((cache->Position + n + 8) | 7) - 7);
 
   if (cache->NumberOfChunks == 0 || nextPosition > cache->ChunkSize)
@@ -848,6 +833,46 @@ char* vtkParse_NewString(StringCache* cache, size_t n)
   return cp;
 }
 
+/* merge "other" into "cache", leaving "other" empty */
+void vtkParse_MergeStringCache(StringCache* cache, StringCache* other)
+{
+  if (cache->NumberOfChunks == 0)
+  {
+    cache->NumberOfChunks = other->NumberOfChunks;
+    cache->Chunks = other->Chunks;
+    cache->ChunkSize = other->ChunkSize;
+    cache->Position = other->Position;
+  }
+  else if (other->NumberOfChunks > 0)
+  {
+    unsigned long i;
+    unsigned long n = cache->NumberOfChunks + other->NumberOfChunks;
+
+    /* round up to a power of two, see NewString for reason */
+    n -= 1;
+    for (i = 1; i <= sizeof(unsigned long) * 4; i *= 2)
+    {
+      n |= n >> i;
+    }
+    n += 1;
+
+    cache->Chunks = (char**)realloc(cache->Chunks, n * sizeof(char*));
+
+    for (i = 0; i < other->NumberOfChunks; i++)
+    {
+      cache->Chunks[cache->NumberOfChunks++] = other->Chunks[i];
+    }
+
+    cache->ChunkSize = other->ChunkSize;
+    cache->Position = other->Position;
+
+    free(other->Chunks);
+  }
+
+  other->NumberOfChunks = 0;
+  other->Chunks = NULL;
+}
+
 /* free all allocated strings */
 void vtkParse_FreeStringCache(StringCache* cache)
 {
@@ -869,9 +894,31 @@ void vtkParse_FreeStringCache(StringCache* cache)
 /* duplicate the first n bytes of a string and terminate it */
 const char* vtkParse_CacheString(StringCache* cache, const char* in, size_t n)
 {
-  char* res = vtkParse_NewString(cache, n);
-  strncpy(res, in, n);
-  res[n] = '\0';
+  char* res = NULL;
+  if (in)
+  {
+    res = vtkParse_NewString(cache, n);
+    strncpy(res, in, n);
+    res[n] = '\0';
+  }
+  else
+  {
+    /* if input is NULL, length must be zero */
+    assert(n == 0);
+  }
 
   return res;
+}
+
+/* hash a string */
+unsigned int vtkParse_HashString(const char* cp, size_t l)
+{
+  unsigned int h = 0;
+
+  if (l != 0)
+  {
+    parse_hash(cp, h, --l > 0);
+  }
+
+  return h;
 }

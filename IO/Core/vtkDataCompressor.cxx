@@ -1,47 +1,36 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataCompressor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDataCompressor.h"
 #include "vtkUnsignedCharArray.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkDataCompressor::vtkDataCompressor() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataCompressor::~vtkDataCompressor() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataCompressor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 size_t vtkDataCompressor::Compress(unsigned char const* uncompressedData, size_t uncompressedSize,
   unsigned char* compressedData, size_t compressionSpace)
 {
   return this->CompressBuffer(uncompressedData, uncompressedSize, compressedData, compressionSpace);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 size_t vtkDataCompressor::Uncompress(unsigned char const* compressedData, size_t compressedSize,
   unsigned char* uncompressedData, size_t uncompressedSize)
 {
   return this->UncompressBuffer(compressedData, compressedSize, uncompressedData, uncompressedSize);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnsignedCharArray* vtkDataCompressor::Compress(
   unsigned char const* uncompressedData, size_t uncompressedSize)
 {
@@ -71,7 +60,7 @@ vtkUnsignedCharArray* vtkDataCompressor::Compress(
   return outputArray;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnsignedCharArray* vtkDataCompressor::Uncompress(
   unsigned char const* compressedData, size_t compressedSize, size_t uncompressedSize)
 {
@@ -97,3 +86,4 @@ vtkUnsignedCharArray* vtkDataCompressor::Uncompress(
 
   return outputArray;
 }
+VTK_ABI_NAMESPACE_END

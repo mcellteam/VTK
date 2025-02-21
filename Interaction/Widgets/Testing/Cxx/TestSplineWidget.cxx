@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSmartPointer.h"
 
 #include "vtkActor.h"
@@ -317,16 +319,6 @@ int TestSplineWidget(int argc, char* argv[])
   camera->SetFocalPoint(100.8, 100.8, 69);
   camera->SetPosition(560.949, 560.949, -167.853);
   ren1->ResetCameraClippingRange();
-
-  // Position the actors
-  //  renWin->Render();
-  //  iren->SetEventPosition(200,200);
-  //  iren->SetKeyCode('r');
-  //  iren->InvokeEvent(vtkCommand::CharEvent,nullptr);
-  //  ren1->ResetCameraClippingRange();
-  //  renWin->Render();
-  //  iren->SetKeyCode('t');
-  //  iren->InvokeEvent(vtkCommand::CharEvent,nullptr);
 
   // Playback recorded events
   vtkSmartPointer<vtkInteractorEventRecorder> recorder =

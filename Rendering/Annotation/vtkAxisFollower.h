@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAxisFollower.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAxisFollower
  * @brief   a subclass of vtkFollower that ensures that
@@ -19,8 +7,8 @@
  *
  * vtkAxisFollower is a subclass of vtkFollower that always follows its
  * specified axis. More specifically it will not change its position or scale,
- * but it will continually update its orientation so that it is aliged with the
- * axis and facing at angle to the camera to provide maximum visibilty.
+ * but it will continually update its orientation so that it is aligned with
+ * the axis and facing at angle to the camera to provide maximum visibility.
  * This is typically used for text labels for 3d plots.
  * @sa
  * vtkActor vtkFollower vtkCamera vtkAxisActor vtkCubeAxesActor
@@ -31,14 +19,16 @@
 
 #include "vtkFollower.h"
 #include "vtkRenderingAnnotationModule.h" // For export macro
+#include "vtkWrappingHints.h"             // For VTK_MARSHALAUTO
 
 #include "vtkWeakPointer.h" // For vtkWeakPointer
 
 // Forward declarations.
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAxisActor;
 class vtkRenderer;
 
-class VTKRENDERINGANNOTATION_EXPORT vtkAxisFollower : public vtkFollower
+class VTKRENDERINGANNOTATION_EXPORT VTK_MARSHALAUTO vtkAxisFollower : public vtkFollower
 {
 public:
   vtkTypeMacro(vtkAxisFollower, vtkFollower);
@@ -49,15 +39,15 @@ public:
    */
   static vtkAxisFollower* New();
 
-  //@{
+  ///@{
   /**
    * Set axis that needs to be followed.
    */
   virtual void SetAxis(vtkAxisActor*);
   virtual vtkAxisActor* GetAxis();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get state of auto center mode where additional
    * translation will be added to make sure the underlying
@@ -66,9 +56,9 @@ public:
   vtkSetMacro(AutoCenter, vtkTypeBool);
   vtkGetMacro(AutoCenter, vtkTypeBool);
   vtkBooleanMacro(AutoCenter, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable / disable use of distance based LOD. If enabled the actor
    * will not be visible at a certain distance from the camera.
@@ -76,9 +66,9 @@ public:
    */
   vtkSetMacro(EnableDistanceLOD, int);
   vtkGetMacro(EnableDistanceLOD, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set distance LOD threshold (0.0 - 1.0).This determines at what fraction
    * of camera far clip range, actor is not visible.
@@ -86,9 +76,9 @@ public:
    */
   vtkSetClampMacro(DistanceLODThreshold, double, 0.0, 1.0);
   vtkGetMacro(DistanceLODThreshold, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable / disable use of view angle based LOD. If enabled the actor
    * will not be visible at a certain view angle.
@@ -96,9 +86,9 @@ public:
    */
   vtkSetMacro(EnableViewAngleLOD, int);
   vtkGetMacro(EnableViewAngleLOD, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set view angle LOD threshold (0.0 - 1.0).This determines at what view
    * angle to geometry will make the geometry not visible.
@@ -106,36 +96,40 @@ public:
    */
   vtkSetClampMacro(ViewAngleLODThreshold, double, 0.0, 1.0);
   vtkGetMacro(ViewAngleLODThreshold, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the desired screen offset from the axis.
    * Convenience method, using a zero horizontal offset
    */
   double GetScreenOffset();
   void SetScreenOffset(double offset);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the desired screen offset from the axis.
    * first component is horizontal, second is vertical.
    */
   vtkSetVector2Macro(ScreenOffsetVector, double);
   vtkGetVector2Macro(ScreenOffsetVector, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This causes the actor to be rendered. It in turn will render the actor's
    * property, texture map and then mapper. If a property hasn't been
    * assigned, then the actor will create one automatically.
    */
-  int RenderOpaqueGeometry(vtkViewport* viewport) override;
-  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   void Render(vtkRenderer* ren) override;
-  //@}
+  ///@}
+
+  /**
+   * Overridden to disable this function, and use ComputeTransformMatrix instead, as
+   * we need a renderer to compute the transform matrix
+   */
+  void ComputeMatrix() override {}
 
   /**
    * Generate the matrix based on ivars. This method overloads its superclasses
@@ -196,4 +190,5 @@ private:
   void Render(vtkRenderer*, vtkMapper*) override {}
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkAxisFollower_h

@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSQLiteDatabase.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkSQLiteDatabase.h"
 #include "vtkSQLiteDatabaseInternals.h"
 #include "vtkSQLiteQuery.h"
@@ -33,9 +17,10 @@
 
 #include "vtk_sqlite.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSQLiteDatabase);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSQLiteDatabase::vtkSQLiteDatabase()
 {
   this->Internal = new vtkSQLiteDatabaseInternals;
@@ -51,7 +36,7 @@ vtkSQLiteDatabase::vtkSQLiteDatabase()
   this->DatabaseFileName = nullptr;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSQLiteDatabase::~vtkSQLiteDatabase()
 {
   if (this->IsOpen())
@@ -70,7 +55,7 @@ vtkSQLiteDatabase::~vtkSQLiteDatabase()
   delete this->Internal;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSQLiteDatabase::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -90,7 +75,7 @@ void vtkSQLiteDatabase::PrintSelf(ostream& os, vtkIndent indent)
      << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkSQLiteDatabase::GetColumnSpecification(
   vtkSQLDatabaseSchema* schema, int tblHandle, int colHandle)
 {
@@ -99,7 +84,7 @@ vtkStdString vtkSQLiteDatabase::GetColumnSpecification(
 
   // Figure out column type
   int colType = schema->GetColumnTypeFromHandle(tblHandle, colHandle);
-  vtkStdString colTypeStr;
+  std::string colTypeStr;
   switch (static_cast<vtkSQLDatabaseSchema::DatabaseColumnType>(colType))
   {
     case vtkSQLDatabaseSchema::SERIAL:
@@ -146,7 +131,7 @@ vtkStdString vtkSQLiteDatabase::GetColumnSpecification(
   else // if ( colTypeStr.size() )
   {
     vtkGenericWarningMacro("Unable to get column specification: unsupported data type " << colType);
-    return vtkStdString();
+    return {};
   }
 
   // Decide whether size is allowed, required, or unused
@@ -211,7 +196,7 @@ vtkStdString vtkSQLiteDatabase::GetColumnSpecification(
     }
   }
 
-  vtkStdString attStr = schema->GetColumnAttributesFromHandle(tblHandle, colHandle);
+  std::string attStr = schema->GetColumnAttributesFromHandle(tblHandle, colHandle);
   if (!attStr.empty())
   {
     queryStr << " " << attStr;
@@ -220,7 +205,7 @@ vtkStdString vtkSQLiteDatabase::GetColumnSpecification(
   return queryStr.str();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteDatabase::IsSupported(int feature)
 {
   switch (feature)
@@ -244,17 +229,17 @@ bool vtkSQLiteDatabase::IsSupported(int feature)
       vtkErrorMacro(<< "Unknown SQL feature code " << feature << "!  See "
                     << "vtkSQLDatabase.h for a list of possible features.");
       return false;
-    };
+    }
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteDatabase::Open(const char* password)
 {
   return this->Open(password, USE_EXISTING);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteDatabase::Open(const char* password, int mode)
 {
   if (this->IsOpen())
@@ -281,7 +266,7 @@ bool vtkSQLiteDatabase::Open(const char* password, int mode)
   }
 
   // Only do checks if it is not an in-memory database
-  if (strcmp(":memory:", this->DatabaseFileName))
+  if (strcmp(":memory:", this->DatabaseFileName) != 0)
   {
     bool exists = vtksys::SystemTools::FileExists(this->DatabaseFileName);
     if (mode == USE_EXISTING && !exists)
@@ -328,7 +313,7 @@ bool vtkSQLiteDatabase::Open(const char* password, int mode)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSQLiteDatabase::Close()
 {
   if (this->Internal->SQLiteInstance == nullptr)
@@ -346,13 +331,13 @@ void vtkSQLiteDatabase::Close()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteDatabase::IsOpen()
 {
   return (this->Internal->SQLiteInstance != nullptr);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSQLQuery* vtkSQLiteDatabase::GetQueryInstance()
 {
   vtkSQLiteQuery* query = vtkSQLiteQuery::New();
@@ -360,7 +345,7 @@ vtkSQLQuery* vtkSQLiteDatabase::GetQueryInstance()
   return query;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStringArray* vtkSQLiteDatabase::GetTables()
 {
   this->Tables->Resize(0);
@@ -393,11 +378,11 @@ vtkStringArray* vtkSQLiteDatabase::GetTables()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStringArray* vtkSQLiteDatabase::GetRecord(const char* table)
 {
   vtkSQLQuery* query = this->GetQueryInstance();
-  vtkStdString text("PRAGMA table_info ('");
+  std::string text("PRAGMA table_info ('");
   text += table;
   text += "')";
 
@@ -432,7 +417,7 @@ vtkStringArray* vtkSQLiteDatabase::GetRecord(const char* table)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkSQLiteDatabase::GetURL()
 {
   const char* fname = this->GetDatabaseFileName();
@@ -445,7 +430,7 @@ vtkStdString vtkSQLiteDatabase::GetURL()
   return this->TempURL;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteDatabase::ParseURL(const char* URL)
 {
   std::string urlstr(URL ? URL : "");
@@ -454,7 +439,7 @@ bool vtkSQLiteDatabase::ParseURL(const char* URL)
 
   if (!vtksys::SystemTools::ParseURLProtocol(urlstr, protocol, dataglom))
   {
-    vtkErrorMacro("Invalid URL: \"" << urlstr.c_str() << "\"");
+    vtkErrorMacro("Invalid URL: \"" << urlstr << "\"");
     return false;
   }
 
@@ -467,7 +452,7 @@ bool vtkSQLiteDatabase::ParseURL(const char* URL)
   return false;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteDatabase::HasError()
 {
   return (sqlite3_errcode(this->Internal->SQLiteInstance) != SQLITE_OK);
@@ -477,3 +462,4 @@ const char* vtkSQLiteDatabase::GetLastErrorText()
 {
   return sqlite3_errmsg(this->Internal->SQLiteInstance);
 }
+VTK_ABI_NAMESPACE_END

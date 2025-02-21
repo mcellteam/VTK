@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageShiftScale.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageShiftScale
  * @brief   shift and scale an input image
@@ -28,6 +16,7 @@
 #include "vtkImagingCoreModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImageShiftScale : public vtkThreadedImageAlgorithm
 {
 public:
@@ -35,23 +24,23 @@ public:
   vtkTypeMacro(vtkImageShiftScale, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the shift value. This value is added to each pixel
    */
   vtkSetMacro(Shift, double);
   vtkGetMacro(Shift, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale value. Each pixel is multiplied by this value.
    */
   vtkSetMacro(Scale, double);
   vtkGetMacro(Scale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the desired output scalar type. The result of the shift
    * and scale operations is cast to the type specified.
@@ -68,9 +57,9 @@ public:
   void SetOutputScalarTypeToUnsignedShort() { this->SetOutputScalarType(VTK_UNSIGNED_SHORT); }
   void SetOutputScalarTypeToChar() { this->SetOutputScalarType(VTK_CHAR); }
   void SetOutputScalarTypeToUnsignedChar() { this->SetOutputScalarType(VTK_UNSIGNED_CHAR); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When the ClampOverflow flag is on, the data is thresholded so that
    * the output value does not exceed the max or min of the data type.
@@ -82,7 +71,7 @@ public:
   vtkSetMacro(ClampOverflow, vtkTypeBool);
   vtkGetMacro(ClampOverflow, vtkTypeBool);
   vtkBooleanMacro(ClampOverflow, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageShiftScale();
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkImageShiftScale&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

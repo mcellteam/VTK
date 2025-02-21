@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTableToStructuredGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTableToStructuredGrid.h"
 
 #include "vtkDoubleArray.h"
@@ -23,8 +11,9 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkTable.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTableToStructuredGrid);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTableToStructuredGrid::vtkTableToStructuredGrid()
 {
   this->XColumn = nullptr;
@@ -37,7 +26,7 @@ vtkTableToStructuredGrid::vtkTableToStructuredGrid()
     this->WholeExtent[4] = this->WholeExtent[5] = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTableToStructuredGrid::~vtkTableToStructuredGrid()
 {
   this->SetXColumn(nullptr);
@@ -45,14 +34,14 @@ vtkTableToStructuredGrid::~vtkTableToStructuredGrid()
   this->SetZColumn(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTableToStructuredGrid::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkTable");
   return 1;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTableToStructuredGrid::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -63,7 +52,7 @@ int vtkTableToStructuredGrid::RequestInformation(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTableToStructuredGrid::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -77,7 +66,7 @@ int vtkTableToStructuredGrid::RequestData(vtkInformation* vtkNotUsed(request),
   return this->Convert(input, output, extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTableToStructuredGrid::Convert(vtkTable* input, vtkStructuredGrid* output, int extent[6])
 {
   int num_values =
@@ -131,6 +120,10 @@ int vtkTableToStructuredGrid::Convert(vtkTable* input, vtkStructuredGrid* output
   // Add all other columns as point data.
   for (int cc = 0; cc < input->GetNumberOfColumns(); cc++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkAbstractArray* arr = input->GetColumn(cc);
     if (arr != xarray && arr != yarray && arr != zarray)
     {
@@ -140,7 +133,7 @@ int vtkTableToStructuredGrid::Convert(vtkTable* input, vtkStructuredGrid* output
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTableToStructuredGrid::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -154,3 +147,4 @@ void vtkTableToStructuredGrid::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ZColumn: " << (this->ZColumn ? this->ZColumn : "(none)") << endl;
   os << indent << "ZComponent: " << this->ZComponent << endl;
 }
+VTK_ABI_NAMESPACE_END

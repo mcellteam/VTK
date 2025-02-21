@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostBiconnectedComponents.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkBoostBiconnectedComponents
  * @brief   Find the biconnected components of a graph
@@ -48,6 +32,7 @@
 #include "vtkInfovisBoostGraphAlgorithmsModule.h" // For export macro
 #include "vtkUndirectedGraphAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKINFOVISBOOSTGRAPHALGORITHMS_EXPORT vtkBoostBiconnectedComponents
   : public vtkUndirectedGraphAlgorithm
 {
@@ -56,13 +41,13 @@ public:
   vtkTypeMacro(vtkBoostBiconnectedComponents, vtkUndirectedGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the output array name. If no output array name is
    * set then the name "biconnected component" is used.
    */
   vtkSetStringMacro(OutputArrayName);
-  //@}
+  ///@}
 
 protected:
   vtkBoostBiconnectedComponents();
@@ -77,4 +62,5 @@ private:
   void operator=(const vtkBoostBiconnectedComponents&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

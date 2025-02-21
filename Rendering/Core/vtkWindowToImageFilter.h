@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWindowToImageFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWindowToImageFilter
  * @brief   Use a vtkWindow as input to image pipeline
@@ -65,6 +53,7 @@
 // VTK_RGB and VTK_RGBA are defined in system includes
 #define VTK_ZBUFFER 5
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkWindow;
 
 class vtkWTI2DHelperClass;
@@ -81,21 +70,21 @@ public:
    */
   void SetInput(vtkWindow* input);
 
-  //@{
+  ///@{
   /**
    * Returns which renderer is being used as the source for the pixel data.
    * Initial value is 0.
    */
   vtkGetObjectMacro(Input, vtkWindow);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the scale (or magnification) factors in X and Y.
    */
   vtkSetVector2Macro(Scale, int);
   vtkGetVector2Macro(Scale, int);
-  //@}
+  ///@}
 
   /**
    * Convenience method to set same scale factors for x and y.
@@ -103,7 +92,7 @@ public:
    */
   void SetScale(int scale) { this->SetScale(scale, scale); }
 
-  //@{
+  ///@{
   /**
    * When scale factor > 1, this class render the full image in tiles.
    * Sometimes that results in artificial artifacts at internal tile seams.
@@ -112,9 +101,9 @@ public:
   vtkSetMacro(FixBoundary, bool);
   vtkGetMacro(FixBoundary, bool);
   vtkBooleanMacro(FixBoundary, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the flag that determines which buffer to read from.
    * The default is to read from the front buffer.
@@ -122,9 +111,9 @@ public:
   vtkBooleanMacro(ReadFrontBuffer, vtkTypeBool);
   vtkGetMacro(ReadFrontBuffer, vtkTypeBool);
   vtkSetMacro(ReadFrontBuffer, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get whether to re-render the input window. Initial value is true.
    * (This option makes no difference if scale factor > 1.)
@@ -132,9 +121,9 @@ public:
   vtkBooleanMacro(ShouldRerender, vtkTypeBool);
   vtkSetMacro(ShouldRerender, vtkTypeBool);
   vtkGetMacro(ShouldRerender, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the extents to be used to generate the image. Initial value is
    * {0,0,1,1} (This option does not work if scale factor > 1.)
@@ -142,9 +131,9 @@ public:
   void SetViewport(double, double, double, double);
   void SetViewport(double*);
   vtkGetVectorMacro(Viewport, double, 4);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the window buffer from which data will be read.  Choices
    * include VTK_RGB (read the color image from the window), VTK_RGBA
@@ -156,7 +145,7 @@ public:
   void SetInputBufferTypeToRGB() { this->SetInputBufferType(VTK_RGB); }
   void SetInputBufferTypeToRGBA() { this->SetInputBufferType(VTK_RGBA); }
   void SetInputBufferTypeToZBuffer() { this->SetInputBufferType(VTK_ZBUFFER); }
-  //@}
+  ///@}
 
   /**
    * Get the output data object for a port on this algorithm.
@@ -209,4 +198,5 @@ private:
   void operator=(const vtkWindowToImageFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

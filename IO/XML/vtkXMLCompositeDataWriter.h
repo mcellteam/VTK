@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkXMLCompositeDataWriter.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLCompositeDataWriter
  * @brief   Writer for multi-group datasets
@@ -30,6 +19,7 @@
 #include "vtkStdString.h"   // needed for vtkStdString.
 #include "vtkXMLWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCallbackCommand;
 class vtkCompositeDataSet;
 class vtkXMLDataElement;
@@ -50,21 +40,21 @@ public:
    * Get/Set the number of pieces into which the inputs are split.
    */
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of ghost levels to be written.
    */
   vtkGetMacro(GhostLevel, int);
   vtkSetMacro(GhostLevel, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set whether this instance will write the meta-file.
    */
   vtkGetMacro(WriteMetaFile, int);
   virtual void SetWriteMetaFile(int flag);
-  //@}
+  ///@}
 
   /**
    * See the vtkAlgorithm for a description of what these do
@@ -124,8 +114,8 @@ protected:
 
   // Methods to help construct internal file names.
   void SplitFileName();
-  const char* GetFilePrefix();
-  const char* GetFilePath();
+  VTK_FILEPATH const char* GetFilePrefix();
+  VTK_FILEPATH const char* GetFilePath();
 
   /**
    * Returns the default extension to use for the given dataset type.
@@ -141,7 +131,7 @@ protected:
   int WriteMetaFileIfRequested();
 
   // Make a directory.
-  void MakeDirectory(const char* name);
+  virtual void MakeDirectory(const char* name);
 
   // Remove a directory.
   void RemoveADirectory(const char* name);
@@ -203,4 +193,5 @@ private:
   void operator=(const vtkXMLCompositeDataWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

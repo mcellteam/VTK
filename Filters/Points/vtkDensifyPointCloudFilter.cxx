@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDensifyPointCloudFilter.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDensifyPointCloudFilter.h"
 
 #include "vtkArrayListTemplate.h" // For processing attribute data
@@ -28,14 +16,15 @@
 #include "vtkSMPTools.h"
 #include "vtkStaticPointLocator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDensifyPointCloudFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Count the number of points that need generation
 template <typename T>
 struct CountPoints
@@ -132,7 +121,7 @@ struct CountPoints
 
 }; // CountPoints
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Count the number of points that need generation
 template <typename T>
 struct GeneratePoints
@@ -238,7 +227,7 @@ struct GeneratePoints
 } // anonymous namespace
 
 //================= Begin VTK class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDensifyPointCloudFilter::vtkDensifyPointCloudFilter()
 {
 
@@ -251,10 +240,10 @@ vtkDensifyPointCloudFilter::vtkDensifyPointCloudFilter()
   this->MaximumNumberOfPoints = VTK_ID_MAX;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDensifyPointCloudFilter::~vtkDensifyPointCloudFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Produce the output data
 int vtkDensifyPointCloudFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -357,14 +346,14 @@ int vtkDensifyPointCloudFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDensifyPointCloudFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPointSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDensifyPointCloudFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -378,3 +367,4 @@ void vtkDensifyPointCloudFilter::PrintSelf(ostream& os, vtkIndent indent)
      << "Interpolate Attribute Data: " << (this->InterpolateAttributeData ? "On\n" : "Off\n");
   os << indent << "Maximum Number Of Points: " << this->MaximumNumberOfPoints << "\n";
 }
+VTK_ABI_NAMESPACE_END

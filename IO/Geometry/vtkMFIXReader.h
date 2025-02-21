@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMFIXReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMFIXReader
  * @brief   reads a dataset in MFIX file format
@@ -38,6 +26,7 @@
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArraySelection;
 class vtkDoubleArray;
 class vtkStringArray;
@@ -48,7 +37,6 @@ class vtkWedge;
 class vtkQuad;
 class vtkHexahedron;
 class vtkPoints;
-class vtkStdString;
 
 class VTKIOGEOMETRY_EXPORT vtkMFIXReader : public vtkUnstructuredGridAlgorithm
 {
@@ -57,64 +45,64 @@ public:
   vtkTypeMacro(vtkMFIXReader, vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the file name of the MFIX Restart data file to read.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the total number of cells. The number of cells is only valid after a
    * successful read of the data file is performed.
    */
   vtkGetMacro(NumberOfCells, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the total number of nodes. The number of nodes is only valid after a
    * successful read of the data file is performed.
    */
   vtkGetMacro(NumberOfPoints, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the number of data components at the nodes and cells.
    */
   vtkGetMacro(NumberOfCellFields, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Which TimeStep to read.
    */
   vtkSetMacro(TimeStep, int);
   vtkGetMacro(TimeStep, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the number of timesteps.
    */
   vtkGetMacro(NumberOfTimeSteps, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Which TimeStepRange to read
    */
   vtkGetVector2Macro(TimeStepRange, int);
   vtkSetVector2Macro(TimeStepRange, int);
-  //@}
+  ///@}
 
   /**
    * Get the number of cell arrays available in the input.
    */
-  int GetNumberOfCellArrays(void);
+  int GetNumberOfCellArrays();
 
   /**
    * Get the name of the cell array with the given index in
@@ -122,22 +110,22 @@ public:
    */
   const char* GetCellArrayName(int index);
 
-  //@{
+  ///@{
   /**
    * Get/Set whether the cell array with the given name is to
    * be read.
    */
   int GetCellArrayStatus(const char* name);
   void SetCellArrayStatus(const char* name, int status);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off all cell arrays.
    */
   void DisableAllCellArrays();
   void EnableAllCellArrays();
-  //@}
+  ///@}
 
   /**
    * Get the range of cell data.
@@ -268,12 +256,8 @@ private:
   void SwapDouble(double& value);
   void SwapFloat(float& value);
   void SwapInt(int& value);
-  vtkStdString ConvertIntToString(int in);
-  int ConvertCharToInt(char in);
-  int ConvertStringToInt(const vtkStdString& in);
   void GetInt(istream& in, int& val);
   void GetDouble(istream& in, double& val);
-  void GetFloat(istream& in, float& val);
   void SkipBytes(istream& in, int n);
   void RestartVersionNumber(const char* buffer);
   void GetBlockOfDoubles(istream& in, vtkDoubleArray* v, int n);
@@ -283,7 +267,7 @@ private:
   void GetVariableAtTimestep(int vari, int tstep, vtkFloatArray* v);
   void CreateVariableNames();
   void GetTimeSteps();
-  void MakeTimeStepTable(int nvars);
+  void MakeTimeStepTable(int numberOfVariables);
   void SetProjectName(const char* infile);
   void MakeSPXTimeStepIndexTable(int nvars);
   void CalculateMaxTimeStep();
@@ -293,4 +277,5 @@ private:
   void GetAllTimes(vtkInformationVector* outputVector);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

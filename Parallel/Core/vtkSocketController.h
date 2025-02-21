@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSocketController.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSocketController
  * @brief   Process communication using Sockets
@@ -44,6 +32,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkParallelCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSocketCommunicator;
 
 class VTKPARALLELCORE_EXPORT vtkSocketController : public vtkMultiProcessController
@@ -54,7 +43,7 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
-   * This method is for initialiazing sockets.
+   * This method is for initializing sockets.
    * One of these is REQUIRED for Windows.
    */
   void Initialize(int* argc, char*** argv, int) override { this->Initialize(argc, argv); }
@@ -130,7 +119,7 @@ protected:
   vtkSocketController();
   ~vtkSocketController() override;
 
-  // Initialize only once, finialize on destruction.
+  // Initialize only once, finalize on destruction.
   static int Initialized;
 
 private:
@@ -138,4 +127,5 @@ private:
   void operator=(const vtkSocketController&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkSocketController_h

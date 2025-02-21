@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContourLoopExtraction.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkContourLoopExtraction.h"
 
 #include "vtkCellArray.h"
@@ -32,9 +20,10 @@
 #include <cfloat>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkContourLoopExtraction);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 // Note on the definition of parametric coordinates: Given a sequence of
@@ -85,7 +74,8 @@ void UpdateRange(vtkDataArray* scalars, vtkIdType pid, double range[2])
 // March along connected lines to the end----------------------------------
 // pts[0] is assumed to be the starting point and already inserted.
 vtkIdType TraverseLoop(double dir, vtkPolyData* polyData, vtkIdType lineId, vtkIdType start,
-  LoopPointType& sortedPoints, char* visited, vtkDataArray* scalars, double range[2])
+  LoopPointType& sortedPoints, std::vector<signed char>& visited, vtkDataArray* scalars,
+  double range[2])
 {
   vtkIdType last = start, numInserted = 0;
   double t = 0.0;
@@ -104,7 +94,7 @@ vtkIdType TraverseLoop(double dir, vtkPolyData* polyData, vtkIdType lineId, vtkI
     last = (pts[0] != last ? pts[0] : pts[1]);
     numInserted++;
     t = dir * static_cast<double>(numInserted);
-    sortedPoints.push_back(LoopPoint(t, last));
+    sortedPoints.emplace_back(t, last);
     UpdateRange(scalars, last, range);
 
     polyData->GetPointCells(last, ncells, cells);
@@ -145,7 +135,7 @@ void OutputPolygon(LoopPointType& sortedPoints, vtkPoints* inPts, vtkCellArray* 
 
   else if (loopClosure == VTK_LOOP_CLOSURE_ALL)
   {
-    ; // do nothing and it will close between the first and last points
+    // do nothing and it will close between the first and last points
   }
 
   // If here we assume that the loop begins and ends on the given bounding
@@ -165,8 +155,8 @@ void OutputPolygon(LoopPointType& sortedPoints, vtkPoints* inPts, vtkCellArray* 
     // if no change in either the x or y direction just return, the loop will complete
     if (delX < FLT_EPSILON || delY < FLT_EPSILON)
     {
-      ; // do nothing loop will complete; points are along same (horizontal or vertical) boundary
-        // edge
+      // do nothing loop will complete; points are along same (horizontal or vertical) boundary
+      // edge
     }
 
     // Otherwise check if the points are on the "boundary" and then complete the loop
@@ -209,9 +199,111 @@ void OutputPolygon(LoopPointType& sortedPoints, vtkPoints* inPts, vtkCellArray* 
   }
 }
 
+using PointMap = std::vector<vtkIdType>;
+
+// Helper functions to clean output data
+template <typename SType>
+void MarkUses(vtkIdType numIds, SType* connArray, PointMap& ptMap)
+{
+  for (auto i = 0; i < numIds; ++i)
+  {
+    ptMap[connArray->GetValue(i)] = 1;
+  }
+}
+
+// Helper function to in place mark point usage
+void MarkPointUses(vtkCellArray* ca, vtkIdType numConn, PointMap& ptMap)
+{
+  if (ca->IsStorage64Bit())
+  {
+    vtkTypeInt64Array* conn = ca->GetConnectivityArray64();
+    MarkUses<vtkTypeInt64Array>(numConn, conn, ptMap);
+  }
+  else
+  {
+    vtkTypeInt32Array* conn = ca->GetConnectivityArray32();
+    MarkUses<vtkTypeInt32Array>(numConn, conn, ptMap);
+  }
+}
+
+// Helper functions to clean output data
+template <typename SType>
+void UpdateUses(vtkIdType numIds, SType* connArray, PointMap& ptMap)
+{
+  for (auto i = 0; i < numIds; ++i)
+  {
+    connArray->SetValue(i, ptMap[connArray->GetValue(i)]);
+  }
+}
+
+// Helper function to in place update point numbering
+void UpdatePointUses(vtkCellArray* ca, vtkIdType numConn, PointMap& ptMap)
+{
+  if (ca->IsStorage64Bit())
+  {
+    vtkTypeInt64Array* conn = ca->GetConnectivityArray64();
+    UpdateUses<vtkTypeInt64Array>(numConn, conn, ptMap);
+  }
+  else
+  {
+    vtkTypeInt32Array* conn = ca->GetConnectivityArray32();
+    UpdateUses<vtkTypeInt32Array>(numConn, conn, ptMap);
+  }
+}
+
+// Discard unused points; renumber output polylines and polygons.
+// Performs this operation in place.
+void CleanOutputPoints(vtkPolyData* output)
+{
+  // Mark points used by lines or polygons, and create a point map
+  // of old point ids to new point ids.
+  vtkIdType numPts = output->GetNumberOfPoints();
+  std::vector<vtkIdType> ptMap(numPts, 0);
+  vtkPoints* pts = output->GetPoints();
+
+  // Get the connectivity of the lines and polygons. Run through them
+  // and mark points that are used.
+  vtkCellArray* lines = output->GetLines();
+  vtkIdType numLinesIds = lines->GetNumberOfConnectivityIds();
+  if (numLinesIds > 0)
+  {
+    MarkPointUses(lines, numLinesIds, ptMap);
+  }
+
+  vtkCellArray* polys = output->GetPolys();
+  vtkIdType numPolysIds = polys->GetNumberOfConnectivityIds();
+  if (numPolysIds > 0)
+  {
+    MarkPointUses(polys, numPolysIds, ptMap);
+  }
+
+  // Renumber points / build the point map
+  vtkNew<vtkPoints> newPts;
+  vtkIdType newId;
+  for (auto pId = 0; pId < numPts; ++pId)
+  {
+    if (ptMap[pId] != 0)
+    {
+      newId = newPts->InsertNextPoint(pts->GetPoint(pId));
+      ptMap[pId] = newId;
+    }
+  }
+  output->SetPoints(newPts);
+
+  // Update the point ids (in place).
+  if (numLinesIds > 0)
+  {
+    UpdatePointUses(lines, numLinesIds, ptMap);
+  }
+  if (numPolysIds > 0)
+  {
+    UpdatePointUses(polys, numPolysIds, ptMap);
+  }
+} // CleanOutputPoints
+
 } // anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object with empty loop.
 vtkContourLoopExtraction::vtkContourLoopExtraction()
 {
@@ -226,12 +318,14 @@ vtkContourLoopExtraction::vtkContourLoopExtraction()
   this->Normal[2] = 1.0;
 
   this->OutputMode = VTK_OUTPUT_POLYGONS;
+
+  this->CleanPoints = true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkContourLoopExtraction::~vtkContourLoopExtraction() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkContourLoopExtraction::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -272,15 +366,17 @@ int vtkContourLoopExtraction::RequestData(vtkInformation* vtkNotUsed(request),
 
   // Prepare output
   output->SetPoints(points);
-  vtkCellArray *outLines = nullptr, *outPolys = nullptr;
+  vtkSmartPointer<vtkCellArray> outLines;
+  vtkSmartPointer<vtkCellArray> outPolys;
+
   if (this->OutputMode == VTK_OUTPUT_POLYLINES || this->OutputMode == VTK_OUTPUT_BOTH)
   {
-    outLines = vtkCellArray::New();
+    outLines.TakeReference(vtkCellArray::New());
     output->SetLines(outLines);
   }
   if (this->OutputMode == VTK_OUTPUT_POLYGONS || this->OutputMode == VTK_OUTPUT_BOTH)
   {
-    outPolys = vtkCellArray::New();
+    outPolys.TakeReference(vtkCellArray::New());
     output->SetPolys(outPolys);
   }
   output->GetPointData()->PassData(inPD);
@@ -290,7 +386,7 @@ int vtkContourLoopExtraction::RequestData(vtkInformation* vtkNotUsed(request),
   vtkIdType npts;
   const vtkIdType* pts;
   vtkIdType lineId;
-  vtkCellArray* newLines = vtkCellArray::New();
+  vtkNew<vtkCellArray> newLines;
   newLines->AllocateEstimate(numLines, 2);
   for (lineId = 0, lines->InitTraversal(); lines->GetNextCell(npts, pts); ++lineId)
   {
@@ -299,7 +395,7 @@ int vtkContourLoopExtraction::RequestData(vtkInformation* vtkNotUsed(request),
       newLines->InsertNextCell(2, pts + i);
     }
   }
-  vtkPolyData* polyData = vtkPolyData::New();
+  vtkNew<vtkPolyData> polyData;
   polyData->SetPoints(points);
   polyData->SetLines(newLines);
   polyData->GetPointData()->PassData(inPD);
@@ -307,8 +403,7 @@ int vtkContourLoopExtraction::RequestData(vtkInformation* vtkNotUsed(request),
 
   // Keep track of what cells are visited
   numLines = newLines->GetNumberOfCells();
-  char* visited = new char[numLines];
-  std::fill_n(visited, numLines, 0);
+  std::vector<signed char> visited(numLines, 0);
 
   // Loop over all lines, visit each one. Build a loop from the seed line if
   // not visited.
@@ -317,12 +412,16 @@ int vtkContourLoopExtraction::RequestData(vtkInformation* vtkNotUsed(request),
   double range[2];
   for (lineId = 0, newLines->InitTraversal(); newLines->GetNextCell(npts, pts); ++lineId)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     if (!visited[lineId])
     {
       visited[lineId] = 1;
       start = pts[0];
       sortedPoints.clear();
-      sortedPoints.push_back(LoopPoint(0.0, start));
+      sortedPoints.emplace_back(0.0, start);
       range[0] = VTK_FLOAT_MAX;
       range[1] = VTK_FLOAT_MIN;
       UpdateRange(scalars, start, range);
@@ -347,25 +446,25 @@ int vtkContourLoopExtraction::RequestData(vtkInformation* vtkNotUsed(request),
     } // if not visited start a loop
   }
 
-  // Clean up
-  newLines->Delete();
+  if (this->CleanPoints)
+  {
+    CleanOutputPoints(output);
+  }
+
+  // Debug information
   if (outLines != nullptr)
   {
     vtkDebugMacro(<< "Generated " << outLines->GetNumberOfCells() << " lines\n");
-    outLines->Delete();
   }
   if (outPolys != nullptr)
   {
     vtkDebugMacro(<< "Generated " << outPolys->GetNumberOfCells() << " polygons\n");
-    outPolys->Delete();
   }
-  polyData->Delete();
-  delete[] visited;
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkContourLoopExtraction::GetLoopClosureAsString()
 {
   if (this->LoopClosure == VTK_LOOP_CLOSURE_OFF)
@@ -382,7 +481,7 @@ const char* vtkContourLoopExtraction::GetLoopClosureAsString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkContourLoopExtraction::GetOutputModeAsString()
 {
   if (this->OutputMode == VTK_OUTPUT_POLYGONS)
@@ -399,7 +498,7 @@ const char* vtkContourLoopExtraction::GetOutputModeAsString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContourLoopExtraction::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -417,4 +516,7 @@ void vtkContourLoopExtraction::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Output Mode: ";
   os << this->GetOutputModeAsString() << "\n";
+
+  os << indent << "Clean Points: " << (this->CleanPoints ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

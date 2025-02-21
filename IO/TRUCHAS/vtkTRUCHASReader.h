@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTRUCHASReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTRUCHASReader
  * @brief   read GE TRUCHAS format HDF5 files
@@ -26,6 +14,7 @@
 #include "vtkIOTRUCHASModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArraySelection;
 
 class VTKIOTRUCHAS_EXPORT vtkTRUCHASReader : public vtkMultiBlockDataSetAlgorithm
@@ -35,20 +24,20 @@ public:
   vtkTypeMacro(vtkTRUCHASReader, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify file name of vtk data file to read.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
   /**
    * A simple, non-exhaustive check to see if a file is a valid truchas file.
    */
-  static int CanReadFile(const char* filename);
+  static int CanReadFile(VTK_FILEPATH const char* filename);
 
-  //@{
+  ///@{
   /**
    * Get/Set information about blocks. As is typical with readers this is valid
    * only after the filename as been set and UpdateInformation() has been
@@ -58,7 +47,7 @@ public:
   const char* GetBlockArrayName(int index);
   void SetBlockArrayStatus(const char* gridname, int status);
   int GetBlockArrayStatus(const char* gridname);
-  //@}
+  ///@}
 
   /**
    * Get information about point-based arrays. As is typical with readers this
@@ -73,13 +62,13 @@ public:
    */
   const char* GetPointArrayName(int index);
 
-  //@{
+  ///@{
   /**
    * Get/Set the point array status.
    */
   int GetPointArrayStatus(const char* name);
   void SetPointArrayStatus(const char* name, int status);
-  //@}
+  ///@}
 
   /**
    * Get information about cell-based arrays. As is typical with readers this
@@ -94,13 +83,13 @@ public:
    */
   const char* GetCellArrayName(int index);
 
-  //@{
+  ///@{
   /**
    * Get/Set the cell array status.
    */
   int GetCellArrayStatus(const char* name);
   void SetCellArrayStatus(const char* name, int status);
-  //@}
+  ///@}
 
 protected:
   vtkTRUCHASReader();
@@ -130,4 +119,5 @@ private:
   void operator=(const vtkTRUCHASReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

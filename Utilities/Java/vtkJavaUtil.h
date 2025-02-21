@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkJavaUtil.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkJavaUtil_h
 #define vtkJavaUtil_h
@@ -23,44 +11,20 @@
 
 #include <string>
 
-extern VTKJAVA_EXPORT jlong q(JNIEnv* env, jobject obj);
+extern JNIEXPORT void* vtkJavaGetPointerFromObject(JNIEnv* env, jobject obj);
+extern JNIEXPORT char* vtkJavaUTF8ToChars(JNIEnv* env, jbyteArray bytes, jint length);
+extern JNIEXPORT std::string vtkJavaUTF8ToString(JNIEnv* env, jbyteArray bytes, jint length);
+extern JNIEXPORT jbyteArray vtkJavaCharsToUTF8(JNIEnv* env, const char* chars, size_t length);
+extern JNIEXPORT jbyteArray vtkJavaStringToUTF8(JNIEnv* env, const std::string& text);
 
-extern VTKJAVA_EXPORT void* vtkJavaGetPointerFromObject(JNIEnv* env, jobject obj);
-extern VTKJAVA_EXPORT char* vtkJavaUTFToChar(JNIEnv* env, jstring in);
-extern VTKJAVA_EXPORT bool vtkJavaUTFToString(JNIEnv* env, jstring in, std::string& out);
-extern VTKJAVA_EXPORT jstring vtkJavaMakeJavaString(JNIEnv* env, const char* in);
-
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfFloatFromFloat(
-  JNIEnv* env, const float* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfDoubleFromFloat(
-  JNIEnv* env, const float* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfDoubleFromDouble(
-  JNIEnv* env, const double* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfShortFromShort(
-  JNIEnv* env, const short* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfIntFromInt(JNIEnv* env, const int* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfIntFromIdType(
-  JNIEnv* env, const vtkIdType* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfIntFromLongLong(
-  JNIEnv* env, const long long* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfIntFromSignedChar(
-  JNIEnv* env, const signed char* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfLongFromLong(
-  JNIEnv* env, const long* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfByteFromUnsignedChar(
-  JNIEnv* env, const unsigned char* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfByteFromChar(
-  JNIEnv* env, const char* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfCharFromChar(
-  JNIEnv* env, const char* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfUnsignedCharFromUnsignedChar(
-  JNIEnv* env, const unsigned char* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfUnsignedIntFromUnsignedInt(
-  JNIEnv* env, const unsigned int* arr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfUnsignedShortFromUnsignedShort(
-  JNIEnv* env, const unsigned short* ptr, int size);
-extern VTKJAVA_EXPORT jarray vtkJavaMakeJArrayOfUnsignedLongFromUnsignedLong(
-  JNIEnv* env, const unsigned long* arr, int size);
+extern JNIEXPORT jbooleanArray vtkJavaMakeJArrayOfBoolean(
+  JNIEnv* env, const jboolean* ptr, int size);
+extern JNIEXPORT jdoubleArray vtkJavaMakeJArrayOfDouble(JNIEnv* env, const jdouble* ptr, int size);
+extern JNIEXPORT jfloatArray vtkJavaMakeJArrayOfFloat(JNIEnv* env, const jfloat* ptr, int size);
+extern JNIEXPORT jbyteArray vtkJavaMakeJArrayOfByte(JNIEnv* env, const jbyte* ptr, int size);
+extern JNIEXPORT jshortArray vtkJavaMakeJArrayOfShort(JNIEnv* env, const jshort* ptr, int size);
+extern JNIEXPORT jintArray vtkJavaMakeJArrayOfInt(JNIEnv* env, const jint* ptr, int size);
+extern JNIEXPORT jlongArray vtkJavaMakeJArrayOfLong(JNIEnv* env, const jlong* ptr, int size);
 
 // this is the void pointer parameter passed to the vtk callback routines on
 // behalf of the Java interface for callbacks.
@@ -71,10 +35,10 @@ struct vtkJavaVoidFuncArg
   jmethodID mid;
 };
 
-extern VTKJAVA_EXPORT void vtkJavaVoidFunc(void*);
-extern VTKJAVA_EXPORT void vtkJavaVoidFuncArgDelete(void*);
+extern JNIEXPORT void vtkJavaVoidFunc(void*);
+extern JNIEXPORT void vtkJavaVoidFuncArgDelete(void*);
 
-class VTKJAVA_EXPORT vtkJavaCommand : public vtkCommand
+class JNIEXPORT vtkJavaCommand : public vtkCommand
 {
 public:
   static vtkJavaCommand* New() { return new vtkJavaCommand; }
@@ -83,7 +47,7 @@ public:
   void SetMethodID(jmethodID id) { this->mid = id; }
   void AssignJavaVM(JNIEnv* env) { env->GetJavaVM(&(this->vm)); }
 
-  void Execute(vtkObject*, unsigned long, void*);
+  void Execute(vtkObject*, unsigned long, void*) override;
 
   JavaVM* vm;
   jobject uobj;
@@ -91,7 +55,7 @@ public:
 
 protected:
   vtkJavaCommand();
-  ~vtkJavaCommand();
+  ~vtkJavaCommand() override;
 };
 
 #endif

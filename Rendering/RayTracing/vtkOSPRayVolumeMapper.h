@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayVolumeMapper.h
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOSPRayVolumeMapper
  * @brief   Standalone OSPRayVolumeMapper.
@@ -27,6 +15,7 @@
 #include "vtkOSPRayVolumeInterface.h"
 #include "vtkRenderingRayTracingModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOSPRayPass;
 class vtkRenderer;
 class vtkWindow;
@@ -43,7 +32,7 @@ public:
    * The parameter window could be used to determine which graphic
    * resources to release.
    */
-  virtual void ReleaseGraphicsResources(vtkWindow*) override;
+  void ReleaseGraphicsResources(vtkWindow*) override;
 
   // Initialize internal constructs
   virtual void Init();
@@ -52,7 +41,7 @@ public:
    * Render the volume onto the screen.
    * Overridden to use OSPRay to do the work.
    */
-  virtual void Render(vtkRenderer*, vtkVolume*) override;
+  void Render(vtkRenderer*, vtkVolume*) override;
 
 protected:
   vtkOSPRayVolumeMapper();
@@ -67,4 +56,5 @@ private:
   void operator=(const vtkOSPRayVolumeMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

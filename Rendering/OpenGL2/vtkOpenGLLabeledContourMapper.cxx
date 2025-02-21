@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLLabeledContourMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLLabeledContourMapper.h"
 
 #include "vtkActor.h"
@@ -31,6 +19,7 @@
 #include "vtkTextActor3D.h"
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLLabeledContourMapper);
 
 //------------------------------------------------------------------------------
@@ -85,6 +74,11 @@ void vtkOpenGLLabeledContourMapper::ReleaseGraphicsResources(vtkWindow* win)
 //------------------------------------------------------------------------------
 bool vtkOpenGLLabeledContourMapper::ApplyStencil(vtkRenderer* ren, vtkActor* act)
 {
+  if (this->StencilQuadsSize == 0)
+  {
+    return true;
+  }
+
   // Draw stencil quads into stencil buffer:
   // compile and bind it if needed
   vtkOpenGLRenderWindow* renWin = vtkOpenGLRenderWindow::SafeDownCast(ren->GetVTKWindow());
@@ -122,13 +116,13 @@ bool vtkOpenGLLabeledContourMapper::ApplyStencil(vtkRenderer* ren, vtkActor* act
 
     // Enable rendering into the stencil buffer:
     ostate->vtkglEnable(GL_STENCIL_TEST);
-    glStencilMask(0xFF);
+    ostate->vtkglStencilMask(0xFF);
     glClearStencil(0);
     ostate->vtkglClear(GL_STENCIL_BUFFER_BIT);
     ostate->vtkglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     ostate->vtkglDepthMask(GL_FALSE);
-    glStencilFunc(GL_ALWAYS, 1, 0xFF);
-    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+    ostate->vtkglStencilFunc(GL_ALWAYS, 1, 0xFF);
+    ostate->vtkglStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 
     vtkOpenGLCamera* cam = (vtkOpenGLCamera*)(ren->GetActiveCamera());
     vtkMatrix4x4* wcdc;
@@ -155,9 +149,9 @@ bool vtkOpenGLLabeledContourMapper::ApplyStencil(vtkRenderer* ren, vtkActor* act
   }
 
   // Setup GL to only draw in unstenciled regions:
-  glStencilMask(0x00);
-  glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-  glStencilFunc(GL_EQUAL, 0, 0xFF);
+  ostate->vtkglStencilMask(0x00);
+  ostate->vtkglStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+  ostate->vtkglStencilFunc(GL_EQUAL, 0, 0xFF);
 
   vtkOpenGLCheckErrorMacro("failed after ApplyStencil()");
 
@@ -173,3 +167,4 @@ bool vtkOpenGLLabeledContourMapper::RemoveStencil(vtkRenderer* ren)
   vtkOpenGLCheckErrorMacro("failed after RemoveStencil()");
   return this->Superclass::RemoveStencil(ren);
 }
+VTK_ABI_NAMESPACE_END

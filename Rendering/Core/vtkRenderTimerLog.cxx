@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderTimerLog.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkRenderTimerLog.h"
 
@@ -20,6 +8,7 @@
 #include <iomanip>
 #include <utility>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkRenderTimerLog);
 
 //------------------------------------------------------------------------------
@@ -39,7 +28,7 @@ void vtkRenderTimerLog::PrintSelf(std::ostream& os, vtkIndent indent)
 }
 
 //------------------------------------------------------------------------------
-bool vtkRenderTimerLog::IsSupported()
+bool vtkRenderTimerLog::IsSupported() VTK_FUTURE_CONST
 {
   return false;
 }
@@ -78,7 +67,7 @@ vtkRenderTimerLog::Frame vtkRenderTimerLog::PopFirstReadyFrame()
 void vtkRenderTimerLog::ReleaseGraphicsResources() {}
 
 //------------------------------------------------------------------------------
-vtkRenderTimerLog::ScopedEventLogger::ScopedEventLogger(ScopedEventLogger&& o)
+vtkRenderTimerLog::ScopedEventLogger::ScopedEventLogger(ScopedEventLogger&& o) noexcept
   : Log(nullptr)
 {
   std::swap(o.Log, this->Log);
@@ -86,7 +75,7 @@ vtkRenderTimerLog::ScopedEventLogger::ScopedEventLogger(ScopedEventLogger&& o)
 
 //------------------------------------------------------------------------------
 vtkRenderTimerLog::ScopedEventLogger& vtkRenderTimerLog::ScopedEventLogger::operator=(
-  ScopedEventLogger&& o)
+  ScopedEventLogger&& o) noexcept
 {
   std::swap(o.Log, this->Log);
   return *this;
@@ -138,3 +127,4 @@ void vtkRenderTimerLog::Event::Print(
     event.Print(os, thisTime, threshMs, nextIndent);
   }
 }
+VTK_ABI_NAMESPACE_END

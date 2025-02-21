@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkThreadedCompositeDataPipeline.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkThreadedCompositeDataPipeline.h"
 
@@ -43,13 +31,14 @@
 #include <cassert>
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkThreadedCompositeDataPipeline);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
-static vtkInformationVector** Clone(vtkInformationVector** src, int n)
+vtkInformationVector** Clone(vtkInformationVector** src, int n)
 {
   vtkInformationVector** dst = new vtkInformationVector*[n];
   for (int i = 0; i < n; ++i)
@@ -59,7 +48,7 @@ static vtkInformationVector** Clone(vtkInformationVector** src, int n)
   }
   return dst;
 }
-static void DeleteAll(vtkInformationVector** dst, int n)
+void DeleteAll(vtkInformationVector** dst, int n)
 {
   for (int i = 0; i < n; ++i)
   {
@@ -67,9 +56,9 @@ static void DeleteAll(vtkInformationVector** dst, int n)
   }
   delete[] dst;
 }
-};
+}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class ProcessBlockData : public vtkObjectBase
 {
 public:
@@ -108,7 +97,7 @@ protected:
   {
   }
 };
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class ProcessBlock
 {
 public:
@@ -124,7 +113,7 @@ public:
     , InObjs(inObjs)
   {
     int numInputPorts = this->Exec->GetNumberOfInputPorts();
-    this->OutObjs = &outObjs[0];
+    this->OutObjs = outObjs.data();
     this->InfoPrototype = vtkSmartPointer<ProcessBlockData>::New();
     this->InfoPrototype->Construct(this->InInfoVec, numInputPorts, this->OutInfoVec);
   }
@@ -198,23 +187,23 @@ protected:
   vtkSMPThreadLocalObject<vtkInformation> Requests;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkThreadedCompositeDataPipeline::vtkThreadedCompositeDataPipeline() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkThreadedCompositeDataPipeline::~vtkThreadedCompositeDataPipeline() = default;
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThreadedCompositeDataPipeline::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThreadedCompositeDataPipeline::ExecuteEach(vtkCompositeDataIterator* iter,
   vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec, int compositePort,
   int connection, vtkInformation* request,
-  std::vector<vtkSmartPointer<vtkCompositeDataSet> >& compositeOutput)
+  std::vector<vtkSmartPointer<vtkCompositeDataSet>>& compositeOutput)
 {
   // from input data objects  itr -> (inObjs, indices)
   // inObjs are the non-null objects that we will loop over.
@@ -268,7 +257,7 @@ void vtkThreadedCompositeDataPipeline::ExecuteEach(vtkCompositeDataIterator* ite
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkThreadedCompositeDataPipeline::CallAlgorithm(vtkInformation* request, int direction,
   vtkInformationVector** inInfo, vtkInformationVector* outInfo)
 {
@@ -281,9 +270,10 @@ int vtkThreadedCompositeDataPipeline::CallAlgorithm(vtkInformation* request, int
   // If the algorithm failed report it now.
   if (!result)
   {
-    vtkErrorMacro("Algorithm " << this->Algorithm->GetClassName() << "(" << this->Algorithm
-                               << ") returned failure for request: " << *request);
+    vtkErrorMacro("Algorithm " << this->Algorithm->GetObjectDescription()
+                               << " returned failure for request: " << *request);
   }
 
   return result;
 }
+VTK_ABI_NAMESPACE_END

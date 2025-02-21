@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOMETIFFReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOMETIFFReader.h"
 #include "vtkTIFFReaderInternal.h"
 
@@ -29,7 +17,6 @@
 #include "vtkStringArray.h"
 #include "vtkStructuredData.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 #include "vtk_pugixml.h"
 
 #include <algorithm>
@@ -40,6 +27,7 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOMETIFFReader::vtkOMEInternals
 {
 public:
@@ -56,9 +44,9 @@ public:
 
   // key = vtkVector3i(C, T, Z)
   std::map<vtkVector3i, int> IFDMap;
-  std::vector<vtkSmartPointer<vtkImageData> > Cache;
+  std::vector<vtkSmartPointer<vtkImageData>> Cache;
   vtkSmartPointer<vtkStringArray> PhysicalSizeUnitArray;
-  std::vector<vtkSmartPointer<vtkDoubleArray> > RangeArrays;
+  std::vector<vtkSmartPointer<vtkDoubleArray>> RangeArrays;
   vtkTimeStamp CacheMTime;
 
   void UpdateCache(vtkImageData* output);
@@ -83,7 +71,7 @@ public:
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOMETIFFReader::vtkOMEInternals::UpdateCache(vtkImageData* source)
 {
   if (!this->IsValid)
@@ -110,7 +98,7 @@ void vtkOMETIFFReader::vtkOMEInternals::UpdateCache(vtkImageData* source)
     vtkNew<vtkImageData> img;
     img->SetExtent(ext[0], ext[1], ext[2], ext[3], 0, this->SizeZ - 1);
     img->AllocateScalars(source->GetScalarType(), source->GetNumberOfScalarComponents());
-    this->Cache.push_back(img);
+    this->Cache.emplace_back(img);
 
     auto pd = img->GetPointData();
     std::vector<vtkDataArray*> scalar_arrays;
@@ -154,7 +142,7 @@ void vtkOMETIFFReader::vtkOMEInternals::UpdateCache(vtkImageData* source)
     for (int c = 0; c < this->SizeC; ++c)
     {
       vtkVector2d range;
-      scalar_arrays[c]->GetRange(range.GetData(), -1);
+      pd->GetRange(scalar_arrays[c]->GetName(), range.GetData(), -1);
       if (range[0] <= range[1])
       {
         channel_ranges[c][0] = std::min(channel_ranges[c][0], range[0]);
@@ -189,26 +177,26 @@ void vtkOMETIFFReader::vtkOMEInternals::UpdateCache(vtkImageData* source)
 
 //============================================================================
 vtkStandardNewMacro(vtkOMETIFFReader);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOMETIFFReader::vtkOMETIFFReader()
   : OMEInternals(new vtkOMETIFFReader::vtkOMEInternals())
 {
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOMETIFFReader::~vtkOMETIFFReader()
 {
   delete this->OMEInternals;
   this->OMEInternals = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOMETIFFReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOMETIFFReader::CanReadFile(const char* fname)
 {
   if (!this->Superclass::CanReadFile(fname))
@@ -229,12 +217,12 @@ int vtkOMETIFFReader::CanReadFile(const char* fname)
   return status;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOMETIFFReader::ExecuteInformation()
 {
   this->Superclass::ExecuteInformation();
-  auto& interals = (*this->InternalImage);
-  if (!interals.Image || !interals.IsOpen)
+  auto& internals = (*this->InternalImage);
+  if (!internals.Image || !internals.IsOpen)
   {
     return;
   }
@@ -245,7 +233,7 @@ void vtkOMETIFFReader::ExecuteInformation()
   auto& doc = omeinternals.XMLDocument;
 
   char* description[255];
-  if (TIFFGetField(interals.Image, TIFFTAG_IMAGEDESCRIPTION, description))
+  if (TIFFGetField(internals.Image, TIFFTAG_IMAGEDESCRIPTION, description))
   {
     auto result = doc.load_buffer(description[0], strlen(description[0]));
     if (!result)
@@ -312,7 +300,7 @@ void vtkOMETIFFReader::ExecuteInformation()
     nextIFD = tiffdataXML.attribute("IFD").as_int(nextIFD);
 
     const int planeCount = tiffdataXML.attribute("PlaneCount")
-                             .as_int(tiffdataXML.attribute("IFD") ? 1 : interals.NumberOfPages);
+                             .as_int(tiffdataXML.attribute("IFD") ? 1 : internals.NumberOfPages);
     for (int plane = 0; plane < planeCount; ++plane)
     {
       omeinternals.IFDMap[vtkVector3i(next[c_idx], next[t_idx], next[z_idx])] = nextIFD;
@@ -333,7 +321,7 @@ void vtkOMETIFFReader::ExecuteInformation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOMETIFFReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -372,12 +360,15 @@ int vtkOMETIFFReader::RequestInformation(
 
     double start = 0.0;
     const double increment = omeinternals.TimeIncrement;
-    std::generate(timesteps.begin(), timesteps.end(), [&start, &increment]() {
-      double ret = start;
-      start += increment;
-      return ret;
-    });
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timesteps[0], omeinternals.SizeT);
+    std::generate(timesteps.begin(), timesteps.end(),
+      [&start, &increment]()
+      {
+        double ret = start;
+        start += increment;
+        return ret;
+      });
+    outInfo->Set(
+      vtkStreamingDemandDrivenPipeline::TIME_STEPS(), timesteps.data(), omeinternals.SizeT);
 
     double range[2] = { timesteps.front(), timesteps.back() };
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), range, 2);
@@ -392,7 +383,7 @@ int vtkOMETIFFReader::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOMETIFFReader::ExecuteDataWithInformation(vtkDataObject* dobj, vtkInformation* outInfo)
 {
   // we want to make superclass read all channels for all timesteps at the same
@@ -447,3 +438,4 @@ void vtkOMETIFFReader::ExecuteDataWithInformation(vtkDataObject* dobj, vtkInform
   omeinternals.ExtractFromCache(output, time_step);
   output->SetSpacing(this->DataSpacing);
 }
+VTK_ABI_NAMESPACE_END

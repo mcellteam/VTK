@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLUnstructuredGridWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLUnstructuredGridWriter.h"
 
 #include "vtkCellArray.h"
@@ -29,45 +17,46 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLUnstructuredGridWriter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLUnstructuredGridWriter::vtkXMLUnstructuredGridWriter()
 {
   this->CellsOM = new OffsetsManagerArray;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLUnstructuredGridWriter::~vtkXMLUnstructuredGridWriter()
 {
   delete this->CellsOM;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGridBase* vtkXMLUnstructuredGridWriter::GetInput()
 {
   return static_cast<vtkUnstructuredGridBase*>(this->Superclass::GetInput());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLUnstructuredGridWriter::GetDataSetName()
 {
   return "UnstructuredGrid";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLUnstructuredGridWriter::GetDefaultFileExtension()
 {
   return "vtu";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::WriteInlinePieceAttributes()
 {
   this->Superclass::WriteInlinePieceAttributes();
@@ -80,7 +69,7 @@ void vtkXMLUnstructuredGridWriter::WriteInlinePieceAttributes()
   this->WriteScalarAttribute("NumberOfCells", input->GetNumberOfCells());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::WriteInlinePiece(vtkIndent indent)
 {
   vtkUnstructuredGridBase* input = this->GetInput();
@@ -109,8 +98,8 @@ void vtkXMLUnstructuredGridWriter::WriteInlinePiece(vtkIndent indent)
   if (vtkUnstructuredGrid* grid = vtkUnstructuredGrid::SafeDownCast(input))
   {
     // This is a bit more efficient and avoids iteration over all cells.
-    this->WriteCellsInline("Cells", grid->GetCells(), grid->GetCellTypesArray(), grid->GetFaces(),
-      grid->GetFaceLocations(), indent);
+    this->WritePolyCellsInline("Cells", grid->GetCells(), grid->GetCellTypesArray(),
+      grid->GetPolyhedronFaces(), grid->GetPolyhedronFaceLocations(), indent);
   }
   else
   {
@@ -121,16 +110,16 @@ void vtkXMLUnstructuredGridWriter::WriteInlinePiece(vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::AllocatePositionArrays()
 {
   this->Superclass::AllocatePositionArrays();
 
   this->NumberOfCellsPositions = new vtkTypeInt64[this->NumberOfPieces];
-  this->CellsOM->Allocate(this->NumberOfPieces, 5, this->NumberOfTimeSteps);
+  this->CellsOM->Allocate(this->NumberOfPieces, 7, this->NumberOfTimeSteps);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::DeletePositionArrays()
 {
   this->Superclass::DeletePositionArrays();
@@ -139,7 +128,7 @@ void vtkXMLUnstructuredGridWriter::DeletePositionArrays()
   this->NumberOfCellsPositions = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::WriteAppendedPieceAttributes(int index)
 {
   this->Superclass::WriteAppendedPieceAttributes(index);
@@ -151,7 +140,7 @@ void vtkXMLUnstructuredGridWriter::WriteAppendedPieceAttributes(int index)
   this->NumberOfCellsPositions[index] = this->ReserveAttributeSpace("NumberOfCells");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::WriteAppendedPiece(int index, vtkIndent indent)
 {
   vtkUnstructuredGridBase* input = this->GetInput();
@@ -164,8 +153,8 @@ void vtkXMLUnstructuredGridWriter::WriteAppendedPiece(int index, vtkIndent inden
   if (vtkUnstructuredGrid* grid = vtkUnstructuredGrid::SafeDownCast(input))
   {
     this->ConvertCells(grid->GetCells());
-    this->WriteCellsAppended("Cells", grid->GetCellTypesArray(), grid->GetFaces(),
-      grid->GetFaceLocations(), indent, &this->CellsOM->GetPiece(index));
+    this->WritePolyCellsAppended("Cells", grid->GetCellTypesArray(), grid->GetPolyhedronFaces(),
+      grid->GetPolyhedronFaceLocations(), indent, &this->CellsOM->GetPiece(index));
   }
   else
   {
@@ -176,7 +165,7 @@ void vtkXMLUnstructuredGridWriter::WriteAppendedPiece(int index, vtkIndent inden
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::WriteAppendedPieceData(int index)
 {
   ostream& os = *(this->Stream);
@@ -214,8 +203,9 @@ void vtkXMLUnstructuredGridWriter::WriteAppendedPieceData(int index)
   // Write the cell specification arrays.
   if (vtkUnstructuredGrid* grid = vtkUnstructuredGrid::SafeDownCast(input))
   {
-    this->WriteCellsAppendedData(grid->GetCells(), grid->GetCellTypesArray(), grid->GetFaces(),
-      grid->GetFaceLocations(), this->CurrentTimeIndex, &this->CellsOM->GetPiece(index));
+    this->WritePolyCellsAppendedData(grid->GetCells(), grid->GetCellTypesArray(),
+      grid->GetPolyhedronFaces(), grid->GetPolyhedronFaceLocations(), this->CurrentTimeIndex,
+      &this->CellsOM->GetPiece(index));
   }
   else
   {
@@ -226,13 +216,13 @@ void vtkXMLUnstructuredGridWriter::WriteAppendedPieceData(int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLUnstructuredGridWriter::GetNumberOfInputCells()
 {
   return this->GetInput()->GetNumberOfCells();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridWriter::CalculateSuperclassFraction(float* fractions)
 {
   vtkUnstructuredGridBase* input = this->GetInput();
@@ -280,10 +270,11 @@ void vtkXMLUnstructuredGridWriter::CalculateSuperclassFraction(float* fractions)
   fractions[2] = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLUnstructuredGridWriter::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkUnstructuredGridBase");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

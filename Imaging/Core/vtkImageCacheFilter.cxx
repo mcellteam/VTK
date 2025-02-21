@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageCacheFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageCacheFilter.h"
 
 #include "vtkCachedStreamingDemandDrivenPipeline.h"
@@ -19,9 +7,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageCacheFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageCacheFilter::vtkImageCacheFilter()
 {
   vtkExecutive* exec = this->CreateDefaultExecutive();
@@ -31,16 +20,16 @@ vtkImageCacheFilter::vtkImageCacheFilter()
   this->SetCacheSize(10);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageCacheFilter::~vtkImageCacheFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutive* vtkImageCacheFilter::CreateDefaultExecutive()
 {
   return vtkCachedStreamingDemandDrivenPipeline::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageCacheFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -48,7 +37,7 @@ void vtkImageCacheFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "CacheSize: " << this->GetCacheSize() << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageCacheFilter::SetCacheSize(int size)
 {
   vtkCachedStreamingDemandDrivenPipeline* csddp =
@@ -59,7 +48,7 @@ void vtkImageCacheFilter::SetCacheSize(int size)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageCacheFilter::GetCacheSize()
 {
   vtkCachedStreamingDemandDrivenPipeline* csddp =
@@ -71,9 +60,10 @@ int vtkImageCacheFilter::GetCacheSize()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method simply copies by reference the input data to the output.
 void vtkImageCacheFilter::ExecuteData(vtkDataObject*)
 {
   // do nothing just override superclass to prevent warning
 }
+VTK_ABI_NAMESPACE_END

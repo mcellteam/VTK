@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBlockSortHelper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @brief Collection of comparison functions for std::sort.
  *
@@ -21,17 +9,17 @@
 #define vtkBlockSortHelper_h
 
 #include "vtkCamera.h"
-#include "vtkImageData.h"
+#include "vtkDataSet.h"
 #include "vtkMatrix4x4.h"
 #include "vtkNew.h"
 #include "vtkRenderer.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
 #include <vector>
 
 namespace vtkBlockSortHelper
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 template <typename T>
 inline void GetBounds(T a, double bds[6])
@@ -40,7 +28,7 @@ inline void GetBounds(T a, double bds[6])
 }
 
 template <>
-inline void GetBounds(vtkImageData* first, double bds[6])
+inline void GetBounds(vtkDataSet* first, double bds[6])
 {
   first->GetBounds(bds);
 }
@@ -103,7 +91,7 @@ struct BackToFront
   //  0 if unknown
   //  1 if second is farther than first
   template <typename TT>
-  inline int CompareOrderWithUncertainty(TT& first, TT& second)
+  int CompareOrderWithUncertainty(TT& first, TT& second)
   {
     double abounds[6], bbounds[6];
     vtkBlockSortHelper::GetBounds<TT>(first, abounds);
@@ -114,7 +102,7 @@ struct BackToFront
   // -1 if first is closer than second
   //  0 if unknown
   //  1 if second is farther than first
-  inline int CompareBoundsOrderWithUncertainty(const double abounds[6], const double bbounds[6])
+  int CompareBoundsOrderWithUncertainty(const double abounds[6], const double bbounds[6])
   {
     double bboundsP[6];
     double aboundsP[6];
@@ -255,8 +243,8 @@ bool operator==(gnode<RandomIt> const& lhs, gnode<RandomIt> const& rhs)
 }
 
 template <class RandomIt>
-bool findCycle(gnode<RandomIt>& start, std::vector<gnode<RandomIt> >& graph,
-  std::vector<gnode<RandomIt> >& active, std::vector<gnode<RandomIt> >& loop)
+bool findCycle(gnode<RandomIt>& start, std::vector<gnode<RandomIt>>& graph,
+  std::vector<gnode<RandomIt>>& active, std::vector<gnode<RandomIt>>& loop)
 {
   if (start.Visited)
   {
@@ -329,7 +317,7 @@ inline void Sort(RandomIt bitr, RandomIt eitr, BackToFront<T>& me)
   }
 
   // build the graph
-  std::vector<gnode<RandomIt> > graph;
+  std::vector<gnode<RandomIt>> graph;
   for (auto it = working.begin(); it != working.end(); ++it)
   {
     gnode<RandomIt> anode;
@@ -348,8 +336,8 @@ inline void Sort(RandomIt bitr, RandomIt eitr, BackToFront<T>& me)
   }
 
   // graph constructed, now look for a loop
-  std::vector<gnode<RandomIt> > active;
-  std::vector<gnode<RandomIt> > loop;
+  std::vector<gnode<RandomIt>> active;
+  std::vector<gnode<RandomIt>> loop;
   for (auto& gval : graph)
   {
     loop.clear();
@@ -404,6 +392,7 @@ inline void Sort(RandomIt bitr, RandomIt eitr, BackToFront<T>& me)
   // copy results to original container
   std::reverse_copy(result.begin(), result.end(), start);
 };
+VTK_ABI_NAMESPACE_END
 }
 
 #endif // vtkBlockSortHelper_h

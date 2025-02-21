@@ -1,26 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSortDataArray.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*
- * Copyright 2003 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkSortDataArray
@@ -69,13 +49,14 @@
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 class vtkAbstractArray;
 
 class VTKCOMMONCORE_EXPORT vtkSortDataArray : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard VTK methods for instantiating, managing type, and printing
    * information about this class.
@@ -83,7 +64,7 @@ public:
   static vtkSortDataArray* New();
   vtkTypeMacro(vtkSortDataArray, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Sorts the given array in ascending order. For this method, the keys must
@@ -92,14 +73,14 @@ public:
   static void Sort(vtkIdList* keys) { vtkSortDataArray::Sort(keys, 0); }
   static void Sort(vtkAbstractArray* keys) { vtkSortDataArray::Sort(keys, 0); }
 
-  //@{
+  ///@{
   /**
    * Sorts the given array in either ascending (dir=0) or descending (dir!=0)
    * order. For this method, the keys must be single-component tuples.
    */
   static void Sort(vtkIdList* keys, int dir);
   static void Sort(vtkAbstractArray* keys, int dir);
-  //@}
+  ///@}
 
   /**
    * Sorts the given key/value pairs based on the keys (the keys are expected
@@ -116,7 +97,7 @@ public:
     vtkSortDataArray::Sort(keys, values, 0);
   }
 
-  //@{
+  ///@{
   /**
    * Sorts the given key/value pairs based on the keys (the keys are expected
    * to be 1-tuples, values may have number of components >= 1).
@@ -125,7 +106,7 @@ public:
    */
   static void Sort(vtkAbstractArray* keys, vtkAbstractArray* values, int dir);
   static void Sort(vtkAbstractArray* keys, vtkIdList* values, int dir);
-  //@}
+  ///@}
 
   /**
    * Sorts the given data array using the specified component as a key.
@@ -148,7 +129,7 @@ public:
    */
   static void SortArrayByComponent(vtkAbstractArray* arr, int k, int dir);
 
-  //@{
+  ///@{
   /**
    * The following are general functions which can be used to produce an
    * ordering, and/or sort various types of VTK arrays. Don't use these
@@ -178,7 +159,7 @@ public:
     vtkAbstractArray* arr, void* dataIn, int dir);
   static void ShuffleIdList(
     vtkIdType* idx, vtkIdType sze, vtkIdList* arrayIn, vtkIdType* dataIn, int dir);
-  //@}
+  ///@}
 
 protected:
   vtkSortDataArray();
@@ -198,4 +179,5 @@ private:
   void operator=(const vtkSortDataArray&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkSortDataArray_h

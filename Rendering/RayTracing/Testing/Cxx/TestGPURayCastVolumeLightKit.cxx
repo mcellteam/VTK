@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastVolumeRotation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test covers additive method.
 // This test volume renders a synthetic dataset with unsigned char values,
 // with the additive method.
@@ -88,7 +76,6 @@ int TestGPURayCastVolumeLightKit(int argc, char* argv[])
   scalarOpacity->AddPoint(65, 1.0);
 
   vtkNew<vtkVolumeProperty> volumeProperty;
-  volumeProperty->ShadeOn();
   volumeProperty->SetAmbient(0.0);
   volumeProperty->SetDiffuse(1.0);
   volumeProperty->SetSpecular(0.0);

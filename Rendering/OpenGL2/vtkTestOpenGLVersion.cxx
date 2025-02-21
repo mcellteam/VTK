@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-Initial version and concept gratefully provided by Klaus Steinhorst
-
-Returns 0 if the system supports OpenGL 3.2 or later.
-
-If provided a -v argument then it will display a message box
-with additional system information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
+#include "vtkABINamespace.h"
 
 #include <iostream>
 #include <sstream>
@@ -28,6 +11,14 @@ with additional system information.
 
 #include <GL/gl.h>
 
+/**
+ * Initial version and concept gratefully provided by Klaus Steinhorst
+ * Returns 0 if the system supports OpenGL 3.2 or later.
+ * If provided a -v argument then it will display a message box
+ * with additional system information.
+ */
+
+VTK_ABI_NAMESPACE_BEGIN
 class CheckOpenGLVersion
 {
 public:
@@ -65,7 +56,7 @@ CheckOpenGLVersion::CheckOpenGLVersion(HINSTANCE hInst)
     0,  // Number of Aux buffers in the framebuffer.
     PFD_MAIN_PLANE, 0, 0, 0, 0 };
 
-  WNDCLASS wc = { 0 };
+  WNDCLASSA wc = { 0 };
   wc.lpfnWndProc = DefWindowProc;
   wc.hInstance = hInstance;
   wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_BACKGROUND);
@@ -75,7 +66,7 @@ CheckOpenGLVersion::CheckOpenGLVersion(HINSTANCE hInst)
   {
     return;
   }
-  HWND windowHandle = CreateWindow(wc.lpszClassName, "openglversioncheck", WS_OVERLAPPEDWINDOW, 0,
+  HWND windowHandle = CreateWindowA(wc.lpszClassName, "openglversioncheck", WS_OVERLAPPEDWINDOW, 0,
     0, 640, 480, 0, 0, this->hInstance, 0);
 
   if (windowHandle != nullptr)
@@ -152,6 +143,7 @@ bool CheckOpenGLVersion::hasVersion_3_2()
 
   return false;
 }
+VTK_ABI_NAMESPACE_END
 
 int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE /*hPrevInstance*/,
   _In_ LPSTR lpCmdLine, _In_ int /*nCmdShow*/)

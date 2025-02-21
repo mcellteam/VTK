@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestOBJReaderMultiTexture.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDebugLeaks.h"
 #include "vtkOBJReader.h"
 
@@ -55,7 +43,7 @@ int TestOBJReaderSingleTexture(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  if (strcmp(tCoords->GetName(), "Material0"))
+  if (strcmp(tCoords->GetName(), "Material0") != 0)
   {
     std::cerr << "Invalid texture coordinates array name" << std::endl;
     return EXIT_FAILURE;

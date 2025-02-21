@@ -1,33 +1,22 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSequencePass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSequencePass.h"
 #include "vtkObjectFactory.h"
 #include "vtkRenderPassCollection.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSequencePass);
 vtkCxxSetObjectMacro(vtkSequencePass, Passes, vtkRenderPassCollection);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSequencePass::vtkSequencePass()
 {
   this->Passes = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSequencePass::~vtkSequencePass()
 {
   if (this->Passes)
@@ -36,7 +25,7 @@ vtkSequencePass::~vtkSequencePass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSequencePass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -52,7 +41,7 @@ void vtkSequencePass::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -74,7 +63,7 @@ void vtkSequencePass::Render(const vtkRenderState* s)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -94,3 +83,4 @@ void vtkSequencePass::ReleaseGraphicsResources(vtkWindow* w)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataTransferHelper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDataTransferHelper.h"
 
 #include "vtkDataArray.h"
@@ -24,6 +12,7 @@
 #include "vtkTextureObject.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 static void vtkGetDimensions(int extents[6], int dims[3])
 {
   dims[0] = extents[1] - extents[0] + 1;
@@ -34,7 +23,7 @@ static void vtkGetDimensions(int extents[6], int dims[3])
 vtkStandardNewMacro(vtkDataTransferHelper);
 vtkCxxSetObjectMacro(vtkDataTransferHelper, Texture, vtkTextureObject);
 vtkCxxSetObjectMacro(vtkDataTransferHelper, Array, vtkDataArray);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataTransferHelper::vtkDataTransferHelper()
 {
   this->Texture = nullptr;
@@ -57,7 +46,7 @@ vtkDataTransferHelper::vtkDataTransferHelper()
   this->MinTextureDimension = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataTransferHelper::~vtkDataTransferHelper()
 {
   this->SetTexture(nullptr);
@@ -65,7 +54,7 @@ vtkDataTransferHelper::~vtkDataTransferHelper()
   this->SetContext(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Tells if the given extent (6 int) is valid. True if min
 // extent<=max extent.
@@ -76,7 +65,7 @@ bool vtkDataTransferHelper::GetExtentIsValid(int* extent)
   return extent[0] <= extent[1] && extent[2] <= extent[3] && extent[4] <= extent[5];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Tells if CPUExtent is valid. True if min extent<=max extent.
 bool vtkDataTransferHelper::GetCPUExtentIsValid()
@@ -84,7 +73,7 @@ bool vtkDataTransferHelper::GetCPUExtentIsValid()
   return this->GetExtentIsValid(this->CPUExtent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Tells if GPUExtent is valid. True if min extent<=max extent.
 bool vtkDataTransferHelper::GetGPUExtentIsValid()
@@ -92,7 +81,7 @@ bool vtkDataTransferHelper::GetGPUExtentIsValid()
   return this->GetExtentIsValid(this->GPUExtent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Tells if TextureExtent is valid. True if min extent<=max extent.
 bool vtkDataTransferHelper::GetTextureExtentIsValid()
@@ -100,7 +89,7 @@ bool vtkDataTransferHelper::GetTextureExtentIsValid()
   return this->GetExtentIsValid(this->TextureExtent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Returns if the context supports the required extensions.
 bool vtkDataTransferHelper::IsSupported(vtkRenderWindow* renWin)
@@ -109,13 +98,13 @@ bool vtkDataTransferHelper::IsSupported(vtkRenderWindow* renWin)
   return (vtkPixelBufferObject::IsSupported(renWin) && vtkTextureObject::IsSupported(rw));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderWindow* vtkDataTransferHelper::GetContext()
 {
   return this->Context;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataTransferHelper::SetContext(vtkRenderWindow* renWin)
 {
   if (renWin == this->Context)
@@ -135,7 +124,7 @@ void vtkDataTransferHelper::SetContext(vtkRenderWindow* renWin)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Upload GPUExtent from CPU vtkDataArray to GPU texture.
 // It is possible to send a subset of the components or to specify and
@@ -372,7 +361,7 @@ bool vtkDataTransferHelper::Upload(int components, int* componentList)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // new comment:
 // Download GPUExtent from GPU texture to CPU vtkDataArray.
@@ -398,7 +387,7 @@ bool vtkDataTransferHelper::Download()
   return (this->DownloadAsync1() && this->DownloadAsync2());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDataTransferHelper::DownloadAsync1()
 {
   if (!this->Context)
@@ -462,7 +451,7 @@ bool vtkDataTransferHelper::DownloadAsync1()
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDataTransferHelper::DownloadAsync2()
 {
   if (!this->AsyncDownloadPBO)
@@ -511,19 +500,19 @@ bool vtkDataTransferHelper::DownloadAsync2()
   return reply;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDataTransferHelper::GetShaderSupportsTextureInt()
 {
   return this->ShaderSupportsTextureInt;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataTransferHelper::SetShaderSupportsTextureInt(bool value)
 {
   this->ShaderSupportsTextureInt = value;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject* vtkDataTransferHelper::GetPBO()
 {
   if (!this->PBO)
@@ -535,7 +524,7 @@ vtkPixelBufferObject* vtkDataTransferHelper::GetPBO()
   return this->PBO;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataTransferHelper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -553,3 +542,4 @@ void vtkDataTransferHelper::PrintSelf(ostream& os, vtkIndent indent)
      << ", " << this->TextureExtent[2] << ", " << this->TextureExtent[3] << ", "
      << this->TextureExtent[4] << ", " << this->TextureExtent[5] << ")" << endl;
 }
+VTK_ABI_NAMESPACE_END

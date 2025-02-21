@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStaticEdgeLocatorTemplate.txx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStaticEdgeLocatorTemplate.h"
 
 #include "vtkSMPTools.h"
@@ -21,14 +9,21 @@
 
 //----------------------------------------------------------------------------
 // Gather coincident edges into contiguous runs. Use this for merging edges.
+VTK_ABI_NAMESPACE_BEGIN
 template <typename IDType, typename EdgeData>
 const IDType* vtkStaticEdgeLocatorTemplate<IDType, EdgeData>::MergeEdges(
-  vtkIdType numEdges, MergeTupleType* mergeArray, vtkIdType& numUniqueEdges)
+  vtkIdType numEdges, EdgeTupleType* mergeArray, vtkIdType& numUniqueEdges)
 {
   // Sort the edges. Note that the sort is first on V0, then V1. So both
-  // V0 and V1 are sorted in ascending order.
-  this->NumEdges = numEdges;
+  // V0 and V1 are sorted in ascending order. Look out for empty cases.
+  this->MergeOffsets.clear(); // make sure offsets are empty initially
+  if ((this->NumEdges = numEdges) <= 0)
+  {
+    numUniqueEdges = 0;
+    return nullptr;
+  }
   this->MergeArray = mergeArray;
+
   vtkSMPTools::Sort(this->MergeArray, this->MergeArray + numEdges);
 
   // Now build offsets, i.e., determine the number of unique edges and determine
@@ -104,4 +99,5 @@ vtkIdType vtkStaticEdgeLocatorTemplate<IDType, EdgeData>::BuildLocator(
   return this->NumEdges;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

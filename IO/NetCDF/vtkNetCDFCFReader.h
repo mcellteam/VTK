@@ -1,24 +1,6 @@
-// -*- c++ -*-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNetCDFCFReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-LANL-California-USGov
 
 /**
  * @class   vtkNetCDFCFReader
@@ -38,6 +20,7 @@
 
 #include "vtkStdString.h" // Used for ivars.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 class vtkPoints;
 class vtkRectilinearGrid;
@@ -51,7 +34,7 @@ public:
   static vtkNetCDFCFReader* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * If on (the default), then 3D data with latitude/longitude dimensions
    * will be read in as curvilinear data shaped like spherical coordinates.
@@ -60,9 +43,9 @@ public:
   vtkGetMacro(SphericalCoordinates, vtkTypeBool);
   vtkSetMacro(SphericalCoordinates, vtkTypeBool);
   vtkBooleanMacro(SphericalCoordinates, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The scale and bias of the vertical component of spherical coordinates.  It
    * is common to write the vertical component with respect to something other
@@ -78,9 +61,9 @@ public:
   vtkSetMacro(VerticalScale, double);
   vtkGetMacro(VerticalBias, double);
   vtkSetMacro(VerticalBias, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the data type of the output.  The index used is taken from the list
    * of VTK data types in vtkType.h.  Valid types are VTK_IMAGE_DATA,
@@ -95,12 +78,34 @@ public:
   void SetOutputTypeToRectilinear() { this->SetOutputType(VTK_RECTILINEAR_GRID); }
   void SetOutputTypeToStructured() { this->SetOutputType(VTK_STRUCTURED_GRID); }
   void SetOutputTypeToUnstructured() { this->SetOutputType(VTK_UNSTRUCTURED_GRID); }
-  //@}
+  ///@}
 
   /**
    * Returns true if the given file can be read.
    */
-  static int CanReadFile(const char* filename);
+  static int CanReadFile(VTK_FILEPATH const char* filename);
+
+  ///@{
+  /**
+   * Names for Time, Latitude, Longitude and Vertical which can be set by
+   * the user for datasets that don't use the proper CF attributes
+   */
+  void SetTimeDimensionName(const char* name);
+  void SetLatitudeDimensionName(const char* name);
+  void SetLongitudeDimensionName(const char* name);
+  void SetVerticalDimensionName(const char* name);
+  ///@}
+
+  ///@{
+  /**
+   * Names for Time, Latitude, Longitude and Vertical. These are either
+   * deduced from CF attributes or overwritten by the user
+   */
+  const char* GetTimeDimensionName();
+  const char* GetLatitudeDimensionName();
+  const char* GetLongitudeDimensionName();
+  const char* GetVerticalDimensionName();
+  ///@}
 
 protected:
   vtkNetCDFCFReader();
@@ -122,20 +127,22 @@ protected:
   int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
 
-  //@{
+  ///@{
   /**
    * Interprets the special conventions of COARDS.
    */
   int ReadMetaData(int ncFD) override;
   int IsTimeDimension(int ncFD, int dimId) override;
   vtkSmartPointer<vtkDoubleArray> GetTimeValues(int ncFD, int dimId) override;
-  //@}
+  ///@}
 
   class vtkDimensionInfo
   {
   public:
-    vtkDimensionInfo() {}
-    vtkDimensionInfo(int ncFD, int id);
+    vtkDimensionInfo() = default;
+    vtkDimensionInfo(vtkNetCDFAccessor* accessor, int ncFD, int id,
+      const std::vector<std::string>& dimensionNames);
+
     const char* GetName() const { return this->Name.c_str(); }
     enum UnitsEnum
     {
@@ -143,7 +150,8 @@ protected:
       TIME_UNITS,
       LATITUDE_UNITS,
       LONGITUDE_UNITS,
-      VERTICAL_UNITS
+      VERTICAL_UNITS,
+      NUMBER_OF_UNITS
     };
     UnitsEnum GetUnits() const { return this->Units; }
     vtkSmartPointer<vtkDoubleArray> GetCoordinates() { return this->Coordinates; }
@@ -152,8 +160,10 @@ protected:
     double GetOrigin() const { return this->Origin; }
     double GetSpacing() const { return this->Spacing; }
     vtkSmartPointer<vtkStringArray> GetSpecialVariables() const { return this->SpecialVariables; }
+    void SetUnitsIfSpecialDimensionOverriden(UnitsEnum unit, const char* name);
 
   protected:
+    vtkNetCDFAccessor* Accessor = nullptr;
     vtkStdString Name;
     int DimId;
     vtkSmartPointer<vtkDoubleArray> Coordinates;
@@ -162,8 +172,15 @@ protected:
     bool HasRegularSpacing;
     double Origin, Spacing;
     vtkSmartPointer<vtkStringArray> SpecialVariables;
+    std::vector<std::string> SpecialDimensionOverrideNames;
     int LoadMetaData(int ncFD);
   };
+  void SetSpecialDimensionOverrideName(vtkDimensionInfo::UnitsEnum dim, const char* name)
+  {
+    this->SpecialDimensionOverrideNames[dim] = name;
+  }
+  const char* GetSpecialDimensionName(vtkDimensionInfo::UnitsEnum dim);
+
   class vtkDimensionInfoVector;
   friend class vtkDimensionInfoVector;
   vtkDimensionInfoVector* DimensionInfo;
@@ -172,11 +189,13 @@ protected:
   class vtkDependentDimensionInfo
   {
   public:
-    vtkDependentDimensionInfo()
-      : Valid(false)
+    vtkDependentDimensionInfo(vtkNetCDFAccessor* accessor)
+      : Accessor(accessor)
+      , Valid(false)
     {
     }
-    vtkDependentDimensionInfo(int ncFD, int varId, vtkNetCDFCFReader* parent);
+    vtkDependentDimensionInfo(
+      vtkNetCDFAccessor* accessor, int ncFD, int varId, vtkNetCDFCFReader* parent);
     bool GetValid() const { return this->Valid; }
     bool GetHasBounds() const { return this->HasBounds; }
     bool GetCellsUnstructured() const { return this->CellsUnstructured; }
@@ -192,6 +211,7 @@ protected:
     vtkSmartPointer<vtkStringArray> GetSpecialVariables() const { return this->SpecialVariables; }
 
   protected:
+    vtkNetCDFAccessor* Accessor;
     bool Valid;
     bool HasBounds;
     bool CellsUnstructured;
@@ -259,7 +279,7 @@ protected:
    */
   void GetUpdateExtentForOutput(vtkDataSet* output, int extent[6]) override;
 
-  //@{
+  ///@{
   /**
    * Internal methods for setting rectilinear coordinates.
    */
@@ -273,9 +293,9 @@ protected:
   void FakeStructuredCoordinates(vtkStructuredGrid* structuredOutput);
   void Add1DRectilinearCoordinates(vtkUnstructuredGrid* unstructuredOutput, const int extent[6]);
   void Add2DRectilinearCoordinates(vtkUnstructuredGrid* unstructuredOutput, const int extent[6]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Internal methods for setting spherical coordinates.
    */
@@ -285,14 +305,14 @@ protected:
   void Add2DSphericalCoordinates(vtkStructuredGrid* structuredOutput);
   void Add1DSphericalCoordinates(vtkUnstructuredGrid* unstructuredOutput, const int extent[6]);
   void Add2DSphericalCoordinates(vtkUnstructuredGrid* unstructuredOutput, const int extent[6]);
-  //@}
+  ///@}
 
   /**
    * Internal method for building unstructred cells that match structured cells.
    */
   void AddStructuredCells(vtkUnstructuredGrid* unstructuredOutput, const int extent[6]);
 
-  //@{
+  ///@{
   /**
    * Internal methods for creating unstructured cells.
    */
@@ -300,11 +320,14 @@ protected:
     vtkUnstructuredGrid* unstructuredOutput, const int extent[6]);
   void AddUnstructuredSphericalCoordinates(
     vtkUnstructuredGrid* unstructuredOutput, const int extent[6]);
-  //@}
+  ///@}
+
+  std::vector<std::string> SpecialDimensionOverrideNames;
 
 private:
   vtkNetCDFCFReader(const vtkNetCDFCFReader&) = delete;
   void operator=(const vtkNetCDFCFReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkNetCDFCFReader_h

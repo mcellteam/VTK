@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractElectronicData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractElectronicData
  * @brief   Provides access to and storage of
@@ -25,6 +13,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkDataObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkAbstractElectronicData : public vtkDataObject
@@ -32,6 +21,11 @@ class VTKCOMMONDATAMODEL_EXPORT vtkAbstractElectronicData : public vtkDataObject
 public:
   vtkTypeMacro(vtkAbstractElectronicData, vtkDataObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+
+  /**
+   * Returns `VTK_ABSTRACT_ELECTRONIC_DATA`.
+   */
+  int GetDataObjectType() override { return VTK_ABSTRACT_ELECTRONIC_DATA; }
 
   /**
    * Returns the number of molecular orbitals available.
@@ -95,13 +89,13 @@ public:
    */
   void DeepCopy(vtkDataObject* obj) override;
 
-  //@{
+  ///@{
   /**
    * Get the padding between the molecule and the cube boundaries. This is
    * used to determine the dataset's bounds.
    */
   vtkGetMacro(Padding, double);
-  //@}
+  ///@}
 
 protected:
   vtkAbstractElectronicData();
@@ -114,4 +108,5 @@ private:
   void operator=(const vtkAbstractElectronicData&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

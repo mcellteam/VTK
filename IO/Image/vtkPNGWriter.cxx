@@ -1,20 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPNGWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPNGWriter.h"
 
 #include "vtkAlgorithmOutput.h"
+#include "vtkEndian.h"
 #include "vtkErrorCode.h"
 #include "vtkImageData.h"
 #include "vtkObjectFactory.h"
@@ -25,10 +14,11 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPNGWriter::vtkInternals
 {
 public:
-  std::vector<std::pair<std::string, std::string> > TextKeyValue;
+  std::vector<std::pair<std::string, std::string>> TextKeyValue;
 };
 
 vtkStandardNewMacro(vtkPNGWriter);
@@ -66,7 +56,7 @@ vtkPNGWriter::~vtkPNGWriter()
   delete this->Internals;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Writes all the data from the input.
 void vtkPNGWriter::Write()
 {
@@ -200,6 +190,9 @@ extern "C"
 #if defined(_MSC_VER) && !defined(VTK_DISPLAY_WIN32_WARNINGS)
 #pragma warning(disable : 4611)
 #endif
+
+static constexpr unsigned int VTK_MAXIMUM_UNCOMPRESSED_TEXT_SIZE = 10000;
+
 void vtkPNGWriter::WriteSlice(vtkImageData* data, int* uExtent)
 {
   vtkInternals* impl = this->Internals;
@@ -214,7 +207,7 @@ void vtkPNGWriter::WriteSlice(vtkImageData* data, int* uExtent)
   }
 
   png_structp png_ptr =
-    png_create_write_struct(PNG_LIBPNG_VER_STRING, (png_voidp)nullptr, nullptr, nullptr);
+    png_create_write_struct(PNG_LIBPNG_VER_STRING, (png_voidp) nullptr, nullptr, nullptr);
   if (!png_ptr)
   {
     vtkErrorMacro(<< "Unable to write PNG file!");
@@ -226,7 +219,7 @@ void vtkPNGWriter::WriteSlice(vtkImageData* data, int* uExtent)
   png_infop info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr)
   {
-    png_destroy_write_struct(&png_ptr, (png_infopp)nullptr);
+    png_destroy_write_struct(&png_ptr, (png_infopp) nullptr);
     vtkErrorMacro(<< "Unable to write PNG file!");
     return;
   }
@@ -251,7 +244,7 @@ void vtkPNGWriter::WriteSlice(vtkImageData* data, int* uExtent)
     if (!this->TempFP)
     {
       vtkErrorMacro("Unable to open file " << this->InternalFileName);
-      this->SetErrorCode(vtkErrorCode::OutOfDiskSpaceError);
+      this->SetErrorCode(vtkErrorCode::CannotOpenFileError);
       return;
     }
     png_init_io(png_ptr, this->TempFP);
@@ -260,7 +253,7 @@ void vtkPNGWriter::WriteSlice(vtkImageData* data, int* uExtent)
     {
       fclose(this->TempFP);
       png_destroy_write_struct(&png_ptr, &info_ptr);
-      this->SetErrorCode(vtkErrorCode::OutOfDiskSpaceError);
+      this->SetErrorCode(vtkErrorCode::UnknownError);
       return;
     }
   }
@@ -301,17 +294,24 @@ void vtkPNGWriter::WriteSlice(vtkImageData* data, int* uExtent)
     std::vector<png_text> pngText(impl->TextKeyValue.size());
     for (size_t i = 0; i < pngText.size(); ++i)
     {
-      pngText[i].compression = PNG_TEXT_COMPRESSION_NONE;
       pngText[i].key = const_cast<char*>(impl->TextKeyValue[i].first.c_str());
       pngText[i].text = const_cast<char*>(impl->TextKeyValue[i].second.c_str());
       pngText[i].text_length = impl->TextKeyValue[i].second.length();
+      if (pngText[i].text_length < VTK_MAXIMUM_UNCOMPRESSED_TEXT_SIZE)
+      {
+        pngText[i].compression = PNG_TEXT_COMPRESSION_NONE;
+      }
+      else
+      {
+        pngText[i].compression = PNG_TEXT_COMPRESSION_zTXt;
+      }
 #ifdef PNG_iTXt_SUPPORTED
       pngText[i].itxt_length = 0;
       pngText[i].lang = nullptr;
       pngText[i].lang_key = nullptr;
 #endif
     }
-    png_set_text(png_ptr, info_ptr, &pngText[0], static_cast<int>(pngText.size()));
+    png_set_text(png_ptr, info_ptr, pngText.data(), static_cast<int>(pngText.size()));
   }
 
   // interlace_type - PNG_INTERLACE_NONE or
@@ -387,3 +387,14 @@ void vtkPNGWriter::AddText(const char* key, const char* value)
   impl->TextKeyValue[index].second.assign(value);
   this->Modified();
 }
+
+void vtkPNGWriter::ClearText()
+{
+  vtkInternals* impl = this->Internals;
+  if (!impl->TextKeyValue.empty())
+  {
+    impl->TextKeyValue.clear();
+    this->Modified();
+  }
+}
+VTK_ABI_NAMESPACE_END

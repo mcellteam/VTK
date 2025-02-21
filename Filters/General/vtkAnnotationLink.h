@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAnnotationLink.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAnnotationLink
  * @brief   An algorithm for linking annotations among objects
@@ -47,6 +35,7 @@
 #include "vtkAnnotationLayersAlgorithm.h"
 #include "vtkFiltersGeneralModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCommand;
 class vtkDataObjectCollection;
 class vtkInformation;
@@ -61,23 +50,23 @@ public:
   vtkTypeMacro(vtkAnnotationLink, vtkAnnotationLayersAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The annotations to be shared.
    */
   vtkGetObjectMacro(AnnotationLayers, vtkAnnotationLayers);
   virtual void SetAnnotationLayers(vtkAnnotationLayers* layers);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set or get the current selection in the annotation layers.
    */
   virtual void SetCurrentSelection(vtkSelection* sel);
   virtual vtkSelection* GetCurrentSelection();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The domain mappings.
    */
@@ -86,7 +75,7 @@ public:
   void RemoveAllDomainMaps();
   int GetNumberOfDomainMaps();
   vtkTable* GetDomainMap(int i);
-  //@}
+  ///@}
 
   /**
    * Get the mtime of this object.
@@ -143,4 +132,5 @@ private:
   Command* Observer;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

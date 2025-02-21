@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointDensityFilter.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPointDensityFilter.h"
 
 #include "vtkAbstractPointLocator.h"
@@ -32,15 +20,16 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPointDensityFilter);
 vtkCxxSetObjectMacro(vtkPointDensityFilter, Locator, vtkAbstractPointLocator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm. Operator() processes slices.
 struct ComputePointDensity
 {
@@ -129,7 +118,7 @@ struct ComputePointDensity
   }
 }; // ComputePointDensity
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm; processes weighted points.
 template <typename T>
 struct ComputeWeightedDensity : public ComputePointDensity
@@ -200,7 +189,7 @@ struct ComputeWeightedDensity : public ComputePointDensity
   }
 }; // ComputeWeightedDensity
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Optional kernel to compute gradient of density function. Also the gradient
 // magnitude and function classification is computed.
 struct ComputeGradients
@@ -309,7 +298,7 @@ struct ComputeGradients
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointDensityFilter::vtkPointDensityFilter()
 {
   this->SampleDimensions[0] = 100;
@@ -341,21 +330,21 @@ vtkPointDensityFilter::vtkPointDensityFilter()
   this->Locator = vtkStaticPointLocator::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointDensityFilter::~vtkPointDensityFilter()
 {
   this->Locator->UnRegister(this);
   this->Locator = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointDensityFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPointSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPointDensityFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -389,7 +378,7 @@ int vtkPointDensityFilter::RequestInformation(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the size of the sample bounding box automatically from the
 // input data.
 void vtkPointDensityFilter::ComputeModelBounds(
@@ -442,7 +431,7 @@ void vtkPointDensityFilter::ComputeModelBounds(
   output->SetSpacing(this->Spacing);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the dimensions of the sampling volume
 void vtkPointDensityFilter::SetSampleDimensions(int i, int j, int k)
 {
@@ -455,7 +444,7 @@ void vtkPointDensityFilter::SetSampleDimensions(int i, int j, int k)
   this->SetSampleDimensions(dim);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointDensityFilter::SetSampleDimensions(int dim[3])
 {
   int dataDim, i;
@@ -495,7 +484,7 @@ void vtkPointDensityFilter::SetSampleDimensions(int dim[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Produce the output data
 int vtkPointDensityFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -627,7 +616,7 @@ int vtkPointDensityFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkPointDensityFilter::GetDensityEstimateAsString()
 {
   if (this->DensityEstimate == VTK_DENSITY_ESTIMATE_FIXED_RADIUS)
@@ -640,7 +629,7 @@ const char* vtkPointDensityFilter::GetDensityEstimateAsString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkPointDensityFilter::GetDensityFormAsString()
 {
   if (this->DensityForm == VTK_DENSITY_FORM_VOLUME_NORM)
@@ -653,7 +642,7 @@ const char* vtkPointDensityFilter::GetDensityFormAsString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPointDensityFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -681,3 +670,4 @@ void vtkPointDensityFilter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Locator: " << this->Locator << "\n";
 }
+VTK_ABI_NAMESPACE_END

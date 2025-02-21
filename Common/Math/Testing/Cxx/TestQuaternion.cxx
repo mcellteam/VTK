@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestQuaternion.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMathUtilities.h"
 #include "vtkQuaternion.h"
@@ -26,7 +14,7 @@ static int TestQuaternionMatrixConversions();
 static int TestQuaternionConversions();
 static int TestQuaternionSlerp();
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQuaternion(int, char*[])
 {
   // Store up any errors, return non-zero if something fails.
@@ -44,7 +32,7 @@ int TestQuaternion(int, char*[])
 }
 
 // Test if the access and set methods are valids
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQuaternionSetGet() // use of vtkQuaternionf for this test
 {
   int retVal = 0;
@@ -141,7 +129,7 @@ int TestQuaternionSetGet() // use of vtkQuaternionf for this test
 }
 
 // Test the normalize and normalized functions.
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQuaternionNormalization() // This test use vtkQuaterniond
 {
   int retVal = 0;
@@ -171,7 +159,7 @@ int TestQuaternionNormalization() // This test use vtkQuaterniond
 // This tests the conjugation and inversion at the same time.
 // Since inversion depends on normalization, this will probably fail
 // if TestQuaternionNormalisation() fails.
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQuaternionConjugationAndInversion() // this test uses vtkQuaternionf
 {
   int retVal = 0;
@@ -219,7 +207,7 @@ int TestQuaternionConjugationAndInversion() // this test uses vtkQuaternionf
 }
 
 // Test the rotations
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQuaternionRotation() // this test uses vtkQuaterniond
 {
   int retVal = 0;
@@ -269,7 +257,7 @@ int TestQuaternionRotation() // this test uses vtkQuaterniond
 }
 
 // Test the matrix conversions
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQuaternionMatrixConversions() // this test uses vtkQuaternionf
 {
   int retVal = 0;
@@ -351,7 +339,7 @@ int TestQuaternionMatrixConversions() // this test uses vtkQuaternionf
 }
 
 // Test the quaternion's conversions
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQuaternionConversions() // this test uses vtkQuaterniond
 {
   int retVal = 0;
@@ -395,7 +383,7 @@ int TestQuaternionConversions() // this test uses vtkQuaterniond
 }
 
 // Test the quaternion's slerp
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQuaternionSlerp() // this test uses vtkQuaterniond
 {
   // return value

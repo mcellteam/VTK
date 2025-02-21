@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCylindricalTransform.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCylindricalTransform
  * @brief   cylindrical to rectangular coords and back
@@ -34,6 +22,7 @@
 #include "vtkCommonTransformsModule.h" // For export macro
 #include "vtkWarpTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONTRANSFORMS_EXPORT vtkCylindricalTransform : public vtkWarpTransform
 {
 public:
@@ -55,13 +44,13 @@ protected:
    */
   void InternalDeepCopy(vtkAbstractTransform* transform) override;
 
-  //@{
+  ///@{
   /**
    * Internal functions for calculating the transformation.
    */
   void ForwardTransformPoint(const float in[3], float out[3]) override;
   void ForwardTransformPoint(const double in[3], double out[3]) override;
-  //@}
+  ///@}
 
   void ForwardTransformDerivative(const float in[3], float out[3], float derivative[3][3]) override;
   void ForwardTransformDerivative(
@@ -79,4 +68,5 @@ private:
   void operator=(const vtkCylindricalTransform&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayTestInteractor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOSPRayTestInteractor.h"
 #include "vtkObjectFactory.h"
@@ -34,7 +22,7 @@ namespace
 static std::vector<std::string> ActorNames;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkOSPRayTestLooper : public vtkCommand
 {
   // for progressive rendering
@@ -74,10 +62,10 @@ public:
   int ProgressiveCount;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOSPRayTestInteractor);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayTestInteractor::vtkOSPRayTestInteractor()
 {
   this->SetPipelineControlPoints(nullptr, nullptr, nullptr);
@@ -86,13 +74,13 @@ vtkOSPRayTestInteractor::vtkOSPRayTestInteractor()
   this->Looper = vtkOSPRayTestLooper::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayTestInteractor::~vtkOSPRayTestInteractor()
 {
   this->Looper->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayTestInteractor::SetPipelineControlPoints(
   vtkRenderer* g, vtkRenderPass* _O, vtkRenderPass* _G)
 {
@@ -101,7 +89,7 @@ void vtkOSPRayTestInteractor::SetPipelineControlPoints(
   this->G = _G;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayTestInteractor::OnKeyPress()
 {
   if (this->GLRenderer == nullptr)
@@ -111,7 +99,8 @@ void vtkOSPRayTestInteractor::OnKeyPress()
 
   // Get the keypress
   vtkRenderWindowInteractor* rwi = this->Interactor;
-  std::string key = rwi->GetKeySym();
+  char* ckey = rwi->GetKeySym();
+  std::string key = ckey != nullptr ? ckey : "";
 
   if (key == "c")
   {

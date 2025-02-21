@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRTAnalyticSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRTAnalyticSource.h"
 
 #include "vtkDataArray.h"
@@ -24,9 +12,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRTAnalyticSource);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRTAnalyticSource::vtkRTAnalyticSource()
 {
   this->Maximum = 255.0;
@@ -54,7 +43,7 @@ vtkRTAnalyticSource::vtkRTAnalyticSource()
   this->SubsampleRate = 1;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRTAnalyticSource::SetWholeExtent(int xMin, int xMax, int yMin, int yMax, int zMin, int zMax)
 {
   int modified = 0;
@@ -95,7 +84,7 @@ void vtkRTAnalyticSource::SetWholeExtent(int xMin, int xMax, int yMin, int yMax,
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRTAnalyticSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -236,7 +225,7 @@ void vtkRTAnalyticSource::ExecuteDataWithInformation(
     z *= zscale;
     zContrib = z * z;
     const float zfactor = static_cast<float>(this->ZMag * cos(this->ZFreq * z));
-    for (idxY = 0; !this->AbortExecute && idxY <= maxY; idxY++)
+    for (idxY = 0; !this->CheckAbort() && idxY <= maxY; idxY++)
     {
       if ((this->SubsampleRate > 1) && (idxY % this->SubsampleRate))
       {
@@ -295,13 +284,4 @@ void vtkRTAnalyticSource::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "SubsampleRate: " << this->SubsampleRate << endl;
 }
-
-int vtkRTAnalyticSource::FillOutputPortInformation(int port, vtkInformation* info)
-{
-  if (!this->Superclass::FillOutputPortInformation(port, info))
-  {
-    return 0;
-  }
-
-  return 1;
-}
+VTK_ABI_NAMESPACE_END

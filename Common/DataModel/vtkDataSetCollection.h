@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSetCollection.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataSetCollection
  * @brief   maintain an unordered list of dataset objects
@@ -28,32 +16,34 @@
 
 #include "vtkDataSet.h" // Needed for inline methods.
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONDATAMODEL_EXPORT vtkDataSetCollection : public vtkCollection
 {
 public:
   static vtkDataSetCollection* New();
   vtkTypeMacro(vtkDataSetCollection, vtkCollection);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Add a dataset to the bottom of the list.
    */
   void AddItem(vtkDataSet* ds) { this->vtkCollection::AddItem(ds); }
 
-  //@{
+  ///@{
   /**
    * Get the next dataset in the list.
    */
   vtkDataSet* GetNextItem() { return static_cast<vtkDataSet*>(this->GetNextItemAsObject()); }
   vtkDataSet* GetNextDataSet() { return static_cast<vtkDataSet*>(this->GetNextItemAsObject()); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the ith dataset in the list.
    */
   vtkDataSet* GetItem(int i) { return static_cast<vtkDataSet*>(this->GetItemAsObject(i)); }
   vtkDataSet* GetDataSet(int i) { return static_cast<vtkDataSet*>(this->GetItemAsObject(i)); }
-  //@}
+  ///@}
 
   /**
    * Reentrant safe way to get an object in a collection. Just pass the
@@ -65,17 +55,16 @@ public:
   }
 
 protected:
-  vtkDataSetCollection() {}
-  ~vtkDataSetCollection() override {}
+  vtkDataSetCollection() = default;
+  ~vtkDataSetCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
   void AddItem(vtkObject* o) { this->vtkCollection::AddItem(o); }
 
-private:
   vtkDataSetCollection(const vtkDataSetCollection&) = delete;
   void operator=(const vtkDataSetCollection&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-// VTK-HeaderTest-Exclude: vtkDataSetCollection.h

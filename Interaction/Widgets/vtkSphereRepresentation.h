@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSphereRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSphereRepresentation
  * @brief   a class defining the representation for the vtkSphereWidget2
@@ -49,7 +37,9 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkSphereSource.h"             // Needed for fast access to the sphere source
 #include "vtkWidgetRepresentation.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkPolyDataMapper;
 class vtkSphere;
@@ -72,7 +62,8 @@ class vtkCursor3D;
 #define VTK_SPHERE_WIREFRAME 1
 #define VTK_SPHERE_SURFACE 2
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkSphereRepresentation : public vtkWidgetRepresentation
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkSphereRepresentation
+  : public vtkWidgetRepresentation
 {
 public:
   /**
@@ -80,13 +71,13 @@ public:
    */
   static vtkSphereRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for type information and to print out the contents of the class.
    */
   vtkTypeMacro(vtkSphereRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   // Used to manage the state of the widget
   enum
@@ -98,7 +89,7 @@ public:
     Scaling
   };
 
-  //@{
+  ///@{
   /**
    * Set the representation (i.e., appearance) of the sphere. Different
    * representations are useful depending on the application.
@@ -108,7 +99,7 @@ public:
   void SetRepresentationToOff() { this->SetRepresentation(VTK_SPHERE_OFF); }
   void SetRepresentationToWireframe() { this->SetRepresentation(VTK_SPHERE_WIREFRAME); }
   void SetRepresentationToSurface() { this->SetRepresentation(VTK_SPHERE_SURFACE); }
-  //@}
+  ///@}
 
   /**
    * Set/Get the resolution of the sphere in the theta direction.
@@ -146,7 +137,7 @@ public:
   void SetRadius(double r);
   double GetRadius() { return this->SphereSource->GetRadius(); }
 
-  //@{
+  ///@{
   /**
    * The handle sits on the surface of the sphere and may be moved around
    * the surface by picking (left mouse) and then moving. The position
@@ -156,9 +147,9 @@ public:
   vtkSetMacro(HandleVisibility, vtkTypeBool);
   vtkGetMacro(HandleVisibility, vtkTypeBool);
   vtkBooleanMacro(HandleVisibility, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the position of the handle. Note that this may adjust the radius
    * of the sphere and the handle direction.
@@ -173,9 +164,9 @@ public:
     this->SetHandlePosition(p);
   }
   vtkGetVector3Macro(HandlePosition, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the direction vector of the handle relative to the center of
    * the sphere. Setting the direction may affect the position of the handle
@@ -191,9 +182,9 @@ public:
     this->SetHandleDirection(d);
   }
   vtkGetVector3Macro(HandleDirection, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable a label that displays the location of the handle in
    * spherical coordinates (radius,theta,phi). The two angles, theta and
@@ -204,9 +195,9 @@ public:
   vtkSetMacro(HandleText, vtkTypeBool);
   vtkGetMacro(HandleText, vtkTypeBool);
   vtkBooleanMacro(HandleText, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable a radial line segment that joins the center of the
    * outer sphere and the handle.
@@ -214,9 +205,9 @@ public:
   vtkSetMacro(RadialLine, vtkTypeBool);
   vtkGetMacro(RadialLine, vtkTypeBool);
   vtkBooleanMacro(RadialLine, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable a center cursor
    * Default is disabled
@@ -224,7 +215,7 @@ public:
   vtkSetMacro(CenterCursor, bool);
   vtkGetMacro(CenterCursor, bool);
   vtkBooleanMacro(CenterCursor, bool);
-  //@}
+  ///@}
 
   /**
    * Grab the polydata (including points) that defines the sphere.  The
@@ -243,40 +234,53 @@ public:
    */
   void GetSphere(vtkSphere* sphere);
 
-  //@{
+  ///@{
   /**
    * Get the sphere properties. The properties of the sphere when selected
    * and unselected can be manipulated.
    */
   vtkGetObjectMacro(SphereProperty, vtkProperty);
   vtkGetObjectMacro(SelectedSphereProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the handle properties (the little ball on the sphere is the
    * handle). The properties of the handle when selected and unselected
-   * can be manipulated.
+   * can be manipulated. Also applied to the center cursor.
    */
   vtkGetObjectMacro(HandleProperty, vtkProperty);
   vtkGetObjectMacro(SelectedHandleProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the handle text property. This can be used to control the appearance
    * of the handle text.
    */
   vtkGetObjectMacro(HandleTextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the property of the radial line. This can be used to control the
    * appearance of the optional line connecting the center to the handle.
    */
   vtkGetObjectMacro(RadialLineProperty, vtkProperty);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set the interaction color of sphere and handle. Set the handle color of the
+   * handle, center cursor and radial line. Foreground color applies to the sphere and text.
+   */
+  void SetInteractionColor(double, double, double);
+  void SetInteractionColor(double c[3]) { this->SetInteractionColor(c[0], c[1], c[2]); }
+  void SetHandleColor(double, double, double);
+  void SetHandleColor(double c[3]) { this->SetHandleColor(c[0], c[1], c[2]); }
+  void SetForegroundColor(double, double, double);
+  void SetForegroundColor(double c[3]) { this->SetForegroundColor(c[0], c[1], c[2]); }
+  ///@}
 
   /**
    * The interaction state may be set from a widget (e.g., vtkSphereWidget2) or
@@ -289,7 +293,7 @@ public:
    */
   void SetInteractionState(int state);
 
-  //@{
+  ///@{
   /**
    * These are methods that satisfy vtkWidgetRepresentation's API. Note that a
    * version of place widget is available where the center and handle position
@@ -302,9 +306,9 @@ public:
   void StartWidgetInteraction(double e[2]) override;
   void WidgetInteraction(double e[2]) override;
   double* GetBounds() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods supporting, and required by, the rendering process.
    */
@@ -313,23 +317,23 @@ public:
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
   int RenderOverlay(vtkViewport*) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
   /*
    * Register internal Pickers within PickingManager
    */
   void RegisterPickers() override;
 
-  //@{
+  ///@{
   /**
    * Gets/Sets the constraint axis for translations. Returns Axis::NONE
    * if none.
    **/
   vtkGetMacro(TranslationAxis, int);
   vtkSetClampMacro(TranslationAxis, int, -1, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Toggles constraint translation axis on/off.
    */
@@ -337,14 +341,14 @@ public:
   void SetYTranslationAxisOn() { this->TranslationAxis = Axis::YAxis; }
   void SetZTranslationAxisOn() { this->TranslationAxis = Axis::ZAxis; }
   void SetTranslationAxisOff() { this->TranslationAxis = Axis::NONE; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Returns true if ContrainedAxis
+   * Returns true if ConstrainedAxis
    **/
   bool IsTranslationConstrained() { return this->TranslationAxis != Axis::NONE; }
-  //@}
+  ///@}
 
 protected:
   vtkSphereRepresentation();
@@ -420,4 +424,5 @@ private:
   void operator=(const vtkSphereRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

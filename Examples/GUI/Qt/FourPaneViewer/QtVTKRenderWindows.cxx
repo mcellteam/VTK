@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "QtVTKRenderWindows.h"
 #include "ui_QtVTKRenderWindows.h"
@@ -33,7 +35,7 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkResliceCursorCallback : public vtkCommand
 {
 public:
@@ -206,6 +208,7 @@ QtVTKRenderWindows::QtVTKRenderWindows(int vtkNotUsed(argc), char* argv[])
       vtkResliceCursorWidget::ResliceThicknessChangedEvent, cbk);
     riw[i]->GetResliceCursorWidget()->AddObserver(vtkResliceCursorWidget::ResetCursorEvent, cbk);
     riw[i]->GetInteractorStyle()->AddObserver(vtkCommand::WindowLevelEvent, cbk);
+    riw[i]->AddObserver(vtkResliceImageViewer::SliceChangedEvent, cbk);
 
     // Make them all share the same color map.
     riw[i]->SetLookupTable(riw[0]->GetLookupTable());

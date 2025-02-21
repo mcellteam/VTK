@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageCast.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageCast
  * @brief    Image Data type Casting Filter
@@ -36,6 +24,7 @@
 #include "vtkImagingCoreModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImageCast : public vtkThreadedImageAlgorithm
 {
 public:
@@ -43,7 +32,7 @@ public:
   vtkTypeMacro(vtkImageCast, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the desired output scalar type to cast to.
    */
@@ -59,9 +48,9 @@ public:
   void SetOutputScalarTypeToUnsignedShort() { this->SetOutputScalarType(VTK_UNSIGNED_SHORT); }
   void SetOutputScalarTypeToUnsignedChar() { this->SetOutputScalarType(VTK_UNSIGNED_CHAR); }
   void SetOutputScalarTypeToChar() { this->SetOutputScalarType(VTK_CHAR); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When the ClampOverflow flag is on, the data is thresholded so that
    * the output value does not exceed the max or min of the data type.
@@ -73,11 +62,11 @@ public:
   vtkSetMacro(ClampOverflow, vtkTypeBool);
   vtkGetMacro(ClampOverflow, vtkTypeBool);
   vtkBooleanMacro(ClampOverflow, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageCast();
-  ~vtkImageCast() override {}
+  ~vtkImageCast() override = default;
 
   vtkTypeBool ClampOverflow;
   int OutputScalarType;
@@ -90,4 +79,5 @@ private:
   void operator=(const vtkImageCast&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

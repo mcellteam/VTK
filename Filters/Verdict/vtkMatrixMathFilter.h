@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkObject.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMatrixMathFilter
  * @brief   Calculate functions of quality of the elements
@@ -31,6 +19,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersVerdictModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCell;
 class vtkDataArray;
 
@@ -52,11 +41,11 @@ class VTKFILTERSVERDICT_EXPORT vtkMatrixMathFilter : public vtkDataSetAlgorithm
   };
 
 public:
-  void PrintSelf(ostream&, vtkIndent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkMatrixMathFilter, vtkDataSetAlgorithm);
   static vtkMatrixMathFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the particular estimator used to function the quality of query.
    */
@@ -66,7 +55,7 @@ public:
   void SetOperationToEigenvalue() { this->SetOperation(EIGENVALUE); }
   void SetOperationToEigenvector() { this->SetOperation(EIGENVECTOR); }
   void SetOperationToInverse() { this->SetOperation(INVERSE); }
-  //@}
+  ///@}
 
 protected:
   ~vtkMatrixMathFilter() override;
@@ -81,4 +70,5 @@ private:
   void operator=(const vtkMatrixMathFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkMatrixMathFilter_h

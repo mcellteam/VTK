@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGAMBITReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Thanks to Jean M. Favre (CSCS, Swiss Center for Scientific Computing) who
 // developed this class.
 // Please address all comments to Jean Favre (jfavre at cscs.ch)
@@ -31,9 +19,10 @@
 #include "vtksys/Encoding.hxx"
 #include "vtksys/FStream.hxx"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGAMBITReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGAMBITReader::vtkGAMBITReader()
 {
   this->FileName = nullptr;
@@ -46,13 +35,13 @@ vtkGAMBITReader::vtkGAMBITReader()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGAMBITReader::~vtkGAMBITReader()
 {
   delete[] this->FileName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGAMBITReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -77,7 +66,7 @@ int vtkGAMBITReader::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -91,7 +80,7 @@ void vtkGAMBITReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Number Of Cell Fields: " << this->NumberOfCellFields << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::ReadFile(vtkUnstructuredGrid* output)
 {
   this->ReadGeometry(output);
@@ -113,19 +102,19 @@ void vtkGAMBITReader::ReadFile(vtkUnstructuredGrid* output)
   this->FileStream = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::ReadNodeData(vtkUnstructuredGrid* vtkNotUsed(output))
 {
   vtkWarningMacro("Not implemented due to lack of examples");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::ReadCellData(vtkUnstructuredGrid* vtkNotUsed(output))
 {
   vtkWarningMacro("Not implemented due to lack of examples");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGAMBITReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -176,7 +165,7 @@ int vtkGAMBITReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   // read here the end of section
   this->FileStream->get(buf, 128, '\n');
   this->FileStream->get(c);
-  if (strncmp(buf, "ENDOFSECTION", 12))
+  if (strncmp(buf, "ENDOFSECTION", 12) != 0)
   {
     vtkErrorMacro(<< "Error reading file");
   }
@@ -189,7 +178,7 @@ int vtkGAMBITReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::ReadGeometry(vtkUnstructuredGrid* output)
 {
   vtkDoubleArray* coords = vtkDoubleArray::New();
@@ -215,7 +204,7 @@ void vtkGAMBITReader::ReadGeometry(vtkUnstructuredGrid* output)
   points->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::ReadBoundaryConditionSets(vtkUnstructuredGrid* output)
 {
   int bcs, f, itype, nentry, nvalues;
@@ -262,7 +251,7 @@ void vtkGAMBITReader::ReadBoundaryConditionSets(vtkUnstructuredGrid* output)
       // read here the end of section
       this->FileStream->get(buf, 128, '\n');
       this->FileStream->get(c);
-      if (strncmp(buf, "ENDOFSECTION", 12))
+      if (strncmp(buf, "ENDOFSECTION", 12) != 0)
       {
         vtkErrorMacro(<< "Error reading ENDOFSECTION tag at end of group");
       }
@@ -277,7 +266,7 @@ void vtkGAMBITReader::ReadBoundaryConditionSets(vtkUnstructuredGrid* output)
       // read here the end of section
       this->FileStream->get(buf, 128, '\n');
       this->FileStream->get(c);
-      if (strncmp(buf, "ENDOFSECTION", 12))
+      if (strncmp(buf, "ENDOFSECTION", 12) != 0)
       {
         vtkErrorMacro(<< "Error reading ENDOFSECTION tag at end of group");
       }
@@ -295,7 +284,7 @@ void vtkGAMBITReader::ReadBoundaryConditionSets(vtkUnstructuredGrid* output)
   bcscalar->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::ReadMaterialTypes(vtkUnstructuredGrid* output)
 {
   int grp, f, flag, id, nbelts, elt, mat, nbflags;
@@ -334,7 +323,7 @@ void vtkGAMBITReader::ReadMaterialTypes(vtkUnstructuredGrid* output)
     // read here the end of section
     this->FileStream->get(buf, 128, '\n');
     this->FileStream->get(c);
-    if (strncmp(buf, "ENDOFSECTION", 12))
+    if (strncmp(buf, "ENDOFSECTION", 12) != 0)
     {
       vtkErrorMacro(<< "Error reading ENDOFSECTION tag at end of group");
     }
@@ -349,7 +338,7 @@ void vtkGAMBITReader::ReadMaterialTypes(vtkUnstructuredGrid* output)
   materials->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::ReadCellConnectivity(vtkUnstructuredGrid* output)
 {
   int i, k;
@@ -450,13 +439,13 @@ void vtkGAMBITReader::ReadCellConnectivity(vtkUnstructuredGrid* output)
   this->FileStream->get(c);
   this->FileStream->get(buf, 128, '\n');
   this->FileStream->get(c);
-  if (strncmp(buf, "ENDOFSECTION", 12))
+  if (strncmp(buf, "ENDOFSECTION", 12) != 0)
   {
     vtkErrorMacro(<< "Error reading ENDOFSECTION tag at end of connectivity");
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGAMBITReader::ReadXYZCoords(vtkDoubleArray* coords)
 {
   int i;
@@ -487,8 +476,9 @@ void vtkGAMBITReader::ReadXYZCoords(vtkDoubleArray* coords)
   this->FileStream->get(c);
   this->FileStream->get(buf, 128, '\n');
   this->FileStream->get(c);
-  if (strncmp(buf, "ENDOFSECTION", 12))
+  if (strncmp(buf, "ENDOFSECTION", 12) != 0)
   {
     vtkErrorMacro("Error reading ENDOFSECTION tag at end of coordinates section");
   }
 }
+VTK_ABI_NAMESPACE_END

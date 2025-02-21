@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkBoostPrimMinimumSpanningTree.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkBoostPrimMinimumSpanningTree.h"
 
 #include "vtkBoostGraphAdapter.h"
@@ -43,14 +27,15 @@ PURPOSE.  See the above copyright notice for more information.
 
 using namespace boost;
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostPrimMinimumSpanningTree);
 
 // Constructor/Destructor
 vtkBoostPrimMinimumSpanningTree::vtkBoostPrimMinimumSpanningTree()
 {
-  this->EdgeWeightArrayName = 0;
+  this->EdgeWeightArrayName = nullptr;
   this->OriginVertexIndex = 0;
-  this->ArrayName = 0;
+  this->ArrayName = nullptr;
   this->SetArrayName("Not Set");
   this->ArrayNameSet = false;
   this->NegateEdgeWeights = false;
@@ -59,11 +44,11 @@ vtkBoostPrimMinimumSpanningTree::vtkBoostPrimMinimumSpanningTree()
   this->CreateGraphVertexIdArray = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoostPrimMinimumSpanningTree::~vtkBoostPrimMinimumSpanningTree()
 {
-  this->SetEdgeWeightArrayName(0);
-  this->SetArrayName(0);
+  this->SetEdgeWeightArrayName(nullptr);
+  this->SetArrayName(nullptr);
 }
 
 // Description:
@@ -83,7 +68,7 @@ void vtkBoostPrimMinimumSpanningTree::SetOriginVertex(vtkIdType index)
 // know the specific index of the vertex.
 void vtkBoostPrimMinimumSpanningTree::SetOriginVertex(vtkStdString arrayName, vtkVariant value)
 {
-  this->SetArrayName(arrayName);
+  this->SetArrayName(arrayName.c_str());
   this->ArrayNameSet = true;
   this->OriginValue = value;
   this->Modified();
@@ -106,7 +91,7 @@ void vtkBoostPrimMinimumSpanningTree::SetNegateEdgeWeights(bool value)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkBoostPrimMinimumSpanningTree::GetVertexIndex(
   vtkAbstractArray* abstract, vtkVariant value)
 {
@@ -126,7 +111,7 @@ vtkIdType vtkBoostPrimMinimumSpanningTree::GetVertexIndex(
   else
   {
     vtkStringArray* stringArray = vtkArrayDownCast<vtkStringArray>(abstract);
-    vtkStdString stringValue(value.ToString());
+    std::string stringValue(value.ToString());
     for (int i = 0; i < stringArray->GetNumberOfTuples(); ++i)
     {
       if (stringValue == stringArray->GetValue(i))
@@ -141,7 +126,7 @@ vtkIdType vtkBoostPrimMinimumSpanningTree::GetVertexIndex(
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostPrimMinimumSpanningTree::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -263,7 +248,7 @@ int vtkBoostPrimMinimumSpanningTree::RequestData(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostPrimMinimumSpanningTree::FillInputPortInformation(int port, vtkInformation* info)
 {
   // now add our info
@@ -274,7 +259,7 @@ int vtkBoostPrimMinimumSpanningTree::FillInputPortInformation(int port, vtkInfor
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoostPrimMinimumSpanningTree::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -296,3 +281,4 @@ void vtkBoostPrimMinimumSpanningTree::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "EdgeWeightArrayName: "
      << (this->EdgeWeightArrayName ? this->EdgeWeightArrayName : "(none)") << endl;
 }
+VTK_ABI_NAMESPACE_END

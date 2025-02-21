@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGlyph2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGlyph2D
  * @brief   copy oriented and scaled glyph geometry to every input point (2D specialization)
@@ -23,8 +11,11 @@
  * z-axis. (See vtkGlyph3D for documentation on the interface to this
  * class.)
  *
+ * Frequently this class is used in combination with vtkGlyphSource.
+ * vtkGlyphSource2D can produce a family of 2D glyphs.
+ *
  * @sa
- * vtkTensorGlyph vtkGlyph3D vtkProgrammableGlyphFilter
+ * vtkTensorGlyph vtkGlyph3D vtkProgrammableGlyphFilter vtkGlyphSource2D
  */
 
 #ifndef vtkGlyph2D_h
@@ -33,11 +24,17 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkGlyph3D.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkGlyph2D : public vtkGlyph3D
 {
 public:
+  ///@{
+  /**
+   * Standard methods for obtaining type information and printing.
+   */
   vtkTypeMacro(vtkGlyph2D, vtkGlyph3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+  ///@}
 
   /**
    * Construct object with scaling on, scaling mode is by scalar value,
@@ -48,8 +45,8 @@ public:
   static vtkGlyph2D* New();
 
 protected:
-  vtkGlyph2D() {}
-  ~vtkGlyph2D() override {}
+  vtkGlyph2D() = default;
+  ~vtkGlyph2D() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -58,4 +55,5 @@ private:
   void operator=(const vtkGlyph2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

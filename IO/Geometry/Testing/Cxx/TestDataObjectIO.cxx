@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestDataObjectIO.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCellData.h"
 #include "vtkCubeSource.h"
 #include "vtkDataObjectWriter.h"
@@ -56,10 +44,7 @@ void InitializeData(vtkRectilinearGrid* Data)
 
 bool CompareData(vtkRectilinearGrid* Output, vtkRectilinearGrid* Input)
 {
-  if (memcmp(Input->GetDimensions(), Output->GetDimensions(), 3 * sizeof(int)))
-    return false;
-
-  return true;
+  return memcmp(Input->GetDimensions(), Output->GetDimensions(), 3 * sizeof(int)) == 0;
 }
 
 void InitializeData(vtkStructuredGrid* Data)
@@ -69,10 +54,13 @@ void InitializeData(vtkStructuredGrid* Data)
 
 bool CompareData(vtkStructuredGrid* Output, vtkStructuredGrid* Input)
 {
-  if (memcmp(Input->GetDimensions(), Output->GetDimensions(), 3 * sizeof(int)))
-    return false;
+  int inputDims[3];
+  Input->GetDimensions(inputDims);
 
-  return true;
+  int outputDims[3];
+  Output->GetDimensions(outputDims);
+
+  return memcmp(inputDims, outputDims, 3 * sizeof(int)) == 0;
 }
 
 void InitializeData(vtkTable* Data)

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPRectilinearGridReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLPRectilinearGridReader.h"
 
 #include "vtkDataArray.h"
@@ -22,39 +10,40 @@
 #include "vtkXMLDataElement.h"
 #include "vtkXMLRectilinearGridReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLPRectilinearGridReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPRectilinearGridReader::vtkXMLPRectilinearGridReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPRectilinearGridReader::~vtkXMLPRectilinearGridReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPRectilinearGridReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPRectilinearGridReader::SetupEmptyOutput()
 {
   this->GetCurrentOutput()->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearGrid* vtkXMLPRectilinearGridReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearGrid* vtkXMLPRectilinearGridReader::GetOutput(int idx)
 {
   return vtkRectilinearGrid::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearGrid* vtkXMLPRectilinearGridReader::GetPieceInput(int index)
 {
   vtkXMLRectilinearGridReader* reader =
@@ -62,25 +51,25 @@ vtkRectilinearGrid* vtkXMLPRectilinearGridReader::GetPieceInput(int index)
   return reader->GetOutput();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLPRectilinearGridReader::GetDataSetName()
 {
   return "PRectilinearGrid";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPRectilinearGridReader::SetOutputExtent(int* extent)
 {
   vtkRectilinearGrid::SafeDownCast(this->GetCurrentOutput())->SetExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPRectilinearGridReader::GetPieceInputExtent(int index, int* extent)
 {
   this->GetPieceInput(index)->GetExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPRectilinearGridReader::ReadPrimaryElement(vtkXMLDataElement* ePrimary)
 {
   if (!this->Superclass::ReadPrimaryElement(ePrimary))
@@ -118,7 +107,7 @@ int vtkXMLPRectilinearGridReader::ReadPrimaryElement(vtkXMLDataElement* ePrimary
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPRectilinearGridReader::SetupOutputData()
 {
   this->Superclass::SetupOutputData();
@@ -174,7 +163,7 @@ void vtkXMLPRectilinearGridReader::SetupOutputData()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPRectilinearGridReader::ReadPieceData()
 {
   if (!this->Superclass::ReadPieceData())
@@ -195,13 +184,13 @@ int vtkXMLPRectilinearGridReader::ReadPieceData()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLDataReader* vtkXMLPRectilinearGridReader::CreatePieceReader()
 {
   return vtkXMLRectilinearGridReader::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPRectilinearGridReader::CopySubCoordinates(
   int* inBounds, int* outBounds, int* subBounds, vtkDataArray* inArray, vtkDataArray* outArray)
 {
@@ -221,3 +210,4 @@ int vtkXMLPRectilinearGridReader::FillOutputPortInformation(int, vtkInformation*
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkRectilinearGrid");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

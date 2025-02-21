@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkChartLegend.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkChartLegend
@@ -28,15 +16,17 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkContextItem.h"
-#include "vtkNew.h"  // For vtkNew
-#include "vtkRect.h" // For vtkRectf return value
+#include "vtkNew.h"           // For vtkNew
+#include "vtkRect.h"          // For vtkRectf return value
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkChart;
 class vtkPen;
 class vtkBrush;
 class vtkTextProperty;
 
-class VTKCHARTSCORE_EXPORT vtkChartLegend : public vtkContextItem
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkChartLegend : public vtkContextItem
 {
 public:
   vtkTypeMacro(vtkChartLegend, vtkContextItem);
@@ -47,19 +37,19 @@ public:
    */
   static vtkChartLegend* New();
 
-  //@{
+  ///@{
   /**
    * Set point the legend box is anchored to.
    */
   vtkSetVector2Macro(Point, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get point the legend box is anchored to.
    */
   vtkGetVector2Macro(Point, float);
-  //@}
+  ///@}
 
   enum
   {
@@ -81,63 +71,73 @@ public:
    */
   const vtkVector2f& GetPointVector();
 
-  //@{
+  ///@{
+  /**
+   * Set/Get whether the anchor point is in normalized chart coordinates or screen coordinates.
+   * By default, this is disabled and the point is in screen coordinates.
+   */
+  vtkSetMacro(PointIsNormalized, bool);
+  vtkGetMacro(PointIsNormalized, bool);
+  vtkBooleanMacro(PointIsNormalized, bool);
+  ///@}
+
+  ///@{
   /**
    * Set the horizontal alignment of the legend to the point specified.
    * Valid values are LEFT, CENTER and RIGHT.
    */
   vtkSetMacro(HorizontalAlignment, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the horizontal alignment of the legend to the point specified.
    */
   vtkGetMacro(HorizontalAlignment, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the vertical alignment of the legend to the point specified.
    * Valid values are TOP, CENTER and BOTTOM.
    */
   vtkSetMacro(VerticalAlignment, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the vertical alignment of the legend to the point specified.
    */
   vtkGetMacro(VerticalAlignment, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the padding between legend marks, default is 5.
    */
   vtkSetMacro(Padding, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the padding between legend marks.
    */
   vtkGetMacro(Padding, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the symbol width, default is 15.
    */
   vtkSetMacro(SymbolWidth, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the legend symbol width.
    */
   vtkGetMacro(SymbolWidth, int);
-  //@}
+  ///@}
 
   /**
    * Set the point size of the label text.
@@ -149,7 +149,7 @@ public:
    */
   virtual int GetLabelSize();
 
-  //@{
+  ///@{
   /**
    * Get/set if the legend should be drawn inline (inside the chart), or not.
    * True would generally request that the chart draws it inside the chart,
@@ -157,9 +157,9 @@ public:
    */
   vtkSetMacro(Inline, bool);
   vtkGetMacro(Inline, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/set if the legend can be dragged with the mouse button, or not.
    * True results in left click and drag causing the legend to move around the
@@ -168,7 +168,7 @@ public:
    */
   vtkSetMacro(DragEnabled, bool);
   vtkGetMacro(DragEnabled, bool);
-  //@}
+  ///@}
 
   /**
    * Set the chart that the legend belongs to and will draw the legend for.
@@ -214,7 +214,7 @@ public:
    */
   vtkTextProperty* GetLabelProperties();
 
-  //@{
+  ///@{
   /**
    * Toggle whether or not this legend should attempt to cache its position
    * and size.  The default value is true.  If this value is set to false,
@@ -226,7 +226,7 @@ public:
   vtkSetMacro(CacheBounds, bool);
   vtkGetMacro(CacheBounds, bool);
   vtkBooleanMacro(CacheBounds, bool);
-  //@}
+  ///@}
 
   /**
    * Return true if the supplied x, y coordinate is inside the item.
@@ -255,6 +255,7 @@ protected:
   float* Point;            // The point the legend is anchored to.
   int HorizontalAlignment; // Alignment of the legend to the point it is anchored to.
   int VerticalAlignment;   // Alignment of the legend to the point it is anchored to.
+  bool PointIsNormalized;  // Allow specifying the point in normalized coordinates
 
   /**
    * The pen used to draw the legend box.
@@ -316,4 +317,5 @@ private:
   void operator=(const vtkChartLegend&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkChartLegend_h

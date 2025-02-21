@@ -1,25 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRungeKutta45.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRungeKutta45.h"
 
 #include "vtkFunctionSet.h"
 #include "vtkObjectFactory.h"
 
+#include <cmath>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRungeKutta45);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Cash-Karp parameters
 double vtkRungeKutta45::A[5] = { 1.0 / 5.0, 3.0 / 10.0, 3.0 / 5.0, 1.0, 7.0 / 8.0 };
 double vtkRungeKutta45::B[5][5] = { { 1.0 / 5.0, 0, 0, 0, 0 }, { 3.0 / 40.0, 9.0 / 40.0, 0, 0, 0 },
@@ -31,7 +22,7 @@ double vtkRungeKutta45::DC[6] = { 37.0 / 378.0 - 2825.0 / 27648.0, 0,
   250.0 / 621.0 - 18575.0 / 48384.0, 125.0 / 594.0 - 13525.0 / 55296.0, -277.0 / 14336.0,
   512.0 / 1771.0 - 1.0 / 4.0 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRungeKutta45::vtkRungeKutta45()
 {
   for (int i = 0; i < 6; i++)
@@ -41,7 +32,7 @@ vtkRungeKutta45::vtkRungeKutta45()
   this->Adaptive = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRungeKutta45::~vtkRungeKutta45()
 {
   for (int i = 0; i < 6; i++)
@@ -51,7 +42,7 @@ vtkRungeKutta45::~vtkRungeKutta45()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRungeKutta45::Initialize()
 {
   this->vtkInitialValueProblemSolver::Initialize();
@@ -67,7 +58,7 @@ void vtkRungeKutta45::Initialize()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRungeKutta45::ComputeNextStep(double* xprev, double* dxprev, double* xnext, double t,
   double& delT, double& delTActual, double minStep, double maxStep, double maxError, double& estErr,
   void* userData)
@@ -116,7 +107,7 @@ int vtkRungeKutta45::ComputeNextStep(double* xprev, double* dxprev, double* xnex
       break;
     }
 
-    errRatio = static_cast<double>(estErr) / static_cast<double>(maxError);
+    errRatio = estErr / maxError;
     // Empirical formulae for calculating next step size
     // 0.9 is a safety factor to prevent infinite loops (see reference)
     if (errRatio == 0.0) // avoid pow errors
@@ -177,7 +168,7 @@ int vtkRungeKutta45::ComputeNextStep(double* xprev, double* dxprev, double* xnex
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Calculate next time step
 int vtkRungeKutta45::ComputeAStep(double* xprev, double* dxprev, double* xnext, double t,
   double& delT, double& delTActual, double& error, void* userData)
@@ -291,8 +282,9 @@ int vtkRungeKutta45::ComputeAStep(double* xprev, double* dxprev, double* xnext, 
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRungeKutta45::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

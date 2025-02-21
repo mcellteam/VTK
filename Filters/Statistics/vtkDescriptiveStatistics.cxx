@@ -1,38 +1,23 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDescriptiveStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
-
-#include "vtkToolkits.h"
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkDescriptiveStatistics.h"
 #include "vtkStatisticsAlgorithmPrivate.h"
 
 #include "vtkDataObjectCollection.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkDoubleArray.h"
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
+#include "vtkLegacy.h"
 #include "vtkMath.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkObjectFactory.h"
 #include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
+#include "vtkUnsignedCharArray.h"
 #include "vtkVariantArray.h"
 
 #include <limits>
@@ -40,36 +25,34 @@
 #include <sstream>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkDescriptiveStatistics);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDescriptiveStatistics::vtkDescriptiveStatistics()
 {
   this->AssessNames->SetNumberOfValues(1);
   this->AssessNames->SetValue(
     0, "d"); // relative deviation, i.e., when unsigned, 1D Mahalanobis distance
 
-  this->UnbiasedVariance =
-    1; // By default, use unbiased estimator of the variance (divided by cardinality-1)
-  this->G1Skewness = 0;       // By default, use g1 estimator of the skewness (G1 otherwise)
-  this->G2Kurtosis = 0;       // By default, use g2 estimator of the kurtosis (G2 otherwise)
+  this->SampleEstimate = true;
   this->SignedDeviations = 0; // By default, use unsigned deviation (1D Mahlanobis distance)
+  this->GhostsToSkip = 0xff;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDescriptiveStatistics::~vtkDescriptiveStatistics() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "UnbiasedVariance: " << this->UnbiasedVariance << "\n";
-  os << indent << "G1Skewness: " << this->G1Skewness << "\n";
-  os << indent << "G2Kurtosis: " << this->G2Kurtosis << "\n";
+  os << indent << "Type of statistics: "
+     << (this->SampleEstimate ? "Sample Statistics" : "Population Statistics") << "\n";
   os << indent << "SignedDeviations: " << this->SignedDeviations << "\n";
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::Aggregate(
   vtkDataObjectCollection* inMetaColl, vtkMultiBlockDataSet* outMeta)
 {
@@ -108,6 +91,17 @@ void vtkDescriptiveStatistics::Aggregate(
   vtkTable* aggregatedTab = vtkTable::New();
   aggregatedTab->DeepCopy(primaryTab);
 
+  vtkDataArray* aggCardinality =
+    vtkArrayDownCast<vtkDataArray>(aggregatedTab->GetColumnByName("Cardinality"));
+  vtkDataArray* aggMinimum =
+    vtkArrayDownCast<vtkDataArray>(aggregatedTab->GetColumnByName("Minimum"));
+  vtkDataArray* aggMaximum =
+    vtkArrayDownCast<vtkDataArray>(aggregatedTab->GetColumnByName("Maximum"));
+  vtkDataArray* aggMean = vtkArrayDownCast<vtkDataArray>(aggregatedTab->GetColumnByName("Mean"));
+  vtkDataArray* aggM2 = vtkArrayDownCast<vtkDataArray>(aggregatedTab->GetColumnByName("M2"));
+  vtkDataArray* aggM3 = vtkArrayDownCast<vtkDataArray>(aggregatedTab->GetColumnByName("M3"));
+  vtkDataArray* aggM4 = vtkArrayDownCast<vtkDataArray>(aggregatedTab->GetColumnByName("M4"));
+
   // Now, loop over all remaining models and update aggregated each time
   while ((inMetaDO = inMetaColl->GetNextDataObject(it)))
   {
@@ -122,6 +116,18 @@ void vtkDescriptiveStatistics::Aggregate(
 
     // Verify that the current primary statistics are indeed contained in a table
     primaryTab = vtkTable::SafeDownCast(inMeta->GetBlock(0));
+
+    vtkDataArray* primCardinality =
+      vtkArrayDownCast<vtkDataArray>(primaryTab->GetColumnByName("Cardinality"));
+    vtkDataArray* primMinimum =
+      vtkArrayDownCast<vtkDataArray>(primaryTab->GetColumnByName("Minimum"));
+    vtkDataArray* primMaximum =
+      vtkArrayDownCast<vtkDataArray>(primaryTab->GetColumnByName("Maximum"));
+    vtkDataArray* primMean = vtkArrayDownCast<vtkDataArray>(primaryTab->GetColumnByName("Mean"));
+    vtkDataArray* primM2 = vtkArrayDownCast<vtkDataArray>(primaryTab->GetColumnByName("M2"));
+    vtkDataArray* primM3 = vtkArrayDownCast<vtkDataArray>(primaryTab->GetColumnByName("M3"));
+    vtkDataArray* primM4 = vtkArrayDownCast<vtkDataArray>(primaryTab->GetColumnByName("M4"));
+
     if (!primaryTab)
     {
       aggregatedTab->Delete();
@@ -149,26 +155,29 @@ void vtkDescriptiveStatistics::Aggregate(
         return;
       }
 
+      // It is important for n and n_c to be double, as later on they are multiplied by themselves,
+      // which can produce an overflow if they were integer types.
+
       // Get aggregated statistics
-      int n = aggregatedTab->GetValueByName(r, "Cardinality").ToInt();
-      double min = aggregatedTab->GetValueByName(r, "Minimum").ToDouble();
-      double max = aggregatedTab->GetValueByName(r, "Maximum").ToDouble();
-      double mean = aggregatedTab->GetValueByName(r, "Mean").ToDouble();
-      double M2 = aggregatedTab->GetValueByName(r, "M2").ToDouble();
-      double M3 = aggregatedTab->GetValueByName(r, "M3").ToDouble();
-      double M4 = aggregatedTab->GetValueByName(r, "M4").ToDouble();
+      double n = aggCardinality->GetComponent(r, 0);
+      double min = aggMinimum->GetComponent(r, 0);
+      double max = aggMaximum->GetComponent(r, 0);
+      double mean = aggMean->GetComponent(r, 0);
+      double M2 = aggM2->GetComponent(r, 0);
+      double M3 = aggM3->GetComponent(r, 0);
+      double M4 = aggM4->GetComponent(r, 0);
 
       // Get current model statistics
-      int n_c = primaryTab->GetValueByName(r, "Cardinality").ToInt();
-      double min_c = primaryTab->GetValueByName(r, "Minimum").ToDouble();
-      double max_c = primaryTab->GetValueByName(r, "Maximum").ToDouble();
-      double mean_c = primaryTab->GetValueByName(r, "Mean").ToDouble();
-      double M2_c = primaryTab->GetValueByName(r, "M2").ToDouble();
-      double M3_c = primaryTab->GetValueByName(r, "M3").ToDouble();
-      double M4_c = primaryTab->GetValueByName(r, "M4").ToDouble();
+      double n_c = primCardinality->GetComponent(r, 0);
+      double min_c = primMinimum->GetComponent(r, 0);
+      double max_c = primMaximum->GetComponent(r, 0);
+      double mean_c = primMean->GetComponent(r, 0);
+      double M2_c = primM2->GetComponent(r, 0);
+      double M3_c = primM3->GetComponent(r, 0);
+      double M4_c = primM4->GetComponent(r, 0);
 
-      // Update global statics
-      int N = n + n_c;
+      // Update global statistics
+      double N = n + n_c;
 
       if (min_c < min)
       {
@@ -181,14 +190,14 @@ void vtkDescriptiveStatistics::Aggregate(
       }
 
       double delta = mean_c - mean;
-      double delta_sur_N = delta / static_cast<double>(N);
+      double delta_sur_N = delta / N;
       double delta2_sur_N2 = delta_sur_N * delta_sur_N;
 
-      int n2 = n * n;
-      int n_c2 = n_c * n_c;
-      int prod_n = n * n_c;
+      double n2 = n * n;
+      double n_c2 = n_c * n_c;
+      double prod_n = n * n_c;
 
-      M4 += M4_c + prod_n * (n2 - prod_n + n_c2) * delta * delta_sur_N * delta2_sur_N2 +
+      M4 += M4_c + delta2_sur_N2 * delta2_sur_N2 * prod_n * (n * n2 + n_c * n_c2) +
         6. * (n2 * M2_c + n_c2 * M2) * delta2_sur_N2 + 4. * (n * M3_c - n_c * M3) * delta_sur_N;
 
       M3 += M3_c + prod_n * (n - n_c) * delta * delta2_sur_N2 +
@@ -217,7 +226,7 @@ void vtkDescriptiveStatistics::Aggregate(
   aggregatedTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::Learn(
   vtkTable* inData, vtkTable* vtkNotUsed(inParameters), vtkMultiBlockDataSet* outMeta)
 {
@@ -274,52 +283,87 @@ void vtkDescriptiveStatistics::Learn(
   primaryTab->AddColumn(doubleCol);
   doubleCol->Delete();
 
+  vtkDataSetAttributes* dsa = inData->GetRowData();
+  vtkUnsignedCharArray* ghosts = dsa->GetGhostArray();
+
   // Loop over requests
   vtkIdType nRow = inData->GetNumberOfRows();
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  vtkIdType numberOfGhostlessRow = 0;
+  if (ghosts)
+  {
+    for (vtkIdType id = 0; id < ghosts->GetNumberOfValues(); ++id)
+    {
+      if (!(ghosts->GetValue(id) & this->GhostsToSkip))
+      {
+        ++numberOfGhostlessRow;
+      }
+    }
+  }
+  else
+  {
+    numberOfGhostlessRow = nRow;
+  }
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one column of interest (if there are others, they are ignored)
     std::set<vtkStdString>::const_iterator it = rit->begin();
-    vtkStdString varName = *it;
-    if (!inData->GetColumnByName(varName))
+    vtkStdString const& varName = *it;
+    if (!inData->GetColumnByName(varName.c_str()))
     {
-      vtkWarningMacro(
-        "InData table does not have a column " << varName.c_str() << ". Ignoring it.");
+      vtkWarningMacro("InData table does not have a column " << varName << ". Ignoring it.");
       continue;
     }
 
-    double minVal = inData->GetValueByName(0, varName).ToDouble();
-    double maxVal = minVal;
-    double mean = 0.;
-    double mom2 = 0.;
-    double mom3 = 0.;
-    double mom4 = 0.;
-
-    double n, inv_n, val, delta, A, B;
-    for (vtkIdType r = 0; r < nRow; ++r)
+    double minVal, maxVal, mean, mom2, mom3, mom4;
+    if (numberOfGhostlessRow == 0)
     {
-      n = r + 1.;
-      inv_n = 1. / n;
+      minVal = std::numeric_limits<double>::quiet_NaN();
+      maxVal = std::numeric_limits<double>::quiet_NaN();
+      mean = std::numeric_limits<double>::quiet_NaN();
+      mom2 = std::numeric_limits<double>::quiet_NaN();
+      mom3 = std::numeric_limits<double>::quiet_NaN();
+      mom4 = std::numeric_limits<double>::quiet_NaN();
+    }
+    else
+    {
+      minVal = std::numeric_limits<double>::max();
+      maxVal = std::numeric_limits<double>::min();
+      mean = 0.;
+      mom2 = 0.;
+      mom3 = 0.;
+      mom4 = 0.;
+    }
 
-      val = inData->GetValueByName(r, varName).ToDouble();
-      delta = val - mean;
-
-      A = delta * inv_n;
-      mean += A;
-      mom4 += A * (A * A * delta * r * (n * (n - 3.) + 3.) + 6. * A * mom2 - 4. * mom3);
-
-      B = val - mean;
-      mom3 += A * (B * delta * (n - 2.) - 3. * mom2);
-      mom2 += delta * B;
-
-      if (val < minVal)
+    if (numberOfGhostlessRow)
+    {
+      double n, inv_n, val, delta, A, B;
+      vtkIdType numberOfSkippedElements = 0;
+      for (vtkIdType r = 0; r < nRow; ++r)
       {
-        minVal = val;
-      }
-      else if (val > maxVal)
-      {
-        maxVal = val;
+        if (ghosts && (ghosts->GetValue(r) & this->GhostsToSkip))
+        {
+          ++numberOfSkippedElements;
+          continue;
+        }
+        n = r + 1. - numberOfSkippedElements;
+        inv_n = 1. / n;
+
+        val = inData->GetValueByName(r, varName.c_str()).ToDouble();
+        delta = val - mean;
+
+        A = delta * inv_n;
+        mean += A;
+        mom4 += A *
+          (A * A * delta * (r - numberOfSkippedElements) * (n * (n - 3.) + 3.) + 6. * A * mom2 -
+            4. * mom3);
+
+        B = val - mean;
+        mom3 += A * (B * delta * (n - 2.) - 3. * mom2);
+        mom2 += delta * B;
+
+        minVal = std::min(minVal, val);
+        maxVal = std::max(maxVal, val);
       }
     }
 
@@ -328,7 +372,7 @@ void vtkDescriptiveStatistics::Learn(
     row->SetNumberOfValues(8);
 
     row->SetValue(0, varName);
-    row->SetValue(1, nRow);
+    row->SetValue(1, numberOfGhostlessRow);
     row->SetValue(2, minVal);
     row->SetValue(3, maxVal);
     row->SetValue(4, mean);
@@ -351,7 +395,7 @@ void vtkDescriptiveStatistics::Learn(
   primaryTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 {
   if (!inMeta || inMeta->GetNumberOfBlocks() < 1)
@@ -366,7 +410,7 @@ void vtkDescriptiveStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   }
 
   int numDoubles = 5;
-  vtkStdString doubleNames[] = { "Standard Deviation", "Variance", "Skewness", "Kurtosis", "Sum" };
+  std::string doubleNames[] = { "Standard Deviation", "Variance", "Skewness", "Kurtosis", "Sum" };
 
   // Create table for derived statistics
   vtkIdType nRow = primaryTab->GetNumberOfRows();
@@ -374,10 +418,10 @@ void vtkDescriptiveStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   vtkDoubleArray* doubleCol;
   for (int j = 0; j < numDoubles; ++j)
   {
-    if (!derivedTab->GetColumnByName(doubleNames[j]))
+    if (!derivedTab->GetColumnByName(doubleNames[j].c_str()))
     {
       doubleCol = vtkDoubleArray::New();
-      doubleCol->SetName(doubleNames[j]);
+      doubleCol->SetName(doubleNames[j].c_str());
       doubleCol->SetNumberOfTuples(nRow);
       derivedTab->AddColumn(doubleCol);
       doubleCol->Delete();
@@ -393,60 +437,106 @@ void vtkDescriptiveStatistics::Derive(vtkMultiBlockDataSet* inMeta)
     double mom3 = primaryTab->GetValueByName(i, "M3").ToDouble();
     double mom4 = primaryTab->GetValueByName(i, "M4").ToDouble();
 
-    int numSamples = primaryTab->GetValueByName(i, "Cardinality").ToInt();
+    vtkTypeInt64 numSamples = primaryTab->GetValueByName(i, "Cardinality").ToTypeInt64();
 
-    if (numSamples == 1 || mom2 < 1.e-150)
+    if (!numSamples)
     {
-      derivedVals[0] = 0.;
-      derivedVals[1] = 0.;
-      derivedVals[2] = 0.;
-      derivedVals[3] = 0.;
-      derivedVals[4] = 0.;
+      derivedVals[0] = std::numeric_limits<double>::quiet_NaN();
+      derivedVals[1] = std::numeric_limits<double>::quiet_NaN();
+      derivedVals[2] = std::numeric_limits<double>::quiet_NaN();
+      derivedVals[3] = std::numeric_limits<double>::quiet_NaN();
+      derivedVals[4] = std::numeric_limits<double>::quiet_NaN();
+
+      for (int j = 0; j < numDoubles; ++j)
+      {
+        derivedTab->SetValueByName(i, doubleNames[j].c_str(), derivedVals[j]);
+      }
+
+      continue;
     }
-    else
+
+    double mean = primaryTab->GetValueByName(i, "Mean").ToDouble();
+
+    if (mom2 * mom2 <= FLT_EPSILON * std::abs(mean))
     {
-      double n = static_cast<double>(numSamples);
-      double inv_n = 1. / n;
-      double nm1 = n - 1.;
+      derivedVals[0] = 0.0;
+      derivedVals[1] = 0.0;
+      derivedVals[2] = std::numeric_limits<double>::quiet_NaN();
+      derivedVals[3] = std::numeric_limits<double>::quiet_NaN();
+      derivedVals[4] = numSamples * mean;
 
-      // Variance
-      if (this->UnbiasedVariance)
+      for (int j = 0; j < numDoubles; ++j)
       {
-        derivedVals[1] = mom2 / nm1;
-      }
-      else // use population variance
-      {
-        derivedVals[1] = mom2 * inv_n;
+        derivedTab->SetValueByName(i, doubleNames[j].c_str(), derivedVals[j]);
       }
 
-      // Standard deviation
-      derivedVals[0] = sqrt(derivedVals[1]);
+      continue;
+    }
 
-      // Skeweness and kurtosis
-      double var_inv = nm1 / mom2;
-      double nvar_inv = var_inv * inv_n;
-      derivedVals[2] = nvar_inv * sqrt(var_inv) * mom3;
-      derivedVals[3] = nvar_inv * var_inv * mom4 - 3.;
+    double n = static_cast<double>(numSamples);
 
-      if (this->G1Skewness && n > 2)
+    // Variance
+    if (this->SampleEstimate)
+    {
+      if (n > 1)
       {
-        // G1 skewness estimate
-        derivedVals[2] *= (n * n) / (nm1 * (nm1 - 1.));
+        derivedVals[1] = mom2 / (n - 1.);
       }
-
-      if (this->G2Kurtosis && n > 3)
+      else
       {
-        // G2 kurtosis estimate
-        derivedVals[3] *= ((n + 1.) * derivedVals[4] + 6.) * nm1 / ((nm1 - 1.) * (nm1 - 2.));
+        derivedVals[1] = std::numeric_limits<double>::quiet_NaN();
       }
+    }
+    else // PopulationStatistics
+    {
+      derivedVals[1] = mom2 / n;
+    }
+
+    // Standard deviation
+    derivedVals[0] = sqrt(derivedVals[1]);
+
+    // Skewness
+    if (this->SampleEstimate)
+    {
+      if (n > 2)
+      {
+        derivedVals[2] = n / ((n - 1.) * (n - 2.)) * mom3 / (derivedVals[1] * derivedVals[0]);
+      }
+      else
+      {
+        derivedVals[2] = std::numeric_limits<double>::quiet_NaN();
+      }
+    }
+    else // PopulationStatistics
+    {
+      derivedVals[2] = mom3 / (n * derivedVals[1] * derivedVals[0]);
+    }
+
+    // Kurtosis
+    if (this->SampleEstimate)
+    {
+      if (n > 3)
+      {
+        derivedVals[3] = (n / (n - 1.)) * ((n + 1.) / (n - 2.)) / (n - 3.) * mom4 /
+            (derivedVals[1] * derivedVals[1]) -
+          3. * ((n - 1.) / (n - 2.)) * ((n - 1.) / (n - 3.));
+      }
+      else
+      {
+        derivedVals[3] = std::numeric_limits<double>::quiet_NaN();
+      }
+    }
+    else // PopulationStatistics
+    {
+      derivedVals[3] = mom4 / n / (derivedVals[1] * derivedVals[1]) - 3.;
     }
 
     // Sum
-    derivedVals[4] = numSamples * primaryTab->GetValueByName(i, "Mean").ToDouble();
+    derivedVals[4] = numSamples * mean;
 
     for (int j = 0; j < numDoubles; ++j)
     {
-      derivedTab->SetValueByName(i, doubleNames[j], derivedVals[j]);
+      derivedTab->SetValueByName(i, doubleNames[j].c_str(), derivedVals[j]);
     }
   }
 
@@ -460,7 +550,7 @@ void vtkDescriptiveStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   derivedTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Use the invalid value of -1 for p-values if R is absent
 vtkDoubleArray* vtkDescriptiveStatistics::CalculatePValues(vtkDoubleArray* statCol)
 {
@@ -478,7 +568,7 @@ vtkDoubleArray* vtkDescriptiveStatistics::CalculatePValues(vtkDoubleArray* statC
   return testCol;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::Test(
   vtkTable* inData, vtkMultiBlockDataSet* inMeta, vtkTable* outMeta)
 {
@@ -529,16 +619,15 @@ void vtkDescriptiveStatistics::Test(
   vtkStringArray* vars = vtkArrayDownCast<vtkStringArray>(primaryTab->GetColumnByName("Variable"));
 
   // Loop over requests
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one column of interest (if there are others, they are ignored)
     std::set<vtkStdString>::const_iterator it = rit->begin();
-    vtkStdString varName = *it;
-    if (!inData->GetColumnByName(varName))
+    vtkStdString const& varName = *it;
+    if (!inData->GetColumnByName(varName.c_str()))
     {
-      vtkWarningMacro(
-        "InData table does not have a column " << varName.c_str() << ". Ignoring it.");
+      vtkWarningMacro("InData table does not have a column " << varName << ". Ignoring it.");
       continue;
     }
 
@@ -551,7 +640,7 @@ void vtkDescriptiveStatistics::Test(
     if (r >= nRowPrim)
     {
       vtkWarningMacro(
-        "Incomplete input: model does not have a row " << varName.c_str() << ". Cannot test.");
+        "Incomplete input: model does not have a row " << varName << ". Cannot test.");
       continue;
     }
 
@@ -590,7 +679,7 @@ void vtkDescriptiveStatistics::Test(
   statCol->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class TableColumnDeviantFunctor : public vtkStatisticsAlgorithm::AssessFunctor
 {
 public:
@@ -613,7 +702,7 @@ public:
   void operator()(vtkDoubleArray* result, vtkIdType id) override
   {
     result->SetNumberOfValues(1);
-    result->SetValue(0, (this->Data->GetTuple1(id) == this->Nominal) ? 0. : 1.);
+    result->SetValue(0, (this->Data->GetComponent(id, 0) == this->Nominal) ? 0. : 1.);
   }
 };
 
@@ -630,7 +719,7 @@ public:
   void operator()(vtkDoubleArray* result, vtkIdType id) override
   {
     result->SetNumberOfValues(1);
-    result->SetValue(0, (this->Data->GetTuple1(id) - this->Nominal) / this->Deviation);
+    result->SetValue(0, (this->Data->GetComponent(id, 0) - this->Nominal) / this->Deviation);
   }
 };
 
@@ -647,11 +736,11 @@ public:
   void operator()(vtkDoubleArray* result, vtkIdType id) override
   {
     result->SetNumberOfValues(1);
-    result->SetValue(0, fabs(this->Data->GetTuple1(id) - this->Nominal) / this->Deviation);
+    result->SetValue(0, fabs(this->Data->GetComponent(id, 0) - this->Nominal) / this->Deviation);
   }
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::SelectAssessFunctor(
   vtkTable* outData, vtkDataObject* inMetaDO, vtkStringArray* rowNames, AssessFunctor*& dfunc)
 {
@@ -680,7 +769,7 @@ void vtkDescriptiveStatistics::SelectAssessFunctor(
     return;
   }
 
-  vtkStdString varName = rowNames->GetValue(0);
+  std::string varName = rowNames->GetValue(0);
 
   // Downcast meta columns to string arrays for efficient data access
   vtkStringArray* vars = vtkArrayDownCast<vtkStringArray>(primaryTab->GetColumnByName("Variable"));
@@ -695,7 +784,7 @@ void vtkDescriptiveStatistics::SelectAssessFunctor(
     if (vars->GetValue(r) == varName)
     {
       // Grab the data for the requested variable
-      vtkAbstractArray* arr = outData->GetColumnByName(varName);
+      vtkAbstractArray* arr = outData->GetColumnByName(varName.c_str());
       if (!arr)
       {
         return;
@@ -739,3 +828,4 @@ void vtkDescriptiveStatistics::SelectAssessFunctor(
 
   // If arrived here it means that the variable of interest was not found in the parameter table
 }
+VTK_ABI_NAMESPACE_END

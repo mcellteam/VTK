@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #import "CustomView.h"
 
 #import "CustomLayer.h"
@@ -64,6 +66,10 @@
     assert(parentWindow);
     cocoaRenWin->SetRootWindow((__bridge void*)parentWindow);
     cocoaRenWin->SetWindowId((__bridge void*)self);
+
+    // Because we want our rendering to happen in our CAOpenGLLayer subclass (CustomLayer),
+    // instruct vtk to not associate the NSOpenGLContext it creates with our NSView.
+    cocoaRenWin->SetConnectContextToNSView(false);
 
     // The usual vtk connections.
     cocoaRenWin->AddRenderer(ren);

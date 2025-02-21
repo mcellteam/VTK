@@ -1,25 +1,36 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStructuredData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStructuredData.h"
 
+#include "vtkCellType.h"
+#include "vtkConstantArray.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkIdList.h"
 #include "vtkObjectFactory.h"
+#include "vtkPoints.h"
+#include "vtkStructuredCellArray.h"
 #include "vtkStructuredExtent.h"
+#include "vtkStructuredPointArray.h"
+#include "vtkUnsignedCharArray.h"
 
 #include <algorithm>
 #include <cassert>
+
+VTK_ABI_NAMESPACE_BEGIN
+namespace
+{
+// FIXME
+// I don't know if it makes sense to add `REFINEDCELL` in this mask.
+// Needs further investigation.
+constexpr unsigned char MASKED_CELL_VALUE =
+  vtkDataSetAttributes::HIDDENCELL | vtkDataSetAttributes::REFINEDCELL;
+} // anonymous namespace
+
+//------------------------------------------------------------------------------
+void vtkStructuredData::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
 
 // Return the topological dimension of the data (e.g., 0, 1, 2, or 3D).
 int vtkStructuredData::GetDataDimension(int dataDescription)
@@ -83,7 +94,7 @@ int vtkStructuredData::GetDataDescriptionFromExtent(int ext[6])
 // returns the dimension of the dataset (0-3D). If the dimensions are
 // improperly specified a -1 is returned. If the dimensions are unchanged, a
 // value of 100 is returned.
-int vtkStructuredData::SetDimensions(int inDim[3], int dim[3])
+int vtkStructuredData::SetDimensions(VTK_FUTURE_CONST int inDim[3], int dim[3])
 {
   int dataDim, i;
   int dataDescription = VTK_UNCHANGED;
@@ -153,7 +164,7 @@ int vtkStructuredData::SetDimensions(int inDim[3], int dim[3])
 // returns the dimension of the dataset (0-3D). If the extents are
 // improperly specified a -1 is returned. If the dimensions are unchanged, a
 // value of 100 is returned.
-int vtkStructuredData::SetExtent(int inExt[6], int ext[6])
+int vtkStructuredData::SetExtent(VTK_FUTURE_CONST int inExt[6], int ext[6])
 {
   int dataDim, i;
   int dataDescription;
@@ -220,6 +231,131 @@ int vtkStructuredData::SetExtent(int inExt[6], int ext[6])
   }
 
   return dataDescription;
+}
+
+//------------------------------------------------------------------------------
+void vtkStructuredData::ComputeCellStructuredMinMaxCoords(
+  vtkIdType cellId, const int dim[3], int ijkMin[3], int ijkMax[3], int dataDescription)
+{
+  switch (dataDescription)
+  {
+    case VTK_EMPTY:
+      ijkMin[0] = ijkMin[1] = ijkMin[2] = 0;
+      ijkMax[0] = ijkMax[1] = ijkMax[2] = 0;
+      return;
+
+    case VTK_SINGLE_POINT:
+      ijkMin[0] = ijkMin[1] = ijkMin[2] = 0;
+      ijkMax[0] = ijkMax[1] = ijkMax[2] = 0;
+      break;
+
+    case VTK_X_LINE:
+      ijkMin[0] = cellId;
+      ijkMin[1] = 0;
+      ijkMin[2] = 0;
+      ijkMax[0] = ijkMin[0] + 1;
+      ijkMax[1] = 0;
+      ijkMax[2] = 0;
+      break;
+
+    case VTK_Y_LINE:
+      ijkMin[0] = 0;
+      ijkMin[1] = cellId;
+      ijkMin[2] = 0;
+      ijkMax[0] = 0;
+      ijkMax[1] = ijkMin[1] + 1;
+      ijkMax[2] = 0;
+      break;
+
+    case VTK_Z_LINE:
+      ijkMin[0] = 0;
+      ijkMax[1] = 0;
+      ijkMin[2] = cellId;
+      ijkMax[0] = 0;
+      ijkMin[1] = 0;
+      ijkMax[2] = ijkMin[2] + 1;
+      break;
+
+    case VTK_XY_PLANE:
+    {
+      const auto div = std::div(cellId, (vtkIdType)(dim[0] - 1));
+      ijkMin[0] = div.rem;
+      ijkMin[1] = div.quot;
+      ijkMin[2] = 0;
+      ijkMax[0] = ijkMin[0] + 1;
+      ijkMax[1] = ijkMin[1] + 1;
+      ijkMax[2] = 0;
+      break;
+    }
+
+    case VTK_YZ_PLANE:
+    {
+      const auto div = std::div(cellId, (vtkIdType)(dim[1] - 1));
+      ijkMin[0] = 0;
+      ijkMin[1] = div.rem;
+      ijkMin[2] = div.quot;
+      ijkMax[0] = 0;
+      ijkMax[1] = ijkMin[1] + 1;
+      ijkMax[2] = ijkMin[2] + 1;
+      break;
+    }
+
+    case VTK_XZ_PLANE:
+    {
+      const auto div = std::div(cellId, (vtkIdType)(dim[0] - 1));
+      ijkMin[0] = div.rem;
+      ijkMin[1] = 0;
+      ijkMin[2] = div.quot;
+      ijkMax[0] = ijkMin[0] + 1;
+      ijkMax[1] = 0;
+      ijkMax[2] = ijkMin[2] + 1;
+      break;
+    }
+
+    case VTK_XYZ_GRID:
+    {
+      const auto div1 = std::div(cellId, (vtkIdType)(dim[0] - 1));
+      const auto div2 = std::div(div1.quot, (vtkIdType)(dim[1] - 1));
+      ijkMin[0] = div1.rem;
+      ijkMin[1] = div2.rem;
+      ijkMin[2] = div2.quot;
+      ijkMax[0] = ijkMin[0] + 1;
+      ijkMax[1] = ijkMin[1] + 1;
+      ijkMax[2] = ijkMin[2] + 1;
+      break;
+    }
+
+    default:
+      vtkErrorWithObjectMacro(nullptr, "Invalid DataDescription.");
+      return;
+  }
+}
+
+//------------------------------------------------------------------------------
+vtkSmartPointer<vtkStructuredCellArray> vtkStructuredData::GetCellArray(
+  int extent[6], bool usePixelVoxelOrientation)
+{
+  auto implicitCellArray = vtkSmartPointer<vtkStructuredCellArray>::New();
+  implicitCellArray->SetData(extent, usePixelVoxelOrientation);
+  return implicitCellArray;
+}
+
+//------------------------------------------------------------------------------
+vtkSmartPointer<vtkConstantArray<int>> vtkStructuredData::GetCellTypesArray(
+  int extent[6], bool usePixelVoxelOrientation)
+{
+  const int dataDescription = vtkStructuredData::GetDataDescriptionFromExtent(extent);
+  const int dimension = vtkStructuredData::GetDataDimension(dataDescription);
+  const int cellType = dimension == 3 ? (usePixelVoxelOrientation ? VTK_VOXEL : VTK_HEXAHEDRON)
+    : dimension == 2                  ? (usePixelVoxelOrientation ? VTK_PIXEL : VTK_QUAD)
+    : dimension == 1                  ? VTK_LINE
+    : dimension == 0 && dataDescription == VTK_SINGLE_POINT ? VTK_VERTEX
+                                                            : VTK_EMPTY_CELL;
+  auto cellTypesArray = vtkSmartPointer<vtkConstantArray<int>>::New();
+  cellTypesArray->ConstructBackend(cellType);
+  cellTypesArray->SetNumberOfComponents(1);
+  cellTypesArray->SetNumberOfTuples(vtkStructuredData::GetNumberOfCells(extent));
+  return cellTypesArray;
 }
 
 //------------------------------------------------------------------------------
@@ -307,8 +443,20 @@ void vtkStructuredData::GetCellPoints(
 }
 
 //------------------------------------------------------------------------------
+vtkSmartPointer<vtkPoints> vtkStructuredData::GetPoints(vtkDataArray* xCoords,
+  vtkDataArray* yCoords, vtkDataArray* zCoords, int extent[6], double dirMatrix[9])
+{
+  auto points = vtkSmartPointer<vtkPoints>::New();
+  const auto implicitPointArray = vtk::CreateStructuredPointArray<double>(xCoords, yCoords, zCoords,
+    extent, vtkStructuredData::GetDataDescriptionFromExtent(extent), dirMatrix);
+  points->SetData(implicitPointArray);
+  return points;
+}
+
+//------------------------------------------------------------------------------
 // Get the cells using a point. (See vtkDataSet for more info.)
-void vtkStructuredData::GetPointCells(vtkIdType ptId, vtkIdList* cellIds, int dim[3])
+void vtkStructuredData::GetPointCells(
+  vtkIdType ptId, vtkIdList* cellIds, VTK_FUTURE_CONST int dim[3])
 {
   vtkIdType cellDim[3];
   int ptLoc[3], cellLoc[3];
@@ -353,6 +501,132 @@ void vtkStructuredData::GetPointCells(vtkIdType ptId, vtkIdList* cellIds, int di
       cellIds->InsertNextId(cellId);
     }
   }
+}
+
+//------------------------------------------------------------------------------
+bool vtkStructuredData::IsPointVisible(vtkIdType pointId, vtkUnsignedCharArray* ghosts)
+{
+  return !(ghosts && (ghosts->GetValue(pointId) & vtkDataSetAttributes::HIDDENPOINT));
+}
+
+//------------------------------------------------------------------------------
+bool vtkStructuredData::IsCellVisible(vtkIdType cellId, VTK_FUTURE_CONST int dimensions[3],
+  int dataDescription, vtkUnsignedCharArray* cellGhostArray, vtkUnsignedCharArray* pointGhostArray)
+{
+  if (cellGhostArray && (cellGhostArray->GetValue(cellId) & MASKED_CELL_VALUE))
+  {
+    return false;
+  }
+
+  if (!pointGhostArray)
+  {
+    return dataDescription != VTK_EMPTY;
+  }
+
+  int numIds = 0;
+  vtkIdType ptIds[8];
+  int iMin, iMax, jMin, jMax, kMin, kMax;
+  vtkIdType d01 = dimensions[0] * dimensions[1];
+  iMin = iMax = jMin = jMax = kMin = kMax = 0;
+
+  switch (dataDescription)
+  {
+    case VTK_EMPTY:
+      return false;
+
+    case VTK_SINGLE_POINT: // cellId can only be = 0
+      numIds = 1;
+      ptIds[0] = iMin + jMin * dimensions[0] + kMin * d01;
+      break;
+
+    case VTK_X_LINE:
+      iMin = cellId;
+      iMax = cellId + 1;
+      numIds = 2;
+      ptIds[0] = iMin + jMin * dimensions[0] + kMin * d01;
+      ptIds[1] = iMax + jMin * dimensions[0] + kMin * d01;
+      break;
+
+    case VTK_Y_LINE:
+      jMin = cellId;
+      jMax = cellId + 1;
+      numIds = 2;
+      ptIds[0] = iMin + jMin * dimensions[0] + kMin * d01;
+      ptIds[1] = iMin + jMax * dimensions[0] + kMin * d01;
+      break;
+
+    case VTK_Z_LINE:
+      kMin = cellId;
+      kMax = cellId + 1;
+      numIds = 2;
+      ptIds[0] = iMin + jMin * dimensions[0] + kMin * d01;
+      ptIds[1] = iMin + jMin * dimensions[0] + kMax * d01;
+      break;
+
+    case VTK_XY_PLANE:
+      iMin = cellId % (dimensions[0] - 1);
+      iMax = iMin + 1;
+      jMin = cellId / (dimensions[0] - 1);
+      jMax = jMin + 1;
+      numIds = 4;
+      ptIds[0] = iMin + jMin * dimensions[0] + kMin * d01;
+      ptIds[1] = iMax + jMin * dimensions[0] + kMin * d01;
+      ptIds[2] = iMax + jMax * dimensions[0] + kMin * d01;
+      ptIds[3] = iMin + jMax * dimensions[0] + kMin * d01;
+      break;
+
+    case VTK_YZ_PLANE:
+      jMin = cellId % (dimensions[1] - 1);
+      jMax = jMin + 1;
+      kMin = cellId / (dimensions[1] - 1);
+      kMax = kMin + 1;
+      numIds = 4;
+      ptIds[0] = iMin + jMin * dimensions[0] + kMin * d01;
+      ptIds[1] = iMin + jMax * dimensions[0] + kMin * d01;
+      ptIds[2] = iMin + jMax * dimensions[0] + kMax * d01;
+      ptIds[3] = iMin + jMin * dimensions[0] + kMax * d01;
+      break;
+
+    case VTK_XZ_PLANE:
+      iMin = cellId % (dimensions[0] - 1);
+      iMax = iMin + 1;
+      kMin = cellId / (dimensions[0] - 1);
+      kMax = kMin + 1;
+      numIds = 4;
+      ptIds[0] = iMin + jMin * dimensions[0] + kMin * d01;
+      ptIds[1] = iMax + jMin * dimensions[0] + kMin * d01;
+      ptIds[2] = iMax + jMin * dimensions[0] + kMax * d01;
+      ptIds[3] = iMin + jMin * dimensions[0] + kMax * d01;
+      break;
+
+    case VTK_XYZ_GRID:
+      iMin = cellId % (dimensions[0] - 1);
+      iMax = iMin + 1;
+      jMin = (cellId / (dimensions[0] - 1)) % (dimensions[1] - 1);
+      jMax = jMin + 1;
+      kMin = cellId / ((dimensions[0] - 1) * (dimensions[1] - 1));
+      kMax = kMin + 1;
+      numIds = 8;
+      ptIds[0] = iMin + jMin * dimensions[0] + kMin * d01;
+      ptIds[1] = iMax + jMin * dimensions[0] + kMin * d01;
+      ptIds[2] = iMax + jMax * dimensions[0] + kMin * d01;
+      ptIds[3] = iMin + jMax * dimensions[0] + kMin * d01;
+      ptIds[4] = iMin + jMin * dimensions[0] + kMax * d01;
+      ptIds[5] = iMax + jMin * dimensions[0] + kMax * d01;
+      ptIds[6] = iMax + jMax * dimensions[0] + kMax * d01;
+      ptIds[7] = iMin + jMax * dimensions[0] + kMax * d01;
+      break;
+  }
+
+  for (int i = 0; i < numIds; i++)
+  {
+    if (!vtkStructuredData::IsPointVisible(ptIds[i], pointGhostArray))
+    {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -625,3 +899,4 @@ void vtkStructuredData::GetCellNeighbors(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBSplineTransform.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBSplineTransform
  * @brief   a cubic b-spline deformation transformation
@@ -38,6 +26,7 @@
 #include "vtkFiltersHybridModule.h" // For export macro
 #include "vtkWarpTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAlgorithmOutput;
 class vtkBSplineTransformConnectionHolder;
 class vtkImageData;
@@ -53,7 +42,7 @@ public:
   vtkTypeMacro(vtkBSplineTransform, vtkWarpTransform);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the coefficient grid for the b-spline transform.
    * The vtkBSplineTransform class will never modify the data.
@@ -63,17 +52,17 @@ public:
   virtual void SetCoefficientConnection(vtkAlgorithmOutput*);
   virtual void SetCoefficientData(vtkImageData*);
   virtual vtkImageData* GetCoefficientData();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a scale to apply to the transformation.
    */
   vtkSetMacro(DisplacementScale, double);
   vtkGetMacro(DisplacementScale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the border mode, to alter behavior at the edge of the grid.
    * The Edge mode allows the displacement to converge to the edge
@@ -90,7 +79,7 @@ public:
   void SetBorderModeToZeroAtBorder() { this->SetBorderMode(VTK_BSPLINE_ZERO_AT_BORDER); }
   vtkGetMacro(BorderMode, int);
   const char* GetBorderModeAsString();
-  //@}
+  ///@}
 
   /**
    * Make another transform of the same type.
@@ -116,13 +105,13 @@ protected:
    */
   void InternalDeepCopy(vtkAbstractTransform* transform) override;
 
-  //@{
+  ///@{
   /**
    * Internal functions for calculating the transformation.
    */
   void ForwardTransformPoint(const float in[3], float out[3]) override;
   void ForwardTransformPoint(const double in[3], double out[3]) override;
-  //@}
+  ///@}
 
   void ForwardTransformDerivative(const float in[3], float out[3], float derivative[3][3]) override;
   void ForwardTransformDerivative(
@@ -154,4 +143,5 @@ private:
   vtkBSplineTransformConnectionHolder* ConnectionHolder;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

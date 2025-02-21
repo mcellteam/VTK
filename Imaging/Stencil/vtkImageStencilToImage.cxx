@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageStencilToImage.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageStencilToImage.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageStencilToImage);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilToImage::vtkImageStencilToImage()
 {
   this->OutsideValue = 0;
@@ -34,10 +23,10 @@ vtkImageStencilToImage::vtkImageStencilToImage()
   this->SetNumberOfInputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilToImage::~vtkImageStencilToImage() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStencilToImage::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -62,7 +51,7 @@ int vtkImageStencilToImage::RequestInformation(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkImageStencilToImageExecute(vtkImageStencilToImage* self, vtkImageStencilData* stencil,
   vtkImageData* outData, T*, int outExt[6], int id)
@@ -120,7 +109,7 @@ void vtkImageStencilToImageExecute(vtkImageStencilToImage* self, vtkImageStencil
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStencilToImage::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -146,7 +135,7 @@ int vtkImageStencilToImage::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageStencilToImage::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -157,7 +146,7 @@ int vtkImageStencilToImage::FillInputPortInformation(int port, vtkInformation* i
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageStencilToImage::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -166,3 +155,4 @@ void vtkImageStencilToImage::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "OutsideValue: " << this->OutsideValue << "\n";
   os << indent << "OutputScalarType: " << this->OutputScalarType << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkResliceCursorLineRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkResliceCursorLineRepresentation
  * @brief   represent the vtkResliceCursorWidget
@@ -35,6 +23,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkResliceCursorRepresentation.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 class vtkResliceCursorActor;
 class vtkResliceCursorPolyDataAlgorithm;
@@ -50,15 +39,15 @@ public:
    */
   static vtkResliceCursorLineRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK methods.
    */
   vtkTypeMacro(vtkResliceCursorLineRepresentation, vtkResliceCursorRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These are methods that satisfy vtkWidgetRepresentation's API.
    */
@@ -67,9 +56,9 @@ public:
   void StartWidgetInteraction(double startEventPos[2]) override;
   void WidgetInteraction(double e[2]) override;
   void Highlight(int highlightOn) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods required by vtkProp superclass.
    */
@@ -78,7 +67,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
   /**
    * Get the bounds of this prop. This simply returns the bounds of the
@@ -86,13 +75,13 @@ public:
    */
   double* GetBounds() override;
 
-  //@{
+  ///@{
   /**
    * Get the reslice cursor actor. You must set the reslice cursor on this
    * class
    */
   vtkGetObjectMacro(ResliceCursorActor, vtkResliceCursorActor);
-  //@}
+  ///@}
 
   /**
    * Get the reslice cursor.
@@ -104,6 +93,11 @@ public:
    */
   virtual void SetUserMatrix(vtkMatrix4x4* matrix);
 
+  /**
+   * Re-implemented to set the tolerance of the picker.
+   */
+  void SetTolerance(int t) override;
+
 protected:
   vtkResliceCursorLineRepresentation();
   ~vtkResliceCursorLineRepresentation() override;
@@ -111,6 +105,7 @@ protected:
   vtkResliceCursorPolyDataAlgorithm* GetCursorAlgorithm() override;
 
   double RotateAxis(double evenPos[2], int axis);
+  double TranslateAxis(double evenPos[2], int axis);
 
   void RotateAxis(int axis, double angle);
 
@@ -119,6 +114,8 @@ protected:
     double angle,   // angle in radians
     double o[3]);
   int DisplayToReslicePlaneIntersection(double displayPos[2], double intersectionPos[3]);
+
+  void ApplyTolerance();
 
   vtkResliceCursorActor* ResliceCursorActor;
   vtkResliceCursorPicker* Picker;
@@ -138,4 +135,5 @@ private:
   void operator=(const vtkResliceCursorLineRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

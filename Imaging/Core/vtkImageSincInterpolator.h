@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSincInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageSincInterpolator
  * @brief   perform sinc interpolation on images
@@ -47,6 +35,7 @@
 #define VTK_BLACKMAN_NUTTALL4 10
 #define VTK_SINC_KERNEL_SIZE_MAX 32
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 struct vtkInterpolationInfo;
 
@@ -57,7 +46,7 @@ public:
   vtkTypeMacro(vtkImageSincInterpolator, vtkAbstractImageInterpolator);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The window function to use.  The default is Lanczos, which is very
    * popular and performs well with a kernel width of 6.  The Cosine
@@ -80,7 +69,7 @@ public:
   void SetWindowFunctionToBlackmanNuttall4() { this->SetWindowFunction(VTK_BLACKMAN_NUTTALL4); }
   int GetWindowFunction() { return this->WindowFunction; }
   virtual const char* GetWindowFunctionAsString();
-  //@}
+  ///@}
 
   /**
    * Set the window half-width, this must be an integer between 1 and 16,
@@ -109,7 +98,7 @@ public:
    * increases the sharpness and ringing, while using an alpha greater
    * than n increases the blurring.
    */
-  void SetWindowParameter(double parm);
+  void SetWindowParameter(double param);
   double GetWindowParameter() { return this->WindowParameter; }
 
   /**
@@ -120,7 +109,7 @@ public:
    */
   void ComputeSupportSize(const double matrix[16], int support[3]) override;
 
-  //@{
+  ///@{
   /**
    * Blur the image by widening the windowed sinc kernel by the specified
    * factors for the x, y, and z directions.  This reduces the bandwidth
@@ -138,7 +127,7 @@ public:
     f[2] = this->BlurFactors[2];
   }
   double* GetBlurFactors() VTK_SIZEHINT(3) { return this->BlurFactors; }
-  //@}
+  ///@}
 
   /**
    * Turn on antialiasing.  If antialiasing is on, then the BlurFactors
@@ -173,7 +162,7 @@ public:
    */
   bool IsSeparable() override;
 
-  //@{
+  ///@{
   /**
    * If the data is going to be sampled on a regular grid, then the
    * interpolation weights can be precomputed.  A matrix must be
@@ -188,7 +177,7 @@ public:
     vtkInterpolationWeights*& weights) override;
   void PrecomputeWeightsForExtent(const float matrix[16], const int extent[6], int newExtent[6],
     vtkInterpolationWeights*& weights) override;
-  //@}
+  ///@}
 
   /**
    * Free the precomputed weights.  THIS METHOD IS THREAD SAFE.
@@ -209,7 +198,7 @@ protected:
    */
   void InternalDeepCopy(vtkAbstractImageInterpolator* obj) override;
 
-  //@{
+  ///@{
   /**
    * Get the interpolation functions.
    */
@@ -217,9 +206,9 @@ protected:
     void (**doublefunc)(vtkInterpolationInfo*, const double[3], double*)) override;
   void GetInterpolationFunc(
     void (**floatfunc)(vtkInterpolationInfo*, const float[3], float*)) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the row interpolation functions.
    */
@@ -227,7 +216,7 @@ protected:
     void (**doublefunc)(vtkInterpolationWeights*, int, int, int, double*, int)) override;
   void GetRowInterpolationFunc(
     void (**floatfunc)(vtkInterpolationWeights*, int, int, int, float*, int)) override;
-  //@}
+  ///@}
 
   /**
    * Build the lookup tables used for the interpolation.
@@ -255,4 +244,5 @@ private:
   void operator=(const vtkImageSincInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

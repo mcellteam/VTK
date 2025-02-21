@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestTemporalXdmfReaderWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Description:
 // This tests temporal reading and writing of static meshes using
 // vtkXdmfReader and vtkXdmfWriter.
@@ -29,11 +17,14 @@
 #include "vtksys/SystemTools.hxx"
 
 #define ASSERT_TEST(_cond_, _msg_)                                                                 \
-  if (!(_cond_))                                                                                   \
+  do                                                                                               \
   {                                                                                                \
-    std::cerr << _msg_ << std::endl;                                                               \
-    return VTK_ERROR;                                                                              \
-  }
+    if (!(_cond_))                                                                                 \
+    {                                                                                              \
+      std::cerr << _msg_ << std::endl;                                                             \
+      return VTK_ERROR;                                                                            \
+    }                                                                                              \
+  } while (false)
 
 int TestStaticMesh(vtkXdmfReader* reader)
 {
@@ -47,8 +38,8 @@ int TestStaticMesh(vtkXdmfReader* reader)
   ASSERT_TEST(steps == 3, "Read data does not have 3 time steps as expected!");
   double* timeSteps = outInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 
-  vtkPoints* geometryAtT0 = 0;
-  vtkCellArray* topologyAtT0 = 0;
+  vtkPoints* geometryAtT0 = nullptr;
+  vtkCellArray* topologyAtT0 = nullptr;
   for (int i = 0; i < steps; i++)
   {
     double updateTime = timeSteps[i];

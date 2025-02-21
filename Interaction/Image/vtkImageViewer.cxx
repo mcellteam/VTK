@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageViewer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageViewer.h"
 
 #include "vtkActor2D.h"
@@ -24,9 +12,12 @@
 #include "vtkRenderer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+#include <cmath>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageViewer);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageViewer::vtkImageViewer()
 {
   this->RenderWindow = vtkRenderWindow::New();
@@ -45,7 +36,7 @@ vtkImageViewer::vtkImageViewer()
   this->InteractorStyle = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageViewer::~vtkImageViewer()
 {
   this->ImageMapper->Delete();
@@ -63,7 +54,7 @@ vtkImageViewer::~vtkImageViewer()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -77,18 +68,18 @@ void vtkImageViewer::PrintSelf(ostream& os, vtkIndent indent)
   this->Actor2D->PrintSelf(os, indent.GetNextIndent());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::SetSize(int a[2])
 {
   this->SetSize(a[0], a[1]);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::SetPosition(int a[2])
 {
   this->SetPosition(a[0], a[1]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkImageViewerCallback : public vtkCommand
 {
 public:
@@ -126,7 +117,7 @@ public:
 
     vtkInteractorStyleImage* isi = static_cast<vtkInteractorStyleImage*>(caller);
 
-    int* size = this->IV->GetRenderWindow()->GetSize();
+    const int* size = this->IV->GetRenderWindow()->GetSize();
     double window = this->InitialWindow;
     double level = this->InitialLevel;
 
@@ -194,7 +185,7 @@ public:
   double InitialLevel;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::SetupInteractor(vtkRenderWindowInteractor* rwi)
 {
   if (this->Interactor && rwi != this->Interactor)
@@ -221,7 +212,7 @@ void vtkImageViewer::SetupInteractor(vtkRenderWindowInteractor* rwi)
   this->Interactor->SetRenderWindow(this->RenderWindow);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::Render()
 {
   if (this->FirstRender)
@@ -243,39 +234,40 @@ void vtkImageViewer::Render()
   this->RenderWindow->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::SetOffScreenRendering(vtkTypeBool i)
 {
   this->RenderWindow->SetOffScreenRendering(i);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkImageViewer::GetOffScreenRendering()
 {
   return this->RenderWindow->GetOffScreenRendering();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::OffScreenRenderingOn()
 {
   this->SetOffScreenRendering(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::OffScreenRenderingOff()
 {
   this->SetOffScreenRendering(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAlgorithm* vtkImageViewer::GetInputAlgorithm()
 {
   return this->ImageMapper->GetInputAlgorithm();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageViewer::SetRenderWindow(vtkRenderWindow* renWin)
 {
   vtkSetObjectBodyMacro(RenderWindow, vtkRenderWindow, renWin);
   renWin->AddRenderer(this->GetRenderer());
 }
+VTK_ABI_NAMESPACE_END

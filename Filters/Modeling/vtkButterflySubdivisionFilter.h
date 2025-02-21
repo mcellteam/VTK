@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkButterflySubdivisionFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkButterflySubdivisionFilter
  * @brief   generate a subdivision surface using the Butterfly Scheme
@@ -48,6 +36,7 @@
 #include "vtkFiltersModelingModule.h" // For export macro
 #include "vtkInterpolatingSubdivisionFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkIdList;
 class vtkIntArray;
@@ -56,17 +45,18 @@ class VTKFILTERSMODELING_EXPORT vtkButterflySubdivisionFilter
   : public vtkInterpolatingSubdivisionFilter
 {
 public:
-  //@{
+  ///@{
   /**
    * Construct object with NumberOfSubdivisions set to 1.
    */
   static vtkButterflySubdivisionFilter* New();
   vtkTypeMacro(vtkButterflySubdivisionFilter, vtkInterpolatingSubdivisionFilter);
-  //@}
+  void PrintSelf(ostream& os, vtkIndent indent) override;
+  ///@}
 
 protected:
-  vtkButterflySubdivisionFilter() {}
-  ~vtkButterflySubdivisionFilter() override {}
+  vtkButterflySubdivisionFilter() = default;
+  ~vtkButterflySubdivisionFilter() override = default;
 
 private:
   int GenerateSubdivisionPoints(vtkPolyData* inputDS, vtkIntArray* edgeData, vtkPoints* outputPts,
@@ -78,11 +68,9 @@ private:
   void GenerateBoundaryStencil(
     vtkIdType p1, vtkIdType p2, vtkPolyData* polys, vtkIdList* stencilIds, double* weights);
 
-private:
   vtkButterflySubdivisionFilter(const vtkButterflySubdivisionFilter&) = delete;
   void operator=(const vtkButterflySubdivisionFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkButterflySubdivisionFilter.h

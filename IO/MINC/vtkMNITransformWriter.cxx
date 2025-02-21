@@ -1,50 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMNITransformWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=========================================================================
-
-Copyright (c) 2006 Atamai, Inc.
-
-Use, modification and redistribution of the software, in source or
-binary forms, are permitted provided that the following terms and
-conditions are met:
-
-1) Redistribution of the source code, in verbatim or modified
-   form, must retain the above copyright notice, this license,
-   the following disclaimer, and any notices that refer to this
-   license and/or the following disclaimer.
-
-2) Redistribution in binary form must include the above copyright
-   notice, a copy of this license and the following disclaimer
-   in the documentation or with other materials provided with the
-   distribution.
-
-3) Modified copies of the source code must be clearly marked as such,
-   and must not be misrepresented as verbatim copies of the source code.
-
-THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE SOFTWARE "AS IS"
-WITHOUT EXPRESSED OR IMPLIED WARRANTY INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  IN NO EVENT SHALL ANY COPYRIGHT HOLDER OR OTHER PARTY WHO MAY
-MODIFY AND/OR REDISTRIBUTE THE SOFTWARE UNDER THE TERMS OF THIS LICENSE
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, LOSS OF DATA OR DATA BECOMING INACCURATE
-OR LOSS OF PROFIT OR BUSINESS INTERRUPTION) ARISING IN ANY WAY OUT OF
-THE USE OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGES.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2006 Atamai, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMNITransformWriter.h"
 
@@ -76,10 +32,11 @@ POSSIBILITY OF SUCH DAMAGES.
 #include <vtksys/FStream.hxx>
 #include <vtksys/SystemTools.hxx>
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMNITransformWriter);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMNITransformWriter::vtkMNITransformWriter()
 {
   this->FileName = nullptr;
@@ -88,7 +45,7 @@ vtkMNITransformWriter::vtkMNITransformWriter()
   this->Comments = nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMNITransformWriter::~vtkMNITransformWriter()
 {
   if (this->Transforms)
@@ -103,7 +60,7 @@ vtkMNITransformWriter::~vtkMNITransformWriter()
   delete[] this->Comments;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITransformWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -118,7 +75,7 @@ void vtkMNITransformWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Comments: " << (this->Comments ? this->Comments : "none") << "\n";
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITransformWriter::WriteLinearTransform(
   ostream& outfile, vtkHomogeneousTransform* transform)
 {
@@ -146,7 +103,7 @@ int vtkMNITransformWriter::WriteLinearTransform(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITransformWriter::WriteThinPlateSplineTransform(
   ostream& outfile, vtkThinPlateSplineTransform* transform)
 {
@@ -318,7 +275,7 @@ int vtkMNITransformWriter::WriteThinPlateSplineTransform(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITransformWriter::WriteGridTransform(ostream& outfile, vtkGridTransform* transform)
 {
   // Write the inverse flag if necessary
@@ -362,7 +319,7 @@ int vtkMNITransformWriter::WriteGridTransform(ostream& outfile, vtkGridTransform
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITransformWriter::WriteTransform(ostream& outfile, vtkAbstractTransform* transform)
 {
   outfile << "Transform_Type = ";
@@ -388,7 +345,7 @@ int vtkMNITransformWriter::WriteTransform(ostream& outfile, vtkAbstractTransform
   return 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITransformWriter::WriteFile()
 {
   // Check that a transform has been set.
@@ -496,7 +453,7 @@ int vtkMNITransformWriter::WriteFile()
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkMNITransformWriter::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -517,14 +474,14 @@ vtkTypeBool vtkMNITransformWriter::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITransformWriter::Write()
 {
   this->Modified();
   this->Update();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITransformWriter::GetNumberOfTransforms()
 {
   if (this->Transform == nullptr)
@@ -535,7 +492,7 @@ int vtkMNITransformWriter::GetNumberOfTransforms()
   return (1 + this->Transforms->GetNumberOfItems());
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITransformWriter::SetTransform(vtkAbstractTransform* transform)
 {
   if (transform == this->Transform)
@@ -558,7 +515,7 @@ void vtkMNITransformWriter::SetTransform(vtkAbstractTransform* transform)
   this->Modified();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITransformWriter::AddTransform(vtkAbstractTransform* transform)
 {
   if (transform == nullptr)
@@ -576,3 +533,4 @@ void vtkMNITransformWriter::AddTransform(vtkAbstractTransform* transform)
     this->Modified();
   }
 }
+VTK_ABI_NAMESPACE_END

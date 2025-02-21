@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAxes.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAxes.h"
 
 #include "vtkCellArray.h"
@@ -22,9 +10,10 @@
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAxes);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with origin=(0,0,0) and scale factor=1.
 vtkAxes::vtkAxes()
 {
@@ -158,10 +147,12 @@ int vtkAxes::RequestData(vtkInformation* vtkNotUsed(request),
   output->SetLines(newLines);
   newLines->Delete();
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This source does not know how to generate pieces yet.
 int vtkAxes::ComputeDivisionExtents(vtkDataObject* vtkNotUsed(output), int idx, int numDivisions)
 {
@@ -177,7 +168,7 @@ int vtkAxes::ComputeDivisionExtents(vtkDataObject* vtkNotUsed(output), int idx, 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxes::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -187,3 +178,4 @@ void vtkAxes::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Symmetric: " << this->Symmetric << "\n";
   os << indent << "ComputeNormals: " << this->ComputeNormals << "\n";
 }
+VTK_ABI_NAMESPACE_END

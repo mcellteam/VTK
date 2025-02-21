@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLookupTableWithEnabling.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLookupTableWithEnabling.h"
 #include "vtkBitArray.h"
 #include "vtkMath.h"
@@ -19,6 +7,7 @@
 #include "vtkVariant.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLookupTableWithEnabling);
 
 vtkCxxSetObjectMacro(vtkLookupTableWithEnabling, EnabledArray, vtkDataArray);
@@ -31,7 +20,7 @@ vtkLookupTableWithEnabling::vtkLookupTableWithEnabling(int sze, int ext)
   this->EnabledArray = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLookupTableWithEnabling::~vtkLookupTableWithEnabling()
 {
   if (this->EnabledArray)
@@ -57,7 +46,7 @@ void vtkLookupTableWithEnabling::DisableColor(unsigned char r, unsigned char g, 
   *bd = static_cast<unsigned char>(rgb[2]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // There is a little more to this than simply taking the log10 of the
 // two range values: we do conversion of negative ranges to positive
 // ranges, and conversion of zero to a 'very small number'
@@ -84,13 +73,13 @@ static void vtkLookupTableWithEnablingLogRange(double range[2], double logRange[
   }
   if (rmin < 0 && rmax < 0)
   {
-    logRange[0] = log10(-static_cast<double>(rmin));
-    logRange[1] = log10(-static_cast<double>(rmax));
+    logRange[0] = log10(-rmin);
+    logRange[1] = log10(-rmax);
   }
   else if (rmin > 0 && rmax > 0)
   {
-    logRange[0] = log10(static_cast<double>(rmin));
-    logRange[1] = log10(static_cast<double>(rmax));
+    logRange[0] = log10(rmin);
+    logRange[1] = log10(rmax);
   }
   else
   {
@@ -99,7 +88,7 @@ static void vtkLookupTableWithEnablingLogRange(double range[2], double logRange[
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply log to value, with appropriate constraints.
 inline double vtkApplyLogScale(double v, double range[2], double logRange[2])
 {
@@ -108,7 +97,7 @@ inline double vtkApplyLogScale(double v, double range[2], double logRange[2])
   {
     if (v < 0)
     {
-      v = log10(-static_cast<double>(v));
+      v = log10(-v);
     }
     else if (range[0] > range[1])
     {
@@ -123,7 +112,7 @@ inline double vtkApplyLogScale(double v, double range[2], double logRange[2])
   {
     if (v > 0)
     {
-      v = log10(static_cast<double>(v));
+      v = log10(v);
     }
     else if (range[0] < range[1])
     {
@@ -137,7 +126,7 @@ inline double vtkApplyLogScale(double v, double range[2], double logRange[2])
   return v;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Apply shift/scale to the scalar value v and do table lookup.
 inline unsigned char* vtkLinearLookup(
   double v, unsigned char* table, double maxIndex, double shift, double scale)
@@ -157,7 +146,7 @@ inline unsigned char* vtkLinearLookup(
   */
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // accelerate the mapping by copying the data in 32-bit chunks instead
 // of 8-bit chunks
 template <class T>
@@ -535,7 +524,7 @@ void vtkLookupTableWithEnablingMapData(vtkLookupTableWithEnabling* self, T* inpu
   }   // alpha blending
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLookupTableWithEnabling::MapScalarsThroughTable2(void* input, unsigned char* output,
   int inputDataType, int numberOfValues, int inputIncrement, int outputFormat)
 {
@@ -567,7 +556,7 @@ void vtkLookupTableWithEnabling::MapScalarsThroughTable2(void* input, unsigned c
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLookupTableWithEnabling::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -583,3 +572,4 @@ void vtkLookupTableWithEnabling::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

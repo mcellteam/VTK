@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkUniforms
  * @brief   helper class to set custom uniform variables in GPU shaders.
@@ -36,6 +25,7 @@
 #include <string>                   // member function parameters
 #include <vector>                   // member function parameters
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMatrix3x3;
 class vtkMatrix4x4;
 
@@ -48,11 +38,11 @@ public:
 
   virtual vtkMTimeType GetUniformListMTime() = 0;
 
-  //@{
+  ///@{
   /**
    * Types of tuples that can be stored : scalar, vector, matrix
    */
-  //@}
+  ///@}
   enum TupleType
   {
     TupleTypeInvalid = 0,
@@ -76,7 +66,7 @@ public:
   /** Remove all uniform variables */
   virtual void RemoveAllUniforms() = 0;
 
-  //@{
+  ///@{
   /** Generic setters and getter. Set and Get the value of
    *  uniform variable @p name, with TupleType @p tt, number
    *  of components @p nbComponents and values stored in
@@ -87,9 +77,9 @@ public:
     const std::vector<float>& value) = 0;
   virtual bool GetUniform(const char* name, std::vector<int>& value) = 0;
   virtual bool GetUniform(const char* name, std::vector<float>& value) = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /** Set the @p name uniform value to @p v. */
   virtual void SetUniformi(const char* name, int v) = 0;
   virtual void SetUniformf(const char* name, float v) = 0;
@@ -99,19 +89,19 @@ public:
   virtual void SetUniform4f(const char* name, const float v[4]) = 0;
   virtual void SetUniformMatrix3x3(const char* name, float* v) = 0;
   virtual void SetUniformMatrix4x4(const char* name, float* v) = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /** Set the @p name uniform array to @p f with @p count elements */
-  virtual void SetUniform1iv(const char* name, const int count, const int* f) = 0;
-  virtual void SetUniform1fv(const char* name, const int count, const float* f) = 0;
-  virtual void SetUniform2fv(const char* name, const int count, const float (*f)[2]) = 0;
-  virtual void SetUniform3fv(const char* name, const int count, const float (*f)[3]) = 0;
-  virtual void SetUniform4fv(const char* name, const int count, const float (*f)[4]) = 0;
-  virtual void SetUniformMatrix4x4v(const char* name, const int count, float* v) = 0;
-  //@}
+  virtual void SetUniform1iv(const char* name, int count, const int* f) = 0;
+  virtual void SetUniform1fv(const char* name, int count, const float* f) = 0;
+  virtual void SetUniform2fv(const char* name, int count, const float (*f)[2]) = 0;
+  virtual void SetUniform3fv(const char* name, int count, const float (*f)[3]) = 0;
+  virtual void SetUniform4fv(const char* name, int count, const float (*f)[4]) = 0;
+  virtual void SetUniformMatrix4x4v(const char* name, int count, float* v) = 0;
+  ///@}
 
-  //@{
+  ///@{
   /** Set the @p name uniform to @p v.
    *  The following are convenience functions and do not reflect
    *  the way the data is stored and sent to OpenGL. Data is
@@ -121,9 +111,9 @@ public:
   virtual void SetUniform4uc(const char* name, const unsigned char v[4]) = 0; // maybe remove
   virtual void SetUniformMatrix(const char* name, vtkMatrix3x3* v) = 0;
   virtual void SetUniformMatrix(const char* name, vtkMatrix4x4* v) = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /** Get the @p name uniform value. Returns true on success. */
   virtual bool GetUniformi(const char* name, int& v) = 0;
   virtual bool GetUniformf(const char* name, float& v) = 0;
@@ -133,9 +123,9 @@ public:
   virtual bool GetUniform4f(const char* name, float v[4]) = 0;
   virtual bool GetUniformMatrix3x3(const char* name, float* v) = 0;
   virtual bool GetUniformMatrix4x4(const char* name, float* v) = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /** Get the @p name uniform to @p v.
    *  The following are convenience functions and do not reflect
    *  the way the data is stored and sent to OpenGL. Data is
@@ -145,9 +135,9 @@ public:
   virtual bool GetUniform4uc(const char* name, unsigned char v[4]) = 0;
   virtual bool GetUniformMatrix(const char* name, vtkMatrix3x3* v) = 0;
   virtual bool GetUniformMatrix(const char* name, vtkMatrix4x4* v) = 0;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /** Get the @p name uniform vector to @p f with. */
   virtual bool GetUniform1iv(const char* name, std::vector<int>& f) = 0;
   virtual bool GetUniform1fv(const char* name, std::vector<float>& f) = 0;
@@ -155,7 +145,7 @@ public:
   virtual bool GetUniform3fv(const char* name, std::vector<float>& f) = 0;
   virtual bool GetUniform4fv(const char* name, std::vector<float>& f) = 0;
   virtual bool GetUniformMatrix4x4v(const char* name, std::vector<float>& f) = 0;
-  //@}
+  ///@}
 
   /** Get number of all uniforms stored in this class */
   virtual int GetNumberOfUniforms() = 0;
@@ -182,12 +172,13 @@ public:
   virtual int GetUniformNumberOfTuples(const char* name) = 0;
 
 protected:
-  vtkUniforms() {}
-  ~vtkUniforms() override {}
+  vtkUniforms() = default;
+  ~vtkUniforms() override = default;
 
 private:
   vtkUniforms(const vtkUniforms&) = delete;
   void operator=(const vtkUniforms&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

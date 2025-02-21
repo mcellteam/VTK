@@ -1,25 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExporter.h"
 
 #include "vtkRenderWindow.h"
 #include "vtkRenderer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkExporter, RenderWindow, vtkRenderWindow);
 vtkCxxSetObjectMacro(vtkExporter, ActiveRenderer, vtkRenderer);
 
+//------------------------------------------------------------------------------
 // Construct with no start and end write methods or arguments.
 vtkExporter::vtkExporter()
 {
@@ -33,6 +23,7 @@ vtkExporter::vtkExporter()
   this->EndWriteArg = nullptr;
 }
 
+//------------------------------------------------------------------------------
 vtkExporter::~vtkExporter()
 {
   this->SetRenderWindow(nullptr);
@@ -48,6 +39,7 @@ vtkExporter::~vtkExporter()
   }
 }
 
+//------------------------------------------------------------------------------
 // Write data to output. Method executes subclasses WriteData() method, as
 // well as StartWrite() and EndWrite() methods.
 void vtkExporter::Write()
@@ -75,12 +67,14 @@ void vtkExporter::Write()
   }
 }
 
+//------------------------------------------------------------------------------
 // Convenient alias for Write() method.
 void vtkExporter::Update()
 {
   this->Write();
 }
 
+//------------------------------------------------------------------------------
 // Specify a function to be called before data is written.
 // Function will be called with argument provided.
 void vtkExporter::SetStartWrite(void (*f)(void*), void* arg)
@@ -98,6 +92,7 @@ void vtkExporter::SetStartWrite(void (*f)(void*), void* arg)
   }
 }
 
+//------------------------------------------------------------------------------
 // Set the arg delete method. This is used to free user memory.
 void vtkExporter::SetStartWriteArgDelete(void (*f)(void*))
 {
@@ -108,6 +103,7 @@ void vtkExporter::SetStartWriteArgDelete(void (*f)(void*))
   }
 }
 
+//------------------------------------------------------------------------------
 // Set the arg delete method. This is used to free user memory.
 void vtkExporter::SetEndWriteArgDelete(void (*f)(void*))
 {
@@ -118,6 +114,7 @@ void vtkExporter::SetEndWriteArgDelete(void (*f)(void*))
   }
 }
 
+//------------------------------------------------------------------------------
 // Specify a function to be called after data is written.
 // Function will be called with argument provided.
 void vtkExporter::SetEndWrite(void (*f)(void*), void* arg)
@@ -135,6 +132,7 @@ void vtkExporter::SetEndWrite(void (*f)(void*), void* arg)
   }
 }
 
+//------------------------------------------------------------------------------
 void vtkExporter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -159,7 +157,7 @@ void vtkExporter::PrintSelf(ostream& os, vtkIndent indent)
 
   if (this->StartWrite)
   {
-    os << indent << "Start Write: (" << static_cast<void (*)(void*)>(this->StartWrite) << ")\n";
+    os << indent << "Start Write: (" << this->StartWrite << ")\n";
   }
   else
   {
@@ -168,7 +166,7 @@ void vtkExporter::PrintSelf(ostream& os, vtkIndent indent)
 
   if (this->EndWrite)
   {
-    os << indent << "End Write: (" << static_cast<void (*)(void*)>(this->EndWrite) << ")\n";
+    os << indent << "End Write: (" << this->EndWrite << ")\n";
   }
   else
   {
@@ -176,6 +174,7 @@ void vtkExporter::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
+//------------------------------------------------------------------------------
 vtkMTimeType vtkExporter::GetMTime()
 {
   vtkMTimeType mTime = this->vtkObject::GetMTime();
@@ -188,3 +187,4 @@ vtkMTimeType vtkExporter::GetMTime()
   }
   return mTime;
 }
+VTK_ABI_NAMESPACE_END

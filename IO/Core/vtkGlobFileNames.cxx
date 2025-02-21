@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGlobFileNames.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGlobFileNames.h"
 #include "vtkStringArray.h"
 
@@ -24,13 +12,14 @@
 #include <vtksys/Glob.hxx>
 #include <vtksys/SystemTools.hxx>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkGlobFileNames* vtkGlobFileNames::New()
 {
   VTK_STANDARD_NEW_BODY(vtkGlobFileNames);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGlobFileNames::vtkGlobFileNames()
 {
   this->Directory = nullptr;
@@ -39,7 +28,7 @@ vtkGlobFileNames::vtkGlobFileNames()
   this->FileNames = vtkStringArray::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGlobFileNames::~vtkGlobFileNames()
 {
   delete[] this->Directory;
@@ -48,7 +37,7 @@ vtkGlobFileNames::~vtkGlobFileNames()
   this->FileNames = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGlobFileNames::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -63,13 +52,13 @@ void vtkGlobFileNames::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGlobFileNames::Reset()
 {
   this->FileNames->Reset();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGlobFileNames::AddFileNames(const char* pattern)
 {
   this->SetPattern(pattern);
@@ -128,7 +117,7 @@ int vtkGlobFileNames::AddFileNames(const char* pattern)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGlobFileNames::GetNthFileName(int index)
 {
   if (index >= this->FileNames->GetNumberOfValues() || index < 0)
@@ -140,8 +129,9 @@ const char* vtkGlobFileNames::GetNthFileName(int index)
   return this->FileNames->GetValue(index).c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGlobFileNames::GetNumberOfFileNames()
 {
   return this->FileNames->GetNumberOfValues();
 }
+VTK_ABI_NAMESPACE_END

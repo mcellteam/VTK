@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestOBJReaderMaterials.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Verifies that vtkOBJReader does something sensible w/rt materials.
 // .SECTION Description
 //
@@ -27,7 +15,7 @@ int TestOBJReaderMaterials(int argc, char* argv[])
   int retVal = 0;
 
   // Create the reader.
-  char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/obj_with_materials.obj");
+  char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/checkerboard_colorful.obj");
   vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
   reader->SetFileName(fname);
   reader->Update();
@@ -54,14 +42,19 @@ int TestOBJReaderMaterials(int argc, char* argv[])
     std::cerr << "missing material id array" << std::endl;
     return 1;
   }
-  if (data->GetNumberOfCells() != 2)
+  if (data->GetNumberOfCells() != 648)
   {
     std::cerr << "wrong number of cells" << std::endl;
     return 1;
   }
-  int matid = mia->GetVariantValue(1).ToInt();
+  int matid = mia->GetVariantValue(40).ToInt();
+  if (matid != mia->GetVariantValue(41).ToInt())
+  {
+    std::cerr << "wrong material id" << std::endl;
+    return 1;
+  }
   std::string matname = mna->GetVariantValue(matid).ToString();
-  if (matname != "Air")
+  if (matname != "cb_odd")
   {
     std::cerr << "wrong material for" << std::endl;
     return 1;

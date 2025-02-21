@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCityGMLReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCityGMLReader.h"
 
 #include "vtkAppendPolyData.h"
@@ -52,6 +40,7 @@
 #include <unordered_map>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCityGMLReader::Implementation
 {
 public:
@@ -62,7 +51,6 @@ public:
     MATERIAL
   };
 
-public:
   Implementation(vtkCityGMLReader* reader, int lod, int useTransparencyAsOpacity)
   {
     this->Initialize(reader, lod, useTransparencyAsOpacity);
@@ -127,7 +115,7 @@ public:
       {
         const char* value = node.child_value();
         std::istringstream iss(value);
-        std::array<float, 3> color;
+        std::array<double, 3> color;
         for (size_t i = 0; i < color.size(); ++i)
         {
           iss >> color[i];
@@ -142,8 +130,13 @@ public:
         }
         else if (std::string(node.name()) == "app:transparency")
         {
-          float transparency = this->UseTransparencyAsOpacity ? 1 - color[0] : color[0];
+          double transparency = this->UseTransparencyAsOpacity ? 1 - color[0] : color[0];
           material.Transparency = transparency;
+        }
+        else if (std::string(node.name()) == "app:shininess")
+        {
+          double shininess = color[0];
+          material.Shininess = shininess;
         }
       }
       this->Materials.push_back(material);
@@ -235,7 +228,7 @@ public:
     transformFilter->SetInputDataObject(it->second);
     transformFilter->Update();
     vtkDataObject* obj = transformFilter->GetOutputDataObject(0);
-    this->SetField(obj, "element", element);
+    vtkCityGMLReader::SetField(obj, "element", element);
     output->SetBlock(output->GetNumberOfBlocks(), obj);
   }
 
@@ -243,7 +236,7 @@ public:
     const char* gmlNamespace, const char* feature)
   {
     vtkNew<vtkMultiBlockDataSet> b;
-    this->SetField(b, "element", "grp:CityObjectGroup");
+    vtkCityGMLReader::SetField(b, "element", "grp:CityObjectGroup");
     auto ximplicitGeometry =
       doc.select_nodes((std::string("//") + gmlNamespace + ":" + feature + "/" + gmlNamespace +
         ":" + "lod" + std::to_string(this->LOD) + "ImplicitRepresentation/core:ImplicitGeometry")
@@ -419,7 +412,7 @@ public:
           ++i;
         }
       } while (validPoint);
-      // gml:posList repeates the last point in a
+      // gml:posList repeats the last point in a
       // polygon (there are n points). We only need the first n - 1.
       polyPointIds->SetNumberOfIds(polyPointIds->GetNumberOfIds() - 1);
       points->SetNumberOfPoints(points->GetNumberOfPoints() - 1);
@@ -432,7 +425,7 @@ public:
       // go over all gml:pos children
       for (pugi::xml_node pos : nodeRing.children())
       {
-        // Part-1-Terrain-WaterBody-Vegetation-V2.gml repeates the last point in a
+        // Part-1-Terrain-WaterBody-Vegetation-V2.gml repeats the last point in a
         // polygon (there are n points). We only read the first n - 1.
         if (i == n - 1)
         {
@@ -458,7 +451,6 @@ public:
     if (posList)
     {
       vtkNew<vtkLine> line;
-      vtkIdType i = 1;
       std::istringstream iss(posList.child_value());
       bool validPoint = true;
       double p[3] = { 0., 0., 0. };
@@ -500,7 +492,6 @@ public:
           points->InsertNextPoint(p);
           line->GetPointIds()->SetId(1, points->GetNumberOfPoints() - 1);
           lines->InsertNextCell(line);
-          ++i;
         }
       } while (validPoint);
       // first point is repeated in the last position
@@ -515,7 +506,7 @@ public:
     else
     {
       std::array<double, 3> p;
-      // Part-1-Terrain-WaterBody-Vegetation-V2.gml repeates the first point at the end
+      // Part-1-Terrain-WaterBody-Vegetation-V2.gml repeats the first point at the end
       vtkIdType n = std::distance(nodeRing.begin(), nodeRing.end());
 
       auto it = nodeRing.begin();
@@ -526,7 +517,7 @@ public:
           iss >> p[j];
         }
       }
-      points->InsertNextPoint(&p[0]);
+      points->InsertNextPoint(p.data());
       vtkIdType firstPointIndex = points->GetNumberOfPoints() - 1;
       vtkIdType i = 1;
       for (++it; it != nodeRing.end(); ++it, ++i)
@@ -544,7 +535,7 @@ public:
         line->GetPointIds()->SetId(0, points->GetNumberOfPoints() - 1);
         if (i < n - 1)
         {
-          points->InsertNextPoint(&p[0]);
+          points->InsertNextPoint(p.data());
           line->GetPointIds()->SetId(1, points->GetNumberOfPoints() - 1);
         }
         else
@@ -573,39 +564,6 @@ public:
     u = id.size();
     int value = std::strtol(id.substr(uPrev + 1, u - uPrev - 1).c_str(), &strEnd, 16);
     components->push_back(value);
-  }
-
-  static void SetField(vtkDataObject* obj, const char* name, const char* value)
-  {
-    vtkFieldData* fd = obj->GetFieldData();
-    if (!fd)
-    {
-      vtkNew<vtkFieldData> newfd;
-      obj->SetFieldData(newfd);
-    }
-    vtkNew<vtkStringArray> sa;
-    sa->SetNumberOfTuples(1);
-    sa->SetValue(0, value);
-    sa->SetName(name);
-    fd->AddArray(sa);
-  }
-
-  static void SetField(vtkDataObject* obj, const char* name, float* value, vtkIdType size)
-  {
-    vtkFieldData* fd = obj->GetFieldData();
-    if (!fd)
-    {
-      vtkNew<vtkFieldData> newfd;
-      obj->SetFieldData(newfd);
-    }
-    vtkNew<vtkFloatArray> da;
-    da->SetNumberOfTuples(size);
-    for (vtkIdType i = 0; i < size; ++i)
-    {
-      da->SetValue(i, value[i]);
-    }
-    da->SetName(name);
-    fd->AddArray(da);
   }
 
   /**
@@ -650,21 +608,22 @@ public:
         vtkNew<vtkCellArray> cells;
         if (gmlIdAttribute)
         {
-          this->SetField(polyData, "gml_id", exteriorId);
+          vtkCityGMLReader::SetField(polyData, "gml_id", exteriorId);
         }
         polyData->SetPoints(points);
         nodeInterior ? polyData->SetLines(cells) : polyData->SetPolys(cells);
         switch (polygonType)
         {
           case PolygonType::TEXTURE:
-            this->SetField(polyData, "texture_uri", imageURI.c_str());
+            vtkCityGMLReader::SetField(polyData, "texture_uri", imageURI.c_str());
             break;
           case PolygonType::MATERIAL:
           {
             Material material = this->Materials[materialIndex];
-            this->SetField(polyData, "diffuse_color", &material.Diffuse[0], 3);
-            this->SetField(polyData, "specular_color", &material.Specular[0], 3);
-            this->SetField(polyData, "transparency", &material.Transparency, 1);
+            vtkCityGMLReader::SetField(polyData, "diffuse_color", material.Diffuse.data(), 3);
+            vtkCityGMLReader::SetField(polyData, "specular_color", material.Specular.data(), 3);
+            vtkCityGMLReader::SetField(polyData, "transparency", &material.Transparency, 1);
+            vtkCityGMLReader::SetField(polyData, "shininess", &material.Shininess, 1);
             break;
           }
           case PolygonType::NONE:
@@ -881,16 +840,23 @@ public:
 
   void ReadMultiSurfaceGroup(pugi::xml_document& doc, vtkMultiBlockDataSet* output,
     const char* gmlNamespace, const char* feature, float progressStart, float progressEnd,
-    int maximumNumberOfNodes = std::numeric_limits<int>::max())
+    size_t beginNodeIndex = 0, size_t endNodeIndex = std::numeric_limits<int>::max())
   {
     std::ostringstream ostr;
     std::string element = std::string(gmlNamespace) + ":" + feature;
     ostr << "//" << element;
     auto nodes = doc.select_nodes(ostr.str().c_str());
     int size = std::distance(nodes.begin(), nodes.end());
-    int i = 0;
-    for (auto featureNode : nodes)
+
+    endNodeIndex = std::min(endNodeIndex, nodes.size());
+    for (size_t i = beginNodeIndex; i < endNodeIndex; ++i)
     {
+      auto featureNode = nodes[i];
+      if (i % 1024 == 0)
+      {
+        this->Reader->UpdateProgress(progressStart + (progressEnd - progressStart) * i / size);
+      }
+
       vtkNew<vtkMultiBlockDataSet> groupBlock;
       ostr.str("");
       ostr << "descendant::" << gmlNamespace
@@ -907,22 +873,13 @@ public:
       if (groupBlock->GetNumberOfBlocks())
       {
         output->SetBlock(output->GetNumberOfBlocks(), groupBlock);
-        this->SetField(groupBlock, "element", element.c_str());
+        vtkCityGMLReader::SetField(groupBlock, "element", element.c_str());
         pugi::xml_attribute gmlIdAttribute = featureNode.node().attribute("gml:id");
         auto gmlId = gmlIdAttribute.value();
         if (gmlId)
         {
-          this->SetField(groupBlock, "gml_id", gmlId);
+          vtkCityGMLReader::SetField(groupBlock, "gml_id", gmlId);
         }
-      }
-      ++i;
-      if (i >= maximumNumberOfNodes)
-      {
-        break;
-      }
-      if (i % 1024 == 0)
-      {
-        this->Reader->UpdateProgress(progressStart + (progressEnd - progressStart) * i / size);
       }
     }
   }
@@ -947,7 +904,7 @@ public:
       {
         pugi::xml_node node = it->node();
         std::istringstream iss(node.child_value());
-        // Part-1-Terrain-WaterBody-Vegetation-V2.gml repeates the last point in a
+        // Part-1-Terrain-WaterBody-Vegetation-V2.gml repeats the last point in a
         // triangle (there are 4 points). We only read the first 3.
         for (vtkIdType i = 0; i < 3; ++i)
         {
@@ -967,7 +924,7 @@ public:
         vtkNew<vtkPolyData> polyData;
         polyData->SetPoints(points);
         polyData->SetPolys(polys);
-        this->SetField(polyData, "element", "dem:ReliefFeature");
+        vtkCityGMLReader::SetField(polyData, "element", "dem:ReliefFeature");
         output->SetBlock(output->GetNumberOfBlocks(), polyData);
       }
     }
@@ -976,7 +933,7 @@ public:
   void ReadWaterBody(pugi::xml_document& doc, vtkMultiBlockDataSet* output)
   {
     vtkNew<vtkMultiBlockDataSet> b;
-    this->SetField(b, "element", "wtr:WaterBody");
+    vtkCityGMLReader::SetField(b, "element", "wtr:WaterBody");
     auto xWaterSurface = doc.select_nodes(("//wtr:WaterBody//wtr:WaterSurface/wtr:lod" +
       std::to_string(this->LOD) + "Surface/gml:CompositeSurface")
                                             .c_str());
@@ -994,7 +951,7 @@ public:
 private:
   struct TextureInfo
   {
-    TextureInfo() {}
+    TextureInfo() = default;
     pugi::xml_node ImageURI;
     pugi::xml_node TextureCoordinates;
   };
@@ -1007,12 +964,12 @@ private:
       std::fill(this->Specular.begin(), this->Specular.end(), 1.0);
       this->Transparency = 1.0;
     }
-    std::array<float, 3> Diffuse;
-    std::array<float, 3> Specular;
-    float Transparency;
+    std::array<double, 3> Diffuse;
+    std::array<double, 3> Specular;
+    double Transparency;
+    double Shininess;
   };
 
-private:
   vtkCityGMLReader* Reader;
   int LOD;
   int UseTransparencyAsOpacity;
@@ -1027,7 +984,7 @@ private:
 
 vtkStandardNewMacro(vtkCityGMLReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCityGMLReader::vtkCityGMLReader()
 {
   this->FileName = nullptr;
@@ -1035,20 +992,38 @@ vtkCityGMLReader::vtkCityGMLReader()
   this->UseTransparencyAsOpacity = false;
   this->Impl = new Implementation(this, this->LOD, this->UseTransparencyAsOpacity);
   this->SetNumberOfInputPorts(0);
-  this->NumberOfBuildings = std::numeric_limits<int>::max();
+  this->NumberOfBuildings = this->EndBuildingIndex = std::numeric_limits<int>::max();
+  this->BeginBuildingIndex = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCityGMLReader::~vtkCityGMLReader()
 {
   delete this->Impl;
   delete[] this->FileName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCityGMLReader::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
+  int beginBuildingIndex = 0, endBuildingIndex = std::numeric_limits<int>::max();
+  if (this->NumberOfBuildings != std::numeric_limits<int>::max())
+  {
+    beginBuildingIndex = 0;
+    endBuildingIndex = this->NumberOfBuildings;
+  }
+  if (this->BeginBuildingIndex != 0 || this->EndBuildingIndex != std::numeric_limits<int>::max())
+  {
+    if (this->NumberOfBuildings != std::numeric_limits<int>::max())
+    {
+      vtkWarningMacro("Both NumberOfBuildings and (BeginBuildingIndex, EndBuildingIndex)"
+                      " are set. Using the latter form.");
+    }
+    beginBuildingIndex = this->BeginBuildingIndex;
+    endBuildingIndex = this->EndBuildingIndex;
+  }
+
   this->Impl->Initialize(this, this->LOD, this->UseTransparencyAsOpacity);
   pugi::xml_document doc;
   pugi::xml_parse_result result = doc.load_file(this->FileName);
@@ -1084,7 +1059,7 @@ int vtkCityGMLReader::RequestData(
     this->Impl->ReadMultiSurfaceGroup(doc, output, "tran", "Road", 0.475, 0.5);
     this->UpdateProgress(0.5);
     this->Impl->ReadMultiSurfaceGroup(
-      doc, output, "bldg", "Building", 0.5, 0.875, this->NumberOfBuildings);
+      doc, output, "bldg", "Building", 0.5, 0.875, beginBuildingIndex, endBuildingIndex);
     this->Impl->ReadMultiSurfaceGroup(doc, output, "frn", "CityFurniture", 0.875, 0.9);
     this->UpdateProgress(0.9);
     this->Impl->CacheImplicitGeometry(doc, "frn", "CityFurniture");
@@ -1092,6 +1067,10 @@ int vtkCityGMLReader::RequestData(
     this->Impl->InitializeImplicitGeometry();
     this->Impl->ReadMultiSurfaceGroup(doc, output, "gen", "GenericCityObject", 0.9, 0.95);
     this->Impl->ReadMultiSurfaceGroup(doc, output, "luse", "LandUse", 0.95, 1.0);
+    if (!output->GetNumberOfBlocks())
+    {
+      vtkWarningMacro("There is no data on LOD " << this->LOD << ". Try a different LOD.");
+    }
   }
   catch (pugi::xpath_exception& e)
   {
@@ -1106,8 +1085,43 @@ int vtkCityGMLReader::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCityGMLReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+
+//------------------------------------------------------------------------------
+void vtkCityGMLReader::SetField(vtkDataObject* obj, const char* name, const char* value)
+{
+  vtkFieldData* fd = obj->GetFieldData();
+  if (!fd)
+  {
+    vtkNew<vtkFieldData> newfd;
+    obj->SetFieldData(newfd);
+  }
+  vtkNew<vtkStringArray> sa;
+  sa->SetNumberOfTuples(1);
+  sa->SetValue(0, value);
+  sa->SetName(name);
+  fd->AddArray(sa);
+}
+
+//------------------------------------------------------------------------------
+void vtkCityGMLReader::SetField(
+  vtkDataObject* obj, const char* name, double* value, vtkIdType components)
+{
+  vtkFieldData* fd = obj->GetFieldData();
+  if (!fd)
+  {
+    vtkNew<vtkFieldData> newfd;
+    obj->SetFieldData(newfd);
+  }
+  vtkNew<vtkDoubleArray> da;
+  da->SetNumberOfTuples(1);
+  da->SetNumberOfComponents(components);
+  da->SetTypedTuple(0, value);
+  da->SetName(name);
+  fd->AddArray(da);
+}
+VTK_ABI_NAMESPACE_END

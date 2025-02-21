@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractEnclosedPoints.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractEnclosedPoints.h"
 
 #include "vtkArrayDispatch.h"
@@ -41,15 +29,16 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractEnclosedPoints);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Classes support threading. Each point can be processed separately, so the
 // in/out containment check is threaded.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm. Thread on point type.
 template <typename ArrayT>
 struct ExtractInOutCheck
@@ -144,7 +133,7 @@ struct ExtractLauncher
 
 } // anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object.
 vtkExtractEnclosedPoints::vtkExtractEnclosedPoints()
 {
@@ -154,12 +143,12 @@ vtkExtractEnclosedPoints::vtkExtractEnclosedPoints()
   this->Tolerance = 0.001;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractEnclosedPoints::~vtkExtractEnclosedPoints() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Partial implementation invokes vtkPointCloudFilter::RequestData(). This is
-// necessary to grab the seconf input.
+// necessary to grab the second input.
 //
 int vtkExtractEnclosedPoints::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -187,12 +176,12 @@ int vtkExtractEnclosedPoints::RequestData(
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Traverse all the input points and extract points that are contained within
 // the enclosing surface.
 int vtkExtractEnclosedPoints::FilterPoints(vtkPointSet* input)
 {
-  // Initiailize search structures
+  // Initialize search structures
   vtkStaticCellLocator* locator = vtkStaticCellLocator::New();
 
   vtkPolyData* surface = this->Surface;
@@ -219,28 +208,28 @@ int vtkExtractEnclosedPoints::FilterPoints(vtkPointSet* input)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the second enclosing surface input via a connection
 void vtkExtractEnclosedPoints::SetSurfaceConnection(vtkAlgorithmOutput* algOutput)
 {
   this->SetInputConnection(1, algOutput);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the second enclosing surface input data
 void vtkExtractEnclosedPoints::SetSurfaceData(vtkPolyData* pd)
 {
   this->SetInputData(1, pd);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the enclosing surface
 vtkPolyData* vtkExtractEnclosedPoints::GetSurface()
 {
   return vtkPolyData::SafeDownCast(this->GetExecutive()->GetInputData(1, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkExtractEnclosedPoints::GetSurface(vtkInformationVector* sourceInfo)
 {
   vtkInformation* info = sourceInfo->GetInformationObject(1);
@@ -251,7 +240,7 @@ vtkPolyData* vtkExtractEnclosedPoints::GetSurface(vtkInformationVector* sourceIn
   return vtkPolyData::SafeDownCast(info->Get(vtkDataObject::DATA_OBJECT()));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractEnclosedPoints::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -268,7 +257,7 @@ int vtkExtractEnclosedPoints::FillInputPortInformation(int port, vtkInformation*
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractEnclosedPoints::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -277,3 +266,4 @@ void vtkExtractEnclosedPoints::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Tolerance: " << this->Tolerance << "\n";
 }
+VTK_ABI_NAMESPACE_END

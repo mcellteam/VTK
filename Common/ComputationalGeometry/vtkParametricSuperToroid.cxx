@@ -1,22 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParametricSuperToroid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParametricSuperToroid.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkParametricSuperToroid);
 
 namespace
@@ -40,7 +29,7 @@ double SgnPower(double x, double n)
 
 } // anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParametricSuperToroid::vtkParametricSuperToroid()
   : RingRadius(1)
   , CrossSectionRadius(0.5)
@@ -64,10 +53,10 @@ vtkParametricSuperToroid::vtkParametricSuperToroid()
   this->DerivativesAvailable = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParametricSuperToroid::~vtkParametricSuperToroid() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParametricSuperToroid::Evaluate(double uvw[3], double Pt[3], double Duvw[9])
 {
   double u = uvw[0];
@@ -93,13 +82,13 @@ void vtkParametricSuperToroid::Evaluate(double uvw[3], double Pt[3], double Duvw
   Pt[2] = this->ZRadius * this->CrossSectionRadius * SgnPower(sv, this->N2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkParametricSuperToroid::EvaluateScalar(double*, double*, double*)
 {
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParametricSuperToroid::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -112,3 +101,4 @@ void vtkParametricSuperToroid::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Y scale factor: " << this->YRadius << "\n";
   os << indent << "Z scale factor: " << this->ZRadius << "\n";
 }
+VTK_ABI_NAMESPACE_END

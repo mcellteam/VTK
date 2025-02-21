@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParametricDini.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParametricDini
  * @brief   Generate Dini's surface.
@@ -20,9 +8,8 @@
  * Dini's surface is a surface that possesses constant negative
  * Gaussian curvature
  *
- * For further information about this surface, please consult the
- * technical description "Parametric surfaces" in http://www.vtk.org/publications
- * in the "VTK Technical Documents" section in the VTk.org web pages.
+ * For further information about this surface, please consult
+ * https://en.wikipedia.org/wiki/Dini%27s_surface
  *
  * @par Thanks:
  * Andrew Maclean andrew.amaclean@gmail.com for creating and contributing the
@@ -36,6 +23,7 @@
 #include "vtkCommonComputationalGeometryModule.h" // For export macro
 #include "vtkParametricFunction.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCOMPUTATIONALGEOMETRY_EXPORT vtkParametricDini : public vtkParametricFunction
 {
 public:
@@ -59,7 +47,7 @@ public:
    */
   int GetDimension() override { return 2; }
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale factor.
    * See the definition in Parametric surfaces referred to above.
@@ -67,9 +55,9 @@ public:
    */
   vtkSetMacro(A, double);
   vtkGetMacro(A, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale factor.
    * See the definition in Parametric surfaces referred to above.
@@ -77,7 +65,7 @@ public:
    */
   vtkSetMacro(B, double);
   vtkGetMacro(B, double);
-  //@}
+  ///@}
 
   /**
    * Dini's surface.
@@ -117,4 +105,5 @@ private:
   void operator=(const vtkParametricDini&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

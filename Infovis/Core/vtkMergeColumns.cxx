@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMergeColumns.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkMergeColumns.h"
 
@@ -25,8 +9,8 @@
 #include "vtkObjectFactory.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
-#include "vtkUnicodeStringArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMergeColumns);
 
 vtkMergeColumns::vtkMergeColumns()
@@ -95,8 +79,8 @@ int vtkMergeColumns::RequestData(
       vtkStringArray* mergedStr = vtkArrayDownCast<vtkStringArray>(merged);
       for (vtkIdType i = 0; i < merged->GetNumberOfTuples(); i++)
       {
-        vtkStdString combined = col1Str->GetValue(i);
-        if (col1Str->GetValue(i).length() > 0 && col2Str->GetValue(i).length() > 0)
+        std::string combined = col1Str->GetValue(i);
+        if (!col1Str->GetValue(i).empty() && !col2Str->GetValue(i).empty())
         {
           combined += " ";
         }
@@ -105,23 +89,7 @@ int vtkMergeColumns::RequestData(
       }
       break;
     }
-    case VTK_UNICODE_STRING:
-    {
-      vtkUnicodeStringArray* col1Str = vtkArrayDownCast<vtkUnicodeStringArray>(col1);
-      vtkUnicodeStringArray* col2Str = vtkArrayDownCast<vtkUnicodeStringArray>(col2);
-      vtkUnicodeStringArray* mergedStr = vtkArrayDownCast<vtkUnicodeStringArray>(merged);
-      for (vtkIdType i = 0; i < merged->GetNumberOfTuples(); i++)
-      {
-        vtkUnicodeString combined = col1Str->GetValue(i);
-        if (!col1Str->GetValue(i).empty() && !col2Str->GetValue(i).empty())
-        {
-          combined += vtkUnicodeString::from_utf8(" ");
-        }
-        combined += col2Str->GetValue(i);
-        mergedStr->SetValue(i, combined);
-      }
-      break;
-    }
+
       vtkTemplateMacro(vtkMergeColumnsCombine(static_cast<VTK_TT*>(col1->GetVoidPointer(0)),
         static_cast<VTK_TT*>(col2->GetVoidPointer(0)),
         static_cast<VTK_TT*>(merged->GetVoidPointer(0)), merged->GetNumberOfTuples()));
@@ -140,3 +108,4 @@ void vtkMergeColumns::PrintSelf(ostream& os, vtkIndent indent)
      << "MergedColumnName: " << (this->MergedColumnName ? this->MergedColumnName : "(null)")
      << endl;
 }
+VTK_ABI_NAMESPACE_END

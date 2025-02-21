@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSpiderPlotActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSpiderPlotActor.h"
 
 #include "vtkAlgorithmOutput.h"
@@ -36,6 +24,7 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSpiderPlotActor);
 
 vtkCxxSetObjectMacro(vtkSpiderPlotActor, LabelTextProperty, vtkTextProperty);
@@ -77,7 +66,7 @@ public:
 
 vtkStandardNewMacro(vtkSpiderPlotActorConnection);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object
 vtkSpiderPlotActor::vtkSpiderPlotActor()
 {
@@ -156,7 +145,7 @@ vtkSpiderPlotActor::vtkSpiderPlotActor()
   this->P1[0] = this->P1[1] = this->P2[0] = this->P2[1] = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSpiderPlotActor::~vtkSpiderPlotActor()
 {
   this->ConnectionHolder->Delete();
@@ -189,13 +178,13 @@ vtkSpiderPlotActor::~vtkSpiderPlotActor()
   this->PlotActor->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpiderPlotActor::SetInputConnection(vtkAlgorithmOutput* ao)
 {
   this->ConnectionHolder->SetInputConnection(ao);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpiderPlotActor::SetInputData(vtkDataObject* dobj)
 {
   vtkTrivialProducer* tp = vtkTrivialProducer::New();
@@ -204,13 +193,13 @@ void vtkSpiderPlotActor::SetInputData(vtkDataObject* dobj)
   tp->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkSpiderPlotActor::GetInput()
 {
   return this->ConnectionHolder->GetInputDataObject(0, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Free-up axes and related stuff
 void vtkSpiderPlotActor::Initialize()
 {
@@ -238,7 +227,7 @@ void vtkSpiderPlotActor::Initialize()
   this->N = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Plot scalar data for each input dataset.
 int vtkSpiderPlotActor::RenderOverlay(vtkViewport* viewport)
 {
@@ -281,7 +270,7 @@ int vtkSpiderPlotActor::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Plot scalar data for each input dataset.
 int vtkSpiderPlotActor::RenderOpaqueGeometry(vtkViewport* viewport)
 {
@@ -324,7 +313,7 @@ int vtkSpiderPlotActor::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkSpiderPlotActor::HasTranslucentPolygonalGeometry()
@@ -332,7 +321,7 @@ vtkTypeBool vtkSpiderPlotActor::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSpiderPlotActor::BuildPlot(vtkViewport* viewport)
 {
   // Initialize
@@ -386,7 +375,7 @@ int vtkSpiderPlotActor::BuildPlot(vtkViewport* viewport)
     vtkDebugMacro(<< "Rebuilding plot");
 
     // Build axes
-    int* size = viewport->GetSize();
+    const int* size = viewport->GetSize();
     if (!this->PlaceAxes(viewport, size))
     {
       return 0;
@@ -398,7 +387,7 @@ int vtkSpiderPlotActor::BuildPlot(vtkViewport* viewport)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static inline int vtkSpiderPlotActorGetComponent(
   vtkFieldData* field, vtkIdType tuple, int component, double* val)
 {
@@ -419,8 +408,8 @@ static inline int vtkSpiderPlotActorGetComponent(
 }
 
 #define VTK_RING_PTS 64
-//----------------------------------------------------------------------------
-int vtkSpiderPlotActor::PlaceAxes(vtkViewport* viewport, int* vtkNotUsed(size))
+//------------------------------------------------------------------------------
+int vtkSpiderPlotActor::PlaceAxes(vtkViewport* viewport, const int* vtkNotUsed(size))
 {
   vtkIdType i, j, k;
   vtkDataObject* input = this->GetInput();
@@ -815,7 +804,7 @@ int vtkSpiderPlotActor::PlaceAxes(vtkViewport* viewport, int* vtkNotUsed(size))
 }
 #undef VTK_RING_PTS
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -831,8 +820,8 @@ void vtkSpiderPlotActor::ReleaseGraphicsResources(vtkWindow* win)
   }
 }
 
-//----------------------------------------------------------------------------
-void vtkSpiderPlotActor::SetAxisLabel(const int i, const char* label)
+//------------------------------------------------------------------------------
+void vtkSpiderPlotActor::SetAxisLabel(int i, const char* label)
 {
   if (i < 0)
   {
@@ -847,7 +836,7 @@ void vtkSpiderPlotActor::SetAxisLabel(const int i, const char* label)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkSpiderPlotActor::GetAxisLabel(int i)
 {
   if (i < 0)
@@ -858,7 +847,7 @@ const char* vtkSpiderPlotActor::GetAxisLabel(int i)
   return this->Labels->at(i).c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpiderPlotActor::SetAxisRange(int i, double min, double max)
 {
   if (i < 0)
@@ -874,13 +863,13 @@ void vtkSpiderPlotActor::SetAxisRange(int i, double min, double max)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpiderPlotActor::SetAxisRange(int i, double range[2])
 {
   this->SetAxisRange(i, range[0], range[1]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpiderPlotActor::GetAxisRange(int i, double range[2])
 {
   if (i < 0)
@@ -893,19 +882,19 @@ void vtkSpiderPlotActor::GetAxisRange(int i, double range[2])
   range[1] = arange.Max;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpiderPlotActor::SetPlotColor(int i, double r, double g, double b)
 {
   this->LegendActor->SetEntryColor(i, r, g, b);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkSpiderPlotActor::GetPlotColor(int i)
 {
   return this->LegendActor->GetEntryColor(i);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpiderPlotActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -956,3 +945,4 @@ void vtkSpiderPlotActor::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Legend Actor: " << this->LegendActor << "\n";
   this->LegendActor->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

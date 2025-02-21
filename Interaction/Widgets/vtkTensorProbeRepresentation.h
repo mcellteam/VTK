@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTensorProbeRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTensorProbeRepresentation
  * @brief   Abstract class that serves as a representation for vtkTensorProbeWidget
@@ -30,32 +18,35 @@
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkWidgetRepresentation.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkPolyData;
 class vtkPolyDataMapper;
 class vtkGenericCell;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkTensorProbeRepresentation : public vtkWidgetRepresentation
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkTensorProbeRepresentation
+  : public vtkWidgetRepresentation
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkTensorProbeRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * See vtkWidgetRepresentation for details.
    */
   void BuildRepresentation() override;
   int RenderOpaqueGeometry(vtkViewport*) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the position of the Tensor probe.
    */
@@ -63,7 +54,7 @@ public:
   vtkGetVector3Macro(ProbePosition, double);
   vtkSetMacro(ProbeCellId, vtkIdType);
   vtkGetMacro(ProbeCellId, vtkIdType);
-  //@}
+  ///@}
 
   /**
    * Set the trajectory that we are trying to probe tensors on
@@ -88,13 +79,13 @@ public:
    */
   virtual int Move(double motionVector[2]);
 
-  //@{
+  ///@{
   /**
    * See vtkProp for details.
    */
   void GetActors(vtkPropCollection*) override;
   void ReleaseGraphicsResources(vtkWindow*) override;
-  //@}
+  ///@}
 
 protected:
   vtkTensorProbeRepresentation();
@@ -114,4 +105,5 @@ private:
   void operator=(const vtkTensorProbeRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

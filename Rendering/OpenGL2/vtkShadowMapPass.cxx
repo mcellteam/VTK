@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShadowMapPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkShadowMapPass.h"
 #include "vtkObjectFactory.h"
@@ -43,27 +31,27 @@
 #include "vtkTextureObject.h"
 #include "vtkTextureUnitManager.h"
 #include "vtkTransform.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 // debugging
 #include "vtkTimerLog.h"
 
-#include "vtkStdString.h"
 #include <cassert>
 #include <sstream>
 
 // to be able to dump intermediate passes into png files for debugging.
 // only for vtkShadowMapPass developers.
-//#define VTK_SHADOW_MAP_PASS_DEBUG
-//#define DONT_DUPLICATE_LIGHTS
+// #define VTK_SHADOW_MAP_PASS_DEBUG
+// #define DONT_DUPLICATE_LIGHTS
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkShadowMapPass);
 vtkCxxSetObjectMacro(vtkShadowMapPass, ShadowMapBakerPass, vtkShadowMapBakerPass);
 vtkCxxSetObjectMacro(vtkShadowMapPass, OpaqueSequence, vtkRenderPass);
 
 vtkInformationKeyMacro(vtkShadowMapPass, ShadowMapPass, ObjectBase);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkShadowMapPass::vtkShadowMapPass()
 {
   this->ShadowMapBakerPass = nullptr;
@@ -84,7 +72,7 @@ vtkShadowMapPass::vtkShadowMapPass()
   this->SetShadowMapBakerPass(bp);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkShadowMapPass::~vtkShadowMapPass()
 {
   if (this->ShadowMapBakerPass != nullptr)
@@ -97,7 +85,7 @@ vtkShadowMapPass::~vtkShadowMapPass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkShadowMapPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -122,7 +110,7 @@ void vtkShadowMapPass::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -276,7 +264,8 @@ bool vtkShadowMapPass::SetShaderParameters(vtkShaderProgram* program, vtkAbstrac
   float transform[16];
   std::ostringstream toString;
 
-  program->SetUniformf("depthC", 11.0);
+  // We have to use the same exponential constant that was used when baking.
+  program->SetUniformf("depthC", this->ShadowMapBakerPass->GetExponentialConstant());
   for (size_t i = 0; i < numLights; i++)
   {
     if (this->ShadowTextureUnits[i] >= 0)
@@ -463,7 +452,7 @@ void vtkShadowMapPass::BuildShaderCode()
   this->FragmentImplementation = toString.str();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -476,3 +465,4 @@ void vtkShadowMapPass::ReleaseGraphicsResources(vtkWindow* w)
     this->ShadowMapBakerPass->ReleaseGraphicsResources(w);
   }
 }
+VTK_ABI_NAMESPACE_END

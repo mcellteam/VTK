@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleTrackballActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInteractorStyleTrackballActor.h"
 
 #include "vtkCallbackCommand.h"
@@ -25,9 +13,10 @@
 #include "vtkRenderer.h"
 #include "vtkTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkInteractorStyleTrackballActor);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleTrackballActor::vtkInteractorStyleTrackballActor()
 {
   this->MotionFactor = 10.0;
@@ -36,13 +25,13 @@ vtkInteractorStyleTrackballActor::vtkInteractorStyleTrackballActor()
   this->InteractionPicker->SetTolerance(0.001);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleTrackballActor::~vtkInteractorStyleTrackballActor()
 {
   this->InteractionPicker->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::OnMouseMove()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -82,7 +71,7 @@ void vtkInteractorStyleTrackballActor::OnMouseMove()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::OnLeftButtonDown()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -110,7 +99,7 @@ void vtkInteractorStyleTrackballActor::OnLeftButtonDown()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::OnLeftButtonUp()
 {
   switch (this->State)
@@ -134,7 +123,7 @@ void vtkInteractorStyleTrackballActor::OnLeftButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::OnMiddleButtonDown()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -158,7 +147,7 @@ void vtkInteractorStyleTrackballActor::OnMiddleButtonDown()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::OnMiddleButtonUp()
 {
   switch (this->State)
@@ -178,7 +167,7 @@ void vtkInteractorStyleTrackballActor::OnMiddleButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::OnRightButtonDown()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -195,7 +184,7 @@ void vtkInteractorStyleTrackballActor::OnRightButtonDown()
   this->StartUniformScale();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::OnRightButtonUp()
 {
   switch (this->State)
@@ -211,7 +200,7 @@ void vtkInteractorStyleTrackballActor::OnRightButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::Rotate()
 {
   if (this->CurrentRenderer == nullptr || this->InteractionProp == nullptr)
@@ -302,7 +291,7 @@ void vtkInteractorStyleTrackballActor::Rotate()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::Spin()
 {
   if (this->CurrentRenderer == nullptr || this->InteractionProp == nullptr)
@@ -372,7 +361,7 @@ void vtkInteractorStyleTrackballActor::Spin()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::Pan()
 {
   if (this->CurrentRenderer == nullptr || this->InteractionProp == nullptr)
@@ -423,7 +412,7 @@ void vtkInteractorStyleTrackballActor::Pan()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::Dolly()
 {
   if (this->CurrentRenderer == nullptr || this->InteractionProp == nullptr)
@@ -473,7 +462,7 @@ void vtkInteractorStyleTrackballActor::Dolly()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::UniformScale()
 {
   if (this->CurrentRenderer == nullptr || this->InteractionProp == nullptr)
@@ -506,13 +495,13 @@ void vtkInteractorStyleTrackballActor::UniformScale()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::FindPickedActor(int x, int y)
 {
   this->InteractionPicker->Pick(x, y, 0.0, this->CurrentRenderer);
@@ -527,7 +516,7 @@ void vtkInteractorStyleTrackballActor::FindPickedActor(int x, int y)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTrackballActor::Prop3DTransform(
   vtkProp3D* prop3D, double* boxCenter, int numRotation, double** rotate, double* scale)
 {
@@ -580,3 +569,4 @@ void vtkInteractorStyleTrackballActor::Prop3DTransform(
   oldMatrix->Delete();
   newTransform->Delete();
 }
+VTK_ABI_NAMESPACE_END

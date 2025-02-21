@@ -2,9 +2,12 @@ NAME
   VTK::RenderingOpenVR
 LIBRARY_NAME
   vtkRenderingOpenVR
-IMPLEMENTS
-  VTK::RenderingCore
+SPDX_LICENSE_IDENTIFIER
+  BSD-3-Clause
+SPDX_COPYRIGHT_TEXT
+  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
 DEPENDS
+  VTK::RenderingVR
   VTK::CommonCore
   VTK::IOImage
   VTK::IOXMLParser
@@ -18,13 +21,13 @@ PRIVATE_DEPENDS
   VTK::FiltersSources
   VTK::IOXML
   VTK::ImagingSources
-  VTK::glew
-  VTK::opengl
+  VTK::glad
 TEST_DEPENDS
   VTK::CommonSystem
   VTK::IOPLY
   VTK::IOXML
   VTK::InteractionWidgets
   VTK::RenderingVolume
+  VTK::RenderingVRModels
   VTK::TestingCore
   VTK::TestingRendering

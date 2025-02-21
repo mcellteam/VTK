@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPLY.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 1994 The Board of Trustees of The Leland Stanford
+// SPDX-License-Identifier: BSD-3-Clause AND MIT
 /*
 
 The interface routines for reading and writing PLY polygon files.
@@ -30,20 +19,6 @@ associated with the element type.  For instance, a vertex element may
 have as properties the floating-point values x,y,z and the three unsigned
 chars representing red, green and blue.
 
----------------------------------------------------------------
-
-Copyright (c) 1994 The Board of Trustees of The Leland Stanford
-Junior University.  All rights reserved.
-
-Permission to use, copy, modify and distribute this software and its
-documentation for any purpose is hereby granted without fee, provided
-that the above copyright notice and this permission notice appear in
-all copies of this software and that you do not sell the software.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND WITHOUT WARRANTY OF ANY KIND,
-EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
-WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
-
 */
 
 #include "vtkPLY.h"
@@ -53,26 +28,39 @@ WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 #include <vtksys/FStream.hxx>
 #include <vtksys/SystemTools.hxx>
 
+#include "vtkFileResourceStream.h"
+#include "vtkMemoryResourceStream.h"
+#include "vtkResourceParser.h"
+
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <limits>
 #include <sstream>
 
+// This entire structure should be converted over to C++-isms instead of using
+// C APIs.
+// NOLINTBEGIN(bugprone-suspicious-realloc-usage)
+
 /* memory allocation */
 #define myalloc(mem_size) vtkPLY::my_alloc((mem_size), __LINE__, __FILE__)
 
+VTK_ABI_NAMESPACE_BEGIN
+namespace
+{
+const int LINE_LENGTH = 4096;
 // wjs: added to manage memory leak
-static vtkHeap* plyHeap = nullptr;
-static void plyInitialize()
+vtkHeap* plyHeap = nullptr;
+void plyInitialize()
 {
   if (plyHeap == nullptr)
   {
     plyHeap = vtkHeap::New();
   }
 }
-static void plyCleanUp()
+void plyCleanUp()
 {
   if (plyHeap)
   {
@@ -80,15 +68,16 @@ static void plyCleanUp()
     plyHeap = nullptr;
   }
 }
-static void* plyAllocateMemory(size_t n)
+void* plyAllocateMemory(size_t n)
 {
   return plyHeap->AllocateMemory(n);
 }
 
-static const char* type_names[] = { "invalid", "char", "short", "int", "int8", "int16", "int32",
-  "uchar", "ushort", "uint", "uint8", "uint16", "uint32", "float", "float32", "double", "float64" };
+const char* type_names[] = { "invalid", "char", "short", "int", "int8", "int16", "int32", "uchar",
+  "ushort", "uint", "uint8", "uint16", "uint32", "float", "float32", "double", "float64" };
 
-static const int ply_type_size[] = { 0, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 4, 4, 8 };
+const int ply_type_size[] = { 0, 1, 2, 4, 1, 2, 4, 1, 2, 4, 1, 2, 4, 4, 4, 8 };
+}
 
 #define NO_OTHER_PROPS (-1)
 
@@ -127,15 +116,11 @@ PlyFile* vtkPLY::ply_write(std::ostream* os, int nelems, const char** elem_names
 
   /* create a record for this object */
 
-  plyfile = (PlyFile*)myalloc(sizeof(PlyFile));
+  plyfile = new PlyFile{};
   plyfile->file_type = file_type;
-  plyfile->num_comments = 0;
-  plyfile->num_obj_info = 0;
   plyfile->nelems = nelems;
   plyfile->version = 1.0;
   plyfile->os = os;
-  plyfile->is = nullptr;
-  plyfile->other_elems = nullptr;
 
   /* tuck aside the names of the elements */
 
@@ -192,6 +177,7 @@ PlyFile* vtkPLY::ply_open_for_writing(
   if (!ofs->is_open())
   {
     delete ofs;
+    plyCleanUp();
     return (nullptr);
   }
 
@@ -202,6 +188,7 @@ PlyFile* vtkPLY::ply_open_for_writing(
   {
     ofs->close();
     delete ofs;
+    plyCleanUp();
     return (nullptr);
   }
 
@@ -684,15 +671,16 @@ Exit:
   returns a pointer to a PlyFile, used to refer to this file, or nullptr if error
 ******************************************************************************/
 
-PlyFile* vtkPLY::ply_read(std::istream* is, int* nelems, char*** elem_names)
+PlyFile* vtkPLY::ply_read(vtkResourceStream* is, int* nelems, char*** elem_names)
 {
   int i, j;
   PlyFile* plyfile;
-  int nwords;
-  char** words;
+  std::vector<char*> words;
   char** elist;
   PlyElement* elem;
-  char* orig_line;
+
+  char line_words[LINE_LENGTH];
+  char orig_line[LINE_LENGTH];
 
   /* check for nullptr file pointer */
   if (is == nullptr)
@@ -700,38 +688,30 @@ PlyFile* vtkPLY::ply_read(std::istream* is, int* nelems, char*** elem_names)
 
   /* create record for this object */
 
-  plyfile = (PlyFile*)myalloc(sizeof(PlyFile));
-  plyfile->nelems = 0;
-  plyfile->comments = nullptr;
-  plyfile->num_comments = 0;
-  plyfile->obj_info = nullptr;
-  plyfile->num_obj_info = 0;
+  plyfile = new PlyFile{};
   plyfile->is = is;
-  plyfile->os = nullptr;
-  plyfile->other_elems = nullptr;
+  plyfile->parser = vtkSmartPointer<vtkResourceParser>::New();
+  plyfile->parser->SetStream(is);
 
   /* read and parse the file's header */
 
-  words = get_words(plyfile->is, &nwords, &orig_line);
-  if (!words || !equal_strings(words[0], "ply"))
+  get_words(plyfile->parser, &words, line_words, orig_line);
+  if (words.empty() || !equal_strings(words[0], "ply"))
   {
-    free(plyfile);
-    if (words)
-      free(words);
+    delete plyfile;
     return (nullptr);
   }
 
-  while (words)
+  while (!words.empty())
   {
 
     /* parse words */
 
     if (equal_strings(words[0], "format"))
     {
-      if (nwords != 3)
+      if (words.size() != 3)
       {
-        free(plyfile);
-        free(words);
+        delete plyfile;
         return (nullptr);
       }
       if (equal_strings(words[1], "ascii"))
@@ -742,37 +722,30 @@ PlyFile* vtkPLY::ply_read(std::istream* is, int* nelems, char*** elem_names)
         plyfile->file_type = PLY_BINARY_LE;
       else
       {
-        free(plyfile);
-        free(words);
+        delete plyfile;
         return (nullptr);
       }
       plyfile->version = atof(words[2]);
     }
     else if (equal_strings(words[0], "element"))
-      add_element(plyfile, words, nwords);
+      add_element(plyfile, words);
     else if (equal_strings(words[0], "property"))
-      add_property(plyfile, words, nwords);
+      add_property(plyfile, words);
     else if (equal_strings(words[0], "comment"))
       add_comment(plyfile, orig_line);
     else if (equal_strings(words[0], "obj_info"))
       add_obj_info(plyfile, orig_line);
     else if (equal_strings(words[0], "end_header"))
     {
-      free(words);
-      words = nullptr;
       break;
     }
 
-    /* free up words space */
-    free(words);
-
-    words = get_words(plyfile->is, &nwords, &orig_line);
+    get_words(plyfile->parser, &words, line_words, orig_line);
   }
 
   if (plyfile->nelems == 0)
   {
-    free(plyfile);
-    free(words);
+    delete plyfile;
     return (nullptr);
   }
 
@@ -816,20 +789,16 @@ Exit:
 
 PlyFile* vtkPLY::ply_open_for_reading(const char* filename, int* nelems, char*** elem_names)
 {
-  vtksys::ifstream* ifs;
   PlyFile* plyfile;
 
   // memory leaks
   plyInitialize();
 
   /* open the file for reading */
-  ifs = new vtksys::ifstream;
-
-  ifs->open(filename, std::ios::in | std::ios::binary);
-  if (!ifs->is_open())
+  auto ifs = vtkSmartPointer<vtkFileResourceStream>::New();
+  if (!ifs->Open(filename))
   {
-    delete ifs;
-    return (nullptr);
+    return nullptr;
   }
 
   /* create the PlyFile data structure */
@@ -837,14 +806,11 @@ PlyFile* vtkPLY::ply_open_for_reading(const char* filename, int* nelems, char***
   plyfile = vtkPLY::ply_read(ifs, nelems, elem_names);
   if (plyfile == nullptr)
   {
-    ifs->close();
-    delete ifs;
-    return (nullptr);
+    return nullptr;
   }
 
   /* return a pointer to the file's information */
-
-  return (plyfile);
+  return plyfile;
 }
 
 /******************************************************************************
@@ -862,28 +828,26 @@ Exit:
 PlyFile* vtkPLY::ply_open_for_reading_from_string(
   const std::string& input, int* nelems, char*** elem_names)
 {
-  std::istringstream* iss;
   PlyFile* plyfile;
 
   // memory leaks
   plyInitialize();
 
   /* open the file for reading */
-  iss = new std::istringstream;
-
-  iss->str(input);
+  // assume memory is managed by caller
+  auto mem = vtkSmartPointer<vtkMemoryResourceStream>::New();
+  mem->SetBuffer(input.data(), input.size());
   /* create the PlyFile data structure */
 
-  plyfile = vtkPLY::ply_read(iss, nelems, elem_names);
+  plyfile = vtkPLY::ply_read(mem, nelems, elem_names);
   if (plyfile == nullptr)
   {
-    delete iss;
-    return (nullptr);
+    return nullptr;
   }
 
   /* return a pointer to the file's information */
 
-  return (plyfile);
+  return plyfile;
 }
 
 /******************************************************************************
@@ -1374,15 +1338,9 @@ void vtkPLY::ply_close(PlyFile* plyfile)
   // Changed by Will Schroeder. Old stuff leaked like a sieve.
 
   /* free up memory associated with the PLY file */
-  if (plyfile->is)
-  {
-    vtksys::ifstream* ifs = dynamic_cast<vtksys::ifstream*>(plyfile->is);
-    if (ifs)
-    {
-      ifs->close();
-    }
-    delete plyfile->is;
-  }
+  plyfile->is = nullptr;
+  plyfile->parser = nullptr;
+
   if (plyfile->os)
   {
     vtksys::ofstream* ofs = dynamic_cast<vtksys::ofstream*>(plyfile->os);
@@ -1422,7 +1380,7 @@ void vtkPLY::ply_close(PlyFile* plyfile)
   }
   free(plyfile->obj_info);
 
-  free(plyfile);
+  delete plyfile;
 
   // memory leaks
   plyCleanUp();
@@ -1458,10 +1416,7 @@ bool vtkPLY::equal_strings(const char* s1, const char* s2)
     if (*s1++ != *s2++)
       return false;
 
-  if (*s1 != *s2)
-    return false;
-  else
-    return true;
+  return *s1 == *s2;
 }
 
 /******************************************************************************
@@ -1526,9 +1481,7 @@ bool vtkPLY::ascii_get_element(PlyFile* plyfile, char* elem_ptr)
   int j, k;
   PlyElement* elem;
   PlyProperty* prop;
-  char** words;
-  int nwords;
-  int which_word;
+  std::vector<char*> words;
   char *elem_data, *item = nullptr;
   char* item_ptr;
   int item_size;
@@ -1538,7 +1491,6 @@ bool vtkPLY::ascii_get_element(PlyFile* plyfile, char* elem_ptr)
   int list_count;
   int store_it;
   char** store_array;
-  char* orig_line;
   char* other_data = nullptr;
   int other_flag;
 
@@ -1560,21 +1512,8 @@ bool vtkPLY::ascii_get_element(PlyFile* plyfile, char* elem_ptr)
   else
     other_flag = 0;
 
-  /* read in the element */
-
-  words = get_words(plyfile->is, &nwords, &orig_line);
-  if (words == nullptr)
-  {
-    fprintf(stderr, "ply_get_element: unexpected end of file\n");
-    assert(0);
-    return false;
-  }
-
-  which_word = 0;
-
   for (j = 0; j < elem->nprops; j++)
   {
-
     prop = elem->props[j];
     store_it = (elem->store_prop[j] | other_flag);
 
@@ -1588,7 +1527,7 @@ bool vtkPLY::ascii_get_element(PlyFile* plyfile, char* elem_ptr)
     { /* a list */
 
       /* get and store the number of items in the list */
-      get_ascii_item(words[which_word++], prop->count_external, &int_val, &uint_val, &double_val);
+      get_ascii_item(plyfile->parser, prop->count_external, &int_val, &uint_val, &double_val);
       if (store_it)
       {
         item = elem_data + prop->count_offset;
@@ -1617,8 +1556,7 @@ bool vtkPLY::ascii_get_element(PlyFile* plyfile, char* elem_ptr)
         /* read items and store them into the array */
         for (k = 0; k < list_count; k++)
         {
-          get_ascii_item(
-            words[which_word++], prop->external_type, &int_val, &uint_val, &double_val);
+          get_ascii_item(plyfile->parser, prop->external_type, &int_val, &uint_val, &double_val);
           if (store_it)
           {
             store_item(item, prop->internal_type, int_val, uint_val, double_val);
@@ -1629,7 +1567,7 @@ bool vtkPLY::ascii_get_element(PlyFile* plyfile, char* elem_ptr)
     }
     else
     { /* not a list */
-      get_ascii_item(words[which_word++], prop->external_type, &int_val, &uint_val, &double_val);
+      get_ascii_item(plyfile->parser, prop->external_type, &int_val, &uint_val, &double_val);
       if (store_it)
       {
         item = elem_data + prop->offset;
@@ -1638,7 +1576,6 @@ bool vtkPLY::ascii_get_element(PlyFile* plyfile, char* elem_ptr)
     }
   }
 
-  free(words);
   return true;
 }
 
@@ -1799,7 +1736,7 @@ IMPORTANT: The calling routine call "free" on the returned pointer once
 finished with it.
 
 Entry:
-  is - input stream
+  parser - input stream parser
 
 Exit:
   nwords    - number of words returned
@@ -1807,27 +1744,21 @@ Exit:
   returns a list of words from the line, or nullptr if end-of-file
 ******************************************************************************/
 
-char** vtkPLY::get_words(std::istream* is, int* nwords, char** orig_line)
+void vtkPLY::get_words(
+  vtkResourceParser* parser, std::vector<char*>* words, char line_words[], char orig_line[])
 {
-  const int BIG_STRING = 4096;
-  char str[BIG_STRING];
-  char str_copy[BIG_STRING];
-  char** words;
-  int max_words = 10;
-  int num_words = 0;
   char *ptr, *ptr2;
+  words->clear();
 
   /* read in a line */
-  is->getline(str, BIG_STRING);
-  if (!is->good())
+  auto result = parser->ReadLineTo(line_words, LINE_LENGTH - 1);
+  if (result.Result != vtkParseResult::EndOfLine)
   {
-    *nwords = 0;
-    *orig_line = nullptr;
-    return (nullptr);
+    return;
   }
-  words = (char**)myalloc(sizeof(char*) * max_words);
+  *result.Output = '\0';
 
-  char* pos = strstr(str, "vertex_index");
+  char* pos = strstr(line_words, "vertex_index");
   if (pos != nullptr)
   {
     strcpy(pos, "vertex_indices");
@@ -1837,10 +1768,9 @@ char** vtkPLY::get_words(std::istream* is, int* nwords, char** orig_line)
   /* (this guarantees that there will be a space before the */
   /*  null character at the end of the string) */
 
-  str[BIG_STRING - 2] = ' ';
-  str[BIG_STRING - 1] = '\0';
+  line_words[LINE_LENGTH - 2] = ' ';
 
-  for (ptr = str, ptr2 = str_copy; *ptr != '\0'; ptr++, ptr2++)
+  for (ptr = line_words, ptr2 = orig_line; *ptr != '\0'; ptr++, ptr2++)
   {
     *ptr2 = *ptr;
     if (*ptr == '\t')
@@ -1867,7 +1797,7 @@ char** vtkPLY::get_words(std::istream* is, int* nwords, char** orig_line)
 
   /* find the words in the line */
 
-  ptr = str;
+  ptr = line_words;
   while (*ptr != '\0')
   {
 
@@ -1879,21 +1809,7 @@ char** vtkPLY::get_words(std::istream* is, int* nwords, char** orig_line)
     if (*ptr == '\0')
       break;
 
-    /* save pointer to beginning of word */
-    if (num_words >= max_words)
-    {
-      max_words += 10;
-      char** oldwords = words;
-      words = (char**)realloc(words, sizeof(char*) * max_words);
-      if (!words)
-      {
-        *nwords = 0;
-        *orig_line = nullptr;
-        free(oldwords);
-        return nullptr;
-      }
-    }
-    words[num_words++] = ptr;
+    words->push_back(ptr);
 
     /* jump over non-spaces */
     while (*ptr != ' ' && *ptr != '\0')
@@ -1906,11 +1822,6 @@ char** vtkPLY::get_words(std::istream* is, int* nwords, char** orig_line)
     /* place a null character here to mark the end of the word */
     *ptr++ = '\0';
   }
-
-  /* return the list of words */
-  *nwords = num_words;
-  *orig_line = str_copy;
-  return (words);
 }
 
 /******************************************************************************
@@ -2211,6 +2122,7 @@ Exit:
   double_val - double-precision floating point value
 ******************************************************************************/
 
+VTK_NO_UBSAN
 void vtkPLY::get_stored_item(
   const void* ptr, int type, int* int_val, unsigned int* uint_val, double* double_val)
 {
@@ -2325,8 +2237,7 @@ bool vtkPLY::get_binary_item(
     case PLY_INT8:
     {
       vtkTypeInt8 value = 0;
-      plyfile->is->read(reinterpret_cast<char*>(&value), sizeof(value));
-      if (!plyfile->is->good())
+      if (plyfile->parser->Read(reinterpret_cast<char*>(&value), sizeof(value)) != sizeof(value))
       {
         vtkGenericWarningMacro("PLY error reading file."
           << " Premature EOF while reading char.");
@@ -2343,8 +2254,7 @@ bool vtkPLY::get_binary_item(
     case PLY_UINT8:
     {
       vtkTypeUInt8 value = 0;
-      plyfile->is->read(reinterpret_cast<char*>(&value), sizeof(value));
-      if (!plyfile->is->good())
+      if (plyfile->parser->Read(reinterpret_cast<char*>(&value), sizeof(value)) != sizeof(value))
       {
         vtkGenericWarningMacro("PLY error reading file."
           << " Premature EOF while reading uchar or uint8.");
@@ -2361,8 +2271,7 @@ bool vtkPLY::get_binary_item(
     case PLY_INT16:
     {
       vtkTypeInt16 value = 0;
-      plyfile->is->read(reinterpret_cast<char*>(&value), sizeof(value));
-      if (!plyfile->is->good())
+      if (plyfile->parser->Read(reinterpret_cast<char*>(&value), sizeof(value)) != sizeof(value))
       {
         vtkGenericWarningMacro("PLY error reading file."
           << " Premature EOF while reading short.");
@@ -2381,8 +2290,7 @@ bool vtkPLY::get_binary_item(
     case PLY_UINT16:
     {
       vtkTypeUInt16 value = 0;
-      plyfile->is->read(reinterpret_cast<char*>(&value), sizeof(value));
-      if (!plyfile->is->good())
+      if (plyfile->parser->Read(reinterpret_cast<char*>(&value), sizeof(value)) != sizeof(value))
       {
         vtkGenericWarningMacro("PLY error reading file."
           << " Premature EOF while reading ushort.");
@@ -2401,8 +2309,7 @@ bool vtkPLY::get_binary_item(
     case PLY_INT32:
     {
       vtkTypeInt32 value = 0;
-      plyfile->is->read(reinterpret_cast<char*>(&value), sizeof(value));
-      if (!plyfile->is->good())
+      if (plyfile->parser->Read(reinterpret_cast<char*>(&value), sizeof(value)) != sizeof(value))
       {
         vtkGenericWarningMacro("PLY error reading file."
           << " Premature EOF while reading int or int32.");
@@ -2421,8 +2328,7 @@ bool vtkPLY::get_binary_item(
     case PLY_UINT32:
     {
       vtkTypeUInt32 value = 0;
-      plyfile->is->read(reinterpret_cast<char*>(&value), sizeof(value));
-      if (!plyfile->is->good())
+      if (plyfile->parser->Read(reinterpret_cast<char*>(&value), sizeof(value)) != sizeof(value))
       {
         vtkGenericWarningMacro("PLY error reading file."
           << " Premature EOF while reading uint");
@@ -2441,8 +2347,7 @@ bool vtkPLY::get_binary_item(
     case PLY_FLOAT32:
     {
       vtkTypeFloat32 value = 0.0;
-      plyfile->is->read(reinterpret_cast<char*>(&value), sizeof(value));
-      if (!plyfile->is->good())
+      if (plyfile->parser->Read(reinterpret_cast<char*>(&value), sizeof(value)) != sizeof(value))
       {
         vtkGenericWarningMacro("PLY error reading file."
           << " Premature EOF while reading float of float32.");
@@ -2464,8 +2369,7 @@ bool vtkPLY::get_binary_item(
     case PLY_FLOAT64:
     {
       vtkTypeFloat64 value = 0.0;
-      plyfile->is->read(reinterpret_cast<char*>(&value), sizeof(value));
-      if (!plyfile->is->good())
+      if (plyfile->parser->Read(reinterpret_cast<char*>(&value), sizeof(value)) != sizeof(value))
       {
         vtkGenericWarningMacro("PLY error reading file."
           << " Premature EOF while reading double.");
@@ -2495,7 +2399,7 @@ Extract the value of an item from an ascii word, and place the result
 into an integer, an unsigned integer and a double.
 
 Entry:
-  word - word to extract value from
+  parser - parser to extract value from
   type - data type supposedly in the word
 
 Exit:
@@ -2504,8 +2408,9 @@ Exit:
   double_val - double-precision floating point value
 ******************************************************************************/
 
+VTK_NO_UBSAN
 void vtkPLY::get_ascii_item(
-  const char* word, int type, int* int_val, unsigned int* uint_val, double* double_val)
+  vtkResourceParser* parser, int type, int* int_val, unsigned int* uint_val, double* double_val)
 {
   switch (type)
   {
@@ -2519,25 +2424,21 @@ void vtkPLY::get_ascii_item(
     case PLY_UINT16:
     case PLY_INT:
     case PLY_INT32:
-      *int_val = atoi(word);
-      *uint_val = *int_val;
-      *double_val = *int_val;
+      parser->Parse(*int_val);
+      *uint_val = static_cast<unsigned int>(*int_val);
       break;
 
     case PLY_UINT:
     case PLY_UINT32:
-      *uint_val = strtoul(word, nullptr, 10);
-      *int_val = *uint_val;
-      *double_val = *uint_val;
+      parser->Parse(*uint_val);
+      *int_val = static_cast<int>(*uint_val);
       break;
 
     case PLY_FLOAT:
     case PLY_FLOAT32:
     case PLY_DOUBLE:
     case PLY_FLOAT64:
-      *double_val = atof(word);
-      *int_val = (int)*double_val;
-      *uint_val = (unsigned int)*double_val;
+      parser->Parse(*double_val);
       break;
 
     default:
@@ -2632,10 +2533,9 @@ Add an element to a PLY file descriptor.
 Entry:
   plyfile - PLY file descriptor
   words   - list of words describing the element
-  nwords  - number of words in the list
 ******************************************************************************/
 
-void vtkPLY::add_element(PlyFile* plyfile, char** words, int)
+void vtkPLY::add_element(PlyFile* plyfile, const std::vector<char*>& words)
 {
   PlyElement* elem;
 
@@ -2685,10 +2585,9 @@ Add a property to a PLY file descriptor.
 Entry:
   plyfile - PLY file descriptor
   words   - list of words describing the property
-  nwords  - number of words in the list
 ******************************************************************************/
 
-void vtkPLY::add_property(PlyFile* plyfile, char** words, int)
+void vtkPLY::add_property(PlyFile* plyfile, const std::vector<char*>& words)
 {
   PlyProperty* prop;
   PlyElement* elem;
@@ -2792,7 +2691,14 @@ Entry:
 
 void* vtkPLY::my_alloc(size_t size, int lnum, const char* fname)
 {
-  void* ptr = malloc(size);
+  // sometimes a alloc-size-larger-than warning is tripped on gcc.
+  // this check is based on discussion found at
+  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85783
+  void* ptr = nullptr;
+  if (size <= PTRDIFF_MAX)
+  {
+    ptr = malloc(size);
+  }
 
   if (ptr == nullptr)
   {
@@ -2801,3 +2707,6 @@ void* vtkPLY::my_alloc(size_t size, int lnum, const char* fname)
 
   return (ptr);
 }
+VTK_ABI_NAMESPACE_END
+
+// NOLINTEND(bugprone-suspicious-realloc-usage)

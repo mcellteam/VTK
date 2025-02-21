@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkColorSeries.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2002 Cynthia Brewer, Mark Harrower, and PSU
+// SPDX-License-Identifier: BSD-3-Clause AND Apache-2.0 AND Apache-1.1
 
 #include "vtkColorSeries.h"
 
@@ -21,29 +10,30 @@
 #include <sstream>
 #include <vector>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 class vtkColorSeriesPalette
 {
 public:
   std::vector<vtkColor3ub> Colors;
-  vtkStdString Name;
+  std::string Name;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkColorSeries::Private
 {
 public:
   Private();
 
   void SetScheme(int idx);
-  int SetSchemeByName(const vtkStdString& name, bool& modified);
+  int SetSchemeByName(const std::string& name, bool& modified);
 
   std::vector<vtkColorSeriesPalette> Palettes; // All palettes
   int Palette;                                 // Currently-selected entry in Palettes
   std::vector<vtkColor3ub>* Colors;            // Pointer to colors in current scheme
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline vtkColor3ub vtkColor3ubFromHex3(vtkTypeUInt32 hex)
 {
   int b = hex & 0xff;
@@ -54,7 +44,7 @@ inline vtkColor3ub vtkColor3ubFromHex3(vtkTypeUInt32 hex)
   return vtkColor3ub(r, g, b);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkColorSeries::Private::Private()
 {
   this->Palettes.resize(vtkColorSeries::CUSTOM);
@@ -81,48 +71,6 @@ Use the sentence above or the following bibliography entry to credit her:
 
 + Brewer, Cynthia A. and Mark Harrower and Andy Woodruff and David Heyman,
   2010. http://ColorBrewer2.org, accessed 2010-Nov-9.
-
-The color schemes below are copyright under the following license, excerpted
-from http://www.personal.psu.edu/cab38/ColorBrewer/ColorBrewer_updates.html
-on August 13, 2012:
-
-    Apache-Style Software License for ColorBrewer software and
-    ColorBrewer Color Schemes
-
-    Copyright (c) 2002 Cynthia Brewer, Mark Harrower, and The Pennsylvania
-    State University.
-
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not
-    use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-    License for the specific language governing permissions and limitations
-    under the License.
-
-This text from my earlier Apache License Version 1.1 also remains in place for
-guidance on attribution and permissions:
-
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    1. Redistributions as source code must retain the above copyright notice,
-       this list of conditions and the following disclaimer.
-    2. The end-user documentation included with the redistribution, if any, must
-       include the following acknowledgment:
-       "This product includes color specifications and designs developed by
-       Cynthia Brewer (http://colorbrewer.org/)."
-       Alternately, this acknowledgment may appear in the software itself, if
-       and wherever such third-party acknowledgments normally appear.
-    4. The name "ColorBrewer" must not be used to endorse or promote products
-       derived from this software without prior written permission. For written
-       permission, please contact Cynthia Brewer at cbrewer@psu.edu.
-    5. Products derived from this software may not be called "ColorBrewer", nor
-       may "ColorBrewer" appear in their name, without prior written permission
-       of Cynthia Brewer.
 */
     // Diverging
     //   Purple-Orange
@@ -332,15 +280,15 @@ guidance on attribution and permissions:
   this->Colors = &(this->Palettes[this->Palette].Colors);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::Private::SetScheme(int idx)
 {
   this->Colors = &(this->Palettes[idx].Colors);
   this->Palette = idx;
 }
 
-//-----------------------------------------------------------------------------
-int vtkColorSeries::Private::SetSchemeByName(const vtkStdString& name, bool& modified)
+//------------------------------------------------------------------------------
+int vtkColorSeries::Private::SetSchemeByName(const std::string& name, bool& modified)
 {
   modified = false;
   int idx = 0;
@@ -363,25 +311,25 @@ int vtkColorSeries::Private::SetSchemeByName(const vtkStdString& name, bool& mod
   return idx;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkColorSeries);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkColorSeries::vtkColorSeries()
 {
   this->Storage = new vtkColorSeries::Private;
   this->SetColorScheme(vtkColorSeries::SPECTRUM);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkColorSeries::~vtkColorSeries()
 {
   delete this->Storage;
   this->Storage = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -392,7 +340,7 @@ void vtkColorSeries::PrintSelf(ostream& os, vtkIndent indent)
      << "ColorSchemeName : " << (palette->Name.empty() ? "(empty)" : palette->Name.c_str()) << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::SetColorScheme(int scheme)
 {
   if (this->Storage->Palette == scheme)
@@ -410,7 +358,7 @@ void vtkColorSeries::SetColorScheme(int scheme)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkColorSeries::SetColorSchemeByName(const vtkStdString& schemeName)
 {
   bool modified;
@@ -422,19 +370,19 @@ int vtkColorSeries::SetColorSchemeByName(const vtkStdString& schemeName)
   return index;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkColorSeries::GetNumberOfColorSchemes() const
 {
   return static_cast<int>(this->Storage->Palettes.size());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkColorSeries::GetColorSchemeName() const
 {
   return this->Storage->Palettes[this->Storage->Palette].Name;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::SetColorSchemeName(const vtkStdString& name)
 {
   // Ignore empty names
@@ -455,26 +403,26 @@ void vtkColorSeries::SetColorSchemeName(const vtkStdString& name)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkColorSeries::GetColorScheme() const
 {
   return this->Storage->Palette;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkColorSeries::GetNumberOfColors() const
 {
   return static_cast<int>(this->Storage->Colors->size());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::SetNumberOfColors(int numColors)
 {
   this->CopyOnWrite();
   this->Storage->Colors->resize(numColors);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkColor3ub vtkColorSeries::GetColor(int index) const
 {
   if (index >= 0 && index < static_cast<int>(this->Storage->Colors->size()))
@@ -487,7 +435,7 @@ vtkColor3ub vtkColorSeries::GetColor(int index) const
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkColor3ub vtkColorSeries::GetColorRepeating(int index) const
 {
   vtkColor3ub color;
@@ -499,7 +447,7 @@ vtkColor3ub vtkColorSeries::GetColorRepeating(int index) const
   return color;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::SetColor(int index, const vtkColor3ub& color)
 {
   if (index >= 0 && index < static_cast<int>(this->Storage->Colors->size()))
@@ -510,7 +458,7 @@ void vtkColorSeries::SetColor(int index, const vtkColor3ub& color)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::AddColor(const vtkColor3ub& color)
 {
   this->CopyOnWrite();
@@ -518,7 +466,7 @@ void vtkColorSeries::AddColor(const vtkColor3ub& color)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::InsertColor(int index, const vtkColor3ub& color)
 {
   if (index >= 0 && index < static_cast<int>(this->Storage->Colors->size()))
@@ -529,7 +477,7 @@ void vtkColorSeries::InsertColor(int index, const vtkColor3ub& color)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::RemoveColor(int index)
 {
   if (index >= 0 && index < static_cast<int>(this->Storage->Colors->size()))
@@ -540,7 +488,7 @@ void vtkColorSeries::RemoveColor(int index)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::ClearColors()
 {
   this->CopyOnWrite();
@@ -548,7 +496,7 @@ void vtkColorSeries::ClearColors()
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::DeepCopy(vtkColorSeries* colors)
 {
   if (!colors)
@@ -562,7 +510,7 @@ void vtkColorSeries::DeepCopy(vtkColorSeries* colors)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::BuildLookupTable(vtkLookupTable* lkup, int lutIndexing)
 {
   if (lkup)
@@ -578,7 +526,7 @@ void vtkColorSeries::BuildLookupTable(vtkLookupTable* lkup, int lutIndexing)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLookupTable* vtkColorSeries::CreateLookupTable(int lutIndexing)
 {
   vtkLookupTable* lkup = vtkLookupTable::New();
@@ -586,7 +534,7 @@ vtkLookupTable* vtkColorSeries::CreateLookupTable(int lutIndexing)
   return lkup;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkColorSeries::CopyOnWrite()
 {
   // If the current scheme is predefined, copy it to a new, custom scheme.
@@ -602,3 +550,4 @@ void vtkColorSeries::CopyOnWrite()
     this->Modified();
   }
 }
+VTK_ABI_NAMESPACE_END

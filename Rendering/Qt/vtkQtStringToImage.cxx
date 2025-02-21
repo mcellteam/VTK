@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQtStringToImage.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkQtStringToImage.h"
 
@@ -19,7 +7,6 @@
 #include "vtkQImageToImageSource.h"
 #include "vtkStdString.h"
 #include "vtkTextProperty.h"
-#include "vtkUnicodeString.h"
 #include "vtkVector.h"
 
 #include "vtkObjectFactory.h"
@@ -30,11 +17,13 @@
 #include <QFontMetrics>
 #include <QImage>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPixmap>
 #include <QString>
 #include <QTextDocument>
 #include <QTextStream>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 struct vtkQtLabelMapEntry
@@ -65,54 +54,23 @@ public:
   }
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkQtStringToImage);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtStringToImage::vtkQtStringToImage()
 {
   this->Implementation = new Internals;
   this->QImageToImage = vtkSmartPointer<vtkQImageToImageSource>::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtStringToImage::~vtkQtStringToImage()
 {
   delete this->Implementation;
 }
 
-//-----------------------------------------------------------------------------
-vtkVector2i vtkQtStringToImage::GetBounds(
-  vtkTextProperty* property, const vtkUnicodeString& string, int dpi)
-{
-  vtkVector2i recti(0, 0);
-  if (!QApplication::instance())
-  {
-    vtkErrorMacro("You must initialize a QApplication before using this class.");
-    return recti;
-  }
-
-  if (!property)
-  {
-    return recti;
-  }
-
-  QFont fontSpec = this->Implementation->TextPropertyToFont(property, dpi);
-
-  QString text = QString::fromUtf8(string.utf8_str());
-
-  QRectF rect;
-  QPainterPath path;
-  path.addText(0, 0, fontSpec, text);
-  rect = path.boundingRect();
-
-  recti.SetX(static_cast<int>(rect.width()));
-  recti.SetY(static_cast<int>(rect.height()));
-
-  return recti;
-}
-
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVector2i vtkQtStringToImage::GetBounds(
   vtkTextProperty* property, const vtkStdString& string, int dpi)
 {
@@ -143,8 +101,8 @@ vtkVector2i vtkQtStringToImage::GetBounds(
   return recti;
 }
 
-int vtkQtStringToImage::RenderString(vtkTextProperty* property, const vtkUnicodeString& string,
-  int dpi, vtkImageData* data, int textDims[2])
+int vtkQtStringToImage::RenderString(vtkTextProperty* property, const vtkStdString& string, int dpi,
+  vtkImageData* data, int textDims[2])
 {
   if (!QApplication::instance())
   {
@@ -163,7 +121,7 @@ int vtkQtStringToImage::RenderString(vtkTextProperty* property, const vtkUnicode
     textDims[1] = box.GetY();
   }
 
-  QString text = QString::fromUtf8(string.utf8_str());
+  QString text = QString::fromUtf8(string.c_str());
   QFont fontSpec = this->Implementation->TextPropertyToFont(property, dpi);
   QFontMetrics fontMetric(fontSpec);
 
@@ -218,17 +176,12 @@ int vtkQtStringToImage::RenderString(vtkTextProperty* property, const vtkUnicode
   return 1;
 }
 
-int vtkQtStringToImage::RenderString(vtkTextProperty* property, const vtkStdString& string, int dpi,
-  vtkImageData* data, int textDims[2])
-{
-  return this->RenderString(property, vtkUnicodeString::from_utf8(string), dpi, data, textDims);
-}
-
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtStringToImage::DeepCopy(vtkQtStringToImage*) {}
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtStringToImage::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

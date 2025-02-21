@@ -1,25 +1,17 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkLight.h"
 #include "vtkNew.h"
 #include "vtkPolyDataMapper.h"
+#include "vtkRTAnalyticSource.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderer.h"
+#include "vtkSmartVolumeMapper.h"
 #include "vtkSphereSource.h"
 #include "vtkTestUtilities.h"
+#include "vtkVolume.h"
 #include "vtkWindowNode.h"
 #include "vtksys/SystemTools.hxx"
 
@@ -44,6 +36,14 @@ int TestJSONRenderWindowExporter(int argc, char* argv[])
   vtkNew<vtkPolyDataMapper> pmap;
   pmap->SetInputConnection(sphere->GetOutputPort());
 
+  vtkNew<vtkRTAnalyticSource> wavelet;
+  wavelet->SetWholeExtent(-10, 10, -10, 10, -10, 10);
+  wavelet->SetCenter(0, 0, 0);
+
+  vtkNew<vtkSmartVolumeMapper> volumeMapper;
+  volumeMapper->SetBlendModeToComposite();
+  volumeMapper->SetInputConnection(wavelet->GetOutputPort());
+
   vtkNew<vtkRenderWindow> rwin;
 
   vtkNew<vtkRenderer> ren;
@@ -54,15 +54,18 @@ int TestJSONRenderWindowExporter(int argc, char* argv[])
 
   vtkNew<vtkActor> actor;
   ren->AddActor(actor);
-
   actor->SetMapper(pmap);
+
+  vtkNew<vtkVolume> volume;
+  ren->AddVolume(volume);
+  volume->SetMapper(volumeMapper);
 
   vtkNew<vtkJSONRenderWindowExporter> exporter;
   exporter->GetArchiver()->SetArchiveName(filename.c_str());
   exporter->SetRenderWindow(rwin);
   exporter->Write();
 
-  vtksys::SystemTools::RemoveADirectory(filename.c_str());
+  vtksys::SystemTools::RemoveADirectory(filename);
 
   return EXIT_SUCCESS;
 }

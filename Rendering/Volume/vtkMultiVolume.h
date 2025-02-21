@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiVolume.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkMultiVolume
  * @brief Represents a world axis-aligned bounding-box containing a set of
@@ -42,6 +30,7 @@
 #include "vtkSmartPointer.h"          // For vtkSmartPointer
 #include "vtkVolume.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractVolumeMapper;
 class vtkBoundingBox;
 class vtkMatrix4x4;
@@ -58,16 +47,16 @@ public:
   vtkTypeMacro(vtkMultiVolume, vtkVolume);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Add / Remove a vtkVolume instance.
    */
   void SetVolume(vtkVolume* volume, int port = 0);
   vtkVolume* GetVolume(int port = 0);
   void RemoveVolume(int port) { this->SetVolume(nullptr, port); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given that this class represents a bounding-box only there is no property
    * directly associated with it (a cannot be set directly).
@@ -77,7 +66,7 @@ public:
    */
   void SetProperty(vtkVolumeProperty* property) override;
   vtkVolumeProperty* GetProperty() override;
-  //@}
+  ///@}
 
   /**
    * Computes the bounds of the box containing all of the vtkVolume instances.
@@ -111,7 +100,7 @@ public:
   vtkMatrix4x4* GetMatrix() override { return this->Matrix; }
 
   /**
-   * Returns the transformation from texture coordinates to data cooridinates
+   * Returns the transformation from texture coordinates to data coordinates
    * of the bounding-box. Since this class represents an axis-aligned bounding
    * -boxThis, this transformation only contains a scaling diagonal.
    */
@@ -178,4 +167,5 @@ private:
   vtkMultiVolume(const vtkMultiVolume&) = delete;
   void operator=(const vtkMultiVolume&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

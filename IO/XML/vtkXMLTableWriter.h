@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLTableWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLTableWriter
  * @brief   Write VTK XML Table files.
@@ -23,9 +11,11 @@
 #ifndef vtkXMLTableWriter_h
 #define vtkXMLTableWriter_h
 
+#include "vtkDeprecation.h" // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkIOXMLModule.h" // For export macro
 #include "vtkXMLWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTable;
 
 class VTKIOXML_EXPORT vtkXMLTableWriter : public vtkXMLWriter
@@ -35,23 +25,23 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkXMLTableWriter* New();
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of pieces used to stream the table through the
    * pipeline while writing to the file.
    */
   vtkSetMacro(NumberOfPieces, int);
   vtkGetMacro(NumberOfPieces, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the piece to write to the file.  If this is
    * negative or equal to the NumberOfPieces, all pieces will be written.
    */
   vtkSetMacro(WritePiece, int);
   vtkGetMacro(WritePiece, int);
-  //@}
+  ///@}
 
   /**
    * See the vtkAlgorithm for a description of what these do
@@ -65,7 +55,9 @@ protected:
 
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
-  vtkTable* GetInputAsTable();
+  vtkTable* GetTableInput();
+  VTK_DEPRECATED_IN_9_5_0("Use GetTableInput() instead.")
+  vtkTable* GetInputAsTable() { return this->GetTableInput(); }
   const char* GetDataSetName() override; // vtkTable isn't a DataSet but it's used by vtkXMLWriter
 
   /**
@@ -126,4 +118,5 @@ private:
   void operator=(const vtkXMLTableWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

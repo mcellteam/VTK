@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPainterCommunicator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkPainterCommunicator
  * @brief A communicator that can safely be used inside a painter.
@@ -27,11 +15,12 @@
 
 #include "vtkRenderingLICOpenGL2Module.h" // for export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGLICOPENGL2_EXPORT vtkPainterCommunicator
 {
 public:
-  vtkPainterCommunicator() {}
-  virtual ~vtkPainterCommunicator() {}
+  vtkPainterCommunicator() = default;
+  virtual ~vtkPainterCommunicator() = default;
 
   /**
    * Copy and assignment operators. Both use Copy internally
@@ -58,24 +47,25 @@ public:
   virtual void Duplicate(const vtkPainterCommunicator*) {}
 
   /**
-   * Querry MPI about the communicator.
+   * Query MPI about the communicator.
    */
   virtual int GetRank() { return 0; }
   virtual int GetSize() { return 1; }
   virtual bool GetIsNull() { return false; }
 
   /**
-   * Querry MPI about the world communicator.
+   * Query MPI about the world communicator.
    */
   virtual int GetWorldRank() { return 0; }
   virtual int GetWorldSize() { return 1; }
 
   /**
-   * Querry MPI about its state.
+   * Query MPI about its state.
    */
   virtual bool GetMPIInitialized() { return false; }
   virtual bool GetMPIFinalized() { return true; }
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkPainterCommunicator.h

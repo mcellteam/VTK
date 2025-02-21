@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractHierarchicalBins.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractHierarchicalBins.h"
 
 #include "vtkDataArray.h"
@@ -21,17 +9,18 @@
 #include "vtkPointSet.h"
 #include "vtkPoints.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractHierarchicalBins);
 vtkCxxSetObjectMacro(vtkExtractHierarchicalBins, BinningFilter, vtkHierarchicalBinningFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Mark points to be extracted
-static void MaskPoints(vtkIdType numPts, vtkIdType* map, vtkIdType offset, vtkIdType numFill)
+void MaskPoints(vtkIdType numPts, vtkIdType* map, vtkIdType offset, vtkIdType numFill)
 {
   std::fill_n(map, offset, static_cast<vtkIdType>(-1));
   std::fill_n(map + offset, numFill, static_cast<vtkIdType>(1));
@@ -41,7 +30,7 @@ static void MaskPoints(vtkIdType numPts, vtkIdType* map, vtkIdType offset, vtkId
 } // anonymous namespace
 
 //================= Begin class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractHierarchicalBins::vtkExtractHierarchicalBins()
 {
   this->Level = 0;
@@ -49,7 +38,7 @@ vtkExtractHierarchicalBins::vtkExtractHierarchicalBins()
   this->BinningFilter = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractHierarchicalBins::~vtkExtractHierarchicalBins()
 {
   this->SetBinningFilter(nullptr);
@@ -62,7 +51,7 @@ void vtkExtractHierarchicalBins::ReportReferences(vtkGarbageCollector* collector
   vtkGarbageCollectorReport(collector, this->BinningFilter, "Binning Filter");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Traverse all the input points and extract points that are contained within
 // and implicit function.
 int vtkExtractHierarchicalBins::FilterPoints(vtkPointSet* input)
@@ -103,7 +92,7 @@ int vtkExtractHierarchicalBins::FilterPoints(vtkPointSet* input)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractHierarchicalBins::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -112,3 +101,4 @@ void vtkExtractHierarchicalBins::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Bin: " << this->Bin << "\n";
   os << indent << "Binning Filter: " << static_cast<void*>(this->BinningFilter) << "\n";
 }
+VTK_ABI_NAMESPACE_END

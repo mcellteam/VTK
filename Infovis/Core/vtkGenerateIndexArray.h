@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenerateIndexArray.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkGenerateIndexArray
  *
@@ -48,6 +32,7 @@
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkInfovisCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKINFOVISCORE_EXPORT vtkGenerateIndexArray : public vtkDataObjectAlgorithm
 {
 public:
@@ -56,38 +41,38 @@ public:
   vtkTypeMacro(vtkGenerateIndexArray, vtkDataObjectAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Control the output index array name.  Default: "index".
    */
   vtkSetStringMacro(ArrayName);
   vtkGetStringMacro(ArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the location where the index array will be stored.
    */
   vtkSetMacro(FieldType, int);
   vtkGetMacro(FieldType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specifies an optional reference array for index-generation.
    */
   vtkSetStringMacro(ReferenceArrayName);
   vtkGetStringMacro(ReferenceArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specifies whether the index array should be marked as
    * pedigree ids.  Default: false.
    */
   vtkSetMacro(PedigreeID, int);
   vtkGetMacro(PedigreeID, int);
-  //@}
+  ///@}
 
   enum
   {
@@ -120,4 +105,5 @@ private:
   void operator=(const vtkGenerateIndexArray&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

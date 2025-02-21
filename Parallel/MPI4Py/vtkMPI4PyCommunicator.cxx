@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMPI4PyCommunicator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMPI4PyCommunicator.h"
 
@@ -21,12 +9,13 @@
 
 #include <mpi4py/mpi4py.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMPI4PyCommunicator);
 
-//----------------------------------------------------------------------------
-vtkMPI4PyCommunicator::vtkMPI4PyCommunicator() {}
+//------------------------------------------------------------------------------
+vtkMPI4PyCommunicator::vtkMPI4PyCommunicator() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyObject* vtkMPI4PyCommunicator::ConvertToPython(vtkMPICommunicator* comm)
 {
   // Import mpi4py if it does not exist.
@@ -46,7 +35,7 @@ PyObject* vtkMPI4PyCommunicator::ConvertToPython(vtkMPICommunicator* comm)
   return PyMPIComm_New(*comm->GetMPIComm()->GetHandle());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMPICommunicator* vtkMPI4PyCommunicator::ConvertToVTK(PyObject* comm)
 {
   // Import mpi4py if it does not exist.
@@ -75,8 +64,9 @@ vtkMPICommunicator* vtkMPI4PyCommunicator::ConvertToVTK(PyObject* comm)
   return vtkComm;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMPI4PyCommunicator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

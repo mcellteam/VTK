@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractVOI.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractVOI.h"
 
 #include "vtkCellData.h"
@@ -24,6 +12,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractVOI);
 
 // Construct object to extract all of the input data.
@@ -51,16 +40,23 @@ vtkExtractVOI::~vtkExtractVOI()
 int vtkExtractVOI::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
+  // get the info objects
+  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
+
+  // Re-init helper to full whole extent. This is needed since `RequestData`
+  // modifies the helper to limit to the input extents rather than whole
+  // extents.
+  int wholeExtent[6];
+  inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), wholeExtent);
+  this->Internal->Initialize(
+    this->VOI, wholeExtent, this->SampleRate, (this->IncludeBoundary == 1));
+
   if (!this->Internal->IsValid())
   {
     return 0;
   }
 
   int i;
-
-  // get the info objects
-  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
-
   bool emptyExtent = false;
   int uExt[6];
   for (i = 0; i < 3; i++)
@@ -93,14 +89,14 @@ int vtkExtractVOI::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
       for (i = 0; i < 3; i++)
       {
         int idx = oUExt[2 * i] - oWExt[2 * i]; // Extent value to index
-        if (idx < 0 || idx >= (int)this->Internal->GetSize(i))
+        if (idx < 0 || idx >= this->Internal->GetSize(i))
         {
           vtkWarningMacro("Requested extent outside whole extent.");
           idx = 0;
         }
         uExt[2 * i] = this->Internal->GetMappedExtentValueFromIndex(i, idx);
         int jdx = oUExt[2 * i + 1] - oWExt[2 * i]; // Extent value to index
-        if (jdx < idx || jdx >= (int)this->Internal->GetSize(i))
+        if (jdx < idx || jdx >= this->Internal->GetSize(i))
         {
           vtkWarningMacro("Requested extent outside whole extent.");
           jdx = 0;
@@ -143,7 +139,7 @@ int vtkExtractVOI::RequestInformation(vtkInformation* vtkNotUsed(request),
 
   if (!this->Internal->IsValid())
   {
-    vtkWarningMacro("Error while initializing filter.");
+    vtkDebugMacro("Error while initializing filter.");
     return 0;
   }
 
@@ -230,7 +226,7 @@ bool vtkExtractVOI::RequestDataImpl(
 
   if (input->GetNumberOfPoints() == 0)
   {
-    return 1;
+    return true;
   }
 
   // compute output spacing
@@ -286,7 +282,7 @@ bool vtkExtractVOI::RequestDataImpl(
   this->Internal->CopyPointsAndPointData(inExt, output->GetExtent(), pd, nullptr, outPD, nullptr);
   this->Internal->CopyCellData(inExt, output->GetExtent(), cd, outCD);
 
-  return 1;
+  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -304,3 +300,4 @@ void vtkExtractVOI::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Include Boundary: " << (this->IncludeBoundary ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

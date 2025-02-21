@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleSwitch.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInteractorStyleSwitch
  * @brief   class to swap between interactory styles
@@ -31,6 +19,7 @@
 
 #include "vtkInteractionStyleModule.h" // For export macro
 #include "vtkInteractorStyleSwitchBase.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALMANUAL
 
 #define VTKIS_JOYSTICK 0
 #define VTKIS_TRACKBALL 1
@@ -38,13 +27,15 @@
 #define VTKIS_CAMERA 0
 #define VTKIS_ACTOR 1
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInteractorStyleJoystickActor;
 class vtkInteractorStyleJoystickCamera;
 class vtkInteractorStyleTrackballActor;
 class vtkInteractorStyleTrackballCamera;
 class vtkInteractorStyleMultiTouchCamera;
 
-class VTKINTERACTIONSTYLE_EXPORT vtkInteractorStyleSwitch : public vtkInteractorStyleSwitchBase
+class VTKINTERACTIONSTYLE_EXPORT VTK_MARSHALMANUAL vtkInteractorStyleSwitch
+  : public vtkInteractorStyleSwitchBase
 {
 public:
   static vtkInteractorStyleSwitch* New();
@@ -62,7 +53,7 @@ public:
    */
   void SetAutoAdjustCameraClippingRange(vtkTypeBool value) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get current style
    */
@@ -72,7 +63,7 @@ public:
   void SetCurrentStyleToTrackballActor();
   void SetCurrentStyleToTrackballCamera();
   void SetCurrentStyleToMultiTouchCamera();
-  //@}
+  ///@}
 
   /**
    * Only care about the char event, which is used to switch between
@@ -80,14 +71,14 @@ public:
    */
   void OnChar() override;
 
-  //@{
+  ///@{
   /**
    * Overridden from vtkInteractorObserver because the interactor styles
    * used by this class must also be updated.
    */
   void SetDefaultRenderer(vtkRenderer*) override;
   void SetCurrentRenderer(vtkRenderer*) override;
-  //@}
+  ///@}
 
 protected:
   vtkInteractorStyleSwitch();
@@ -111,4 +102,5 @@ private:
   void operator=(const vtkInteractorStyleSwitch&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBezierContourLineInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBezierContourLineInterpolator
  * @brief   Interpolates supplied nodes with bezier line segments
@@ -30,6 +18,7 @@
 #include "vtkContourLineInterpolator.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKINTERACTIONWIDGETS_EXPORT vtkBezierContourLineInterpolator
   : public vtkContourLineInterpolator
 {
@@ -39,17 +28,17 @@ public:
    */
   static vtkBezierContourLineInterpolator* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkBezierContourLineInterpolator, vtkContourLineInterpolator);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   int InterpolateLine(vtkRenderer* ren, vtkContourRepresentation* rep, int idx1, int idx2) override;
 
-  //@{
+  ///@{
   /**
    * The difference between a line segment connecting two points and the curve
    * connecting the same points. In the limit of the length of the curve
@@ -58,16 +47,16 @@ public:
    */
   vtkSetClampMacro(MaximumCurveError, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(MaximumCurveError, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Maximum number of bezier line segments between two nodes. Larger values
    * create a finer interpolation. Default is 100.
    */
   vtkSetClampMacro(MaximumCurveLineSegments, int, 1, 1000);
   vtkGetMacro(MaximumCurveLineSegments, int);
-  //@}
+  ///@}
 
   /**
    * Span of the interpolator, i.e. the number of control points it's supposed
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkBezierContourLineInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

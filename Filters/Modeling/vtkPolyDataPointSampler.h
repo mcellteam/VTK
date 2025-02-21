@@ -1,39 +1,48 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataPointSampler.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPolyDataPointSampler
  * @brief   generate points from vtkPolyData
  *
  * vtkPolyDataPointSampler generates points from input vtkPolyData. The
+ * filter has two modes of operation: random point generation, or regular
+ * point generation. In random generation mode, points are generated in each
+ * polygonal entity using a random approach. In regular generation mode, the
  * points are placed approximately a specified distance apart. Optionally,
  * the points attributes can be interpolated from the generating vertices,
  * edges, and polygons.
  *
- * This filter functions as follows. First, it regurgitates all input points,
- * then it samples all lines, plus edges associated with the input polygons
- * and triangle strips to produce edge points. Finally, the interiors of
- * polygons and triangle strips are subsampled to produce points. All of
- * these operations can be enabled or disabled separately. Note that this
- * algorithm only approximately generates points the specified distance
- * apart. Generally the point density is finer than requested.
+ * In regular point generation mode, this filter functions as follows. First,
+ * it regurgitates all input points, then it samples all lines, plus edges
+ * associated with the input polygons and triangle strips to produce edge
+ * points. Finally, the interiors of polygons and triangle strips are
+ * subsampled to produce points. All of these operations can be enabled or
+ * disabled separately. Note that this algorithm only approximately generates
+ * points the specified distance apart. Generally the point density is finer
+ * than requested.
+ *
+ * In random point generation mode, this filter functions as follows. First,
+ * it randomly regurgitates all input points (if enabled), then it randomly
+ * samples all lines, plus edges associated with the input polygons and
+ * triangle strips to produce edge points (if enabled). Finally, the
+ * interiors of polygons and triangle strips are randomly subsampled to
+ * produce points. All of these operations can be enabled or disabled
+ * separately. Note that this algorithm only approximately generates points
+ * the specified distance apart. Generally the point density is finer than
+ * requested. Also note that the result is not truly random due to the
+ * constraints of the mesh construction.
  *
  * @warning
- * While this algorithm processes general polygons. it does so by performing
- * a fan triangulation. This may produce poor results, especially for convave
+ * Although this algorithm processes general polygons. it does so by performing
+ * a fan triangulation. This may produce poor results, especially for concave
  * polygons. For better results, use a triangle filter to pre-tesselate
  * polygons.
+ *
+ * @warning
+ * In random point generation mode, producing random edges and vertex points
+ * from polygons and triangle strips is less random than is typically
+ * desirable. You may wish to disable vertex and edge point generation for a
+ * result that is closer to random.
  *
  * @warning
  * Point generation can be useful in a variety of applications. For example,
@@ -43,8 +52,8 @@
  * from polygons or other primitives.
  *
  * @warning
- * When sampling polygons of 5 sides or more, the polygon is triangulated.
- * This can result in variations in point density near tesselation boudaries.
+ * When sampling polygons of five sides or more, the polygon is triangulated.
+ * This can result in variations in point density near tessellation boundaries.
  *
  * @sa
  * vtkTriangleFilter vtkImplicitModeller
@@ -58,6 +67,7 @@
 #include "vtkNew.h"                   // for data members
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSMODELING_EXPORT vtkPolyDataPointSampler : public vtkPolyDataAlgorithm
 {
 public:
@@ -66,24 +76,45 @@ public:
    */
   static vtkPolyDataPointSampler* New();
 
-  //@{
+  ///@{
   /**
    * Standard macros for type information and printing.
    */
   vtkTypeMacro(vtkPolyDataPointSampler, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the approximate distance between points. This is an absolute
    * distance measure. The default is 0.01.
    */
   vtkSetClampMacro(Distance, double, 0.0, VTK_FLOAT_MAX);
   vtkGetMacro(Distance, double);
-  //@}
+  ///@}
 
-  //@{
+  /**
+   * Specify how points are to be generated.
+   */
+  enum
+  {
+    REGULAR_GENERATION,
+    RANDOM_GENERATION
+  };
+
+  ///@{
+  /**
+   * Specify/retrieve the type of point generation: either regular point
+   * generation or random point generation. By default, regular point
+   * generation is used.
+   */
+  vtkSetClampMacro(PointGenerationMode, int, REGULAR_GENERATION, RANDOM_GENERATION);
+  vtkGetMacro(PointGenerationMode, int);
+  void SetPointGenerationModeToRegular() { this->SetPointGenerationMode(REGULAR_GENERATION); }
+  void SetPointGenerationModeToRandom() { this->SetPointGenerationMode(RANDOM_GENERATION); }
+  ///@}
+
+  ///@{
   /**
    * Specify/retrieve a boolean flag indicating whether cell vertex points should
    * be output.
@@ -91,9 +122,9 @@ public:
   vtkGetMacro(GenerateVertexPoints, bool);
   vtkSetMacro(GenerateVertexPoints, bool);
   vtkBooleanMacro(GenerateVertexPoints, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify/retrieve a boolean flag indicating whether cell edges should
    * be sampled to produce output points. The default is true.
@@ -101,9 +132,9 @@ public:
   vtkGetMacro(GenerateEdgePoints, bool);
   vtkSetMacro(GenerateEdgePoints, bool);
   vtkBooleanMacro(GenerateEdgePoints, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify/retrieve a boolean flag indicating whether cell interiors should
    * be sampled to produce output points. The default is true.
@@ -111,9 +142,9 @@ public:
   vtkGetMacro(GenerateInteriorPoints, bool);
   vtkSetMacro(GenerateInteriorPoints, bool);
   vtkBooleanMacro(GenerateInteriorPoints, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify/retrieve a boolean flag indicating whether cell vertices should
    * be generated. Cell vertices are useful if you actually want to display
@@ -124,9 +155,9 @@ public:
   vtkGetMacro(GenerateVertices, bool);
   vtkSetMacro(GenerateVertices, bool);
   vtkBooleanMacro(GenerateVertices, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify/retrieve a boolean flag indicating whether point data should be
    * interpolated onto the newly generated points. If enabled, points
@@ -138,16 +169,16 @@ public:
   vtkGetMacro(InterpolatePointData, bool);
   vtkSetMacro(InterpolatePointData, bool);
   vtkBooleanMacro(InterpolatePointData, bool);
-  //@}
+  ///@}
 
 protected:
   vtkPolyDataPointSampler();
-  ~vtkPolyDataPointSampler() override {}
+  ~vtkPolyDataPointSampler() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   double Distance;
-  double Distance2;
+  int PointGenerationMode;
 
   bool GenerateVertexPoints;
   bool GenerateEdgePoints;
@@ -156,25 +187,10 @@ protected:
 
   bool InterpolatePointData;
 
-  // Internal scratch arrays supporting point data interpolation, and
-  // sampling edges.
-  vtkNew<vtkEdgeTable> EdgeTable;
-  double TriWeights[3];
-  vtkNew<vtkIdList> TriIds;
-  double QuadWeights[4];
-  vtkNew<vtkIdList> QuadIds;
-
-  // Internal methods for sampling edges, triangles, and polygons
-  void SampleEdge(
-    vtkPoints* pts, vtkIdType p0, vtkIdType p1, vtkPointData* inPD, vtkPointData* outPD);
-  void SampleTriangle(vtkPoints* newPts, vtkPoints* inPts, const vtkIdType* pts, vtkPointData* inPD,
-    vtkPointData* outPD);
-  void SamplePolygon(vtkPoints* newPts, vtkPoints* inPts, vtkIdType npts, const vtkIdType* pts,
-    vtkPointData* inPD, vtkPointData* outPD);
-
 private:
   vtkPolyDataPointSampler(const vtkPolyDataPointSampler&) = delete;
   void operator=(const vtkPolyDataPointSampler&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

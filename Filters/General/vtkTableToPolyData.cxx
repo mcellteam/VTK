@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkTableToPolyData.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTableToPolyData.h"
 
 #include "vtkCellArray.h"
@@ -23,8 +12,9 @@
 #include "vtkPolyData.h"
 #include "vtkTable.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTableToPolyData);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTableToPolyData::vtkTableToPolyData()
 {
   this->XColumn = nullptr;
@@ -36,11 +26,11 @@ vtkTableToPolyData::vtkTableToPolyData()
   this->XComponent = 0;
   this->YComponent = 0;
   this->ZComponent = 0;
-  this->Create2DPoints = 0;
+  this->Create2DPoints = false;
   this->PreserveCoordinateColumnsAsDataArrays = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTableToPolyData::~vtkTableToPolyData()
 {
   this->SetXColumn(nullptr);
@@ -48,14 +38,14 @@ vtkTableToPolyData::~vtkTableToPolyData()
   this->SetZColumn(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTableToPolyData::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkTable");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTableToPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -159,6 +149,10 @@ int vtkTableToPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   // Add all other columns as point data.
   for (int cc = 0; cc < input->GetNumberOfColumns(); cc++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkAbstractArray* arr = input->GetColumn(cc);
     if (this->PreserveCoordinateColumnsAsDataArrays)
     {
@@ -172,7 +166,7 @@ int vtkTableToPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTableToPolyData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -189,3 +183,4 @@ void vtkTableToPolyData::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "PreserveCoordinateColumnsAsDataArrays: "
      << (this->PreserveCoordinateColumnsAsDataArrays ? "true" : "false") << endl;
 }
+VTK_ABI_NAMESPACE_END

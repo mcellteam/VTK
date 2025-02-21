@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextureIO.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTextureIO.h"
 
 #include "vtkCellData.h"
@@ -33,7 +21,8 @@ using std::deque;
 using std::ostringstream;
 using std::string;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 static vtkFloatArray* DownloadTexture(vtkTextureObject* texture, const unsigned int* sub)
 {
   int tt = texture->GetVTKDataType();
@@ -65,7 +54,7 @@ static vtkFloatArray* DownloadTexture(vtkTextureObject* texture, const unsigned 
   return ta;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureIO::Write(
   const char* filename, vtkTextureObject* texture, const unsigned int* subset, const double* origin)
 {
@@ -107,7 +96,7 @@ void vtkTextureIO::Write(
   w->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureIO::Write(const char* filename, vtkTextureObject* texture,
   const deque<vtkPixelExtent>& exts, const double* origin)
 {
@@ -155,3 +144,4 @@ void vtkTextureIO::Write(const char* filename, vtkTextureObject* texture,
   w->Delete();
   mb->Delete();
 }
+VTK_ABI_NAMESPACE_END

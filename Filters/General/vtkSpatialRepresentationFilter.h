@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSpatialRepresentationFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSpatialRepresentationFilter
  * @brief   generate polygonal model of spatial search object (i.e., a vtkLocator)
@@ -50,6 +38,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLocator;
 class vtkDataSet;
 class vtkSpatialRepresentationFilterInternal;
@@ -61,21 +50,21 @@ public:
   vtkTypeMacro(vtkSpatialRepresentationFilter, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the locator that will be used to generate the representation.
    */
   virtual void SetSpatialRepresentation(vtkLocator*);
   vtkGetObjectMacro(SpatialRepresentation, vtkLocator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the maximum level that is available. Populated during
    * RequestData().
    */
   vtkGetMacro(MaximumLevel, int);
-  //@}
+  ///@}
 
   /**
    * Add a level to be computed.
@@ -87,14 +76,14 @@ public:
    */
   void ResetLevels();
 
-  //@{
+  ///@{
   /**
    * Turn on/off the generation of leaf nodes. Off by default.
    */
   vtkSetMacro(GenerateLeaves, bool);
   vtkGetMacro(GenerateLeaves, bool);
   vtkBooleanMacro(GenerateLeaves, bool);
-  //@}
+  ///@}
 
 protected:
   vtkSpatialRepresentationFilter();
@@ -117,4 +106,5 @@ private:
   vtkSpatialRepresentationFilterInternal* Internal;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

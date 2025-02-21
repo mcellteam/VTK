@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageDataToUniformGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkImageDataToUniformGrid.h"
 
@@ -27,25 +15,26 @@
 #include "vtkUniformGrid.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageDataToUniformGrid);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageDataToUniformGrid::vtkImageDataToUniformGrid()
 {
   this->Reverse = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageDataToUniformGrid::~vtkImageDataToUniformGrid() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageDataToUniformGrid::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Reverse: " << this->Reverse << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToUniformGrid::RequestDataObject(
   vtkInformation*, vtkInformationVector** inV, vtkInformationVector* outV)
 {
@@ -86,7 +75,7 @@ int vtkImageDataToUniformGrid::RequestDataObject(
   return VTK_ERROR;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToUniformGrid::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outV)
 {
@@ -127,6 +116,10 @@ int vtkImageDataToUniformGrid::RequestData(
   iter->TraverseSubTreeOn();
   for (iter->GoToFirstItem(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     if (vtkImageData* inImageData = vtkImageData::SafeDownCast(iter->GetCurrentDataObject()))
     {
       vtkNew<vtkUniformGrid> outUniformGrid;
@@ -147,7 +140,7 @@ int vtkImageDataToUniformGrid::RequestData(
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToUniformGrid::FillInputPortInformation(int port, vtkInformation* info)
 {
   this->Superclass::FillInputPortInformation(port, info);
@@ -158,7 +151,7 @@ int vtkImageDataToUniformGrid::FillInputPortInformation(int port, vtkInformation
   return VTK_OK;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToUniformGrid::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   // now add our info
@@ -167,7 +160,7 @@ int vtkImageDataToUniformGrid::FillOutputPortInformation(int vtkNotUsed(port), v
   return VTK_OK;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToUniformGrid::Process(
   vtkImageData* input, int association, const char* arrayName, vtkUniformGrid* output)
 {
@@ -207,7 +200,9 @@ int vtkImageDataToUniformGrid::Process(
   }
 
   vtkNew<vtkUnsignedCharArray> blankingArray;
-  blankingArray->DeepCopy(inScalars);
+  blankingArray->SetNumberOfTuples(inScalars->GetNumberOfTuples());
+  blankingArray->SetNumberOfComponents(1);
+  blankingArray->FillValue(0);
   blankingArray->SetName(vtkDataSetAttributes::GhostArrayName());
 
   unsigned char value1;
@@ -238,9 +233,15 @@ int vtkImageDataToUniformGrid::Process(
       value2 = 0;
     }
   }
+
   for (vtkIdType i = 0; i < blankingArray->GetNumberOfTuples(); i++)
   {
-    char value = blankingArray->GetValue(i) == 0 ? value1 : value2;
+    if (this->CheckAbort())
+    {
+      break;
+    }
+    double scalarValue = inScalars->GetTuple1(i);
+    char value = ((scalarValue > -1) && (scalarValue < 1)) ? value1 : value2;
     blankingArray->SetValue(i, value);
   }
 
@@ -255,3 +256,4 @@ int vtkImageDataToUniformGrid::Process(
 
   return VTK_OK;
 }
+VTK_ABI_NAMESPACE_END

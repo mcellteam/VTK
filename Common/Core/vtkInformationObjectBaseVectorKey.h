@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationObjectBaseVectorKey.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInformationObjectBaseVectorKey
  * @brief   Key for vtkObjectBase vector values.
@@ -29,6 +17,7 @@
 #include "vtkCommonInformationKeyManager.h" // Manage instances of this type.
 #include "vtkInformationKey.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformationObjectBaseVectorValue;
 
 class VTKCOMMONCORE_EXPORT vtkInformationObjectBaseVectorKey : public vtkInformationKey
@@ -36,11 +25,11 @@ class VTKCOMMONCORE_EXPORT vtkInformationObjectBaseVectorKey : public vtkInforma
 public:
   vtkTypeMacro(vtkInformationObjectBaseVectorKey, vtkInformationKey);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@{
+  ///@{
   /**
    * The name of the static instance and the class in which
    * it is defined(location) should be passed to the constructor.
-   * Providing "requiredClass" name one can insure that only
+   * Providing "requiredClass" name one can ensure that only
    * objects of type "requiredClass" are stored in vectors
    * associated with the instance of this key type created.
    * These should be string literals as they are not copied.
@@ -49,7 +38,7 @@ public:
     const char* name, const char* location, const char* requiredClass = nullptr);
   //
   ~vtkInformationObjectBaseVectorKey() override;
-  //@}
+  ///@}
 
   /**
    * This method simply returns a new vtkInformationObjectBaseVectorKey, given a
@@ -57,7 +46,7 @@ public:
    * which class types can be set with this key). This method is provided
    * for wrappers. Use the constructor directly from C++ instead.
    */
-  static vtkInformationObjectBaseVectorKey* MakeKey(
+  static VTK_NEWINSTANCE vtkInformationObjectBaseVectorKey* MakeKey(
     const char* name, const char* location, const char* requiredClass = nullptr)
   {
     return new vtkInformationObjectBaseVectorKey(name, location, requiredClass);
@@ -91,7 +80,7 @@ public:
    */
   void Set(vtkInformation* info, vtkObjectBase* value, int i);
 
-  //@{
+  ///@{
   /**
    * Remove all instances of val from the list. If using the indexed overload,
    * the object at the specified position is removed.
@@ -99,7 +88,7 @@ public:
   void Remove(vtkInformation* info, vtkObjectBase* val);
   void Remove(vtkInformation* info, int idx);
   using Superclass::Remove; // Don't hide base class methods
-  //@}
+  ///@}
 
   /**
    * Copy n values from the range in source defined by [from  from+n-1]
@@ -165,4 +154,5 @@ private:
   void operator=(const vtkInformationObjectBaseVectorKey&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

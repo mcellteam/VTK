@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestImportExportOBJ.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
@@ -42,12 +30,12 @@ int TestImportExportOBJ(int argc, char* argv[])
   auto renderer = vtkSmartPointer<vtkRenderer>::New();
 
   std::string fileName = argv[1];
-  std::string extension = "";
+  std::string extension;
   // Make the extension lowercase
   std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-  if (fileName.find_last_of(".") != std::string::npos)
+  if (fileName.find_last_of('.') != std::string::npos)
   {
-    extension = fileName.substr(fileName.find_last_of(".") + 1);
+    extension = fileName.substr(fileName.find_last_of('.') + 1);
   }
   if (extension == "3ds")
   {
@@ -56,7 +44,11 @@ int TestImportExportOBJ(int argc, char* argv[])
     importer->SetRenderWindow(renderWindow);
     renderWindow = importer->GetRenderWindow();
     renderer = importer->GetRenderer();
-    importer->Read();
+    if (!importer->Update())
+    {
+      std::cerr << "ERROR: Importer failed to update\n";
+      return EXIT_FAILURE;
+    }
   }
   else if (extension == "gltf" || extension == "glb")
   {
@@ -65,7 +57,11 @@ int TestImportExportOBJ(int argc, char* argv[])
     importer->SetRenderWindow(renderWindow);
     renderWindow = importer->GetRenderWindow();
     renderer = importer->GetRenderer();
-    importer->Read();
+    if (!importer->Update())
+    {
+      std::cerr << "ERROR: Importer failed to update\n";
+      return EXIT_FAILURE;
+    }
   }
   else
   {

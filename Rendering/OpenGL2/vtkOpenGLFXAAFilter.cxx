@@ -1,21 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLFXAAFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLFXAAFilter.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include "vtkFXAAOptions.h"
 #include "vtkObjectFactory.h"
@@ -41,8 +29,9 @@
 #include "vtkFXAAFilterFS.h"
 
 // Define to perform/dump benchmarking info:
-//#define FXAA_BENCHMARK
+// #define FXAA_BENCHMARK
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLFXAAFilter);
 
 //------------------------------------------------------------------------------
@@ -264,7 +253,7 @@ void vtkOpenGLFXAAFilter::CreateGLObjects()
   vtkOpenGLRenderWindow* renWin =
     static_cast<vtkOpenGLRenderWindow*>(this->Renderer->GetRenderWindow());
   this->Input->SetContext(renWin);
-  this->Input->SetFormat(GL_RGB);
+  this->Input->SetFormat(GL_RGBA);
 
   // we need to get the format of current color buffer in order to allocate the right format
   // for the texture used in FXAA
@@ -279,9 +268,9 @@ void vtkOpenGLFXAAFilter::CreateGLObjects()
     // ES doesn't support GL_RGB8, and OpenGL 3 doesn't support GL_RGB.
     // What a world.
 #ifdef GL_ES_VERSION_3_0
-    this->Input->SetInternalFormat(GL_RGB);
+    this->Input->SetInternalFormat(GL_RGBA);
 #else  // OpenGL ES
-    this->Input->SetInternalFormat(GL_RGB8);
+    this->Input->SetInternalFormat(GL_RGBA8);
 #endif // OpenGL ES
   }
 
@@ -335,6 +324,12 @@ void vtkOpenGLFXAAFilter::ApplyFilter()
   }
 
   vtkShaderProgram* program = this->QHelper->Program;
+  if (!program)
+  {
+    vtkWarningMacro(
+      "Unable to retrieve shader program from internal vtkOpenGLQuadHelper instance.");
+    return;
+  }
   program->SetUniformi("Input", this->Input->GetTextureUnit());
   float invTexSize[2] = { 1.f / static_cast<float>(this->Viewport[2]),
     1.f / static_cast<float>(this->Viewport[3]) };
@@ -449,3 +444,4 @@ void vtkOpenGLFXAAFilter::PrintBenchmark()
     this->FXAATimer->Reset();
   }
 }
+VTK_ABI_NAMESPACE_END

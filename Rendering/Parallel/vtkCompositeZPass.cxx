@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeZPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCompositeZPass.h"
 #include "vtkObjectFactory.h"
@@ -24,7 +12,7 @@
 
 // to be able to dump intermediate result into png files for debugging.
 // only for vtkCompositeZPass developers.
-//#define VTK_COMPOSITE_ZPASS_DEBUG
+// #define VTK_COMPOSITE_ZPASS_DEBUG
 
 #include "vtkFrameBufferObjectBase.h"
 #include "vtkImageData.h"
@@ -35,12 +23,11 @@
 #include "vtkPNGWriter.h"
 #include "vtkPixelBufferObject.h"
 #include "vtkPointData.h"
-#include "vtkStdString.h"
 #include "vtkTimerLog.h"
 #include <sstream>
 
 #ifdef VTK_COMPOSITE_ZPASS_DEBUG
-//#include <unistd.h>
+// #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/types.h> // Linux specific gettid()
 #endif
@@ -50,12 +37,13 @@
 #include "vtkOpenGLShaderCache.h"
 #include "vtkShaderProgram.h"
 #include "vtkTextureObjectVS.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositeZPass);
 vtkCxxSetObjectMacro(vtkCompositeZPass, Controller, vtkMultiProcessController);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeZPass::vtkCompositeZPass()
 {
   this->Controller = nullptr;
@@ -66,7 +54,7 @@ vtkCompositeZPass::vtkCompositeZPass()
   this->RawZBufferSize = 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeZPass::~vtkCompositeZPass()
 {
   if (this->Controller != nullptr)
@@ -89,7 +77,7 @@ vtkCompositeZPass::~vtkCompositeZPass()
   delete[] this->RawZBuffer;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeZPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -105,13 +93,13 @@ void vtkCompositeZPass::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositeZPass::IsSupported(vtkOpenGLRenderWindow* context)
 {
   return context != nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -276,12 +264,8 @@ void vtkCompositeZPass::Render(const vtkRenderState* s)
     timer->StopTimer();
     ostxx << "root0_" << vtkTimerLog::GetUniversalTime() << "_.png";
 
-    vtkStdString* sssxx = new vtkStdString;
-    (*sssxx) = ostxx.str();
-
     writer = vtkPNGWriter::New();
-    writer->SetFileName(*sssxx);
-    delete sssxx;
+    writer->SetFileName(ostxx.str().c_str());
     writer->SetInputConnection(converter->GetOutputPort());
     importer->Delete();
     //    rgbaToRgb->Delete();
@@ -325,11 +309,7 @@ void vtkCompositeZPass::Render(const vtkRenderState* s)
       ost.precision(5);
       ost << "root1_proc_" << proc << "_" << vtkTimerLog::GetUniversalTime() << "_.png";
 
-      vtkStdString* sss = new vtkStdString;
-      (*sss) = ost.str();
-
-      writer->SetFileName(*sss);
-      delete sss;
+      writer->SetFileName(ost.str().c_str());
       writer->SetInputConnection(converter->GetOutputPort());
       importer->Delete();
       //    rgbaToRgb->Delete();
@@ -341,7 +321,7 @@ void vtkCompositeZPass::Render(const vtkRenderState* s)
 #endif
 
       // send it to a PBO
-      glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // client to server
+      ostate->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1); // client to server
 
 #ifdef VTK_COMPOSITE_ZPASS_DEBUG
       state->Update();
@@ -490,12 +470,8 @@ void vtkCompositeZPass::Render(const vtkRenderState* s)
 
     ost3 << "root2_" << vtkTimerLog::GetUniversalTime() << "_.png";
 
-    vtkStdString* sss3 = new vtkStdString;
-    (*sss3) = ost3.str();
-
     writer = vtkPNGWriter::New();
-    writer->SetFileName(*sss3);
-    delete sss3;
+    writer->SetFileName(ost3.str().c_str());
     writer->SetInputConnection(converter->GetOutputPort());
     importer->Delete();
     //    rgbaToRgb->Delete();
@@ -559,12 +535,8 @@ void vtkCompositeZPass::Render(const vtkRenderState* s)
     timer->StopTimer();
     ost << "satellite1_" << vtkTimerLog::GetUniversalTime() << "_.png";
 
-    vtkStdString* sss = new vtkStdString;
-    (*sss) = ost.str();
-
     writer = vtkPNGWriter::New();
-    writer->SetFileName(*sss);
-    delete sss;
+    writer->SetFileName(ost.str().c_str());
     writer->SetInputConnection(converter->GetOutputPort());
     importer->Delete();
     //    rgbaToRgb->Delete();
@@ -607,12 +579,8 @@ void vtkCompositeZPass::Render(const vtkRenderState* s)
 
     ost2 << "satellite2_" << vtkTimerLog::GetUniversalTime() << "_.png";
 
-    vtkStdString* sss2 = new vtkStdString;
-    (*sss2) = ost2.str();
-
     writer = vtkPNGWriter::New();
-    writer->SetFileName(*sss2);
-    delete sss2;
+    writer->SetFileName(ost2.str().c_str());
     writer->SetInputConnection(converter->GetOutputPort());
     importer->Delete();
     //    rgbaToRgb->Delete();
@@ -652,7 +620,7 @@ void vtkCompositeZPass::Render(const vtkRenderState* s)
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeZPass::CreateProgram(vtkOpenGLRenderWindow* context)
 {
   assert("pre: context_exists" && context != nullptr);
@@ -669,7 +637,7 @@ void vtkCompositeZPass::CreateProgram(vtkOpenGLRenderWindow* context)
   assert("post: Program_exists" && this->Program != nullptr);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -695,3 +663,4 @@ void vtkCompositeZPass::ReleaseGraphicsResources(vtkWindow* w)
     this->Program->ReleaseGraphicsResources(w);
   }
 }
+VTK_ABI_NAMESPACE_END

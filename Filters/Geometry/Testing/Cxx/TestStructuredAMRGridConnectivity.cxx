@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestStructuredAMRGridConnectivity.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME TestStructuredAMRGridConnectivity.cxx -- Test AMR grid connectivity
 //
 // .SECTION Description
@@ -40,7 +28,7 @@
 #include <string>
 #include <vector>
 
-//#define ENABLE_IO
+// #define ENABLE_IO
 
 #define IMIN(ext) ext[0]
 #define IMAX(ext) ext[1]
@@ -65,8 +53,8 @@ const int BlocksPerLevel[2] = { 2, 2 };
 // (level,imin,imax,jmin,jmax,kmin,kmax)
 // Where imin,imax,jmin,jmax,kmin,kmax are defined w.r.t. a virtual grid
 // that covers the entire domain at level 0.
-static int Patches[4][7] = { { 0, 0, 2, 0, 5, 0, 5 }, { 0, 2, 5, 0, 5, 0, 5 },
-  { 1, 1, 4, 2, 4, 0, 5 }, { 1, 2, 4, 0, 2, 0, 5 } };
+int Patches[4][7] = { { 0, 0, 2, 0, 5, 0, 5 }, { 0, 2, 5, 0, 5, 0, 5 }, { 1, 1, 4, 2, 4, 0, 5 },
+  { 1, 2, 4, 0, 2, 0, 5 } };
 
 // Define the number of dimensions for the root level virtual grid
 // The domain is assumed to be square [NDIM x NDIM x NDIM]
@@ -107,7 +95,7 @@ void GetPoint(const int i, const int j, const int k, double h[3], double pnt[3])
 void GetGridExtent(const int blockIdx, const int dim, const int ratio, int ext[6])
 {
   assert("pre: block index is out-of-bounds" && (blockIdx >= 0) && (blockIdx < NumPatches));
-  assert("pre: dimensino is out-of-bounds" && (dim >= 2) && (dim <= 3));
+  assert("pre: dimension is out-of-bounds" && (dim >= 2) && (dim <= 3));
 
   // STEP 0: Initialize the extent
   for (int i = 0; i < 6; ++i)
@@ -428,7 +416,7 @@ void GetGhostedAMRData(vtkOverlappingAMR* amr, vtkStructuredAMRGridConnectivity*
   {
     blocksPerLevel.push_back(amr->GetNumberOfDataSets(i));
   }
-  ghostedAMR->Initialize(static_cast<int>(blocksPerLevel.size()), &blocksPerLevel[0]);
+  ghostedAMR->Initialize(static_cast<int>(blocksPerLevel.size()), blocksPerLevel.data());
 
   unsigned int levelIdx = 0;
   for (; levelIdx < amr->GetNumberOfLevels(); ++levelIdx)

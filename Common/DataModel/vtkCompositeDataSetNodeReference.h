@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeDataSetNodeReference.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkCompositeDataSetNodeReference_h
 #define vtkCompositeDataSetNodeReference_h
@@ -23,13 +11,11 @@
 #include <cassert>
 #include <type_traits>
 
-#ifndef __VTK_WRAP__
-
 namespace vtk
 {
-
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 //------------------------------------------------------------------------------
 // MTimeWatcher:
@@ -49,7 +35,7 @@ struct MTimeWatcher
 {
   vtkMTimeType MTime{ 0 };
 
-  MTimeWatcher() {}
+  MTimeWatcher() = default;
   explicit MTimeWatcher(vtkObject* o)
     : MTime{ o->GetMTime() }
   {
@@ -62,7 +48,7 @@ struct MTimeWatcher
 // empty, transparent, does nothing. operator() always returns true.
 struct NoOpMTimeWatcher
 {
-  NoOpMTimeWatcher() {}
+  NoOpMTimeWatcher() = default;
   explicit NoOpMTimeWatcher(vtkObject*) {}
   bool operator()(vtkObject*) const { return true; }
   void Reset(vtkObject*) {}
@@ -87,7 +73,10 @@ template <class ObjectType>
 using DebugWeakPointer = ObjectType*;
 #endif
 
+VTK_ABI_NAMESPACE_END
 } // end namespace detail
+
+VTK_ABI_NAMESPACE_BEGIN
 
 /**
  * A reference proxy into a vtkCompositeDataSet, obtained by dereferencing an
@@ -267,9 +256,8 @@ public:
   }
 };
 
+VTK_ABI_NAMESPACE_END
 } // end namespace vtk
-
-#endif // __VTK_WRAP__
 
 #endif // vtkCompositeDataSetNodeReference_h
 

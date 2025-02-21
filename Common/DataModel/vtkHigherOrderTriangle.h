@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHigherOrderTriangle.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHigherOrderTriangle
  * @brief   A 2D cell that represents an arbitrary order HigherOrder triangle
@@ -31,6 +19,8 @@
 #ifndef vtkHigherOrderTriangle_h
 #define vtkHigherOrderTriangle_h
 
+#include <functional> //For std::function
+
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkNew.h"                   // For member variable.
 #include "vtkNonLinearCell.h"
@@ -38,6 +28,7 @@
 
 #include <vector> // For caching
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 class vtkHigherOrderCurve;
 class vtkTriangle;
@@ -54,7 +45,9 @@ public:
   int GetNumberOfEdges() override { return 3; }
   int GetNumberOfFaces() override { return 0; }
   vtkCell* GetEdge(int edgeId) override = 0;
-  void GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* results, int edgeId);
+  void SetEdgeIdsAndPoints(int edgeId,
+    const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+    const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points);
   vtkCell* GetFace(int) override { return nullptr; }
 
   void Initialize() override;
@@ -71,7 +64,7 @@ public:
     vtkIdType cellId, vtkCellData* outCd, int insideOut) override;
   int IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t, double x[3],
     double pcoords[3], int& subId) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   void JacobianInverse(const double pcoords[3], double** inverse, double* derivs);
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
@@ -86,6 +79,9 @@ public:
 
   vtkIdType GetOrder() const { return this->Order; }
   vtkIdType ComputeOrder();
+  /// Return true if the number of points supports a cell of uniform
+  /// degree along each axis.
+  static bool PointCountSupportsUniformOrder(vtkIdType pointsPerTri);
 
   void ToBarycentricIndex(vtkIdType index, vtkIdType* bindex);
   vtkIdType ToIndex(const vtkIdType* bindex);
@@ -93,9 +89,9 @@ public:
   static void BarycentricIndex(vtkIdType index, vtkIdType* bindex, vtkIdType order);
   static vtkIdType Index(const vtkIdType* bindex, vtkIdType order);
 
-  static double eta(vtkIdType n, vtkIdType chi, double sigma);
-  static double d_eta(vtkIdType n, vtkIdType chi, double sigma);
-  virtual vtkHigherOrderCurve* getEdgeCell() = 0;
+  static double Eta(vtkIdType n, vtkIdType chi, double sigma);
+  static double Deta(vtkIdType n, vtkIdType chi, double sigma);
+  virtual vtkHigherOrderCurve* GetEdgeCell() = 0;
 
 protected:
   vtkHigherOrderTriangle();
@@ -124,4 +120,5 @@ private:
   void operator=(const vtkHigherOrderTriangle&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

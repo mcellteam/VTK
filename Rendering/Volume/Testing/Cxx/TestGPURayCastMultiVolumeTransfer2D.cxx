@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastMultiVolumeTransfer2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * Sets two inputs in vtkGPUVolumeRayCastMapper and uses a vtkMultiVolume
  * instance to render the two inputs simultaneously. Each vtkVolume contains
@@ -151,6 +139,7 @@ int TestGPURayCastMultiVolumeTransfer2D(int argc, char* argv[])
   vtkNew<vtkVolume> vol1;
   auto tf2d = ConvertImageToFloat(reader2dtf->GetOutputDataObject(0));
   vol1->GetProperty()->SetTransferFunction2D(tf2d);
+  vol1->GetProperty()->SetTransferFunctionMode(vtkVolumeProperty::TF_2D);
   vol1->GetProperty()->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
 
   vol1->RotateX(180.);

@@ -1,40 +1,29 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSocketCollection.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSocketCollection.h"
 
 #include "vtkCollectionIterator.h"
 #include "vtkObjectFactory.h"
 #include "vtkSocket.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSocketCollection);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSocketCollection::vtkSocketCollection()
 {
   this->SelectedSocket = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSocketCollection::~vtkSocketCollection() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCollection::AddItem(vtkSocket* soc)
 {
   this->Superclass::AddItem(soc);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocketCollection::SelectSockets(unsigned long msec /*=0*/)
 {
   // clear last selected socket.
@@ -95,7 +84,7 @@ int vtkSocketCollection::SelectSockets(unsigned long msec /*=0*/)
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCollection::RemoveItem(vtkObject* a)
 {
   if (this->SelectedSocket && this->SelectedSocket == a)
@@ -105,7 +94,7 @@ void vtkSocketCollection::RemoveItem(vtkObject* a)
   this->Superclass::RemoveItem(a);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCollection::RemoveItem(int i)
 {
   if (this->SelectedSocket && this->GetItemAsObject(i) == this->SelectedSocket)
@@ -115,7 +104,7 @@ void vtkSocketCollection::RemoveItem(int i)
   this->Superclass::RemoveItem(i);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCollection::ReplaceItem(int i, vtkObject* a)
 {
   if (this->SelectedSocket && this->GetItemAsObject(i) == this->SelectedSocket)
@@ -125,15 +114,16 @@ void vtkSocketCollection::ReplaceItem(int i, vtkObject* a)
   this->Superclass::ReplaceItem(i, a);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCollection::RemoveAllItems()
 {
   this->SelectedSocket = nullptr;
   this->Superclass::RemoveAllItems();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocketCollection::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

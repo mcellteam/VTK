@@ -1,32 +1,18 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestLineSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkConvexHull2D.h"
 #include "vtkMath.h"
 #include "vtkPoints.h"
 #include "vtkSmartPointer.h"
 #include "vtkTestUtilities.h"
-#include <limits>
 
-#ifndef ABS
-#define ABS(x) ((x) < 0 ? -(x) : (x))
-#endif
+#include <cmath>
+#include <limits>
 
 template <class A>
 bool fuzzyCompare1Dweak(A a, A b)
 {
-  return ABS(a - b) < 0.000001;
+  return std::abs(a - b) < 0.000001;
 }
 
 template <class A>

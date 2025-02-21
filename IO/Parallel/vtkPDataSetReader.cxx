@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPDataSetReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPDataSetReader.h"
 
 #include "vtkAppendFilter.h"
@@ -39,9 +27,10 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPDataSetReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPDataSetReader::vtkPDataSetReader()
 {
   this->FileName = nullptr;
@@ -55,14 +44,14 @@ vtkPDataSetReader::vtkPDataSetReader()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPDataSetReader::~vtkPDataSetReader()
 {
   delete[] this->FileName;
   this->SetNumberOfPieces(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDataSetReader::SetNumberOfPieces(int num)
 {
   int i;
@@ -110,7 +99,7 @@ void vtkPDataSetReader::SetNumberOfPieces(int num)
   this->NumberOfPieces = num;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetReader::RequestDataObject(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -193,7 +182,7 @@ int vtkPDataSetReader::RequestDataObject(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Returns 0 for end of file.
 // Returns 1 for start block,
 // Returns 2 for parameter-value pair (occurs after 1 but before 3).
@@ -201,7 +190,7 @@ int vtkPDataSetReader::RequestDataObject(
 // Returns 4 for string inside block.  Puts string in retVal. (param = nullptr)
 // Returns 5 for end block.
 // =======
-// The statics should be instance variables ...
+// The statistics should be instance variables ...
 int vtkPDataSetReader::ReadXML(istream* file, char** retBlock, char** retParam, char** retVal)
 {
   static char str[1024];
@@ -386,7 +375,7 @@ int vtkPDataSetReader::ReadXML(istream* file, char** retBlock, char** retParam, 
   return 2;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetReader::CanReadFile(const char* filename)
 {
   istream* file;
@@ -408,7 +397,7 @@ int vtkPDataSetReader::CanReadFile(const char* filename)
   {
     // We cannot leave the XML parser in a bad state.
     // As a quick fix, read to the end of the file block.
-    // A better solution would be to move statics
+    // A better solution would be to move statistics
     // to ivars and initialize them as needed.
     while (this->ReadXML(file, &block, &param, &value) != 5)
     {
@@ -433,7 +422,7 @@ int vtkPDataSetReader::CanReadFile(const char* filename)
   return flag;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDataSetReader::ReadPVTKFileInformation(
   istream* file, vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -452,7 +441,7 @@ void vtkPDataSetReader::ReadPVTKFileInformation(
 
   // The file block should have a version parameter.
   type = this->ReadXML(file, &block, &param, &val);
-  if (type != 2 || strcmp(param, "version"))
+  if (type != 2 || strcmp(param, "version") != 0)
   {
     vtkErrorMacro("Could not find file version.");
     return;
@@ -627,7 +616,7 @@ void vtkPDataSetReader::ReadPVTKFileInformation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDataSetReader::ReadVTKFileInformation(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -650,7 +639,7 @@ void vtkPDataSetReader::ReadVTKFileInformation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 istream* vtkPDataSetReader::OpenFile(const char* filename)
 {
   vtksys::ifstream* file;
@@ -672,7 +661,7 @@ istream* vtkPDataSetReader::OpenFile(const char* filename)
   return file;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetReader::RequestInformation(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -682,7 +671,7 @@ int vtkPDataSetReader::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetReader::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -746,7 +735,7 @@ int vtkPDataSetReader::RequestData(
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetReader::PolyDataExecute(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -814,7 +803,7 @@ int vtkPDataSetReader::PolyDataExecute(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDataSetReader::UnstructuredGridExecute(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -877,7 +866,7 @@ int vtkPDataSetReader::UnstructuredGridExecute(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Structured data is trickier.  Which files to load?
 int vtkPDataSetReader::ImageDataExecute(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
@@ -972,7 +961,7 @@ int vtkPDataSetReader::ImageDataExecute(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Structured data is trickier.  Which files to load?
 int vtkPDataSetReader::StructuredGridExecute(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
@@ -1009,7 +998,7 @@ int vtkPDataSetReader::StructuredGridExecute(
   this->CoverExtent(uExt, pieceMask.data());
 
   // Now read the pieces.
-  std::vector<vtkSmartPointer<vtkStructuredGrid> > pieces;
+  std::vector<vtkSmartPointer<vtkStructuredGrid>> pieces;
   reader = vtkStructuredGridReader::New();
   reader->ReadAllScalarsOn();
   reader->ReadAllVectorsOn();
@@ -1135,7 +1124,7 @@ int vtkPDataSetReader::StructuredGridExecute(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDataSetReader::CoverExtent(int ext[6], int* pieceMask)
 {
   int bestArea;
@@ -1238,7 +1227,7 @@ void vtkPDataSetReader::CoverExtent(int ext[6], int* pieceMask)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDataSetReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1253,3 +1242,4 @@ void vtkPDataSetReader::PrintSelf(ostream& os, vtkIndent indent)
   }
   os << indent << "DataType: " << this->DataType << endl;
 }
+VTK_ABI_NAMESPACE_END

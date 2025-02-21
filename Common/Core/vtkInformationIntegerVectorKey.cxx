@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationIntegerVectorKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationIntegerVectorKey.h"
 
 #include "vtkInformation.h" // For vtkErrorWithObjectMacro
@@ -19,7 +7,8 @@
 #include <algorithm>
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationIntegerVectorKey ::vtkInformationIntegerVectorKey(
   const char* name, const char* location, int length)
   : vtkInformationKey(name, location)
@@ -28,16 +17,16 @@ vtkInformationIntegerVectorKey ::vtkInformationIntegerVectorKey(
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationIntegerVectorKey::~vtkInformationIntegerVectorKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerVectorKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkInformationIntegerVectorValue : public vtkObjectBase
 {
 public:
@@ -45,7 +34,7 @@ public:
   std::vector<int> Value;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerVectorKey::Append(vtkInformation* info, int value)
 {
   vtkInformationIntegerVectorValue* v =
@@ -60,14 +49,14 @@ void vtkInformationIntegerVectorKey::Append(vtkInformation* info, int value)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerVectorKey::Set(vtkInformation* info)
 {
-  int someVal;
+  int someVal = 0;
   this->Set(info, &someVal, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerVectorKey::Set(vtkInformation* info, const int* value, int length)
 {
   if (value)
@@ -110,15 +99,15 @@ void vtkInformationIntegerVectorKey::Set(vtkInformation* info, const int* value,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int* vtkInformationIntegerVectorKey::Get(vtkInformation* info)
 {
   vtkInformationIntegerVectorValue* v =
     static_cast<vtkInformationIntegerVectorValue*>(this->GetAsObjectBase(info));
-  return (v && !v->Value.empty()) ? (&v->Value[0]) : nullptr;
+  return (v && !v->Value.empty()) ? v->Value.data() : nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationIntegerVectorKey::Get(vtkInformation* info, int idx)
 {
   if (idx >= this->Length(info))
@@ -131,7 +120,7 @@ int vtkInformationIntegerVectorKey::Get(vtkInformation* info, int idx)
   return values[idx];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerVectorKey::Get(vtkInformation* info, int* value)
 {
   vtkInformationIntegerVectorValue* v =
@@ -145,7 +134,7 @@ void vtkInformationIntegerVectorKey::Get(vtkInformation* info, int* value)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationIntegerVectorKey::Length(vtkInformation* info)
 {
   vtkInformationIntegerVectorValue* v =
@@ -153,13 +142,13 @@ int vtkInformationIntegerVectorKey::Length(vtkInformation* info)
   return v ? static_cast<int>(v->Value.size()) : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerVectorKey::ShallowCopy(vtkInformation* from, vtkInformation* to)
 {
   this->Set(to, this->Get(from), this->Length(from));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationIntegerVectorKey::Print(ostream& os, vtkInformation* info)
 {
   // Print the value.
@@ -176,10 +165,11 @@ void vtkInformationIntegerVectorKey::Print(ostream& os, vtkInformation* info)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int* vtkInformationIntegerVectorKey::GetWatchAddress(vtkInformation* info)
 {
   vtkInformationIntegerVectorValue* v =
     static_cast<vtkInformationIntegerVectorValue*>(this->GetAsObjectBase(info));
-  return (v && !v->Value.empty()) ? (&v->Value[0]) : nullptr;
+  return (v && !v->Value.empty()) ? v->Value.data() : nullptr;
 }
+VTK_ABI_NAMESPACE_END

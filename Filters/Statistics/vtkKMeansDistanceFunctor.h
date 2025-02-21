@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkKMeansDistanceFunctor_h
 #define vtkKMeansDistanceFunctor_h
 
@@ -16,6 +18,7 @@
 #include "vtkFiltersStatisticsModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkVariantArray;
 class vtkAbstractArray;
 class vtkTable;
@@ -86,7 +89,7 @@ public:
    */
   virtual void PackElements(vtkTable* curTable, void* vElements);
 
-  //@{
+  ///@{
   /**
    * Unpack the cluster center coordinates in \a vElements into columns of \a curTable.
    * This code may assume that the columns in \a curTable are all of the type returned by \a
@@ -96,7 +99,7 @@ public:
     vtkTable* curTable, vtkTable* newTable, void* vLocalElements, void* vGlobalElements, int np);
   virtual void UnPackElements(
     vtkTable* curTable, void* vLocalElements, vtkIdType numRows, vtkIdType numCols);
-  //@}
+  ///@}
 
   /**
    * Return the data type used to store cluster center coordinates.
@@ -116,4 +119,5 @@ private:
   void operator=(const vtkKMeansDistanceFunctor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkKMeansDistanceFunctor_h

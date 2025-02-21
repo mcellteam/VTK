@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayWindowNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOSPRayWindowNode.h"
 
 #include "vtkCollectionIterator.h"
@@ -27,9 +15,10 @@
 #include "RTWrapper/RTWrapper.h"
 
 //============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOSPRayWindowNode);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayWindowNode::vtkOSPRayWindowNode()
 {
   vtkOSPRayPass::RTInit();
@@ -38,21 +27,32 @@ vtkOSPRayWindowNode::vtkOSPRayWindowNode()
   fac->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayWindowNode::~vtkOSPRayWindowNode()
 {
   vtkOSPRayPass::RTShutdown();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayWindowNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayWindowNode::Render(bool prepass)
 {
+  if (!vtkOSPRayPass::IsSupported())
+  {
+    static bool warned = false;
+    if (!warned)
+    {
+      vtkWarningMacro(<< "Ignoring render request because OSPRay is not supported.");
+      warned = true;
+    }
+    return;
+  }
+
   if (!prepass)
   {
     // composite all renderers framebuffers together
@@ -84,3 +84,4 @@ void vtkOSPRayWindowNode::Render(bool prepass)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    XdmfTestVTKIO.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Description:
 // This tests vtkXdmfWriter and vtkXdmfReader
 // It manufactures/reads a bunch of test data objects, writes them to disk
@@ -27,6 +15,7 @@
 #include "vtkDataSet.h"
 #include "vtkDataSetReader.h"
 #include "vtkDataSetWriter.h"
+#include "vtkPlatform.h" // for VTK_MAXPATH
 #include "vtkPointData.h"
 #include "vtkTimeSourceExample.h"
 #include "vtkXdmfReader.h"
@@ -89,7 +78,7 @@ bool DoFilesExist(const char* xdmffile, const char* hdf5file, bool deleteIfSo)
 
 bool DoDataObjectsDiffer(vtkDataObject* dobj1, vtkDataObject* dobj2)
 {
-  if (strcmp(dobj1->GetClassName(), dobj2->GetClassName()))
+  if (strcmp(dobj1->GetClassName(), dobj2->GetClassName()) != 0)
   {
     cerr << "Class name test failed " << dobj1->GetClassName() << " != " << dobj2->GetClassName()
          << endl;

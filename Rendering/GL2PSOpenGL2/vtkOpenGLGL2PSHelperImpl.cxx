@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLGL2PSHelperImpl.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLGL2PSHelperImpl.h"
 
@@ -39,6 +27,7 @@
 #include <cassert>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLGL2PSHelperImpl);
 
 namespace
@@ -56,17 +45,13 @@ bool GetMetrics(
   vtkNew<vtkTextProperty> tpropTmp;
   tpropTmp->ShallowCopy(tprop);
   tpropTmp->SetOrientation(0.);
-  if (!tren->GetMetrics(tpropTmp, str, m, dpi))
-  {
-    return false;
-  }
-  return true;
+  return tren->GetMetrics(tpropTmp, str, m, dpi);
 }
 
 // replace \n with space as PS treats it as a space but PDF just removes them.
 // we also need this so that we get the correct bounding box for PDFs
 // considering that we do not address multi-line strings yet.
-void GetSpaceStr(const char* str, vtkStdString* spaceStr)
+void GetSpaceStr(const char* str, std::string* spaceStr)
 {
   *spaceStr = str;
   std::string::size_type eolPos = 0;
@@ -184,7 +169,7 @@ void vtkOpenGLGL2PSHelperImpl::ProcessTransformFeedback(
   // Info to transform clip --> display coords
   double renVp[4];
   ren->GetViewport(renVp);
-  int* winSize = ren->GetRenderWindow()->GetSize();
+  const int* winSize = ren->GetRenderWindow()->GetSize();
   int vp[4] = { static_cast<int>(renVp[0] * winSize[0]), static_cast<int>(renVp[1] * winSize[1]),
     static_cast<int>(renVp[2] * winSize[0]), static_cast<int>(renVp[3] * winSize[1]) };
   float halfW = (vp[2] - vp[0]) * 0.5f;
@@ -356,9 +341,9 @@ void vtkOpenGLGL2PSHelperImpl::DrawString(const std::string& str, vtkTextPropert
   // Export text as either a path or a text object.
   if (!isMath && !this->TextAsPath)
   {
-    const char* fontname = this->TextPropertyToPSFontName(tprop);
+    const char* fontname = vtkOpenGLGL2PSHelperImpl::TextPropertyToPSFontName(tprop);
 
-    GLint align = static_cast<GLint>(this->TextPropertyToGL2PSAlignment(tprop));
+    GLint align = static_cast<GLint>(vtkOpenGLGL2PSHelperImpl::TextPropertyToGL2PSAlignment(tprop));
 
     GLfloat angle = static_cast<GLfloat>(tprop->GetOrientation());
 
@@ -385,7 +370,7 @@ void vtkOpenGLGL2PSHelperImpl::DrawString(const std::string& str, vtkTextPropert
     // draw text by passing the bottom left corner as PDF does not support
     // alignment.
     double blpos[3];
-    vtkStdString spaceStr;
+    std::string spaceStr;
     // compute the bounding box and the string without \n
     vtkTextRenderer::Metrics m;
     ::GetSpaceStr(str.c_str(), &spaceStr);
@@ -427,7 +412,7 @@ void vtkOpenGLGL2PSHelperImpl::DrawString(const std::string& str, vtkTextPropert
       static_cast<unsigned char>(tprop->GetOpacity() * 255) };
 
     double devicePos[3] = { pos[0], pos[1], pos[2] };
-    this->ProjectPoint(devicePos, ren);
+    vtkOpenGLGL2PSHelperImpl::ProjectPoint(devicePos, ren);
 
     this->DrawPath(path, pos, devicePos, rgba, nullptr, 0.0, -1.f,
       (std::string("Pathified string: ") + str).c_str());
@@ -470,7 +455,7 @@ void vtkOpenGLGL2PSHelperImpl::Draw3DPath(vtkPath* path, vtkMatrix4x4* actorMatr
   double translation[2] = { 0.0, 0.0 };
   vtkNew<vtkPath> projPath;
   projPath->DeepCopy(path);
-  this->ProjectPoints(projPath->GetPoints(), ren, actorMatrix);
+  vtkOpenGLGL2PSHelperImpl::ProjectPoints(projPath->GetPoints(), ren, actorMatrix);
   this->DrawPath(projPath, rasterPos, translation, actorColor, nullptr, 0.0, -1.f, label);
 }
 
@@ -705,7 +690,7 @@ void vtkOpenGLGL2PSHelperImpl::GetTransformParameters(vtkRenderer* ren, vtkMatri
 }
 
 //------------------------------------------------------------------------------
-inline void vtkOpenGLGL2PSHelperImpl::ProjectPoint(
+void vtkOpenGLGL2PSHelperImpl::ProjectPoint(
   double point[3], vtkRenderer* ren, vtkMatrix4x4* actorMatrix)
 {
   vtkNew<vtkMatrix4x4> xform;
@@ -721,7 +706,7 @@ inline void vtkOpenGLGL2PSHelperImpl::ProjectPoint(
 }
 
 //------------------------------------------------------------------------------
-inline void vtkOpenGLGL2PSHelperImpl::ProjectPoint(double point[4], vtkMatrix4x4* transformMatrix,
+void vtkOpenGLGL2PSHelperImpl::ProjectPoint(double point[4], vtkMatrix4x4* transformMatrix,
   double viewportOrigin[2], double halfWidth, double halfHeight, double zfact1, double zfact2)
 {
   // Convert world to clip coordinates:
@@ -739,7 +724,7 @@ inline void vtkOpenGLGL2PSHelperImpl::ProjectPoint(double point[4], vtkMatrix4x4
 }
 
 //------------------------------------------------------------------------------
-inline void vtkOpenGLGL2PSHelperImpl::ProjectPoints(
+void vtkOpenGLGL2PSHelperImpl::ProjectPoints(
   vtkPoints* points, vtkRenderer* ren, vtkMatrix4x4* actorMatrix)
 {
   vtkNew<vtkMatrix4x4> xform;
@@ -761,9 +746,8 @@ inline void vtkOpenGLGL2PSHelperImpl::ProjectPoints(
 }
 
 //------------------------------------------------------------------------------
-inline void vtkOpenGLGL2PSHelperImpl::UnprojectPoint(double point[4],
-  vtkMatrix4x4* invTransformMatrix, double viewportOrigin[2], double halfWidth, double halfHeight,
-  double zfact1, double zfact2)
+void vtkOpenGLGL2PSHelperImpl::UnprojectPoint(double point[4], vtkMatrix4x4* invTransformMatrix,
+  double viewportOrigin[2], double halfWidth, double halfHeight, double zfact1, double zfact2)
 {
   point[0] = (point[0] - viewportOrigin[0] - halfWidth) / halfWidth;
   point[1] = (point[1] - viewportOrigin[1] - halfHeight) / halfHeight;
@@ -777,7 +761,7 @@ inline void vtkOpenGLGL2PSHelperImpl::UnprojectPoint(double point[4],
 }
 
 //------------------------------------------------------------------------------
-inline void vtkOpenGLGL2PSHelperImpl::UnprojectPoints(
+void vtkOpenGLGL2PSHelperImpl::UnprojectPoints(
   double* points3D, vtkIdType numPoints, vtkRenderer* ren, vtkMatrix4x4* actorMatrix)
 {
   vtkNew<vtkMatrix4x4> xform;
@@ -1245,3 +1229,4 @@ void vtkOpenGLGL2PSHelperImpl::DrawPathSVG(vtkPath* path, double rasterPos[3], d
   gl2psForceRasterPos(&gl2psRasterPos);
   gl2psSpecial(gl2psGetFileFormat(), out.str().c_str());
 }
+VTK_ABI_NAMESPACE_END

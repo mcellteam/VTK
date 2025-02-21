@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDepthSortPolyData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDepthSortPolyData
  * @brief   sort poly data along camera view direction
@@ -34,6 +22,7 @@
 #include "vtkFiltersHybridModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCamera;
 class vtkProp3D;
 class vtkTransform;
@@ -56,7 +45,7 @@ public:
     VTK_DIRECTION_SPECIFIED_VECTOR = 2
   };
 
-  //@{
+  ///@{
   /**
    * Specify the sort method for the polygonal primitives. By default, the
    * poly data is sorted from back to front.
@@ -66,7 +55,7 @@ public:
   void SetDirectionToFrontToBack() { this->SetDirection(VTK_DIRECTION_FRONT_TO_BACK); }
   void SetDirectionToBackToFront() { this->SetDirection(VTK_DIRECTION_BACK_TO_FRONT); }
   void SetDirectionToSpecifiedVector() { this->SetDirection(VTK_DIRECTION_SPECIFIED_VECTOR); }
-  //@}
+  ///@}
 
   enum SortMode
   {
@@ -75,7 +64,7 @@ public:
     VTK_SORT_PARAMETRIC_CENTER = 2
   };
 
-  //@{
+  ///@{
   /**
    * Specify the point to use when sorting. The fastest is to just
    * take the first cell point. Other options are to take the bounding
@@ -87,9 +76,9 @@ public:
   void SetDepthSortModeToFirstPoint() { this->SetDepthSortMode(VTK_SORT_FIRST_POINT); }
   void SetDepthSortModeToBoundsCenter() { this->SetDepthSortMode(VTK_SORT_BOUNDS_CENTER); }
   void SetDepthSortModeToParametricCenter() { this->SetDepthSortMode(VTK_SORT_PARAMETRIC_CENTER); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a camera that is used to define a view direction along which
    * the cells are sorted. This ivar only has effect if the direction is set
@@ -97,7 +86,7 @@ public:
    */
   virtual void SetCamera(vtkCamera*);
   vtkGetObjectMacro(Camera, vtkCamera);
-  //@}
+  ///@}
 
   /**
    * Specify a transformation matrix (via the vtkProp3D::GetMatrix() method)
@@ -108,7 +97,7 @@ public:
   void SetProp3D(vtkProp3D*);
   vtkProp3D* GetProp3D() { return this->Prop3D; }
 
-  //@{
+  ///@{
   /**
    * Set/Get the sort direction. This ivar only has effect if the sort
    * direction is set to SetDirectionToSpecifiedVector(). The sort occurs
@@ -116,9 +105,9 @@ public:
    */
   vtkSetVector3Macro(Vector, double);
   vtkGetVectorMacro(Vector, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the sort origin. This ivar only has effect if the sort
    * direction is set to SetDirectionToSpecifiedVector(). The sort occurs
@@ -127,9 +116,9 @@ public:
    */
   vtkSetVector3Macro(Origin, double);
   vtkGetVectorMacro(Origin, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a flag that controls the generation of scalar values
    * corresponding to the sort order. If enabled, the output of this
@@ -139,7 +128,7 @@ public:
   vtkSetMacro(SortScalars, vtkTypeBool);
   vtkGetMacro(SortScalars, vtkTypeBool);
   vtkBooleanMacro(SortScalars, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Return MTime also considering the dependent objects: the camera
@@ -168,4 +157,5 @@ private:
   void operator=(const vtkDepthSortPolyData&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,52 +1,15 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkXOpenGLRenderWindow.cxx
+// Must be included first to avoid conflicts with X11's `Status` define.
+#include "vtksys/SystemTools.hxx"
 
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-#include "vtkXOpenGLRenderWindow.h"
 #include "vtkOpenGLRenderer.h"
-
-#include "vtk_glew.h"
-// Define GLX_GLXEXT_LEGACY to prevent glx.h from including the glxext.h
-// provided by the system.
-//#define GLX_GLXEXT_LEGACY
-
-// Ensure older version of glx.h define glXGetProcAddressARB
-#define GLX_GLXEXT_PROTOTYPES
-
-// New Workaround:
-// The GLX_GLXEXT_LEGACY definition was added to work around system glxext.h
-// files that used the GLintptr and GLsizeiptr types, but did not define them.
-// However, this broke multisampling (See PR#15433). Instead of using that
-// define, we're just defining the missing typedefs here.
-typedef ptrdiff_t GLintptr;
-typedef ptrdiff_t GLsizeiptr;
-#include "GL/glx.h"
-
-#ifndef GLAPI
-#define GLAPI extern
-#endif
-
-#ifndef GLAPIENTRY
-#define GLAPIENTRY
-#endif
-
-#ifndef APIENTRY
-#define APIENTRY GLAPIENTRY
-#endif
+#include "vtkXOpenGLRenderWindow.h"
 
 #include "vtkCommand.h"
 #include "vtkIdList.h"
+#include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLShaderCache.h"
@@ -56,14 +19,75 @@ typedef ptrdiff_t GLsizeiptr;
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRendererCollection.h"
 #include "vtkStringOutputWindow.h"
-#include "vtkToolkits.h"
-#include "vtksys/SystemTools.hxx"
 
 #include <sstream>
 
+#include <X11/Xatom.h>
+#include <X11/cursorfont.h>
+#if VTK_HAVE_XCURSOR
+#include <X11/Xcursor/Xcursor.h>
+#endif
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/cursorfont.h>
+
+#include "vtk_glad.h"
+#include "vtkglad/include/glad/glx.h"
+
+/*
+ * Work-around to get forward declarations of C typedef of anonymous
+ * structs working. We do not want to include XUtil.h in the header as
+ * it populates the global namespace.
+ */
+VTK_ABI_NAMESPACE_BEGIN
+struct vtkXVisualInfo : public XVisualInfo
+{
+};
+
+/*******************************************************************************
+ * Motif style hint definitions
+ *
+ * The definitions in this section are taken from here:
+ *
+ *     https://sources.debian.org/src/motif/2.3.4-6+deb8u1/lib/Xm/MwmUtil.h/
+ *
+ * These are likely to be supported as long as xlib is, and the extended
+ * window manager hints documented at freedesktop.org don't seem to have a
+ * good alternative:
+ *
+ *     https://specifications.freedesktop.org/wm-spec/latest/ar01s05.html#id-1.6.7
+ *
+ * The _NET_WM_WINDOW_TYPE_SPLASH window type mentioned there comes close, but
+ * does not result in task bar entries that can be used to bring the windows
+ * to the front.
+ */
+typedef struct
+{
+  int flags;
+  int functions;
+  int decorations;
+  int input_mode;
+  int status;
+} MotifWmHints;
+
+typedef MotifWmHints MwmHints;
+
+/* bit definitions for MwmHints.flags */
+#define MWM_HINTS_FUNCTIONS (1L << 0)
+#define MWM_HINTS_DECORATIONS (1L << 1)
+
+/* bit definitions for MwmHints.functions */
+#define MWM_FUNC_ALL (1L << 0)
+
+/* number of elements of size 32 in _MWM_HINTS */
+#define PROP_MOTIF_WM_HINTS_ELEMENTS 5
+#define PROP_MWM_HINTS_ELEMENTS PROP_MOTIF_WM_HINTS_ELEMENTS
+
+/* atom name for _MWM_HINTS property */
+#define _XA_MOTIF_WM_HINTS "_MOTIF_WM_HINTS"
+#define _XA_MWM_HINTS _XA_MOTIF_WM_HINTS
+/*
+ * Motif style hint definitions
+ ******************************************************************************/
 
 #define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB 0x2092
@@ -91,8 +115,6 @@ vtkXOpenGLRenderWindowInternal::vtkXOpenGLRenderWindowInternal(vtkRenderWindow*)
 }
 
 vtkStandardNewMacro(vtkXOpenGLRenderWindow);
-
-#define MAX_LIGHTS 8
 
 GLXFBConfig vtkXOpenGLRenderWindowTryForFBConfig(Display* DisplayId, int drawable_type,
   vtkTypeBool doublebuff, vtkTypeBool stereo, vtkTypeBool stencil, bool srgb)
@@ -161,24 +183,6 @@ GLXFBConfig vtkXOpenGLRenderWindowTryForFBConfig(Display* DisplayId, int drawabl
   return None;
 }
 
-// dead code?
-#if 0
-XVisualInfo *vtkXOpenGLRenderWindowTryForVisual(Display *DisplayId,
-                                                vtkTypeBool doublebuff,
-                                                vtkTypeBool stereo,
-                                                int stencil, bool srgb)
-{
-  GLXFBConfig fbc = vtkXOpenGLRenderWindowTryForFBConfig(DisplayId,
-       GLX_WINDOW_BIT,
-       doublebuff, stereo,
-       stencil, srgb);
-
-  XVisualInfo *v = glXGetVisualFromFBConfig( DisplayId, fbc);
-
-  return v;
-}
-#endif
-
 GLXFBConfig vtkXOpenGLRenderWindowGetDesiredFBConfig(Display* DisplayId, vtkTypeBool& win_stereo,
   vtkTypeBool& win_doublebuffer, int drawable_type, vtkTypeBool& stencil, bool srgb)
 {
@@ -219,28 +223,20 @@ GLXFBConfig vtkXOpenGLRenderWindowGetDesiredFBConfig(Display* DisplayId, vtkType
 }
 
 template <int EventType>
-int XEventTypeEquals(Display*, XEvent* event, XPointer)
+int XEventTypeEquals(Display*, XEvent* event, XPointer winptr)
 {
-  return event->type == EventType;
+  return (event->type == EventType &&
+    *(reinterpret_cast<Window*>(winptr)) == reinterpret_cast<XAnyEvent*>(event)->window);
 }
 
-XVisualInfo* vtkXOpenGLRenderWindow::GetDesiredVisualInfo()
+vtkXVisualInfo* vtkXOpenGLRenderWindow::GetDesiredVisualInfo()
 {
   XVisualInfo* v = nullptr;
 
   // get the default display connection
-  if (!this->DisplayId)
+  if (!this->EnsureDisplay())
   {
-    this->DisplayId = XOpenDisplay(static_cast<char*>(nullptr));
-
-    if (this->DisplayId == nullptr)
-    {
-      vtkErrorMacro(<< "bad X server connection. DISPLAY=" << vtksys::SystemTools::GetEnv("DISPLAY")
-                    << ". Aborting.\n");
-      abort();
-    }
-
-    this->OwnDisplay = 1;
+    return nullptr;
   }
   this->Internal->FBConfig =
     vtkXOpenGLRenderWindowGetDesiredFBConfig(this->DisplayId, this->StereoCapableWindow,
@@ -258,14 +254,12 @@ XVisualInfo* vtkXOpenGLRenderWindow::GetDesiredVisualInfo()
       vtkErrorMacro(<< "Could not find a decent visual\n");
     }
   }
-  return (v);
+  return reinterpret_cast<vtkXVisualInfo*>(v);
 }
 
 vtkXOpenGLRenderWindow::vtkXOpenGLRenderWindow()
 {
   this->ParentId = static_cast<Window>(0);
-  this->ScreenSize[0] = 0;
-  this->ScreenSize[1] = 0;
   this->OwnDisplay = 0;
   this->CursorHidden = 0;
   this->ForceMakeCurrent = 0;
@@ -288,6 +282,17 @@ vtkXOpenGLRenderWindow::vtkXOpenGLRenderWindow()
   this->XCSizeSE = 0;
   this->XCSizeSW = 0;
   this->XCHand = 0;
+  this->XCCustom = 0;
+
+  auto loadFunc = [](void*, const char* name) -> VTKOpenGLAPIProc
+  {
+    if (name)
+    {
+      return glXGetProcAddress((const GLubyte*)name);
+    }
+    return nullptr;
+  };
+  this->SetOpenGLSymbolLoader(loadFunc, nullptr);
 }
 
 // free up memory & close the window
@@ -335,6 +340,15 @@ bool vtkXOpenGLRenderWindow::InitializeFromCurrentContext()
   return false;
 }
 
+void vtkXOpenGLRenderWindow::SetCoverable(vtkTypeBool coverable)
+{
+  if (this->Coverable != coverable)
+  {
+    this->Coverable = coverable;
+    this->Modified();
+  }
+}
+
 //
 // Set the variable that indicates that we want a stereo capable window
 // be created. This method can only be called before a window is realized.
@@ -353,9 +367,10 @@ void vtkXOpenGLRenderWindow::SetStereoCapableWindow(vtkTypeBool capable)
 }
 
 static int PbufferAllocFail = 0;
+#define vtkXOGLPbufferErrorHandler VTK_ABI_NAMESPACE_MANGLE(vtkXOGLPbufferErrorHandler)
 extern "C"
 {
-  int vtkXOGLPbufferErrorHandler(Display*, XErrorEvent*)
+  int VTK_ABI_NAMESPACE_MANGLE(vtkXOGLPbufferErrorHandler)(Display*, XErrorEvent*)
   {
     PbufferAllocFail = 1;
     return 1;
@@ -363,9 +378,11 @@ extern "C"
 }
 
 static bool ctxErrorOccurred = false;
+#define vtkXOGLContextCreationErrorHandler                                                         \
+  VTK_ABI_NAMESPACE_MANGLE(vtkXOGLContextCreationErrorHandler)
 extern "C"
 {
-  int vtkXOGLContextCreationErrorHandler(Display*, XErrorEvent*)
+  int VTK_ABI_NAMESPACE_MANGLE(vtkXOGLContextCreationErrorHandler)(Display*, XErrorEvent*)
   {
     ctxErrorOccurred = true;
     return 1;
@@ -393,7 +410,8 @@ void vtkXOpenGLRenderWindow::SetShowWindow(bool val)
       if (winattr.map_state == IsUnmapped)
       {
         XEvent e;
-        XIfEvent(this->DisplayId, &e, XEventTypeEquals<MapNotify>, nullptr);
+        XIfEvent(this->DisplayId, &e, XEventTypeEquals<MapNotify>,
+          reinterpret_cast<XPointer>(&this->WindowId));
       }
       this->Mapped = 1;
     }
@@ -408,7 +426,8 @@ void vtkXOpenGLRenderWindow::SetShowWindow(bool val)
       if (winattr.map_state != IsUnmapped)
       {
         XEvent e;
-        XIfEvent(this->DisplayId, &e, XEventTypeEquals<UnmapNotify>, nullptr);
+        XIfEvent(this->DisplayId, &e, XEventTypeEquals<UnmapNotify>,
+          reinterpret_cast<XPointer>(&this->WindowId));
       }
       this->Mapped = 0;
     }
@@ -429,12 +448,12 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
   if ((this->Position[0] >= 0) && (this->Position[1] >= 0))
   {
     xsh.flags |= USPosition;
-    xsh.x = static_cast<int>(this->Position[0]);
-    xsh.y = static_cast<int>(this->Position[1]);
+    xsh.x = this->Position[0];
+    xsh.y = this->Position[1];
   }
 
-  x = ((this->Position[0] >= 0) ? this->Position[0] : 5);
-  y = ((this->Position[1] >= 0) ? this->Position[1] : 5);
+  x = this->Position[0];
+  y = this->Position[1];
   width = ((this->Size[0] > 0) ? this->Size[0] : 300);
   height = ((this->Size[1] > 0) ? this->Size[1] : 300);
 
@@ -442,21 +461,15 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
   xsh.height = height;
 
   // get the default display connection
-  if (!this->DisplayId)
+  if (!this->EnsureDisplay())
   {
-    this->DisplayId = XOpenDisplay(static_cast<char*>(nullptr));
-    if (this->DisplayId == nullptr)
-    {
-      vtkErrorMacro(<< "bad X server connection. DISPLAY=" << vtksys::SystemTools::GetEnv("DISPLAY")
-                    << ". Aborting.\n");
-      abort();
-    }
-    this->OwnDisplay = 1;
+    return;
   }
 
   attr.override_redirect = False;
-  if (this->Borders == 0.0)
+  if (this->Borders == 0.0 && !this->Coverable)
   {
+    // Removes borders, and makes the window appear on top of all other windows
     attr.override_redirect = True;
   }
 
@@ -467,8 +480,8 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
     v = this->GetDesiredVisualInfo();
     if (!v)
     {
-      vtkErrorMacro(<< "Could not find a decent visual\n");
-      abort();
+      vtkWarningMacro(<< "Could not find a decent visual\n");
+      return;
     }
     this->ColorMap = XCreateColormap(
       this->DisplayId, XRootWindow(this->DisplayId, v->screen), v->visual, AllocNone);
@@ -487,6 +500,19 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
       XCreateWindow(this->DisplayId, this->ParentId, x, y, static_cast<unsigned int>(width),
         static_cast<unsigned int>(height), 0, v->depth, InputOutput, v->visual,
         CWBackPixel | CWBorderPixel | CWColormap | CWOverrideRedirect | CWEventMask, &attr);
+
+    if (this->Borders == 0.0 && this->Coverable)
+    {
+      // Removes borders, while still allowing other windows on top
+      Atom mwmHintsProperty = XInternAtom(this->DisplayId, _XA_MWM_HINTS, 0);
+      MotifWmHints mwmHints;
+      mwmHints.flags = MWM_HINTS_FUNCTIONS | MWM_HINTS_DECORATIONS;
+      mwmHints.functions = MWM_FUNC_ALL;
+      mwmHints.decorations = 0;
+      XChangeProperty(this->DisplayId, this->WindowId, mwmHintsProperty, XA_ATOM, 32,
+        PropModeReplace, reinterpret_cast<unsigned char*>(&mwmHints), PROP_MWM_HINTS_ELEMENTS);
+    }
+
     XStoreName(this->DisplayId, this->WindowId, this->WindowName);
     XSetNormalHints(this->DisplayId, this->WindowId, &xsh);
 
@@ -540,7 +566,7 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
   // is GLX extension is supported?
   if (!glXQueryExtension(this->DisplayId, nullptr, nullptr))
   {
-    vtkErrorMacro("GLX not found.  Aborting.");
+    vtkWarningMacro("GLX not found.");
     if (this->HasObserver(vtkCommand::ExitEvent))
     {
       this->InvokeEvent(vtkCommand::ExitEvent, nullptr);
@@ -548,7 +574,7 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
     }
     else
     {
-      abort();
+      return;
     }
   }
 
@@ -562,7 +588,12 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
         (const GLubyte*)"glXCreateContextAttribsARB");
 
     int context_attribs[] = { GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-      // GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+    // GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+#ifdef GL_ES_VERSION_3_0
+      GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_ES_PROFILE_BIT_EXT,
+#else
+      GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+#endif
       0 };
 
     if (glXCreateContextAttribsARB)
@@ -584,7 +615,12 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
 
       // we believe that these later versions are all compatible with
       // OpenGL 3.2 so get a more recent context if we can.
+      // For GLES, version 3.0 is best supported by VTK shaders.
+#ifdef GL_ES_VERSION_3_0
+      int attemptedVersions[] = { 3, 0 };
+#else
       int attemptedVersions[] = { 4, 5, 4, 4, 4, 3, 4, 2, 4, 1, 4, 0, 3, 3, 3, 2 };
+#endif
 
       // try shared context first, the fallback to not shared
       bool done = false;
@@ -634,7 +670,7 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
 
   if (!this->Internal->ContextId)
   {
-    vtkErrorMacro("Cannot create GLX context.  Aborting.");
+    vtkWarningMacro("Cannot create GLX context.");
     if (this->HasObserver(vtkCommand::ExitEvent))
     {
       this->InvokeEvent(vtkCommand::ExitEvent, nullptr);
@@ -642,7 +678,7 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
     }
     else
     {
-      abort();
+      return;
     }
   }
 
@@ -652,13 +688,20 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
     XMapWindow(this->DisplayId, this->WindowId);
     XSync(this->DisplayId, False);
     XEvent e;
-    XIfEvent(this->DisplayId, &e, XEventTypeEquals<MapNotify>, nullptr);
+    XIfEvent(this->DisplayId, &e, XEventTypeEquals<MapNotify>,
+      reinterpret_cast<XPointer>(&this->WindowId));
     XGetWindowAttributes(this->DisplayId, this->WindowId, &winattr);
     // if the specified window size is bigger than the screen size,
     // we have to reset the window size to the screen size
     width = winattr.width;
     height = winattr.height;
     this->Mapped = 1;
+
+    if (this->FullScreen)
+    {
+      XGrabKeyboard(
+        this->DisplayId, this->WindowId, False, GrabModeAsync, GrabModeAsync, CurrentTime);
+    }
   }
   // free the visual info
   if (v)
@@ -724,6 +767,10 @@ void vtkXOpenGLRenderWindow::DestroyWindow()
     {
       XFreeCursor(this->DisplayId, this->XCHand);
     }
+    if (this->XCCustom)
+    {
+      XFreeCursor(this->DisplayId, this->XCCustom);
+    }
   }
 
   this->XCCrosshair = 0;
@@ -736,6 +783,7 @@ void vtkXOpenGLRenderWindow::DestroyWindow()
   this->XCSizeSE = 0;
   this->XCSizeSW = 0;
   this->XCHand = 0;
+  this->XCCustom = 0;
 
   if (this->OwnContext && this->Internal->ContextId)
   {
@@ -780,9 +828,13 @@ void vtkXOpenGLRenderWindow::DestroyWindow()
 }
 
 // Initialize the window for rendering.
-void vtkXOpenGLRenderWindow::WindowInitialize(void)
+void vtkXOpenGLRenderWindow::WindowInitialize()
 {
   this->CreateAWindow();
+  if (!this->DisplayId || !this->WindowId)
+  {
+    return;
+  }
 
   this->MakeCurrent();
 
@@ -798,7 +850,7 @@ void vtkXOpenGLRenderWindow::WindowInitialize(void)
 }
 
 // Initialize the rendering window.
-void vtkXOpenGLRenderWindow::Initialize(void)
+void vtkXOpenGLRenderWindow::Initialize()
 {
   if (!this->Internal->ContextId)
   {
@@ -807,8 +859,12 @@ void vtkXOpenGLRenderWindow::Initialize(void)
   }
 }
 
-void vtkXOpenGLRenderWindow::Finalize(void)
+void vtkXOpenGLRenderWindow::Finalize()
 {
+  if (!this->Initialized)
+  {
+    return;
+  }
   // clean and destroy window
   this->DestroyWindow();
 }
@@ -824,7 +880,11 @@ void vtkXOpenGLRenderWindow::SetFullScreen(vtkTypeBool arg)
   }
 
   if (this->FullScreen == arg)
+  {
     return;
+  }
+
+  this->FullScreen = arg;
 
   if (!this->Mapped)
   {
@@ -833,7 +893,6 @@ void vtkXOpenGLRenderWindow::SetFullScreen(vtkTypeBool arg)
   }
 
   // set the mode
-  this->FullScreen = arg;
   if (this->FullScreen <= 0)
   {
     this->Position[0] = this->OldScreen[0];
@@ -884,8 +943,7 @@ void vtkXOpenGLRenderWindow::PrefFullScreen()
   }
   else
   {
-    int* size;
-    size = this->GetScreenSize();
+    const int* size = this->GetScreenSize();
     this->Size[0] = size[0];
     this->Size[1] = size[1];
   }
@@ -909,7 +967,7 @@ void vtkXOpenGLRenderWindow::WindowRemap()
 }
 
 // Begin the rendering process.
-void vtkXOpenGLRenderWindow::Start(void)
+void vtkXOpenGLRenderWindow::Start()
 {
   this->Initialize();
 
@@ -936,29 +994,62 @@ void vtkXOpenGLRenderWindow::SetSize(int width, int height)
         this->Interactor->SetSize(width, height);
       }
 
+      // get baseline serial number for X requests generated from XResizeWindow
+      unsigned long serial = NextRequest(this->DisplayId);
+
+      // request a new window size from the X server
       XResizeWindow(this->DisplayId, this->WindowId, static_cast<unsigned int>(width),
         static_cast<unsigned int>(height));
-      // this is an async call so we wait until we know it has been resized.
+
+      // flush output queue and wait for X server to processes the request
       XSync(this->DisplayId, False);
-      XWindowAttributes attribs;
-      XGetWindowAttributes(this->DisplayId, this->WindowId, &attribs);
-      if (attribs.width != width || attribs.height != height)
+
+      // The documentation for XResizeWindow includes this important note:
+      //
+      //   If the override-redirect flag of the window is False and some
+      //   other client has selected SubstructureRedirectMask on the parent,
+      //   the X server generates a ConfigureRequest event, and no further
+      //   processing is performed.
+      //
+      // What this means, essentially, is that if this window is a top-level
+      // window, then it's the window manager (the "other client") that is
+      // responsible for changing this window's size.  So when we call
+      // XResizeWindow() on a top-level window, then instead of resizing
+      // the window immediately, the X server informs the window manager,
+      // and then the window manager sets our new size (usually it will be
+      // the size we asked for).  We receive a ConfigureNotify event when
+      // our new size has been set.
+
+      // check our override-redirect flag
+      XWindowAttributes attrs;
+      XGetWindowAttributes(this->DisplayId, this->WindowId, &attrs);
+      if (!attrs.override_redirect && this->ParentId)
       {
-        XEvent e;
-        XIfEvent(this->DisplayId, &e, XEventTypeEquals<ConfigureNotify>, nullptr);
+        // check if parent has SubstructureRedirectMask
+        XWindowAttributes parentAttrs;
+        XGetWindowAttributes(this->DisplayId, this->ParentId, &parentAttrs);
+        if ((parentAttrs.all_event_masks & SubstructureRedirectMask) == SubstructureRedirectMask)
+        {
+          // set the wait timeout to be 2 seconds from now
+          double maxtime = 2.0 + vtksys::SystemTools::GetTime();
+          // look for a ConfigureNotify that came *after* XResizeWindow
+          XEvent e;
+          while (!XCheckIfEvent(this->DisplayId, &e, XEventTypeEquals<ConfigureNotify>,
+                   reinterpret_cast<XPointer>(&this->WindowId)) ||
+            e.xconfigure.serial < serial)
+          {
+            // wait for 10 milliseconds and try again until time runs out
+            vtksys::SystemTools::Delay(10);
+            if (vtksys::SystemTools::GetTime() > maxtime)
+            {
+              vtkWarningMacro(<< "Timeout while waiting for response to XResizeWindow.");
+              return;
+            }
+          }
+          XPutBackEvent(this->DisplayId, &e);
+        }
       }
     }
-
-    this->Modified();
-  }
-}
-
-void vtkXOpenGLRenderWindow::SetSizeNoXResize(int width, int height)
-{
-  if ((this->Size[0] != width) || (this->Size[1] != height))
-  {
-    this->Superclass::SetSize(width, height);
-    this->Modified();
   }
 }
 
@@ -1080,7 +1171,16 @@ void vtkXOpenGLRenderWindow::MakeCurrent()
   }
 }
 
-// ----------------------------------------------------------------------------
+void vtkXOpenGLRenderWindow::ReleaseCurrent()
+{
+  if (this->Internal->ContextId && (this->Internal->ContextId == glXGetCurrentContext()) &&
+    this->DisplayId)
+  {
+    glXMakeCurrent(this->DisplayId, None, nullptr);
+  }
+}
+
+//------------------------------------------------------------------------------
 // Description:
 // Tells if this window is the current OpenGL context for the calling thread.
 bool vtkXOpenGLRenderWindow::IsCurrent()
@@ -1123,11 +1223,13 @@ void vtkXOpenGLRenderWindow::SetForceMakeCurrent()
   this->ForceMakeCurrent = 1;
 }
 
-int vtkXOpenGLRenderWindowFoundMatch;
+vtkTypeBool vtkXOpenGLRenderWindowFoundMatch;
 
+#define vtkXOpenGLRenderWindowPredProc VTK_ABI_NAMESPACE_MANGLE(vtkXOpenGLRenderWindowPredProc)
 extern "C"
 {
-  Bool vtkXOpenGLRenderWindowPredProc(Display* vtkNotUsed(disp), XEvent* event, char* arg)
+  Bool VTK_ABI_NAMESPACE_MANGLE(vtkXOpenGLRenderWindowPredProc)(
+    Display* vtkNotUsed(disp), XEvent* event, char* arg)
   {
     Window win = (Window)arg;
 
@@ -1150,7 +1252,12 @@ void* vtkXOpenGLRenderWindow::GetGenericContext()
   return static_cast<void*>(gc);
 }
 
-int vtkXOpenGLRenderWindow::GetEventPending()
+void* vtkXOpenGLRenderWindow::GetGenericFBConfig()
+{
+  return reinterpret_cast<void*>(&(this->Internal->FBConfig));
+}
+
+vtkTypeBool vtkXOpenGLRenderWindow::GetEventPending()
 {
   XEvent report;
 
@@ -1168,19 +1275,11 @@ int vtkXOpenGLRenderWindow::GetEventPending()
 int* vtkXOpenGLRenderWindow::GetScreenSize()
 {
   // get the default display connection
-  if (!this->DisplayId)
+  if (!this->EnsureDisplay())
   {
-    this->DisplayId = XOpenDisplay(static_cast<char*>(nullptr));
-    if (this->DisplayId == nullptr)
-    {
-      vtkErrorMacro(<< "bad X server connection. DISPLAY=" << vtksys::SystemTools::GetEnv("DISPLAY")
-                    << ". Aborting.\n");
-      abort();
-    }
-    else
-    {
-      this->OwnDisplay = 1;
-    }
+    this->ScreenSize[0] = 0;
+    this->ScreenSize[1] = 0;
+    return this->ScreenSize;
   }
 
   this->ScreenSize[0] = XDisplayWidth(this->DisplayId, XDefaultScreen(this->DisplayId));
@@ -1190,7 +1289,7 @@ int* vtkXOpenGLRenderWindow::GetScreenSize()
 }
 
 // Get the position in screen coordinates (pixels) of the window.
-int* vtkXOpenGLRenderWindow::GetPosition(void)
+int* vtkXOpenGLRenderWindow::GetPosition()
 {
   XWindowAttributes attribs;
   int x, y;
@@ -1206,7 +1305,7 @@ int* vtkXOpenGLRenderWindow::GetPosition(void)
   x = attribs.x;
   y = attribs.y;
 
-  XTranslateCoordinates(this->DisplayId, this->WindowId,
+  XTranslateCoordinates(this->DisplayId, this->ParentId,
     XRootWindowOfScreen(XScreenOfDisplay(this->DisplayId, 0)), x, y, &this->Position[0],
     &this->Position[1], &child);
 
@@ -1219,6 +1318,29 @@ Display* vtkXOpenGLRenderWindow::GetDisplayId()
   vtkDebugMacro(<< "Returning DisplayId of " << static_cast<void*>(this->DisplayId) << "\n");
 
   return this->DisplayId;
+}
+
+bool vtkXOpenGLRenderWindow::EnsureDisplay()
+{
+  if (!this->DisplayId)
+  {
+    this->DisplayId = XOpenDisplay(static_cast<char*>(nullptr));
+    if (this->DisplayId == nullptr)
+    {
+      // Only warn about DISPLAY if on-screen rendering is selected,
+      // this helps with automatic detection of best window backend.
+      if (this->ShowWindow)
+      {
+        vtkWarningMacro(<< "bad X server connection. DISPLAY="
+                        << vtksys::SystemTools::GetEnv("DISPLAY"));
+      }
+    }
+    else
+    {
+      this->OwnDisplay = 1;
+    }
+  }
+  return this->DisplayId != nullptr;
 }
 
 // Get this RenderWindow's parent X window id.
@@ -1285,26 +1407,11 @@ void vtkXOpenGLRenderWindow::SetWindowId(Window arg)
 // Set this RenderWindow's X window id to a pre-existing window.
 void vtkXOpenGLRenderWindow::SetWindowInfo(const char* info)
 {
+  // note: potential Display/Window mismatch here
+  this->EnsureDisplay();
+
   int tmp;
-
-  // get the default display connection
-  if (!this->DisplayId)
-  {
-    this->DisplayId = XOpenDisplay(static_cast<char*>(nullptr));
-    if (this->DisplayId == nullptr)
-    {
-      vtkErrorMacro(<< "bad X server connection. DISPLAY=" << vtksys::SystemTools::GetEnv("DISPLAY")
-                    << ". Aborting.\n");
-      abort();
-    }
-    else
-    {
-      this->OwnDisplay = 1;
-    }
-  }
-
   sscanf(info, "%i", &tmp);
-
   this->SetWindowId(static_cast<Window>(tmp));
 }
 
@@ -1313,33 +1420,17 @@ void vtkXOpenGLRenderWindow::SetNextWindowInfo(const char* info)
 {
   int tmp;
   sscanf(info, "%i", &tmp);
-
   this->SetNextWindowId(static_cast<Window>(tmp));
 }
 
 // Sets the X window id of the window that WILL BE created.
 void vtkXOpenGLRenderWindow::SetParentInfo(const char* info)
 {
+  // note: potential Display/Window mismatch here
+  this->EnsureDisplay();
+
   int tmp;
-
-  // get the default display connection
-  if (!this->DisplayId)
-  {
-    this->DisplayId = XOpenDisplay(static_cast<char*>(nullptr));
-    if (this->DisplayId == nullptr)
-    {
-      vtkErrorMacro(<< "bad X server connection. DISPLAY=" << vtksys::SystemTools::GetEnv("DISPLAY")
-                    << ". Aborting.\n");
-      abort();
-    }
-    else
-    {
-      this->OwnDisplay = 1;
-    }
-  }
-
   sscanf(info, "%i", &tmp);
-
   this->SetParentId(static_cast<Window>(tmp));
 }
 
@@ -1424,12 +1515,14 @@ void vtkXOpenGLRenderWindow::CloseDisplay()
   if (this->OwnDisplay && this->DisplayId)
   {
     XCloseDisplay(this->DisplayId);
-    this->DisplayId = nullptr;
-    this->OwnDisplay = 0;
   }
+
+  // disconnect from the display, even if we didn't own it
+  this->DisplayId = nullptr;
+  this->OwnDisplay = false;
 }
 
-int vtkXOpenGLRenderWindow::IsDirect()
+vtkTypeBool vtkXOpenGLRenderWindow::IsDirect()
 {
   this->MakeCurrent();
   this->UsingHardware = 0;
@@ -1463,6 +1556,50 @@ void vtkXOpenGLRenderWindow::SetWindowName(const char* cname)
     XFree(win_name_text_prop.value);
   }
   delete[] name;
+}
+
+void vtkXOpenGLRenderWindow::SetIcon(vtkImageData* img)
+{
+  int dim[3];
+  img->GetDimensions(dim);
+
+  int nbComp = img->GetNumberOfScalarComponents();
+
+  if (img->GetScalarType() != VTK_UNSIGNED_CHAR || dim[2] != 1 || nbComp < 3 || nbComp > 4)
+  {
+    vtkErrorMacro(
+      "Icon image should be 2D, have 3 or 4 components, and its type must be unsigned char.");
+    return;
+  }
+
+  unsigned char* imgScalars = static_cast<unsigned char*>(img->GetScalarPointer());
+
+  std::vector<unsigned long> pixels(2 + dim[0] * dim[1]);
+  pixels[0] = dim[0];
+  pixels[1] = dim[1];
+
+  // Convert vtkImageData buffer to X icon.
+  // We need to flip Y and use ARGB 32-bits encoded convention
+  for (int col = 0; col < dim[1]; col++)
+  {
+    for (int line = 0; line < dim[0]; line++)
+    {
+      unsigned char* inPixel = imgScalars + nbComp * ((dim[0] - col - 1) * dim[1] + line); // flip Y
+      unsigned long* outPixel = pixels.data() + col * dim[1] + line + 2;
+      if (nbComp == 4)
+      {
+        *outPixel = nbComp == 4 ? inPixel[3] : 0xff;
+      }
+      *outPixel = (*outPixel << 8) + inPixel[0];
+      *outPixel = (*outPixel << 8) + inPixel[1];
+      *outPixel = (*outPixel << 8) + inPixel[2];
+    }
+  }
+
+  Atom iconAtom = XInternAtom(this->DisplayId, "_NET_WM_ICON", False);
+  Atom typeAtom = XInternAtom(this->DisplayId, "CARDINAL", False);
+  XChangeProperty(this->DisplayId, this->WindowId, iconAtom, typeAtom, 32, PropModeReplace,
+    reinterpret_cast<unsigned char*>(pixels.data()), pixels.size());
 }
 
 // Specify the X window id to use if a WindowRemap is done.
@@ -1513,7 +1650,7 @@ void vtkXOpenGLRenderWindow::Render()
   this->vtkOpenGLRenderWindow::Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXOpenGLRenderWindow::HideCursor()
 {
   static char blankBits[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1541,7 +1678,7 @@ void vtkXOpenGLRenderWindow::HideCursor()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXOpenGLRenderWindow::ShowCursor()
 {
   if (!this->DisplayId || !this->WindowId)
@@ -1651,5 +1788,26 @@ void vtkXOpenGLRenderWindow::SetCurrentCursor(int shape)
       }
       XDefineCursor(this->DisplayId, this->WindowId, this->XCHand);
       break;
+    case VTK_CURSOR_CUSTOM:
+#if VTK_HAVE_XCURSOR
+      this->XCCustom = XcursorFilenameLoadCursor(this->DisplayId, this->GetCursorFileName());
+      if (!this->XCCustom)
+      {
+        vtkErrorMacro(<< "Failed to load cursor from Xcursor file: " << this->GetCursorFileName());
+        break;
+      }
+      XDefineCursor(this->DisplayId, this->WindowId, this->XCCustom);
+#else
+    {
+      static bool once = false;
+      if (!once)
+      {
+        once = true;
+        vtkWarningMacro("VTK built without Xcursor support; ignoring requests for custom cursors.");
+      }
+    }
+#endif
+      break;
   }
 }
+VTK_ABI_NAMESPACE_END

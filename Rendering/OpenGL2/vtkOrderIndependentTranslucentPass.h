@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOrderIndependentTranslucentPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOrderIndependentTranslucentPass
  * @brief   Implement OIT rendering using average color
@@ -28,14 +16,17 @@
 
 #include "vtkOpenGLRenderPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLFramebufferObject;
 class vtkTextureObject;
 class vtkOpenGLRenderWindow;
 class vtkOpenGLState;
 class vtkOpenGLQuadHelper;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkOrderIndependentTranslucentPass : public vtkOpenGLRenderPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkOrderIndependentTranslucentPass
+  : public vtkOpenGLRenderPass
 {
 public:
   static vtkOrderIndependentTranslucentPass* New();
@@ -55,7 +46,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Delegate for rendering the translucent polygonal geometry.
    * If it is NULL, nothing will be rendered and a warning will be emitted.
@@ -64,7 +55,7 @@ public:
    */
   vtkGetObjectMacro(TranslucentPass, vtkRenderPass);
   virtual void SetTranslucentPass(vtkRenderPass* translucentPass);
-  //@}
+  ///@}
 
   // vtkOpenGLRenderPass virtuals:
   bool PostReplaceShaderValues(std::string& vertexShader, std::string& geometryShader,
@@ -83,7 +74,7 @@ protected:
 
   vtkRenderPass* TranslucentPass;
 
-  //@{
+  ///@{
   /**
    * Cache viewport values for depth peeling.
    */
@@ -91,7 +82,7 @@ protected:
   int ViewportY;
   int ViewportWidth;
   int ViewportHeight;
-  //@}
+  ///@}
 
   vtkOpenGLFramebufferObject* Framebuffer;
   vtkOpenGLQuadHelper* FinalBlend;
@@ -110,4 +101,5 @@ private:
   void operator=(const vtkOrderIndependentTranslucentPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

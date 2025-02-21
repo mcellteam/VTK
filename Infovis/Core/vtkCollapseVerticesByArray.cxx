@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCollapseVerticesByArray.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCollapseVerticesByArray.h"
 
@@ -36,6 +24,7 @@
 #include <string> // Using STL.
 #include <vector> // Using STL.
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCollapseVerticesByArray);
 
 //------------------------------------------------------------------------------
@@ -47,12 +36,11 @@ public:
 
 //------------------------------------------------------------------------------
 vtkCollapseVerticesByArray::vtkCollapseVerticesByArray()
-  : vtkGraphAlgorithm()
-  , AllowSelfLoops(false)
+  : AllowSelfLoops(false)
   , VertexArray(nullptr)
-  , CountEdgesCollapsed(0)
+  , CountEdgesCollapsed(false)
   , EdgesCollapsedArray(nullptr)
-  , CountVerticesCollapsed(0)
+  , CountVerticesCollapsed(false)
   , VerticesCollapsedArray(nullptr)
 {
   // Setting default names.
@@ -62,7 +50,7 @@ vtkCollapseVerticesByArray::vtkCollapseVerticesByArray()
   this->Internal = new vtkCollapseVerticesByArrayInternal();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCollapseVerticesByArray::~vtkCollapseVerticesByArray()
 {
   delete this->Internal;
@@ -71,7 +59,7 @@ vtkCollapseVerticesByArray::~vtkCollapseVerticesByArray()
   delete[] this->EdgesCollapsedArray;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCollapseVerticesByArray::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Base class print.
@@ -92,7 +80,7 @@ void vtkCollapseVerticesByArray::PrintSelf(ostream& os, vtkIndent indent)
 //------------------------------------------------------------------------------
 void vtkCollapseVerticesByArray::AddAggregateEdgeArray(const char* arrName)
 {
-  this->Internal->AggregateEdgeArrays.push_back(std::string(arrName));
+  this->Internal->AggregateEdgeArrays.emplace_back(arrName);
 }
 
 //------------------------------------------------------------------------------
@@ -273,7 +261,7 @@ vtkGraph* vtkCollapseVerticesByArray::Create(vtkGraph* inGraph)
     bool alreadyAdded(false);
     for (size_t j = 0; j < this->Internal->AggregateEdgeArrays.size(); ++j)
     {
-      if (strcmp(absArray->GetName(), this->Internal->AggregateEdgeArrays[j].c_str()) == 0)
+      if (absArray->GetName() == this->Internal->AggregateEdgeArrays[j])
       {
         vtkDataArray* inDataArray = vtkArrayDownCast<vtkDataArray>(absArray);
         if (inDataArray)
@@ -387,8 +375,8 @@ vtkGraph* vtkCollapseVerticesByArray::Create(vtkGraph* inGraph)
     }
   }
 
-  // Now itereate over all the edges in the graph.
-  // Result vary dependeing on whether the input graph is
+  // Now iterate over all the edges in the graph.
+  // Result vary depending on whether the input graph is
   // directed or not.
   vtkEdgeListIteratorRefPtr elItr(vtkEdgeListIteratorRefPtr::New());
   inGraph->GetEdges(elItr);
@@ -517,3 +505,4 @@ void vtkCollapseVerticesByArray::FindEdge(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

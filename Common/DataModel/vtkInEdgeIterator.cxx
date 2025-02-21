@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInEdgeIterator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkInEdgeIterator.h"
 
@@ -24,9 +8,10 @@
 #include "vtkGraphEdge.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkInEdgeIterator, Graph, vtkGraph);
 vtkStandardNewMacro(vtkInEdgeIterator);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInEdgeIterator::vtkInEdgeIterator()
 {
   this->Vertex = 0;
@@ -36,7 +21,7 @@ vtkInEdgeIterator::vtkInEdgeIterator()
   this->GraphEdge = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInEdgeIterator::~vtkInEdgeIterator()
 {
   if (this->Graph)
@@ -49,7 +34,7 @@ vtkInEdgeIterator::~vtkInEdgeIterator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInEdgeIterator::Initialize(vtkGraph* graph, vtkIdType v)
 {
   this->SetGraph(graph);
@@ -59,7 +44,7 @@ void vtkInEdgeIterator::Initialize(vtkGraph* graph, vtkIdType v)
   this->End = this->Current + nedges;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGraphEdge* vtkInEdgeIterator::NextGraphEdge()
 {
   vtkInEdgeType e = this->Next();
@@ -73,7 +58,7 @@ vtkGraphEdge* vtkInEdgeIterator::NextGraphEdge()
   return this->GraphEdge;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInEdgeIterator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -84,3 +69,4 @@ void vtkInEdgeIterator::PrintSelf(ostream& os, vtkIndent indent)
   }
   os << indent << "Vertex: " << this->Vertex << endl;
 }
+VTK_ABI_NAMESPACE_END

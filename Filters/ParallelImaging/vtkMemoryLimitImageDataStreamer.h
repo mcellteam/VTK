@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMemoryLimitImageDataStreamer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMemoryLimitImageDataStreamer
  * @brief   Initiates streaming on image data.
@@ -27,6 +15,7 @@
 #include "vtkFiltersParallelImagingModule.h" // For export macro
 #include "vtkImageDataStreamer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSPARALLELIMAGING_EXPORT vtkMemoryLimitImageDataStreamer : public vtkImageDataStreamer
 {
 public:
@@ -34,13 +23,13 @@ public:
   vtkTypeMacro(vtkMemoryLimitImageDataStreamer, vtkImageDataStreamer);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set / Get the memory limit in kibibytes (1024 bytes).
    */
   vtkSetMacro(MemoryLimit, unsigned long);
   vtkGetMacro(MemoryLimit, unsigned long);
-  //@}
+  ///@}
 
   // See the vtkAlgorithm for a description of what these do
   vtkTypeBool ProcessRequest(
@@ -48,7 +37,7 @@ public:
 
 protected:
   vtkMemoryLimitImageDataStreamer();
-  ~vtkMemoryLimitImageDataStreamer() override {}
+  ~vtkMemoryLimitImageDataStreamer() override = default;
 
   unsigned long MemoryLimit;
 
@@ -57,4 +46,5 @@ private:
   void operator=(const vtkMemoryLimitImageDataStreamer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTDxInteractorStyle.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkTDxInteractorStyle.h"
 
@@ -19,16 +7,17 @@
 #include "vtkTDxInteractorStyleSettings.h"
 #include "vtkTDxMotionEventInfo.h" // Borland needs it.
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkTDxInteractorStyle, Settings, vtkTDxInteractorStyleSettings);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTDxInteractorStyle::vtkTDxInteractorStyle()
 {
   this->Renderer = nullptr;
   this->Settings = vtkTDxInteractorStyleSettings::New();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTDxInteractorStyle::~vtkTDxInteractorStyle()
 {
   if (this->Settings != nullptr)
@@ -37,7 +26,7 @@ vtkTDxInteractorStyle::~vtkTDxInteractorStyle()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTDxInteractorStyle::ProcessEvent(vtkRenderer* renderer, unsigned long event, void* calldata)
 {
   vtkDebugMacro(<< "vtkTDxInteractorStyle::ProcessEvent()");
@@ -66,25 +55,25 @@ void vtkTDxInteractorStyle::ProcessEvent(vtkRenderer* renderer, unsigned long ev
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTDxInteractorStyle::OnMotionEvent(vtkTDxMotionEventInfo* vtkNotUsed(motionInfo))
 {
   vtkDebugMacro(<< "vtkTDxInteractorStyle::OnMotionEvent()");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTDxInteractorStyle::OnButtonPressedEvent(int vtkNotUsed(button))
 {
   vtkDebugMacro(<< "vtkTDxInteractorStyle::OnButtonPressedEvent()");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTDxInteractorStyle::OnButtonReleasedEvent(int vtkNotUsed(button))
 {
   vtkDebugMacro(<< "vtkTDxInteractorStyle::OnButtonReleasedEvent()");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTDxInteractorStyle::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -100,3 +89,4 @@ void vtkTDxInteractorStyle::PrintSelf(ostream& os, vtkIndent indent)
     this->Settings->PrintSelf(os, indent.GetNextIndent());
   }
 }
+VTK_ABI_NAMESPACE_END

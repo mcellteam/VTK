@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVolumeOfRevolutionFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVolumeOfRevolutionFilter
  * @brief   sweep data about a line to create a volume
@@ -37,6 +25,7 @@
 #include "vtkFiltersModelingModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSMODELING_EXPORT vtkVolumeOfRevolutionFilter : public vtkUnstructuredGridAlgorithm
 {
 public:
@@ -49,40 +38,40 @@ public:
    */
   static vtkVolumeOfRevolutionFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get resolution of sweep operation. Resolution controls the number
    * of intermediate node points.
    */
   vtkSetClampMacro(Resolution, int, 1, VTK_INT_MAX);
   vtkGetMacro(Resolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get angle of rotation in degrees.
    */
   vtkSetClampMacro(SweepAngle, double, -360., 360.);
   vtkGetMacro(SweepAngle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the position of the axis of revolution.
    */
   vtkSetVector3Macro(AxisPosition, double);
   vtkGetVector3Macro(AxisPosition, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the direction of the axis of revolution.
    */
   vtkSetVector3Macro(AxisDirection, double);
   vtkGetVector3Macro(AxisDirection, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -90,7 +79,7 @@ public:
    */
   vtkSetClampMacro(OutputPointsPrecision, int, SINGLE_PRECISION, DEFAULT_PRECISION);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkVolumeOfRevolutionFilter();
@@ -111,4 +100,5 @@ private:
   void operator=(const vtkVolumeOfRevolutionFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

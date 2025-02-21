@@ -1,38 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPickingManagerSeedWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*==============================================================================
-
-  Library: MSVTK
-
-  Copyright (c) Kitware Inc.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0.txt
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-==============================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware Inc.
+// SPDX-License-Identifier: BSD-3-Clause AND Apache-2.0
 //
 // This example tests the PickingManager using a scene full of seed widgets.
 // It makes sure that the picking works when some widgets are disabled.
@@ -61,7 +29,6 @@
 #include "vtkSeedWidget.h"
 #include "vtkSmartPointer.h"
 #include "vtkSphereHandleRepresentation.h"
-#include "vtkStdString.h"
 #include "vtkTimerLog.h"
 
 // STL includes
@@ -127,12 +94,14 @@ public:
   void Execute(vtkObject* caller, unsigned long, void*) override
   {
     vtkRenderWindowInteractor* iren = static_cast<vtkRenderWindowInteractor*>(caller);
+    char* cKeySym = iren->GetKeySym();
+    std::string keySym = cKeySym != nullptr ? cKeySym : "";
 
     // Reorganize the cube
-    if (vtkStdString(iren->GetKeySym()) == "space")
+    if (keySym == "space")
     {
       const int baseCube = static_cast<int>(pow(this->Seeds.size(), 1. / 3.) / 2 + 0.5);
-      std::list<vtkSmartPointer<vtkHandleWidget> >::iterator it = this->Seeds.begin();
+      std::list<vtkSmartPointer<vtkHandleWidget>>::iterator it = this->Seeds.begin();
 
       for (int i = -baseCube; i < baseCube; ++i)
       {
@@ -153,7 +122,7 @@ public:
       }
     }
     // Disable every other seed
-    if (vtkStdString(iren->GetKeySym()) == "Alt_L" || vtkStdString(iren->GetKeySym()) == "Alt_R")
+    if (keySym == "Alt_L" || keySym == "Alt_R")
     {
       const int baseCube = static_cast<int>(pow(this->Seeds.size(), 1. / 3.) / 2 + 0.5);
       int n = 0;
@@ -176,7 +145,7 @@ public:
     }
   }
 
-  std::list<vtkSmartPointer<vtkHandleWidget> > Seeds;
+  std::list<vtkSmartPointer<vtkHandleWidget>> Seeds;
   vtkSeedWidget* Widget;
 };
 
@@ -223,7 +192,7 @@ int TestPickingManagerSeedWidget2(int vtkNotUsed(argc), char* vtkNotUsed(argv)[]
   // Create a cube full of seeds
   // base correspond to the side of the cube --> (2*base)^3 seeds
   const int baseCube = 2;
-  std::list<vtkSmartPointer<vtkHandleWidget> > seeds;
+  std::list<vtkSmartPointer<vtkHandleWidget>> seeds;
   for (int i = -baseCube; i < baseCube; ++i)
   {
     for (int j = -baseCube; j < baseCube; ++j)
@@ -242,7 +211,7 @@ int TestPickingManagerSeedWidget2(int vtkNotUsed(argc), char* vtkNotUsed(argv)[]
         newHandleRep->GetProperty()->SetColor(1, 1, 1);
         newHandleRep->SetWorldPosition(pos);
 
-        seeds.push_back(newHandle);
+        seeds.emplace_back(newHandle);
       }
     }
   }

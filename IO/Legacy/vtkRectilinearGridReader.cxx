@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRectilinearGridReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRectilinearGridReader.h"
 
 #include "vtkDataArray.h"
@@ -23,34 +11,35 @@
 #include "vtkRectilinearGrid.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRectilinearGridReader);
 
 vtkRectilinearGridReader::vtkRectilinearGridReader() = default;
 vtkRectilinearGridReader::~vtkRectilinearGridReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearGrid* vtkRectilinearGridReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearGrid* vtkRectilinearGridReader::GetOutput(int idx)
 {
   return vtkRectilinearGrid::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRectilinearGridReader::SetOutput(vtkRectilinearGrid* output)
 {
   this->GetExecutive()->SetOutputData(0, output);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearGridReader::ReadMetaDataSimple(const std::string& fname, vtkInformation* outInfo)
 {
   char line[256];
-  bool dimsRead = 0;
+  bool dimsRead = false;
 
   vtkDebugMacro(<< "Reading vtk rectilinear grid file info...");
 
@@ -68,7 +57,7 @@ int vtkRectilinearGridReader::ReadMetaDataSimple(const std::string& fname, vtkIn
     return 1;
   }
 
-  if (!strncmp(this->LowerCase(line), "dataset", (unsigned long)7))
+  if (!strncmp(this->LowerCase(line), "dataset", 7))
   {
     // Make sure we're reading right type of geometry
     //
@@ -79,7 +68,7 @@ int vtkRectilinearGridReader::ReadMetaDataSimple(const std::string& fname, vtkIn
       return 1;
     }
 
-    if (strncmp(this->LowerCase(line), "rectilinear_grid", 16))
+    if (strncmp(this->LowerCase(line), "rectilinear_grid", 16) != 0)
     {
       vtkErrorMacro(<< "Cannot read dataset type: " << line);
       this->CloseVTKFile();
@@ -88,7 +77,7 @@ int vtkRectilinearGridReader::ReadMetaDataSimple(const std::string& fname, vtkIn
 
     // Read keyword and number of points
     //
-    while (1)
+    while (true)
     {
       if (!this->ReadString(line))
       {
@@ -107,7 +96,7 @@ int vtkRectilinearGridReader::ReadMetaDataSimple(const std::string& fname, vtkIn
         }
         outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), 0, dim[0] - 1, 0, dim[1] - 1,
           0, dim[2] - 1);
-        dimsRead = 1;
+        dimsRead = true;
       }
 
       else if (!strncmp(line, "extent", 6) && !dimsRead)
@@ -125,7 +114,7 @@ int vtkRectilinearGridReader::ReadMetaDataSimple(const std::string& fname, vtkIn
         outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), extent[0], extent[1],
           extent[2], extent[3], extent[4], extent[5]);
 
-        dimsRead = 1;
+        dimsRead = true;
       }
     }
   }
@@ -138,7 +127,7 @@ int vtkRectilinearGridReader::ReadMetaDataSimple(const std::string& fname, vtkIn
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearGridReader::ReadMeshSimple(const std::string& fname, vtkDataObject* doOutput)
 {
   vtkIdType numPts = 0, npts, ncoords, numCells = 0, ncells;
@@ -170,7 +159,7 @@ int vtkRectilinearGridReader::ReadMeshSimple(const std::string& fname, vtkDataOb
     return 1;
   }
 
-  if (!strncmp(this->LowerCase(line), "dataset", (unsigned long)7))
+  if (!strncmp(this->LowerCase(line), "dataset", 7))
   {
     // Make sure we're reading right type of geometry
     //
@@ -181,7 +170,7 @@ int vtkRectilinearGridReader::ReadMeshSimple(const std::string& fname, vtkDataOb
       return 1;
     }
 
-    if (strncmp(this->LowerCase(line), "rectilinear_grid", 16))
+    if (strncmp(this->LowerCase(line), "rectilinear_grid", 16) != 0)
     {
       vtkErrorMacro(<< "Cannot read dataset type: " << line);
       this->CloseVTKFile();
@@ -326,7 +315,7 @@ int vtkRectilinearGridReader::ReadMeshSimple(const std::string& fname, vtkDataOb
       vtkWarningMacro(<< "No dimensions read.");
     if (!output->GetXCoordinates() || output->GetXCoordinates()->GetNumberOfTuples() < 1)
     {
-      vtkWarningMacro(<< "No x coordinatess read.");
+      vtkWarningMacro(<< "No x coordinates read.");
     }
     if (!output->GetYCoordinates() || output->GetYCoordinates()->GetNumberOfTuples() < 1)
     {
@@ -372,15 +361,16 @@ int vtkRectilinearGridReader::ReadMeshSimple(const std::string& fname, vtkDataOb
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearGridReader::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkRectilinearGrid");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRectilinearGridReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

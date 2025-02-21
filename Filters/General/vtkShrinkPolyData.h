@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShrinkPolyData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkShrinkPolyData
  * @brief   shrink cells composing PolyData
@@ -42,6 +30,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkShrinkPolyData : public vtkPolyDataAlgorithm
 {
 public:
@@ -49,23 +38,23 @@ public:
   vtkTypeMacro(vtkShrinkPolyData, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the fraction of shrink for each cell.
    */
   vtkSetClampMacro(ShrinkFactor, double, 0.0, 1.0);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the fraction of shrink for each cell.
    */
   vtkGetMacro(ShrinkFactor, double);
-  //@}
+  ///@}
 
 protected:
   vtkShrinkPolyData(double sf = 0.5);
-  ~vtkShrinkPolyData() override {}
+  ~vtkShrinkPolyData() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   double ShrinkFactor;
@@ -75,4 +64,5 @@ private:
   void operator=(const vtkShrinkPolyData&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

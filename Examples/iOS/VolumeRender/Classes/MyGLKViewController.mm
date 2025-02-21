@@ -1,16 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #import "MyGLKViewController.h"
 #include "vtk/vtkIOSRenderWindow.h"
@@ -135,7 +124,8 @@ PURPOSE.  See the above copyright notice for more information.
   mi->Update();
 
   double range[2];
-  mi->GetOutput()->GetPointData()->GetScalars()->GetRange(range);
+  vtkPointData* pd = mi->GetOutput()->GetPointData();
+  pd->GetRange(pd->GetScalars()->GetName(), range);
 
   volumeMapper->SetInputConnection(mi->GetOutputPort());
 #endif
@@ -206,7 +196,7 @@ PURPOSE.  See the above copyright notice for more information.
 
   [EAGLContext setCurrentContext:self.context];
   [self resizeView];
-  [self getVTKRenderWindow] -> Render();
+  [self getVTKRenderWindow]->Render();
 }
 
 - (void)dealloc
@@ -252,7 +242,7 @@ PURPOSE.  See the above copyright notice for more information.
   double scale = self.view.contentScaleFactor;
   double newWidth = scale * self.view.bounds.size.width;
   double newHeight = scale * self.view.bounds.size.height;
-  [self getVTKRenderWindow] -> SetSize(newWidth, newHeight);
+  [self getVTKRenderWindow]->SetSize(newWidth, newHeight);
 }
 
 - (void)viewWillLayoutSubviews
@@ -263,7 +253,7 @@ PURPOSE.  See the above copyright notice for more information.
 - (void)glkView:(GLKView*)view drawInRect:(CGRect)rect
 {
   // std::cout << [self getVTKRenderWindow]->ReportCapabilities() << std::endl;
-  [self getVTKRenderWindow] -> Render();
+  [self getVTKRenderWindow]->Render();
 }
 
 //=================================================================

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBorderWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBorderWidget
  * @brief   place a border around a 2D rectangular region
@@ -75,10 +63,12 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBorderRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkBorderWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkBorderWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -86,15 +76,15 @@ public:
    */
   static vtkBorderWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for class.
    */
   vtkTypeMacro(vtkBorderWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether the interior region of the widget can be selected or
    * not. If not, then events (such as left mouse down) allow the user to
@@ -104,9 +94,9 @@ public:
   vtkSetMacro(Selectable, vtkTypeBool);
   vtkGetMacro(Selectable, vtkTypeBool);
   vtkBooleanMacro(Selectable, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether the boundary of the widget can be resized.
    * If not, the cursor will not change to "resize" type when mouse
@@ -115,7 +105,7 @@ public:
   vtkSetMacro(Resizable, vtkTypeBool);
   vtkGetMacro(Resizable, vtkTypeBool);
   vtkBooleanMacro(Resizable, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -140,6 +130,12 @@ public:
    */
   void CreateDefaultRepresentation() override;
 
+  /**
+   * Reimplement ProcessEvents to disable it when using relative location with
+   * windowLocation. When using exact location this override has no effect.
+   */
+  vtkTypeBool GetProcessEvents() override;
+
 protected:
   vtkBorderWidget();
   ~vtkBorderWidget() override;
@@ -160,6 +156,7 @@ protected:
   static void TranslateAction(vtkAbstractWidget*);
   static void EndSelectAction(vtkAbstractWidget*);
   static void MoveAction(vtkAbstractWidget*);
+  static void HoverLeaveAction(vtkAbstractWidget*);
 
   // Special internal methods to support subclasses handling events.
   // If a non-zero value is returned, the subclass is handling the event.
@@ -173,7 +170,7 @@ protected:
 
   // widget state
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Define,
@@ -186,4 +183,5 @@ private:
   void operator=(const vtkBorderWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

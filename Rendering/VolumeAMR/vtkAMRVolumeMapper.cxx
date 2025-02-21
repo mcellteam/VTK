@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAMRVolumeMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMRVolumeMapper.h"
 
 #include "vtkAMRResampleFilter.h"
@@ -36,10 +24,11 @@
 #include "vtkNew.h"
 #include "vtkTimerLog.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAMRVolumeMapper);
 
 // Construct a vtkAMRVolumeMapper
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAMRVolumeMapper::vtkAMRVolumeMapper()
 {
   this->InternalMapper = vtkSmartVolumeMapper::New();
@@ -50,7 +39,7 @@ vtkAMRVolumeMapper::vtkAMRVolumeMapper()
   this->NumberOfSamples[0] = 128;
   this->NumberOfSamples[1] = 128;
   this->NumberOfSamples[2] = 128;
-  this->RequestedResamplingMode = 0; // Frustrum Mode
+  this->RequestedResamplingMode = 0; // Frustum Mode
   this->FreezeFocalPoint = false;
   this->LastFocalPointPosition[0] = this->LastFocalPointPosition[1] =
     this->LastFocalPointPosition[2] = 0.0;
@@ -62,7 +51,7 @@ vtkAMRVolumeMapper::vtkAMRVolumeMapper()
   this->UseDefaultThreading = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAMRVolumeMapper::~vtkAMRVolumeMapper()
 {
   this->InternalMapper->Delete();
@@ -76,25 +65,34 @@ vtkAMRVolumeMapper::~vtkAMRVolumeMapper()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetInputData(vtkImageData* vtkNotUsed(genericInput))
 {
   vtkErrorMacro("Mapper expects a hierarchical dataset as input");
-  this->Resampler->SetInputConnection(0, 0);
+  this->Resampler->SetInputConnection(0, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetInputData(vtkDataSet* vtkNotUsed(genericInput))
 {
   vtkErrorMacro("Mapper expects a hierarchical dataset as input");
-  this->Resampler->SetInputConnection(0, 0);
+  this->Resampler->SetInputConnection(0, nullptr);
 }
-//----------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+void vtkAMRVolumeMapper::SetInputData(vtkRectilinearGrid* vtkNotUsed(genericInput))
+{
+  vtkErrorMacro("Mapper expects a hierarchical dataset as input");
+  this->Resampler->SetInputConnection(0, nullptr);
+}
+
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetInputData(vtkOverlappingAMR* hdata)
 {
   this->SetInputDataInternal(0, hdata);
 }
-//----------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetInputConnection(int port, vtkAlgorithmOutput* input)
 {
   if ((this->Resampler->GetNumberOfInputConnections(0) > 0) &&
@@ -110,7 +108,7 @@ void vtkAMRVolumeMapper::SetInputConnection(int port, vtkAlgorithmOutput* input)
     this->Grid = nullptr;
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkAMRVolumeMapper::GetBounds()
 {
   vtkOverlappingAMR* hdata;
@@ -125,49 +123,49 @@ double* vtkAMRVolumeMapper::GetBounds()
   }
   return this->Bounds;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRVolumeMapper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkOverlappingAMR");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SelectScalarArray(int arrayNum)
 {
   this->InternalMapper->SelectScalarArray(arrayNum);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SelectScalarArray(const char* arrayName)
 {
   this->InternalMapper->SelectScalarArray(arrayName);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkAMRVolumeMapper::GetScalarModeAsString()
 {
   return this->InternalMapper->GetScalarModeAsString();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkAMRVolumeMapper::GetArrayName()
 {
   return this->InternalMapper->GetArrayName();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRVolumeMapper::GetArrayId()
 {
   return this->InternalMapper->GetArrayId();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRVolumeMapper::GetArrayAccessMode()
 {
   return this->InternalMapper->GetArrayAccessMode();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetScalarMode(int mode)
 {
   this->vtkVolumeMapper::SetScalarMode(mode);
@@ -185,78 +183,78 @@ void vtkAMRVolumeMapper::SetScalarMode(int mode)
 
   this->InternalMapper->SetScalarMode(newMode);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetBlendMode(int mode)
 {
   this->InternalMapper->SetBlendMode(mode);
 }
-//----------------------------------------------------------------------------
-int vtkAMRVolumeMapper::GetBlendMode()
+//------------------------------------------------------------------------------
+int vtkAMRVolumeMapper::GetBlendMode() VTK_FUTURE_CONST
 {
   return this->InternalMapper->GetBlendMode();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetCropping(vtkTypeBool mode)
 {
   this->InternalMapper->SetCropping(mode);
 }
-//----------------------------------------------------------------------------
-vtkTypeBool vtkAMRVolumeMapper::GetCropping()
+//------------------------------------------------------------------------------
+vtkTypeBool vtkAMRVolumeMapper::GetCropping() VTK_FUTURE_CONST
 {
   return this->InternalMapper->GetCropping();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetCroppingRegionFlags(int mode)
 {
   this->InternalMapper->SetCroppingRegionFlags(mode);
 }
-//----------------------------------------------------------------------------
-int vtkAMRVolumeMapper::GetCroppingRegionFlags()
+//------------------------------------------------------------------------------
+int vtkAMRVolumeMapper::GetCroppingRegionFlags() VTK_FUTURE_CONST
 {
   return this->InternalMapper->GetCroppingRegionFlags();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetCroppingRegionPlanes(
   double arg1, double arg2, double arg3, double arg4, double arg5, double arg6)
 {
   this->InternalMapper->SetCroppingRegionPlanes(arg1, arg2, arg3, arg4, arg5, arg6);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::GetCroppingRegionPlanes(double* planes)
 {
   this->InternalMapper->GetCroppingRegionPlanes(planes);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkAMRVolumeMapper::GetCroppingRegionPlanes()
 {
   return this->InternalMapper->GetCroppingRegionPlanes();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetRequestedRenderMode(int mode)
 {
   this->InternalMapper->SetRequestedRenderMode(mode);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRVolumeMapper::GetRequestedRenderMode()
 {
   return this->InternalMapper->GetRequestedRenderMode();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::SetInterpolationMode(int mode)
 {
   this->InternalMapper->SetInterpolationMode(mode);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRVolumeMapper::GetInterpolationMode()
 {
   return this->InternalMapper->GetInterpolationMode();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::ReleaseGraphicsResources(vtkWindow* window)
 {
   this->InternalMapper->ReleaseGraphicsResources(window);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::Render(vtkRenderer* ren, vtkVolume* vol)
 {
   // Hack - Make sure the camera is in the right mode for moving the focal point
@@ -302,7 +300,7 @@ void vtkAMRVolumeMapper::Render(vtkRenderer* ren, vtkVolume* vol)
     this->InternalMapper->Render(ren, vol);
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::UpdateResampler(vtkRenderer* ren, vtkOverlappingAMR* amr)
 {
   // Set the bias of the resample filter to be the projection direction
@@ -371,7 +369,7 @@ void vtkAMRVolumeMapper::UpdateResampler(vtkRenderer* ren, vtkOverlappingAMR* am
   this->GridNeedsToBeUpdated = true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::UpdateResamplerFrustrumMethod(vtkRenderer* ren, vtkOverlappingAMR* amr)
 {
   double bounds[6];
@@ -399,7 +397,7 @@ void vtkAMRVolumeMapper::UpdateResamplerFrustrumMethod(vtkRenderer* ren, vtkOver
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkAMRVolumeMapper::ComputeResamplerBoundsFrustumMethod(
   vtkCamera* camera, vtkRenderer* renderer, const double bounds[6], double out_bounds[6])
 {
@@ -511,7 +509,7 @@ bool vtkAMRVolumeMapper::ComputeResamplerBoundsFrustumMethod(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::UpdateGrid()
 {
   // This is for debugging
@@ -550,7 +548,7 @@ void vtkAMRVolumeMapper::UpdateGrid()
     this->Grid->Delete();
   }
   this->Grid = vtkUniformGrid::SafeDownCast(mb->GetBlock(0));
-  this->Grid->Register(0);
+  this->Grid->Register(nullptr);
   this->GridNeedsToBeUpdated = false;
 #if PRINTSTATS
   this->Grid->GetDimensions(gridDim);
@@ -560,13 +558,13 @@ void vtkAMRVolumeMapper::UpdateGrid()
             << ")\n";
 #endif
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::ProcessUpdateExtentRequest(vtkRenderer* vtkNotUsed(ren),
   vtkInformation* info, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   this->Resampler->RequestUpdateExtent(info, inputVector, outputVector);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRVolumeMapper::ProcessInformationRequest(vtkRenderer* ren, vtkInformation* info,
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -589,7 +587,7 @@ void vtkAMRVolumeMapper::ProcessInformationRequest(vtkRenderer* ren, vtkInformat
   this->UpdateResampler(ren, amrMetaData);
   this->Resampler->RequestInformation(info, inputVector, outputVector);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Print the vtkAMRVolumeMapper
 void vtkAMRVolumeMapper::PrintSelf(ostream& os, vtkIndent indent)
@@ -620,4 +618,5 @@ void vtkAMRVolumeMapper::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "RequestedResamplingMode: " << this->RequestedResamplingMode << "\n";
   os << indent << "FreezeFocalPoint: " << this->FreezeFocalPoint << "\n";
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_END

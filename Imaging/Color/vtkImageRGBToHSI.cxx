@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageRGBToHSI.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageRGBToHSI.h"
 
 #include "vtkImageData.h"
@@ -21,9 +9,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageRGBToHSI);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageRGBToHSI::vtkImageRGBToHSI()
 {
   this->Maximum = 255.0;
@@ -31,7 +20,7 @@ vtkImageRGBToHSI::vtkImageRGBToHSI()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class T>
 void vtkImageRGBToHSIExecute(
@@ -82,7 +71,7 @@ void vtkImageRGBToHSIExecute(
         S = max * (1.0 - (3.0 * temp / sumRGB));
       }
 
-      temp = static_cast<double>(R + G + B);
+      temp = R + G + B;
       // Intensity is easy
       I = temp / 3.0;
 
@@ -119,7 +108,7 @@ void vtkImageRGBToHSIExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageRGBToHSI::ThreadedExecute(
   vtkImageData* inData, vtkImageData* outData, int outExt[6], int id)
 {
@@ -161,3 +150,4 @@ void vtkImageRGBToHSI::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Maximum: " << this->Maximum << "\n";
 }
+VTK_ABI_NAMESPACE_END

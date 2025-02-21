@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkViewTheme.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkViewTheme.h"
 
@@ -24,6 +8,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkTextProperty.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkViewTheme);
 vtkCxxSetObjectMacro(vtkViewTheme, PointLookupTable, vtkScalarsToColors);
 vtkCxxSetObjectMacro(vtkViewTheme, CellLookupTable, vtkScalarsToColors);
@@ -104,7 +89,7 @@ vtkViewTheme::~vtkViewTheme()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewTheme::SetPointHueRange(double mn, double mx)
 {
   if (vtkLookupTable* lut = vtkLookupTable::SafeDownCast(this->PointLookupTable))
@@ -148,7 +133,7 @@ void vtkViewTheme::GetPointHueRange(double rng[2])
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewTheme::SetPointSaturationRange(double mn, double mx)
 {
   if (vtkLookupTable* lut = vtkLookupTable::SafeDownCast(this->PointLookupTable))
@@ -192,7 +177,7 @@ void vtkViewTheme::GetPointSaturationRange(double rng[2])
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewTheme::SetPointValueRange(double mn, double mx)
 {
   if (vtkLookupTable* lut = vtkLookupTable::SafeDownCast(this->PointLookupTable))
@@ -236,7 +221,7 @@ void vtkViewTheme::GetPointValueRange(double rng[2])
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewTheme::SetPointAlphaRange(double mn, double mx)
 {
   if (vtkLookupTable* lut = vtkLookupTable::SafeDownCast(this->PointLookupTable))
@@ -280,7 +265,7 @@ void vtkViewTheme::GetPointAlphaRange(double rng[2])
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewTheme::SetCellHueRange(double mn, double mx)
 {
   if (vtkLookupTable* lut = vtkLookupTable::SafeDownCast(this->CellLookupTable))
@@ -324,7 +309,7 @@ void vtkViewTheme::GetCellHueRange(double rng[2])
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewTheme::SetCellSaturationRange(double mn, double mx)
 {
   if (vtkLookupTable* lut = vtkLookupTable::SafeDownCast(this->CellLookupTable))
@@ -368,7 +353,7 @@ void vtkViewTheme::GetCellSaturationRange(double rng[2])
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewTheme::SetCellValueRange(double mn, double mx)
 {
   if (vtkLookupTable* lut = vtkLookupTable::SafeDownCast(this->CellLookupTable))
@@ -412,7 +397,7 @@ void vtkViewTheme::GetCellValueRange(double rng[2])
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewTheme::SetCellAlphaRange(double mn, double mx)
 {
   if (vtkLookupTable* lut = vtkLookupTable::SafeDownCast(this->CellLookupTable))
@@ -678,3 +663,4 @@ void vtkViewTheme::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ScalePointLookupTable: " << this->ScalePointLookupTable << endl;
   os << indent << "ScaleCellLookupTable: " << this->ScaleCellLookupTable << endl;
 }
+VTK_ABI_NAMESPACE_END

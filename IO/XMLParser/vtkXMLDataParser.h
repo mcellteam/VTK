@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLDataParser.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLDataParser
  * @brief   Used by vtkXMLReader to parse VTK XML files.
@@ -33,6 +21,7 @@
 #include "vtkXMLDataElement.h"    //For inline definition.
 #include "vtkXMLParser.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInputStream;
 class vtkDataCompressor;
 
@@ -93,14 +82,14 @@ public:
    */
   size_t ReadBinaryData(void* buffer, vtkTypeUInt64 startWord, size_t maxWords, int wordType);
 
-  //@{
+  ///@{
   /**
    * Get/Set the compressor used to decompress binary and appended data
    * after reading from the file.
    */
   virtual void SetCompressor(vtkDataCompressor*);
   vtkGetObjectMacro(Compressor, vtkDataCompressor);
-  //@}
+  ///@}
 
   /**
    * Get the size of a word of the given type.
@@ -113,25 +102,25 @@ public:
    */
   int Parse() override;
 
-  //@{
+  ///@{
   /**
    * Get/Set flag to abort reading of data.  This may be set by a
    * progress event observer.
    */
   vtkGetMacro(Abort, int);
   vtkSetMacro(Abort, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set progress of reading data.  This may be checked by a
    * progress event observer.
    */
   vtkGetMacro(Progress, float);
   vtkSetMacro(Progress, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the character encoding that will be used to set the attributes's
    * encoding type of each vtkXMLDataElement created by this parser (i.e.,
@@ -142,7 +131,7 @@ public:
    */
   vtkSetClampMacro(AttributesEncoding, int, VTK_ENCODING_NONE, VTK_ENCODING_UNKNOWN);
   vtkGetMacro(AttributesEncoding, int);
-  //@}
+  ///@}
 
   /**
    * If you need the text inside XMLElements, turn IgnoreCharacterData off.
@@ -215,6 +204,9 @@ protected:
   // How much of the string "<AppendedData" has been matched in input.
   int AppendedDataMatched;
 
+  // Whether AppendedData has been dealt with or not.
+  bool AppendedDataFound;
+
   // The byte order of the binary input.
   int ByteOrder;
 
@@ -266,4 +258,5 @@ inline void vtkXMLDataParser::CharacterDataHandler(const char* data, int length)
   this->OpenElements[eid]->AddCharacterData(data, length);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

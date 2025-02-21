@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangeQuadrilateral.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLagrangeQuadrilateral.h"
 
 #include "vtkCellData.h"
@@ -26,14 +14,11 @@
 #include "vtkQuad.h"
 #include "vtkTriangle.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLagrangeQuadrilateral);
 
-vtkLagrangeQuadrilateral::vtkLagrangeQuadrilateral()
-  : vtkHigherOrderQuadrilateral()
-{
-}
+vtkLagrangeQuadrilateral::vtkLagrangeQuadrilateral() = default;
 
 vtkLagrangeQuadrilateral::~vtkLagrangeQuadrilateral() = default;
 
@@ -45,7 +30,18 @@ void vtkLagrangeQuadrilateral::PrintSelf(ostream& os, vtkIndent indent)
 vtkCell* vtkLagrangeQuadrilateral::GetEdge(int edgeId)
 {
   vtkLagrangeCurve* result = EdgeCell;
-  this->GetEdgeWithoutRationalWeights(result, edgeId);
+  const auto set_number_of_ids_and_points = [&](const vtkIdType& npts) -> void
+  {
+    result->Points->SetNumberOfPoints(npts);
+    result->PointIds->SetNumberOfIds(npts);
+  };
+  const auto set_ids_and_points = [&](const vtkIdType& edge_id, const vtkIdType& face_id) -> void
+  {
+    result->Points->SetPoint(edge_id, this->Points->GetPoint(face_id));
+    result->PointIds->SetId(edge_id, this->PointIds->GetId(face_id));
+  };
+
+  this->SetEdgeIdsAndPoints(edgeId, set_number_of_ids_and_points, set_ids_and_points);
   return result;
 }
 
@@ -99,7 +95,8 @@ void vtkLagrangeQuadrilateral::InterpolateDerivs(const double pcoords[3], double
   vtkLagrangeInterpolation::Tensor2ShapeDerivatives(this->GetOrder(), pcoords, derivs);
 }
 
-vtkHigherOrderCurve* vtkLagrangeQuadrilateral::getEdgeCell()
+vtkHigherOrderCurve* vtkLagrangeQuadrilateral::GetEdgeCell()
 {
   return EdgeCell;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWindBladeReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWindBladeReader
  * @brief   class for reading WindBlade data files
@@ -21,7 +9,7 @@
  * giving the number of bytes within the block.  The number of data
  * variables dumped varies.  There are 3 output ports with the first
  * being a structured grid with irregular spacing in the Z dimension.
- * The second is an unstructured grid only read on on process 0 and
+ * The second is an unstructured grid only read on process 0 and
  * used to represent the blade.  The third is also a structured grid
  * with irregular spacing on the Z dimension.  Only the first and
  * second output ports have time dependent data.
@@ -33,6 +21,7 @@
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkStructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArraySelection;
 class vtkCallbackCommand;
 class vtkStringArray;
@@ -52,8 +41,8 @@ public:
   vtkTypeMacro(vtkWindBladeReader, vtkStructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  vtkSetStringMacro(Filename);
-  vtkGetStringMacro(Filename);
+  vtkSetFilePathMacro(Filename);
+  vtkGetFilePathMacro(Filename);
 
   vtkSetVector6Macro(WholeExtent, int);
   vtkGetVector6Macro(WholeExtent, int);
@@ -68,7 +57,7 @@ public:
   vtkUnstructuredGrid* GetBladeOutput(); // Output port 1
   vtkStructuredGrid* GetGroundOutput();  // Output port 2
 
-  //@{
+  ///@{
   /**
    * The following methods allow selective reading of solutions fields.
    * By default, ALL data fields on the nodes are read, but this can
@@ -76,7 +65,7 @@ public:
    */
   int GetNumberOfPointArrays();
   const char* GetPointArrayName(int index);
-  //@}
+  ///@}
 
   int GetPointArrayStatus(const char* name);
   void SetPointArrayStatus(const char* name, int status);
@@ -255,4 +244,5 @@ private:
   vtkWindBladeReader(const vtkWindBladeReader&) = delete;
   void operator=(const vtkWindBladeReader&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

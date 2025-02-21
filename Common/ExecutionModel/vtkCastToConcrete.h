@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCastToConcrete.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCastToConcrete
  * @brief   works around type-checking limitations
@@ -25,7 +13,7 @@
  * to vtkElevationFilter is of type vtkPolyData, and you know the output of
  * vtkElevationFilter is the same type as its input.
  *
- * vtkCastToConcrete performs run-time checking to insure that output type
+ * vtkCastToConcrete performs run-time checking to ensure that output type
  * is of the right type. An error message will result if you try to cast
  * an input type improperly. Otherwise, the filter performs the appropriate
  * cast and returns the data.
@@ -44,6 +32,7 @@
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkDataSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONEXECUTIONMODEL_EXPORT vtkCastToConcrete : public vtkDataSetAlgorithm
 {
 
@@ -53,8 +42,8 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
-  vtkCastToConcrete() {}
-  ~vtkCastToConcrete() override {}
+  vtkCastToConcrete() = default;
+  ~vtkCastToConcrete() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**,
     vtkInformationVector*) override; // insures compatibility; satisfies abstract api in vtkFilter
@@ -65,4 +54,5 @@ private:
   void operator=(const vtkCastToConcrete&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

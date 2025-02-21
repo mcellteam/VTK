@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLGPUVolumeRayCastMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkOpenGLGPUVolumeRayCastMapper
  * @brief OpenGL implementation of volume rendering through ray-casting.
@@ -52,6 +40,10 @@
  *   - With the limitation that all of the inputs are assumed to share the same
  *     name/id.
  *
+ * - Inputs
+ *   - 1-component inputs with vtkVolumeProperty::IndependentComponentsOn()
+ *   - 4-component inputs with vtkVolumeProperty::IndependentComponentsOff()
+ *
  * @sa vtkGPUVolumeRayCastMapper vtkVolumeInputHelper vtkVolumeTexture
  * vtkMultiVolume
  *
@@ -66,7 +58,9 @@
 #include "vtkRenderingVolumeOpenGL2Module.h" // For export macro
 #include "vtkShader.h"                       // For methods
 #include "vtkSmartPointer.h"                 // For smartptr
+#include "vtkWrappingHints.h"                // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGenericOpenGLResourceFreeCallback;
 class vtkImplicitFunction;
 class vtkOpenGLCamera;
@@ -81,7 +75,7 @@ class vtkVolumeInputHelper;
 class vtkVolumeTexture;
 class vtkOpenGLShaderProperty;
 
-class VTKRENDERINGVOLUMEOPENGL2_EXPORT vtkOpenGLGPUVolumeRayCastMapper
+class VTKRENDERINGVOLUMEOPENGL2_EXPORT VTK_MARSHALAUTO vtkOpenGLGPUVolumeRayCastMapper
   : public vtkGPUVolumeRayCastMapper
 {
 public:
@@ -137,7 +131,7 @@ public:
 
   /**
    * Set a fixed number of partitions in which to split the volume
-   * during rendring. This will force by-block rendering without
+   * during rendering. This will force by-block rendering without
    * trying to compute an optimum number of partitions.
    */
   void SetPartitions(unsigned short x, unsigned short y, unsigned short z);
@@ -209,8 +203,16 @@ protected:
   void ComputeReductionFactor(double allocatedTime);
 
   // Description:
-  // Empty implementation.
-  void GetReductionRatio(double* ratio) override { ratio[0] = ratio[1] = ratio[2] = 1.0; }
+  // Returns a reduction ratio for each dimension
+  // This ratio is computed from MaxMemoryInBytes and MaxMemoryFraction so that the total
+  // memory usage of the resampled image, by the returned ratio, does not exceed
+  // `MaxMemoryInBytes * MaxMemoryFraction`
+  // \pre input is up-to-date
+  // \post Aspect ratio of image is always kept
+  // - for a 1D image `ratio[1] == ratio[2] == 1`
+  // - for a 2D image `ratio[0] == ratio[1]` and `ratio[2] == 1`
+  // - for a 3D image `ratio[0] == ratio[1] == ratio[2]`
+  void GetReductionRatio(double* ratio) override;
 
   // Description:
   // Empty implementation.
@@ -220,7 +222,7 @@ protected:
     return 1;
   }
 
-  //@{
+  ///@{
   /**
    *  \brief vtkOpenGLRenderPass API
    */
@@ -276,7 +278,7 @@ protected:
    *  guarantee that they are still valid!
    */
   vtkNew<vtkInformation> LastRenderPassInfo;
-  //@}
+  ///@}
 
   double ReductionFactor;
   int CurrentPass;
@@ -296,4 +298,5 @@ private:
   void operator=(const vtkOpenGLGPUVolumeRayCastMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkOpenGLGPUVolumeRayCastMapper_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBalloonWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBalloonWidget
  * @brief   popup text balloons above instance of vtkProp when hovering occurs
@@ -73,7 +61,9 @@
 
 #include "vtkHoverWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBalloonRepresentation;
 class vtkProp;
 class vtkAbstractPropPicker;
@@ -81,7 +71,7 @@ class vtkStdString;
 class vtkPropMap;
 class vtkImageData;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkBalloonWidget : public vtkHoverWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkBalloonWidget : public vtkHoverWidget
 {
 public:
   /**
@@ -89,13 +79,13 @@ public:
    */
   static vtkBalloonWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for a VTK class.
    */
   vtkTypeMacro(vtkBalloonWidget, vtkHoverWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * The method for activating and deactivating this widget. This method
@@ -126,7 +116,7 @@ public:
    */
   void CreateDefaultRepresentation() override;
 
-  //@{
+  ///@{
   /**
    * Add and remove text and/or an image to be associated with a vtkProp. You
    * may add one or both of them.
@@ -138,9 +128,9 @@ public:
     this->AddBalloon(prop, str, nullptr);
   }
   void RemoveBalloon(vtkProp* prop);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to retrieve the information associated with each vtkProp (i.e.,
    * the information that makes up each balloon). A nullptr will be returned if
@@ -149,16 +139,16 @@ public:
    */
   const char* GetBalloonString(vtkProp* prop);
   vtkImageData* GetBalloonImage(vtkProp* prop);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Update the balloon string or image. If the specified prop does not exist,
    * then nothing is added not changed.
    */
   void UpdateBalloonString(vtkProp* prop, const char* str);
   void UpdateBalloonImage(vtkProp* prop, vtkImageData* image);
-  //@}
+  ///@}
 
   /**
    * Return the current vtkProp that is being hovered over. Note that the
@@ -166,7 +156,7 @@ public:
    */
   virtual vtkProp* GetCurrentProp() { return this->CurrentProp; }
 
-  //@{
+  ///@{
   /**
    * Set/Get the object used to perform pick operations. Since the
    * vtkBalloonWidget operates on vtkProps, the picker must be a subclass of
@@ -175,7 +165,7 @@ public:
    */
   void SetPicker(vtkAbstractPropPicker*);
   vtkGetObjectMacro(Picker, vtkAbstractPropPicker);
-  //@}
+  ///@}
 
   /*
    * Register internal Pickers within PickingManager
@@ -204,4 +194,5 @@ private:
   void operator=(const vtkBalloonWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitTextureCoords.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImplicitTextureCoords
  * @brief   generate 1D, 2D, or 3D texture coordinates based on implicit function(s)
@@ -52,6 +40,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersTextureModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImplicitFunction;
 
 class VTKFILTERSTEXTURE_EXPORT vtkImplicitTextureCoords : public vtkDataSetAlgorithm
@@ -66,31 +55,31 @@ public:
    */
   static vtkImplicitTextureCoords* New();
 
-  //@{
+  ///@{
   /**
    * Specify an implicit function to compute the r texture coordinate.
    */
   virtual void SetRFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(RFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify an implicit function to compute the s texture coordinate.
    */
   virtual void SetSFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(SFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify an implicit function to compute the t texture coordinate.
    */
   virtual void SetTFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(TFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If enabled, this will flip the sense of inside and outside the implicit
    * function (i.e., a rotation around the r-s-t=0.5 axis).
@@ -98,7 +87,7 @@ public:
   vtkSetMacro(FlipTexture, vtkTypeBool);
   vtkGetMacro(FlipTexture, vtkTypeBool);
   vtkBooleanMacro(FlipTexture, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImplicitTextureCoords();
@@ -116,4 +105,5 @@ private:
   void operator=(const vtkImplicitTextureCoords&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

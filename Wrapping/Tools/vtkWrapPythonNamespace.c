@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWrapPythonNamespace.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkWrapPythonNamespace.h"
 #include "vtkWrapPythonConstant.h"
@@ -33,7 +21,10 @@ int vtkWrapPython_WrapNamespace(FILE* fp, const char* module, NamespaceInfo* dat
   /* create any enum types defined in the namespace */
   for (i = 0; i < data->NumberOfEnums; i++)
   {
-    vtkWrapPython_GenerateEnumType(fp, module, data->Name, data->Enums[i]);
+    if (!data->Enums[i]->IsExcluded)
+    {
+      vtkWrapPython_GenerateEnumType(fp, module, data->Name, data->Enums[i]);
+    }
   }
 
   fprintf(fp,

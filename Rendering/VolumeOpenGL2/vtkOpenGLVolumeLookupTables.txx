@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLVolumeLookupTables.txx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkOpenGLVolumeLookupTables_txx
 #define vtkOpenGLVolumeLookupTables_txx
@@ -21,6 +9,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 template <class T>
 vtkStandardNewMacro(vtkOpenGLVolumeLookupTables<T>);
 
@@ -50,7 +39,7 @@ void vtkOpenGLVolumeLookupTables<T>::PrintSelf(ostream& os, vtkIndent indent)
 template <class T>
 void vtkOpenGLVolumeLookupTables<T>::Create(std::size_t numberOfTables)
 {
-  this->Tables.reserve(static_cast<std::size_t>(numberOfTables));
+  this->Tables.reserve(numberOfTables);
   for (std::size_t i = 0; i < numberOfTables; ++i)
   {
     auto* const table = T::New();
@@ -87,4 +76,5 @@ void vtkOpenGLVolumeLookupTables<T>::ReleaseGraphicsResources(vtkWindow* win)
   }
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkOpenGLVolumeLookupTables_txx

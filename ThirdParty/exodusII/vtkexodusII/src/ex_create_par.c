@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 
 /*!
@@ -60,7 +33,6 @@ causes of errors include:
   -  Attempting to create a file in a directory without permission
  to create files there.
   -  Passing an invalid file clobber mode.
-
 
 \param path The file name of the new exodus file. This can be given as either an
             absolute path name (from the root of the file system) or a relative
@@ -155,7 +127,8 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 #if defined(PARALLEL_AWARE_EXODUS)
 
 #include "exodusII_int.h"
-#include <mpi.h>
+#include <vtk_mpi.h>
+#include <stdlib.h>
 
 /* NOTE: Do *not* call `ex_create_par_int()` directly.  The public API
  *       function name is `ex_create_par()` which is a wrapper that calls
@@ -185,30 +158,81 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
   EX_FUNC_LEAVE(EX_FATAL);
 #endif
 
-  nc_mode = ex__handle_mode(my_mode, is_parallel, run_version);
-
-  if ((status = nc_create_par(path, nc_mode, comm, info, &exoid)) != NC_NOERR) {
-#if NC_HAS_HDF5
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
-#else
-    if (my_mode & EX_NETCDF4) {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: file create failed for %s in NETCDF4 "
-               "mode.\n\tThis library does not support netcdf-4 files.",
-               path);
-    }
-    else {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
-    }
-#endif
-    ex_err(__func__, errmsg, status);
+  if (!path || strlen(path) == 0) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Filename is not specified.");
+    ex_err(__func__, errmsg, EX_BADFILEMODE);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  status = ex__populate_header(exoid, path, my_mode, is_parallel, comp_ws, io_ws);
+  char *canon_path = exi_canonicalize_filename(path);
+
+  /* Verify that this file is not already open for read or write...
+     In theory, should be ok for the file to be open multiple times
+     for read, but bad things can happen if being read and written
+     at the same time...
+  */
+  if (exi_check_multiple_open(canon_path, EX_WRITE, __func__)) {
+    free(canon_path);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
+  nc_mode = exi_handle_mode(my_mode, is_parallel, run_version);
+
+#if defined NC_NOATTCREORD
+  /* Disable attribute creation order tracking if available... */
+  if (my_mode & EX_NETCDF4) {
+    nc_mode |= NC_NOATTCREORD;
+  }
+#endif
+
+#if defined NC_NODIMSCALE_ATTACH
+  /* Disable attaching dimscales to variables (netcdf-c issue #2128) if available */
+  if (my_mode & EX_NETCDF4) {
+    nc_mode |= NC_NODIMSCALE_ATTACH;
+  }
+#endif
+
+  /* There is an issue on some versions of mpi that limit the length of the path to <250 characters
+   * Check for that here and use `path` if `canon_path` is >=250 characters...
+   */
+  if (strlen(canon_path) >= 250) {
+    status = nc_create_par(path, nc_mode, comm, info, &exoid);
+  }
+  else {
+    status = nc_create_par(canon_path, nc_mode, comm, info, &exoid);
+  }
+  if (status != NC_NOERR) {
+    if (my_mode & EX_NETCDF4) {
+#if NC_HAS_PARALLEL4
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s.", canon_path);
+#else
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: file create failed for %s in NetCDF-4 "
+               "mode.\n\tThis library does not support parallel NetCDF-4 files (HDF5-based).",
+               canon_path);
+#endif
+    }
+    else {
+#if NC_HAS_PNETCDF
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", canon_path);
+#else
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: file create failed for %s in PnetCDF "
+               "mode.\n\tThis library does not provide PnetCDF support.",
+               canon_path);
+#endif
+    }
+    ex_err(__func__, errmsg, status);
+    free(canon_path);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
+  status = exi_populate_header(exoid, canon_path, my_mode, is_parallel, comp_ws, io_ws);
   if (status != EX_NOERR) {
+    free(canon_path);
     EX_FUNC_LEAVE(status);
   }
+  free(canon_path);
   EX_FUNC_LEAVE(exoid);
 }
 #else
@@ -216,5 +240,5 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
  * Prevent warning in some versions of ranlib(1) because the object
  * file has no symbols.
  */
-const char exodus_unused_symbol_dummy_ex_create_par;
+extern const char exodus_unused_symbol_dummy_ex_create_par;
 #endif

@@ -1,24 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkFiberSurface
  * @brief Given a fiber surface control polygon (FSCP) and an
  * unstructured grid composed of tetrahedral cells with two scalar arrays, this filter
  * computes the corresponding fiber surfaces.
  *
- * @section Introduction
+ * @section vtkFiberSurface-introduction Introduction
  * Fiber surfaces are constructed from sets of fibers, the multivariate analogues
  * of isolines. The original paper [0] offers a general purpose method that produces
  * separating surfaces representing boundaries in bivariate fields. This filter is based
@@ -35,7 +23,7 @@
  *     Fast and Exact Fiber Surfaces for Tetrahedral Meshes,
  *     Paper in submission, 2015
  *
- * @section Algorithm For Extracting An Exact Fiber Surface
+ * @section vtkFiberSurface-algorithm Algorithm For Extracting An Exact Fiber Surface
  *  Require: R.1 A 3D domain space represented by an unstructured grid composed of
  *               tetrahedral cells
  *           R.2 Two scalar fields, f1 and f2, that map the domain space to a 2D range
@@ -319,6 +307,7 @@
 #include "vtkFiltersTopologyModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSTOPOLOGY_EXPORT vtkFiberSurface : public vtkPolyDataAlgorithm
 {
 public:
@@ -397,4 +386,5 @@ private:
   vtkFiberSurface(const vtkFiberSurface&) = delete;
   void operator=(const vtkFiberSurface&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

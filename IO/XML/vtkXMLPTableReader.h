@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPTableReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLPTableReader
  * @brief   Read PVTK XML Table files.
@@ -32,6 +20,7 @@
 #include "vtkIOXMLModule.h" // For export macro
 #include "vtkXMLPDataObjectReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTable;
 class vtkXMLTableReader;
 
@@ -42,13 +31,13 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkXMLPTableReader* New();
 
-  //@{
+  ///@{
   /**
    * Get the reader's output.
    */
   vtkTable* GetOutput();
   vtkTable* GetOutput(int idx);
-  //@}
+  ///@}
 
   /**
    * For the specified port, copy the information this reader sets up in
@@ -67,14 +56,14 @@ public:
    */
   const char* GetColumnArrayName(int index);
 
-  //@{
+  ///@{
   /**
    * Get/Set whether the column array with the given name is to
    * be read.
    */
   int GetColumnArrayStatus(const char* name);
   void SetColumnArrayStatus(const char* name, int status);
-  //@}
+  ///@}
 
   /**
    * Get the data array selection tables used to configure which data
@@ -234,4 +223,5 @@ private:
   void operator=(const vtkXMLPTableReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

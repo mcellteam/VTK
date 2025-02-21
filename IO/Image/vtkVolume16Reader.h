@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVolume16Reader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVolume16Reader
  * @brief   read 16 bit image files
@@ -51,6 +39,7 @@
 #include "vtkIOImageModule.h" // For export macro
 #include "vtkVolumeReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTransform;
 class vtkUnsignedCharArray;
 class vtkUnsignedShortArray;
@@ -71,32 +60,32 @@ public:
    */
   static vtkVolume16Reader* New();
 
-  //@{
+  ///@{
   /**
    * Specify the dimensions for the data.
    */
   vtkSetVector2Macro(DataDimensions, int);
   vtkGetVectorMacro(DataDimensions, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a mask used to eliminate data in the data file (e.g.,
    * connectivity bits).
    */
   vtkSetMacro(DataMask, unsigned short);
   vtkGetMacro(DataMask, unsigned short);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the number of bytes to seek over at start of image.
    */
   vtkSetMacro(HeaderSize, int);
   vtkGetMacro(HeaderSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods should be used instead of the SwapBytes methods.
    * They indicate the byte ordering of the file you are trying
@@ -115,18 +104,18 @@ public:
   int GetDataByteOrder();
   void SetDataByteOrder(int);
   const char* GetDataByteOrderAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off byte swapping.
    */
   vtkSetMacro(SwapBytes, vtkTypeBool);
   vtkGetMacro(SwapBytes, vtkTypeBool);
   vtkBooleanMacro(SwapBytes, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get transformation matrix to transform the data from slice space
    * into world space. This matrix must be a permutation matrix. To qualify,
@@ -134,7 +123,7 @@ public:
    */
   virtual void SetTransform(vtkTransform*);
   vtkGetObjectMacro(Transform, vtkTransform);
-  //@}
+  ///@}
 
   /**
    * Other objects make use of these methods
@@ -154,7 +143,7 @@ protected:
   vtkTransform* Transform;
 
   void TransformSlice(
-    unsigned short* slice, unsigned short* pixels, int k, int dimensions[3], int bounds[3]);
+    unsigned short* slice, unsigned short* pixels, int k, int dimensions[3], int bounds[6]);
   void ComputeTransformedDimensions(int dimensions[3]);
   void ComputeTransformedBounds(int bounds[6]);
   void ComputeTransformedSpacing(double Spacing[3]);
@@ -170,4 +159,5 @@ private:
   void operator=(const vtkVolume16Reader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

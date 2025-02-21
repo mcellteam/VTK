@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLContextActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLContextActor
  * @brief   provides a vtkProp derived object.
@@ -26,8 +14,11 @@
 
 #include "vtkContextActor.h"
 #include "vtkRenderingContextOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"                 // For VTK_MARSHALAUTO
 
-class VTKRENDERINGCONTEXTOPENGL2_EXPORT vtkOpenGLContextActor : public vtkContextActor
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGCONTEXTOPENGL2_EXPORT VTK_MARSHALAUTO vtkOpenGLContextActor
+  : public vtkContextActor
 {
 public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
@@ -61,4 +52,5 @@ private:
   void operator=(const vtkOpenGLContextActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

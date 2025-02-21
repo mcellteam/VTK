@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkActor
  * @brief   represents an object (geometry & properties) in a rendered scene
@@ -19,7 +7,7 @@
  *
  * vtkActor is used to represent an entity in a rendering scene.  It inherits
  * functions related to the actors position, and orientation from
- * vtkProp. The actor also has scaling and maintains a reference to the
+ * vtkProp3D. The actor also has scaling and maintains a reference to the
  * defining geometry (i.e., the mapper), rendering properties, and possibly a
  * texture map. vtkActor combines these instance variables into one 4x4
  * transformation matrix as follows: [x y z 1] = [x y z 1] Translate(-origin)
@@ -34,7 +22,9 @@
 
 #include "vtkProp3D.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkPropCollection;
 class vtkActorCollection;
@@ -42,7 +32,7 @@ class vtkTexture;
 class vtkMapper;
 class vtkProperty;
 
-class VTKRENDERINGCORE_EXPORT vtkActor : public vtkProp3D
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkActor : public vtkProp3D
 {
 public:
   vtkTypeMacro(vtkActor, vtkProp3D);
@@ -62,21 +52,21 @@ public:
    */
   void GetActors(vtkPropCollection*) override;
 
-  //@{
+  ///@{
   /**
    * Support the standard render methods.
    */
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Does this prop have some opaque/translucent polygonal geometry?
    */
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
   vtkTypeBool HasOpaqueGeometry() override;
-  //@}
+  ///@}
 
   /**
    * This causes the actor to be rendered. It in turn will render the actor's
@@ -98,7 +88,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow*) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the property object that controls this actors surface
    * properties.  This should be an instance of a vtkProperty object.  Every
@@ -108,7 +98,7 @@ public:
    */
   void SetProperty(vtkProperty* lut);
   vtkProperty* GetProperty();
-  //@}
+  ///@}
 
   /**
    * Create a new property suitable for use with this type of Actor.
@@ -117,7 +107,7 @@ public:
    */
   virtual vtkProperty* MakeProperty();
 
-  //@{
+  ///@{
   /**
    * Set/Get the property object that controls this actors backface surface
    * properties.  This should be an instance of a vtkProperty object. If one
@@ -126,9 +116,9 @@ public:
    */
   void SetBackfaceProperty(vtkProperty* lut);
   vtkGetObjectMacro(BackfaceProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the texture object to control rendering texture maps.  This will
    * be a vtkTexture object. An actor does not need to have an associated
@@ -136,7 +126,7 @@ public:
    */
   virtual void SetTexture(vtkTexture*);
   vtkGetObjectMacro(Texture, vtkTexture);
-  //@}
+  ///@}
 
   /**
    * This is the method that is used to connect an actor to the end of a
@@ -146,12 +136,12 @@ public:
    */
   virtual void SetMapper(vtkMapper*);
 
-  //@{
+  ///@{
   /**
    * Returns the Mapper that this actor is getting its data from.
    */
   vtkGetObjectMacro(Mapper, vtkMapper);
-  //@}
+  ///@}
 
   /**
    * Get the bounds for this Actor as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax). (The
@@ -183,7 +173,7 @@ public:
    */
   vtkMTimeType GetRedrawMTime() override;
 
-  //@{
+  ///@{
   /**
    * Force the actor to be treated as opaque or translucent
    */
@@ -193,7 +183,7 @@ public:
   vtkGetMacro(ForceTranslucent, bool);
   vtkSetMacro(ForceTranslucent, bool);
   vtkBooleanMacro(ForceTranslucent, bool);
-  //@}
+  ///@}
 
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
@@ -210,11 +200,11 @@ public:
   void ProcessSelectorPixelBuffers(
     vtkHardwareSelector* sel, std::vector<unsigned int>& pixeloffsets) override;
 
-  //@{
+  ///@{
   // Get if we are in the translucent polygonal geometry pass
   bool IsRenderingTranslucentPolygonalGeometry() override { return this->InTranslucentPass; }
   void SetIsRenderingTranslucentPolygonalGeometry(bool val) { this->InTranslucentPass = val; }
-  //@}
+  ///@}
 
 protected:
   vtkActor();
@@ -241,4 +231,5 @@ private:
   void operator=(const vtkActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

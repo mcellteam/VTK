@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestDiagram.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGraphItem.h"
 
 #include "vtkBrush.h"
@@ -29,10 +17,11 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkTooltipItem.h"
 #include "vtkTransform2D.h"
-#include "vtkVectorOperators.h"
+#include "vtkVector.h"
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGraphItem);
 vtkCxxSetObjectMacro(vtkGraphItem, Graph, vtkGraph);
 
@@ -43,8 +32,8 @@ struct vtkGraphItem::Internals
   std::vector<vtkColor4ub> VertexColors;
   std::vector<int> VertexMarkers;
 
-  std::vector<std::vector<vtkVector2f> > EdgePositions;
-  std::vector<std::vector<vtkColor4ub> > EdgeColors;
+  std::vector<std::vector<vtkVector2f>> EdgePositions;
+  std::vector<std::vector<vtkColor4ub>> EdgeColors;
   std::vector<float> EdgeWidths;
 
   bool Animating;
@@ -163,8 +152,8 @@ float vtkGraphItem::EdgeWidth(vtkIdType vtkNotUsed(line), vtkIdType vtkNotUsed(p
 void vtkGraphItem::RebuildBuffers()
 {
   vtkIdType numEdges = this->NumberOfEdges();
-  this->Internal->EdgePositions = std::vector<std::vector<vtkVector2f> >(numEdges);
-  this->Internal->EdgeColors = std::vector<std::vector<vtkColor4ub> >(numEdges);
+  this->Internal->EdgePositions = std::vector<std::vector<vtkVector2f>>(numEdges);
+  this->Internal->EdgeColors = std::vector<std::vector<vtkColor4ub>>(numEdges);
   this->Internal->EdgeWidths = std::vector<float>(numEdges);
   for (vtkIdType edgeIdx = 0; edgeIdx < numEdges; ++edgeIdx)
   {
@@ -292,7 +281,7 @@ void vtkGraphItem::ProcessEvents(
       // We must filter the events to ensure we actually get the timer event we
       // created. I would love signals and slots...
       int timerId = *static_cast<int*>(callerData); // Seems to work.
-      if (self->Internal->Animating && timerId == static_cast<int>(self->Internal->TimerId))
+      if (self->Internal->Animating && timerId == self->Internal->TimerId)
       {
         self->UpdateLayout();
         vtkIdType v = self->HitVertex(self->Internal->LastMousePos);
@@ -382,7 +371,7 @@ bool vtkGraphItem::MouseMoveEvent(const vtkContextMouseEvent& event)
       this->Tooltip->SetVisible(false);
       return true;
     }
-    vtkStdString text = this->VertexTooltip(v);
+    std::string text = this->VertexTooltip(v);
     if (text.empty())
     {
       this->Tooltip->SetVisible(false);
@@ -497,3 +486,4 @@ void vtkGraphItem::PrintSelf(ostream& os, vtkIndent indent)
   }
   os << "GraphBuildTime: " << this->GraphBuildTime << std::endl;
 }
+VTK_ABI_NAMESPACE_END

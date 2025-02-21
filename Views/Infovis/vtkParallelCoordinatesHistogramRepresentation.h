@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParallelCoordinatesHistogramRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2009 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2009 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkParallelCoordinatesHistogramRepresentation
  * @brief   Data representation
@@ -58,6 +42,7 @@
 #include "vtkParallelCoordinatesRepresentation.h"
 #include "vtkViewsInfovisModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkComputeHistogram2DOutliers;
 class vtkPairwiseExtractHistogram2D;
 class vtkExtractHistogram2D;
@@ -77,48 +62,48 @@ public:
    */
   void ApplyViewTheme(vtkViewTheme* theme) override;
 
-  //@{
+  ///@{
   /**
    * Whether to use the histogram rendering mode or the superclass's line rendering mode
    */
   virtual void SetUseHistograms(vtkTypeBool);
   vtkGetMacro(UseHistograms, vtkTypeBool);
   vtkBooleanMacro(UseHistograms, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Whether to compute and show outlier lines
    */
   virtual void SetShowOutliers(vtkTypeBool);
   vtkGetMacro(ShowOutliers, vtkTypeBool);
   vtkBooleanMacro(ShowOutliers, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control over the range of the lookup table used to draw the histogram quads.
    */
   vtkSetVector2Macro(HistogramLookupTableRange, double);
   vtkGetVector2Macro(HistogramLookupTableRange, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The number of histogram bins on either side of each pair of axes.
    */
   void SetNumberOfHistogramBins(int, int);
   void SetNumberOfHistogramBins(int*);
   vtkGetVector2Macro(NumberOfHistogramBins, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Target maximum number of outliers to be drawn, although not guaranteed.
    */
   void SetPreferredNumberOfOutliers(int);
   vtkGetMacro(PreferredNumberOfOutliers, int);
-  //@}
+  ///@}
 
   /**
    * Calls superclass swap, and assures that only histograms affected by the
@@ -204,14 +189,14 @@ protected:
    */
   virtual int PlaceHistogramCurveQuads(vtkPolyData* polyData);
 
-  //@{
+  ///@{
   /**
    * Compute the number of axes and their individual ranges, as well
    * as histograms if requested.
    */
   int ComputeDataProperties() override;
   int UpdatePlotProperties(vtkStringArray*) override;
-  //@}
+  ///@}
 
   /**
    * Access the input data object containing the histograms and
@@ -230,4 +215,5 @@ private:
   void operator=(const vtkParallelCoordinatesHistogramRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

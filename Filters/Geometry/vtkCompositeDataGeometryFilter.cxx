@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeDataGeometryFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCompositeDataGeometryFilter.h"
 
 #include "vtkAppendPolyData.h"
@@ -27,15 +15,16 @@
 #include "vtkObjectFactory.h"
 #include "vtkSmartPointer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCompositeDataGeometryFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataGeometryFilter::vtkCompositeDataGeometryFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataGeometryFilter::~vtkCompositeDataGeometryFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataGeometryFilter::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
@@ -44,7 +33,7 @@ int vtkCompositeDataGeometryFilter::FillInputPortInformation(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkCompositeDataGeometryFilter::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -58,7 +47,7 @@ vtkTypeBool vtkCompositeDataGeometryFilter::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataGeometryFilter::RequestCompositeData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -82,17 +71,23 @@ int vtkCompositeDataGeometryFilter::RequestCompositeData(
 
   for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkDataSet* ds = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
     if (ds && ds->GetNumberOfPoints() > 0)
     {
       vtkNew<vtkDataSetSurfaceFilter> dssf;
       dssf->SetInputData(ds);
+      dssf->SetContainerAlgorithm(this);
       dssf->Update();
       append->AddInputDataObject(dssf->GetOutputDataObject(0));
     }
   }
   if (append->GetNumberOfInputConnections(0) > 0)
   {
+    append->SetContainerAlgorithm(this);
     append->Update();
     output->ShallowCopy(append->GetOutput());
   }
@@ -100,14 +95,15 @@ int vtkCompositeDataGeometryFilter::RequestCompositeData(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutive* vtkCompositeDataGeometryFilter::CreateDefaultExecutive()
 {
   return vtkCompositeDataPipeline::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataGeometryFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

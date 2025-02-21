@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkObserverMediator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkObserverMediator.h"
 #include "vtkInteractorObserver.h"
 #include "vtkObjectFactory.h"
@@ -20,6 +8,7 @@
 #include "vtkRenderWindowInteractor.h"
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkObserverMediator);
 
 // PIMPL the map representing the observer (key) to cursor request
@@ -40,14 +29,7 @@ struct vtkObserverCompare
     }
     else if (p1 == p2)
     {
-      if (w1 < w2)
-      {
-        return true;
-      }
-      else
-      {
-        return false;
-      }
+      return w1 < w2;
     }
     else
     {
@@ -60,14 +42,11 @@ struct vtkObserverCompare
 class vtkObserverMap : public std::map<vtkInteractorObserver*, int, vtkObserverCompare>
 {
 public:
-  vtkObserverMap()
-    : std::map<vtkInteractorObserver*, int, vtkObserverCompare>()
-  {
-  }
+  vtkObserverMap() = default;
 };
 typedef vtkObserverMap::iterator ObserverMapIterator;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkObserverMediator::vtkObserverMediator()
 {
   this->Interactor = nullptr;
@@ -77,19 +56,19 @@ vtkObserverMediator::vtkObserverMediator()
   this->CurrentCursorShape = VTK_CURSOR_DEFAULT;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkObserverMediator::~vtkObserverMediator()
 {
   delete this->ObserverMap;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkObserverMediator::SetInteractor(vtkRenderWindowInteractor* i)
 {
   this->Interactor = i;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This mediation process works by keeping track of non-default cursor
 // requests.
 // Ties are broken based on widget priority (hence the priority queue).
@@ -144,7 +123,7 @@ int vtkObserverMediator::RequestCursorShape(vtkInteractorObserver* w, int reques
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkObserverMediator::RemoveAllCursorShapeRequests(vtkInteractorObserver* w)
 {
   if (w)
@@ -161,7 +140,7 @@ void vtkObserverMediator::RemoveAllCursorShapeRequests(vtkInteractorObserver* w)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkObserverMediator::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -177,3 +156,4 @@ void vtkObserverMediator::PrintSelf(ostream& os, vtkIndent indent)
     os << "(None)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

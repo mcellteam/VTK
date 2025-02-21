@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostDividedEdgeBundling.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkBoostDividedEdgeBundling.h"
 
 #include "vtkBoostGraphAdapter.h"
@@ -29,15 +13,16 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPoints.h"
-#include "vtkVectorOperators.h"
+#include "vtkVector.h"
 
 #include <algorithm>
 #include <boost/graph/johnson_all_pairs_shortest.hpp>
 #include <boost/property_map/property_map.hpp>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostDividedEdgeBundling);
 
-vtkBoostDividedEdgeBundling::vtkBoostDividedEdgeBundling() {}
+vtkBoostDividedEdgeBundling::vtkBoostDividedEdgeBundling() = default;
 
 class vtkBundlingMetadata
 {
@@ -92,14 +77,14 @@ public:
   vtkBoostDividedEdgeBundling* Outer;
   vtkDirectedGraph* Graph;
   vtkVector3f* Nodes;
-  std::vector<std::pair<vtkIdType, vtkIdType> > Edges;
-  std::vector<std::vector<float> > NodeDistances;
+  std::vector<std::pair<vtkIdType, vtkIdType>> Edges;
+  std::vector<std::vector<float>> NodeDistances;
   std::vector<float> EdgeLengths;
-  std::vector<std::vector<float> > EdgeCompatibilities;
-  std::vector<std::vector<float> > EdgeDots;
-  std::vector<std::vector<vtkVector3f> > EdgeMesh;
-  std::vector<std::vector<vtkVector3f> > EdgeMeshVelocities;
-  std::vector<std::vector<vtkVector3f> > EdgeMeshAccelerations;
+  std::vector<std::vector<float>> EdgeCompatibilities;
+  std::vector<std::vector<float>> EdgeDots;
+  std::vector<std::vector<vtkVector3f>> EdgeMesh;
+  std::vector<std::vector<vtkVector3f>> EdgeMeshVelocities;
+  std::vector<std::vector<vtkVector3f>> EdgeMeshAccelerations;
   // std::vector<std::vector<float> > EdgeMeshGroupCounts;
   vtkVector2f XRange;
   vtkVector2f YRange;
@@ -345,11 +330,11 @@ void vtkBundlingMetadata::DoubleEdgeMeshResolution()
 {
   int newMeshCount = (this->MeshCount - 1) * 2 + 1;
   vtkIdType numEdges = this->Graph->GetNumberOfEdges();
-  std::vector<std::vector<vtkVector3f> > newEdgeMesh(
+  std::vector<std::vector<vtkVector3f>> newEdgeMesh(
     numEdges, std::vector<vtkVector3f>(newMeshCount));
-  std::vector<std::vector<vtkVector3f> > newEdgeMeshVelocities(
+  std::vector<std::vector<vtkVector3f>> newEdgeMeshVelocities(
     numEdges, std::vector<vtkVector3f>(newMeshCount, vtkVector3f(0.0f, 0.0f, 0.0f)));
-  std::vector<std::vector<vtkVector3f> > newEdgeMeshAccelerations(
+  std::vector<std::vector<vtkVector3f>> newEdgeMeshAccelerations(
     numEdges, std::vector<vtkVector3f>(newMeshCount, vtkVector3f(0.0f, 0.0f, 0.0f)));
   // std::vector<std::vector<float> > newEdgeMeshGroupCounts(
   //    numEdges, std::vector<float>(newMeshCount, 1.0f));
@@ -511,7 +496,7 @@ void vtkBundlingMetadata::SmoothEdges()
   // Has to sum to 1.0 to be correct.
   float gaussianKernel[] = { 0.10468, 0.139936, 0.166874, 0.177019, 0.166874, 0.139936, 0.10468 };
   vtkIdType numEdges = this->Graph->GetNumberOfEdges();
-  std::vector<std::vector<vtkVector3f> > smoothedEdgeMesh(
+  std::vector<std::vector<vtkVector3f>> smoothedEdgeMesh(
     numEdges, std::vector<vtkVector3f>(this->MeshCount));
   for (vtkIdType e = 0; e < numEdges; ++e)
   {
@@ -595,3 +580,4 @@ void vtkBoostDividedEdgeBundling::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

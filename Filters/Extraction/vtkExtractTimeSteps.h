@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractTimeSteps.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractTimeSteps
  * @brief   extract specific time-steps from dataset
@@ -40,6 +28,7 @@
 
 #include <set> // for time step indices
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSEXTRACTION_EXPORT vtkExtractTimeSteps : public vtkPassInputTypeAlgorithm
 {
 public:
@@ -58,21 +47,21 @@ public:
    */
   void AddTimeStepIndex(int timeStepIndex);
 
-  //@{
+  ///@{
   /**
    * Get/Set an array of time step indices. For the Get function,
    * timeStepIndices should be big enough for GetNumberOfTimeSteps() values.
    */
   void SetTimeStepIndices(int count, const int* timeStepIndices);
   void GetTimeStepIndices(int* timeStepIndices) const;
-  //@}
+  ///@}
 
   /**
    * Generate a range of indices in [begin, end) with a step size of 'step'
    */
   void GenerateTimeStepIndices(int begin, int end, int step);
 
-  //@{
+  ///@{
   /**
    * Clear the time step indices
    */
@@ -81,9 +70,9 @@ public:
     this->TimeStepIndices.clear();
     this->Modified();
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set whether to extract a range of timesteps.  When false, extracts
    * the time steps explicitly set with SetTimeStepIndices.  Defaults to false.
@@ -91,24 +80,24 @@ public:
   vtkGetMacro(UseRange, bool);
   vtkSetMacro(UseRange, bool);
   vtkBooleanMacro(UseRange, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the range of time steps to extract.
    */
   vtkGetVector2Macro(Range, int);
   vtkSetVector2Macro(Range, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the time step interval to extract.  This is the N in 'extract every
    * Nth timestep in this range'.  Default to 1 or 'extract all timesteps in this range.
    */
   vtkGetMacro(TimeStepInterval, int);
   vtkSetClampMacro(TimeStepInterval, int, 1, VTK_INT_MAX);
-  //@}
+  ///@}
 
   // What timestep to provide when the requested time is between the timesteps
   // the filter is set to extract
@@ -119,7 +108,7 @@ public:
     NEAREST_TIMESTEP   // take the timestep whose absolute difference from the requested time is
                        // smallest
   } EstimationMode;
-  //@{
+  ///@{
   /**
    * Get/Set what to do when the requested time is not one of the timesteps this filter
    * is set to extract.  Should be one of the values of the enum
@@ -130,11 +119,11 @@ public:
   void SetTimeEstimationModeToPrevious() { this->SetTimeEstimationMode(PREVIOUS_TIMESTEP); }
   void SetTimeEstimationModeToNext() { this->SetTimeEstimationMode(NEXT_TIMESTEP); }
   void SetTimeEstimationModeToNearest() { this->SetTimeEstimationMode(NEAREST_TIMESTEP); }
-  //@}
+  ///@}
 
 protected:
   vtkExtractTimeSteps();
-  ~vtkExtractTimeSteps() override {}
+  ~vtkExtractTimeSteps() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
@@ -151,4 +140,5 @@ private:
   void operator=(const vtkExtractTimeSteps&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkExtractTimeSteps_h

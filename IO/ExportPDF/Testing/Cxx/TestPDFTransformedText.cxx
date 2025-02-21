@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPDFTransformedText.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPDFExporter.h"
 
@@ -67,7 +55,7 @@ std::array<Justification, 3> JustArray{
   Justification{ VTK_TEXT_RIGHT, VTK_TEXT_TOP },
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class TransformedTextPDFTest : public vtkContextItem
 {
 public:
@@ -164,7 +152,8 @@ void TransformedTextPDFTest::PaintCell(
   int vJust;
   std::tie(hJust, vJust) = JustArray[justIdx];
 
-  auto scaleToStr = [](double scale) -> std::string {
+  auto scaleToStr = [](double scale) -> std::string
+  {
     if (scale < 0.5)
     {
       return "S";

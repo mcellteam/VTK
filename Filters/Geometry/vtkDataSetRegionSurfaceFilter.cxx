@@ -1,12 +1,6 @@
-//=========================================================================
-//  Copyright (c) Kitware, Inc.
-//  All rights reserved.
-//  See LICENSE.txt for details.
-//
-//  This software is distributed WITHOUT ANY WARRANTY; without even
-//  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-//  PURPOSE.  See the above copyright notice for more information.
-//=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDataSetRegionSurfaceFilter.h"
 
 #include "vtkCellArray.h"
@@ -32,6 +26,7 @@
 
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSetRegionSurfaceFilter::Internals
 {
 public:
@@ -39,7 +34,7 @@ public:
     : NextRegion(0)
   {
     this->OldToNew[-1] = -1;
-  };
+  }
   ~Internals() = default;
 
   // place to pass a material id back but still subclass
@@ -54,7 +49,7 @@ public:
 };
 vtkStandardNewMacro(vtkDataSetRegionSurfaceFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSetRegionSurfaceFilter::vtkDataSetRegionSurfaceFilter()
 {
   this->RegionArray = nullptr;
@@ -78,7 +73,7 @@ vtkDataSetRegionSurfaceFilter::vtkDataSetRegionSurfaceFilter()
   this->SingleSided = true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSetRegionSurfaceFilter::~vtkDataSetRegionSurfaceFilter()
 {
   this->SetRegionArrayName(nullptr);
@@ -91,14 +86,14 @@ vtkDataSetRegionSurfaceFilter::~vtkDataSetRegionSurfaceFilter()
   delete this->Internal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataSetRegionSurfaceFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkUnstructuredGrid");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataSetRegionSurfaceFilter::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -147,10 +142,12 @@ int vtkDataSetRegionSurfaceFilter::RequestData(
     output->GetPointData()->RemoveArray("vtkOriginalPointIds");
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
   vtkDataSet* dataSetInput, vtkPolyData* output)
 {
@@ -187,6 +184,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
     uggf->SetInputData(clone);
     uggf->SetPassThroughCellIds(this->PassThroughCellIds);
     uggf->SetPassThroughPointIds(this->PassThroughPointIds);
+    uggf->SetMatchBoundariesIgnoringCellOrder(this->MatchBoundariesIgnoringCellOrder);
     uggf->Update();
 
     tempInput = vtkSmartPointer<vtkUnstructuredGrid>::New();
@@ -218,7 +216,6 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
 
   // These are for the default case/
   vtkIdList* pts;
-  vtkPoints* coords;
   vtkCell* face;
   int flag2D = 0;
 
@@ -229,14 +226,10 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
   vtkIdList* outPts2;
 
   pts = vtkIdList::New();
-  coords = vtkPoints::New();
   parametricCoords = vtkDoubleArray::New();
   parametricCoords2 = vtkDoubleArray::New();
   outPts = vtkIdList::New();
   outPts2 = vtkIdList::New();
-  // might not be necessary to set the data type for coords
-  // but certainly safer to do so
-  coords->SetDataType(input->GetPoints()->GetData()->GetDataType());
   cell = vtkGenericCell::New();
 
   this->NumberOfNewCells = 0;
@@ -304,7 +297,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
   // Traverse cells to extract geometry
   //
   progressCount = 0;
-  int abort = 0;
+  bool abort = false;
   vtkIdType progressInterval = numCells / 20 + 1;
 
   // First insert all points lines in output and 3D geometry in hash.
@@ -320,7 +313,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
     {
       vtkDebugMacro(<< "Process cell #" << cellId);
       this->UpdateProgress(static_cast<double>(cellId) / numCells);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
       progressCount = 0;
     }
     progressCount++;
@@ -329,7 +322,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
     cellType = cellTypes[cellId];
 
     // A couple of common cases to see if things go faster.
-    if (cellType == VTK_VERTEX || cellType == VTK_POLY_VERTEX)
+    if (cellType == VTK_VERTEX || cellType == VTK_POLY_VERTEX || cellType == VTK_EMPTY_CELL)
     {
       // Do nothing.  This case was handled in the previous loop.
     }
@@ -443,7 +436,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
       {
         if (cell->GetCellDimension() == 1)
         {
-          cell->Triangulate(0, pts, coords);
+          cell->TriangulateIds(0, pts);
           for (i = 0; i < pts->GetNumberOfIds(); i += 2)
           {
             newLines->InsertNextCell(2);
@@ -475,7 +468,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
               if (this->NonlinearSubdivisionLevel >= 1)
               {
                 // TODO: Handle NonlinearSubdivisionLevel > 1 correctly.
-                face->Triangulate(0, pts, coords);
+                face->TriangulateIds(0, pts);
                 for (i = 0; i < pts->GetNumberOfIds(); i += 3)
                 {
                   this->InsertTriInHash(
@@ -597,7 +590,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
       // Note: we should not be here if this->NonlinearSubdivisionLevel is less
       // than 1.  See the check above.
       input->GetCell(cellId, cell);
-      cell->Triangulate(0, pts, coords);
+      cell->TriangulateIds(0, pts);
       // Copy the level 1 subdivision points (which also exist in the input and
       // can therefore just be copied over.  Note that the output of Triangulate
       // records triangles in pts where each 3 points defines a triangle.  We
@@ -614,6 +607,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
       if (this->NonlinearSubdivisionLevel > 1)
       {
         // We are going to need parametric coordinates to further subdivide.
+        std::vector<double> weights(cell->GetNumberOfPoints());
         double* pc = cell->GetParametricCoords();
         parametricCoords->Reset();
         parametricCoords->SetNumberOfComponents(3);
@@ -655,8 +649,8 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
               inParamCoords[k][0] = 0.5 * (inParamCoords[pt1][0] + inParamCoords[pt2][0]);
               inParamCoords[k][1] = 0.5 * (inParamCoords[pt1][1] + inParamCoords[pt2][1]);
               inParamCoords[k][2] = 0.5 * (inParamCoords[pt1][2] + inParamCoords[pt2][2]);
-              inPts[k] = GetInterpolatedPointId(
-                inPts[pt1], inPts[pt2], input, cell, inParamCoords[k], newPts, outputPD);
+              inPts[k] = GetInterpolatedPointId(inPts[pt1], inPts[pt2], input, cell,
+                inParamCoords[k], weights.data(), newPts, outputPD);
             }
             //       * 0
             //      / \        Use the 6 points recorded
@@ -666,7 +660,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
             //  /   \ /   \    .
             // *-----*-----*
             // 1     4     2
-            const int subtriangles[12] = { 0, 3, 5, 3, 1, 4, 3, 4, 5, 5, 4, 2 };
+            static const int subtriangles[12] = { 0, 3, 5, 3, 1, 4, 3, 4, 5, 5, 4, 2 };
             for (k = 0; k < 12; k++)
             {
               int localId = subtriangles[k];
@@ -836,7 +830,6 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
 
   // Update ourselves and release memory
   cell->Delete();
-  coords->Delete();
   pts->Delete();
   parametricCoords->Delete();
   parametricCoords2->Delete();
@@ -881,7 +874,7 @@ int vtkDataSetRegionSurfaceFilter::UnstructuredGridExecute(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSetRegionSurfaceFilter::InsertQuadInHash(
   vtkIdType a, vtkIdType b, vtkIdType c, vtkIdType d, vtkIdType sourceId, vtkIdType faceId)
 {
@@ -969,7 +962,7 @@ void vtkDataSetRegionSurfaceFilter::InsertQuadInHash(
   *end = quad;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSetRegionSurfaceFilter::InsertTriInHash(
   vtkIdType a, vtkIdType b, vtkIdType c, vtkIdType sourceId, vtkIdType faceId)
 {
@@ -1043,7 +1036,7 @@ void vtkDataSetRegionSurfaceFilter::InsertTriInHash(
   *end = quad;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSetRegionSurfaceFilter::RecordOrigCellId(vtkIdType destIndex, vtkFastGeomQuad* quad)
 {
   this->OrigCellIds->InsertValue(destIndex, quad->SourceId);
@@ -1051,13 +1044,13 @@ void vtkDataSetRegionSurfaceFilter::RecordOrigCellId(vtkIdType destIndex, vtkFas
   this->CellFaceIds->InsertValue(destIndex, *faceId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSetRegionSurfaceFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFastGeomQuad* vtkDataSetRegionSurfaceFilter::GetNextVisibleQuadFromHash()
 {
   if (!this->RegionArray)
@@ -1168,3 +1161,4 @@ vtkFastGeomQuad* vtkDataSetRegionSurfaceFilter::GetNextVisibleQuadFromHash()
 
   return quad;
 }
+VTK_ABI_NAMESPACE_END

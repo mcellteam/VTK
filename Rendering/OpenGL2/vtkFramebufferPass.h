@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFramebufferPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFramebufferPass
  * @brief   Render into a FO
@@ -25,13 +13,16 @@
 
 #include "vtkDepthImageProcessingPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLFramebufferObject;
 class vtkOpenGLHelper;
 class vtkOpenGLRenderWindow;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkFramebufferPass : public vtkDepthImageProcessingPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkFramebufferPass
+  : public vtkDepthImageProcessingPass
 {
 public:
   static vtkFramebufferPass* New();
@@ -89,7 +80,7 @@ protected:
   vtkTextureObject* ColorTexture; // render target for the scene
   vtkTextureObject* DepthTexture; // render target for the depth
 
-  //@{
+  ///@{
   /**
    * Cache viewport values for depth peeling.
    */
@@ -97,7 +88,7 @@ protected:
   int ViewportY;
   int ViewportWidth;
   int ViewportHeight;
-  //@}
+  ///@}
 
   int DepthFormat;
   int ColorFormat;
@@ -107,4 +98,5 @@ private:
   void operator=(const vtkFramebufferPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

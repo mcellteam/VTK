@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkColor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkColor
@@ -30,11 +18,12 @@
 
 // .NAME vtkColor3 - templated base type for storage of 3 component colors.
 //
+VTK_ABI_NAMESPACE_BEGIN
 template <typename T>
 class vtkColor3 : public vtkTuple<T, 3>
 {
 public:
-  vtkColor3() {}
+  vtkColor3() = default;
 
   explicit vtkColor3(const T& scalar)
     : vtkTuple<T, 3>(scalar)
@@ -53,7 +42,7 @@ public:
     this->Data[2] = blue;
   }
 
-  //@{
+  ///@{
   /**
    * Set the red, green and blue components of the color.
    */
@@ -63,7 +52,7 @@ public:
     this->Data[1] = green;
     this->Data[2] = blue;
   }
-  //@}
+  ///@}
 
   /**
    * Set the red component of the color, i.e. element 0.
@@ -102,7 +91,7 @@ template <typename T>
 class vtkColor4 : public vtkTuple<T, 4>
 {
 public:
-  vtkColor4() {}
+  vtkColor4() = default;
 
   explicit vtkColor4(const T& scalar)
     : vtkTuple<T, 4>(scalar)
@@ -122,7 +111,7 @@ public:
     this->Data[3] = alpha;
   }
 
-  //@{
+  ///@{
   /**
    * Set the red, green and blue components of the color.
    */
@@ -132,9 +121,9 @@ public:
     this->Data[1] = green;
     this->Data[2] = blue;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the red, green, blue and alpha components of the color.
    */
@@ -145,7 +134,7 @@ public:
     this->Data[2] = blue;
     this->Data[3] = alpha;
   }
-  //@}
+  ///@}
 
   /**
    * Set the red component of the color, i.e. element 0.
@@ -194,7 +183,7 @@ public:
 class vtkColor3ub : public vtkColor3<unsigned char>
 {
 public:
-  vtkColor3ub() {}
+  vtkColor3ub() = default;
   explicit vtkColor3ub(unsigned char scalar)
     : vtkColor3<unsigned char>(scalar)
   {
@@ -204,7 +193,7 @@ public:
   {
   }
 
-  //@{
+  ///@{
   /**
    * Construct a color from a hexadecimal representation such as 0x0000FF (blue).
    */
@@ -217,7 +206,7 @@ public:
     hex >>= 8;
     this->Data[0] = hex & 0xff;
   }
-  //@}
+  ///@}
 
   vtkColor3ub(unsigned char r, unsigned char g, unsigned char b)
     : vtkColor3<unsigned char>(r, g, b)
@@ -228,7 +217,7 @@ public:
 class vtkColor3f : public vtkColor3<float>
 {
 public:
-  vtkColor3f() {}
+  vtkColor3f() = default;
   explicit vtkColor3f(float scalar)
     : vtkColor3<float>(scalar)
   {
@@ -246,7 +235,7 @@ public:
 class vtkColor3d : public vtkColor3<double>
 {
 public:
-  vtkColor3d() {}
+  vtkColor3d() = default;
   explicit vtkColor3d(double scalar)
     : vtkColor3<double>(scalar)
   {
@@ -264,7 +253,7 @@ public:
 class vtkColor4ub : public vtkColor4<unsigned char>
 {
 public:
-  vtkColor4ub() {}
+  vtkColor4ub() = default;
   explicit vtkColor4ub(unsigned char scalar)
     : vtkColor4<unsigned char>(scalar)
   {
@@ -274,7 +263,7 @@ public:
   {
   }
 
-  //@{
+  ///@{
   /**
    * Construct a color from a hexadecimal representation such as 0x0000FFAA
    * (opaque blue).
@@ -290,7 +279,7 @@ public:
     hex >>= 8;
     this->Data[0] = hex & 0xff;
   }
-  //@}
+  ///@}
 
   vtkColor4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255)
     : vtkColor4<unsigned char>(r, g, b, a)
@@ -305,7 +294,7 @@ public:
 class vtkColor4f : public vtkColor4<float>
 {
 public:
-  vtkColor4f() {}
+  vtkColor4f() = default;
   explicit vtkColor4f(float scalar)
     : vtkColor4<float>(scalar)
   {
@@ -323,7 +312,7 @@ public:
 class vtkColor4d : public vtkColor4<double>
 {
 public:
-  vtkColor4d() {}
+  vtkColor4d() = default;
   explicit vtkColor4d(double scalar)
     : vtkColor4<double>(scalar)
   {
@@ -338,5 +327,6 @@ public:
   }
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkColor_h
 // VTK-HeaderTest-Exclude: vtkColor.h

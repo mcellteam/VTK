@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ParallelConnectivity.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkConnectivityFilter.h"
 
@@ -19,10 +7,10 @@
 #include "vtkContourFilter.h"
 #include "vtkDataSetTriangleFilter.h"
 #include "vtkDistributedDataFilter.h"
+#include "vtkGhostCellsGenerator.h"
 #include "vtkIdTypeArray.h"
 #include "vtkMPIController.h"
 #include "vtkPConnectivityFilter.h"
-#include "vtkPUnstructuredGridGhostCellsGenerator.h"
 #include "vtkRemoveGhosts.h"
 #include "vtkStructuredPoints.h"
 #include "vtkStructuredPointsReader.h"
@@ -68,10 +56,10 @@ int RunParallelConnectivity(
   vtkNew<vtkDataSetTriangleFilter> tetrahedralize;
   tetrahedralize->SetInputConnection(contour->GetOutputPort());
 
-  vtkNew<vtkPUnstructuredGridGhostCellsGenerator> ghostCells;
+  vtkNew<vtkGhostCellsGenerator> ghostCells;
   ghostCells->SetController(contr);
   ghostCells->SetBuildIfRequired(false);
-  ghostCells->SetMinimumNumberOfGhostLevels(1);
+  ghostCells->SetNumberOfGhostLayers(1);
   ghostCells->SetInputConnection(tetrahedralize->GetOutputPort());
 
   // Test factory override mechanism instantiated as a vtkPConnectivityFilter.
@@ -114,11 +102,11 @@ int RunParallelConnectivity(
   std::vector<vtkIdType> regionCounts(connectivity->GetNumberOfExtractedRegions(), 0);
 
   // Count up cells with RegionIds
-  auto regionIdArray =
-    vtkIdTypeArray::SafeDownCast(ghostOutput->GetCellData()->GetArray("RegionId"));
-  for (vtkIdType cellId = 0; cellId < numberOfCells; ++cellId)
+
+  vtkDataArray* regionIdArray = ghostOutput->GetCellData()->GetArray("RegionId");
+  auto regionIdRange = vtk::DataArrayValueRange(regionIdArray);
+  for (const auto regionId : regionIdRange)
   {
-    vtkIdType regionId = regionIdArray->GetValue(cellId);
     regionCounts[regionId]++;
   }
 
@@ -153,10 +141,10 @@ int RunParallelConnectivity(
   removeGhosts->Update();
 
   std::fill(regionCounts.begin(), regionCounts.end(), 0);
-  regionIdArray = vtkIdTypeArray::SafeDownCast(ghostOutput->GetCellData()->GetArray("RegionId"));
-  for (vtkIdType cellId = 0; cellId < numberOfCells; ++cellId)
+  regionIdArray = ghostOutput->GetCellData()->GetArray("RegionId");
+  regionIdRange = vtk::DataArrayValueRange(regionIdArray);
+  for (const auto regionId : regionIdRange)
   {
-    vtkIdType regionId = regionIdArray->GetValue(cellId);
     regionCounts[regionId]++;
   }
 

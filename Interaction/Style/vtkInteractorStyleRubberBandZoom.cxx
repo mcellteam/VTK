@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleRubberBandZoom.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInteractorStyleRubberBandZoom.h"
 
 #include "vtkCamera.h"
@@ -21,31 +9,9 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
 #include "vtkUnsignedCharArray.h"
-#include "vtkVectorOperators.h"
+#include "vtkVector.h"
 
-namespace impl
-{
-template <class T>
-vtkVector3d GetCenter(const vtkRect<T>& rect)
-{
-  return vtkVector3d(
-    rect.GetX() + 0.5 * rect.GetWidth(), rect.GetY() + 0.5 * rect.GetHeight(), 0.0);
-}
-
-vtkVector3d DisplayToWorld(const vtkVector3d& display, vtkRenderer* ren)
-{
-  ren->SetDisplayPoint(display[0], display[1], display[2]);
-  ren->DisplayToView();
-  ren->ViewToWorld();
-
-  vtkVector<double, 4> world4;
-  ren->GetWorldPoint(world4.GetData());
-  double invw = 1.0 * world4[3];
-  world4 = world4 * invw;
-  return vtkVector3d(world4.GetData());
-}
-}
-
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkInteractorStyleRubberBandZoom);
 
 vtkInteractorStyleRubberBandZoom::vtkInteractorStyleRubberBandZoom()
@@ -114,7 +80,7 @@ void vtkInteractorStyleRubberBandZoom::OnMouseMove()
 
   this->EndPosition[0] = this->Interactor->GetEventPosition()[0];
   this->EndPosition[1] = this->Interactor->GetEventPosition()[1];
-  int* size = this->Interactor->GetRenderWindow()->GetSize();
+  const int* size = this->Interactor->GetRenderWindow()->GetSize();
   if (this->EndPosition[0] > (size[0] - 1))
   {
     this->EndPosition[0] = size[0] - 1;
@@ -220,7 +186,7 @@ void vtkInteractorStyleRubberBandZoom::OnLeftButtonDown()
 
   this->PixelArray->Initialize();
   this->PixelArray->SetNumberOfComponents(3);
-  int* size = renWin->GetSize();
+  const int* size = renWin->GetSize();
   this->PixelArray->SetNumberOfTuples(size[0] * size[1]);
 
   renWin->GetPixelData(0, 0, size[0] - 1, size[1] - 1, 1, this->PixelArray);
@@ -267,9 +233,20 @@ void vtkInteractorStyleRubberBandZoom::Zoom()
   }
   else
   {
-    this->ZoomPerspectiveProjectionUsingViewAngle(box);
+    cam->SetFocalPoint(this->CalculatePerspectiveZoomFocalPoint(box).GetData());
+    this->CurrentRenderer->ZoomToBoxUsingViewAngle(box);
   }
   this->Interactor->Render();
+}
+
+vtkVector3d vtkInteractorStyleRubberBandZoom::CalculatePerspectiveZoomFocalPoint(
+  const vtkRecti& box) const
+{
+  const vtkVector2d rbCenter2d = box.GetCenter();
+  const vtkVector3d rbCenter3d = vtkVector3d(rbCenter2d.GetX(), rbCenter2d.GetY(), 0.0);
+  const vtkVector3d worldRBCenter = this->CurrentRenderer->DisplayToWorld(rbCenter3d);
+
+  return worldRBCenter;
 }
 
 void vtkInteractorStyleRubberBandZoom::ZoomTraditional(const vtkRecti& box)
@@ -278,11 +255,13 @@ void vtkInteractorStyleRubberBandZoom::ZoomTraditional(const vtkRecti& box)
   const int* origin = this->CurrentRenderer->GetOrigin();
   vtkCamera* cam = this->CurrentRenderer->GetActiveCamera();
 
-  const vtkVector3d rbcenter = impl::GetCenter(box);
-  const vtkVector3d worldRBCenter = impl::DisplayToWorld(rbcenter, this->CurrentRenderer);
+  const vtkVector2d rbCenter2d = box.GetCenter();
+  const vtkVector3d rbCenter3d = vtkVector3d(rbCenter2d.GetX(), rbCenter2d.GetY(), 0.0);
+  const vtkVector3d worldRBCenter = this->CurrentRenderer->DisplayToWorld(rbCenter3d);
 
-  const vtkVector3d winCenter = impl::GetCenter(vtkRecti(origin[0], origin[1], size[0], size[1]));
-  const vtkVector3d worldWinCenter = impl::DisplayToWorld(winCenter, this->CurrentRenderer);
+  const vtkVector2d winCenter2d = vtkRecti(origin[0], origin[1], size[0], size[1]).GetCenter();
+  const vtkVector3d winCenter3d = vtkVector3d(winCenter2d.GetX(), winCenter2d.GetY(), 0.0);
+  const vtkVector3d worldWinCenter = this->CurrentRenderer->DisplayToWorld(winCenter3d);
   const vtkVector3d translation = worldRBCenter - worldWinCenter;
 
   vtkVector3d pos, fp;
@@ -337,28 +316,6 @@ void vtkInteractorStyleRubberBandZoom::ZoomTraditional(const vtkRecti& box)
   }
 }
 
-void vtkInteractorStyleRubberBandZoom::ZoomPerspectiveProjectionUsingViewAngle(const vtkRecti& box)
-{
-  const int* size = this->CurrentRenderer->GetSize();
-  vtkCamera* cam = this->CurrentRenderer->GetActiveCamera();
-
-  const vtkVector3d rbcenter = impl::GetCenter(box);
-  const vtkVector3d worldRBCenter = impl::DisplayToWorld(rbcenter, this->CurrentRenderer);
-  cam->SetFocalPoint(worldRBCenter.GetData());
-
-  double zoomFactor;
-  if (box.GetWidth() > box.GetHeight())
-  {
-    zoomFactor = size[0] / static_cast<double>(box.GetWidth());
-  }
-  else
-  {
-    zoomFactor = size[1] / static_cast<double>(box.GetHeight());
-  }
-
-  cam->Zoom(zoomFactor);
-}
-
 void vtkInteractorStyleRubberBandZoom::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -367,3 +324,4 @@ void vtkInteractorStyleRubberBandZoom::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "UseDollyForPerspectiveProjection: " << this->UseDollyForPerspectiveProjection
      << endl;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageEuclideanToPolar.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageEuclideanToPolar.h"
 
 #include "vtkImageData.h"
@@ -21,9 +9,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageEuclideanToPolar);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageEuclideanToPolar::vtkImageEuclideanToPolar()
 {
   this->SetNumberOfInputPorts(1);
@@ -31,7 +20,7 @@ vtkImageEuclideanToPolar::vtkImageEuclideanToPolar()
   this->ThetaMaximum = 255.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class T>
 void vtkImageEuclideanToPolarExecute(vtkImageEuclideanToPolar* self, vtkImageData* inData,
@@ -82,7 +71,7 @@ void vtkImageEuclideanToPolarExecute(vtkImageEuclideanToPolar* self, vtkImageDat
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageEuclideanToPolar::ThreadedExecute(
   vtkImageData* inData, vtkImageData* outData, int outExt[6], int id)
 {
@@ -119,3 +108,4 @@ void vtkImageEuclideanToPolar::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Maximum Angle: " << this->ThetaMaximum << "\n";
 }
+VTK_ABI_NAMESPACE_END

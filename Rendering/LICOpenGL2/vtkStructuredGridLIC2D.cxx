@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStructuredGridLIC2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStructuredGridLIC2D.h"
 
 #include "vtkOpenGLHelper.h"
@@ -47,8 +35,9 @@
 #define PRINTEXTENT(ext)                                                                           \
   ext[0] << ", " << ext[1] << ", " << ext[2] << ", " << ext[3] << ", " << ext[4] << ", " << ext[5]
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStructuredGridLIC2D);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGridLIC2D::vtkStructuredGridLIC2D()
 {
   this->Context = nullptr;
@@ -69,20 +58,20 @@ vtkStructuredGridLIC2D::vtkStructuredGridLIC2D()
   this->LICProgram = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGridLIC2D::~vtkStructuredGridLIC2D()
 {
   this->NoiseSource->Delete();
   this->SetContext(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderWindow* vtkStructuredGridLIC2D::GetContext()
 {
   return this->Context;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStructuredGridLIC2D::SetContext(vtkRenderWindow* context)
 {
   if (this->Context && this->OwnWindow)
@@ -99,7 +88,7 @@ int vtkStructuredGridLIC2D::SetContext(vtkRenderWindow* context)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Fill the input port information objects for this algorithm.  This
 // is invoked by the first call to GetInputPortInformation for each
@@ -123,7 +112,7 @@ int vtkStructuredGridLIC2D::FillInputPortInformation(int port, vtkInformation* i
   return 1;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Fill the output port information objects for this algorithm.
 // This is invoked by the first call to GetOutputPortInformation for
@@ -144,7 +133,7 @@ int vtkStructuredGridLIC2D::FillOutputPortInformation(int port, vtkInformation* 
 
   return 1;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // We need to report output extent after taking into consideration the
 // magnification.
 int vtkStructuredGridLIC2D::RequestInformation(vtkInformation* vtkNotUsed(request),
@@ -186,7 +175,7 @@ int vtkStructuredGridLIC2D::RequestInformation(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStructuredGridLIC2D::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -233,7 +222,7 @@ int vtkStructuredGridLIC2D::RequestUpdateExtent(vtkInformation* vtkNotUsed(reque
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Stolen from vtkImageAlgorithm. Should be in vtkStructuredGridAlgorithm.
 void vtkStructuredGridLIC2D::AllocateOutputData(vtkDataObject* output, vtkInformation* outInfo)
 {
@@ -253,7 +242,7 @@ void vtkStructuredGridLIC2D::AllocateOutputData(vtkDataObject* output, vtkInform
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Stolen from vtkImageData. Should be in vtkStructuredGrid.
 void vtkStructuredGridLIC2D::AllocateScalars(vtkStructuredGrid* sg, vtkInformation* outInfo)
 {
@@ -311,7 +300,7 @@ void vtkStructuredGridLIC2D::AllocateScalars(vtkStructuredGrid* sg, vtkInformati
   scalars->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStructuredGridLIC2D::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -555,12 +544,12 @@ int vtkStructuredGridLIC2D::RequestData(vtkInformation* vtkNotUsed(request),
   vtkDebugMacro(<< "glFinish before rendering quad" << endl);
 
   fbo->RenderQuad(0, magWidth - 1, 0, magHeight - 1, pgm, this->LICProgram->VAO);
-  vtkOpenGLCheckErrorMacro("StructuredGridLIC2D projection fialed");
+  vtkOpenGLCheckErrorMacro("StructuredGridLIC2D projection failed");
 
   vtkDebugMacro(<< "glFinish after rendering quad" << endl);
 
   vtkLineIntegralConvolution2D* internal = vtkLineIntegralConvolution2D::New();
-  if (!internal->IsSupported(this->Context))
+  if (!vtkLineIntegralConvolution2D::IsSupported(this->Context))
   {
     this->LICProgram->ReleaseGraphicsResources(renWin);
     delete this->LICProgram;
@@ -730,7 +719,7 @@ int vtkStructuredGridLIC2D::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStructuredGridLIC2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -741,3 +730,4 @@ void vtkStructuredGridLIC2D::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "LICSuccess: " << this->LICSuccess << "\n";
   os << indent << "Magnification: " << this->Magnification << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCurvatures.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCurvatures.h"
 
 #include "vtkCellArray.h"
@@ -29,9 +17,12 @@
 #include "vtkPolyDataNormals.h"
 #include "vtkPolygon.h"
 #include "vtkTriangle.h"
+#include "vtkTriangleFilter.h"
+#include "vtkTriangleStrip.h"
 
 #include <memory> // For unique_ptr
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCurvatures);
 
 //-------------------------------------------------------//
@@ -45,14 +36,33 @@ void vtkCurvatures::GetMeanCurvature(vtkPolyData* mesh)
 {
   vtkDebugMacro("Start vtkCurvatures::GetMeanCurvature");
 
+  bool hasTriangleStrip = false;
+  for (vtkIdType cellId = 0; cellId < mesh->GetNumberOfCells(); ++cellId)
+  {
+    if (mesh->GetCellType(cellId) == VTK_TRIANGLE_STRIP)
+    {
+      hasTriangleStrip = true;
+      break;
+    }
+  }
+
+  vtkPolyData* polyData = mesh;
+  vtkNew<vtkTriangleFilter> triangulateFilter;
+  if (hasTriangleStrip)
+  {
+    triangulateFilter->SetInputData(mesh);
+    triangulateFilter->Update();
+    polyData = triangulateFilter->GetOutput();
+  }
+
   // Empty array check
-  if (mesh->GetNumberOfPolys() == 0 || mesh->GetNumberOfPoints() == 0)
+  if (polyData->GetNumberOfPolys() == 0 || polyData->GetNumberOfPoints() == 0)
   {
     vtkErrorMacro("No points/cells to operate on");
     return;
   }
 
-  int numPts = mesh->GetNumberOfPoints();
+  int numPts = polyData->GetNumberOfPoints();
 
   //     create-allocate
   const vtkNew<vtkIdList> vertices;
@@ -77,9 +87,9 @@ void vtkCurvatures::GetMeanCurvature(vtkPolyData* mesh)
   double vn2[3];
   double e[3]; // edge (oriented)
 
-  mesh->BuildLinks();
+  polyData->BuildLinks();
   // data init
-  const int F = mesh->GetNumberOfCells();
+  const int F = polyData->GetNumberOfCells();
   // init, preallocate the mean curvature
   const std::unique_ptr<int[]> num_neighb(new int[numPts]);
   for (int v = 0; v < numPts; v++)
@@ -91,21 +101,25 @@ void vtkCurvatures::GetMeanCurvature(vtkPolyData* mesh)
   //     main loop
   vtkDebugMacro(<< "Main loop: loop over facets such that id > id of neighb");
   vtkDebugMacro(<< "so that every edge comes only once");
-  //
-  for (int f = 0; f < F; f++)
-  {
-    mesh->GetCellPoints(f, vertices);
-    const int nv = vertices->GetNumberOfIds();
 
-    for (int v = 0; v < nv; v++)
+  for (vtkIdType f = 0; f < F; ++f)
+  {
+    if (this->CheckAbort())
+    {
+      break;
+    }
+    polyData->GetCellPoints(f, vertices);
+    const vtkIdType nv = vertices->GetNumberOfIds();
+
+    for (vtkIdType v = 0; v < nv; v++)
     {
       // get neighbour
-      const int v_l = vertices->GetId(v);
-      const int v_r = vertices->GetId((v + 1) % nv);
-      const int v_o = vertices->GetId((v + 2) % nv);
-      mesh->GetCellEdgeNeighbors(f, v_l, v_r, neighbours);
+      const vtkIdType v_l = vertices->GetId(v);
+      const vtkIdType v_r = vertices->GetId((v + 1) % nv);
+      const vtkIdType v_o = vertices->GetId((v + 2) % nv);
+      polyData->GetCellEdgeNeighbors(f, v_l, v_r, neighbours);
 
-      int n; // n short for neighbor
+      vtkIdType n; // n short for neighbor
 
       // compute only if there is really ONE neighbour
       // AND meanCurvature has not been computed yet!
@@ -115,9 +129,9 @@ void vtkCurvatures::GetMeanCurvature(vtkPolyData* mesh)
         double Hf; // temporary store
 
         // find 3 corners of f: in order!
-        mesh->GetPoint(v_l, ore);
-        mesh->GetPoint(v_r, end);
-        mesh->GetPoint(v_o, oth);
+        polyData->GetPoint(v_l, ore);
+        polyData->GetPoint(v_r, end);
+        polyData->GetPoint(v_o, oth);
         // compute normal of f
         vtkTriangle::ComputeNormal(ore, end, oth, n_f);
         // compute common edge
@@ -130,11 +144,11 @@ void vtkCurvatures::GetMeanCurvature(vtkPolyData* mesh)
         const double length = vtkMath::Normalize(e);
         double Af = vtkTriangle::TriangleArea(ore, end, oth);
         // find 3 corners of n: in order!
-        mesh->GetCellPoints(n, vertices_n);
-        mesh->GetPoint(vertices_n->GetId(0), vn0);
-        mesh->GetPoint(vertices_n->GetId(1), vn1);
-        mesh->GetPoint(vertices_n->GetId(2), vn2);
-        Af += double(vtkTriangle::TriangleArea(vn0, vn1, vn2));
+        polyData->GetCellPoints(n, vertices_n);
+        polyData->GetPoint(vertices_n->GetId(0), vn0);
+        polyData->GetPoint(vertices_n->GetId(1), vn1);
+        polyData->GetPoint(vertices_n->GetId(2), vn2);
+        Af += vtkTriangle::TriangleArea(vn0, vn1, vn2);
         // compute normal of n
         vtkTriangle::ComputeNormal(vn0, vn1, vn2, n_n);
         // the cosine is n_f * n_n
@@ -190,7 +204,7 @@ void vtkCurvatures::GetMeanCurvature(vtkPolyData* mesh)
   mesh->GetPointData()->SetActiveScalars("Mean_Curvature");
 
   vtkDebugMacro("Set Values of Mean Curvature: Done");
-};
+}
 //--------------------------------------------
 #define CLAMP_MACRO(v) ((v) < (-1) ? (-1) : (v) > (1) ? (1) : (v))
 void vtkCurvatures::GetGaussCurvature(vtkPolyData* output)
@@ -199,12 +213,60 @@ void vtkCurvatures::GetGaussCurvature(vtkPolyData* output)
   // vtk data
   vtkCellArray* facets = output->GetPolys();
 
+  vtkNew<vtkCellArray> triangleStrip;
+  for (vtkIdType cellId = 0; cellId < output->GetNumberOfCells(); ++cellId)
+  {
+    if (this->CheckAbort())
+    {
+      break;
+    }
+    if (output->GetCellType(cellId) == VTK_TRIANGLE_STRIP)
+    {
+      vtkCell* cell = output->GetCell(cellId);
+      vtkTriangleStrip::DecomposeStrip(
+        cell->GetNumberOfPoints(), cell->GetPointIds()->GetPointer(0), triangleStrip);
+    }
+  }
   // Empty array check
-  if (output->GetNumberOfPolys() == 0 || output->GetNumberOfPoints() == 0)
+  if ((triangleStrip->GetNumberOfCells() == 0 && output->GetNumberOfPolys() == 0) ||
+    output->GetNumberOfPoints() == 0)
   {
     vtkErrorMacro("No points/cells to operate on");
     return;
   }
+
+  int numPts = output->GetNumberOfPoints();
+  const vtkNew<vtkDoubleArray> gaussCurvature;
+  gaussCurvature->SetName("Gauss_Curvature");
+  gaussCurvature->SetNumberOfComponents(1);
+  gaussCurvature->SetNumberOfTuples(numPts);
+  gaussCurvature->Fill(0.0);
+  double* gaussCurvatureData = gaussCurvature->GetPointer(0);
+
+  if (output->GetNumberOfPolys())
+  {
+    this->ComputeGaussCurvature(facets, output, gaussCurvatureData);
+  }
+  if (triangleStrip->GetNumberOfCells())
+  {
+    this->ComputeGaussCurvature(triangleStrip, output, gaussCurvatureData);
+  }
+
+  output->GetPointData()->AddArray(gaussCurvature);
+  output->GetPointData()->SetActiveScalars("Gauss_Curvature");
+
+  vtkDebugMacro("Set Values of Gauss Curvature: Done");
+}
+
+void vtkCurvatures::ComputeGaussCurvature(
+  vtkCellArray* facets, vtkPolyData* output, double* gaussCurvatureData)
+{
+  double v0[3], v1[3], v2[3], e0[3], e1[3], e2[3];
+
+  double A, alpha0, alpha1, alpha2;
+
+  vtkIdType f;
+  const vtkIdType* vert = nullptr;
 
   // other data
   vtkIdType Nv = output->GetNumberOfPoints();
@@ -218,15 +280,13 @@ void vtkCurvatures::GetGaussCurvature(vtkPolyData* output)
     dA[k] = 0.0;
   }
 
-  double v0[3], v1[3], v2[3], e0[3], e1[3], e2[3];
-
-  double A, alpha0, alpha1, alpha2;
-
-  vtkIdType f;
-  const vtkIdType* vert = nullptr;
   facets->InitTraversal();
   while (facets->GetNextCell(f, vert))
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     output->GetPoint(vert[0], v0);
     output->GetPoint(vert[1], v1);
     output->GetPoint(vert[2], v2);
@@ -252,22 +312,12 @@ void vtkCurvatures::GetGaussCurvature(vtkPolyData* output)
     e2[1] -= v2[1];
     e2[2] -= v2[2];
 
-    // normalise
-    vtkMath::Normalize(e0);
-    vtkMath::Normalize(e1);
-    vtkMath::Normalize(e2);
-    // angles
-    // I get lots of acos domain errors so clamp the value to +/-1 as the
-    // normalize function can return 1.000000001 etc (I think)
-    double ac1 = vtkMath::Dot(e1, e2);
-    double ac2 = vtkMath::Dot(e2, e0);
-    double ac3 = vtkMath::Dot(e0, e1);
-    alpha0 = acos(-CLAMP_MACRO(ac1));
-    alpha1 = acos(-CLAMP_MACRO(ac2));
-    alpha2 = acos(-CLAMP_MACRO(ac3));
+    alpha0 = vtkMath::Pi() - vtkMath::AngleBetweenVectors(e1, e2);
+    alpha1 = vtkMath::Pi() - vtkMath::AngleBetweenVectors(e2, e0);
+    alpha2 = vtkMath::Pi() - vtkMath::AngleBetweenVectors(e0, e1);
 
     // surf. area
-    A = double(vtkTriangle::TriangleArea(v0, v1, v2));
+    A = vtkTriangle::TriangleArea(v0, v1, v2);
     // UPDATE
     dA[vert[0]] += A;
     dA[vert[1]] += A;
@@ -277,31 +327,15 @@ void vtkCurvatures::GetGaussCurvature(vtkPolyData* output)
     K[vert[2]] -= alpha0;
   }
 
-  int numPts = output->GetNumberOfPoints();
   // put curvature in vtkArray
-  const vtkNew<vtkDoubleArray> gaussCurvature;
-  gaussCurvature->SetName("Gauss_Curvature");
-  gaussCurvature->SetNumberOfComponents(1);
-  gaussCurvature->SetNumberOfTuples(numPts);
-  double* gaussCurvatureData = gaussCurvature->GetPointer(0);
-
   for (int v = 0; v < Nv; v++)
   {
     if (dA[v] > 0.0)
     {
       gaussCurvatureData[v] = 3.0 * K[v] / dA[v];
     }
-    else
-    {
-      gaussCurvatureData[v] = 0.0;
-    }
   }
-
-  output->GetPointData()->AddArray(gaussCurvature);
-  output->GetPointData()->SetActiveScalars("Gauss_Curvature");
-
-  vtkDebugMacro("Set Values of Gauss Curvature: Done");
-};
+}
 
 void vtkCurvatures::GetMaximumCurvature(vtkPolyData* input, vtkPolyData* output)
 {
@@ -325,6 +359,11 @@ void vtkCurvatures::GetMaximumCurvature(vtkPolyData* input, vtkPolyData* output)
 
   for (vtkIdType i = 0; i < numPts; i++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
+
     k = gauss->GetComponent(i, 0);
     h = mean->GetComponent(i, 0);
     tmp = h * h - k;
@@ -334,10 +373,13 @@ void vtkCurvatures::GetMaximumCurvature(vtkPolyData* input, vtkPolyData* output)
     }
     else
     {
-      vtkDebugMacro(<< "Maximum Curvature undefined at point: " << i);
-      // k_max can be any real number. Undefined points will be indistinguishable
-      // from points that actually have a k_max == 0
-      k_max = 0;
+      k_max = h;
+      if (tmp < -0.1)
+      {
+        vtkWarningMacro(
+          << "The Gaussian or mean curvature at point " << i
+          << " have a large computation error... The maximum curvature is likely off.");
+      }
     }
     maximumCurvature->SetComponent(i, 0, k_max);
   }
@@ -365,6 +407,11 @@ void vtkCurvatures::GetMinimumCurvature(vtkPolyData* input, vtkPolyData* output)
 
   for (vtkIdType i = 0; i < numPts; i++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
+
     k = gauss->GetComponent(i, 0);
     h = mean->GetComponent(i, 0);
     tmp = h * h - k;
@@ -374,10 +421,13 @@ void vtkCurvatures::GetMinimumCurvature(vtkPolyData* input, vtkPolyData* output)
     }
     else
     {
-      vtkDebugMacro(<< "Minimum Curvature undefined at point: " << i);
-      // k_min can be any real number. Undefined points will be indistinguishable
-      // from points that actually have a k_min == 0
-      k_min = 0;
+      k_min = h;
+      if (tmp < -0.1)
+      {
+        vtkWarningMacro(
+          << "The Gaussian or mean curvature at point " << i
+          << " have a large computation error... The minimum curvature is likely off.");
+      }
     }
     minimumCurvature->SetComponent(i, 0, k_min);
   }
@@ -441,3 +491,4 @@ void vtkCurvatures::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "CurvatureType: " << this->CurvatureType << "\n";
   os << indent << "InvertMeanCurvature: " << this->InvertMeanCurvature << "\n";
 }
+VTK_ABI_NAMESPACE_END

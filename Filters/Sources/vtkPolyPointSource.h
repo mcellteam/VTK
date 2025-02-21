@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyPointSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPolyPointSource
  * @brief   create points from a list of input points
@@ -26,6 +14,7 @@
 #include "vtkFiltersSourcesModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 
 class VTKFILTERSSOURCES_EXPORT vtkPolyPointSource : public vtkPolyDataAlgorithm
@@ -35,13 +24,13 @@ public:
   vtkTypeMacro(vtkPolyPointSource, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the number of points in the poly line.
    */
   void SetNumberOfPoints(vtkIdType numPoints);
   vtkIdType GetNumberOfPoints();
-  //@}
+  ///@}
 
   /**
    * Resize while preserving data.
@@ -53,13 +42,13 @@ public:
    */
   void SetPoint(vtkIdType id, double x, double y, double z);
 
-  //@{
+  ///@{
   /**
    * Get the points.
    */
   void SetPoints(vtkPoints* points);
   vtkGetObjectMacro(Points, vtkPoints);
-  //@}
+  ///@}
 
   /**
    * Get the mtime plus consider its Points
@@ -79,4 +68,5 @@ private:
   void operator=(const vtkPolyPointSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

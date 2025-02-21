@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeoProjection.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkGeoProjection
  * @brief   Represent a projection from a sphere to a plane
@@ -35,6 +19,8 @@
 struct PJconsts;
 typedef struct PJconsts PJ;
 typedef PJ* projPJ;
+
+VTK_ABI_NAMESPACE_BEGIN
 
 class VTKGEOVISCORE_EXPORT vtkGeoProjection : public vtkObject
 {
@@ -61,7 +47,7 @@ public:
    */
   static const char* GetProjectionDescription(int projection);
 
-  //@{
+  ///@{
   /**
    * Set/get the short name describing the projection you wish to use.
    * This defaults to "latlong".
@@ -70,7 +56,7 @@ public:
    */
   vtkSetStringMacro(Name);
   vtkGetStringMacro(Name);
-  //@}
+  ///@}
 
   /**
    * Return the index of the current projection's type in the list of all projection types.
@@ -84,14 +70,14 @@ public:
    */
   const char* GetDescription();
 
-  //@{
+  ///@{
   /**
    * Set/get the longitude which corresponds to the central meridian of the projection.
    * This defaults to 0, the Greenwich Meridian.
    */
   vtkSetMacro(CentralMeridian, double);
   vtkGetMacro(CentralMeridian, double);
-  //@}
+  ///@}
 
   /**
    * Return a pointer to the PROJ.4 data structure describing this projection.
@@ -134,18 +120,18 @@ public:
    */
   void ClearOptionalParameters();
 
-  //@{
+  ///@{
   /**
    * Set/Get/Clear projection string in PROJ.4 format.
    * This is a special case alternative to setting the projection name and
    * specifying parameters.
    *
-   * \note If the PROJ4String is not empty, it supercedes the other parameters
+   * \note If the PROJ4String is not empty, it supersedes the other parameters
    * and is used explicitly to instantiate the `projPJ` projection object.
    */
   vtkSetStringMacro(PROJ4String);
   vtkGetStringMacro(PROJ4String);
-  //@}
+  ///@}
 
 protected:
   vtkGeoProjection();
@@ -173,4 +159,5 @@ private:
   vtkInternals* Internals;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkGeoProjection_h

@@ -1,20 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridQuadricDecimation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-  Copyright 2007, 2008 by University of Utah.
-
-=========================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2007, 2008 by University of Utah
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkUnstructuredGridQuadricDecimation
  * @brief   reduce the number of
@@ -65,6 +51,7 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkUnstructuredGridQuadricDecimation
   : public vtkUnstructuredGridAlgorithm
 {
@@ -80,32 +67,32 @@ public:
   // NumbersOfTetsOutput is also 0, then TargetReduction will control the
   // output.
 
-  //@{
+  ///@{
   /**
    * Set/Get the desired reduction (expressed as a fraction of the original
    * number of tetrehedra)
    */
   vtkSetMacro(TargetReduction, double);
   vtkGetMacro(TargetReduction, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the desired number of tetrahedra to be outputted
    */
   vtkSetMacro(NumberOfTetsOutput, int);
   vtkGetMacro(NumberOfTetsOutput, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the desired number of edge to collapse
    */
   vtkSetMacro(NumberOfEdgesToDecimate, int);
   vtkGetMacro(NumberOfEdgesToDecimate, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of candidates selected for each randomized set before
    * performing an edge collapse. Increasing this number can help producing
@@ -113,9 +100,9 @@ public:
    */
   vtkSetMacro(NumberOfCandidates, int);
   vtkGetMacro(NumberOfCandidates, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable(1)/Disable(0) the feature of temporarily doubling the number of
    * candidates for each randomized set if the quadric error was significantly
@@ -127,37 +114,37 @@ public:
    */
   vtkSetMacro(AutoAddCandidates, int);
   vtkGetMacro(AutoAddCandidates, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the threshold that decides when to double the set size.
    * Default is 0.4.
    */
   vtkSetMacro(AutoAddCandidatesThreshold, double);
   vtkGetMacro(AutoAddCandidatesThreshold, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the weight of the boundary on the quadric metrics. The larger
    * the number, the better the boundary is preserved.
    */
   vtkSetMacro(BoundaryWeight, double);
   vtkGetMacro(BoundaryWeight, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scalar field name used for simplification
    */
   vtkSetStringMacro(ScalarsName);
   vtkGetStringMacro(ScalarsName);
-  //@}
+  ///@}
 
   enum
   {
-    NO_ERROR = 0,
+    NON_ERROR = 0,
     NON_TETRAHEDRA = 1,
     NO_SCALARS = 2,
     NO_CELLS = 3
@@ -185,4 +172,5 @@ private:
   void operator=(const vtkUnstructuredGridQuadricDecimation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

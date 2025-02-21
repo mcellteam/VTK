@@ -1,32 +1,27 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPCellSizeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPCellSizeFilter.h"
 
 #include "vtkCommunicator.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPCellSizeFilter);
 
-//-----------------------------------------------------------------------------
-vtkPCellSizeFilter::vtkPCellSizeFilter() {}
+//------------------------------------------------------------------------------
+void vtkPCellSizeFilter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
 
-//-----------------------------------------------------------------------------
-vtkPCellSizeFilter::~vtkPCellSizeFilter() {}
+//------------------------------------------------------------------------------
+vtkPCellSizeFilter::vtkPCellSizeFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkPCellSizeFilter::~vtkPCellSizeFilter() = default;
+
+//------------------------------------------------------------------------------
 void vtkPCellSizeFilter::ComputeGlobalSum(double sum[4])
 {
   vtkMultiProcessController* controller = vtkMultiProcessController::GetGlobalController();
@@ -40,3 +35,4 @@ void vtkPCellSizeFilter::ComputeGlobalSum(double sum[4])
     }
   }
 }
+VTK_ABI_NAMESPACE_END

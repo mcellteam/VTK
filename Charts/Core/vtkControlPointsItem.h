@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkControlPointsItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkControlPointsItem
@@ -28,12 +16,16 @@
 #ifndef vtkControlPointsItem_h
 #define vtkControlPointsItem_h
 
+#include "vtkPlot.h"
+
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkCommand.h"          // For vtkCommand enum
-#include "vtkPlot.h"
-#include "vtkSmartPointer.h" // for SmartPointer
-#include "vtkVector.h"       // For vtkVector2f
+#include "vtkSmartPointer.h"     // For SmartPointer
+#include "vtkVector.h"           // For vtkVector2f
+#include "vtkWrappingHints.h"    // For VTK_MARSHALAUTO
+#include <string>                // Used by GetControlPointLabel
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCallbackCommand;
 class vtkContext2D;
 class vtkControlPointsAddPointItem;
@@ -41,7 +33,7 @@ class vtkPiecewisePointHandleItem;
 class vtkPoints2D;
 class vtkTransform2D;
 
-class VTKCHARTSCORE_EXPORT vtkControlPointsItem : public vtkPlot
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkControlPointsItem : public vtkPlot
 {
 public:
   vtkTypeMacro(vtkControlPointsItem, vtkPlot);
@@ -65,7 +57,7 @@ public:
    */
   void GetBounds(double bounds[4]) override;
 
-  //@{
+  ///@{
   /**
    * Set custom bounds, except if bounds are invalid, bounds will be
    * automatically computed based on the range of the control points
@@ -73,9 +65,9 @@ public:
    */
   vtkSetVector4Macro(UserBounds, double);
   vtkGetVector4Macro(UserBounds, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Controls the valid range for the values.
    * An invalid value (0, -1, 0., -1, 0, -1.) indicates that the valid
@@ -83,16 +75,26 @@ public:
    */
   vtkSetVector4Macro(ValidBounds, double);
   vtkGetVector4Macro(ValidBounds, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/set the radius for screen points.
    * Default is 6.f
    */
   vtkGetMacro(ScreenPointRadius, float);
   vtkSetMacro(ScreenPointRadius, float);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Get/Set the flag to draw points.
+   * Default is true.
+   */
+  vtkGetMacro(DrawPoints, bool);
+  vtkSetMacro(DrawPoints, bool);
+  vtkBooleanMacro(DrawPoints, bool);
+  ///@}
 
   /**
    * Paint the points with a fixed size (cosmetic) which doesn't depend
@@ -183,7 +185,7 @@ public:
    */
   void GetControlPointsIds(vtkIdTypeArray* ids, bool excludeFirstAndLast = false) const;
 
-  //@{
+  ///@{
   /**
    * Controls whether or not control points are drawn (true) or clicked and
    * moved (false).
@@ -191,9 +193,9 @@ public:
    */
   vtkSetMacro(StrokeMode, bool);
   vtkGetMacro(StrokeMode, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If DrawPoints is false, SwitchPoints controls the behavior when a control
    * point is dragged past another point. The crossed point becomes current
@@ -202,9 +204,9 @@ public:
    */
   vtkSetMacro(SwitchPointsMode, bool);
   vtkGetMacro(SwitchPointsMode, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If EndPointsMovable is false, the two end points will not
    * be moved. True by default.
@@ -214,33 +216,33 @@ public:
   vtkSetMacro(EndPointsYMovable, bool);
   vtkGetMacro(EndPointsYMovable, bool);
   virtual bool GetEndPointsMovable();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If EndPointsRemovable is false, the two end points will not
    * be removed. True by default.
    */
   vtkSetMacro(EndPointsRemovable, bool);
   vtkGetMacro(EndPointsRemovable, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When set to true, labels are shown on the current control point and the end
    * points. Default is false.
    */
   vtkSetMacro(ShowLabels, bool);
   vtkGetMacro(ShowLabels, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the label format. Default is "%.4f, %.4f".
    */
   vtkSetStringMacro(LabelFormat);
   vtkGetStringMacro(LabelFormat);
-  //@}
+  ///@}
 
   /**
    * Add a point to the function. Returns the index of the point (0 based),
@@ -265,7 +267,7 @@ public:
   /**
    * Remove the current point.
    */
-  inline void RemoveCurrentPoint();
+  void RemoveCurrentPoint();
 
   /**
    * Returns the total number of points
@@ -330,22 +332,22 @@ public:
    */
   void SetCurrentPoint(vtkIdType index);
 
-  //@{
+  ///@{
   /**
    * Gets the selected point pen and brush.
    */
   vtkGetObjectMacro(SelectedPointPen, vtkPen);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Depending on the control points item, the brush might not be taken into
    * account.
    */
   vtkGetObjectMacro(SelectedPointBrush, vtkBrush);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When enabled, a dedicated item is used to determine if a point should
    * be added when clicking anywhere.
@@ -355,7 +357,7 @@ public:
   vtkGetMacro(UseAddPointItem, bool);
   vtkSetMacro(UseAddPointItem, bool);
   vtkBooleanMacro(UseAddPointItem, bool);
-  //@}
+  ///@}
 
   /**
    * Item dedicated to add point, to be added below all other items.
@@ -369,7 +371,7 @@ public:
    */
   void ResetBounds();
 
-  //@{
+  ///@{
   /**
    * Mouse and key events.
    */
@@ -379,7 +381,7 @@ public:
   bool MouseMoveEvent(const vtkContextMouseEvent& mouse) override;
   bool KeyPressEvent(const vtkContextKeyEvent& key) override;
   bool KeyReleaseEvent(const vtkContextKeyEvent& key) override;
-  //@}
+  ///@}
 
 protected:
   vtkControlPointsItem();
@@ -399,14 +401,14 @@ protected:
   static void CallComputePoints(
     vtkObject* sender, unsigned long event, void* receiver, void* params);
 
-  //@{
+  ///@{
   /**
    * Must be reimplemented by subclasses to calculate the points to draw.
    * It's subclass responsibility to call ComputePoints() via the callback
    */
   virtual void ComputePoints();
   virtual vtkMTimeType GetControlPointsMTime() = 0;
-  //@}
+  ///@}
 
   /**
    * Returns true if the supplied x, y are within the bounds or on a control point.
@@ -415,16 +417,16 @@ protected:
    */
   bool Hit(const vtkContextMouseEvent& mouse) override;
 
-  //@{
+  ///@{
   /**
    * Clamp the given 2D pos into the bounds of the function.
    * Return true if the pos has been clamped, false otherwise.
    */
   bool ClampValidDataPos(double pos[2]);
   bool ClampValidScreenPos(double pos[2]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Internal function that paints a collection of points and optionally
    * excludes some.
@@ -432,14 +434,14 @@ protected:
   void DrawUnselectedPoints(vtkContext2D* painter);
   void DrawSelectedPoints(vtkContext2D* painter);
   virtual void DrawPoint(vtkContext2D* painter, vtkIdType index);
-  //@}
+  ///@}
 
   void SetCurrentPointPos(const vtkVector2f& newPos);
   vtkIdType SetPointPos(vtkIdType point, const vtkVector2f& newPos);
   void MoveCurrentPoint(const vtkVector2f& translation);
   vtkIdType MovePoint(vtkIdType point, const vtkVector2f& translation);
 
-  inline vtkVector2f GetSelectionCenterOfMass() const;
+  vtkVector2f GetSelectionCenterOfMass() const;
   vtkVector2f GetCenterOfMass(vtkIdTypeArray* pointIDs) const;
 
   void Stroke(const vtkVector2f& newPos);
@@ -448,7 +450,7 @@ protected:
   /**
    * Generate label for a control point.
    */
-  virtual vtkStdString GetControlPointLabel(vtkIdType index);
+  virtual std::string GetControlPointLabel(vtkIdType index);
 
   void AddPointId(vtkIdType addedPointId);
 
@@ -471,35 +473,36 @@ protected:
    */
   virtual void ComputeBounds(double* bounds);
 
-  vtkCallbackCommand* Callback;
-  vtkPen* SelectedPointPen;
-  vtkBrush* SelectedPointBrush;
-  int BlockUpdates;
-  int StartedInteractions;
-  int StartedChanges;
-  vtkIdType CurrentPoint;
+  vtkNew<vtkCallbackCommand> Callback;
+  vtkNew<vtkPen> SelectedPointPen;
+  vtkNew<vtkBrush> SelectedPointBrush;
+  int BlockUpdates = 0;
+  int StartedInteractions = 0;
+  int StartedChanges = 0;
+  vtkIdType CurrentPoint = -1;
 
-  double Bounds[4];
-  double UserBounds[4];
-  double ValidBounds[4];
+  double Bounds[4] = { 0., -1., 0., -1. };
+  double UserBounds[4] = { 0., -1., 0., -1. };
+  double ValidBounds[4] = { 0., -1., 0., -1. };
 
-  vtkTransform2D* Transform;
-  float ScreenPointRadius;
+  vtkNew<vtkTransform2D> ControlPointsTransform;
+  float ScreenPointRadius = 6.f;
 
-  bool StrokeMode;
-  bool SwitchPointsMode;
-  bool MouseMoved;
-  bool EnforceValidFunction;
-  vtkIdType PointToDelete;
-  bool PointAboutToBeDeleted;
-  vtkIdType PointToToggle;
-  bool PointAboutToBeToggled;
-  bool InvertShadow;
-  bool EndPointsXMovable;
-  bool EndPointsYMovable;
-  bool EndPointsRemovable;
-  bool ShowLabels;
-  char* LabelFormat;
+  bool DrawPoints = true;
+  bool StrokeMode = false;
+  bool SwitchPointsMode = false;
+  bool MouseMoved = false;
+  bool EnforceValidFunction = true;
+  vtkIdType PointToDelete = -1;
+  bool PointAboutToBeDeleted = false;
+  vtkIdType PointToToggle = -1;
+  bool PointAboutToBeToggled = false;
+  bool InvertShadow = false;
+  bool EndPointsXMovable = true;
+  bool EndPointsYMovable = true;
+  bool EndPointsRemovable = true;
+  bool ShowLabels = false;
+  char* LabelFormat = nullptr;
 
 private:
   vtkControlPointsItem(const vtkControlPointsItem&) = delete;
@@ -512,17 +515,5 @@ private:
   bool UseAddPointItem = false;
   vtkNew<vtkControlPointsAddPointItem> AddPointItem;
 };
-
-//-----------------------------------------------------------------------------
-void vtkControlPointsItem::RemoveCurrentPoint()
-{
-  this->RemovePoint(this->GetCurrentPoint());
-}
-
-//-----------------------------------------------------------------------------
-vtkVector2f vtkControlPointsItem::GetSelectionCenterOfMass() const
-{
-  return this->GetCenterOfMass(this->Selection);
-}
-
+VTK_ABI_NAMESPACE_END
 #endif

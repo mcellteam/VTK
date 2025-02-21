@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkToneMappingPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkToneMappingPass
  * @brief   Implement a post-processing Tone Mapping.
@@ -40,12 +28,14 @@
 
 #include "vtkImageProcessingPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLFramebufferObject;
 class vtkOpenGLQuadHelper;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkToneMappingPass : public vtkImageProcessingPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkToneMappingPass : public vtkImageProcessingPass
 {
 public:
   static vtkToneMappingPass* New();
@@ -62,13 +52,13 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Set function to set uncharted 2 presets, and default presets
    */
   void SetGenericFilmicDefaultPresets();
   void SetGenericFilmicUncharted2Presets();
-  //@}
+  ///@}
 
   /**
    * Enumeration of tone mapping algorithms
@@ -78,37 +68,38 @@ public:
     Clamp = 0,
     Reinhard = 1,
     Exponential = 2,
-    GenericFilmic = 3
+    GenericFilmic = 3,
+    NeutralPBR = 4
   };
 
-  //@{
+  ///@{
   /**
    * Get/Set the tone mapping type.
    * Default is GenericFilmic
    */
-  vtkSetClampMacro(ToneMappingType, int, 0, 3);
+  vtkSetClampMacro(ToneMappingType, int, 0, 4);
   vtkGetMacro(ToneMappingType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set Exposure coefficient used for exponential and Generic Filmic tone mapping.
    * Default is 1.0
    */
   vtkGetMacro(Exposure, float);
   vtkSetMacro(Exposure, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Contrast adjust the toe of the curve. Typically in [1-2].
    * Default is 1.6773
    */
   vtkSetClampMacro(Contrast, float, 0.0001f, VTK_FLOAT_MAX);
   vtkGetMacro(Contrast, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Shoulder limit the output in the shoulder region of the curve.
    * Typically in [0.9-1].
@@ -116,43 +107,43 @@ public:
    */
   vtkSetClampMacro(Shoulder, float, 0.0001, 1.f);
   vtkGetMacro(Shoulder, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Mid level anchor input.
    * Default is 0.18 (in percent gray)
    */
   vtkSetClampMacro(MidIn, float, 0.0001, 1.f);
   vtkGetMacro(MidIn, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Mid level anchor output.
    * Default is 0.18 (in percent gray)
    */
   vtkSetClampMacro(MidOut, float, 0.0001, 1.f);
   vtkGetMacro(MidOut, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Maximum HDR input that is not clipped.
-   * Defalut is 11.0785
+   * Default is 11.0785
    */
   vtkSetClampMacro(HdrMax, float, 1.f, VTK_FLOAT_MAX);
   vtkGetMacro(HdrMax, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Apply or not the Academy Color Encoding System (ACES).
    * Default is true
    */
   vtkSetMacro(UseACES, bool);
   vtkGetMacro(UseACES, bool);
-  //@}
+  ///@}
 
 protected:
   vtkToneMappingPass() = default;
@@ -203,4 +194,5 @@ private:
   void operator=(const vtkToneMappingPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

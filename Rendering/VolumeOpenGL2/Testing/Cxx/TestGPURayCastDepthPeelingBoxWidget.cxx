@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastDepthPeeling.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  *  Tests interactive clipping with volume peeling.
  */
@@ -102,8 +90,8 @@ public:
 };
 
 const std::string EventStream =
-R"eventStream(
-#StreamVersion 1.1
+  R"eventStream(
+# StreamVersion 1.1
 LeftButtonPressEvent 198 296 0 0 0 0
 RenderEvent 198 296 0 0 0 0
 MouseMoveEvent 198 295 0 0 0 0
@@ -294,9 +282,9 @@ RenderEvent 266 134 0 0 0 0
 MouseMoveEvent 265 135 0 0 0 0
 RenderEvent 265 135 0 0 0 0
 )eventStream"
-    // We have to break this string up, otherwise MSVC whines about it being
-    // too long (error C2026)
-R"eventStream(
+  // We have to break this string up, otherwise MSVC whines about it being
+  // too long (error C2026)
+  R"eventStream(
 MouseMoveEvent 262 137 0 0 0 0
 RenderEvent 262 137 0 0 0 0
 MouseMoveEvent 260 138 0 0 0 0
@@ -630,9 +618,9 @@ RenderEvent 325 100 0 0 0 0
 InteractionEvent 325 100 0 0 0 0
 MouseMoveEvent 325 101 0 0 0 0
 )eventStream"
-    // We have to break this string up, otherwise MSVC whines about it being
-    // too long (error C2026)
-R"eventStream(
+  // We have to break this string up, otherwise MSVC whines about it being
+  // too long (error C2026)
+  R"eventStream(
 RenderEvent 325 101 0 0 0 0
 InteractionEvent 325 101 0 0 0 0
 MouseMoveEvent 325 102 0 0 0 0
@@ -918,9 +906,9 @@ MouseMoveEvent 379 42 0 0 0 0
 MouseMoveEvent 381 40 0 0 0 0
 MouseMoveEvent 382 40 0 0 0 0
 )eventStream"
-    // We have to break this string up, otherwise MSVC whines about it being
-    // too long (error C2026)
-R"eventStream(
+  // We have to break this string up, otherwise MSVC whines about it being
+  // too long (error C2026)
+  R"eventStream(
 MouseMoveEvent 383 39 0 0 0 0
 MouseMoveEvent 384 39 0 0 0 0
 MouseMoveEvent 385 38 0 0 0 0
@@ -1289,9 +1277,9 @@ int TestGPURayCastDepthPeelingBoxWidget(int argc, char* argv[])
   vtkOpenGLRenderer* oglRen = vtkOpenGLRenderer::SafeDownCast(ren);
   assert(oglRen); // This test should only be enabled for OGL2 backend.
   // This will print details about why depth peeling is unsupported:
-  oglRen->SetDebug(1);
+  oglRen->SetDebug(true);
   bool supported = oglRen->IsDualDepthPeelingSupported();
-  oglRen->SetDebug(0);
+  oglRen->SetDebug(false);
   if (!supported)
   {
     std::cerr << "Skipping test; volume peeling not supported.\n";
@@ -1429,7 +1417,7 @@ int TestGPURayCastDepthPeelingBoxWidget(int argc, char* argv[])
   iren->Initialize();
   renWin->Render();
 
-//#define RECORD
+// #define RECORD
 #ifdef RECORD
   recorder->SetFileName("/tmp/events.log");
   recorder->Record();

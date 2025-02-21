@@ -1,20 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLFramebufferObject.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLFramebufferObject.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLBufferObject.h"
@@ -29,8 +17,8 @@
 
 #include <cassert>
 #include <vector>
-using std::vector;
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFOInfo
 {
 public:
@@ -258,10 +246,10 @@ typedef std::map<unsigned int, vtkFOInfo*>::iterator foIter;
 
 // #define VTK_FBO_DEBUG // display info on RenderQuad()
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOpenGLFramebufferObject);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLFramebufferObject::vtkOpenGLFramebufferObject()
 {
   this->Context = nullptr;
@@ -284,7 +272,7 @@ vtkOpenGLFramebufferObject::vtkOpenGLFramebufferObject()
     this, &vtkOpenGLFramebufferObject::ReleaseGraphicsResources);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLFramebufferObject::~vtkOpenGLFramebufferObject()
 {
   if (this->ResourceCallback)
@@ -302,7 +290,7 @@ vtkOpenGLFramebufferObject::~vtkOpenGLFramebufferObject()
   this->Context = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOpenGLFramebufferObject::GetOpenGLType(int vtkType)
 {
   // convert vtk type to open gl type
@@ -344,7 +332,7 @@ unsigned int vtkOpenGLFramebufferObject::GetBothMode()
   return GL_FRAMEBUFFER;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::CreateFBO()
 {
   if (!this->FBOIndex)
@@ -358,7 +346,7 @@ void vtkOpenGLFramebufferObject::CreateFBO()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::DestroyFBO()
 {
   if (this->FBOIndex != 0)
@@ -385,7 +373,7 @@ void vtkOpenGLFramebufferObject::ReleaseGraphicsResources(vtkWindow* win)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::SetContext(vtkRenderWindow* rw)
 {
   vtkOpenGLRenderWindow* renWin = static_cast<vtkOpenGLRenderWindow*>(rw);
@@ -402,7 +390,7 @@ void vtkOpenGLFramebufferObject::SetContext(vtkRenderWindow* rw)
     return;
   }
   // check for support
-  if (!this->LoadRequiredExtensions(renWin))
+  if (!vtkOpenGLFramebufferObject::LoadRequiredExtensions(renWin))
   {
     vtkErrorMacro("Context does not support the required extensions");
     return;
@@ -411,13 +399,13 @@ void vtkOpenGLFramebufferObject::SetContext(vtkRenderWindow* rw)
   this->Context = renWin;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLRenderWindow* vtkOpenGLFramebufferObject::GetContext()
 {
   return this->Context;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::InitializeViewport(int width, int height)
 {
   vtkOpenGLState* ostate = this->Context->GetState();
@@ -554,7 +542,7 @@ void vtkOpenGLFramebufferObject::Resize(int width, int height)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkOpenGLFramebufferObject::Start(int width, int height)
 {
   if (!this->StartNonOrtho(width, height))
@@ -566,7 +554,7 @@ bool vtkOpenGLFramebufferObject::Start(int width, int height)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::ActivateBuffers()
 {
   GLint maxbuffers;
@@ -591,7 +579,7 @@ void vtkOpenGLFramebufferObject::ActivateDrawBuffer(unsigned int num)
   this->ActivateDrawBuffers(&num, 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::ActivateReadBuffer(unsigned int colorAtt)
 {
   colorAtt += GL_COLOR_ATTACHMENT0;
@@ -599,7 +587,7 @@ void vtkOpenGLFramebufferObject::ActivateReadBuffer(unsigned int colorAtt)
   this->ActiveReadBuffer = colorAtt;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::ActivateDrawBuffers(unsigned int num)
 {
   GLint maxbuffers;
@@ -633,7 +621,7 @@ unsigned int vtkOpenGLFramebufferObject::GetActiveDrawBuffer(unsigned int id)
   return GL_COLOR_ATTACHMENT0 + this->ActiveBuffers[id];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::ActivateDrawBuffers(unsigned int* ids, int num)
 {
   GLint maxbuffers;
@@ -658,7 +646,7 @@ void vtkOpenGLFramebufferObject::ActivateDrawBuffers(unsigned int* ids, int num)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::DeactivateDrawBuffers()
 {
   GLenum att = GL_NONE;
@@ -666,14 +654,14 @@ void vtkOpenGLFramebufferObject::DeactivateDrawBuffers()
   this->ActiveBuffers.clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::DeactivateReadBuffer()
 {
   this->Context->GetState()->vtkReadBuffer(GL_NONE, this);
   this->ActiveReadBuffer = GL_NONE;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::SaveCurrentBindingsAndBuffers()
 {
   this->SaveCurrentBindingsAndBuffers(GL_FRAMEBUFFER);
@@ -724,7 +712,7 @@ void vtkOpenGLFramebufferObject::RestorePreviousBindingsAndBuffers(unsigned int 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::Bind()
 {
   this->Bind(GL_FRAMEBUFFER);
@@ -773,7 +761,7 @@ void vtkOpenGLFramebufferObject::AttachDepthBuffer()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::UnBind()
 {
   if (this->FBOIndex != 0)
@@ -806,13 +794,13 @@ void vtkOpenGLFramebufferObject::AddDepthAttachment()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::DestroyDepthBuffer(vtkWindow*)
 {
   this->DepthBuffer->Clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::DestroyColorBuffers(vtkWindow*)
 {
   for (foIter i = this->ColorBuffers.begin(); i != this->ColorBuffers.end(); ++i)
@@ -821,7 +809,7 @@ void vtkOpenGLFramebufferObject::DestroyColorBuffers(vtkWindow*)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkOpenGLFramebufferObject::GetMaximumNumberOfActiveTargets()
 {
   unsigned int result = 0;
@@ -834,7 +822,7 @@ unsigned int vtkOpenGLFramebufferObject::GetMaximumNumberOfActiveTargets()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkOpenGLFramebufferObject::GetMaximumNumberOfRenderTargets()
 {
   unsigned int result = 0;
@@ -847,7 +835,7 @@ unsigned int vtkOpenGLFramebufferObject::GetMaximumNumberOfRenderTargets()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::RemoveDepthAttachment()
 {
   if (this->FBOIndex != 0)
@@ -871,6 +859,21 @@ void vtkOpenGLFramebufferObject::AddDepthAttachment(vtkRenderbuffer* rb)
 {
   this->DepthBuffer->SetRenderbuffer(rb, GL_DEPTH_ATTACHMENT);
   this->AttachDepthBuffer();
+}
+
+vtkTextureObject* vtkOpenGLFramebufferObject::GetColorAttachmentAsTextureObject(unsigned int index)
+{
+  foIter i = this->ColorBuffers.find(index);
+  if (i != this->ColorBuffers.end())
+  {
+    return i->second->Texture;
+  }
+  return nullptr;
+}
+
+vtkTextureObject* vtkOpenGLFramebufferObject::GetDepthAttachmentAsTextureObject()
+{
+  return this->DepthBuffer ? this->DepthBuffer->Texture : nullptr;
 }
 
 void vtkOpenGLFramebufferObject::AddColorAttachment(unsigned int index, vtkTextureObject* tex,
@@ -913,7 +916,7 @@ void vtkOpenGLFramebufferObject::AddColorAttachment(unsigned int index, vtkRende
   this->AttachColorBuffer(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::RemoveColorAttachments(unsigned int num)
 {
   for (unsigned int i = 0; i < num; ++i)
@@ -941,7 +944,7 @@ void vtkOpenGLFramebufferObject::RemoveColorAttachment(unsigned int index)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Display all the attachments of the current framebuffer object.
 void vtkOpenGLFramebufferObject::DisplayFrameBufferAttachments()
@@ -974,7 +977,7 @@ void vtkOpenGLFramebufferObject::DisplayFrameBufferAttachments()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Display a given attachment for the current framebuffer object.
 void vtkOpenGLFramebufferObject::DisplayFrameBufferAttachment(unsigned int uattachment)
@@ -1073,7 +1076,7 @@ void vtkOpenGLFramebufferObject::DisplayFrameBufferAttachment(unsigned int uatta
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Display the draw buffers.
 void vtkOpenGLFramebufferObject::DisplayDrawBuffers()
@@ -1110,7 +1113,7 @@ void vtkOpenGLFramebufferObject::DisplayDrawBuffers()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Display the read buffer.
 void vtkOpenGLFramebufferObject::DisplayReadBuffer()
@@ -1122,20 +1125,19 @@ void vtkOpenGLFramebufferObject::DisplayReadBuffer()
   cout << endl;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Display any buffer (convert value into string).
 void vtkOpenGLFramebufferObject::DisplayBuffer(int value)
 {
-  if (value >= static_cast<int>(GL_COLOR_ATTACHMENT0) &&
-    value <= static_cast<int>(GL_COLOR_ATTACHMENT0 + 15))
+  if (value >= GL_COLOR_ATTACHMENT0 && value <= GL_COLOR_ATTACHMENT0 + 15)
   {
     cout << "GL_COLOR_ATTACHMENT" << (value - GL_COLOR_ATTACHMENT0);
   }
   else
   {
 #ifdef GL_ES_VERSION_3_0
-    vtkErrorMacro("Attempt to use bad display destintation");
+    vtkErrorMacro("Attempt to use bad display destination");
 #else
     if (value >= GL_AUX0)
     {
@@ -1195,7 +1197,7 @@ void vtkOpenGLFramebufferObject::DisplayBuffer(int value)
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // a program must be bound
 // a VAO must be bound
 void vtkOpenGLFramebufferObject::RenderQuad(int minX, int maxX, int minY, int maxY,
@@ -1247,7 +1249,7 @@ void vtkOpenGLFramebufferObject::RenderQuad(int minX, int maxX, int minY, int ma
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1255,7 +1257,7 @@ void vtkOpenGLFramebufferObject::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "LastSize : " << this->LastSize[0] << this->LastSize[1] << endl;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkOpenGLFramebufferObject::GetFrameBufferStatus(unsigned int mode, const char*& desc)
 {
   bool ok = false;
@@ -1305,14 +1307,10 @@ bool vtkOpenGLFramebufferObject::GetFrameBufferStatus(unsigned int mode, const c
     default:
       desc = "Unknown status";
   }
-  if (!ok)
-  {
-    return false;
-  }
-  return true;
+  return ok;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOpenGLFramebufferObject::CheckFrameBufferStatus(unsigned int mode)
 {
   bool ok = false;
@@ -1370,7 +1368,7 @@ int vtkOpenGLFramebufferObject::CheckFrameBufferStatus(unsigned int mode)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOpenGLFramebufferObject::Blit(
   const int srcExt[4], const int destExt[4], unsigned int bits, unsigned int mapping)
 {
@@ -1383,7 +1381,7 @@ int vtkOpenGLFramebufferObject::Blit(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject* vtkOpenGLFramebufferObject::DownloadDepth(int extent[4], int vtkType)
 {
   assert(this->Context);
@@ -1391,7 +1389,7 @@ vtkPixelBufferObject* vtkOpenGLFramebufferObject::DownloadDepth(int extent[4], i
   return this->Download(extent, vtkType, 1, this->GetOpenGLType(vtkType), GL_DEPTH_COMPONENT);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject* vtkOpenGLFramebufferObject::DownloadColor4(int extent[4], int vtkType)
 {
   assert(this->Context);
@@ -1399,7 +1397,7 @@ vtkPixelBufferObject* vtkOpenGLFramebufferObject::DownloadColor4(int extent[4], 
   return this->Download(extent, vtkType, 4, this->GetOpenGLType(vtkType), GL_RGBA);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject* vtkOpenGLFramebufferObject::DownloadColor3(int extent[4], int vtkType)
 {
   assert(this->Context);
@@ -1407,7 +1405,7 @@ vtkPixelBufferObject* vtkOpenGLFramebufferObject::DownloadColor3(int extent[4], 
   return this->Download(extent, vtkType, 3, this->GetOpenGLType(vtkType), GL_RGB);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject* vtkOpenGLFramebufferObject::DownloadColor1(
   int extent[4], int vtkType, int channel)
 {
@@ -1432,18 +1430,18 @@ vtkPixelBufferObject* vtkOpenGLFramebufferObject::DownloadColor1(
   return this->Download(extent, vtkType, 1, this->GetOpenGLType(vtkType), oglChannel);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject* vtkOpenGLFramebufferObject::Download(
   int extent[4], int vtkType, int nComps, int oglType, int oglFormat)
 {
   vtkPixelBufferObject* pbo = vtkPixelBufferObject::New();
   pbo->SetContext(this->Context);
 
-  this->Download(extent, vtkType, nComps, oglType, oglFormat, pbo);
+  vtkOpenGLFramebufferObject::Download(extent, vtkType, nComps, oglType, oglFormat, pbo);
 
   return pbo;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLFramebufferObject::Download(
   int extent[4], int vtkType, int nComps, int oglType, int oglFormat, vtkPixelBufferObject* pbo)
 {
@@ -1456,7 +1454,9 @@ void vtkOpenGLFramebufferObject::Download(
 
   pbo->Bind(vtkPixelBufferObject::PACKED_BUFFER);
 
-  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  static_cast<vtkOpenGLRenderWindow*>(pbo->GetContext())
+    ->GetState()
+    ->vtkglPixelStorei(GL_PACK_ALIGNMENT, 1);
   glReadPixels(extent[0], extent[2], extentSize[0], extentSize[1], oglFormat, oglType, nullptr);
 
   vtkOpenGLStaticCheckErrorMacro("failed at glReadPixels");
@@ -1467,7 +1467,14 @@ void vtkOpenGLFramebufferObject::Download(
 int vtkOpenGLFramebufferObject::GetMultiSamples()
 {
   int abuff = this->ActiveBuffers[0];
-  return this->ColorBuffers[abuff]->GetSamples();
+  foIter colorBufferIt = this->ColorBuffers.find(abuff);
+  if (colorBufferIt == this->ColorBuffers.end())
+  {
+    // vtkFOInfo::GetSamples() returns 0 if no Texture and Renderbuffer is set,
+    // therefore we return the same value if no active framebuffer object is found
+    return 0;
+  }
+  return colorBufferIt->second->GetSamples();
 }
 
 bool vtkOpenGLFramebufferObject::PopulateFramebuffer(int width, int height)
@@ -1520,9 +1527,11 @@ bool vtkOpenGLFramebufferObject::PopulateFramebuffer(int width, int height, bool
           case 16:
             depth->AllocateDepth(this->LastSize[0], this->LastSize[1], vtkTextureObject::Fixed16);
             break;
+#ifdef GL_DEPTH_COMPONENT32
           case 32:
             depth->AllocateDepth(this->LastSize[0], this->LastSize[1], vtkTextureObject::Fixed32);
             break;
+#endif
           case 24:
           default:
             depth->AllocateDepth(this->LastSize[0], this->LastSize[1], vtkTextureObject::Fixed24);
@@ -1558,7 +1567,7 @@ bool vtkOpenGLFramebufferObject::PopulateFramebuffer(int width, int height, bool
       depth->SetContext(this->Context);
       if (wantStencilAttachment)
       {
-        depth->Create(GL_DEPTH_STENCIL, this->LastSize[0], this->LastSize[1], multisamples);
+        depth->Create(GL_DEPTH24_STENCIL8, this->LastSize[0], this->LastSize[1], multisamples);
       }
       else
       {
@@ -1597,3 +1606,4 @@ int vtkOpenGLFramebufferObject::GetNumberOfColorAttachments()
 {
   return static_cast<int>(this->ColorBuffers.size());
 }
+VTK_ABI_NAMESPACE_END

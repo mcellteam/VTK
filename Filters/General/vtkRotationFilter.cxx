@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRotationFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRotationFilter.h"
 
 #include "vtkCellData.h"
@@ -25,9 +13,10 @@
 #include "vtkTransform.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRotationFilter);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRotationFilter::vtkRotationFilter()
 {
   this->Axis = 2;
@@ -37,10 +26,10 @@ vtkRotationFilter::vtkRotationFilter()
   this->Angle = 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRotationFilter::~vtkRotationFilter() = default;
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRotationFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -53,7 +42,7 @@ void vtkRotationFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Angle: " << this->Angle << endl;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRotationFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -103,15 +92,13 @@ int vtkRotationFilter::RequestData(vtkInformation* vtkNotUsed(request),
   outPD->CopyAllocate(inPD);
   outCD->CopyAllocate(inCD);
 
-  vtkDataArray *inPtVectors, *outPtVectors, *inPtNormals;
-  vtkDataArray *inCellVectors, *outCellVectors, *inCellNormals;
+  vtkDataArray *inPtVectors, *outPtVectors;
+  vtkDataArray *inCellVectors, *outCellVectors;
 
   inPtVectors = inPD->GetVectors();
   outPtVectors = outPD->GetVectors();
-  inPtNormals = inPD->GetNormals();
   inCellVectors = inCD->GetVectors();
   outCellVectors = outCD->GetVectors();
-  inCellNormals = inCD->GetNormals();
 
   // Copy first points.
   if (this->CopyInput)
@@ -125,7 +112,6 @@ int vtkRotationFilter::RequestData(vtkInformation* vtkNotUsed(request),
   }
   vtkTransform* localTransform = vtkTransform::New();
   // Rotate points.
-  // double angle = vtkMath::RadiansFromDegrees( this->GetAngle() );
   this->GetCenter(center);
   negativCenter[0] = -center[0];
   negativCenter[1] = -center[1];
@@ -161,18 +147,10 @@ int vtkRotationFilter::RequestData(vtkInformation* vtkNotUsed(request),
         inPtVectors->GetTuple(i, tuple);
         outPtVectors->SetTuple(ptId, tuple);
       }
-      if (inPtNormals)
-      {
-        // inPtNormals->GetTuple(i, tuple);
-        // outPtNormals->SetTuple(ptId, tuple);
-      }
     }
   }
 
   localTransform->Delete();
-
-  vtkIdType* newCellPts;
-  vtkIdList* cellPts;
 
   // Copy original cells.
   if (this->CopyInput)
@@ -185,40 +163,35 @@ int vtkRotationFilter::RequestData(vtkInformation* vtkNotUsed(request),
     }
   }
 
+  vtkIdType* newCellPts;
+  vtkIdList* cellPts;
+
   // Generate rotated cells.
-  for (int k = 0; k < this->GetNumberOfCopies(); ++k)
+  for (int k = 0; k < this->GetNumberOfCopies() && !this->CheckAbort(); ++k)
   {
     for (vtkIdType i = 0; i < numCells; ++i)
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       input->GetCellPoints(i, ptIds);
       input->GetCell(i, cell);
       vtkIdType numCellPts = cell->GetNumberOfPoints();
       int cellType = cell->GetCellType();
       cellPts = cell->GetPointIds();
-      // Triangle strips with even number of triangles have
-      // to be handled specially. A degenerate triangle is
-      // introduce to flip all the triangles properly.
-      if (cellType == VTK_TRIANGLE_STRIP && numCellPts % 2 == 0)
+
+      vtkDebugMacro(<< "celltype " << cellType << " numCellPts " << numCellPts);
+      newCellPts = new vtkIdType[numCellPts];
+      for (vtkIdType j = 0; j < numCellPts; ++j)
       {
-        vtkErrorMacro(<< "Triangles with bad points");
-        return 0;
-      }
-      else
-      {
-        vtkDebugMacro(<< "celltype " << cellType << " numCellPts " << numCellPts);
-        newCellPts = new vtkIdType[numCellPts];
-        // for (j = numCellPts-1; j >= 0; j--)
-        for (vtkIdType j = 0; j < numCellPts; ++j)
+        newCellPts[j] = cellPts->GetId(j) + numPts * k;
+        if (this->CopyInput)
         {
-          // newCellPts[numCellPts-1-j] = cellPts->GetId(j) + numPts*k;
-          newCellPts[j] = cellPts->GetId(j) + numPts * k;
-          if (this->CopyInput)
-          {
-            // newCellPts[numCellPts-1-j] += numPts;
-            newCellPts[j] += numPts;
-          }
+          newCellPts[j] += numPts;
         }
       }
+
       cellId = output->InsertNextCell(cellType, numCellPts, newCellPts);
       delete[] newCellPts;
       outCD->CopyData(inCD, i, cellId);
@@ -226,11 +199,6 @@ int vtkRotationFilter::RequestData(vtkInformation* vtkNotUsed(request),
       {
         inCellVectors->GetTuple(i, tuple);
         outCellVectors->SetTuple(cellId, tuple);
-      }
-      if (inCellNormals)
-      {
-        // inCellNormals->GetTuple(i, tuple);
-        // outCellNormals->SetTuple(cellId, tuple);
       }
     }
   }
@@ -249,3 +217,4 @@ int vtkRotationFilter::FillInputPortInformation(int, vtkInformation* info)
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageRectilinearWipe.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageRectilinearWipe.h"
 
 #include "vtkImageData.h"
@@ -20,9 +8,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageRectilinearWipe);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageRectilinearWipe::vtkImageRectilinearWipe()
 {
   this->Position[0] = 0;
@@ -33,7 +22,7 @@ vtkImageRectilinearWipe::vtkImageRectilinearWipe()
   this->SetNumberOfInputPorts(2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 // Handles the two input operations
 template <class T>
@@ -87,7 +76,7 @@ void vtkImageRectilinearWipeExecute2(vtkImageRectilinearWipe* self, vtkImageData
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function adjusts the extents of the wipe to the output extents.
 static int vtkImageRectilinearWipeClampExtents(int wipeExt[6], int outExt[6])
 {
@@ -119,7 +108,7 @@ static int vtkImageRectilinearWipeClampExtents(int wipeExt[6], int outExt[6])
   }
   return status;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output regions, and executes the filter
 // algorithm to fill the output from the inputs based on the Wipe ivar.
 void vtkImageRectilinearWipe::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
@@ -377,3 +366,4 @@ void vtkImageRectilinearWipe::PrintSelf(ostream& os, vtkIndent indent)
       break;
   }
 }
+VTK_ABI_NAMESPACE_END

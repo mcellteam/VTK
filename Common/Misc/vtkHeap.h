@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHeap.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHeap
  * @brief   replacement for malloc/free and new/delete
@@ -48,6 +36,7 @@
 #include "vtkCommonMiscModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHeapBlock; // forward declaration
 
 class VTKCOMMONMISC_EXPORT vtkHeap : public vtkObject
@@ -62,7 +51,7 @@ public:
    */
   void* AllocateMemory(size_t n);
 
-  //@{
+  ///@{
   /**
    * Set/Get the size at which blocks are allocated. If a memory
    * request is bigger than the block size, then that size
@@ -70,15 +59,15 @@ public:
    */
   virtual void SetBlockSize(size_t);
   virtual size_t GetBlockSize() { return this->BlockSize; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the number of allocations thus far.
    */
   vtkGetMacro(NumberOfBlocks, int);
   vtkGetMacro(NumberOfAllocations, int);
-  //@}
+  ///@}
 
   /**
    * This methods resets the current allocation location
@@ -118,4 +107,5 @@ private:
   void operator=(const vtkHeap&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

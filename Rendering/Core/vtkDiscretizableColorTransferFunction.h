@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDiscretizableColorTransferFunction.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDiscretizableColorTransferFunction
  * @brief   a combination of
@@ -50,9 +38,11 @@
 #include "vtkRenderingCoreModule.h" // For export macro
 #include "vtkSmartPointer.h"        // for vtkSmartPointer
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkColorTransferFunction;
 class vtkLookupTable;
 class vtkPiecewiseFunction;
+class vtkUnsignedCharArray;
 
 class VTKRENDERINGCORE_EXPORT vtkDiscretizableColorTransferFunction
   : public vtkColorTransferFunction
@@ -62,13 +52,15 @@ public:
   vtkTypeMacro(vtkDiscretizableColorTransferFunction, vtkColorTransferFunction);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Returns the negation of \a EnableOpacityMapping.
    */
-  int IsOpaque() override;
-  int IsOpaque(vtkAbstractArray* scalars, int colorMode, int component) override;
-  //@}
+  vtkTypeBool IsOpaque() override;
+  vtkTypeBool IsOpaque(vtkAbstractArray* scalars, int colorMode, int component) override;
+  vtkTypeBool IsOpaque(vtkAbstractArray* scalars, int colorMode, int component,
+    vtkUnsignedCharArray* ghosts, unsigned char ghostsToSkip = 0xff) override;
+  ///@}
 
   /**
    * Add colors to use when \a IndexedLookup is true.
@@ -101,7 +93,7 @@ public:
    */
   void GetIndexedColor(vtkIdType i, double rgba[4]) override;
 
-  //@{
+  ///@{
   /**
    * Set the number of indexed colors. These are used when IndexedLookup is
    * true. If no indexed colors are specified, for backwards compatibility,
@@ -109,7 +101,7 @@ public:
    */
   void SetNumberOfIndexedColors(unsigned int count);
   unsigned int GetNumberOfIndexedColors();
-  //@}
+  ///@}
 
   /**
    * Generate discretized lookup table, if applicable.
@@ -119,7 +111,7 @@ public:
    */
   void Build() override;
 
-  //@{
+  ///@{
   /**
    * Set if the values are to be mapped after discretization. The
    * number of discrete values is set by using SetNumberOfValues().
@@ -129,18 +121,18 @@ public:
   vtkSetMacro(Discretize, vtkTypeBool);
   vtkGetMacro(Discretize, vtkTypeBool);
   vtkBooleanMacro(Discretize, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set if log scale must be used while mapping scalars
    * to colors. The default is 0.
    */
-  virtual void SetUseLogScale(int useLogScale);
-  vtkGetMacro(UseLogScale, int);
-  //@}
+  virtual void SetUseLogScale(vtkTypeBool useLogScale);
+  vtkGetMacro(UseLogScale, vtkTypeBool);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of values i.e. colors to be generated in the
    * discrete lookup table. This has no effect if Discretize is off.
@@ -148,7 +140,7 @@ public:
    */
   vtkSetMacro(NumberOfValues, vtkIdType);
   vtkGetMacro(NumberOfValues, vtkIdType);
-  //@}
+  ///@}
 
   /**
    * Map one value through the lookup table and return a color defined
@@ -184,7 +176,7 @@ public:
    */
   void SetAlpha(double alpha) override;
 
-  //@{
+  ///@{
   /**
    * Set the color to use when a NaN (not a number) is encountered.  This is an
    * RGB 3-tuple color of doubles in the range [0, 1].
@@ -192,7 +184,7 @@ public:
    */
   void SetNanColor(double r, double g, double b) override;
   void SetNanColor(const double rgb[3]) override { this->SetNanColor(rgb[0], rgb[1], rgb[2]); }
-  //@}
+  ///@}
 
   /**
    * Set the opacity to use when a NaN (not a number) is encountered.  This is an
@@ -205,29 +197,29 @@ public:
    * This should return 1 if the subclass is using log scale for
    * mapping scalars to colors.
    */
-  int UsingLogScale() override { return this->UseLogScale; }
+  vtkTypeBool UsingLogScale() override { return this->UseLogScale; }
 
   /**
    * Get the number of available colors for mapping to.
    */
   vtkIdType GetNumberOfAvailableColors() override;
 
-  //@{
+  ///@{
   /**
    * Set/get the opacity function to use.
    */
   virtual void SetScalarOpacityFunction(vtkPiecewiseFunction* function);
   virtual vtkPiecewiseFunction* GetScalarOpacityFunction() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable the usage of the scalar opacity function.
    */
   vtkSetMacro(EnableOpacityMapping, bool);
   vtkGetMacro(EnableOpacityMapping, bool);
   vtkBooleanMacro(EnableOpacityMapping, bool);
-  //@}
+  ///@}
 
   /**
    * Overridden to include the ScalarOpacityFunction's MTime.
@@ -246,7 +238,7 @@ protected:
   /**
    * Flag indicating whether log scaling is to be used.
    */
-  int UseLogScale;
+  vtkTypeBool UseLogScale;
 
   /**
    * Number of values to use in discretized color map.
@@ -281,4 +273,5 @@ private:
   vtkInternals* Internals;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

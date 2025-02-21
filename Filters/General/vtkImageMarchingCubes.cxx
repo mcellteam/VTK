@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMarchingCubes.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageMarchingCubes.h"
 
 #include "vtkCellArray.h"
@@ -29,9 +17,10 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageMarchingCubes);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Construct object with initial range (0,1) and single contour value
 // of 0.0. ComputeNormal is on, ComputeGradients is off and ComputeScalars is on.
@@ -64,14 +53,14 @@ vtkMTimeType vtkImageMarchingCubes::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 int vtkImageMarchingCubesGetTypeSize(T*)
 {
   return sizeof(T);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageMarchingCubes::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -83,7 +72,7 @@ int vtkImageMarchingCubes::RequestUpdateExtent(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageMarchingCubes::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -186,7 +175,7 @@ int vtkImageMarchingCubes::RequestData(vtkInformation* vtkNotUsed(request),
   // Loop through the chunks running marching cubes on each one
   int zMin = extent[4];
   int zMax = extent[5];
-  for (int chunkMin = zMin, chunkMax; chunkMin < zMax; chunkMin = chunkMax)
+  for (int chunkMin = zMin, chunkMax; chunkMin < zMax && !this->CheckAbort(); chunkMin = chunkMax)
   {
     // Get the chunk from the input
     chunkMax = chunkMin + this->NumberOfSlicesPerChunk;
@@ -216,7 +205,7 @@ int vtkImageMarchingCubes::RequestData(vtkInformation* vtkNotUsed(request),
     inputExec->Update();
 
     this->March(inData, chunkMin, chunkMax, numContours, values);
-    if (!this->AbortExecute)
+    if (!this->GetAbortOutput())
     {
       this->UpdateProgress(static_cast<double>(chunkMax - zMin) / (zMax - zMin));
     }
@@ -262,7 +251,7 @@ int vtkImageMarchingCubes::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method uses central differences to compute the gradient
 // of a point. Note: This method assumes that max > min for all 3 axes!
 // It does not consider the dataset spacing.
@@ -314,7 +303,7 @@ void vtkImageMarchingCubesComputePointGradient(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method interpolates vertices to make a new point.
 template <class T>
 int vtkImageMarchingCubesMakeNewPoint(vtkImageMarchingCubes* self, int idx0, int idx1, int idx2,
@@ -487,7 +476,7 @@ int vtkImageMarchingCubesMakeNewPoint(vtkImageMarchingCubes* self, int idx0, int
   return self->Points->InsertNextPoint(pt);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method runs marching cubes on one cube.
 template <class T>
 void vtkImageMarchingCubesHandleCube(vtkImageMarchingCubes* self, int cellX, int cellY, int cellZ,
@@ -542,12 +531,12 @@ void vtkImageMarchingCubesHandleCube(vtkImageMarchingCubes* self, int cellX, int
     {
       cubeIndex += 128;
     }
-    // Make sure we have trianlges
+    // Make sure we have triangles
     if (cubeIndex != 0 && cubeIndex != 255)
     {
       // Get edges.
       triCase = triCases + cubeIndex;
-      EDGE_LIST* edge = triCase->edges;
+      int* edge = triCase->edges;
       // loop over triangles
       while (*edge > -1)
       {
@@ -571,7 +560,7 @@ void vtkImageMarchingCubesHandleCube(vtkImageMarchingCubes* self, int cellX, int
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkImageMarchingCubesMarch(vtkImageMarchingCubes* self, vtkImageData* inData, T* ptr,
   int chunkMin, int chunkMax, int numContours, double* values)
@@ -603,7 +592,7 @@ void vtkImageMarchingCubesMarch(vtkImageMarchingCubes* self, vtkImageData* inDat
     {
       if (!(count % target))
       {
-        if (self->GetAbortExecute())
+        if (self->CheckAbort())
         {
           return;
         }
@@ -625,7 +614,7 @@ void vtkImageMarchingCubesMarch(vtkImageMarchingCubes* self, vtkImageData* inDat
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method calls the proper templade function.
 void vtkImageMarchingCubes::March(
   vtkImageData* inData, int chunkMin, int chunkMax, int numContours, double* values)
@@ -650,7 +639,7 @@ void vtkImageMarchingCubes::March(
 // edges on their min faces.  Their is an extra row and column of cubes
 // to store the max edges of the last row/column of cubes,
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method allocates and initializes the point array.
 // One 2d array of cubes is stored. (z dimension is ignored).
 void vtkImageMarchingCubes::InitializeLocator(int min0, int max0, int min1, int max1)
@@ -675,7 +664,7 @@ void vtkImageMarchingCubes::InitializeLocator(int min0, int max0, int min1, int 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method frees the locators memory.
 void vtkImageMarchingCubes::DeleteLocator()
 {
@@ -684,7 +673,7 @@ void vtkImageMarchingCubes::DeleteLocator()
   this->LocatorPointIds = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method moves the Z index of the locator up one slice.
 void vtkImageMarchingCubes::IncrementLocatorZ()
 {
@@ -701,7 +690,7 @@ void vtkImageMarchingCubes::IncrementLocatorZ()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method adds a point to the array.  Cube is the X/Y cube,
 // segment is the index of the segment (same as marching cubes).(XYZ)
 // (0,0,0)->(1,0,0): 0,  (1,0,0)->(1,1,0): 1,
@@ -718,7 +707,7 @@ void vtkImageMarchingCubes::AddLocatorPoint(int cellX, int cellY, int edge, vtkI
   *ptr = ptId;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method gets a point from the locator.
 vtkIdType vtkImageMarchingCubes::GetLocatorPoint(int cellX, int cellY, int edge)
 {
@@ -727,7 +716,7 @@ vtkIdType vtkImageMarchingCubes::GetLocatorPoint(int cellX, int cellY, int edge)
   return *ptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method returns a pointer to an ID from a cube and an edge.
 vtkIdType* vtkImageMarchingCubes::GetLocatorPointer(int cellX, int cellY, int edge)
 {
@@ -786,14 +775,14 @@ vtkIdType* vtkImageMarchingCubes::GetLocatorPointer(int cellX, int cellY, int ed
     (cellX + cellY * static_cast<vtkIdType>(this->LocatorDimX)) * 5;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageMarchingCubes::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkImageData");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageMarchingCubes::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -806,3 +795,4 @@ void vtkImageMarchingCubes::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "InputMemoryLimit: " << this->InputMemoryLimit << "K bytes\n";
 }
+VTK_ABI_NAMESPACE_END

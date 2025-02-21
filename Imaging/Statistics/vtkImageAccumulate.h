@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageAccumulate.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageAccumulate
  * @brief   Generalized histograms up to 3 dimensions.
@@ -40,6 +28,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingStatisticsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageStencilData;
 
 class VTKIMAGINGSTATISTICS_EXPORT vtkImageAccumulate : public vtkImageAlgorithm
@@ -49,7 +38,7 @@ public:
   vtkTypeMacro(vtkImageAccumulate, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get - The component spacing is the dimension of each bin.
    * This ends up being the spacing of the output "image".
@@ -61,23 +50,23 @@ public:
    */
   vtkSetVector3Macro(ComponentSpacing, double);
   vtkGetVector3Macro(ComponentSpacing, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get - The component origin is the location of bin (0, 0, 0).
    * Note that if the Component extent does not include the value (0,0,0),
    * then this origin bin will not actually be in the output.
-   * The origin of the output ends up being the same as the componenet origin.
+   * The origin of the output ends up being the same as the component origin.
    * For a 1D histogram with 10 bins spanning the values 1000 to 2000,
    * this origin should be set to 1000, 0, 0.
    * Initial value is (0.0,0.0,0.0).
    */
   vtkSetVector3Macro(ComponentOrigin, double);
   vtkGetVector3Macro(ComponentOrigin, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get - The component extent sets the number/extent of the bins.
    * For a 1D histogram with 10 bins spanning the values 1000 to 2000,
@@ -90,9 +79,9 @@ public:
   void SetComponentExtent(int minX, int maxX, int minY, int maxY, int minZ, int maxZ);
   void GetComponentExtent(int extent[6]);
   int* GetComponentExtent() VTK_SIZEHINT(6) { return this->ComponentExtent; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use a stencil to specify which voxels to accumulate.
    * Backcompatible methods.
@@ -101,18 +90,18 @@ public:
    */
   void SetStencilData(vtkImageStencilData* stencil);
   vtkImageStencilData* GetStencil();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Reverse the stencil. Initial value is false.
    */
   vtkSetClampMacro(ReverseStencil, vtkTypeBool, 0, 1);
   vtkBooleanMacro(ReverseStencil, vtkTypeBool);
   vtkGetMacro(ReverseStencil, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the statistics information for the data.
    * The values only make sense after the execution of the filter.
@@ -123,16 +112,16 @@ public:
   vtkGetVector3Macro(Mean, double);
   vtkGetVector3Macro(StandardDeviation, double);
   vtkGetMacro(VoxelCount, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Should the data with value 0 be ignored? Initial value is false.
    */
   vtkSetClampMacro(IgnoreZero, vtkTypeBool, 0, 1);
   vtkGetMacro(IgnoreZero, vtkTypeBool);
   vtkBooleanMacro(IgnoreZero, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageAccumulate();
@@ -163,4 +152,5 @@ private:
   void operator=(const vtkImageAccumulate&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

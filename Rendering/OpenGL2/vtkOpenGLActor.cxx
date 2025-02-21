@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLActor.h"
 
 #include "vtkDepthPeelingPass.h"
@@ -33,6 +21,7 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLActor);
 
 vtkInformationKeyMacro(vtkOpenGLActor, GLDepthMaskOverride, Integer);
@@ -111,7 +100,7 @@ void vtkOpenGLActor::Render(vtkRenderer* ren, vtkMapper* mapper)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -119,11 +108,18 @@ void vtkOpenGLActor::PrintSelf(ostream& os, vtkIndent indent)
 
 void vtkOpenGLActor::GetKeyMatrices(vtkMatrix4x4*& mcwc, vtkMatrix3x3*& normMat)
 {
-  // has the actor changed?
-  if (this->GetMTime() > this->KeyMatrixTime)
+  vtkMTimeType rwTime = 0;
+  if (this->CoordinateSystem != WORLD && this->CoordinateSystemRenderer)
   {
-    this->ComputeMatrix();
-    this->MCWCMatrix->DeepCopy(this->Matrix);
+    rwTime = this->CoordinateSystemRenderer->GetVTKWindow()->GetMTime();
+  }
+
+  // has the actor changed or is in device coords?
+  if (this->GetMTime() > this->KeyMatrixTime || rwTime > this->KeyMatrixTime ||
+    this->CoordinateSystem == DEVICE)
+  {
+    this->GetModelToWorldMatrix(this->MCWCMatrix);
+
     this->MCWCMatrix->Transpose();
 
     if (this->GetIsIdentity())
@@ -149,3 +145,4 @@ void vtkOpenGLActor::GetKeyMatrices(vtkMatrix4x4*& mcwc, vtkMatrix3x3*& normMat)
   mcwc = this->MCWCMatrix;
   normMat = this->NormalMatrix;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeoJSONWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGeoJSONWriter.h"
 
@@ -26,6 +14,7 @@
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGeoJSONWriter);
 
 #define VTK_GJWRITER_MAXPOINTS 32000
@@ -40,9 +29,9 @@ public:
     this->Top = this->Buffer;
   };
   ~Internals() { delete[] this->Buffer; }
-  inline size_t GetSize() { return this->Top - this->Buffer; }
+  size_t GetSize() { return this->Top - this->Buffer; }
   void Clear() { this->Top = this->Buffer; }
-  inline void Grow()
+  void Grow()
   {
     this->MaxBufferSize *= 2;
     // cerr << "GROW " << this->MaxBufferSize << endl;
@@ -53,7 +42,7 @@ public:
     this->Buffer = biggerBuffer;
     this->Top = this->Buffer + curSize;
   }
-  inline void append(const char* newcontent)
+  void append(const char* newcontent)
   {
     while (this->Top + strlen(newcontent) >= this->Buffer + this->MaxBufferSize)
     {
@@ -62,7 +51,7 @@ public:
     int nchars = snprintf(this->Top, this->MaxBufferSize, "%s", newcontent);
     this->Top += nchars;
   }
-  inline void append(const double newcontent)
+  void append(const double newcontent)
   {
     snprintf(this->NumBuffer, 64, "%g", newcontent);
     while (this->Top + strlen(NumBuffer) >= this->Buffer + this->MaxBufferSize)
@@ -528,3 +517,4 @@ vtkStdString vtkGeoJSONWriter::GetOutputStdString()
 
 //------------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkGeoJSONWriter, LookupTable, vtkLookupTable);
+VTK_ABI_NAMESPACE_END

@@ -1,22 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAffineRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAffineRepresentation.h"
 #include "vtkObjectFactory.h"
 #include "vtkTransform.h"
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkAffineRepresentation::vtkAffineRepresentation()
 {
   this->InteractionState = vtkAffineRepresentation::Outside;
@@ -24,13 +13,13 @@ vtkAffineRepresentation::vtkAffineRepresentation()
   this->Transform = vtkTransform::New();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAffineRepresentation::~vtkAffineRepresentation()
 {
   this->Transform->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation::ShallowCopy(vtkProp* prop)
 {
   vtkAffineRepresentation* rep = vtkAffineRepresentation::SafeDownCast(prop);
@@ -41,7 +30,7 @@ void vtkAffineRepresentation::ShallowCopy(vtkProp* prop)
   this->Superclass::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAffineRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -49,3 +38,4 @@ void vtkAffineRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Tolerance: " << this->Tolerance << "\n";
 }
+VTK_ABI_NAMESPACE_END

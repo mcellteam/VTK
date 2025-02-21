@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLCellToVTKCellMap.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLCellToVTKCellMap
  * @brief   OpenGL rendering utility functions
@@ -29,6 +17,7 @@
 #include "vtkRenderingOpenGL2Module.h" // For export macro
 #include "vtkStateStorage.h"           // used for ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkPoints;
 
@@ -46,9 +35,9 @@ public:
   //
   // The same concept applies to cell based picking
   //
-  void BuildCellSupportArrays(vtkCellArray * [4], int representation, vtkPoints* points);
+  void BuildCellSupportArrays(vtkCellArray* [4], int representation, vtkPoints* points);
 
-  void BuildPrimitiveOffsetsIfNeeded(vtkCellArray * [4], int representation, vtkPoints* points);
+  void BuildPrimitiveOffsetsIfNeeded(vtkCellArray* [4], int representation, vtkPoints* points);
 
   vtkIdType ConvertOpenGLCellIdToVTKCellId(bool pointPicking, vtkIdType openGLId);
 
@@ -83,4 +72,5 @@ private:
   void operator=(const vtkOpenGLCellToVTKCellMap&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

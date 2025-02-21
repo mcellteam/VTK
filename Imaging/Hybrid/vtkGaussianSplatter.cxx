@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGaussianSplatter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGaussianSplatter.h"
 
 #include "vtkCompositeDataIterator.h"
@@ -31,9 +19,10 @@
 #include <algorithm>
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGaussianSplatter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Algorithm and integration into vtkSMPTools
 class vtkGaussianSplatterAlgorithm
 {
@@ -88,7 +77,7 @@ public:
   };
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Create the VTK class proper.  Construct object with dimensions=(50,50,50);
 // automatic computation of bounds; a splat radius of 0.1; an exponent factor
 // of -5; and normal and scalar warping turned on.
@@ -121,7 +110,7 @@ vtkGaussianSplatter::vtkGaussianSplatter()
   this->NullValue = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGaussianSplatter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -160,7 +149,7 @@ int vtkGaussianSplatter::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGaussianSplatter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -387,7 +376,7 @@ int vtkGaussianSplatter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGaussianSplatter::ComputeModelBounds(
   vtkCompositeDataSet* input, vtkImageData* output, vtkInformation* outInfo)
 {
@@ -474,7 +463,7 @@ void vtkGaussianSplatter::ComputeModelBounds(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the size of the sample bounding box automatically from the
 // input data.
 void vtkGaussianSplatter::ComputeModelBounds(
@@ -553,7 +542,7 @@ void vtkGaussianSplatter::SetSampleDimensions(int i, int j, int k)
   this->SetSampleDimensions(dim);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGaussianSplatter::SetSampleDimensions(int dim[3])
 {
   int dataDim, i;
@@ -593,7 +582,7 @@ void vtkGaussianSplatter::SetSampleDimensions(int dim[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGaussianSplatter::Cap(vtkDoubleArray* s)
 {
   int i, j, k;
@@ -655,7 +644,7 @@ void vtkGaussianSplatter::Cap(vtkDoubleArray* s)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 //  Gaussian sampling
 //
@@ -665,7 +654,7 @@ double vtkGaussianSplatter::Gaussian(double cx[3])
     (cx[2] - P[2]) * (cx[2] - P[2]));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 //  Ellipsoidal Gaussian sampling
 //
@@ -699,7 +688,7 @@ double vtkGaussianSplatter::EccentricGaussian(double cx[3])
   return (rxy2 / this->Eccentricity2 + z2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGaussianSplatter::GetAccumulationModeAsString()
 {
   if (this->AccumulationMode == VTK_ACCUMULATION_MODE_MIN)
@@ -716,7 +705,7 @@ const char* vtkGaussianSplatter::GetAccumulationModeAsString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGaussianSplatter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -746,10 +735,11 @@ void vtkGaussianSplatter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Null Value: " << this->NullValue << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGaussianSplatter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkCompositeDataSet");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

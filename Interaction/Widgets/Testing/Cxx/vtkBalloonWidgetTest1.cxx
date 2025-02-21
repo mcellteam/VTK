@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAbstractPropPicker.h"
 #include "vtkActor.h"
 #include "vtkBalloonRepresentation.h"
@@ -5,7 +7,6 @@
 #include "vtkCellPicker.h"
 #include "vtkImageData.h"
 #include "vtkProp.h"
-#include "vtkStdString.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -25,18 +26,18 @@ int vtkBalloonWidgetTest1(int, char*[])
 
   vtkSmartPointer<vtkActor> prop1 = vtkSmartPointer<vtkActor>::New();
   vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
-  vtkStdString stdString = "something with a space";
+  std::string stdString = "something with a space";
   const char* cstr = "string1";
   const char* retstr = nullptr;
 
-  node1->AddBalloon(prop1, stdString, imageData);
+  node1->AddBalloon(prop1, stdString.c_str(), imageData);
   retstr = node1->GetBalloonString(prop1);
   if (!retstr)
   {
     std::cerr << "1. Get null return string." << std::endl;
     return EXIT_FAILURE;
   }
-  if (stdString.compare(retstr) != 0)
+  if (stdString != retstr)
   {
     std::cerr << "1. Expected " << stdString << ", got " << retstr << std::endl;
     return EXIT_FAILURE;

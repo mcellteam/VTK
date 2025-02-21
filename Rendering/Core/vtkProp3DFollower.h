@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProp3DFollower.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkProp3DFollower
  * @brief   a vtkProp3D that always faces the camera
@@ -37,6 +25,7 @@
 #include "vtkProp3D.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCamera;
 class vtkMapper;
 
@@ -48,32 +37,32 @@ public:
    */
   static vtkProp3DFollower* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK methods for type and printing.
    */
   vtkTypeMacro(vtkProp3DFollower, vtkProp3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the vtkProp3D to control (i.e., face the camera).
    */
   virtual void SetProp3D(vtkProp3D* prop);
   virtual vtkProp3D* GetProp3D();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the camera to follow. If this is not set, then the follower
    * won't know what to follow and will act like a normal vtkProp3D.
    */
   virtual void SetCamera(vtkCamera*);
   vtkGetObjectMacro(Camera, vtkCamera);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This causes the actor to be rendered. It in turn will render the actor's
    * property, texture map and then mapper. If a property hasn't been
@@ -82,7 +71,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   int RenderVolumetricGeometry(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Does this prop have some translucent polygonal geometry?
@@ -110,14 +99,14 @@ public:
    */
   double* GetBounds() override;
 
-  //@{
+  ///@{
   /**
    * Overload vtkProp's method for setting up assembly paths. See
    * the documentation for vtkProp.
    */
   void InitPathTraversal() override;
   vtkAssemblyPath* GetNextPath() override;
-  //@}
+  ///@}
 
 protected:
   vtkProp3DFollower();
@@ -134,4 +123,5 @@ private:
   void operator=(const vtkProp3DFollower&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

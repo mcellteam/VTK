@@ -1,24 +1,6 @@
-/* -*- Mode: C++; -*- */
-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkODBCDatabase.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkODBCDatabase
@@ -75,6 +57,7 @@
 #include "vtkIOODBCModule.h" // For export macro
 #include "vtkSQLDatabase.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSQLQuery;
 class vtkODBCQuery;
 class vtkStringArray;
@@ -132,7 +115,7 @@ public:
    */
   bool IsSupported(int feature) override;
 
-  //@{
+  ///@{
   /**
    * Set the data source name.  For ODBC connections this will be
    * something listed in odbc.ini.  The location of that file varies wildly
@@ -140,7 +123,7 @@ public:
    */
   vtkSetStringMacro(DataSourceName);
   vtkGetStringMacro(DataSourceName);
-  //@}
+  ///@}
 
   vtkSetMacro(ServerPort, int);
   vtkSetStringMacro(HostName);
@@ -151,12 +134,12 @@ public:
 
   bool HasError() override;
 
-  //@{
+  ///@{
   /**
    * String representing database type (e.g. "ODBC").
    */
   const char* GetDatabaseType() override { return this->DatabaseType; }
-  //@}
+  ///@}
 
   vtkStdString GetURL() override;
 
@@ -227,4 +210,5 @@ private:
   void operator=(const vtkODBCDatabase&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkODBCDatabase_h

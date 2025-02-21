@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQtTableView.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkQtTableView.h"
 
@@ -33,8 +17,8 @@
 #include "vtkAnnotationLayers.h"
 #include "vtkAnnotationLink.h"
 #include "vtkApplyColors.h"
+#include "vtkAttributeDataToTableFilter.h"
 #include "vtkConvertSelection.h"
-#include "vtkDataObjectToTable.h"
 #include "vtkDataRepresentation.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkGraph.h"
@@ -50,17 +34,29 @@
 #include "vtkTable.h"
 #include "vtkViewTheme.h"
 
+namespace
+{
+const std::map<int, int> FIELD_ASSOCIATION_MAP = { { vtkQtTableView::FIELD_DATA,
+                                                     vtkDataObject::FIELD_ASSOCIATION_NONE },
+  { vtkQtTableView::POINT_DATA, vtkDataObject::FIELD_ASSOCIATION_POINTS },
+  { vtkQtTableView::CELL_DATA, vtkDataObject::FIELD_ASSOCIATION_CELLS },
+  { vtkQtTableView::VERTEX_DATA, vtkDataObject::FIELD_ASSOCIATION_VERTICES },
+  { vtkQtTableView::EDGE_DATA, vtkDataObject::FIELD_ASSOCIATION_EDGES },
+  { vtkQtTableView::ROW_DATA, vtkDataObject::FIELD_ASSOCIATION_ROWS } };
+}
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkQtTableView);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtTableView::vtkQtTableView()
 {
   this->ApplyColors = vtkSmartPointer<vtkApplyColors>::New();
-  this->DataObjectToTable = vtkSmartPointer<vtkDataObjectToTable>::New();
+  this->DataObjectToTable = vtkSmartPointer<vtkAttributeDataToTableFilter>::New();
   this->AddSelectedColumn = vtkSmartPointer<vtkAddMembershipArray>::New();
   this->AddSelectedColumn->SetInputConnection(0, this->DataObjectToTable->GetOutputPort());
 
-  this->DataObjectToTable->SetFieldType(vtkDataObjectToTable::VERTEX_DATA);
+  this->DataObjectToTable->SetFieldAssociation(vtkDataObject::FIELD_ASSOCIATION_VERTICES);
   this->AddSelectedColumn->SetFieldType(vtkAddMembershipArray::VERTEX_DATA);
   this->FieldType = vtkQtTableView::VERTEX_DATA;
   this->AddSelectedColumn->SetOutputArrayName("vtkAddMembershipArray membership");
@@ -97,7 +93,7 @@ vtkQtTableView::vtkQtTableView()
     SLOT(slotQtSelectionChanged(const QItemSelection&, const QItemSelection&)));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtTableView::~vtkQtTableView()
 {
   delete this->TableView;
@@ -106,13 +102,13 @@ vtkQtTableView::~vtkQtTableView()
   this->SetColumnName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QWidget* vtkQtTableView::GetWidget()
 {
   return this->TableView;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetShowVerticalHeaders(bool state)
 {
   if (state)
@@ -125,7 +121,7 @@ void vtkQtTableView::SetShowVerticalHeaders(bool state)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetShowHorizontalHeaders(bool state)
 {
   if (state)
@@ -138,22 +134,22 @@ void vtkQtTableView::SetShowHorizontalHeaders(bool state)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetEnableDragDrop(bool state)
 {
   this->TableView->setDragEnabled(state);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetSortingEnabled(bool state)
 {
   this->TableView->setSortingEnabled(state);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetFieldType(int type)
 {
-  this->DataObjectToTable->SetFieldType(type);
+  this->DataObjectToTable->SetFieldAssociation(::FIELD_ASSOCIATION_MAP.at(type));
   this->AddSelectedColumn->SetFieldType(type);
   if (this->FieldType != type)
   {
@@ -162,7 +158,7 @@ void vtkQtTableView::SetFieldType(int type)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetColumnVisibility(const QString& name, bool s)
 {
   for (int j = 0; j < this->TableAdapter->columnCount(); ++j)
@@ -183,7 +179,7 @@ void vtkQtTableView::SetColumnVisibility(const QString& name, bool s)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetShowAll(bool s)
 {
   if (this->ShowAll != s)
@@ -224,13 +220,13 @@ void vtkQtTableView::SetSortSelectionToTop(bool value)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetSplitMultiComponentColumns(bool value)
 {
   this->TableAdapter->SetSplitMultiComponentColumns(value);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkQtTableView::GetSplitMultiComponentColumns()
 {
   return this->TableAdapter->GetSplitMultiComponentColumns();
@@ -307,7 +303,7 @@ const char* vtkQtTableView::GetColorArrayName()
   return this->GetColorArrayNameInternal();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::slotQtSelectionChanged(
   const QItemSelection& vtkNotUsed(s1), const QItemSelection& vtkNotUsed(s2))
 {
@@ -347,7 +343,7 @@ void vtkQtTableView::slotQtSelectionChanged(
   this->InSelectionChanged = true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::SetVTKSelection()
 {
   if (this->InSelectionChanged)
@@ -405,7 +401,7 @@ void vtkQtTableView::SetVTKSelection()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::Update()
 {
   vtkView::Update();
@@ -608,7 +604,7 @@ void vtkQtTableView::ApplyViewTheme(vtkViewTheme* theme)
   this->ApplyColors->SetSelectedCellOpacity(theme->GetSelectedCellOpacity());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtTableView::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -618,3 +614,4 @@ void vtkQtTableView::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SortSelectionToTop: " << (this->SortSelectionToTop ? "true" : "false") << endl;
   os << indent << "ColumnName: " << (this->ColumnName ? this->ColumnName : "(none)") << endl;
 }
+VTK_ABI_NAMESPACE_END

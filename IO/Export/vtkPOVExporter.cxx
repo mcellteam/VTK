@@ -1,64 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPOVExporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=========================================================================
-
-  Program:   VTK/ParaView Los Alamos National Laboratory Modules (PVLANL)
-  Module:    vtkPOVExporter.cxx
-
-Copyright (c) 2007, Los Alamos National Security, LLC
-
-All rights reserved.
-
-Copyright 2007. Los Alamos National Security, LLC.
-This software was produced under U.S. Government contract DE-AC52-06NA25396
-for Los Alamos National Laboratory (LANL), which is operated by
-Los Alamos National Security, LLC for the U.S. Department of Energy.
-The U.S. Government has rights to use, reproduce, and distribute this software.
-NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
-If software is modified to produce derivative works, such modified software
-should be clearly marked, so as not to confuse it with the version available
-from LANL.
-
-Additionally, redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the following conditions
-are met:
--   Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
--   Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
--   Neither the name of Los Alamos National Security, LLC, Los Alamos National
-    Laboratory, LANL, the U.S. Government, nor the names of its contributors
-    may be used to endorse or promote products derived from this software
-    without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-=========================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2007, Los Alamos National Security, LLC
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-LANL-USGov
 #include "vtkPOVExporter.h"
 
 #include "vtkAssemblyPath.h"
@@ -88,6 +30,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPOVExporter);
 
 // Can't use printf("%d", a_vtkIdType) because vtkIdType is not always int.
@@ -97,41 +40,31 @@ class vtkPOVInternals
 public:
   vtkPOVInternals()
   {
-    this->CountFormat = new char[100]; //"\t\t%d,\n"
     strcpy(this->CountFormat, "\t\t");
     strcat(this->CountFormat, vtkTypeTraits<vtkIdType>::ParseFormat());
     strcat(this->CountFormat, ",\n");
 
-    char* triFormat = new char[100]; //"%d, %d, %d"
+    char triFormat[100]; //"%d, %d, %d"
     strcpy(triFormat, vtkTypeTraits<vtkIdType>::ParseFormat());
     strcat(triFormat, ", ");
     strcat(triFormat, vtkTypeTraits<vtkIdType>::ParseFormat());
     strcat(triFormat, ", ");
     strcat(triFormat, vtkTypeTraits<vtkIdType>::ParseFormat());
 
-    this->TriangleFormat1 = new char[100]; //"\t\t<%d, %d, %d>,"
     strcpy(this->TriangleFormat1, "\t\t<");
     strcat(this->TriangleFormat1, triFormat);
     strcat(this->TriangleFormat1, ">,");
 
-    this->TriangleFormat2 = new char[100]; //" %d, %d, %d,\n"
     strcpy(this->TriangleFormat2, " ");
     strcat(this->TriangleFormat2, triFormat);
     strcat(this->TriangleFormat2, ",\n");
-
-    delete[] triFormat;
   }
 
-  ~vtkPOVInternals()
-  {
-    delete[] this->CountFormat;
-    delete[] this->TriangleFormat1;
-    delete[] this->TriangleFormat2;
-  }
+  ~vtkPOVInternals() = default;
 
-  char* CountFormat;
-  char* TriangleFormat1;
-  char* TriangleFormat2;
+  char CountFormat[100];
+  char TriangleFormat1[100];
+  char TriangleFormat2[100];
 };
 
 #define VTKPOV_CNTFMT this->Internals->CountFormat
@@ -231,7 +164,7 @@ void vtkPOVExporter::WriteHeader(vtkRenderer* renderer)
 
   // width and height of output image,
   // and other default command line args to POVRay
-  int* size = renderer->GetSize();
+  const int* size = renderer->GetSize();
   fprintf(this->FilePtr, "// +W%d +H%d\n\n", size[0], size[1]);
 
   // global settings
@@ -660,3 +593,4 @@ void vtkPOVExporter::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "FileName: (null)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

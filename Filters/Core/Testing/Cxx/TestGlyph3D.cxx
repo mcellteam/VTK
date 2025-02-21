@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestExtractSelection.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
@@ -63,7 +51,7 @@ static bool TestGlyph3D_WithBadArray()
   glyph3D->Update();
   int status = errorObserver1->CheckErrorMessage("vtkDataArray Normals has more than 3 components");
   status += errorObserver2->CheckErrorMessage("Algorithm vtkGlyph3D");
-  return true;
+  return (status == 0);
 }
 
 static bool TestGlyph3D_WithoutSource()

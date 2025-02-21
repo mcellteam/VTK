@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCPExodusIINodalCoordinatesTemplate.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkCPExodusIINodalCoordinatesTemplate
@@ -27,19 +15,23 @@
 #ifndef vtkCPExodusIINodalCoordinatesTemplate_h
 #define vtkCPExodusIINodalCoordinatesTemplate_h
 
+#include "vtkDeprecation.h"    // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkIOExodusModule.h" // For export macro
 #include "vtkMappedDataArray.h"
 
 #include "vtkObjectFactory.h" // for vtkStandardNewMacro
 
+VTK_ABI_NAMESPACE_BEGIN
 template <class Scalar>
-class vtkCPExodusIINodalCoordinatesTemplate : public vtkMappedDataArray<Scalar>
+class VTK_DEPRECATED_IN_9_5_0(
+  "Please use the SetArray functionality of `vtkSOADataArrayTemplate` instead.")
+  vtkCPExodusIINodalCoordinatesTemplate : public vtkMappedDataArray<Scalar>
 {
 public:
   vtkAbstractTemplateTypeMacro(
     vtkCPExodusIINodalCoordinatesTemplate<Scalar>, vtkMappedDataArray<Scalar>)
-    vtkMappedDataArrayNewInstanceMacro(vtkCPExodusIINodalCoordinatesTemplate<
-      Scalar>) static vtkCPExodusIINodalCoordinatesTemplate* New();
+  vtkMappedDataArrayNewInstanceMacro(vtkCPExodusIINodalCoordinatesTemplate<
+    Scalar>) static vtkCPExodusIINodalCoordinatesTemplate* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   typedef typename Superclass::ValueType ValueType;
@@ -68,7 +60,7 @@ public:
   ValueType& GetValueReference(vtkIdType idx) override;
   void GetTypedTuple(vtkIdType idx, Scalar* t) const override;
 
-  //@{
+  ///@{
   /**
    * This container is read only -- this method does nothing but print a
    * warning.
@@ -83,6 +75,8 @@ public:
   void InsertTuple(vtkIdType i, const float* source) override;
   void InsertTuple(vtkIdType i, const double* source) override;
   void InsertTuples(vtkIdList* dstIds, vtkIdList* srcIds, vtkAbstractArray* source) override;
+  void InsertTuplesStartingAt(
+    vtkIdType dstStart, vtkIdList* srcIds, vtkAbstractArray* source) override;
   void InsertTuples(
     vtkIdType dstStart, vtkIdType n, vtkIdType srcStart, vtkAbstractArray* source) override;
   vtkIdType InsertNextTuple(vtkIdType j, vtkAbstractArray* source) override;
@@ -105,7 +99,7 @@ public:
   void SetValue(vtkIdType idx, Scalar value) override;
   vtkIdType InsertNextValue(Scalar v) override;
   void InsertValue(vtkIdType idx, Scalar v) override;
-  //@}
+  ///@}
 
 protected:
   vtkCPExodusIINodalCoordinatesTemplate();
@@ -123,6 +117,7 @@ private:
   double* TempDoubleArray;
 };
 
+VTK_ABI_NAMESPACE_END
 #include "vtkCPExodusIINodalCoordinatesTemplate.txx"
 
 #endif // vtkCPExodusIINodalCoordinatesTemplate_h

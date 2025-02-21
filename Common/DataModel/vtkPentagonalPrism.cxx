@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPentagonalPrism.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 //.SECTION Thanks
 // Thanks to Philippe Guerville who developed this class. <br>
 // Thanks to Charles Pignerol (CEA-DAM, France) who ported this class under
@@ -28,6 +16,7 @@
 
 #include "vtkPentagonalPrism.h"
 
+#include "vtkDoubleArray.h"
 #include "vtkLine.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
@@ -36,16 +25,16 @@
 #include "vtkQuad.h"
 #include "vtkTriangle.h"
 
+#include <algorithm> //std::copy
 #include <cassert>
-#ifndef VTK_LEGACY_REMOVE // needed temporarily in deprecated methods
 #include <vector>
-#endif
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPentagonalPrism);
 
 static const double VTK_DIVERGED = 1.e6;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the prism with ten points.
 vtkPentagonalPrism::vtkPentagonalPrism()
 {
@@ -73,7 +62,7 @@ vtkPentagonalPrism::vtkPentagonalPrism()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPentagonalPrism::~vtkPentagonalPrism()
 {
   this->Line->Delete();
@@ -89,7 +78,7 @@ vtkPentagonalPrism::~vtkPentagonalPrism()
 static const int VTK_PENTA_MAX_ITERATION = 10;
 static const double VTK_PENTA_CONVERGED = 1.e-03;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPentagonalPrism::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& dist2, double weights[])
 {
@@ -97,8 +86,18 @@ int vtkPentagonalPrism::EvaluatePosition(const double x[3], double closestPoint[
   double params[3];
   double fcol[3], rcol[3], scol[3], tcol[3];
   int i, j;
-  double d, pt[3];
+  double d;
+  const double* pt;
   double derivs[30];
+
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
 
   // set initial position for Newton's method
   subId = 0;
@@ -108,8 +107,8 @@ int vtkPentagonalPrism::EvaluatePosition(const double x[3], double closestPoint[
   for (iteration = converged = 0; !converged && (iteration < VTK_PENTA_MAX_ITERATION); iteration++)
   {
     //  calculate element interpolation functions and derivatives
-    this->InterpolationFunctions(pcoords, weights);
-    this->InterpolationDerivs(pcoords, derivs);
+    vtkPentagonalPrism::InterpolationFunctions(pcoords, weights);
+    vtkPentagonalPrism::InterpolationDerivs(pcoords, derivs);
 
     //  calculate newton functions
     for (i = 0; i < 3; i++)
@@ -118,7 +117,7 @@ int vtkPentagonalPrism::EvaluatePosition(const double x[3], double closestPoint[
     }
     for (i = 0; i < 10; i++)
     {
-      this->Points->GetPoint(i, pt);
+      pt = pts + 3 * i;
       for (j = 0; j < 3; j++)
       {
         fcol[j] += pt[j] * weights[i];
@@ -176,7 +175,7 @@ int vtkPentagonalPrism::EvaluatePosition(const double x[3], double closestPoint[
     return -1;
   }
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkPentagonalPrism::InterpolationFunctions(pcoords, weights);
 
   if (pcoords[0] >= -0.001 && pcoords[0] <= 1.001 && pcoords[1] >= -0.001 && pcoords[1] <= 1.001 &&
     pcoords[2] >= -0.001 && pcoords[2] <= 1.001)
@@ -217,7 +216,7 @@ int vtkPentagonalPrism::EvaluatePosition(const double x[3], double closestPoint[
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Compute iso-parametric interpolation functions
 // See:
@@ -254,7 +253,7 @@ void vtkPentagonalPrism::InterpolationFunctions(const double pcoords[3], double 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Compute iso-parametric interpolation derivatives
 // See:
@@ -388,19 +387,28 @@ void vtkPentagonalPrism::InterpolationDerivs(const double pcoords[3], double der
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPentagonalPrism::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
   int i, j;
-  double pt[3];
+  const double* pt;
 
   this->InterpolationFunctions(pcoords, weights);
+
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
 
   x[0] = x[1] = x[2] = 0.0;
   for (i = 0; i < 10; i++)
   {
-    this->Points->GetPoint(i, pt);
+    pt = pts + 3 * i;
     for (j = 0; j < 3; j++)
     {
       x[j] += pt[j] * weights[i];
@@ -425,7 +433,7 @@ namespace
 //       \/____\/
 //       0      1
 
-static constexpr vtkIdType edges[vtkPentagonalPrism::NumberOfEdges][2] = {
+constexpr vtkIdType edges[vtkPentagonalPrism::NumberOfEdges][2] = {
   { 0, 1 }, // 0
   { 1, 2 }, // 1
   { 2, 3 }, // 2
@@ -443,18 +451,18 @@ static constexpr vtkIdType edges[vtkPentagonalPrism::NumberOfEdges][2] = {
   { 4, 9 }, // 14
 };
 
-static constexpr vtkIdType
-  faces[vtkPentagonalPrism::NumberOfFaces][vtkPentagonalPrism::MaximumFaceSize + 1] = {
-    { 0, 4, 3, 2, 1, -1 },  // 0
-    { 5, 6, 7, 8, 9, -1 },  // 1
-    { 0, 1, 6, 5, -1, -1 }, // 2
-    { 1, 2, 7, 6, -1, -1 }, // 3
-    { 2, 3, 8, 7, -1, -1 }, // 4
-    { 3, 4, 9, 8, -1, -1 }, // 5
-    { 4, 0, 5, 9, -1, -1 }, // 6
-  };
+constexpr vtkIdType faces[vtkPentagonalPrism::NumberOfFaces]
+                         [vtkPentagonalPrism::MaximumFaceSize + 1] = {
+                           { 0, 4, 3, 2, 1, -1 },  // 0
+                           { 5, 6, 7, 8, 9, -1 },  // 1
+                           { 0, 1, 6, 5, -1, -1 }, // 2
+                           { 1, 2, 7, 6, -1, -1 }, // 3
+                           { 2, 3, 8, 7, -1, -1 }, // 4
+                           { 3, 4, 9, 8, -1, -1 }, // 5
+                           { 4, 0, 5, 9, -1, -1 }, // 6
+                         };
 
-static constexpr vtkIdType edgeToAdjacentFaces[vtkPentagonalPrism::NumberOfEdges][2] = {
+constexpr vtkIdType edgeToAdjacentFaces[vtkPentagonalPrism::NumberOfEdges][2] = {
   { 0, 2 }, // 0
   { 0, 3 }, // 1
   { 0, 4 }, // 2
@@ -472,60 +480,60 @@ static constexpr vtkIdType edgeToAdjacentFaces[vtkPentagonalPrism::NumberOfEdges
   { 5, 6 }, // 14
 };
 
-static constexpr vtkIdType
-  faceToAdjacentFaces[vtkPentagonalPrism::NumberOfFaces][vtkPentagonalPrism::MaximumFaceSize] = {
-    { 6, 5, 4, 3, 2 },  // 0
-    { 2, 3, 4, 5, 6 },  // 1
-    { 0, 3, 1, 6, -1 }, // 2
-    { 0, 4, 1, 2, -1 }, // 3
-    { 0, 5, 1, 3, -1 }, // 4
-    { 0, 6, 1, 4, -1 }, // 5
-    { 0, 2, 1, 5, -1 }, // 6
-  };
+constexpr vtkIdType faceToAdjacentFaces[vtkPentagonalPrism::NumberOfFaces]
+                                       [vtkPentagonalPrism::MaximumFaceSize] = {
+                                         { 6, 5, 4, 3, 2 },  // 0
+                                         { 2, 3, 4, 5, 6 },  // 1
+                                         { 0, 3, 1, 6, -1 }, // 2
+                                         { 0, 4, 1, 2, -1 }, // 3
+                                         { 0, 5, 1, 3, -1 }, // 4
+                                         { 0, 6, 1, 4, -1 }, // 5
+                                         { 0, 2, 1, 5, -1 }, // 6
+                                       };
 
-static constexpr vtkIdType
-  pointToIncidentEdges[vtkPentagonalPrism::NumberOfPoints][vtkPentagonalPrism::MaximumValence] = {
-    { 0, 10, 4 }, // 0
-    { 0, 1, 11 }, // 1
-    { 1, 2, 12 }, // 2
-    { 2, 3, 13 }, // 3
-    { 3, 4, 14 }, // 4
-    { 5, 9, 10 }, // 5
-    { 5, 11, 6 }, // 6
-    { 6, 12, 7 }, // 7
-    { 7, 13, 8 }, // 8
-    { 8, 14, 9 }, // 9
-  };
+constexpr vtkIdType pointToIncidentEdges[vtkPentagonalPrism::NumberOfPoints]
+                                        [vtkPentagonalPrism::MaximumValence] = {
+                                          { 0, 10, 4 }, // 0
+                                          { 0, 1, 11 }, // 1
+                                          { 1, 2, 12 }, // 2
+                                          { 2, 3, 13 }, // 3
+                                          { 3, 4, 14 }, // 4
+                                          { 5, 9, 10 }, // 5
+                                          { 5, 11, 6 }, // 6
+                                          { 6, 12, 7 }, // 7
+                                          { 7, 13, 8 }, // 8
+                                          { 8, 14, 9 }, // 9
+                                        };
 
-static constexpr vtkIdType
-  pointToIncidentFaces[vtkPentagonalPrism::NumberOfPoints][vtkPentagonalPrism::MaximumValence] = {
-    { 2, 6, 0 }, // 0
-    { 0, 3, 2 }, // 1
-    { 0, 4, 3 }, // 2
-    { 0, 5, 4 }, // 3
-    { 0, 6, 5 }, // 4
-    { 1, 6, 2 }, // 5
-    { 2, 3, 1 }, // 6
-    { 3, 4, 1 }, // 7
-    { 4, 5, 1 }, // 8
-    { 5, 6, 1 }, // 9
-  };
+constexpr vtkIdType pointToIncidentFaces[vtkPentagonalPrism::NumberOfPoints]
+                                        [vtkPentagonalPrism::MaximumValence] = {
+                                          { 2, 6, 0 }, // 0
+                                          { 0, 3, 2 }, // 1
+                                          { 0, 4, 3 }, // 2
+                                          { 0, 5, 4 }, // 3
+                                          { 0, 6, 5 }, // 4
+                                          { 1, 6, 2 }, // 5
+                                          { 2, 3, 1 }, // 6
+                                          { 3, 4, 1 }, // 7
+                                          { 4, 5, 1 }, // 8
+                                          { 5, 6, 1 }, // 9
+                                        };
 
-static constexpr vtkIdType
-  pointToOneRingPoints[vtkPentagonalPrism::NumberOfPoints][vtkPentagonalPrism::MaximumValence] = {
-    { 1, 5, 4 }, // 0
-    { 0, 2, 6 }, // 1
-    { 1, 3, 7 }, // 2
-    { 2, 4, 8 }, // 3
-    { 3, 0, 9 }, // 4
-    { 6, 9, 0 }, // 5
-    { 5, 1, 7 }, // 6
-    { 6, 2, 8 }, // 7
-    { 7, 3, 9 }, // 8
-    { 8, 4, 5 }, // 9
-  };
+constexpr vtkIdType pointToOneRingPoints[vtkPentagonalPrism::NumberOfPoints]
+                                        [vtkPentagonalPrism::MaximumValence] = {
+                                          { 1, 5, 4 }, // 0
+                                          { 0, 2, 6 }, // 1
+                                          { 1, 3, 7 }, // 2
+                                          { 2, 4, 8 }, // 3
+                                          { 3, 0, 9 }, // 4
+                                          { 6, 9, 0 }, // 5
+                                          { 5, 1, 7 }, // 6
+                                          { 6, 2, 8 }, // 7
+                                          { 7, 3, 9 }, // 8
+                                          { 8, 4, 5 }, // 9
+                                        };
 
-static constexpr vtkIdType numberOfPointsInFace[vtkPentagonalPrism::NumberOfFaces] = {
+constexpr vtkIdType numberOfPointsInFace[vtkPentagonalPrism::NumberOfFaces] = {
   5, // 0
   5, // 1
   4, // 2
@@ -537,13 +545,13 @@ static constexpr vtkIdType numberOfPointsInFace[vtkPentagonalPrism::NumberOfFace
 
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPentagonalPrism::GetCentroid(double centroid[3]) const
 {
   return vtkPentagonalPrism::ComputeCentroid(this->Points, nullptr, centroid);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPentagonalPrism::ComputeCentroid(
   vtkPoints* points, const vtkIdType* pointIds, double centroid[3])
 {
@@ -574,7 +582,7 @@ bool vtkPentagonalPrism::ComputeCentroid(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPentagonalPrism::IsInsideOut()
 {
   double n0[3], n1[3];
@@ -583,7 +591,7 @@ bool vtkPentagonalPrism::IsInsideOut()
   return vtkMath::Dot(n0, n1) > 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Returns the closest face to the point specified. Closeness is measured
 // parametrically.
 int vtkPentagonalPrism::CellBoundary(int subId, const double pcoords[3], vtkIdList* pts)
@@ -698,49 +706,49 @@ int vtkPentagonalPrism::CellBoundary(int subId, const double pcoords[3], vtkIdLi
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkPentagonalPrism::GetEdgeToAdjacentFacesArray(vtkIdType edgeId)
 {
   assert(edgeId < vtkPentagonalPrism::NumberOfEdges && "edgeId too large");
   return edgeToAdjacentFaces[edgeId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkPentagonalPrism::GetFaceToAdjacentFacesArray(vtkIdType faceId)
 {
   assert(faceId < vtkPentagonalPrism::NumberOfFaces && "faceId too large");
   return faceToAdjacentFaces[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkPentagonalPrism::GetPointToIncidentEdgesArray(vtkIdType pointId)
 {
   assert(pointId < vtkPentagonalPrism::NumberOfPoints && "pointId too large");
   return pointToIncidentEdges[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkPentagonalPrism::GetPointToIncidentFacesArray(vtkIdType pointId)
 {
   assert(pointId < vtkPentagonalPrism::NumberOfPoints && "pointId too large");
   return pointToIncidentFaces[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkPentagonalPrism::GetPointToOneRingPointsArray(vtkIdType pointId)
 {
   assert(pointId < vtkPentagonalPrism::NumberOfPoints && "pointId too large");
   return pointToOneRingPoints[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkPentagonalPrism::GetEdgeArray(vtkIdType edgeId)
 {
   assert(edgeId < vtkPentagonalPrism::NumberOfEdges && "edgeId too large");
   return edges[edgeId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkPentagonalPrism::GetEdge(int edgeId)
 {
   const vtkIdType* verts;
@@ -758,14 +766,14 @@ vtkCell* vtkPentagonalPrism::GetEdge(int edgeId)
   return this->Line;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkPentagonalPrism::GetFaceArray(vtkIdType faceId)
 {
   assert(faceId < vtkPentagonalPrism::NumberOfFaces && "faceId too large");
   return faces[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkPentagonalPrism::GetFace(int faceId)
 {
   const vtkIdType* verts;
@@ -807,7 +815,7 @@ vtkCell* vtkPentagonalPrism::GetFace(int faceId)
     return this->Quad;
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Intersect prism faces against line. Each prism face is a quadrilateral.
 //
@@ -898,21 +906,21 @@ int vtkPentagonalPrism::IntersectWithLine(const double p1[3], const double p2[3]
   return intersection;
 }
 
-//----------------------------------------------------------------------------
-int vtkPentagonalPrism::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkPentagonalPrism::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  ptIds->Reset();
-  pts->Reset();
-
-  for (int i = 0; i < 4; i++)
-  {
-    ptIds->InsertId(i, this->PointIds->GetId(i));
-    pts->InsertPoint(i, this->Points->GetPoint(i));
-  }
-
+  // Create 8 tetrahedron. This might not be the minimum, but it is a simple solution.
+  // The Pentagonal Prism is divided in one hexa and one wedge.
+  // The first five tetra are for the hexahedron
+  // The last three tetra are for the wedge
+  ptIds->SetNumberOfIds(32);
+  constexpr vtkIdType localPtIds[8][4] = { { 0, 1, 3, 5 }, { 1, 5, 6, 7 }, { 1, 5, 7, 3 },
+    { 1, 3, 7, 2 }, { 3, 7, 8, 5 }, { 0, 4, 5, 3 }, { 3, 5, 8, 9 }, { 3, 4, 5, 9 } };
+  std::copy(&localPtIds[0][0], &localPtIds[0][0] + 32, ptIds->begin());
   return 1;
 }
-//----------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 //
 // Compute derivatives in x-y-z directions. Use chain rule in combination
 // with interpolation function derivatives.
@@ -946,12 +954,12 @@ void vtkPentagonalPrism::Derivatives(
     }
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given parametric coordinates compute inverse Jacobian transformation
 // matrix. Returns 9 elements of 3x3 inverse Jacobian plus interpolation
 // function derivatives.
 void vtkPentagonalPrism::JacobianInverse(
-  const double pcoords[3], double** inverse, double derivs[24])
+  const double pcoords[3], double** inverse, double derivs[30])
 {
   int i, j;
   double *m[3], m0[3], m1[3], m2[3];
@@ -988,7 +996,7 @@ void vtkPentagonalPrism::JacobianInverse(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPentagonalPrism::GetPointToOneRingPoints(vtkIdType pointId, const vtkIdType*& pts)
 {
   assert(pointId < vtkPentagonalPrism::NumberOfPoints && "pointId too large");
@@ -996,7 +1004,7 @@ vtkIdType vtkPentagonalPrism::GetPointToOneRingPoints(vtkIdType pointId, const v
   return vtkPentagonalPrism::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPentagonalPrism::GetPointToIncidentFaces(vtkIdType pointId, const vtkIdType*& faceIds)
 {
   assert(pointId < vtkPentagonalPrism::NumberOfPoints && "pointId too large");
@@ -1004,7 +1012,7 @@ vtkIdType vtkPentagonalPrism::GetPointToIncidentFaces(vtkIdType pointId, const v
   return vtkPentagonalPrism::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPentagonalPrism::GetPointToIncidentEdges(vtkIdType pointId, const vtkIdType*& edgeIds)
 {
   assert(pointId < vtkPentagonalPrism::NumberOfPoints && "pointId too large");
@@ -1012,7 +1020,7 @@ vtkIdType vtkPentagonalPrism::GetPointToIncidentEdges(vtkIdType pointId, const v
   return vtkPentagonalPrism::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPentagonalPrism::GetFaceToAdjacentFaces(vtkIdType faceId, const vtkIdType*& faceIds)
 {
   assert(faceId < vtkPentagonalPrism::NumberOfFaces && "faceId too large");
@@ -1020,41 +1028,21 @@ vtkIdType vtkPentagonalPrism::GetFaceToAdjacentFaces(vtkIdType faceId, const vtk
   return numberOfPointsInFace[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPentagonalPrism::GetEdgeToAdjacentFaces(vtkIdType edgeId, const vtkIdType*& pts)
 {
   assert(edgeId < vtkPentagonalPrism::NumberOfEdges && "edgeId too large");
   pts = edgeToAdjacentFaces[edgeId];
 }
 
-#ifndef VTK_LEGACY_REMOVE
-//----------------------------------------------------------------------------
-void vtkPentagonalPrism::GetEdgePoints(int edgeId, int*& pts)
-{
-  VTK_LEGACY_REPLACED_BODY(vtkPentagonalPrism::GetEdgePoints(int, int*&), "VTK 9.0",
-    vtkPentagonalPrism::GetEdgePoints(vtkIdType, const vtkIdType*&));
-  static std::vector<int> tmp(std::begin(faces[edgeId]), std::end(faces[edgeId]));
-  pts = tmp.data();
-}
-
-//----------------------------------------------------------------------------
-void vtkPentagonalPrism::GetFacePoints(int faceId, int*& pts)
-{
-  VTK_LEGACY_REPLACED_BODY(vtkPentagonalPrism::GetFacePoints(int, int*&), "VTK 9.0",
-    vtkPentagonalPrism::GetFacePoints(vtkIdType, const vtkIdType*&));
-  static std::vector<int> tmp(std::begin(faces[faceId]), std::end(faces[faceId]));
-  pts = tmp.data();
-}
-#endif
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPentagonalPrism::GetEdgePoints(vtkIdType edgeId, const vtkIdType*& pts)
 {
   assert(edgeId < vtkPentagonalPrism::NumberOfEdges && "edgeId too large");
   pts = this->GetEdgeArray(edgeId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPentagonalPrism::GetFacePoints(vtkIdType faceId, const vtkIdType*& pts)
 {
   assert(faceId < vtkPentagonalPrism::NumberOfFaces && "faceId too large");
@@ -1078,13 +1066,13 @@ static double vtkPentagonalPrismCellPCoords[30] = {
   1, 0.5, 1               //
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkPentagonalPrism::GetParametricCoords()
 {
   return vtkPentagonalPrismCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPentagonalPrism::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1096,3 +1084,4 @@ void vtkPentagonalPrism::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Polygon:\n";
   this->Polygon->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

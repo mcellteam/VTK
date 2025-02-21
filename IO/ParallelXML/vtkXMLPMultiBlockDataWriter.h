@@ -1,21 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPMultiBlockDataWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLPMultiBlockDataWriter
- * @brief   parallel writer for
- * vtkHierarchicalBoxDataSet.
+ * @brief   parallel writer for vtkMultiBlockDataSet.
  *
  * vtkXMLPCompositeDataWriter writes (in parallel or serially) the VTK XML
  * multi-group, multi-block hierarchical and hierarchical box files. XML
@@ -29,6 +16,7 @@
 #include "vtkIOParallelXMLModule.h" // For export macro
 #include "vtkXMLMultiBlockDataWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCompositeDataSet;
 class vtkMultiProcessController;
 
@@ -39,23 +27,23 @@ public:
   vtkTypeMacro(vtkXMLPMultiBlockDataWriter, vtkXMLMultiBlockDataWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of pieces that are being written in parallel.
    */
   vtkSetMacro(NumberOfPieces, int);
   vtkGetMacro(NumberOfPieces, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the range of pieces assigned to this writer.
    */
   vtkSetMacro(StartPiece, int);
   vtkGetMacro(StartPiece, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Controller used to communicate data type of blocks.
    * By default, the global controller is used. If you want another
@@ -65,7 +53,7 @@ public:
    */
   virtual void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
   /**
    * Set whether this instance will write the meta-file. WriteMetaFile
@@ -127,19 +115,25 @@ protected:
    */
   virtual vtkStdString CreatePieceFileName(int currentFileIndex, int procId, int dataSetType);
 
+  /** Make a directory.
+   *
+   * Overridden to create the directory only on rank 0.
+   */
+  void MakeDirectory(const char* name) override;
+
   /**
    * Utility function to remove any already written files
    * in case writer failed.
    */
   void RemoveWrittenFiles(const char* subDirectory) override;
 
-  //@{
+  ///@{
   /**
    * Piece information.
    */
   int StartPiece;
   int NumberOfPieces;
-  //@}
+  ///@}
 
 private:
   vtkXMLPMultiBlockDataWriter(const vtkXMLPMultiBlockDataWriter&) = delete;
@@ -149,4 +143,5 @@ private:
   vtkInternal* XMLPMultiBlockDataWriterInternal;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

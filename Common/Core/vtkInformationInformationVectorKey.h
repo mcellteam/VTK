@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationInformationVectorKey.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInformationInformationVectorKey
  * @brief   Key for vtkInformation vectors.
@@ -28,6 +16,7 @@
 
 #include "vtkCommonInformationKeyManager.h" // Manage instances of this type.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformationVector;
 
 class VTKCOMMONCORE_EXPORT vtkInformationInformationVectorKey : public vtkInformationKey
@@ -39,14 +28,14 @@ public:
   vtkInformationInformationVectorKey(const char* name, const char* location);
   ~vtkInformationInformationVectorKey() override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the value associated with this key in the given
    * information object.
    */
   void Set(vtkInformation* info, vtkInformationVector*);
   vtkInformationVector* Get(vtkInformation* info);
-  //@}
+  ///@}
 
   /**
    * Copy the entry associated with this key from one information
@@ -72,4 +61,5 @@ private:
   void operator=(const vtkInformationInformationVectorKey&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

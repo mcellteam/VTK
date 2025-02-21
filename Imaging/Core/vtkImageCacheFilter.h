@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageCacheFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageCacheFilter
  * @brief   Caches multiple vtkImageData objects.
@@ -29,6 +17,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkExecutive;
 
 class VTKIMAGINGCORE_EXPORT vtkImageCacheFilter : public vtkImageAlgorithm
@@ -38,14 +27,14 @@ public:
   vtkTypeMacro(vtkImageCacheFilter, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * This is the maximum number of images that can be retained in memory.
    * it defaults to 10.
    */
   void SetCacheSize(int size);
   int GetCacheSize();
-  //@}
+  ///@}
 
 protected:
   vtkImageCacheFilter();
@@ -60,4 +49,5 @@ private:
   void operator=(const vtkImageCacheFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageIdealLowPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageIdealLowPass.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
@@ -21,15 +9,16 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageIdealLowPass);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageIdealLowPass::vtkImageIdealLowPass()
 {
   this->CutOff[0] = this->CutOff[1] = this->CutOff[2] = VTK_DOUBLE_MAX;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageIdealLowPass::SetXCutOff(double cutOff)
 {
   if (cutOff == this->CutOff[0])
@@ -39,7 +28,7 @@ void vtkImageIdealLowPass::SetXCutOff(double cutOff)
   this->CutOff[0] = cutOff;
   this->Modified();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageIdealLowPass::SetYCutOff(double cutOff)
 {
   if (cutOff == this->CutOff[1])
@@ -49,7 +38,7 @@ void vtkImageIdealLowPass::SetYCutOff(double cutOff)
   this->CutOff[1] = cutOff;
   this->Modified();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageIdealLowPass::SetZCutOff(double cutOff)
 {
   if (cutOff == this->CutOff[2])
@@ -60,7 +49,7 @@ void vtkImageIdealLowPass::SetZCutOff(double cutOff)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageIdealLowPass::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector),
   vtkImageData*** inData, vtkImageData** outData, int ext[6], int id)
@@ -215,3 +204,4 @@ void vtkImageIdealLowPass::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "CutOff: ( " << this->CutOff[0] << ", " << this->CutOff[1] << ", "
      << this->CutOff[2] << " )\n";
 }
+VTK_ABI_NAMESPACE_END

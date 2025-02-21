@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkResliceCursorThickLineRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkResliceCursorThickLineRepresentation.h"
 #include "vtkImageData.h"
 #include "vtkImageMapToColors.h"
@@ -19,23 +7,25 @@
 #include "vtkImageSlabReslice.h"
 #include "vtkObjectFactory.h"
 #include "vtkResliceCursor.h"
+#include "vtkResliceCursorPolyDataAlgorithm.h"
 #include <algorithm>
 #include <cmath>
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkResliceCursorThickLineRepresentation);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkResliceCursorThickLineRepresentation::vtkResliceCursorThickLineRepresentation()
 {
   this->CreateDefaultResliceAlgorithm();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkResliceCursorThickLineRepresentation::~vtkResliceCursorThickLineRepresentation() = default;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorThickLineRepresentation::CreateDefaultResliceAlgorithm()
 {
   if (this->Reslice)
@@ -47,7 +37,7 @@ void vtkResliceCursorThickLineRepresentation::CreateDefaultResliceAlgorithm()
   this->Reslice = vtkImageSlabReslice::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorThickLineRepresentation ::SetResliceParameters(
   double outputSpacingX, double outputSpacingY, int extentX, int extentY)
 {
@@ -71,7 +61,9 @@ void vtkResliceCursorThickLineRepresentation ::SetResliceParameters(
     thickReslice->SetOutputExtent(0, extentX - 1, 0, extentY - 1, 0, 0);
 
     vtkResliceCursor* rc = this->GetResliceCursor();
-    thickReslice->SetSlabThickness(rc->GetThickness()[0]);
+    int axis = this->GetCursorAlgorithm()->GetReslicePlaneNormal();
+    thickReslice->SetSlabThickness(rc->GetThickness()[axis]);
+
     double spacing[3];
     rc->GetImage()->GetSpacing(spacing);
 
@@ -83,9 +75,10 @@ void vtkResliceCursorThickLineRepresentation ::SetResliceParameters(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorThickLineRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

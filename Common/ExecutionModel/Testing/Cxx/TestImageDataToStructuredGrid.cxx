@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestImageDataToStructuredGridFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCell.h"
 #include "vtkCellData.h"
 #include "vtkDataArray.h"
@@ -54,11 +42,7 @@ bool FloatNumberEquals(double a, double b, double TOL)
   double adiff = std::abs(a - b);
   double d1 = SafeDivision(adiff, std::abs(a));
   double d2 = SafeDivision(adiff, std::abs(b));
-  if ((d1 <= TOL) || (d2 <= TOL))
-  {
-    return true;
-  }
-  return false;
+  return d1 <= TOL || d2 <= TOL;
 }
 
 // Description:

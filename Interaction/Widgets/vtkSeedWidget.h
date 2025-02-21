@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSeedWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSeedWidget
  * @brief   place multiple seed points
@@ -72,13 +60,15 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHandleRepresentation;
 class vtkHandleWidget;
 class vtkSeedList;
 class vtkSeedRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkSeedWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkSeedWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -86,13 +76,13 @@ public:
    */
   static vtkSeedWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for a VTK class.
    */
   vtkTypeMacro(vtkSeedWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * The method for activating and deactivating this widget. This method
@@ -178,12 +168,12 @@ public:
    */
   vtkHandleWidget* GetSeed(int n);
 
-  //@{
+  ///@{
   /**
    * Get the widget state.
    */
   vtkGetMacro(WidgetState, int);
-  //@}
+  ///@}
 
   // The state of the widget
 
@@ -220,4 +210,5 @@ private:
   void operator=(const vtkSeedWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkMeanValueCoordinatesInterpolator.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMeanValueCoordinatesInterpolator
  * @brief   compute interpolation computes
@@ -45,6 +33,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 class vtkIdList;
 class vtkCellArray;
@@ -57,14 +46,14 @@ class vtkMVCPolyIterator;
 class VTKCOMMONDATAMODEL_EXPORT vtkMeanValueCoordinatesInterpolator : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard instantiable class methods.
    */
   static vtkMeanValueCoordinatesInterpolator* New();
   vtkTypeMacro(vtkMeanValueCoordinatesInterpolator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Method to generate interpolation weights for a point x[3] from a list of
@@ -107,4 +96,5 @@ private:
   void operator=(const vtkMeanValueCoordinatesInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

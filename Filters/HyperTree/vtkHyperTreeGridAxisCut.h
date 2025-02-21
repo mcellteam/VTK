@@ -1,24 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridAxisCut.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridAxisCut
  * @brief   Axis aligned hyper tree grid cut
  *
- *
  * Cut an hyper tree grid along an axis aligned plane and output a hyper
- * tree grid lower dimensionality. Only works for 3D grids as inputs
+ * tree grid lower dimensionality. Only works for 3D HTGs as input.
+ *
+ * @note This filter uses fuzzy comparison to test if a plane cuts the
+ * HTG (used epsilon is DBL_EPSILON). It prevents having no cut generated
+ * inside the HTG (when the is being coincident to cell faces) or bugs
+ * related to floating point comparison.
  *
  * NB: This new (2014-16) version of the class is not to be confused with
  * earlier (2012-13) version that produced a vtkPolyData output composed of
@@ -42,6 +34,7 @@
 #include "vtkFiltersHyperTreeModule.h" // For export macro
 #include "vtkHyperTreeGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 class vtkHyperTreeGrid;
 class vtkHyperTreeGridNonOrientedCursor;
@@ -52,23 +45,23 @@ class VTKFILTERSHYPERTREE_EXPORT vtkHyperTreeGridAxisCut : public vtkHyperTreeGr
 public:
   static vtkHyperTreeGridAxisCut* New();
   vtkTypeMacro(vtkHyperTreeGridAxisCut, vtkHyperTreeGridAlgorithm);
-  void PrintSelf(ostream&, vtkIndent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Normal axis: 0=X, 1=Y, 2=Z. Default is 0
    */
   vtkSetClampMacro(PlaneNormalAxis, int, 0, 2);
   vtkGetMacro(PlaneNormalAxis, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Position of plane: Axis constant. Default is 0.0
    */
   vtkSetMacro(PlanePosition, double);
   vtkGetMacro(PlanePosition, double);
-  //@}
+  ///@}
 
 protected:
   vtkHyperTreeGridAxisCut();
@@ -115,4 +108,5 @@ private:
   void operator=(const vtkHyperTreeGridAxisCut&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkHyperTreeGridAxisCut_h

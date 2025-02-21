@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAMRBox.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAMRBox
  * @brief   Encloses a rectangular region of voxel like cells.
@@ -30,6 +18,7 @@
 #include "vtkObject.h"
 #include "vtkStructuredData.h" // For VTK_XYZ_GRID definition
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONDATAMODEL_EXPORT vtkAMRBox
 {
 public:
@@ -67,9 +56,9 @@ public:
    */
   vtkAMRBox& operator=(const vtkAMRBox& other);
 
-  virtual ~vtkAMRBox() {}
+  virtual ~vtkAMRBox() = default;
 
-  //@{
+  ///@{
   /**
    * Set the box to be invalid;
    */
@@ -78,7 +67,7 @@ public:
     this->LoCorner[0] = this->LoCorner[1] = this->LoCorner[2] = 0;
     this->HiCorner[0] = this->HiCorner[1] = this->HiCorner[2] = -2;
   }
-  //@}
+  ///@}
 
   /**
    * Whether dimension i is empty, e.g. if the data set is type VTK_XY_PLANE
@@ -110,22 +99,22 @@ public:
    */
   void GetDimensions(int dims[6]) const;
 
-  //@{
+  ///@{
   /**
    * Gets the number of cells enclosed by the box.
    */
   vtkIdType GetNumberOfCells() const;
   void GetNumberOfCells(int num[3]) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Gets the number of nodes required to construct
    * a physical representation of the box.
    */
   void GetNumberOfNodes(int ext[3]) const;
   vtkIdType GetNumberOfNodes() const;
-  //@}
+  ///@}
 
   /**
    * Determines the dimension of the AMR box given the
@@ -177,7 +166,7 @@ public:
    */
   ostream& Print(ostream& os) const;
 
-  //@{
+  ///@{
   /**
    * Serializes this object instance into a byte-stream.
    * buffer   -- user-supplied pointer where the serialized object is stored.
@@ -191,7 +180,7 @@ public:
    */
   void Serialize(unsigned char*& buffer, vtkIdType& bytesize);
   void Serialize(int* buffer) const;
-  //@}
+  ///@}
 
   /**
    * Deserializes this object instance from the given byte-stream.
@@ -207,7 +196,7 @@ public:
    * intersects successfully. Otherwise, there is no intersection along the
    * given dimension and false is returned.
    */
-  bool DoesBoxIntersectAlongDimension(const vtkAMRBox& other, const int q) const;
+  bool DoesBoxIntersectAlongDimension(const vtkAMRBox& other, int q) const;
 
   bool DoesIntersect(const vtkAMRBox& other) const;
 
@@ -221,21 +210,21 @@ public:
    */
   void Refine(int r);
 
-  //@{
+  ///@{
   /**
    * Grows the box in all directions.
    */
   void Grow(int byN);
   void Shrink(int byN);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Shifts the box in index space
    */
   void Shift(int i, int j, int k);
   void Shift(const int I[3]);
-  //@}
+  ///@}
 
   /**
    * Intersect this box with another box in place.  Returns
@@ -244,13 +233,13 @@ public:
    */
   bool Intersect(const vtkAMRBox& other);
 
-  //@{
+  ///@{
   /**
    * Test to see if a given cell index is inside this box.
    */
   bool Contains(int i, int j, int k) const;
   bool Contains(const int I[3]) const;
-  //@}
+  ///@}
 
   /**
    * Test to see if a given box is inside this box.
@@ -270,7 +259,6 @@ public:
    */
   void RemoveGhosts(int r);
 
-public:
   /**
    * Returns the number of bytes allocated by this instance. In addition,
    * this number of bytes corresponds to the buffer size required to serialize
@@ -281,8 +269,7 @@ public:
   /**
    * Returns the linear index of the given cell structured coordinates
    */
-  static int GetCellLinearIndex(
-    const vtkAMRBox& box, const int i, const int j, const int k, int imageDimension[3]);
+  static int GetCellLinearIndex(const vtkAMRBox& box, int i, int j, int k, int imageDimension[3]);
 
   /**
    * Get the bounds of this box.
@@ -322,25 +309,24 @@ protected:
    * successfully. Otherwise, false is returned if there is no intersection at
    * the given dimension.
    */
-  bool IntersectBoxAlongDimension(const vtkAMRBox& other, const int q);
+  bool IntersectBoxAlongDimension(const vtkAMRBox& other, int q);
 
 private:
   int LoCorner[3]; // lo corner cell id.
   int HiCorner[3]; // hi corner cell id.
 
-  //@{
+  ///@{
   /**
    * This method builds the AMR box with the given dimensions.
    * Note: the dimension of the AMR box is automatically detected
    * within this method.
    */
-  void BuildAMRBox(
-    const int ilo, const int jlo, const int klo, const int ihi, const int jhi, const int khi);
-  //@}
+  void BuildAMRBox(int ilo, int jlo, int klo, int ihi, int jhi, int khi);
+  ///@}
 };
 
 //*****************************************************************************
-//@{
+///@{
 /**
  * Fill the region of "pArray" enclosed by "destRegion" with "fillValue"
  * "pArray" is defined on "arrayRegion".
@@ -385,8 +371,9 @@ void FillRegion(T* pArray, const vtkAMRBox& arrayRegion, const vtkAMRBox& destRe
       }
     }
   }
-  //@}
+  ///@}
 }
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkAMRBox.h

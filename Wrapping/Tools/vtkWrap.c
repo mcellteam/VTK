@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWrap.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkWrap.h"
 #include "vtkParseData.h"
@@ -27,7 +15,7 @@
 /* -------------------------------------------------------------------- */
 /* Common types. */
 
-int vtkWrap_IsVoid(ValueInfo* val)
+int vtkWrap_IsVoid(const ValueInfo* val)
 {
   if (val == 0)
   {
@@ -37,7 +25,7 @@ int vtkWrap_IsVoid(ValueInfo* val)
   return ((val->Type & VTK_PARSE_UNQUALIFIED_TYPE) == VTK_PARSE_VOID);
 }
 
-int vtkWrap_IsVoidFunction(ValueInfo* val)
+int vtkWrap_IsVoidFunction(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_UNQUALIFIED_TYPE);
 
@@ -56,51 +44,67 @@ int vtkWrap_IsVoidFunction(ValueInfo* val)
   return 0;
 }
 
-int vtkWrap_IsVoidPointer(ValueInfo* val)
+int vtkWrap_IsVoidPointer(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
   return (t == VTK_PARSE_VOID && vtkWrap_IsPointer(val));
 }
 
-int vtkWrap_IsCharPointer(ValueInfo* val)
+int vtkWrap_IsCharPointer(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
-  return (t == VTK_PARSE_CHAR && vtkWrap_IsPointer(val) && (val->Type & VTK_PARSE_ZEROCOPY) == 0);
+  return (
+    t == VTK_PARSE_CHAR && vtkWrap_IsPointer(val) && (val->Attributes & VTK_PARSE_ZEROCOPY) == 0);
 }
 
-int vtkWrap_IsPODPointer(ValueInfo* val)
+int vtkWrap_IsPODPointer(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
   return (t != VTK_PARSE_CHAR && vtkWrap_IsNumeric(val) && vtkWrap_IsPointer(val) &&
-    (val->Type & VTK_PARSE_ZEROCOPY) == 0);
+    (val->Attributes & VTK_PARSE_ZEROCOPY) == 0);
 }
 
-int vtkWrap_IsZeroCopyPointer(ValueInfo* val)
+int vtkWrap_IsZeroCopyPointer(const ValueInfo* val)
 {
-  return (vtkWrap_IsPointer(val) && (val->Type & VTK_PARSE_ZEROCOPY) != 0);
+  return (vtkWrap_IsPointer(val) && (val->Attributes & VTK_PARSE_ZEROCOPY) != 0);
 }
 
-int vtkWrap_IsStdVector(ValueInfo* val)
+int vtkWrap_IsArrayRef(const ValueInfo* val)
+{
+  return (vtkWrap_IsRef(val) && val->NumberOfDimensions > 0);
+}
+
+int vtkWrap_IsStdVector(const ValueInfo* val)
 {
   return ((val->Type & VTK_PARSE_BASE_TYPE) == VTK_PARSE_UNKNOWN && val->Class &&
     strncmp(val->Class, "std::vector<", 12) == 0);
 }
 
-int vtkWrap_IsVTKObject(ValueInfo* val)
+int vtkWrap_IsVTKObject(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_UNQUALIFIED_TYPE);
-  return (t == VTK_PARSE_OBJECT_PTR && !val->IsEnum && val->Class[0] == 'v' &&
-    strncmp(val->Class, "vtk", 3) == 0);
+  return ((t == VTK_PARSE_UNKNOWN_PTR || t == VTK_PARSE_OBJECT_PTR || t == VTK_PARSE_QOBJECT_PTR) &&
+    !val->IsEnum);
 }
 
-int vtkWrap_IsSpecialObject(ValueInfo* val)
+int vtkWrap_IsVTKSmartPointer(const ValueInfo* val)
 {
-  unsigned int t = (val->Type & VTK_PARSE_UNQUALIFIED_TYPE);
-  return ((t == VTK_PARSE_OBJECT || t == VTK_PARSE_OBJECT_REF) && !val->IsEnum &&
-    val->Class[0] == 'v' && strncmp(val->Class, "vtk", 3) == 0);
+  return ((val->Type & VTK_PARSE_BASE_TYPE) == VTK_PARSE_OBJECT && val->Class &&
+    strncmp(val->Class, "vtkSmartPointer<", 16) == 0);
 }
 
-int vtkWrap_IsPythonObject(ValueInfo* val)
+int vtkWrap_IsSpecialObject(const ValueInfo* val)
+{
+  /* exclude classes in std:: space, they will have separate handlers */
+  unsigned int t = (val->Type & VTK_PARSE_UNQUALIFIED_TYPE);
+  return (
+    (t == VTK_PARSE_UNKNOWN || t == VTK_PARSE_OBJECT || t == VTK_PARSE_QOBJECT ||
+      t == VTK_PARSE_UNKNOWN_REF || t == VTK_PARSE_OBJECT_REF || t == VTK_PARSE_QOBJECT_REF) &&
+    !val->IsEnum && val->Class && strncmp(val->Class, "std::", 5) != 0 &&
+    strncmp(val->Class, "vtkSmartPointer<", 16) != 0);
+}
+
+int vtkWrap_IsPythonObject(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
   return (t == VTK_PARSE_UNKNOWN && strncmp(val->Class, "Py", 2) == 0);
@@ -109,25 +113,25 @@ int vtkWrap_IsPythonObject(ValueInfo* val)
 /* -------------------------------------------------------------------- */
 /* The base types, all are mutually exclusive. */
 
-int vtkWrap_IsObject(ValueInfo* val)
+int vtkWrap_IsObject(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
-  return (t == VTK_PARSE_OBJECT || t == VTK_PARSE_QOBJECT);
+  return (t == VTK_PARSE_UNKNOWN || t == VTK_PARSE_OBJECT || t == VTK_PARSE_QOBJECT);
 }
 
-int vtkWrap_IsFunction(ValueInfo* val)
+int vtkWrap_IsFunction(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
   return (t == VTK_PARSE_FUNCTION);
 }
 
-int vtkWrap_IsStream(ValueInfo* val)
+int vtkWrap_IsStream(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
   return (t == VTK_PARSE_ISTREAM || t == VTK_PARSE_OSTREAM);
 }
 
-int vtkWrap_IsNumeric(ValueInfo* val)
+int vtkWrap_IsNumeric(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
 
@@ -141,7 +145,6 @@ int vtkWrap_IsNumeric(ValueInfo* val)
     case VTK_PARSE_INT:
     case VTK_PARSE_LONG:
     case VTK_PARSE_LONG_LONG:
-    case VTK_PARSE___INT64:
     case VTK_PARSE_SIGNED_CHAR:
     case VTK_PARSE_SSIZE_T:
     case VTK_PARSE_BOOL:
@@ -151,28 +154,28 @@ int vtkWrap_IsNumeric(ValueInfo* val)
   return 0;
 }
 
-int vtkWrap_IsString(ValueInfo* val)
+int vtkWrap_IsString(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
-  return (t == VTK_PARSE_STRING || t == VTK_PARSE_UNICODE_STRING);
+  return (t == VTK_PARSE_STRING);
 }
 
 /* -------------------------------------------------------------------- */
 /* Subcategories */
 
-int vtkWrap_IsBool(ValueInfo* val)
+int vtkWrap_IsBool(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
   return (t == VTK_PARSE_BOOL);
 }
 
-int vtkWrap_IsChar(ValueInfo* val)
+int vtkWrap_IsChar(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
   return (t == VTK_PARSE_CHAR);
 }
 
-int vtkWrap_IsInteger(ValueInfo* val)
+int vtkWrap_IsInteger(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
 
@@ -186,7 +189,6 @@ int vtkWrap_IsInteger(ValueInfo* val)
     case VTK_PARSE_INT:
     case VTK_PARSE_LONG:
     case VTK_PARSE_LONG_LONG:
-    case VTK_PARSE___INT64:
     case VTK_PARSE_UNSIGNED_CHAR:
     case VTK_PARSE_SIGNED_CHAR:
     case VTK_PARSE_SSIZE_T:
@@ -196,7 +198,7 @@ int vtkWrap_IsInteger(ValueInfo* val)
   return 0;
 }
 
-int vtkWrap_IsRealNumber(ValueInfo* val)
+int vtkWrap_IsRealNumber(const ValueInfo* val)
 {
   unsigned int t = (val->Type & VTK_PARSE_BASE_TYPE);
   return (t == VTK_PARSE_FLOAT || t == VTK_PARSE_DOUBLE);
@@ -205,27 +207,27 @@ int vtkWrap_IsRealNumber(ValueInfo* val)
 /* -------------------------------------------------------------------- */
 /* These are mutually exclusive, as well. */
 
-int vtkWrap_IsScalar(ValueInfo* val)
+int vtkWrap_IsScalar(const ValueInfo* val)
 {
   unsigned int i = (val->Type & VTK_PARSE_POINTER_MASK);
   return (i == 0);
 }
 
-int vtkWrap_IsPointer(ValueInfo* val)
+int vtkWrap_IsPointer(const ValueInfo* val)
 {
   unsigned int i = (val->Type & VTK_PARSE_POINTER_MASK);
   return (i == VTK_PARSE_POINTER && val->Count == 0 && val->CountHint == 0 &&
     val->NumberOfDimensions <= 1);
 }
 
-int vtkWrap_IsArray(ValueInfo* val)
+int vtkWrap_IsArray(const ValueInfo* val)
 {
   unsigned int i = (val->Type & VTK_PARSE_POINTER_MASK);
   return (i == VTK_PARSE_POINTER && val->NumberOfDimensions <= 1 &&
     (val->Count != 0 || val->CountHint != 0));
 }
 
-int vtkWrap_IsNArray(ValueInfo* val)
+int vtkWrap_IsNArray(const ValueInfo* val)
 {
   int j = 0;
   unsigned int i = (val->Type & VTK_PARSE_POINTER_MASK);
@@ -246,7 +248,7 @@ int vtkWrap_IsNArray(ValueInfo* val)
 /* -------------------------------------------------------------------- */
 /* Other type properties, not mutually exclusive. */
 
-int vtkWrap_IsNonConstRef(ValueInfo* val)
+int vtkWrap_IsNonConstRef(const ValueInfo* val)
 {
   int isconst = ((val->Type & VTK_PARSE_CONST) != 0);
   unsigned int ptrBits = val->Type & VTK_PARSE_POINTER_MASK;
@@ -263,24 +265,24 @@ int vtkWrap_IsNonConstRef(ValueInfo* val)
   return ((val->Type & VTK_PARSE_REF) != 0 && !isconst);
 }
 
-int vtkWrap_IsConstRef(ValueInfo* val)
+int vtkWrap_IsConstRef(const ValueInfo* val)
 {
   return ((val->Type & VTK_PARSE_REF) != 0 && !vtkWrap_IsNonConstRef(val));
 }
 
-int vtkWrap_IsRef(ValueInfo* val)
+int vtkWrap_IsRef(const ValueInfo* val)
 {
   return ((val->Type & VTK_PARSE_REF) != 0);
 }
 
-int vtkWrap_IsConst(ValueInfo* val)
+int vtkWrap_IsConst(const ValueInfo* val)
 {
   return ((val->Type & VTK_PARSE_CONST) != 0);
 }
 
 /* -------------------------------------------------------------------- */
 /* Check if the arg type is an enum that is a member of the class */
-int vtkWrap_IsEnumMember(ClassInfo* data, ValueInfo* arg)
+int vtkWrap_IsEnumMember(const ClassInfo* data, const ValueInfo* arg)
 {
   int i;
 
@@ -289,7 +291,7 @@ int vtkWrap_IsEnumMember(ClassInfo* data, ValueInfo* arg)
     /* check if the enum is a member of the class */
     for (i = 0; i < data->NumberOfEnums; i++)
     {
-      EnumInfo* info = data->Enums[i];
+      const EnumInfo* info = data->Enums[i];
       if (info->Name && strcmp(arg->Class, info->Name) == 0)
       {
         return 1;
@@ -303,15 +305,15 @@ int vtkWrap_IsEnumMember(ClassInfo* data, ValueInfo* arg)
 /* -------------------------------------------------------------------- */
 /* Hints */
 
-int vtkWrap_IsNewInstance(ValueInfo* val)
+int vtkWrap_IsNewInstance(const ValueInfo* val)
 {
-  return ((val->Type & VTK_PARSE_NEWINSTANCE) != 0);
+  return ((val->Attributes & VTK_PARSE_NEWINSTANCE) != 0);
 }
 
 /* -------------------------------------------------------------------- */
 /* Constructor/Destructor checks */
 
-int vtkWrap_IsConstructor(ClassInfo* c, FunctionInfo* f)
+int vtkWrap_IsConstructor(const ClassInfo* c, const FunctionInfo* f)
 
 {
   size_t i, m;
@@ -340,7 +342,7 @@ int vtkWrap_IsConstructor(ClassInfo* c, FunctionInfo* f)
   return 0;
 }
 
-int vtkWrap_IsDestructor(ClassInfo* c, FunctionInfo* f)
+int vtkWrap_IsDestructor(const ClassInfo* c, const FunctionInfo* f)
 {
   size_t i;
   const char* cp;
@@ -360,7 +362,7 @@ int vtkWrap_IsDestructor(ClassInfo* c, FunctionInfo* f)
   return 0;
 }
 
-int vtkWrap_IsInheritedMethod(ClassInfo* c, FunctionInfo* f)
+int vtkWrap_IsInheritedMethod(const ClassInfo* c, const FunctionInfo* f)
 {
   size_t l;
   for (l = 0; c->Name[l]; l++)
@@ -380,7 +382,7 @@ int vtkWrap_IsInheritedMethod(ClassInfo* c, FunctionInfo* f)
   return 0;
 }
 
-int vtkWrap_IsSetVectorMethod(FunctionInfo* f)
+int vtkWrap_IsSetVectorMethod(const FunctionInfo* f)
 {
   if (f->Macro && strncmp(f->Macro, "vtkSetVector", 12) == 0)
   {
@@ -390,7 +392,7 @@ int vtkWrap_IsSetVectorMethod(FunctionInfo* f)
   return 0;
 }
 
-int vtkWrap_IsGetVectorMethod(FunctionInfo* f)
+int vtkWrap_IsGetVectorMethod(const FunctionInfo* f)
 {
   if (f->Macro && strncmp(f->Macro, "vtkGetVector", 12) == 0)
   {
@@ -403,7 +405,7 @@ int vtkWrap_IsGetVectorMethod(FunctionInfo* f)
 /* -------------------------------------------------------------------- */
 /* Argument counting */
 
-int vtkWrap_CountWrappedParameters(FunctionInfo* f)
+int vtkWrap_CountWrappedParameters(const FunctionInfo* f)
 {
   int totalArgs = f->NumberOfParameters;
 
@@ -420,7 +422,7 @@ int vtkWrap_CountWrappedParameters(FunctionInfo* f)
   return totalArgs;
 }
 
-int vtkWrap_CountRequiredArguments(FunctionInfo* f)
+int vtkWrap_CountRequiredArguments(const FunctionInfo* f)
 {
   int requiredArgs = 0;
   int totalArgs;
@@ -442,9 +444,9 @@ int vtkWrap_CountRequiredArguments(FunctionInfo* f)
 /* -------------------------------------------------------------------- */
 /* Check whether the class is derived from vtkObjectBase. */
 
-int vtkWrap_IsVTKObjectBaseType(HierarchyInfo* hinfo, const char* classname)
+int vtkWrap_IsVTKObjectBaseType(const HierarchyInfo* hinfo, const char* classname)
 {
-  HierarchyEntry* entry;
+  const HierarchyEntry* entry;
 
   if (hinfo)
   {
@@ -471,9 +473,9 @@ int vtkWrap_IsVTKObjectBaseType(HierarchyInfo* hinfo, const char* classname)
 /* -------------------------------------------------------------------- */
 /* Check if the class is not derived from vtkObjectBase. */
 
-int vtkWrap_IsSpecialType(HierarchyInfo* hinfo, const char* classname)
+int vtkWrap_IsSpecialType(const HierarchyInfo* hinfo, const char* classname)
 {
-  HierarchyEntry* entry;
+  const HierarchyEntry* entry;
 
   if (hinfo)
   {
@@ -500,9 +502,9 @@ int vtkWrap_IsSpecialType(HierarchyInfo* hinfo, const char* classname)
 /* -------------------------------------------------------------------- */
 /* Check if the class is derived from superclass */
 
-int vtkWrap_IsTypeOf(HierarchyInfo* hinfo, const char* classname, const char* superclass)
+int vtkWrap_IsTypeOf(const HierarchyInfo* hinfo, const char* classname, const char* superclass)
 {
-  HierarchyEntry* entry;
+  const HierarchyEntry* entry;
 
   if (strcmp(classname, superclass) == 0)
   {
@@ -524,14 +526,14 @@ int vtkWrap_IsTypeOf(HierarchyInfo* hinfo, const char* classname, const char* su
 /* -------------------------------------------------------------------- */
 /* Make a guess about whether a class is wrapped */
 
-int vtkWrap_IsClassWrapped(HierarchyInfo* hinfo, const char* classname)
+int vtkWrap_IsClassWrapped(const HierarchyInfo* hinfo, const char* classname)
 {
   if (hinfo)
   {
-    HierarchyEntry* entry;
+    const HierarchyEntry* entry;
     entry = vtkParseHierarchy_FindEntry(hinfo, classname);
 
-    if (entry)
+    if (entry && !vtkParseHierarchy_GetProperty(entry, "WRAPEXCLUDE"))
     {
       return 1;
     }
@@ -548,7 +550,7 @@ int vtkWrap_IsClassWrapped(HierarchyInfo* hinfo, const char* classname)
 /* Check whether the destructor is public */
 int vtkWrap_HasPublicDestructor(ClassInfo* data)
 {
-  FunctionInfo* func;
+  const FunctionInfo* func;
   int i;
 
   for (i = 0; i < data->NumberOfFunctions; i++)
@@ -568,7 +570,7 @@ int vtkWrap_HasPublicDestructor(ClassInfo* data)
 /* Check whether the copy constructor is public */
 int vtkWrap_HasPublicCopyConstructor(ClassInfo* data)
 {
-  FunctionInfo* func;
+  const FunctionInfo* func;
   int i;
 
   for (i = 0; i < data->NumberOfFunctions; i++)
@@ -588,9 +590,9 @@ int vtkWrap_HasPublicCopyConstructor(ClassInfo* data)
 
 /* -------------------------------------------------------------------- */
 /* Get the size for subclasses of vtkTuple */
-int vtkWrap_GetTupleSize(ClassInfo* data, HierarchyInfo* hinfo)
+int vtkWrap_GetTupleSize(const ClassInfo* data, const HierarchyInfo* hinfo)
 {
-  HierarchyEntry* entry;
+  const HierarchyEntry* entry;
   const char* classname = NULL;
   size_t m;
   int size = 0;
@@ -618,7 +620,7 @@ int vtkWrap_GetTupleSize(ClassInfo* data, HierarchyInfo* hinfo)
 /* -------------------------------------------------------------------- */
 /* This sets the CountHint for vtkDataArray methods where the
  * tuple size is equal to GetNumberOfComponents. */
-void vtkWrap_FindCountHints(ClassInfo* data, FileInfo* finfo, HierarchyInfo* hinfo)
+void vtkWrap_FindCountHints(ClassInfo* data, FileInfo* finfo, const HierarchyInfo* hinfo)
 {
   int i;
   int count;
@@ -717,7 +719,7 @@ void vtkWrap_FindCountHints(ClassInfo* data, FileInfo* finfo, HierarchyInfo* hin
       if (count)
       {
         char counttext[24];
-        sprintf(counttext, "%d", count);
+        snprintf(counttext, sizeof(counttext), "%d", count);
         theFunc->Parameters[0]->Count = count;
         vtkParse_AddStringToArray(&theFunc->Parameters[0]->Dimensions,
           &theFunc->Parameters[0]->NumberOfDimensions,
@@ -749,28 +751,89 @@ void vtkWrap_FindCountHints(ClassInfo* data, FileInfo* finfo, HierarchyInfo* hin
 
 /* -------------------------------------------------------------------- */
 /* This sets the NewInstance hint for generator methods. */
-void vtkWrap_FindNewInstanceMethods(ClassInfo* data, HierarchyInfo* hinfo)
+void vtkWrap_FindNewInstanceMethods(ClassInfo* data, const HierarchyInfo* hinfo)
 {
   int i;
   FunctionInfo* theFunc;
-  OptionInfo* options;
+  const OptionInfo* options;
 
   for (i = 0; i < data->NumberOfFunctions; i++)
   {
     theFunc = data->Functions[i];
     if (theFunc->Name && theFunc->ReturnValue && vtkWrap_IsVTKObject(theFunc->ReturnValue) &&
+      (theFunc->ReturnValue->Attributes & VTK_PARSE_NEWINSTANCE) == 0 &&
       vtkWrap_IsVTKObjectBaseType(hinfo, theFunc->ReturnValue->Class))
     {
-      if (strcmp(theFunc->Name, "NewInstance") == 0 || strcmp(theFunc->Name, "NewIterator") == 0 ||
-        strcmp(theFunc->Name, "CreateInstance") == 0)
+      int needsNewInstance = 0;
+      if (strcmp(theFunc->Name, "NewInstance") == 0 || strcmp(theFunc->Name, "CreateInstance") == 0)
       {
-        if ((theFunc->ReturnValue->Type & VTK_PARSE_NEWINSTANCE) == 0)
+        needsNewInstance = 1;
+      }
+      else if (strcmp(theFunc->Name, "NewIterator") == 0)
+      {
+        needsNewInstance = 1;
+      }
+      else if (strcmp(theFunc->Name, "MakeKey") == 0 &&
+        vtkWrap_IsTypeOf(hinfo, data->Name, "vtkInformationKey"))
+      {
+        needsNewInstance = 1;
+      }
+
+      if (needsNewInstance)
+      {
+        /* get the command-line options */
+        options = vtkParse_GetCommandLineOptions();
+        fprintf(stderr, "Warning: %s without VTK_NEWINSTANCE hint in %s\n", theFunc->Name,
+          options->InputFileName);
+        theFunc->ReturnValue->Attributes |= VTK_PARSE_NEWINSTANCE;
+        /* Do not finalize `options` here; we're just peeking at global state
+         * to know when to warn. */
+      }
+    }
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/* This sets the FilePath hint for method parameters. */
+void vtkWrap_FindFilePathMethods(ClassInfo* data)
+{
+  int i, n;
+  size_t l;
+  FunctionInfo* theFunc;
+  const char* name;
+  ValueInfo* arg;
+
+  for (i = 0; i < data->NumberOfFunctions; i++)
+  {
+    theFunc = data->Functions[i];
+    arg = NULL;
+    name = theFunc->Name;
+    if (name)
+    {
+      /* check if method ends in "FileName" or "DirectoryName" */
+      l = strlen(name);
+      if ((l >= 8 && strcmp(&name[l - 8], "FileName") == 0) ||
+        (l >= 13 && strcmp(&name[l - 13], "DirectoryName") == 0) ||
+        (l == 11 && strcmp(name, "CanReadFile") == 0))
+      {
+        n = theFunc->NumberOfParameters;
+        /* look for Set and Get methods */
+        if (n == 0 && strncmp(name, "Get", 3) == 0)
         {
-          /* get the command-line options */
-          options = vtkParse_GetCommandLineOptions();
-          fprintf(stderr, "Warning: %s without VTK_NEWINSTANCE hint in %s\n", theFunc->Name,
-            options->InputFileName);
-          theFunc->ReturnValue->Type |= VTK_PARSE_NEWINSTANCE;
+          arg = theFunc->ReturnValue;
+        }
+        else if (n == 1 && strncmp(name, "Set", 3) == 0)
+        {
+          arg = theFunc->Parameters[0];
+        }
+        else if (n == 1 && strncmp(name, "Can", 3) == 0)
+        {
+          arg = theFunc->Parameters[0];
+        }
+        /* check the parameter type (must be string) */
+        if (arg && (vtkWrap_IsCharPointer(arg) || vtkWrap_IsString(arg)))
+        {
+          arg->Attributes |= VTK_PARSE_FILEPATH;
         }
       }
     }
@@ -779,7 +842,7 @@ void vtkWrap_FindNewInstanceMethods(ClassInfo* data, HierarchyInfo* hinfo)
 
 /* -------------------------------------------------------------------- */
 /* Expand all typedef types that are used in function arguments */
-void vtkWrap_ExpandTypedefs(ClassInfo* data, FileInfo* finfo, HierarchyInfo* hinfo)
+void vtkWrap_ExpandTypedefs(ClassInfo* data, FileInfo* finfo, const HierarchyInfo* hinfo)
 {
   int i, j, n;
   FunctionInfo* funcInfo;
@@ -844,7 +907,7 @@ void vtkWrap_ExpandTypedefs(ClassInfo* data, FileInfo* finfo, HierarchyInfo* hin
 
 /* -------------------------------------------------------------------- */
 /* Merge superclass methods according to using declarations */
-void vtkWrap_ApplyUsingDeclarations(ClassInfo* data, FileInfo* finfo, HierarchyInfo* hinfo)
+void vtkWrap_ApplyUsingDeclarations(ClassInfo* data, FileInfo* finfo, const HierarchyInfo* hinfo)
 {
   int i, n;
 
@@ -871,7 +934,7 @@ void vtkWrap_ApplyUsingDeclarations(ClassInfo* data, FileInfo* finfo, HierarchyI
 
 /* -------------------------------------------------------------------- */
 /* Merge superclass methods */
-void vtkWrap_MergeSuperClasses(ClassInfo* data, FileInfo* finfo, HierarchyInfo* hinfo)
+void vtkWrap_MergeSuperClasses(ClassInfo* data, FileInfo* finfo, const HierarchyInfo* hinfo)
 {
   int n = data->NumberOfSuperClasses;
   int i;
@@ -896,7 +959,7 @@ void vtkWrap_MergeSuperClasses(ClassInfo* data, FileInfo* finfo, HierarchyInfo* 
 /* -------------------------------------------------------------------- */
 /* get the type name */
 
-const char* vtkWrap_GetTypeName(ValueInfo* val)
+const char* vtkWrap_GetTypeName(const ValueInfo* val)
 {
   unsigned int aType = val->Type;
   const char* aClass = val->Class;
@@ -928,18 +991,12 @@ const char* vtkWrap_GetTypeName(ValueInfo* val)
       return "unsigned char";
     case VTK_PARSE_LONG_LONG:
       return "long long";
-    case VTK_PARSE___INT64:
-      return "__int64";
     case VTK_PARSE_UNSIGNED_LONG_LONG:
       return "unsigned long long";
-    case VTK_PARSE_UNSIGNED___INT64:
-      return "unsigned __int64";
     case VTK_PARSE_SIGNED_CHAR:
       return "signed char";
     case VTK_PARSE_BOOL:
       return "bool";
-    case VTK_PARSE_UNICODE_STRING:
-      return "vtkUnicodeString";
     case VTK_PARSE_SSIZE_T:
       return "ssize_t";
     case VTK_PARSE_SIZE_T:
@@ -953,7 +1010,7 @@ const char* vtkWrap_GetTypeName(ValueInfo* val)
 /* variable declarations */
 
 void vtkWrap_DeclareVariable(
-  FILE* fp, ClassInfo* data, ValueInfo* val, const char* name, int i, int flags)
+  FILE* fp, const ClassInfo* data, const ValueInfo* val, const char* name, int i, int flags)
 {
   unsigned int aType;
   int j;
@@ -979,14 +1036,15 @@ void vtkWrap_DeclareVariable(
   {
     /* use a typedef to work around compiler issues when someone used
        the same name for the enum type as for a variable or method */
-    newTypeName = (char*)malloc(strlen(name) + 16);
+    size_t newTypeNameLen = strlen(name) + 19 + 5 + 1;
+    newTypeName = (char*)malloc(newTypeNameLen);
     if (i >= 0)
     {
-      sprintf(newTypeName, "%s%i_type", name, i);
+      snprintf(newTypeName, newTypeNameLen, "%s%i_type", name, i);
     }
     else
     {
-      sprintf(newTypeName, "%s_type", name);
+      snprintf(newTypeName, newTypeNameLen, "%s_type", name);
     }
     fprintf(fp, "  typedef %s::%s %s;\n", data->Name, typeName, newTypeName);
     typeName = newTypeName;
@@ -1029,10 +1087,12 @@ void vtkWrap_DeclareVariable(
   {
     /* objects refs and pointers are always handled via pointers,
      * other refs are passed by value */
-    if (aType == VTK_PARSE_CHAR_PTR || aType == VTK_PARSE_VOID_PTR ||
-      (!val->IsEnum &&
-        (aType == VTK_PARSE_OBJECT_PTR || aType == VTK_PARSE_OBJECT_REF ||
-          aType == VTK_PARSE_OBJECT)))
+    if (vtkWrap_IsVTKObject(val) || vtkWrap_IsSpecialObject(val))
+    {
+      fprintf(fp, "*");
+    }
+    /* handling of "char *" C strings, "void *" C buffers */
+    else if (aType == VTK_PARSE_CHAR_PTR || aType == VTK_PARSE_VOID_PTR)
     {
       fprintf(fp, "*");
     }
@@ -1081,7 +1141,7 @@ void vtkWrap_DeclareVariable(
       vtkWrap_QualifyExpression(fp, data, val->Value);
     }
     else if (aType == VTK_PARSE_CHAR_PTR || aType == VTK_PARSE_VOID_PTR ||
-      (!val->IsEnum &&
+      (!val->IsEnum && !vtkWrap_IsVTKSmartPointer(val) &&
         (aType == VTK_PARSE_OBJECT_PTR || aType == VTK_PARSE_OBJECT_REF ||
           aType == VTK_PARSE_OBJECT)))
     {
@@ -1106,7 +1166,7 @@ void vtkWrap_DeclareVariable(
   free(newTypeName);
 }
 
-void vtkWrap_DeclareVariableSize(FILE* fp, ValueInfo* val, const char* name, int i)
+void vtkWrap_DeclareVariableSize(FILE* fp, const ValueInfo* val, const char* name, int i)
 {
   char idx[32];
   int j;
@@ -1114,7 +1174,7 @@ void vtkWrap_DeclareVariableSize(FILE* fp, ValueInfo* val, const char* name, int
   idx[0] = '\0';
   if (i >= 0)
   {
-    sprintf(idx, "%d", i);
+    snprintf(idx, sizeof(idx), "%d", i);
   }
 
   if (val->NumberOfDimensions > 1)
@@ -1139,7 +1199,7 @@ void vtkWrap_DeclareVariableSize(FILE* fp, ValueInfo* val, const char* name, int
   }
 }
 
-void vtkWrap_QualifyExpression(FILE* fp, ClassInfo* data, const char* text)
+void vtkWrap_QualifyExpression(FILE* fp, const ClassInfo* data, const char* text)
 {
   StringTokenizer t;
   int qualified = 0;
@@ -1157,7 +1217,7 @@ void vtkWrap_QualifyExpression(FILE* fp, ClassInfo* data, const char* text)
       /* check for class members */
       for (j = 0; j < data->NumberOfItems; j++)
       {
-        ItemInfo* item = &data->Items[j];
+        const ItemInfo* item = &data->Items[j];
         const char* name = NULL;
 
         if (item->Type == VTK_CONSTANT_INFO)
@@ -1236,4 +1296,26 @@ char* vtkWrap_SafeSuperclassName(const char* name)
     return NULL;
   }
   return safe_name;
+}
+
+char* vtkWrap_TemplateArg(const char* name)
+{
+  /* ignore 2nd arg if present (e.g. std::vector allocator) */
+  const char* defaults[2] = { NULL, "" };
+  const char** args;
+  char* arg;
+
+  vtkParse_DecomposeTemplatedType(name, NULL, 2, &args, defaults);
+  arg = strdup(args[0]);
+  vtkParse_FreeTemplateDecomposition(NULL, 2, args);
+
+  return arg;
+}
+
+void vtkWrap_WarnEmpty(const OptionInfo* options)
+{
+  if (options->WarningFlags.Empty)
+  {
+    fprintf(stderr, "warning: did not wrap anything from %s [-Wempty]\n", options->InputFileName);
+  }
 }

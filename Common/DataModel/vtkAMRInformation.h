@@ -1,23 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAMRInformation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAMRInformation
  * @brief   Meta data that describes the structure of an AMR data set
  *
  *
- * vtkAMRInformation encaspulates the following meta information for an AMR data set
+ * vtkAMRInformation encapsulates the following meta information for an AMR data set
  * - a list of vtkAMRBox objects
  * - Refinement ratio between AMR levels
  * - Grid spacing for each level
@@ -39,6 +27,7 @@
 
 typedef std::vector<vtkAMRBox> vtkAMRBoxList;
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUnsignedIntArray;
 class vtkIntArray;
 class vtkDoubleArray;
@@ -52,7 +41,7 @@ public:
 
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  bool operator==(const vtkAMRInformation& other);
+  bool operator==(const vtkAMRInformation& other) const;
 
   /**
    * Initialize the meta information
@@ -61,15 +50,15 @@ public:
    */
   void Initialize(int numLevels, const int* blocksPerLevel);
 
-  //@{
+  ///@{
   /**
    * returns the value of vtkUniformGrid::GridDescription() of any block
    */
   vtkGetMacro(GridDescription, int);
   void SetGridDescription(int description);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the AMR dataset origin
    * The origin is essentially the minimum of all the grids.
@@ -77,7 +66,7 @@ public:
   void GetOrigin(double origin[3]);
   double* GetOrigin();
   void SetOrigin(const double* origin);
-  //@}
+  ///@}
 
   /**
    * Return the number of levels
@@ -129,27 +118,27 @@ public:
 
   bool HasSpacing(unsigned int level);
 
-  //@{
+  ///@{
   /**
    * Methods to set and get the AMR box at a given position
    */
   void SetAMRBox(unsigned int level, unsigned int id, const vtkAMRBox& box);
   const vtkAMRBox& GetAMRBox(unsigned int level, unsigned int id) const;
-  //@}
+  ///@}
 
   /**
    * return the amr box coarsened to the previous level
    */
   bool GetCoarsenedAMRBox(unsigned int level, unsigned int id, vtkAMRBox& box) const;
 
-  //@{
+  ///@{
   /**
    * Get/Set the SourceIndex of a block. Typically, this is a file-type specific index
    * that can be used by a reader to load a particular file block
    */
   int GetAMRBlockSourceIndex(int index);
   void SetAMRBlockSourceIndex(int index, int sourceId);
-  //@}
+  ///@}
 
   /**
    * This method computes the refinement ratio at each level.
@@ -242,7 +231,7 @@ public:
    */
   const std::vector<int>& GetNumBlocks() const { return this->NumBlocks; }
 
-  std::vector<std::vector<unsigned int> >& GetChildrenAtLevel(unsigned int i)
+  std::vector<std::vector<unsigned int>>& GetChildrenAtLevel(unsigned int i)
   {
     return this->AllChildren[i];
   }
@@ -257,12 +246,12 @@ private:
 
   bool HasValidOrigin();
   bool HasValidBounds();
-  void UpdateBounds(const int level, const int id);
+  void UpdateBounds(int level, int id);
   void AllocateBoxes(unsigned int n);
   void GenerateBlockLevel();
   void CalculateParentChildRelationShip(unsigned int level,
-    std::vector<std::vector<unsigned int> >& children,
-    std::vector<std::vector<unsigned int> >& parents);
+    std::vector<std::vector<unsigned int>>& children,
+    std::vector<std::vector<unsigned int>>& parents);
 
   //-------------------------------------------------------------------------
   // Essential information that determines an AMR structure. Must be copied
@@ -286,8 +275,9 @@ private:
                                                    // ComputeIndexPair
 
   // parent child information
-  std::vector<std::vector<std::vector<unsigned int> > > AllChildren;
-  std::vector<std::vector<std::vector<unsigned int> > > AllParents;
+  std::vector<std::vector<std::vector<unsigned int>>> AllChildren;
+  std::vector<std::vector<std::vector<unsigned int>>> AllParents;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestValuePassFloatingPoint.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Description:
 // Tests vtkValuePass in FLOATING_POINT mode. The test generates a 3-component
@@ -124,10 +112,10 @@ void GenerateElevationArray(vtkSmartPointer<vtkPolyDataAlgorithm> source)
   data->GetPointData()->AddArray(
     vtkDataSet::SafeDownCast(calc->GetOutput())->GetPointData()->GetArray("elevationVector"));
   data->GetCellData()->AddArray(outputP2c->GetCellData()->GetArray("elevationVector"));
-};
+}
 
 //------------------------------------------------------------------------------
-void RenderComponentImages(std::vector<vtkSmartPointer<vtkImageData> >& colorImOut,
+void RenderComponentImages(std::vector<vtkSmartPointer<vtkImageData>>& colorImOut,
   vtkRenderWindow* window, vtkRenderer* renderer, vtkValuePass* valuePass, int dataMode,
   char const* name)
 {
@@ -159,7 +147,7 @@ void RenderComponentImages(std::vector<vtkSmartPointer<vtkImageData> >& colorImO
     colorImOut.push_back(colorIm);
     colored->Delete();
   }
-};
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 int TestValuePassFloatingPoint(int argc, char* argv[])
@@ -226,12 +214,12 @@ int TestValuePassFloatingPoint(int argc, char* argv[])
   window->Render();
 
   // Render point data images
-  std::vector<vtkSmartPointer<vtkImageData> > colorImagesPoint;
+  std::vector<vtkSmartPointer<vtkImageData>> colorImagesPoint;
   RenderComponentImages(colorImagesPoint, window, renderer, valuePass,
     VTK_SCALAR_MODE_USE_POINT_FIELD_DATA, "elevationVector");
 
   // Render cell data images
-  std::vector<vtkSmartPointer<vtkImageData> > colorImagesCell;
+  std::vector<vtkSmartPointer<vtkImageData>> colorImagesCell;
   RenderComponentImages(colorImagesCell, window, renderer, valuePass,
     VTK_SCALAR_MODE_USE_CELL_FIELD_DATA, "elevationVector");
 

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGDALRasterReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include <vtkGDALRasterReader.h>
 
 // VTK includes
@@ -71,7 +59,7 @@ int TestGDALRasterReader(int argc, char** argv)
   }
 
   // test if we read all 3 bands with CollateBands=0 (default is 1)
-  reader->SetCollateBands(0);
+  reader->SetCollateBands(false);
   reader->Update();
   vtkUniformGrid* data = vtkUniformGrid::SafeDownCast(reader->GetOutput());
   if (data->GetCellData()->GetNumberOfArrays() != 3)
@@ -91,7 +79,7 @@ int TestGDALRasterReader(int argc, char** argv)
   }
 
   // collate bands
-  reader->SetCollateBands(1);
+  reader->SetCollateBands(true);
   reader->SetCellArrayStatus(reader->GetCellArrayName(0), 1);
   reader->Update();
   delete[] rasterFileName;

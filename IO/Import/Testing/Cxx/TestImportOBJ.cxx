@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include <vtkNamedColors.h>
 #include <vtkOBJImporter.h>
 #include <vtkPolyData.h>
@@ -36,7 +38,11 @@ int TestImportOBJ(int argc, char* argv[])
 
   iren->SetRenderWindow(renWin);
   importer->SetRenderWindow(renWin);
-  importer->Update();
+  if (!importer->Update())
+  {
+    std::cerr << "Error: failed to Update" << std::endl;
+    return EXIT_FAILURE;
+  }
 
   auto actors = renderer->GetActors();
   actors->InitTraversal();

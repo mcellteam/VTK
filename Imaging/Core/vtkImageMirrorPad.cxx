@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMirrorPad.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageMirrorPad.h"
 
 #include "vtkImageData.h"
@@ -20,9 +8,16 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageMirrorPad);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageMirrorPad::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 // Just clip the request.
 void vtkImageMirrorPad::ComputeInputUpdateExtent(int inExt[6], int outExt[6], int wExtent[6])
 {
@@ -44,7 +39,7 @@ void vtkImageMirrorPad::ComputeInputUpdateExtent(int inExt[6], int outExt[6], in
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkImageMirrorPadExecute(vtkImageMirrorPad* self, vtkImageData* inData, int* wExtent,
   vtkImageData* outData, T* outPtr, int outExt[6], int id)
@@ -190,7 +185,7 @@ void vtkImageMirrorPadExecute(vtkImageMirrorPad* self, vtkImageData* inData, int
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output data, and executes the filter
 // algorithm to fill the output from the input.
 // It just executes a switch statement to call the correct function for
@@ -229,3 +224,4 @@ void vtkImageMirrorPad::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
       return;
   }
 }
+VTK_ABI_NAMESPACE_END

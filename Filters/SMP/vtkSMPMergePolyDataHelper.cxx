@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContourGrid.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSMPMergePolyDataHelper.h"
 
 #include "vtkCellArray.h"
@@ -27,6 +15,7 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -93,7 +82,9 @@ void MergePoints(
     numPts += (*itr).Output->GetNumberOfPoints();
     ++itr;
   }
+  // Resize preserves existing data on reallocation
   outPts->Resize(numPts);
+  outPts->SetNumberOfPoints(numPts);
 
   // Find non-empty buckets for best load balancing. We don't
   // want to visit bunch of empty buckets.
@@ -128,20 +119,22 @@ void MergePoints(
   }
 
   vtkParallelMergePoints mergePoints;
-  mergePoints.BucketIds = &nonEmptyBuckets[0];
+  mergePoints.BucketIds = nonEmptyBuckets.data();
   mergePoints.Merger = (*begin).Locator;
   mergePoints.OutputPointData = (*begin).Output->GetPointData();
   if (!idMaps.empty())
   {
     mergePoints.Merger->InitializeMerge();
-    mergePoints.IdMaps = &idMaps[0];
+    mergePoints.IdMaps = idMaps.data();
     // Prepare output point data
     int numArrays = mergePoints.OutputPointData->GetNumberOfArrays();
     for (int i = 0; i < numArrays; i++)
     {
+      // Resize preserves existing data on reallocation
       mergePoints.OutputPointData->GetArray(i)->Resize(numPts);
+      mergePoints.OutputPointData->GetArray(i)->SetNumberOfTuples(numPts);
     }
-    mergePoints.InputPointDatas = &pds[0];
+    mergePoints.InputPointDatas = pds.data();
 
     // The first locator is what we will use to accumulate all others
     // So all iteration starts from second dataset.
@@ -208,16 +201,14 @@ public:
 
       // Copy the offsets, adding outConnOffset to adjust for existing
       // connectivity entries:
-      std::transform(
-        inCell.cbegin(), inCell.cend(), outCell.begin(), [&](InIndexType i) -> OutIndexType {
-          return static_cast<OutIndexType>(i + outConnOffset);
-        });
+      std::transform(inCell.cbegin(), inCell.cend(), outCell.begin(),
+        [&](InIndexType i) -> OutIndexType
+        { return static_cast<OutIndexType>(i + outConnOffset); });
 
       // Copy the connectivities, passing them through the map:
-      std::transform(
-        inConn.cbegin(), inConn.cend(), outConn.begin(), [&](InIndexType i) -> OutIndexType {
-          return static_cast<OutIndexType>(map->GetId(static_cast<vtkIdType>(i)));
-        });
+      std::transform(inConn.cbegin(), inConn.cend(), outConn.begin(),
+        [&](InIndexType i) -> OutIndexType
+        { return static_cast<OutIndexType>(map->GetId(static_cast<vtkIdType>(i))); });
     }
   };
 
@@ -402,7 +393,7 @@ vtkPolyData* vtkSMPMergePolyDataHelper::MergePolyData(std::vector<InputData>& in
   std::vector<vtkMergePointsData> mpData;
   while (itr != end)
   {
-    mpData.push_back(vtkMergePointsData((*itr).Input, (*itr).Locator));
+    mpData.emplace_back((*itr).Input, (*itr).Locator);
     ++itr;
   }
 
@@ -436,6 +427,7 @@ vtkPolyData* vtkSMPMergePolyDataHelper::MergePolyData(std::vector<InputData>& in
   int numCellArrays = outCellData->GetNumberOfArrays();
   for (int i = 0; i < numCellArrays; i++)
   {
+    // Resize preserves existing data on reallocation
     outCellData->GetArray(i)->Resize(numOutCells);
     outCellData->GetArray(i)->SetNumberOfTuples(numOutCells);
   }
@@ -451,8 +443,8 @@ vtkPolyData* vtkSMPMergePolyDataHelper::MergePolyData(std::vector<InputData>& in
     itr = begin;
     while (itr != end)
     {
-      mcData.push_back(vtkMergeCellsData(
-        (*itr).Input, (*itr).VertCellOffsets, (*itr).VertConnOffsets, (*itr).Input->GetVerts()));
+      mcData.emplace_back(
+        (*itr).Input, (*itr).VertCellOffsets, (*itr).VertConnOffsets, (*itr).Input->GetVerts());
       ++itr;
     }
     MergeCells(mcData, idMaps, 0, outVerts);
@@ -470,8 +462,8 @@ vtkPolyData* vtkSMPMergePolyDataHelper::MergePolyData(std::vector<InputData>& in
     itr = begin;
     while (itr != end)
     {
-      mcData.push_back(vtkMergeCellsData(
-        (*itr).Input, (*itr).LineCellOffsets, (*itr).LineConnOffsets, (*itr).Input->GetLines()));
+      mcData.emplace_back(
+        (*itr).Input, (*itr).LineCellOffsets, (*itr).LineConnOffsets, (*itr).Input->GetLines());
       ++itr;
     }
     MergeCells(mcData, idMaps, vertSize, outLines);
@@ -489,8 +481,8 @@ vtkPolyData* vtkSMPMergePolyDataHelper::MergePolyData(std::vector<InputData>& in
     itr = begin;
     while (itr != end)
     {
-      mcData.push_back(vtkMergeCellsData(
-        (*itr).Input, (*itr).PolyCellOffsets, (*itr).PolyConnOffsets, (*itr).Input->GetPolys()));
+      mcData.emplace_back(
+        (*itr).Input, (*itr).PolyCellOffsets, (*itr).PolyConnOffsets, (*itr).Input->GetPolys());
       ++itr;
     }
     MergeCells(mcData, idMaps, vertSize + lineSize, outPolys);
@@ -509,3 +501,4 @@ vtkPolyData* vtkSMPMergePolyDataHelper::MergePolyData(std::vector<InputData>& in
 
   return outPolyData;
 }
+VTK_ABI_NAMESPACE_END

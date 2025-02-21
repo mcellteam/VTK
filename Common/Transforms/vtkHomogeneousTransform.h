@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHomogeneousTransform.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHomogeneousTransform
  * @brief   superclass for homogeneous transformations
@@ -28,10 +16,13 @@
 
 #include "vtkAbstractTransform.h"
 #include "vtkCommonTransformsModule.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMatrix4x4;
 
-class VTKCOMMONTRANSFORMS_EXPORT vtkHomogeneousTransform : public vtkAbstractTransform
+class VTKCOMMONTRANSFORMS_EXPORT VTK_MARSHALAUTO vtkHomogeneousTransform
+  : public vtkAbstractTransform
 {
 public:
   vtkTypeMacro(vtkHomogeneousTransform, vtkAbstractTransform);
@@ -79,16 +70,16 @@ public:
     return static_cast<vtkHomogeneousTransform*>(this->GetInverse());
   }
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation without calling Update.
    * Meant for use only within other VTK classes.
    */
   void InternalTransformPoint(const float in[3], float out[3]) override;
   void InternalTransformPoint(const double in[3], double out[3]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation as well as its derivative
    * without calling Update.  Meant for use only within other VTK
@@ -98,7 +89,7 @@ public:
     const float in[3], float out[3], float derivative[3][3]) override;
   void InternalTransformDerivative(
     const double in[3], double out[3], double derivative[3][3]) override;
-  //@}
+  ///@}
 
 protected:
   vtkHomogeneousTransform();
@@ -113,4 +104,5 @@ private:
   void operator=(const vtkHomogeneousTransform&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

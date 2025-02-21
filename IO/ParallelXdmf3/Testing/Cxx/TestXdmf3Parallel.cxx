@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestXdmf3Parallel.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test exercises xdmf3 reading and writing in parallel.
 //
 
@@ -19,6 +7,7 @@
 
 #include "vtkMPICommunicator.h"
 #include "vtkMPIController.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcess.h"
 #include "vtkSmartPointer.h"
@@ -35,7 +24,7 @@ public:
   static MyProcess* New();
   vtkTypeMacro(MyProcess, vtkProcess);
 
-  virtual void Execute() override;
+  void Execute() override;
 
   void SetArgs(int argc, char* argv[], const std::string& ifname, const std::string& ofname)
   {
@@ -107,18 +96,15 @@ int TestXdmf3Parallel(int argc, char** argv)
 
   // Note that this will create a vtkMPIController if MPI
   // is configured, vtkThreadedController otherwise.
-  vtkMPIController* contr = vtkMPIController::New();
+  vtkNew<vtkMPIController> contr;
   contr->Initialize(&argc, &argv, 1);
-
-  int retVal = 1; // 1 == failed
 
   int numProcs = contr->GetNumberOfProcesses();
 
-  if (numProcs < 2 && false)
+  if (numProcs < 2)
   {
     cout << "This test requires at least 2 processes" << endl;
-    contr->Delete();
-    return retVal;
+    return EXIT_FAILURE;
   }
 
   vtkMultiProcessController::SetGlobalController(contr);
@@ -142,22 +128,21 @@ int TestXdmf3Parallel(int argc, char** argv)
     }
   }
   MyProcess* p = MyProcess::New();
-  p->SetArgs(argc, argv, ifile.c_str(), ofile.c_str());
+  p->SetArgs(argc, argv, ifile, ofile);
 
   contr->SetSingleProcessObject(p);
   contr->SingleMethodExecute();
 
-  retVal = p->GetReturnValue();
+  int retVal = p->GetReturnValue();
 
   p->Delete();
   contr->Finalize();
-  contr->Delete();
-  vtkMultiProcessController::SetGlobalController(0);
+  vtkMultiProcessController::SetGlobalController(nullptr);
 
   if (retVal)
   {
     // test passed, remove the files we wrote
-    vtksys::SystemTools::RemoveADirectory(tempdir.c_str());
+    vtksys::SystemTools::RemoveADirectory(tempdir);
   }
   return !retVal;
 }

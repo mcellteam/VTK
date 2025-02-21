@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPImageWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPImageWriter.h"
 
 #include "vtkAlgorithmOutput.h"
@@ -23,28 +11,24 @@
 #include "vtksys/FStream.hxx"
 
 #define vtkPIWCloseFile                                                                            \
-  if (file && fileOpenedHere)                                                                      \
+  do                                                                                               \
   {                                                                                                \
-    this->WriteFileTrailer(file, cache);                                                           \
-    vtksys::ofstream* ofile = dynamic_cast<vtksys::ofstream*>(file);                               \
-    if (ofile)                                                                                     \
+    if (file && fileOpenedHere)                                                                    \
     {                                                                                              \
-      ofile->close();                                                                              \
+      this->WriteFileTrailer(file, cache);                                                         \
+      vtksys::ofstream* ofile = dynamic_cast<vtksys::ofstream*>(file);                             \
+      if (ofile)                                                                                   \
+      {                                                                                            \
+        ofile->close();                                                                            \
+      }                                                                                            \
+      delete file;                                                                                 \
     }                                                                                              \
-    delete file;                                                                                   \
-  }
+  } while (false)
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPImageWriter);
 
-#ifdef write
-#undef write
-#endif
-
-#ifdef close
-#undef close
-#endif
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPImageWriter::vtkPImageWriter()
 {
   // Set a default memory limit of a gibibyte
@@ -53,7 +37,7 @@ vtkPImageWriter::vtkPImageWriter()
   this->SizeEstimator = vtkPipelineSize::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPImageWriter::~vtkPImageWriter()
 {
   if (this->SizeEstimator)
@@ -62,7 +46,7 @@ vtkPImageWriter::~vtkPImageWriter()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPImageWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -70,7 +54,7 @@ void vtkPImageWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "MemoryLimit (in kibibytes): " << this->MemoryLimit << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Breaks region into pieces with correct dimensionality.
 void vtkPImageWriter::RecursiveWrite(
   int axis, vtkImageData* cache, vtkInformation* inInfo, ostream* file)
@@ -213,3 +197,4 @@ void vtkPImageWriter::RecursiveWrite(
   // if we opened the file here, then we need to close it up
   vtkPIWCloseFile;
 }
+VTK_ABI_NAMESPACE_END

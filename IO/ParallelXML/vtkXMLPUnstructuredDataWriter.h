@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPUnstructuredDataWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLPUnstructuredDataWriter
  * @brief   Superclass for PVTK XML unstructured data writers.
@@ -24,9 +12,11 @@
 #ifndef vtkXMLPUnstructuredDataWriter_h
 #define vtkXMLPUnstructuredDataWriter_h
 
+#include "vtkDeprecation.h"         // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkIOParallelXMLModule.h" // For export macro
 #include "vtkXMLPDataWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPointSet;
 class vtkXMLUnstructuredDataWriter;
 
@@ -40,7 +30,9 @@ protected:
   vtkXMLPUnstructuredDataWriter();
   ~vtkXMLPUnstructuredDataWriter() override;
 
-  vtkPointSet* GetInputAsPointSet();
+  vtkPointSet* GetPointSetInput();
+  VTK_DEPRECATED_IN_9_5_0("Use GetPointSetInput() instead.")
+  vtkPointSet* GetInputAsPointSet() { return this->GetPointSetInput(); }
   virtual vtkXMLUnstructuredDataWriter* CreateUnstructuredPieceWriter() = 0;
   vtkXMLWriter* CreatePieceWriter(int index) override;
   void WritePData(vtkIndent indent) override;
@@ -50,4 +42,5 @@ private:
   void operator=(const vtkXMLPUnstructuredDataWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphHierarchicalBundleEdges.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkGraphHierarchicalBundleEdges
  * @brief   layout graph arcs in bundles
@@ -58,6 +42,7 @@
 #include "vtkGraphAlgorithm.h"
 #include "vtkInfovisCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKINFOVISCORE_EXPORT vtkGraphHierarchicalBundleEdges : public vtkGraphAlgorithm
 {
 public:
@@ -66,7 +51,7 @@ public:
   vtkTypeMacro(vtkGraphHierarchicalBundleEdges, vtkGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The level of arc bundling in the graph.
    * A strength of 0 creates straight lines, while a strength of 1
@@ -75,9 +60,9 @@ public:
    */
   vtkSetClampMacro(BundlingStrength, double, 0.0, 1.0);
   vtkGetMacro(BundlingStrength, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If on, uses direct mapping from tree to graph vertices.
    * If off, both the graph and tree must contain PedigreeId arrays
@@ -87,7 +72,7 @@ public:
   vtkSetMacro(DirectMapping, bool);
   vtkGetMacro(DirectMapping, bool);
   vtkBooleanMacro(DirectMapping, bool);
-  //@}
+  ///@}
 
   /**
    * Set the input type of the algorithm to vtkGraph.
@@ -96,7 +81,7 @@ public:
 
 protected:
   vtkGraphHierarchicalBundleEdges();
-  ~vtkGraphHierarchicalBundleEdges() override {}
+  ~vtkGraphHierarchicalBundleEdges() override = default;
 
   double BundlingStrength;
   bool DirectMapping;
@@ -111,4 +96,5 @@ private:
   void operator=(const vtkGraphHierarchicalBundleEdges&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

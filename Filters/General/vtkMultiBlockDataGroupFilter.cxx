@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiBlockDataGroupFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMultiBlockDataGroupFilter.h"
 
 #include "vtkCellData.h"
@@ -22,14 +10,15 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMultiBlockDataGroupFilter);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMultiBlockDataGroupFilter::vtkMultiBlockDataGroupFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMultiBlockDataGroupFilter::~vtkMultiBlockDataGroupFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMultiBlockDataGroupFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -38,7 +27,7 @@ int vtkMultiBlockDataGroupFilter::RequestInformation(vtkInformation* vtkNotUsed(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMultiBlockDataGroupFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -55,7 +44,7 @@ int vtkMultiBlockDataGroupFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMultiBlockDataGroupFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -78,6 +67,10 @@ int vtkMultiBlockDataGroupFilter::RequestData(vtkInformation* vtkNotUsed(request
   output->SetNumberOfBlocks(numInputs);
   for (int idx = 0; idx < numInputs; ++idx)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     /*
     // This can be a vtkMultiPieceDataSet if we ever support it.
     vtkMultiBlockDataSet* block = vtkMultiBlockDataSet::New();
@@ -109,26 +102,26 @@ int vtkMultiBlockDataGroupFilter::RequestData(vtkInformation* vtkNotUsed(request
   {
     vtkMultiBlockDataSet* block = vtkMultiBlockDataSet::SafeDownCast(output->GetBlock(0));
     block->Register(this);
-    output->ShallowCopy(block);
+    output->CompositeShallowCopy(block);
     block->UnRegister(this);
   }
 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockDataGroupFilter::AddInputData(vtkDataObject* input)
 {
   this->AddInputData(0, input);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockDataGroupFilter::AddInputData(int index, vtkDataObject* input)
 {
   this->AddInputDataInternal(index, input);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMultiBlockDataGroupFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataObject");
@@ -137,8 +130,9 @@ int vtkMultiBlockDataGroupFilter::FillInputPortInformation(int, vtkInformation* 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockDataGroupFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

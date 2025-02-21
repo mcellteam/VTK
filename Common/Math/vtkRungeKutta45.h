@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRungeKutta45.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRungeKutta45
  * @brief   Integrate an initial value problem using 5th
@@ -38,6 +26,7 @@
 #include "vtkCommonMathModule.h" // For export macro
 #include "vtkInitialValueProblemSolver.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONMATH_EXPORT vtkRungeKutta45 : public vtkInitialValueProblemSolver
 {
 public:
@@ -50,7 +39,7 @@ public:
   static vtkRungeKutta45* New();
 
   using Superclass::ComputeNextStep;
-  //@{
+  ///@{
   /**
    * Given initial values, xprev , initial time, t and a requested time
    * interval, delT calculate values of x at t+delTActual (xnext).
@@ -100,7 +89,7 @@ public:
   int ComputeNextStep(double* xprev, double* dxprev, double* xnext, double t, double& delT,
     double& delTActual, double minStep, double maxStep, double maxError, double& estErr,
     void* userData) override;
-  //@}
+  ///@}
 
 protected:
   vtkRungeKutta45();
@@ -124,4 +113,5 @@ private:
   void operator=(const vtkRungeKutta45&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

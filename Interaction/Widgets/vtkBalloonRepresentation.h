@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBalloonRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBalloonRepresentation
  * @brief   represent the vtkBalloonWidget
@@ -56,7 +44,9 @@
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkWidgetRepresentation.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTextMapper;
 class vtkTextActor;
 class vtkTextProperty;
@@ -73,7 +63,8 @@ class vtkPolyData;
 class vtkPolyDataMapper2D;
 class vtkTexturedActor2D;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkBalloonRepresentation : public vtkWidgetRepresentation
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkBalloonRepresentation
+  : public vtkWidgetRepresentation
 {
 public:
   /**
@@ -81,31 +72,31 @@ public:
    */
   static vtkBalloonRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK methods.
    */
   vtkTypeMacro(vtkBalloonRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify/retrieve the image to display in the balloon.
    */
   virtual void SetBalloonImage(vtkImageData* img);
   vtkGetObjectMacro(BalloonImage, vtkImageData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify/retrieve the text to display in the balloon.
    */
   vtkGetStringMacro(BalloonText);
   vtkSetStringMacro(BalloonText);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the minimum size for the image. Note that this is a bounding
    * rectangle, the image will fit inside of it. However, if the balloon
@@ -114,32 +105,32 @@ public:
    */
   vtkSetVector2Macro(ImageSize, int);
   vtkGetVector2Macro(ImageSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the text property (relevant only if text is shown).
    */
   virtual void SetTextProperty(vtkTextProperty* p);
   vtkGetObjectMacro(TextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the frame property (relevant only if text is shown).
    * The frame lies behind the text.
    */
   virtual void SetFrameProperty(vtkProperty2D* p);
   vtkGetObjectMacro(FrameProperty, vtkProperty2D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the image property (relevant only if an image is shown).
    */
   virtual void SetImageProperty(vtkProperty2D* p);
   vtkGetObjectMacro(ImageProperty, vtkProperty2D);
-  //@}
+  ///@}
 
   enum
   {
@@ -149,7 +140,7 @@ public:
     ImageTop
   };
 
-  //@{
+  ///@{
   /**
    * Specify the layout of the image and text within the balloon. Note that
    * there are reduncies in these methods, for example
@@ -167,9 +158,9 @@ public:
   void SetBalloonLayoutToTextRight() { this->SetBalloonLayout(ImageLeft); }
   void SetBalloonLayoutToTextTop() { this->SetBalloonLayout(ImageBottom); }
   void SetBalloonLayoutToTextBottom() { this->SetBalloonLayout(ImageTop); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the offset from the mouse pointer from which to place the
    * balloon. The representation will try and honor this offset unless there
@@ -178,18 +169,18 @@ public:
    */
   vtkSetVector2Macro(Offset, int);
   vtkGetVector2Macro(Offset, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the padding (in pixels) that is used between the text and the
    * frame.
    */
   vtkSetClampMacro(Padding, int, 0, 100);
   vtkGetMacro(Padding, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These are methods that satisfy vtkWidgetRepresentation's API.
    */
@@ -197,20 +188,20 @@ public:
   void EndWidgetInteraction(double e[2]) override;
   void BuildRepresentation() override;
   int ComputeInteractionState(int X, int Y, int modify = 0) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods required by vtkProp superclass.
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
   int RenderOverlay(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * State is either outside, or inside (on the text portion of the image).
    */
-  enum _InteractionState
+  enum InteractionStateType
   {
     Outside = 0,
     OnText,
@@ -267,4 +258,5 @@ private:
   void operator=(const vtkBalloonRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

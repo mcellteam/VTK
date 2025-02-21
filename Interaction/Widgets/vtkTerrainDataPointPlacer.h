@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTerrainDataPointPlacer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTerrainDataPointPlacer
  * @brief   Place points on terrain data
@@ -40,6 +28,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPointPlacer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPropCollection;
 class vtkProp;
 class vtkPropPicker;
@@ -52,21 +41,21 @@ public:
    */
   static vtkTerrainDataPointPlacer* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkTerrainDataPointPlacer, vtkPointPlacer);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  // Descuription:
-  // Add an actor (that represents a terrain in a rendererd scene) to the
+  // Description:
+  // Add an actor (that represents a terrain in a rendered scene) to the
   // list. Only props in this list are considered by the PointPlacer
   virtual void AddProp(vtkProp*);
   virtual void RemoveAllProps();
 
-  //@{
+  ///@{
   /**
    * This is the height above (or below) the terrain that the dictated
    * point should be placed. Positive values indicate distances above the
@@ -75,7 +64,7 @@ public:
    */
   vtkSetMacro(HeightOffset, double);
   vtkGetMacro(HeightOffset, double);
-  //@}
+  ///@}
 
   /**
    * Given a renderer and a display position in pixel coordinates,
@@ -114,12 +103,12 @@ public:
    */
   int ValidateWorldPosition(double worldPos[3], double worldOrient[9]) override;
 
-  //@{
+  ///@{
   /**
    * Get the Prop picker.
    */
   vtkGetObjectMacro(PropPicker, vtkPropPicker);
-  //@}
+  ///@}
 
 protected:
   vtkTerrainDataPointPlacer();
@@ -136,4 +125,5 @@ private:
   void operator=(const vtkTerrainDataPointPlacer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

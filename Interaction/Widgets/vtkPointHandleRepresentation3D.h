@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointHandleRepresentation3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPointHandleRepresentation3D
  * @brief   represent the position of a point in 3D space
@@ -31,6 +19,7 @@
 #include "vtkHandleRepresentation.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCursor3D;
 class vtkProperty;
 class vtkActor;
@@ -45,17 +34,17 @@ public:
    */
   static vtkPointHandleRepresentation3D* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkPointHandleRepresentation3D, vtkHandleRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   using vtkHandleRepresentation::Translate;
 
-  //@{
+  ///@{
   /**
    * Set the position of the point in world and display coordinates. Note
    * that if the position is set outside of the bounding box, it will be
@@ -65,7 +54,7 @@ public:
    */
   void SetWorldPosition(double p[3]) override;
   void SetDisplayPosition(double p[3]) override;
-  //@}
+  ///@}
 
   /**
    * Turn on/off the wireframe bounding box.
@@ -99,7 +88,7 @@ public:
   void ZShadowsOn() { this->Cursor3D->ZShadowsOn(); }
   void ZShadowsOff() { this->Cursor3D->ZShadowsOff(); }
 
-  //@{
+  ///@{
   /**
    * If translation mode is on, as the widget is moved the bounding box,
    * shadows, and cursor are all translated and sized simultaneously as the
@@ -114,8 +103,9 @@ public:
   void SetTranslationMode(vtkTypeBool mode);
   vtkGetMacro(TranslationMode, vtkTypeBool);
   vtkBooleanMacro(TranslationMode, vtkTypeBool);
-  //@}
+  ///@}
 
+  ///@{
   /**
    * Convenience methods to turn outline and shadows on and off.
    */
@@ -133,9 +123,9 @@ public:
     this->YShadowsOff();
     this->ZShadowsOff();
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the handle properties when unselected and selected.
    */
@@ -143,9 +133,19 @@ public:
   void SetSelectedProperty(vtkProperty*);
   vtkGetObjectMacro(Property, vtkProperty);
   vtkGetObjectMacro(SelectedProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set the widget color, and the color of interactive handles.
+   */
+  void SetInteractionColor(double, double, double);
+  void SetInteractionColor(double c[3]) { this->SetInteractionColor(c[0], c[1], c[2]); }
+  void SetForegroundColor(double, double, double);
+  void SetForegroundColor(double c[3]) { this->SetForegroundColor(c[0], c[1], c[2]); }
+  ///@}
+
+  ///@{
   /**
    * Set the "hot spot" size; i.e., the region around the focus, in which the
    * motion vector is used to control the constrained sliding action. Note the
@@ -154,14 +154,14 @@ public:
    */
   vtkSetClampMacro(HotSpotSize, double, 0.0, 1.0);
   vtkGetMacro(HotSpotSize, double);
-  //@}
+  ///@}
 
   /**
    * Overload the superclasses SetHandleSize() method to update internal variables.
    */
   void SetHandleSize(double size) override;
 
-  //@{
+  ///@{
   /**
    * Methods to make this class properly act like a vtkWidgetRepresentation.
    */
@@ -177,9 +177,9 @@ public:
     unsigned long event, void* calldata) override;
   int ComputeComplexInteractionState(vtkRenderWindowInteractor* iren, vtkAbstractWidget* widget,
     unsigned long event, void* calldata, int modify = 0) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to make this class behave as a vtkProp.
    */
@@ -190,11 +190,11 @@ public:
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
   void Highlight(int highlight) override;
 
-  //@{
+  ///@{
   /**
    * Turn on/off smooth motion of the handle. See the documentation of
    * MoveFocusRequest for details. By default, SmoothMotion is ON. However,
@@ -209,7 +209,7 @@ public:
   vtkSetMacro(SmoothMotion, vtkTypeBool);
   vtkGetMacro(SmoothMotion, vtkTypeBool);
   vtkBooleanMacro(SmoothMotion, vtkTypeBool);
-  //@}
+  ///@}
 
   /*
    * Register internal Pickers within PickingManager
@@ -240,7 +240,7 @@ protected:
 
   // Methods to manipulate the cursor
   int ConstraintAxis;
-  virtual void Translate(const double* p1, const double* p2) override;
+  void Translate(const double* p1, const double* p2) override;
   void Scale(const double* p1, const double* p2, const double eventPos[2]);
   void MoveFocus(const double* p1, const double* p2);
   void SizeBounds();
@@ -250,7 +250,7 @@ protected:
    * world coordinates), the new display position of the handle center is
    * populated into requestedDisplayPos. This is again only a request for the
    * new display position. It is up to the point placer to deduce the
-   * appropriate world co-ordinates that this display position will map into.
+   * appropriate world coordinates that this display position will map into.
    * The placer may even disallow such a movement.
    * If "SmoothMotion" is OFF, the returned requestedDisplayPos is the same
    * as the event position, ie the location of the mouse cursor. If its OFF,
@@ -284,4 +284,5 @@ private:
   void operator=(const vtkPointHandleRepresentation3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

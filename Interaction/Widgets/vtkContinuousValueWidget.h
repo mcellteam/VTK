@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContinuousValueWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkContinuousValueWidget
@@ -66,19 +50,22 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkContinuousValueWidgetRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkContinuousValueWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkContinuousValueWidget
+  : public vtkAbstractWidget
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard macros.
    */
   vtkTypeMacro(vtkContinuousValueWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -98,17 +85,17 @@ public:
     return reinterpret_cast<vtkContinuousValueWidgetRepresentation*>(this->WidgetRep);
   }
 
-  //@{
+  ///@{
   /**
    * Get the value for this widget.
    */
   double GetValue();
   void SetValue(double v);
-  //@}
+  ///@}
 
 protected:
   vtkContinuousValueWidget();
-  ~vtkContinuousValueWidget() override {}
+  ~vtkContinuousValueWidget() override = default;
 
   // These are the events that are handled
   static void SelectAction(vtkAbstractWidget*);
@@ -117,7 +104,7 @@ protected:
 
   // Manage the state of the widget
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Highlighting,
@@ -131,4 +118,5 @@ private:
   void operator=(const vtkContinuousValueWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

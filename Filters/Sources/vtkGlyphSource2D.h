@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGlyphSource2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGlyphSource2D
  * @brief   create 2D glyphs represented by vtkPolyData
@@ -25,6 +13,8 @@
  * color, and whether the symbol is filled or not (a polygon or closed line
  * sequence). You can also put a short line through the glyph running from -x
  * to +x (the glyph looks like it's on a line), or a cross.
+ *
+ * The simple arrow can also be double pointed and point inwards.
  */
 
 #ifndef vtkGlyphSource2D_h
@@ -49,6 +39,7 @@
 
 #define VTK_MAX_CIRCLE_RESOLUTION 1024
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 class vtkUnsignedCharArray;
 class vtkCellArray;
@@ -65,41 +56,41 @@ public:
    */
   static vtkGlyphSource2D* New();
 
-  //@{
+  ///@{
   /**
    * Set the center of the glyph. By default the center is (0,0,0).
    */
   vtkSetVector3Macro(Center, double);
   vtkGetVectorMacro(Center, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scale of the glyph. Note that the glyphs are designed
    * to fit in the (1,1) rectangle.
    */
   vtkSetClampMacro(Scale, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Scale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scale of optional portions of the glyph (e.g., the
    * dash and cross is DashOn() and CrossOn()).
    */
   vtkSetClampMacro(Scale2, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Scale2, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the color of the glyph. The default color is white.
    */
   vtkSetVector3Macro(Color, double);
   vtkGetVectorMacro(Color, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether the glyph is filled (a polygon) or not (a
    * closed polygon defined by line segments). This only applies
@@ -108,9 +99,9 @@ public:
   vtkSetMacro(Filled, vtkTypeBool);
   vtkGetMacro(Filled, vtkTypeBool);
   vtkBooleanMacro(Filled, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether a short line segment is drawn through the
    * glyph. (This is in addition to the glyph. If the glyph type
@@ -119,9 +110,9 @@ public:
   vtkSetMacro(Dash, vtkTypeBool);
   vtkGetMacro(Dash, vtkTypeBool);
   vtkBooleanMacro(Dash, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether a cross is drawn as part of the glyph. (This
    * is in addition to the glyph. If the glyph type is set to
@@ -130,9 +121,9 @@ public:
   vtkSetMacro(Cross, vtkTypeBool);
   vtkGetMacro(Cross, vtkTypeBool);
   vtkBooleanMacro(Cross, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify an angle (in degrees) to rotate the glyph around
    * the z-axis. Using this ivar, it is possible to generate
@@ -140,17 +131,17 @@ public:
    */
   vtkSetMacro(RotationAngle, double);
   vtkGetMacro(RotationAngle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the number of points that form the circular glyph.
    */
   vtkSetClampMacro(Resolution, int, 3, VTK_MAX_CIRCLE_RESOLUTION);
   vtkGetMacro(Resolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the type of glyph to generate.
    */
@@ -169,9 +160,9 @@ public:
   void SetGlyphTypeToThickArrow() { this->SetGlyphType(VTK_THICKARROW_GLYPH); }
   void SetGlyphTypeToHookedArrow() { this->SetGlyphType(VTK_HOOKEDARROW_GLYPH); }
   void SetGlyphTypeToEdgeArrow() { this->SetGlyphType(VTK_EDGEARROW_GLYPH); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output points.
    * vtkAlgorithm::SINGLE_PRECISION - Output single-precision floating point.
@@ -179,25 +170,60 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set/get the length of the tip(s) for VTK_ARROW_GLYPH.
+   * If DoublePointed is on, the length is capped at 0.5.
+   * Default is 0.3.
+   */
+  vtkSetClampMacro(TipLength, double, 0.0, 1.0);
+  vtkGetMacro(TipLength, double);
+  ///@}
+
+  ///@{
+  /**
+   * Specify whether the arrow glyph should have two opposite tips.
+   * Only applicable for VTK_ARROW_GLYPH.
+   * Default is false.
+   */
+  vtkSetMacro(DoublePointed, bool);
+  vtkGetMacro(DoublePointed, bool);
+  vtkBooleanMacro(DoublePointed, bool);
+  ///@}
+
+  ///@{
+  /**
+   * Specify whether the arrow glyph should have its tip(s) pointing inwards.
+   * Only applicable for VTK_ARROW_GLYPH.
+   * Default is false.
+   */
+  vtkSetMacro(PointInwards, bool);
+  vtkGetMacro(PointInwards, bool);
+  vtkBooleanMacro(PointInwards, bool);
+  ///@}
 
 protected:
   vtkGlyphSource2D();
-  ~vtkGlyphSource2D() override {}
+  ~vtkGlyphSource2D() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
-  double Center[3];
-  double Scale;
-  double Scale2;
-  double Color[3];
-  vtkTypeBool Filled;
-  vtkTypeBool Dash;
-  vtkTypeBool Cross;
-  int GlyphType;
-  double RotationAngle;
-  int Resolution;
-  int OutputPointsPrecision;
+  double Center[3] = { 0.0, 0.0, 0.0 };
+  double Scale = 1.0;
+  double Scale2 = 1.5;
+  double Color[3] = { 1.0, 1.0, 1.0 };
+  vtkTypeBool Filled = true;
+  vtkTypeBool Dash = false;
+  vtkTypeBool Cross = false;
+  int GlyphType = VTK_VERTEX_GLYPH;
+  double RotationAngle = 0.0;
+  int Resolution = 8;
+  int OutputPointsPrecision = SINGLE_PRECISION;
+  double TipLength = 0.3;
+  bool DoublePointed = false;
+  bool PointInwards = false;
 
   void TransformGlyph(vtkPoints* pts);
   void ConvertColor();
@@ -232,4 +258,5 @@ private:
   void operator=(const vtkGlyphSource2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

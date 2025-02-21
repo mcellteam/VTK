@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLabeledTreeMapDataMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkLabeledTreeMapDataMapper.h"
 #include "vtkActor2D.h"
@@ -38,6 +22,7 @@
 #include "vtkViewport.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLabeledTreeMapDataMapper);
 
 vtkLabeledTreeMapDataMapper::vtkLabeledTreeMapDataMapper()
@@ -125,13 +110,13 @@ vtkLabeledTreeMapDataMapper::~vtkLabeledTreeMapDataMapper()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLabeledTreeMapDataMapper::SetRectanglesArrayName(const char* name)
 {
   this->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_VERTICES, name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this mapper.
 void vtkLabeledTreeMapDataMapper::ReleaseGraphicsResources(vtkWindow* win)
 {
@@ -224,10 +209,10 @@ int vtkLabeledTreeMapDataMapper::UpdateWindowInfo(vtkViewport* viewport)
 
   // Get the window extents
   vtkWindow* win = viewport->GetVTKWindow();
-  int* winPos = win->GetPosition();
+  const int* winPos = win->GetPosition();
   this->WindowLimits[0][0] = winPos[0];
   this->WindowLimits[1][0] = winPos[1];
-  int* winSize = win->GetSize();
+  const int* winSize = win->GetSize();
   this->WindowLimits[0][1] = this->WindowLimits[0][0] + winSize[0];
   this->WindowLimits[1][1] = this->WindowLimits[1][0] + winSize[1];
 
@@ -299,7 +284,7 @@ void vtkLabeledTreeMapDataMapper::GetVertexLabel(vtkIdType vertex, vtkDataArray*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLabeledTreeMapDataMapper::RenderOverlay(vtkViewport* viewport, vtkActor2D* actor)
 {
   int i;
@@ -313,7 +298,7 @@ void vtkLabeledTreeMapDataMapper::RenderOverlay(vtkViewport* viewport, vtkActor2
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLabeledTreeMapDataMapper::RenderOpaqueGeometry(vtkViewport* viewport, vtkActor2D* actor)
 {
   int i, numComp = 0, pointIdLabels, activeComp = 0;
@@ -419,14 +404,13 @@ void vtkLabeledTreeMapDataMapper::RenderOpaqueGeometry(vtkViewport* viewport, vt
         }
         numericData = vtkArrayDownCast<vtkDataArray>(abstractData);
         stringData = vtkArrayDownCast<vtkStringArray>(abstractData);
-      };
+      }
       break;
     }
 
     // determine number of components and check input
     if (pointIdLabels)
     {
-      ;
     }
     else if (numericData)
     {
@@ -991,3 +975,4 @@ void vtkLabeledTreeMapDataMapper::GetLevelRange(int range[2])
   range[0] = this->StartLevel;
   range[1] = this->EndLevel;
 }
+VTK_ABI_NAMESPACE_END

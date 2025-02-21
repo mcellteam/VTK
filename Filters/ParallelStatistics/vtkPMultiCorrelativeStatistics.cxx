@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPMultiCorrelativeStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
-#include "vtkToolkits.h"
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkPMultiCorrelativeStatistics.h"
 
@@ -35,29 +18,30 @@
 
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPMultiCorrelativeStatistics);
 vtkCxxSetObjectMacro(vtkPMultiCorrelativeStatistics, Controller, vtkMultiProcessController);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPMultiCorrelativeStatistics::vtkPMultiCorrelativeStatistics()
 {
-  this->Controller = 0;
+  this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPMultiCorrelativeStatistics::~vtkPMultiCorrelativeStatistics()
 {
-  this->SetController(0);
+  this->SetController(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPMultiCorrelativeStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPMultiCorrelativeStatistics::Learn(
   vtkTable* inData, vtkTable* inParameters, vtkMultiBlockDataSet* outMeta)
 {
@@ -82,7 +66,7 @@ void vtkPMultiCorrelativeStatistics::Learn(
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPMultiCorrelativeStatistics::GatherStatistics(
   vtkMultiProcessController* curController, vtkTable* sparseCov)
 {
@@ -121,10 +105,10 @@ void vtkPMultiCorrelativeStatistics::GatherStatistics(
   double* M_l = new double[nM];
 
   // First, load all means and create a name-to-index lookup table
-  std::map<vtkStdString, vtkIdType> meanIndex;
+  std::map<std::string, vtkIdType> meanIndex;
   for (vtkIdType r = 1; r < nRow; ++r)
   {
-    if (sparseCov->GetValueByName(r, "Column2").ToString() == "")
+    if (sparseCov->GetValueByName(r, "Column2").ToString().empty())
     {
       meanIndex[sparseCov->GetValueByName(r, "Column1").ToString()] = r - 1;
 
@@ -134,11 +118,11 @@ void vtkPMultiCorrelativeStatistics::GatherStatistics(
   vtkIdType nMeans = static_cast<vtkIdType>(meanIndex.size());
 
   // Second, load all MXYs and create an index-to-index-pair lookup table
-  std::map<vtkIdType, std::pair<vtkIdType, vtkIdType> > covToMeans;
+  std::map<vtkIdType, std::pair<vtkIdType, vtkIdType>> covToMeans;
   for (vtkIdType r = 1; r < nRow; ++r)
   {
-    vtkStdString col2 = sparseCov->GetValueByName(r, "Column2").ToString();
-    if (col2 != "")
+    std::string col2 = sparseCov->GetValueByName(r, "Column2").ToString();
+    if (!col2.empty())
     {
       covToMeans[r - 1] = std::pair<vtkIdType, vtkIdType>(
         meanIndex[sparseCov->GetValueByName(r, "Column1").ToString()], meanIndex[col2]);
@@ -217,8 +201,9 @@ void vtkPMultiCorrelativeStatistics::GatherStatistics(
   delete[] n_g;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOrderStatistics* vtkPMultiCorrelativeStatistics::CreateOrderStatisticsInstance()
 {
   return vtkPOrderStatistics::New();
 }
+VTK_ABI_NAMESPACE_END

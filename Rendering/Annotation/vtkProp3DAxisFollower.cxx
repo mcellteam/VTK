@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProp3DAxisFollower.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkProp3DAxisFollower.h"
 
 #include "vtkAxisActor.h"
@@ -28,6 +16,7 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkProp3DAxisFollower);
 
 // List of vectors per axis (depending on which one needs to be
@@ -46,7 +35,7 @@ const double AxisAlignedY[3][4][2][3] = {
     { { -1.0, 0.0, 0.0 }, { 0.0, -1.0, 0.0 } }, { { -1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 } } }
 };
 }
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Creates a follower with no camera set
 vtkProp3DAxisFollower::vtkProp3DAxisFollower()
 {
@@ -68,10 +57,10 @@ vtkProp3DAxisFollower::vtkProp3DAxisFollower()
   this->VisibleAtCurrentViewAngle = -1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProp3DAxisFollower::~vtkProp3DAxisFollower() = default;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::SetAxis(vtkAxisActor* axis)
 {
   if (!axis)
@@ -89,13 +78,13 @@ void vtkProp3DAxisFollower::SetAxis(vtkAxisActor* axis)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAxisActor* vtkProp3DAxisFollower::GetAxis()
 {
   return this->Axis;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::SetViewport(vtkViewport* vp)
 {
   if (this->Viewport != vp)
@@ -107,13 +96,13 @@ void vtkProp3DAxisFollower::SetViewport(vtkViewport* vp)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewport* vtkProp3DAxisFollower::GetViewport()
 {
   return this->Viewport;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::CalculateOrthogonalVectors(
   double rX[3], double rY[3], double rZ[3], vtkAxisActor* axis, double* dop, vtkViewport* viewport)
 {
@@ -200,7 +189,7 @@ void vtkProp3DAxisFollower::CalculateOrthogonalVectors(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkProp3DAxisFollower::AutoScale(
   vtkViewport* viewport, vtkCamera* camera, double screenSize, double position[3])
 {
@@ -237,7 +226,7 @@ double vtkProp3DAxisFollower::AutoScale(
   return newScale;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::ComputeMatrix()
 {
   if (!this->Axis)
@@ -330,7 +319,7 @@ void vtkProp3DAxisFollower::ComputeMatrix()
   this->SetVisibility(this->VisibleAtCurrentViewAngle);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower ::ComputeRotationAndTranlation(vtkViewport* viewport,
   double translation[3], double rX[3], double rY[3], double rZ[3], vtkAxisActor* axis)
 {
@@ -351,7 +340,7 @@ void vtkProp3DAxisFollower ::ComputeRotationAndTranlation(vtkViewport* viewport,
   double origRy[3] = { rY[0], rY[1], rY[2] };
 
   // NOTE: Basically the idea here is that dotVal will be positive
-  // only when we have projection direction aligned with our z directon
+  // only when we have projection direction aligned with our z direction
   // and when that happens it means that our Y is inverted.
   if (dotVal > 0)
   {
@@ -391,7 +380,7 @@ void vtkProp3DAxisFollower ::ComputeRotationAndTranlation(vtkViewport* viewport,
   translation[2] = origRy[2] * autoScaleVert * vertSign + origRx[2] * autoScaleHoriz * horizSign;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::ComputerAutoCenterTranslation(
   const double& vtkNotUsed(autoScaleFactor), double translation[3])
 {
@@ -429,7 +418,7 @@ void vtkProp3DAxisFollower::ComputerAutoCenterTranslation(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkProp3DAxisFollower::TestDistanceVisibility()
 {
   if (!this->Camera->GetParallelProjection())
@@ -468,7 +457,7 @@ int vtkProp3DAxisFollower::TestDistanceVisibility()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::ExecuteViewAngleVisibility(double normal[3])
 {
   if (!normal)
@@ -492,7 +481,7 @@ void vtkProp3DAxisFollower::ExecuteViewAngleVisibility(double normal[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -515,7 +504,7 @@ void vtkProp3DAxisFollower::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::ShallowCopy(vtkProp* prop)
 {
   vtkProp3DAxisFollower* f = vtkProp3DAxisFollower::SafeDownCast(prop);
@@ -534,42 +523,43 @@ void vtkProp3DAxisFollower::ShallowCopy(vtkProp* prop)
   this->Superclass::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkProp3DAxisFollower::IsTextUpsideDown(double* a, double* b)
 {
   double angle = vtkMath::RadiansFromDegrees(this->Orientation[2]);
   return (b[0] - a[0]) * cos(angle) - (b[1] - a[1]) * sin(angle) < 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkProp3DAxisFollower::SetScreenOffset(double offset)
 {
   this->SetScreenOffsetVector(1, offset);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkProp3DAxisFollower::GetScreenOffset()
 {
   return this->GetScreenOffsetVector()[1];
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkProp3DAxisFollower::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   this->SetViewport(viewport);
   return this->Superclass::RenderOpaqueGeometry(viewport);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkProp3DAxisFollower::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
 {
   this->SetViewport(viewport);
   return this->Superclass::RenderTranslucentPolygonalGeometry(viewport);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkProp3DAxisFollower::RenderVolumetricGeometry(vtkViewport* viewport)
 {
   this->SetViewport(viewport);
   return this->Superclass::RenderVolumetricGeometry(viewport);
 }
+VTK_ABI_NAMESPACE_END

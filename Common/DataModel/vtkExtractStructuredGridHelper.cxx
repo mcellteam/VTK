@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractGrid.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractStructuredGridHelper.h"
 
 // VTK includes
@@ -49,6 +37,7 @@ namespace vtk
 {
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 // Index mapping works as:
 // inputExtent = Mapping[dim][outputExtent - this->OutputWholeExtent[2*dim]]
@@ -57,31 +46,33 @@ struct vtkIndexMap
   std::vector<int> Mapping[3];
 };
 
+VTK_ABI_NAMESPACE_END
 } // End namespace detail
 } // End namespace vtk
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractStructuredGridHelper);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractStructuredGridHelper::vtkExtractStructuredGridHelper()
 {
   this->IndexMap = new vtk::detail::vtkIndexMap;
   this->Invalidate();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractStructuredGridHelper::~vtkExtractStructuredGridHelper()
 {
   delete this->IndexMap;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractStructuredGridHelper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractStructuredGridHelper::Invalidate()
 {
   this->VOI[0] = 0;
@@ -114,7 +105,7 @@ void vtkExtractStructuredGridHelper::Invalidate()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractStructuredGridHelper::Initialize(
   int inVoi[6], int wholeExtent[6], int sampleRate[3], bool includeBoundary)
 {
@@ -203,7 +194,7 @@ void vtkExtractStructuredGridHelper::Initialize(
   } // END for all dimensions
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkExtractStructuredGridHelper::IsValid() const
 {
   return this->OutputWholeExtent[0] <= this->OutputWholeExtent[1] &&
@@ -211,7 +202,7 @@ bool vtkExtractStructuredGridHelper::IsValid() const
     this->OutputWholeExtent[4] <= this->OutputWholeExtent[5];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractStructuredGridHelper::GetMappedIndex(int dim, int outIdx)
 {
   // Sanity Checks
@@ -220,7 +211,7 @@ int vtkExtractStructuredGridHelper::GetMappedIndex(int dim, int outIdx)
   return this->IndexMap->Mapping[dim][outIdx];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractStructuredGridHelper::GetMappedIndexFromExtentValue(int dim, int outExtVal)
 {
   // Sanity Checks
@@ -231,7 +222,7 @@ int vtkExtractStructuredGridHelper::GetMappedIndexFromExtentValue(int dim, int o
   return this->IndexMap->Mapping[dim][outIdx];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractStructuredGridHelper::GetMappedExtentValue(int dim, int outExtVal)
 {
   // Sanity Checks
@@ -242,7 +233,7 @@ int vtkExtractStructuredGridHelper::GetMappedExtentValue(int dim, int outExtVal)
   return this->IndexMap->Mapping[dim][outIdx] + this->InputWholeExtent[2 * dim];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractStructuredGridHelper::GetMappedExtentValueFromIndex(int dim, int outIdx)
 {
   // Sanity Checks
@@ -251,14 +242,15 @@ int vtkExtractStructuredGridHelper::GetMappedExtentValueFromIndex(int dim, int o
   return this->IndexMap->Mapping[dim][outIdx] + this->InputWholeExtent[2 * dim];
 }
 
-//-----------------------------------------------------------------------------
-int vtkExtractStructuredGridHelper::GetSize(const int dim)
+//------------------------------------------------------------------------------
+int vtkExtractStructuredGridHelper::GetSize(int dim)
 {
   assert("pre: dimension dim is out-of-bounds!" && (dim >= 0) && (dim < 3));
   return (static_cast<int>(this->IndexMap->Mapping[dim].size()));
 }
+VTK_ABI_NAMESPACE_END
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 int roundToInt(double r)
@@ -267,7 +259,8 @@ int roundToInt(double r)
 }
 }
 
-//-----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 void vtkExtractStructuredGridHelper::ComputeBeginAndEnd(
   int inExt[6], int voi[6], int begin[3], int end[3])
 {
@@ -282,7 +275,7 @@ void vtkExtractStructuredGridHelper::ComputeBeginAndEnd(
 
     for (int i = 0; i < 6; ++i)
     {
-      uExt[i] = static_cast<int>(roundToInt(uExtB.GetBound(i)));
+      uExt[i] = roundToInt(uExtB.GetBound(i));
     }
 
     // Find the first and last indices in the map that are
@@ -315,7 +308,7 @@ void vtkExtractStructuredGridHelper::ComputeBeginAndEnd(
   } // END if box intersects
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractStructuredGridHelper::CopyPointsAndPointData(int inExt[6], int outExt[6],
   vtkPointData* pd, vtkPoints* inpnts, vtkPointData* outPD, vtkPoints* outpnts)
 {
@@ -420,7 +413,7 @@ void vtkExtractStructuredGridHelper::CopyPointsAndPointData(int inExt[6], int ou
   } // END for all k
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractStructuredGridHelper::CopyCellData(
   int inExt[6], int outExt[6], vtkCellData* cd, vtkCellData* outCD)
 {
@@ -564,7 +557,7 @@ void vtkExtractStructuredGridHelper::GetPartitionedVOI(const int globalVOI[6],
   // Start with filter's VOI (Ex: [3, 17] | [3, 17] )
   std::copy(globalVOI, globalVOI + 6, partitionedVOI);
 
-  // Clamp to paritioned data (Ex: [3, 10] | [10, 17] )
+  // Clamp to partitioned data (Ex: [3, 10] | [10, 17] )
   vtkStructuredExtent::Clamp(partitionedVOI, partitionedExtent);
 
   // Adjust for spacing: (Ex: [3, 9] | [11, 17] )
@@ -657,3 +650,4 @@ void vtkExtractStructuredGridHelper::GetPartitionedOutputExtent(const int global
     }
   }
 }
+VTK_ABI_NAMESPACE_END

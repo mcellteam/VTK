@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleAreaSelectHover.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkInteractorStyleAreaSelectHover
  * @brief   An interactor style for an area tree view
@@ -37,6 +21,7 @@
 #include "vtkInteractorStyleRubberBand2D.h"
 #include "vtkViewsInfovisModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAreaLayout;
 class vtkBalloonRepresentation;
 class vtkPoints;
@@ -53,24 +38,24 @@ public:
   vtkTypeMacro(vtkInteractorStyleAreaSelectHover, vtkInteractorStyleRubberBand2D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Must be set to the vtkAreaLayout used to compute the bounds of
    * each vertex.
    */
   void SetLayout(vtkAreaLayout* layout);
   vtkGetObjectMacro(Layout, vtkAreaLayout);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The name of the field to use when displaying text in the hover balloon.
    */
   vtkSetStringMacro(LabelField);
   vtkGetStringMacro(LabelField);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Determine whether or not to use rectangular coordinates instead of
    * polar coordinates.
@@ -78,7 +63,7 @@ public:
   vtkSetMacro(UseRectangularCoordinates, bool);
   vtkGetMacro(UseRectangularCoordinates, bool);
   vtkBooleanMacro(UseRectangularCoordinates, bool);
-  //@}
+  ///@}
 
   /**
    * Overridden from vtkInteractorStyleImage to provide the desired
@@ -96,13 +81,13 @@ public:
    */
   void SetHighLightColor(double r, double g, double b);
 
-  //@{
+  ///@{
   /**
    * The width of the line around the hovered vertex.
    */
   void SetHighLightWidth(double lw);
   double GetHighLightWidth();
-  //@}
+  ///@}
 
   /**
    * Obtain the tree vertex id at the position specified.
@@ -129,4 +114,5 @@ private:
   bool UseRectangularCoordinates;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

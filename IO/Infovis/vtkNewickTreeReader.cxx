@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNewickTreeReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkNewickTreeReader.h"
 
 #include "vtkByteSwap.h"
@@ -33,13 +21,14 @@
 #include <fstream>
 #include <iostream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkNewickTreeReader);
 
 #ifdef read
 #undef read
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNewickTreeReader::vtkNewickTreeReader()
 {
   vtkTree* output = vtkTree::New();
@@ -50,28 +39,28 @@ vtkNewickTreeReader::vtkNewickTreeReader()
   output->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNewickTreeReader::~vtkNewickTreeReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTree* vtkNewickTreeReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTree* vtkNewickTreeReader::GetOutput(int idx)
 {
   return vtkTree::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNewickTreeReader::SetOutput(vtkTree* output)
 {
   this->GetExecutive()->SetOutputData(0, output);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNewickTreeReader::ReadNewickTree(const char* buffer, vtkTree& tree)
 {
   // Read through the input file to count the number of nodes in the tree.
@@ -146,7 +135,7 @@ int vtkNewickTreeReader::ReadNewickTree(const char* buffer, vtkTree& tree)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNewickTreeReader::ReadMeshSimple(const std::string& fname, vtkDataObject* doOutput)
 {
   vtkDebugMacro(<< "Reading Newick tree ...");
@@ -197,7 +186,7 @@ int vtkNewickTreeReader::ReadMeshSimple(const std::string& fname, vtkDataObject*
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNewickTreeReader::CountNodes(const char* buffer, vtkIdType* numNodes)
 {
   char* current;
@@ -320,7 +309,7 @@ void vtkNewickTreeReader::CountNodes(const char* buffer, vtkIdType* numNodes)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkNewickTreeReader::BuildTree(char* buffer, vtkMutableDirectedGraph* g,
   vtkDoubleArray* weights, vtkStringArray* names, vtkIdType parent)
 {
@@ -496,17 +485,18 @@ vtkIdType vtkNewickTreeReader::BuildTree(char* buffer, vtkMutableDirectedGraph* 
   return node;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNewickTreeReader::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTree");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNewickTreeReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "InputString: " << (this->InputString ? this->InputString : "(none)") << endl;
   os << indent << "ReadFromInputString: " << (this->ReadFromInputString ? "on" : "off") << endl;
 }
+VTK_ABI_NAMESPACE_END

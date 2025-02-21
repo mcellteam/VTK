@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRResampleFilter.h
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAMRResampleFilter
  *
@@ -37,6 +25,7 @@
 #include "vtkMultiBlockDataSetAlgorithm.h"
 #include <vector> // For STL vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformation;
 class vtkInformationVector;
 class vtkUniformGrid;
@@ -56,65 +45,65 @@ public:
   vtkTypeMacro(vtkAMRResampleFilter, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& oss, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set & Get macro for the number of samples (cells) in each dimension.
    * Nominal value for the number of samples is 10x10x10.
    */
   vtkSetVector3Macro(NumberOfSamples, int);
   vtkGetVector3Macro(NumberOfSamples, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set & Get macro for the TransferToNodes flag
    */
-  vtkSetMacro(TransferToNodes, int);
-  vtkGetMacro(TransferToNodes, int);
-  //@}
+  vtkSetMacro(TransferToNodes, vtkTypeBool);
+  vtkGetMacro(TransferToNodes, vtkTypeBool);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set & Get macro to allow the filter to operate in both demand-driven
    * and standard modes
    */
   vtkSetMacro(DemandDrivenMode, int);
   vtkGetMacro(DemandDrivenMode, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set & Get macro for the number of subdivisions
    */
   vtkSetMacro(NumberOfPartitions, int);
   vtkGetMacro(NumberOfPartitions, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set and Get the min corner
    */
   vtkSetVector3Macro(Min, double);
   vtkGetVector3Macro(Min, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set and Get the max corner
    */
   vtkSetVector3Macro(Max, double);
   vtkGetVector3Macro(Max, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set & Get macro for the number of subdivisions
    */
   vtkSetMacro(UseBiasVector, bool);
   vtkGetMacro(UseBiasVector, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set and Get the bias vector.  If UseBiasVector is true
    * then the largest component of this vector can not have
@@ -122,15 +111,15 @@ public:
    */
   vtkSetVector3Macro(BiasVector, double);
   vtkGetVector3Macro(BiasVector, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set & Get macro for the multi-process controller
    */
-  vtkSetMacro(Controller, vtkMultiProcessController*);
-  vtkGetMacro(Controller, vtkMultiProcessController*);
-  //@}
+  virtual void SetController(vtkMultiProcessController*);
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  ///@}
 
   // Standard pipeline routines
 
@@ -164,7 +153,7 @@ protected:
   double GridMax[3];
   int LevelOfResolution;
   int NumberOfPartitions;
-  int TransferToNodes;
+  vtkTypeBool TransferToNodes;
   int DemandDrivenMode;
   vtkMultiProcessController* Controller;
   bool UseBiasVector;
@@ -191,18 +180,18 @@ protected:
    * Given the Region ID this function returns whether or not the region
    * belongs to this process or not.
    */
-  bool IsRegionMine(const int regionIdx);
+  bool IsRegionMine(int regionIdx);
 
   /**
    * Given the Region ID, this method computes the corresponding process ID
    * that owns the region based on static block-cyclic distribution.
    */
-  int GetRegionProcessId(const int regionIdx);
+  int GetRegionProcessId(int regionIdx);
 
   /**
    * Given a cell index and a grid, this method computes the cell centroid.
    */
-  void ComputeCellCentroid(vtkUniformGrid* g, const vtkIdType cellIdx, double c[3]);
+  void ComputeCellCentroid(vtkUniformGrid* g, vtkIdType cellIdx, double c[3]);
 
   /**
    * Given the source cell data of an AMR grid, this method initializes the
@@ -314,8 +303,7 @@ protected:
    * samples requested, N, the root level spacing h0, the length of the box,
    * L (actual length after snapping) and the refinement ratio.
    */
-  void ComputeLevelOfResolution(
-    const int N[3], const double h0[3], const double L[3], const double rf);
+  void ComputeLevelOfResolution(const int N[3], const double h0[3], const double L[3], double rf);
 
   /**
    * This method snaps the bounds s.t. they are within the interior of the
@@ -376,4 +364,5 @@ private:
   void operator=(const vtkAMRResampleFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkAMRResampleFilter_h */

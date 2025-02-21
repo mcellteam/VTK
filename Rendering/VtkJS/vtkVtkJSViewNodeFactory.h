@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVtkJSViewNodeFactory.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVtkJSViewNodeFactory
  * @brief   Constructs view nodes for traversing a scene for vtk-js
@@ -34,6 +22,7 @@
 
 #include "vtkViewNodeFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkVtkJSSceneGraphSerializer;
 
 class VTKRENDERINGVTKJS_EXPORT vtkVtkJSViewNodeFactory : public vtkViewNodeFactory
@@ -43,13 +32,13 @@ public:
   vtkTypeMacro(vtkVtkJSViewNodeFactory, vtkViewNodeFactory);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the Serializer object
    */
   void SetSerializer(vtkVtkJSSceneGraphSerializer*);
   vtkGetObjectMacro(Serializer, vtkVtkJSSceneGraphSerializer);
-  //@}
+  ///@}
 
 protected:
   vtkVtkJSViewNodeFactory();
@@ -62,4 +51,5 @@ private:
   void operator=(const vtkVtkJSViewNodeFactory&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

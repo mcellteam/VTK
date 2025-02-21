@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExpandSelectedGraph.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkExpandSelectedGraph
@@ -40,6 +24,7 @@
 #include "vtkInfovisCoreModule.h" // For export macro
 #include "vtkSelectionAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGraph;
 class vtkIdTypeArray;
 
@@ -60,16 +45,16 @@ public:
    */
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get BFSDistance which controls how many 'hops' the selection
    * is grown from each seed point in the selection set (defaults to 1)
    */
   vtkSetMacro(BFSDistance, int);
   vtkGetMacro(BFSDistance, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get IncludeShortestPaths controls whether this filter tries to
    * 'connect' the vertices in the selection set by computing the
@@ -79,17 +64,17 @@ public:
   vtkSetMacro(IncludeShortestPaths, bool);
   vtkGetMacro(IncludeShortestPaths, bool);
   vtkBooleanMacro(IncludeShortestPaths, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the vertex domain to use in the expansion.
    */
   vtkSetStringMacro(Domain);
   vtkGetStringMacro(Domain);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Whether or not to use the domain when deciding to add a vertex to the
    * expansion. Defaults to false.
@@ -97,7 +82,7 @@ public:
   vtkSetMacro(UseDomain, bool);
   vtkGetMacro(UseDomain, bool);
   vtkBooleanMacro(UseDomain, bool);
-  //@}
+  ///@}
 
 protected:
   vtkExpandSelectedGraph();
@@ -119,4 +104,5 @@ private:
   void BFSExpandSelection(vtkIdTypeArray* selection, vtkGraph* graph);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

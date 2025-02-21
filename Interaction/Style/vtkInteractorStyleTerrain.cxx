@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleTerrain.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInteractorStyleTerrain.h"
 
 #include "vtkActor.h"
@@ -27,9 +15,12 @@
 #include "vtkRenderer.h"
 #include "vtkSphereSource.h"
 
+#include <algorithm>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkInteractorStyleTerrain);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleTerrain::vtkInteractorStyleTerrain()
 {
   this->LatLongLines = 0;
@@ -42,7 +33,7 @@ vtkInteractorStyleTerrain::vtkInteractorStyleTerrain()
   this->MotionFactor = 10.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleTerrain::~vtkInteractorStyleTerrain()
 {
   if (this->LatLongSphere != nullptr)
@@ -66,7 +57,7 @@ vtkInteractorStyleTerrain::~vtkInteractorStyleTerrain()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::OnMouseMove()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -94,7 +85,7 @@ void vtkInteractorStyleTerrain::OnMouseMove()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::OnLeftButtonDown()
 {
   this->FindPokedRenderer(
@@ -108,7 +99,7 @@ void vtkInteractorStyleTerrain::OnLeftButtonDown()
   this->StartRotate();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::OnLeftButtonUp()
 {
   switch (this->State)
@@ -123,7 +114,7 @@ void vtkInteractorStyleTerrain::OnLeftButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::OnMiddleButtonDown()
 {
   this->FindPokedRenderer(
@@ -137,7 +128,7 @@ void vtkInteractorStyleTerrain::OnMiddleButtonDown()
   this->StartPan();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::OnMiddleButtonUp()
 {
   switch (this->State)
@@ -152,7 +143,7 @@ void vtkInteractorStyleTerrain::OnMiddleButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::OnRightButtonDown()
 {
   this->FindPokedRenderer(
@@ -166,7 +157,7 @@ void vtkInteractorStyleTerrain::OnRightButtonDown()
   this->StartDolly();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::OnRightButtonUp()
 {
   switch (this->State)
@@ -181,7 +172,7 @@ void vtkInteractorStyleTerrain::OnRightButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::Rotate()
 {
   if (this->CurrentRenderer == nullptr)
@@ -194,7 +185,7 @@ void vtkInteractorStyleTerrain::Rotate()
   int dx = -(rwi->GetEventPosition()[0] - rwi->GetLastEventPosition()[0]);
   int dy = -(rwi->GetEventPosition()[1] - rwi->GetLastEventPosition()[1]);
 
-  int* size = this->CurrentRenderer->GetRenderWindow()->GetSize();
+  const int* size = this->CurrentRenderer->GetRenderWindow()->GetSize();
 
   double a = dx / static_cast<double>(size[0]) * 180.0;
   double e = dy / static_cast<double>(size[1]) * 180.0;
@@ -240,7 +231,7 @@ void vtkInteractorStyleTerrain::Rotate()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::Pan()
 {
   if (this->CurrentRenderer == nullptr)
@@ -284,7 +275,7 @@ void vtkInteractorStyleTerrain::Pan()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::Dolly()
 {
   if (this->CurrentRenderer == nullptr)
@@ -321,44 +312,44 @@ void vtkInteractorStyleTerrain::Dolly()
   rwi->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::OnChar()
 {
   vtkRenderWindowInteractor* rwi = this->Interactor;
-
-  switch (rwi->GetKeyCode())
+  char* cKeySym = rwi->GetKeySym();
+  std::string keySym = cKeySym != nullptr ? cKeySym : "";
+  std::transform(keySym.begin(), keySym.end(), keySym.begin(), ::toupper);
+  if (keySym == "L")
   {
-    case 'l':
-      this->FindPokedRenderer(rwi->GetEventPosition()[0], rwi->GetEventPosition()[1]);
-      this->CreateLatLong();
-      if (this->LatLongLines)
-      {
-        this->LatLongLinesOff();
-      }
-      else
-      {
-        double bounds[6];
-        this->CurrentRenderer->ComputeVisiblePropBounds(bounds);
-        double radius = sqrt((bounds[1] - bounds[0]) * (bounds[1] - bounds[0]) +
-                          (bounds[3] - bounds[2]) * (bounds[3] - bounds[2]) +
-                          (bounds[5] - bounds[4]) * (bounds[5] - bounds[4])) /
-          2.0;
-        this->LatLongSphere->SetRadius(radius);
-        this->LatLongSphere->SetCenter((bounds[0] + bounds[1]) / 2.0, (bounds[2] + bounds[3]) / 2.0,
-          (bounds[4] + bounds[5]) / 2.0);
-        this->LatLongLinesOn();
-      }
-      this->SelectRepresentation();
-      rwi->Render();
-      break;
-
-    default:
-      this->Superclass::OnChar();
-      break;
+    this->FindPokedRenderer(rwi->GetEventPosition()[0], rwi->GetEventPosition()[1]);
+    this->CreateLatLong();
+    if (this->LatLongLines)
+    {
+      this->LatLongLinesOff();
+    }
+    else
+    {
+      double bounds[6];
+      this->CurrentRenderer->ComputeVisiblePropBounds(bounds);
+      double radius = sqrt((bounds[1] - bounds[0]) * (bounds[1] - bounds[0]) +
+                        (bounds[3] - bounds[2]) * (bounds[3] - bounds[2]) +
+                        (bounds[5] - bounds[4]) * (bounds[5] - bounds[4])) /
+        2.0;
+      this->LatLongSphere->SetRadius(radius);
+      this->LatLongSphere->SetCenter((bounds[0] + bounds[1]) / 2.0, (bounds[2] + bounds[3]) / 2.0,
+        (bounds[4] + bounds[5]) / 2.0);
+      this->LatLongLinesOn();
+    }
+    this->SelectRepresentation();
+    rwi->Render();
+  }
+  else
+  {
+    this->Superclass::OnChar();
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::CreateLatLong()
 {
   if (this->LatLongSphere == nullptr)
@@ -389,7 +380,7 @@ void vtkInteractorStyleTerrain::CreateLatLong()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::SelectRepresentation()
 {
   if (this->CurrentRenderer == nullptr)
@@ -410,10 +401,11 @@ void vtkInteractorStyleTerrain::SelectRepresentation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleTerrain::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Latitude/Longitude Lines: " << (this->LatLongLines ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

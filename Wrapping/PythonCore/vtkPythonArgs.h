@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPythonArgs.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /*-----------------------------------------------------------------------
 The vtkPythonArgs class was created in Oct 2010 by David Gobbi for.
 
@@ -31,19 +19,24 @@ resulting in wrapper code that is faster and more compact.
 #include "PyVTKEnum.h"
 #include "PyVTKObject.h"
 #include "PyVTKTemplate.h"
+#include "vtkABINamespace.h"
 #include "vtkPythonUtil.h"
 #include "vtkWrappingPythonCoreModule.h" // For export macro
 
-#include "vtkConfigure.h"
-#include "vtkUnicodeString.h"
+#include "vtkCompiler.h" // for VTK_USE_EXTERN_TEMPLATE
 
+#include <cassert>
 #include <cstring>
 #include <string>
+
+VTK_ABI_NAMESPACE_BEGIN
+class vtkObjectBase;
+class vtkSmartPointerBase;
 
 class VTKWRAPPINGPYTHONCORE_EXPORT vtkPythonArgs
 {
 public:
-  //@{
+  ///@{
   /**
    * Constructor for parsing args of a vtkObjectBase object.
    */
@@ -51,13 +44,13 @@ public:
     : Args(args)
     , MethodName(methodname)
   {
-    this->N = PyTuple_GET_SIZE(args);
+    this->N = PyTuple_Size(args);
     this->M = PyType_Check(self);
     this->I = this->M;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Constructor for parsing method args.
    */
@@ -65,11 +58,11 @@ public:
     : Args(args)
     , MethodName(methodname)
   {
-    this->N = PyTuple_GET_SIZE(args);
+    this->N = PyTuple_Size(args);
     this->M = 0;
     this->I = 0;
   }
-  //@}
+  ///@}
 
   /**
    * Reset in order to re-parse the args.
@@ -153,7 +146,7 @@ public:
    */
   bool CheckSizeHint(int i, size_t m, size_t n);
 
-  //@{
+  ///@{
   /**
    * Get the next argument as a naked Python object.
    */
@@ -169,9 +162,9 @@ public:
     v = vtkPythonArgs::GetArgAsPythonObject(o, b);
     return b;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next argument as a vtkObjectBase derived type.
    * It uses a C-style cast instead of a static_cast, which
@@ -193,9 +186,18 @@ public:
     v = (T*)vtkPythonArgs::GetArgAsVTKObject(o, classname, b);
     return b;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Get the next argument as a vtkObjectBase derived type,
+   * and put into a smart pointer.
+   */
+  bool GetVTKObject(vtkSmartPointerBase& v, const char* classname);
+  bool GetVTKObject(PyObject* o, vtkSmartPointerBase& v, const char* classname);
+  ///@}
+
+  ///@{
   /**
    * Get the next argument as a special object.  If a constructor
    * was needed to convert the arg, the constructed object will be
@@ -213,9 +215,9 @@ public:
     v = static_cast<T*>(vtkPythonArgs::GetArgAsSpecialObject(arg, classname, &o));
     return (v != nullptr);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next argument as a special object.  Use this if the
    * arg is a non-const ref, as it will disallow conversion.
@@ -232,9 +234,9 @@ public:
     v = static_cast<T*>(vtkPythonArgs::GetArgAsSpecialObject(o, classname, nullptr));
     return (v != nullptr);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next argument as an enum value.
    */
@@ -252,16 +254,16 @@ public:
     v = static_cast<T>(vtkPythonArgs::GetArgAsEnum(o, enumname, r));
     return r;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the arguments needed for a SetExecuteMethod or a similar
    * method that requires a function-pointer argument.
    */
   bool GetFunction(PyObject*& o);
   static bool GetFunction(PyObject* arg, PyObject*& o);
-  //@}
+  ///@}
 
   // Get the next arg as a pointer to a buffer.
   bool GetBuffer(void*& a, Py_buffer* buf);
@@ -325,7 +327,7 @@ public:
   bool GetBuffer(const unsigned long long*& a, Py_buffer* buf);
   static bool GetBuffer(PyObject* o, const unsigned long long*& a, Py_buffer* buf);
 
-  //@{
+  ///@{
   /**
    * Get the next argument as a string.
    */
@@ -333,19 +335,17 @@ public:
   static bool GetValue(PyObject* o, const char*& a);
   bool GetValue(std::string& a);
   static bool GetValue(PyObject* o, std::string& a);
-  bool GetValue(vtkUnicodeString& a);
-  static bool GetValue(PyObject* o, vtkUnicodeString& a);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next string arg as a character.
    */
   bool GetValue(char& a);
   static bool GetValue(PyObject* o, char& a);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next argument.  Sets a TypeError on failure.
    */
@@ -375,9 +375,19 @@ public:
   static bool GetValue(PyObject* o, long long& a);
   bool GetValue(unsigned long long& a);
   static bool GetValue(PyObject* o, unsigned long long& a);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Get the next argument as file system path.
+   */
+  bool GetFilePath(const char*& a);
+  static bool GetFilePath(PyObject* o, const char*& a);
+  bool GetFilePath(std::string& a);
+  static bool GetFilePath(PyObject* o, std::string& a);
+  ///@}
+
+  ///@{
   /**
    * Get the next argument as an array.
    */
@@ -396,10 +406,10 @@ public:
   bool GetArray(long long* a, size_t n);
   bool GetArray(unsigned long long* a, size_t n);
   bool GetArray(std::string* a, size_t n);
-  bool GetArray(vtkUnicodeString* a, size_t n);
-  //@}
+  bool GetArray(vtkSmartPointerBase* a, size_t n, const char* classname);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next argument as a multi-dimensional array.
    */
@@ -417,14 +427,13 @@ public:
   bool GetNArray(unsigned long* a, int ndims, const size_t* dims);
   bool GetNArray(long long* a, int ndims, const size_t* dims);
   bool GetNArray(unsigned long long* a, int ndims, const size_t* dims);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the value of an argument that was passed by reference.
    */
   bool SetArgValue(int i, const std::string& a);
-  bool SetArgValue(int i, const vtkUnicodeString& a);
   bool SetArgValue(int i, char a);
   bool SetArgValue(int i, float a);
   bool SetArgValue(int i, double a);
@@ -452,9 +461,9 @@ public:
   bool SetArgValue(int i, const unsigned long* a, size_t n);
   bool SetArgValue(int i, const long long* a, size_t n);
   bool SetArgValue(int i, const unsigned long long* a, size_t n);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the values in an array argument.
    */
@@ -472,9 +481,9 @@ public:
   bool SetArray(int i, const unsigned long* a, size_t n);
   bool SetArray(int i, const long long* a, size_t n);
   bool SetArray(int i, const unsigned long long* a, size_t n);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the values in a multi-dimensional array argument.
    */
@@ -492,7 +501,7 @@ public:
   bool SetNArray(int i, const unsigned long* a, int n, const size_t* d);
   bool SetNArray(int i, const long long* a, int n, const size_t* d);
   bool SetNArray(int i, const unsigned long long* a, int n, const size_t* d);
-  //@}
+  ///@}
 
   /**
    * Set the contents of the specified argument from a sequence,
@@ -510,6 +519,12 @@ public:
    * If a null pointer is given, then None will be returned.
    */
   static PyObject* BuildVTKObject(const void* v);
+
+  /**
+   * Build a vtkObjectBase object from a smart pointer.
+   * If pointer is empty, then None will be returned.
+   */
+  static PyObject* BuildVTKObject(vtkSmartPointerBase& v);
 
   /**
    * Build a non-vtkObjectBase object of the specified type.
@@ -531,22 +546,21 @@ public:
    */
   static PyObject* BuildValue(const void* v);
 
-  //@{
+  ///@{
   /**
    * Build a string return value.
    */
   static PyObject* BuildValue(const char* v, size_t l);
   static PyObject* BuildValue(const char* v);
   static PyObject* BuildValue(const std::string& v);
-  static PyObject* BuildValue(const vtkUnicodeString& v);
-  //@}
+  ///@}
 
   /**
    * Build a char return value.
    */
   static PyObject* BuildValue(char v);
 
-  //@{
+  ///@{
   /**
    * Build a numeric return value.
    */
@@ -558,14 +572,14 @@ public:
   static PyObject* BuildValue(unsigned long v);
   static PyObject* BuildValue(long long v);
   static PyObject* BuildValue(unsigned long long v);
-  //@}
+  ///@}
 
   /**
    * Build a bytes object (or string).
    */
   static PyObject* BuildBytes(const char* v, size_t n);
 
-  //@{
+  ///@{
   /**
    * Build a tuple for a return value.
    */
@@ -583,8 +597,14 @@ public:
   static PyObject* BuildTuple(const long long* a, size_t n);
   static PyObject* BuildTuple(const unsigned long long* a, size_t n);
   static PyObject* BuildTuple(const std::string* a, size_t n);
-  static PyObject* BuildTuple(const vtkUnicodeString* a, size_t n);
-  //@}
+  static PyObject* BuildTuple(const vtkSmartPointerBase* a, size_t n);
+  ///@}
+
+  /**
+   * Delete a vtkObjectBase object, given just a void pointer.
+   * This can be used when conversion of the object to Python fails.
+   */
+  static void DeleteVTKObject(void* v);
 
   /**
    * Copy an array.
@@ -592,7 +612,14 @@ public:
   template <class T>
   static void Save(const T* a, T* b, size_t n)
   {
-    memcpy(b, a, n * sizeof(T));
+    if (b && a)
+    {
+      memcpy(b, a, n * sizeof(T));
+    }
+    else
+    {
+      assert(n == 0);
+    }
   }
 
   /**
@@ -601,20 +628,28 @@ public:
   template <class T>
   static bool HasChanged(const T* a, const T* b, size_t n)
   {
-    return (memcmp(a, b, n * sizeof(T)) != 0);
+    if (a && b)
+    {
+      return (memcmp(a, b, n * sizeof(T)) != 0);
+    }
+    else
+    {
+      assert(n == 0);
+      return false; // Actually indeterminate, but this is compatible.
+    }
   }
 
   /**
    * Get the argument count.
    */
-  static int GetArgCount(PyObject* args) { return static_cast<int>(PyTuple_GET_SIZE(args)); }
+  static int GetArgCount(PyObject* args) { return static_cast<int>(PyTuple_Size(args)); }
 
   /**
    * Get the argument count for a method that might be unbound.
    */
   static int GetArgCount(PyObject* self, PyObject* args)
   {
-    return (static_cast<int>(PyTuple_GET_SIZE(args)) - PyType_Check(self));
+    return (static_cast<int>(PyTuple_Size(args)) - PyType_Check(self));
   }
 
   /**
@@ -658,37 +693,37 @@ protected:
    */
   static PyObject* GetSelfFromFirstArg(PyObject* self, PyObject* args);
 
-  //@{
+  ///@{
   /**
    * Get the next argument as an object of the given type.
    */
   PyObject* GetArgAsPythonObject(bool& valid);
   static PyObject* GetArgAsPythonObject(PyObject* o, bool& valid);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next argument as an object of the given type.
    */
   vtkObjectBase* GetArgAsVTKObject(const char* classname, bool& valid);
   static vtkObjectBase* GetArgAsVTKObject(PyObject* o, const char* classname, bool& valid);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next argument as an object of the given type.
    */
   void* GetArgAsSpecialObject(const char* classname, PyObject** p);
   static void* GetArgAsSpecialObject(PyObject* o, const char* classname, PyObject** p);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the next argument as an object of the given type.
    */
   int GetArgAsEnum(const char* enumname, bool& valid);
   static int GetArgAsEnum(PyObject* o, const char* enumname, bool& valid);
-  //@}
+  ///@}
 
   /**
    * Raise a TypeError if a virtual method call was called.
@@ -777,7 +812,7 @@ inline bool vtkPythonArgs::CheckPrecond(bool c, const char* text)
 {
   if (!c)
   {
-    this->PrecondError(text);
+    vtkPythonArgs::PrecondError(text);
   }
   return c;
 }
@@ -812,11 +847,6 @@ inline PyObject* vtkPythonArgs::BuildNone()
   return Py_None;
 }
 
-inline PyObject* vtkPythonArgs::BuildVTKObject(const void* v)
-{
-  return vtkPythonUtil::GetObjectFromPointer(static_cast<vtkObjectBase*>(const_cast<void*>(v)));
-}
-
 inline PyObject* vtkPythonArgs::BuildSpecialObject(const void* v, const char* classname)
 {
   return PyVTKSpecialObject_CopyNew(classname, v);
@@ -827,7 +857,7 @@ inline PyObject* vtkPythonArgs::BuildValue(const void* a)
   if (a)
   {
     const char* s = vtkPythonUtil::ManglePointer(a, "p_void");
-    return PyString_FromString(s);
+    return PyUnicode_FromString(s);
   }
   Py_INCREF(Py_None);
   return Py_None;
@@ -835,21 +865,13 @@ inline PyObject* vtkPythonArgs::BuildValue(const void* a)
 
 inline PyObject* vtkPythonArgs::BuildValue(const char* a, size_t l)
 {
-#if PY_VERSION_HEX < 0x03000000
-  return PyString_FromStringAndSize(a, static_cast<Py_ssize_t>(l));
-#else
-#if PY_VERSION_HEX >= 0x03030000
   PyObject* o = PyUnicode_FromStringAndSize(a, static_cast<Py_ssize_t>(l));
-#else
-  PyObject* o = PyUnicode_Decode(a, static_cast<Py_ssize_t>(l), nullptr, nullptr);
-#endif
   if (o == nullptr)
   {
     PyErr_Clear();
     o = PyBytes_FromStringAndSize(a, static_cast<Py_ssize_t>(l));
   }
   return o;
-#endif
 }
 
 inline PyObject* vtkPythonArgs::BuildValue(const char* a)
@@ -867,23 +889,25 @@ inline PyObject* vtkPythonArgs::BuildValue(const std::string& a)
   return vtkPythonArgs::BuildValue(a.data(), a.size());
 }
 
-inline PyObject* vtkPythonArgs::BuildValue(const vtkUnicodeString& a)
-{
-  std::string s;
-  a.utf8_str(s);
-#ifdef Py_USING_UNICODE
-  return PyUnicode_DecodeUTF8(s.c_str(), static_cast<Py_ssize_t>(s.size()), nullptr);
-#else
-  return PyString_FromStringAndSize(s.c_str(), static_cast<Py_ssize_t>(s.size()));
-#endif
-}
-
 inline PyObject* vtkPythonArgs::BuildValue(char a)
 {
-  char b[2];
-  b[0] = a;
-  b[1] = '\0';
-  return PyString_FromString(b);
+  char b[2] = { a, '\0' };
+  Py_ssize_t n = 1;
+  if ((static_cast<unsigned char>(a) & 0xc0) == 0x80)
+  {
+    // convert value [128,191] to equivalent utf-8 sequence
+    b[0] = '\xc2';
+    b[1] = a;
+    n = 2;
+  }
+  else if ((static_cast<unsigned char>(a) & 0xc0) == 0xc0)
+  {
+    // convert value [192,255] to equivalent utf-8 sequence
+    b[0] = '\xc3';
+    b[1] = a ^ '\x40';
+    n = 2;
+  }
+  return PyUnicode_FromStringAndSize(b, n);
 }
 
 inline PyObject* vtkPythonArgs::BuildValue(double a)
@@ -898,32 +922,24 @@ inline PyObject* vtkPythonArgs::BuildValue(bool a)
 
 inline PyObject* vtkPythonArgs::BuildValue(int a)
 {
-  return PyInt_FromLong(a);
+  return PyLong_FromLong(a);
 }
 
 inline PyObject* vtkPythonArgs::BuildValue(unsigned int a)
 {
-#if VTK_SIZEOF_INT < VTK_SIZEOF_LONG
-  return PyInt_FromLong(a);
-#else
-  if ((long)(a) >= 0)
-  {
-    return PyInt_FromLong((long)(a));
-  }
   return PyLong_FromUnsignedLong(a);
-#endif
 }
 
 inline PyObject* vtkPythonArgs::BuildValue(long a)
 {
-  return PyInt_FromLong(a);
+  return PyLong_FromLong(a);
 }
 
 inline PyObject* vtkPythonArgs::BuildValue(unsigned long a)
 {
   if (static_cast<long>(a) >= 0)
   {
-    return PyInt_FromLong(static_cast<long>(a));
+    return PyLong_FromLong(static_cast<long>(a));
   }
   return PyLong_FromUnsignedLong(a);
 }
@@ -965,6 +981,8 @@ inline PyObject* vtkPythonArgs::BuildBytes(const char* a, size_t n)
 #if defined(VTK_USE_EXTERN_TEMPLATE) && !defined(vtkPythonArgs_cxx)
 vtkPythonArgsTemplateMacro(extern template class VTKWRAPPINGPYTHONCORE_EXPORT vtkPythonArgs::Array);
 #endif
+
+VTK_ABI_NAMESPACE_END
 
 #endif
 // VTK-HeaderTest-Exclude: vtkPythonArgs.h

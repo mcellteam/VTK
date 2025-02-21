@@ -1,24 +1,6 @@
-// -*- c++ -*-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPSLACReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkPSLACReader.h"
 
@@ -48,7 +30,8 @@
 #include <unordered_map>
 
 //=============================================================================
-#define CALL_NETCDF(call)                                                                          \
+#define CALL_NETCDF_INT(call)                                                                      \
+  do                                                                                               \
   {                                                                                                \
     int errorcode = call;                                                                          \
     if (errorcode != NC_NOERR)                                                                     \
@@ -56,20 +39,33 @@
       vtkErrorMacro(<< "netCDF Error: " << nc_strerror(errorcode));                                \
       return 0;                                                                                    \
     }                                                                                              \
-  }
+  } while (false)
+
+#define CALL_NETCDF_PTR(call)                                                                      \
+  do                                                                                               \
+  {                                                                                                \
+    int errorcode = call;                                                                          \
+    if (errorcode != NC_NOERR)                                                                     \
+    {                                                                                              \
+      vtkErrorMacro(<< "netCDF Error: " << nc_strerror(errorcode));                                \
+      return nullptr;                                                                              \
+    }                                                                                              \
+  } while (false)
 
 #define WRAP_NETCDF(call)                                                                          \
+  do                                                                                               \
   {                                                                                                \
     int errorcode = call;                                                                          \
     if (errorcode != NC_NOERR)                                                                     \
       return errorcode;                                                                            \
-  }
+  } while (false)
 
 #ifdef VTK_USE_64BIT_IDS
-//#ifdef NC_INT64
+// #ifdef NC_INT64
 //// This may or may not work with the netCDF 4 library reading in netCDF 3 files.
-//#define nc_get_vars_vtkIdType nc_get_vars_longlong
-//#else // NC_INT64
+// #define nc_get_vars_vtkIdType nc_get_vars_longlong
+// #else // NC_INT64
+VTK_ABI_NAMESPACE_BEGIN
 static int nc_get_vars_vtkIdType(int ncid, int varid, const size_t start[], const size_t count[],
   const ptrdiff_t stride[], vtkIdType* ip)
 {
@@ -98,12 +94,14 @@ static int nc_get_vars_vtkIdType(int ncid, int varid, const size_t start[], cons
 
   return NC_NOERR;
 }
-//#endif // NC_INT64
+VTK_ABI_NAMESPACE_END
+// #endif // NC_INT64
 #else // VTK_USE_64_BIT_IDS
 #define nc_get_vars_vtkIdType nc_get_vars_int
 #endif // VTK_USE_64BIT_IDS
 
 //=============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 static int NetCDFTypeToVTKType(nc_type type)
 {
   switch (type)
@@ -197,7 +195,7 @@ static void SynchronizeBlocks(vtkMultiBlockDataSet* blocks, vtkMultiProcessContr
 //=============================================================================
 // Structures used by ReadMidpointCoordinates to store and transfer midpoint
 // information.
-namespace vtkPSLACReaderTypes
+namespace
 {
 struct EdgeEndpointsHash
 {
@@ -208,38 +206,42 @@ public:
   }
 };
 
-typedef struct
+struct midpointPositionType_t
 {
   double coord[3];
-} midpointPositionType;
+};
+using midpointPositionType = struct midpointPositionType_t;
 const vtkIdType midpointPositionSize = sizeof(midpointPositionType) / sizeof(double);
 
-typedef struct
+struct midpointTopologyType_t
 {
   vtkIdType minEdgePoint;
   vtkIdType maxEdgePoint;
   vtkIdType globalId;
-} midpointTopologyType;
+};
+using midpointTopologyType = struct midpointTopologyType_t;
 const vtkIdType midpointTopologySize = sizeof(midpointTopologyType) / sizeof(vtkIdType);
 
-typedef struct
+struct midpointListsType_t
 {
   std::vector<midpointPositionType> position;
   std::vector<midpointTopologyType> topology;
-} midpointListsType;
+};
+using midpointListsType = struct midpointListsType_t;
 
-typedef struct
+struct midpointPointersType_t
 {
   midpointPositionType* position;
   midpointTopologyType* topology;
-} midpointPointersType;
+};
+using midpointPointersType = struct midpointPointersType_t;
 typedef std::unordered_map<vtkSLACReader::EdgeEndpoints, midpointPointersType, EdgeEndpointsHash>
   MidpointsAvailableType;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Convenience function for gathering midpoint information to a process.
-static void GatherMidpoints(vtkMultiProcessController* controller,
-  const midpointListsType& sendMidpoints, midpointListsType& recvMidpoints, int process)
+void GatherMidpoints(vtkMultiProcessController* controller, const midpointListsType& sendMidpoints,
+  midpointListsType& recvMidpoints, int process)
 {
   vtkIdType sendLength = static_cast<vtkIdType>(sendMidpoints.position.size());
   if (sendLength != static_cast<vtkIdType>(sendMidpoints.topology.size()))
@@ -301,9 +303,8 @@ static void GatherMidpoints(vtkMultiProcessController* controller,
     &topologyLengths.at(0), &topologyOffsets.at(0), process);
 }
 };
-using namespace vtkPSLACReaderTypes;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Simple hash function for vtkIdType.
 struct vtkPSLACReaderIdTypeHash
 {
@@ -315,7 +316,7 @@ vtkObjectFactoryNewMacro(vtkPSLACReader);
 
 vtkCxxSetObjectMacro(vtkPSLACReader, Controller, vtkMultiProcessController);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkPSLACReader::vtkInternal
 {
 public:
@@ -349,7 +350,7 @@ public:
   vtkSmartPointer<vtkIdTypeArray> EdgesToSendToProcessesOffsets;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPSLACReader::vtkPSLACReader()
 {
   this->Controller = nullptr;
@@ -385,12 +386,12 @@ void vtkPSLACReader::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   // It would be more efficient to read the meta data on just process 0 and
-  // propgate to the rest.  However, this will probably have a profound effect
+  // propagate to the rest.  However, this will probably have a profound effect
   // only on big jobs accessing parallel file systems.  Until we need that,
   // I'm not going to bother.
   if (!this->Superclass::RequestInformation(request, inputVector, outputVector))
@@ -413,7 +414,7 @@ int vtkPSLACReader::RequestInformation(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -451,11 +452,11 @@ int vtkPSLACReader::RequestData(
   return retval;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::ReadTetrahedronInteriorArray(int meshFD, vtkIdTypeArray* connectivity)
 {
   int tetInteriorVarId;
-  CALL_NETCDF(nc_inq_varid(meshFD, "tetrahedron_interior", &tetInteriorVarId));
+  CALL_NETCDF_INT(nc_inq_varid(meshFD, "tetrahedron_interior", &tetInteriorVarId));
   vtkIdType numTets = this->GetNumTuplesInVariable(meshFD, tetInteriorVarId, NumPerTetInt);
 
   vtkIdType numTetsPerPiece = numTets / this->NumberOfPieces + 1;
@@ -475,17 +476,17 @@ int vtkPSLACReader::ReadTetrahedronInteriorArray(int meshFD, vtkIdTypeArray* con
   connectivity->Initialize();
   connectivity->SetNumberOfComponents(static_cast<int>(count[1]));
   connectivity->SetNumberOfTuples(static_cast<vtkIdType>(count[0]));
-  CALL_NETCDF(nc_get_vars_vtkIdType(
+  CALL_NETCDF_INT(nc_get_vars_vtkIdType(
     meshFD, tetInteriorVarId, start, count, nullptr, connectivity->GetPointer(0)));
 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::ReadTetrahedronExteriorArray(int meshFD, vtkIdTypeArray* connectivity)
 {
   int tetExteriorVarId;
-  CALL_NETCDF(nc_inq_varid(meshFD, "tetrahedron_exterior", &tetExteriorVarId));
+  CALL_NETCDF_INT(nc_inq_varid(meshFD, "tetrahedron_exterior", &tetExteriorVarId));
   vtkIdType numTets = this->GetNumTuplesInVariable(meshFD, tetExteriorVarId, NumPerTetExt);
 
   vtkIdType numTetsPerPiece = numTets / this->NumberOfPieces + 1;
@@ -505,13 +506,13 @@ int vtkPSLACReader::ReadTetrahedronExteriorArray(int meshFD, vtkIdTypeArray* con
   connectivity->Initialize();
   connectivity->SetNumberOfComponents(static_cast<int>(count[1]));
   connectivity->SetNumberOfTuples(static_cast<vtkIdType>(count[0]));
-  CALL_NETCDF(nc_get_vars_vtkIdType(
+  CALL_NETCDF_INT(nc_get_vars_vtkIdType(
     meshFD, tetExteriorVarId, start, count, nullptr, connectivity->GetPointer(0)));
 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::CheckTetrahedraWinding(int meshFD)
 {
   // Check the file only on the first process and broadcast the result.
@@ -524,7 +525,7 @@ int vtkPSLACReader::CheckTetrahedraWinding(int meshFD)
   return winding;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::ReadConnectivity(
   int meshFD, vtkMultiBlockDataSet* surfaceOutput, vtkMultiBlockDataSet* volumeOutput)
 {
@@ -605,7 +606,7 @@ int vtkPSLACReader::ReadConnectivity(
       {
         for (vtkIdType i = 0; i < npts; i++)
         {
-          edgesNeeded.push_back(vtkSLACReader::EdgeEndpoints(pts[i], pts[(i + 1) % npts]));
+          edgesNeeded.emplace_back(pts[i], pts[(i + 1) % npts]);
         }
       }
     }
@@ -645,7 +646,7 @@ int vtkPSLACReader::ReadConnectivity(
 
   // Record how many global points there are.
   int coordsVarId;
-  CALL_NETCDF(nc_inq_varid(meshFD, "coords", &coordsVarId));
+  CALL_NETCDF_INT(nc_inq_varid(meshFD, "coords", &coordsVarId));
   this->NumberOfGlobalPoints = this->GetNumTuplesInVariable(meshFD, coordsVarId, 3);
 
   // Iterate over our LocalToGlobalIds map and determine which process reads
@@ -734,7 +735,7 @@ int vtkPSLACReader::ReadConnectivity(
     this->PInternal->EdgesToSendToProcessesOffsets = vtkSmartPointer<vtkIdTypeArray>::New();
     this->PInternal->EdgesToSendToProcessesOffsets->SetNumberOfTuples(this->NumberOfPieces);
 
-    std::vector<vtkSmartPointer<vtkIdTypeArray> > edgeLists(this->NumberOfPieces);
+    std::vector<vtkSmartPointer<vtkIdTypeArray>> edgeLists(this->NumberOfPieces);
     for (int process = 0; process < this->NumberOfPieces; process++)
     {
       edgeLists[process] = vtkSmartPointer<vtkIdTypeArray>::New();
@@ -778,7 +779,7 @@ int vtkPSLACReader::ReadConnectivity(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::RestoreMeshCache(vtkMultiBlockDataSet* surfaceOutput,
   vtkMultiBlockDataSet* volumeOutput, vtkMultiBlockDataSet* compositeOutput)
 {
@@ -794,12 +795,12 @@ int vtkPSLACReader::RestoreMeshCache(vtkMultiBlockDataSet* surfaceOutput,
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointer<vtkDataArray> vtkPSLACReader::ReadPointDataArray(int ncFD, int varId)
 {
   // Get the dimension info.  We should only need to worry about 1 or 2D arrays.
   int numDims;
-  CALL_NETCDF(nc_inq_varndims(ncFD, varId, &numDims));
+  CALL_NETCDF_PTR(nc_inq_varndims(ncFD, varId, &numDims));
   if (numDims > 2)
   {
     vtkErrorMacro(<< "Sanity check failed.  "
@@ -813,9 +814,9 @@ vtkSmartPointer<vtkDataArray> vtkPSLACReader::ReadPointDataArray(int ncFD, int v
     return nullptr;
   }
   int dimIds[2];
-  CALL_NETCDF(nc_inq_vardimid(ncFD, varId, dimIds));
+  CALL_NETCDF_PTR(nc_inq_vardimid(ncFD, varId, dimIds));
   size_t numCoords;
-  CALL_NETCDF(nc_inq_dimlen(ncFD, dimIds[0], &numCoords));
+  CALL_NETCDF_PTR(nc_inq_dimlen(ncFD, dimIds[0], &numCoords));
   if (numCoords != static_cast<size_t>(this->NumberOfGlobalPoints))
   {
     vtkErrorMacro(<< "Encountered inconsistent number of coordinates.");
@@ -824,12 +825,12 @@ vtkSmartPointer<vtkDataArray> vtkPSLACReader::ReadPointDataArray(int ncFD, int v
   size_t numComponents = 1;
   if (numDims > 1)
   {
-    CALL_NETCDF(nc_inq_dimlen(ncFD, dimIds[1], &numComponents));
+    CALL_NETCDF_PTR(nc_inq_dimlen(ncFD, dimIds[1], &numComponents));
   }
 
   // Allocate an array of the right type.
   nc_type ncType;
-  CALL_NETCDF(nc_inq_vartype(ncFD, varId, &ncType));
+  CALL_NETCDF_PTR(nc_inq_vartype(ncFD, varId, &ncType));
   int vtkType = NetCDFTypeToVTKType(ncType);
   if (vtkType < 1)
     return nullptr;
@@ -844,7 +845,7 @@ vtkSmartPointer<vtkDataArray> vtkPSLACReader::ReadPointDataArray(int ncFD, int v
   count[1] = numComponents;
   dataArray->SetNumberOfComponents(static_cast<int>(count[1]));
   dataArray->SetNumberOfTuples(static_cast<vtkIdType>(count[0]));
-  CALL_NETCDF(nc_get_vars(ncFD, varId, start, count, nullptr, dataArray->GetVoidPointer(0)));
+  CALL_NETCDF_PTR(nc_get_vars(ncFD, varId, start, count, nullptr, dataArray->GetVoidPointer(0)));
 
   // We now need to redistribute the data.  Allocate an array to store the final
   // point data and a buffer to send data to the rest of the processes.
@@ -898,7 +899,7 @@ vtkSmartPointer<vtkDataArray> vtkPSLACReader::ReadPointDataArray(int ncFD, int v
   return finalDataArray;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::ReadCoordinates(int meshFD, vtkMultiBlockDataSet* output)
 {
   // The superclass reads everything correctly because it will call our
@@ -917,7 +918,7 @@ int vtkPSLACReader::ReadCoordinates(int meshFD, vtkMultiBlockDataSet* output)
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::ReadFieldData(
   const int* modeFDArray, int numModeFDs, vtkMultiBlockDataSet* output)
 {
@@ -926,13 +927,13 @@ int vtkPSLACReader::ReadFieldData(
   return this->Superclass::ReadFieldData(modeFDArray, numModeFDs, output);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::ReadMidpointCoordinates(
   int meshFD, vtkMultiBlockDataSet* vtkNotUsed(output), vtkSLACReader::MidpointCoordinateMap& map)
 {
   // Get the number of midpoints.
   int midpointsVar;
-  CALL_NETCDF(nc_inq_varid(meshFD, "surface_midpoint", &midpointsVar));
+  CALL_NETCDF_INT(nc_inq_varid(meshFD, "surface_midpoint", &midpointsVar));
   this->NumberOfGlobalMidpoints = this->GetNumTuplesInVariable(meshFD, midpointsVar, 5);
   if (this->NumberOfGlobalMidpoints < 1)
     return 0;
@@ -956,7 +957,7 @@ int vtkPSLACReader::ReadMidpointCoordinates(
   VTK_CREATE(vtkDoubleArray, midpointData);
   midpointData->SetNumberOfComponents(static_cast<int>(counts[1]));
   midpointData->SetNumberOfTuples(static_cast<vtkIdType>(counts[0]));
-  CALL_NETCDF(
+  CALL_NETCDF_INT(
     nc_get_vars_double(meshFD, midpointsVar, starts, counts, nullptr, midpointData->GetPointer(0)));
 
   // Collect the midpoints we've read on the processes that originally read the
@@ -1104,7 +1105,7 @@ int vtkPSLACReader::ReadMidpointCoordinates(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::ReadMidpointData(
   int meshFD, vtkMultiBlockDataSet* output, vtkSLACReader::MidpointIdMap& map)
 {
@@ -1135,7 +1136,7 @@ int vtkPSLACReader::ReadMidpointData(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPSLACReader::MeshUpToDate()
 {
   int localflag = this->Superclass::MeshUpToDate();
@@ -1146,3 +1147,4 @@ int vtkPSLACReader::MeshUpToDate()
   this->Controller->AllReduce(&localflag, &globalflag, 1, vtkCommunicator::LOGICAL_AND_OP);
   return globalflag;
 }
+VTK_ABI_NAMESPACE_END

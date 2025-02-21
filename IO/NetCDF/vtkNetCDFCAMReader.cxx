@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNetCDFCAMReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkNetCDFCAMReader.h"
 
 #include "vtkCallbackCommand.h"
@@ -37,6 +25,7 @@
 #include <vector>
 #include <vtk_netcdf.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 // determine if this is a cell that wraps from 360 to 0 (i.e. if it's
@@ -55,11 +44,7 @@ bool IsCellInverted(double points[4][3])
     return true;
   }
   vtkPolygon::ComputeNormal(3, points[1], normal);
-  if (normal[2] > 0)
-  {
-    return true;
-  }
-  return false;
+  return normal[2] > 0;
 }
 
 template <class T>
@@ -189,10 +174,10 @@ std::string vtkNetCDFCAMReader::Internal::GetNameDimension(int nc_file, int nc_v
   return name.str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkNetCDFCAMReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNetCDFCAMReader::vtkNetCDFCAMReader()
 {
   this->FileName = nullptr;
@@ -223,7 +208,7 @@ vtkNetCDFCAMReader::vtkNetCDFCAMReader()
   this->Internals = new Internal(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNetCDFCAMReader::~vtkNetCDFCAMReader()
 {
   this->SetFileName(nullptr);
@@ -240,7 +225,7 @@ vtkNetCDFCAMReader::~vtkNetCDFCAMReader()
   delete this->Internals;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNetCDFCAMReader::CanReadFile(const char* fileName)
 {
   Internal* internals = new Internal(nullptr);
@@ -253,7 +238,7 @@ int vtkNetCDFCAMReader::CanReadFile(const char* fileName)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFCAMReader::SetFileName(const char* fileName)
 {
   vtkDebugMacro(<< " setting FileName to " << (fileName ? fileName : "(null)"));
@@ -276,7 +261,7 @@ void vtkNetCDFCAMReader::SetFileName(const char* fileName)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFCAMReader::SetConnectivityFileName(const char* fileName)
 {
   vtkDebugMacro(<< " setting ConnectivityFileName to " << (fileName ? fileName : "(null)"));
@@ -299,7 +284,7 @@ void vtkNetCDFCAMReader::SetConnectivityFileName(const char* fileName)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNetCDFCAMReader::RequestInformation(vtkInformation* vtkNotUsed(reqInfo),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -394,10 +379,10 @@ int vtkNetCDFCAMReader::RequestInformation(vtkInformation* vtkNotUsed(reqInfo),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFCAMReader::BuildVarArray()
 {
-  std::vector<std::set<std::string> > varsnames(VERTICAL_DIMENSION_COUNT);
+  std::vector<std::set<std::string>> varsnames(VERTICAL_DIMENSION_COUNT);
   int nvars;
   int vars[NC_MAX_VARS];
   if (this->Internals->nc_err(nc_inq_varids(this->Internals->nc_points, &nvars, vars)))
@@ -484,7 +469,7 @@ void vtkNetCDFCAMReader::BuildVarArray()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNetCDFCAMReader::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -507,25 +492,25 @@ int vtkNetCDFCAMReader::RequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNetCDFCAMReader::GetNumberOfPointArrays()
 {
   return this->PointDataArraySelection->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkNetCDFCAMReader::GetPointArrayName(int index)
 {
   return this->PointDataArraySelection->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNetCDFCAMReader::GetPointArrayStatus(const char* name)
 {
   return this->PointDataArraySelection->ArrayIsEnabled(name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFCAMReader::SetPointArrayStatus(const char* name, int status)
 {
   if (status)
@@ -538,19 +523,19 @@ void vtkNetCDFCAMReader::SetPointArrayStatus(const char* name, int status)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFCAMReader::DisableAllPointArrays()
 {
   this->PointDataArraySelection->DisableAllArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFCAMReader::EnableAllPointArrays()
 {
   this->PointDataArraySelection->EnableAllArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNetCDFCAMReader::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -585,7 +570,7 @@ int vtkNetCDFCAMReader::RequestData(
   // read in the points first
   size_t numLevels = 1; // value for single level
   const char* levName = nullptr;
-  int levelsid;
+  int levelsid = 0;
   if (this->VerticalDimension == VERTICAL_DIMENSION_MIDPOINT_LAYERS ||
     this->VerticalDimension == VERTICAL_DIMENSION_INTERFACE_LAYERS)
   {
@@ -666,7 +651,7 @@ int vtkNetCDFCAMReader::RequestData(
     size_t start[] = { 0 };
     size_t count[] = { numFilePoints };
     if (this->Internals->nc_err(
-          nc_get_vara_double(this->Internals->nc_points, lonid, start, count, &array[0])))
+          nc_get_vara_double(this->Internals->nc_points, lonid, start, count, array.data())))
     {
       return 0;
     }
@@ -688,7 +673,7 @@ int vtkNetCDFCAMReader::RequestData(
     size_t start[] = { 0 };
     size_t count[] = { numFilePoints };
     if (this->Internals->nc_err(
-          nc_get_vara_float(this->Internals->nc_points, lonid, start, count, &array[0])))
+          nc_get_vara_float(this->Internals->nc_points, lonid, start, count, array.data())))
     {
       return 0;
     }
@@ -761,10 +746,10 @@ int vtkNetCDFCAMReader::RequestData(
   size_t numLocalCells = endCell - beginCell;
   size_t numLocalLevels = endLevel - beginLevel + 1;
   std::vector<int> cellConnectivity(4 * numLocalCells);
-  size_t start_conn[] = { 0, static_cast<size_t>(beginCell) };
-  size_t count_conn[] = { 4, static_cast<size_t>(numLocalCells) };
+  size_t start_conn[] = { 0, beginCell };
+  size_t count_conn[] = { 4, numLocalCells };
   if (this->Internals->nc_err(nc_get_vara_int(
-        this->Internals->nc_connectivity, connid, start_conn, count_conn, &cellConnectivity[0])))
+        this->Internals->nc_connectivity, connid, start_conn, count_conn, cellConnectivity.data())))
   {
     return 0;
   }
@@ -778,7 +763,7 @@ int vtkNetCDFCAMReader::RequestData(
       pointIds[j] = cellConnectivity[i + j * numLocalCells] - 1;
       points->GetPoint(pointIds[j], coords[j]);
     }
-    if (IsCellInverted(coords) == true)
+    if (IsCellInverted(coords))
     {
       // First decide whether we're putting this cell on the 360 side (right) or on the
       // 0 side (left). We decide this based on which side will have the
@@ -889,8 +874,7 @@ int vtkNetCDFCAMReader::RequestData(
   this->UpdateProgress(.5); // educated guess for progress
 
   // Collect the time step requested
-  vtkInformationDoubleKey* timeKey =
-    static_cast<vtkInformationDoubleKey*>(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+  vtkInformationDoubleKey* timeKey = vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP();
 
   double dTime = 0.0;
   if (outInfo->Has(timeKey))
@@ -1027,8 +1011,7 @@ int vtkNetCDFCAMReader::RequestData(
     {
       for (size_t lev = 0; lev < numLocalLevels; lev++)
       {
-        size_t start[] = { static_cast<size_t>(timeStep), static_cast<size_t>(lev + beginLevel),
-          0 };
+        size_t start[] = { timeStep, lev + beginLevel, 0 };
         size_t count[] = { 1, 1, numFilePoints };
         if (doubleArray)
         {
@@ -1052,7 +1035,7 @@ int vtkNetCDFCAMReader::RequestData(
     }
     else
     {
-      size_t start[] = { static_cast<size_t>(timeStep), 0 };
+      size_t start[] = { timeStep, 0 };
       size_t count[] = { 1, numFilePoints };
       if (doubleArray)
       {
@@ -1098,10 +1081,10 @@ int vtkNetCDFCAMReader::RequestData(
   if (this->VerticalDimension != VERTICAL_DIMENSION_SINGLE_LAYER)
   {
     std::vector<float> levelData(numLocalLevels);
-    size_t start[] = { static_cast<size_t>(beginLevel) };
-    size_t count[] = { static_cast<size_t>(numLocalLevels) };
+    size_t start[] = { beginLevel };
+    size_t count[] = { numLocalLevels };
     if (this->Internals->nc_err(
-          nc_get_vara_float(this->Internals->nc_points, lonid, start, count, &levelData[0])))
+          nc_get_vara_float(this->Internals->nc_points, levelsid, start, count, levelData.data())))
     {
       return 0;
     }
@@ -1175,7 +1158,7 @@ int vtkNetCDFCAMReader::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkNetCDFCAMReader::GetPartitioning(size_t piece, size_t numPieces, size_t numLevels,
   size_t numCellsPerLevel, size_t& beginLevel, size_t& endLevel, size_t& beginCell, size_t& endCell)
 {
@@ -1238,7 +1221,7 @@ bool vtkNetCDFCAMReader::GetPartitioning(size_t piece, size_t numPieces, size_t 
   }
   else // underworked pieces
   {
-    if (evenOverworked == false &&
+    if (!evenOverworked &&
       piece - numOverworkedPieces < 2 * numOverworkedPieces / (piecesPerLevel - 1))
     { // fillers for levels that also have overworked pieces working on them
       beginLevel = inputBeginLevel + piece - numOverworkedPieces;
@@ -1258,14 +1241,14 @@ bool vtkNetCDFCAMReader::GetPartitioning(size_t piece, size_t numPieces, size_t 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFCAMReader::SelectionCallback(
   vtkObject*, unsigned long vtkNotUsed(eventid), void* clientdata, void* vtkNotUsed(calldata))
 {
   static_cast<vtkNetCDFCAMReader*>(clientdata)->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNetCDFCAMReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1281,3 +1264,4 @@ void vtkNetCDFCAMReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "PointsFile: " << this->Internals->nc_points << endl;
   os << indent << "ConnectivityFile: " << this->Internals->nc_connectivity << endl;
 }
+VTK_ABI_NAMESPACE_END

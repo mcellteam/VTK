@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOTDensityMap.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOTDensityMap
  * @brief
@@ -32,6 +20,7 @@
 
 #include <map> // For map
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 class vtkInformationDoubleKey;
 class vtkPolyData;
@@ -47,9 +36,9 @@ public:
   /**
    * Check contour values to return actual mtime
    */
-  virtual vtkMTimeType GetMTime() override;
+  vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Methods to set / get density lines values.
    * Values are expected to be between 0 and 1.
@@ -92,9 +81,9 @@ public:
    * Get the number of contours in the list of contour values.
    */
   int GetNumberOfContours();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to set / get grid subdivisions,
    * aka the number of point in each dimensions of the grid
@@ -104,19 +93,19 @@ public:
    */
   void SetGridSubdivisions(int gridSubdivisions);
   vtkGetMacro(GridSubdivisions, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to set / get number of points to compute
    * the contour values approximations using a LogPDF.
    * It ensure the DensityLogPDFSampleCache time is modified.
-   * Modyfying the parameter will trigger a recomputation of the
+   * Modifying the parameter will trigger a recomputation of the
    * LogPDF only, 600 by default
    */
   vtkGetMacro(ContourApproximationNumberOfPoints, int);
   virtual void SetContourApproximationNumberOfPoints(int val);
-  //@}
+  ///@}
 
   int FillInputPortInformation(int port, vtkInformation* info) override;
   int FillOutputPortInformation(int port, vtkInformation* info) override;
@@ -153,7 +142,7 @@ protected:
   void ClearCache();
   void BuildContours(vtkPolyData* contourPd, int numContours, const double* contourValues,
     const double* densityPDFContourValues, const char* xArrayName, const char* yArrayName,
-    std::multimap<double, vtkSmartPointer<vtkTable> >& contoursMap);
+    std::multimap<double, vtkSmartPointer<vtkTable>>& contoursMap);
 
   // Cache
   class OTDensityCache;
@@ -174,4 +163,5 @@ private:
   void operator=(const vtkOTDensityMap&) = delete;
   vtkOTDensityMap(const vtkOTDensityMap&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,24 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataArrayMeta.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkDataArrayMeta_h
 #define vtkDataArrayMeta_h
 
 #include "vtkAssume.h"
-#include "vtkConfigure.h"
 #include "vtkDataArray.h"
+#include "vtkDebugRangeIterators.h"
 #include "vtkMeta.h"
 #include "vtkSetGet.h"
 #include "vtkType.h"
@@ -43,11 +31,12 @@
 #define VTK_ITER_ASSERT(x, msg)
 #endif
 
-#if defined(VTK_ALWAYS_OPTIMIZE_ARRAY_ITERATORS) && !defined(VTK_DEBUG_RANGE_ITERATORS)
+#if (defined(VTK_ALWAYS_OPTIMIZE_ARRAY_ITERATORS) || !defined(VTK_DEBUG_RANGE_ITERATORS)) &&       \
+  !defined(VTK_COMPILER_MSVC)
 #define VTK_ITER_INLINE VTK_ALWAYS_INLINE
 #define VTK_ITER_ASSUME VTK_ASSUME_NO_ASSERT
 #define VTK_ITER_OPTIMIZE_START VTK_ALWAYS_OPTIMIZE_START
-#define VTK_ITER_OPTIMIZE_END VTK_ALWAYS_OPTIMIZE_START
+#define VTK_ITER_OPTIMIZE_END VTK_ALWAYS_OPTIMIZE_END
 #else
 #define VTK_ITER_INLINE inline
 #define VTK_ITER_ASSUME VTK_ASSUME
@@ -58,19 +47,24 @@
 VTK_ITER_OPTIMIZE_START
 
 // For IsAOSDataArray:
+VTK_ABI_NAMESPACE_BEGIN
 template <typename ValueType>
 class vtkAOSDataArrayTemplate;
+VTK_ABI_NAMESPACE_END
 
 namespace vtk
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 // Typedef for data array indices:
 using ComponentIdType = int;
 using TupleIdType = vtkIdType;
 using ValueIdType = vtkIdType;
+VTK_ABI_NAMESPACE_END
 
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 //------------------------------------------------------------------------------
 // Used by ranges/iterators when tuple size is unknown at compile time
@@ -154,7 +148,10 @@ struct GenericTupleSize<DynamicTupleSize>
 {
   using value_type = ComponentIdType;
 
-  VTK_ITER_INLINE GenericTupleSize() noexcept : value(0) {}
+  VTK_ITER_INLINE GenericTupleSize() noexcept
+    : value(0)
+  {
+  }
   VTK_ITER_INLINE explicit GenericTupleSize(vtkDataArray* array)
     : value(array->GetNumberOfComponents())
   {
@@ -166,27 +163,35 @@ struct GenericTupleSize<DynamicTupleSize>
   ComponentIdType value;
 };
 
-template <typename ArrayType>
+template <typename ArrayType, typename ForceValueTypeForVtkDataArray = double>
 struct GetAPITypeImpl
 {
   using APIType = typename ArrayType::ValueType;
 };
-template <>
-struct GetAPITypeImpl<vtkDataArray>
+template <typename ForceValueTypeForVtkDataArray>
+struct GetAPITypeImpl<vtkDataArray, ForceValueTypeForVtkDataArray>
 {
-  using APIType = double;
+  using APIType = ForceValueTypeForVtkDataArray;
 };
 
+VTK_ABI_NAMESPACE_END
 } // end namespace detail
+
+VTK_ABI_NAMESPACE_BEGIN
 
 //------------------------------------------------------------------------------
 // Typedef for double if vtkDataArray, or the array's ValueType for subclasses.
-template <typename ArrayType, typename = detail::EnableIfVtkDataArray<ArrayType> >
-using GetAPIType = typename detail::GetAPITypeImpl<ArrayType>::APIType;
+template <typename ArrayType, typename ForceValueTypeForVtkDataArray = double,
+  typename = detail::EnableIfVtkDataArray<ArrayType>>
+using GetAPIType =
+  typename detail::GetAPITypeImpl<ArrayType, ForceValueTypeForVtkDataArray>::APIType;
+
+VTK_ABI_NAMESPACE_END
 
 //------------------------------------------------------------------------------
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 template <typename ArrayType>
 struct IsAOSDataArrayImpl
@@ -195,13 +200,16 @@ struct IsAOSDataArrayImpl
   static constexpr bool value = std::is_base_of<vtkAOSDataArrayTemplate<APIType>, ArrayType>::value;
 };
 
+VTK_ABI_NAMESPACE_END
 } // end namespace detail
 
+VTK_ABI_NAMESPACE_BEGIN
 //------------------------------------------------------------------------------
 // True if ArrayType inherits some specialization of vtkAOSDataArrayTemplate
 template <typename ArrayType>
 using IsAOSDataArray = std::integral_constant<bool, detail::IsAOSDataArrayImpl<ArrayType>::value>;
 
+VTK_ABI_NAMESPACE_END
 } // end namespace vtk
 
 VTK_ITER_OPTIMIZE_END

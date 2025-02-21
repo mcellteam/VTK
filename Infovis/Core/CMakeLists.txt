@@ -6,7 +6,6 @@ set(classes
   vtkCollapseGraph
   vtkCollapseVerticesByArray
   vtkContinuousScatterplot
-  vtkDataObjectToTable
   vtkDotProductSimilarity
   vtkEdgeCenters
   vtkExpandSelectedGraph
@@ -47,3 +46,4 @@ set(classes
 
 vtk_module_add_module(VTK::InfovisCore
   CLASSES ${classes})
+vtk_add_test_mangling(VTK::InfovisCore)

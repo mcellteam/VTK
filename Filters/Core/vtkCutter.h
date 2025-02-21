@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCutter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCutter
  * @brief   Cut vtkDataSet with user-specified implicit function
@@ -38,13 +26,18 @@
  * By default, if an implicit function is set it is used to clip the data
  * set, otherwise the dataset scalars are used to perform the clipping.
  *
+ * Note that this class delegates to vtkPlaneCutter whenever possible since
+ * it's specialized for planes and it's faster because it's multithreaded, and in some
+ * cases also algorithmically faster.
+ *
  * @sa
- * vtkImplicitFunction vtkClipPolyData
+ * vtkImplicitFunction vtkClipPolyData vtkPlaneCutter
  */
 
 #ifndef vtkCutter_h
 #define vtkCutter_h
 
+#include "vtkDeprecation.h"       // For VTK_DEPRECATED_IN_9_4_0
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
@@ -53,12 +46,14 @@
 #define VTK_SORT_BY_VALUE 0
 #define VTK_SORT_BY_CELL 1
 
+VTK_ABI_NAMESPACE_BEGIN
+class vtkGridSynchronizedTemplates3D;
 class vtkImplicitFunction;
 class vtkIncrementalPointLocator;
+class vtkPlaneCutter;
+class vtkRectilinearSynchronizedTemplates;
 class vtkSynchronizedTemplates3D;
 class vtkSynchronizedTemplatesCutter3D;
-class vtkGridSynchronizedTemplates3D;
-class vtkRectilinearSynchronizedTemplates;
 
 class VTKFILTERSCORE_EXPORT vtkCutter : public vtkPolyDataAlgorithm
 {
@@ -132,15 +127,15 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Specify the implicit function to perform the cutting.
    */
   virtual void SetCutFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(CutFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this flag is enabled, then the output scalar values will be
    * interpolated from the implicit function values, and not the input scalar
@@ -149,31 +144,31 @@ public:
   vtkSetMacro(GenerateCutScalars, vtkTypeBool);
   vtkGetMacro(GenerateCutScalars, vtkTypeBool);
   vtkBooleanMacro(GenerateCutScalars, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this is enabled (by default), the output will be triangles
    * otherwise, the output will be the intersection polygons
    * WARNING: if the cutting function is not a plane, the output
-   * will be 3D poygons, which might be nice to look at but hard
+   * will be 3D polygons, which might be nice to look at but hard
    * to compute with downstream.
    */
   vtkSetMacro(GenerateTriangles, vtkTypeBool);
   vtkGetMacro(GenerateTriangles, vtkTypeBool);
   vtkBooleanMacro(GenerateTriangles, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a spatial locator for merging points. By default,
    * an instance of vtkMergePoints is used.
    */
   void SetLocator(vtkIncrementalPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the sorting order for the generated polydata. There are two
    * possibilities:
@@ -194,7 +189,7 @@ public:
   void SetSortByToSortByValue() { this->SetSortBy(VTK_SORT_BY_VALUE); }
   void SetSortByToSortByCell() { this->SetSortBy(VTK_SORT_BY_CELL); }
   const char* GetSortByAsString();
-  //@}
+  ///@}
 
   /**
    * Create default locator. Used to create one when none is specified. The
@@ -207,9 +202,10 @@ public:
    * This is a temporary fix until we convert this class and contour filter
    * to generate unstructured grid output instead of poly data, I am leaving it here.
    */
+  VTK_DEPRECATED_IN_9_4_0("This is no longer used. Use vtkCellTypes::GetDimension(type) instead.")
   static void GetCellTypeDimensions(unsigned char* cellTypeDimensions);
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -217,7 +213,7 @@ public:
    */
   vtkSetClampMacro(OutputPointsPrecision, int, SINGLE_PRECISION, DEFAULT_PRECISION);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkCutter(vtkImplicitFunction* cf = nullptr);
@@ -235,27 +231,30 @@ protected:
   vtkImplicitFunction* CutFunction;
   vtkTypeBool GenerateTriangles;
 
-  vtkSynchronizedTemplates3D* SynchronizedTemplates3D;
-  vtkSynchronizedTemplatesCutter3D* SynchronizedTemplatesCutter3D;
-  vtkGridSynchronizedTemplates3D* GridSynchronizedTemplates;
-  vtkRectilinearSynchronizedTemplates* RectilinearSynchronizedTemplates;
+  vtkNew<vtkSynchronizedTemplates3D> SynchronizedTemplates3D;
+  vtkNew<vtkSynchronizedTemplatesCutter3D> SynchronizedTemplatesCutter3D;
+  vtkNew<vtkGridSynchronizedTemplates3D> GridSynchronizedTemplates;
+  vtkNew<vtkRectilinearSynchronizedTemplates> RectilinearSynchronizedTemplates;
+  vtkNew<vtkPlaneCutter> PlaneCutter;
 
   vtkIncrementalPointLocator* Locator;
   int SortBy;
-  vtkContourValues* ContourValues;
+  vtkNew<vtkContourValues> ContourValues;
   vtkTypeBool GenerateCutScalars;
   int OutputPointsPrecision;
+
+  // Garbage collection method
+  void ReportReferences(vtkGarbageCollector*) override;
 
 private:
   vtkCutter(const vtkCutter&) = delete;
   void operator=(const vtkCutter&) = delete;
 };
 
-//@{
 /**
  * Return the sorting procedure as a descriptive character string.
  */
-inline const char* vtkCutter::GetSortByAsString(void)
+inline const char* vtkCutter::GetSortByAsString()
 {
   if (this->SortBy == VTK_SORT_BY_VALUE)
   {
@@ -266,6 +265,6 @@ inline const char* vtkCutter::GetSortByAsString(void)
     return "SortByCell";
   }
 }
-//@}
 
+VTK_ABI_NAMESPACE_END
 #endif

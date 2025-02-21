@@ -1,25 +1,17 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSmartPointerBase.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSmartPointerBase.h"
 
 #include "vtkGarbageCollector.h"
 
-//----------------------------------------------------------------------------
-vtkSmartPointerBase::vtkSmartPointerBase() noexcept : Object(nullptr) {}
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+vtkSmartPointerBase::vtkSmartPointerBase() noexcept
+  : Object(nullptr)
+{
+}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointerBase::vtkSmartPointerBase(vtkObjectBase* r)
   : Object(r)
 {
@@ -27,7 +19,7 @@ vtkSmartPointerBase::vtkSmartPointerBase(vtkObjectBase* r)
   this->Register();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointerBase::vtkSmartPointerBase(vtkObjectBase* r, const NoReference&)
   : Object(r)
 {
@@ -35,7 +27,7 @@ vtkSmartPointerBase::vtkSmartPointerBase(vtkObjectBase* r, const NoReference&)
   // NoReference argument.
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointerBase::vtkSmartPointerBase(const vtkSmartPointerBase& r)
   : Object(r.Object)
 {
@@ -43,7 +35,7 @@ vtkSmartPointerBase::vtkSmartPointerBase(const vtkSmartPointerBase& r)
   this->Register();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointerBase::~vtkSmartPointerBase()
 {
   // The main pointer must be set to nullptr before calling UnRegister,
@@ -58,7 +50,7 @@ vtkSmartPointerBase::~vtkSmartPointerBase()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointerBase& vtkSmartPointerBase::operator=(vtkObjectBase* r)
 {
   if (r != this->Object)
@@ -73,7 +65,7 @@ vtkSmartPointerBase& vtkSmartPointerBase::operator=(vtkObjectBase* r)
   return *this;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointerBase& vtkSmartPointerBase::operator=(const vtkSmartPointerBase& r)
 {
   if (&r != this && r.Object != this->Object)
@@ -88,13 +80,13 @@ vtkSmartPointerBase& vtkSmartPointerBase::operator=(const vtkSmartPointerBase& r
   return *this;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSmartPointerBase::Report(vtkGarbageCollector* collector, const char* desc)
 {
   vtkGarbageCollectorReport(collector, this->Object, desc);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSmartPointerBase::Swap(vtkSmartPointerBase& r) noexcept
 {
   // Just swap the pointers.  This is used internally by the
@@ -104,7 +96,7 @@ void vtkSmartPointerBase::Swap(vtkSmartPointerBase& r) noexcept
   this->Object = temp;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSmartPointerBase::Register()
 {
   // Add a reference only if the object is not nullptr.
@@ -114,9 +106,10 @@ void vtkSmartPointerBase::Register()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 ostream& operator<<(ostream& os, const vtkSmartPointerBase& p)
 {
   // Just print the pointer value into the stream.
   return os << static_cast<void*>(p.GetPointer());
 }
+VTK_ABI_NAMESPACE_END

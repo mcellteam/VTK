@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStructuredGridAppend.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStructuredGridAppend.h"
 
 #include "vtkAlgorithmOutput.h"
@@ -29,15 +17,16 @@
 #include "vtkUnsignedCharArray.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStructuredGridAppend);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGridAppend::vtkStructuredGridAppend() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGridAppend::~vtkStructuredGridAppend() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStructuredGridAppend::ReplaceNthInputConnection(int idx, vtkAlgorithmOutput* input)
 {
   if (idx < 0 || idx >= this->GetNumberOfInputConnections(0))
@@ -59,7 +48,7 @@ void vtkStructuredGridAppend::ReplaceNthInputConnection(int idx, vtkAlgorithmOut
   this->SetNthInputConnection(0, idx, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The default vtkStructuredGridAlgorithm semantics are that SetInput() puts
 // each input on a different port, we want all the structured grid inputs to
 // go on the first port.
@@ -68,7 +57,7 @@ void vtkStructuredGridAppend::SetInputData(int idx, vtkDataObject* input)
   this->SetInputDataInternal(idx, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkStructuredGridAppend::GetInput(int idx)
 {
   if (this->GetNumberOfInputConnections(0) <= idx)
@@ -78,7 +67,7 @@ vtkDataObject* vtkStructuredGridAppend::GetInput(int idx)
   return vtkStructuredGrid::SafeDownCast(this->GetExecutive()->GetInputData(0, idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method tells the output it will have more components
 int vtkStructuredGridAppend::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -128,7 +117,7 @@ int vtkStructuredGridAppend::RequestInformation(vtkInformation* vtkNotUsed(reque
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStructuredGridAppend::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -149,63 +138,62 @@ int vtkStructuredGridAppend::RequestUpdateExtent(vtkInformation* vtkNotUsed(requ
 
 namespace
 {
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated implementation executes the filter for any type of data.
 struct AppendWorker
 {
   template <typename InArrayT, typename OutArrayT>
-  void operator()(InArrayT *inArray,
-                  OutArrayT *outArray,
-                  int inExt[6],
-                  int outExt[6],
-                  vtkStructuredGrid *inData,
-                  std::vector<int> &validValues,
-                  vtkUnsignedCharArray *ghosts,
-                  bool forCells)
+  void operator()(InArrayT* inArray, OutArrayT* outArray, int inExt[6], int outExt[6],
+    vtkStructuredGrid* inData, std::vector<int>& validValues, vtkUnsignedCharArray* ghosts,
+    bool forCells, vtkStructuredGridAppend* self)
   {
     const auto inTuples = vtk::DataArrayTupleRange(inArray);
     auto outTuples = vtk::DataArrayTupleRange(outArray);
 
     const int forPoints = forCells ? 0 : 1;
     vtkIdType inCounter = 0;
+    bool abort = false;
+    int checkAbortInterval = std::min((inExt[1] + forPoints - inExt[0]) / 10 + 1, 1000);
 
-    for (int k = inExt[4]; k < inExt[5] + forPoints; k++)
+    for (int k = inExt[4]; k < inExt[5] + forPoints && !abort; k++)
     {
-      for (int j = inExt[2]; j < inExt[3] + forPoints; j++)
+      for (int j = inExt[2]; j < inExt[3] + forPoints && !abort; j++)
       {
         for (int i = inExt[0]; i < inExt[1] + forPoints; i++)
         {
-          const int ijk[3] = {i, j, k};
-          bool skipValue = forCells
-              ? !inData->IsCellVisible(inCounter)
-              : !inData->IsPointVisible(inCounter);
+          if (i % checkAbortInterval == 0 && self->CheckAbort())
+          {
+            abort = true;
+            break;
+          }
+          const int ijk[3] = { i, j, k };
+          bool skipValue =
+            forCells ? !inData->IsCellVisible(inCounter) : !inData->IsPointVisible(inCounter);
 
           const vtkIdType outputIndex = forCells
-              ? vtkStructuredData::ComputeCellIdForExtent(outExt, ijk)
-              : vtkStructuredData::ComputePointIdForExtent(outExt, ijk);
+            ? vtkStructuredData::ComputeCellIdForExtent(outExt, ijk)
+            : vtkStructuredData::ComputePointIdForExtent(outExt, ijk);
           assert(static_cast<size_t>(outputIndex) < validValues.size());
-          int &validValue = validValues[static_cast<std::size_t>(outputIndex)];
+          int& validValue = validValues[static_cast<std::size_t>(outputIndex)];
 
           if (skipValue && validValue <= 1)
           { // current output value for this is not set
             skipValue = false;
             validValue = 1; // value is from a blanked entity
           }
-          else if(
-            ghosts &&
-            (ghosts->GetValue(inCounter) & vtkDataSetAttributes::DUPLICATECELL) &&
+          else if (ghosts && (ghosts->GetValue(inCounter) & vtkDataSetAttributes::DUPLICATECELL) &&
             validValue <= 2)
           {
             validValue = 2; // value is a ghost
             skipValue = false;
           }
-          else if(validValue <= 3)
+          else if (validValue <= 3)
           {
             validValue = 3; // value is valid
             skipValue = false;
           }
 
-          if(!skipValue)
+          if (!skipValue)
           {
             outTuples[outputIndex] = inTuples[inCounter];
           }
@@ -217,7 +205,7 @@ struct AppendWorker
 };
 } // end anon namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStructuredGridAppend::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -242,8 +230,14 @@ int vtkStructuredGridAppend::RequestData(
   using Dispatcher = vtkArrayDispatch::Dispatch2SameValueType;
   AppendWorker worker;
 
+  int checkAbortInterval = std::min(this->GetNumberOfInputConnections(0) / 10 + 1, 1000);
+
   for (int idx1 = 0; idx1 < this->GetNumberOfInputConnections(0); ++idx1)
   {
+    if (idx1 % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     vtkStructuredGrid* input = vtkStructuredGrid::GetData(inputVector[0], idx1);
     if (input != nullptr)
     {
@@ -300,21 +294,18 @@ int vtkStructuredGridAppend::RequestData(
                           << "), must match output ScalarType (" << outArray->GetDataType() << ")");
             return 0;
           }
-          if (strcmp(inArray->GetName(), outArray->GetName()))
+          if (strcmp(inArray->GetName(), outArray->GetName()) != 0)
           {
             vtkErrorMacro(<< "Execute: input" << idx1 << " Name (" << inArray->GetName()
                           << "), must match output Name (" << outArray->GetName() << ")");
             return 0;
           }
 
-          if (!Dispatcher::Execute(inArray, outArray,
-                                   worker, inExt, outExt, input,
-                                   validValues, ghosts, false))
+          if (!Dispatcher::Execute(
+                inArray, outArray, worker, inExt, outExt, input, validValues, ghosts, false, this))
           { // Fallback for unknown array types:
-            worker(inArray, outArray, inExt, outExt, input, validValues,
-                   ghosts, false);
+            worker(inArray, outArray, inExt, outExt, input, validValues, ghosts, false, this);
           }
-
         }
 
         // do the point locations array
@@ -328,12 +319,10 @@ int vtkStructuredGridAppend::RequestData(
         }
         outArray = output->GetPoints()->GetData();
 
-        if (!Dispatcher::Execute(inArray, outArray,
-                                 worker, inExt, outExt, input,
-                                 validValues, ghosts, false))
+        if (!Dispatcher::Execute(
+              inArray, outArray, worker, inExt, outExt, input, validValues, ghosts, false, this))
         { // Fallback for unknown array types:
-          worker(inArray, outArray, inExt, outExt, input, validValues,
-                 ghosts, false);
+          worker(inArray, outArray, inExt, outExt, input, validValues, ghosts, false, this);
         }
 
         // note that we are still using validValues but only for the
@@ -377,19 +366,17 @@ int vtkStructuredGridAppend::RequestData(
                           << "), must match output ScalarType (" << outArray->GetDataType() << ")");
             return 0;
           }
-          if (strcmp(inArray->GetName(), outArray->GetName()))
+          if (strcmp(inArray->GetName(), outArray->GetName()) != 0)
           {
             vtkErrorMacro(<< "Execute: input" << idx1 << " Name (" << inArray->GetName()
                           << "), must match output Name (" << outArray->GetName() << ")");
             return 0;
           }
 
-          if (!Dispatcher::Execute(inArray, outArray,
-                                   worker, inExt, outExt, input,
-                                   validValues, ghosts, true))
+          if (!Dispatcher::Execute(
+                inArray, outArray, worker, inExt, outExt, input, validValues, ghosts, true, this))
           { // Fallback for unknown array types:
-            worker(inArray, outArray, inExt, outExt, input, validValues,
-                   ghosts, true);
+            worker(inArray, outArray, inExt, outExt, input, validValues, ghosts, true, this);
           }
         }
       }
@@ -399,15 +386,16 @@ int vtkStructuredGridAppend::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStructuredGridAppend::FillInputPortInformation(int i, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_IS_REPEATABLE(), 1);
   return this->Superclass::FillInputPortInformation(i, info);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStructuredGridAppend::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*==================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestHyperTreeGridBinary2DVectorAxisReflectionYCenter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-===================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .SECTION Thanks
 // This test was written by Philippe Pebay, 2016
 // This test was modified by Philippe Pebay, NexGen Analytics 2017
@@ -49,7 +37,7 @@ int TestHyperTreeGridBinary2DVectorAxisReflectionYCenter(int argc, char* argv[])
   htGrid->Update();
   vtkHyperTreeGrid* H = vtkHyperTreeGrid::SafeDownCast(htGrid->GetOutput());
   H->GetCellData()->SetScalars(H->GetCellData()->GetArray("Depth"));
-  H->SetHasInterface(1);
+  H->SetHasInterface(true);
   char normalsName[] = "Normals";
   H->SetInterfaceNormalsName(normalsName);
   char interceptsName[] = "Intercepts";
@@ -140,7 +128,7 @@ int TestHyperTreeGridBinary2DVectorAxisReflectionYCenter(int argc, char* argv[])
   // Render and test
   renWin->Render();
 
-  int retVal = vtkRegressionTestImageThreshold(renWin, 70);
+  int retVal = vtkRegressionTestImageThreshold(renWin, 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Start();

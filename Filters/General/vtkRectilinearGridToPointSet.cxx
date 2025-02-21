@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRectilinearGridToTetrahedra.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRectilinearGridToPointSet.h"
 
 #include "vtkCellData.h"
@@ -28,9 +13,10 @@
 
 #include "vtkNew.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRectilinearGridToPointSet);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearGridToPointSet::vtkRectilinearGridToPointSet() = default;
 
 vtkRectilinearGridToPointSet::~vtkRectilinearGridToPointSet() = default;
@@ -40,7 +26,7 @@ void vtkRectilinearGridToPointSet::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearGridToPointSet::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -51,7 +37,7 @@ int vtkRectilinearGridToPointSet::FillInputPortInformation(int port, vtkInformat
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearGridToPointSet::CopyStructure(
   vtkStructuredGrid* outData, vtkRectilinearGrid* inData)
 {
@@ -98,7 +84,7 @@ int vtkRectilinearGridToPointSet::CopyStructure(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearGridToPointSet::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -125,5 +111,8 @@ int vtkRectilinearGridToPointSet::RequestData(vtkInformation* vtkNotUsed(request
   outData->GetPointData()->PassData(inData->GetPointData());
   outData->GetCellData()->PassData(inData->GetCellData());
 
+  this->CheckAbort();
+
   return 1;
 }
+VTK_ABI_NAMESPACE_END

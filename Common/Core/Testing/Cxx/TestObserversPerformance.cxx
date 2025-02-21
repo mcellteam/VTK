@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSmartPointer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test speed of Observers.
 // .SECTION Description
 // Probe the speed of vtkObject::AddObserver, vtkObject::InvokeEvent and
@@ -52,7 +40,7 @@ public:
   static vtkSimpleCommand* New() { return new vtkSimpleCommand(); }
   vtkTypeMacro(vtkSimpleCommand, vtkCommand);
 
-  void Execute(vtkObject*, unsigned long, void*) override { this->MTime.Modified(); }
+  void Execute(vtkObject*, unsigned long, void*) override { vtkSimpleCommand::MTime.Modified(); }
 
 protected:
   static vtkTimeStamp MTime;
@@ -116,7 +104,7 @@ double StressInvoke(const int observerCount, const int eventCount, const int inv
               << " observers each." << std::endl;
   }
   vtkObject* volcano = vtkObject::New();
-  std::vector<vtkSmartPointer<vtkSimpleCommand> > observers;
+  std::vector<vtkSmartPointer<vtkSimpleCommand>> observers;
   vtkNew<vtkTimerLog> totalTimer;
   vtkNew<vtkTimerLog> addTimer;
   vtkNew<vtkTimerLog> invokeTimer;
@@ -129,7 +117,7 @@ double StressInvoke(const int observerCount, const int eventCount, const int inv
     {
       vtkNew<vtkSimpleCommand> observer;
       volcano->AddObserver(event + 1000, observer.GetPointer());
-      observers.push_back(observer.GetPointer());
+      observers.emplace_back(observer.GetPointer());
     }
   }
   addTimer->StopTimer();

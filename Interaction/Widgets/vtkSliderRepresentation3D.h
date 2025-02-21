@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSliderRepresentation3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSliderRepresentation3D
  * @brief   provide the representation for a vtkSliderWidget with a 3D skin
@@ -33,6 +21,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkSliderRepresentation.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkPolyDataMapper;
 class vtkSphereSource;
@@ -53,15 +42,15 @@ public:
    */
   static vtkSliderRepresentation3D* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for the class.
    */
   vtkTypeMacro(vtkSliderRepresentation3D, vtkSliderRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Position the first end point of the slider. Note that this point is an
    * instance of vtkCoordinate, meaning that Point 1 can be specified in a
@@ -72,9 +61,9 @@ public:
    */
   vtkCoordinate* GetPoint1Coordinate();
   void SetPoint1InWorldCoordinates(double x, double y, double z);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Position the second end point of the slider. Note that this point is an
    * instance of vtkCoordinate, meaning that Point 1 can be specified in a
@@ -85,18 +74,18 @@ public:
    */
   vtkCoordinate* GetPoint2Coordinate();
   void SetPoint2InWorldCoordinates(double x, double y, double z);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the title text for this widget. If the value is not set, or set
    * to the empty string "", then the title text is not displayed.
    */
   void SetTitleText(const char*) override;
   const char* GetTitleText() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether to use a sphere or cylinder slider shape. By default, a
    * sphere shape is used.
@@ -105,9 +94,9 @@ public:
   vtkGetMacro(SliderShape, int);
   void SetSliderShapeToSphere() { this->SetSliderShape(SphereShape); }
   void SetSliderShapeToCylinder() { this->SetSliderShape(CylinderShape); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the rotation of the slider widget around the axis of the widget. This is
    * used to control which way the widget is initially oriented. (This is especially
@@ -115,33 +104,33 @@ public:
    */
   vtkSetMacro(Rotation, double);
   vtkGetMacro(Rotation, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the slider properties. The properties of the slider when selected
    * and unselected can be manipulated.
    */
   vtkGetObjectMacro(SliderProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the properties for the tube and end caps.
    */
   vtkGetObjectMacro(TubeProperty, vtkProperty);
   vtkGetObjectMacro(CapProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the selection property. This property is used to modify the appearance of
    * selected objects (e.g., the slider).
    */
   vtkGetObjectMacro(SelectedProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to interface with the vtkSliderWidget.
    */
@@ -150,19 +139,19 @@ public:
   void StartWidgetInteraction(double eventPos[2]) override;
   void WidgetInteraction(double newEventPos[2]) override;
   void Highlight(int) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods supporting the rendering process.
    */
   double* GetBounds() VTK_SIZEHINT(6) override;
-  void GetActors(vtkPropCollection*) override;
-  void ReleaseGraphicsResources(vtkWindow*) override;
-  int RenderOpaqueGeometry(vtkViewport*) override;
-  int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
+  void GetActors(vtkPropCollection* propCollection) override;
+  void ReleaseGraphicsResources(vtkWindow* window) override;
+  int RenderOpaqueGeometry(vtkViewport* viewport) override;
+  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
   /**
    * Override GetMTime to include point coordinates
@@ -243,7 +232,7 @@ protected:
   vtkTransform* Transform;
 
   // Manage the state of the widget
-  enum _SliderShape
+  enum SliderShapeType
   {
     SphereShape,
     CylinderShape
@@ -254,4 +243,5 @@ private:
   void operator=(const vtkSliderRepresentation3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

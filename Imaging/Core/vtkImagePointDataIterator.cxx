@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImagePointDataIterator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImagePointDataIterator.h"
 #include "vtkAlgorithm.h"
 #include "vtkDataArray.h"
@@ -21,7 +9,8 @@
 
 #include <algorithm>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageStencilIteratorFriendship
 {
 public:
@@ -33,7 +22,7 @@ public:
   static int** GetExtentLists(vtkImageStencilData* stencil) { return stencil->ExtentLists; }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImagePointDataIterator::vtkImagePointDataIterator()
 {
   this->Id = 0;
@@ -73,7 +62,7 @@ vtkImagePointDataIterator::vtkImagePointDataIterator()
   this->ThreadId = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImagePointDataIterator::Initialize(vtkImageData* image, const int extent[6],
   vtkImageStencilData* stencil, vtkAlgorithm* algorithm, int threadId)
 {
@@ -272,7 +261,7 @@ void vtkImagePointDataIterator::Initialize(vtkImageData* image, const int extent
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImagePointDataIterator::SetSpanState(int idX)
 {
   // Find the span that includes idX
@@ -307,7 +296,7 @@ void vtkImagePointDataIterator::SetSpanState(int idX)
   this->SpanEnd = rowStart + (endIdX - this->Extent[0]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImagePointDataIterator::NextSpan()
 {
   if (this->SpanEnd == this->RowEnd)
@@ -399,7 +388,7 @@ void vtkImagePointDataIterator::NextSpan()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void* vtkImagePointDataIterator::GetVoidPointer(
   vtkDataArray* array, vtkIdType i, int* pixelIncrement)
 {
@@ -411,7 +400,7 @@ void* vtkImagePointDataIterator::GetVoidPointer(
   return array->GetVoidPointer(i * n);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void* vtkImagePointDataIterator::GetVoidPointer(
   vtkImageData* image, vtkIdType i, int* pixelIncrement)
 {
@@ -419,7 +408,7 @@ void* vtkImagePointDataIterator::GetVoidPointer(
     image->GetPointData()->GetScalars(), i, pixelIncrement);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImagePointDataIterator::ReportProgress()
 {
   if (this->Count % this->Target == 0)
@@ -438,3 +427,4 @@ void vtkImagePointDataIterator::ReportProgress()
   }
   this->Count++;
 }
+VTK_ABI_NAMESPACE_END

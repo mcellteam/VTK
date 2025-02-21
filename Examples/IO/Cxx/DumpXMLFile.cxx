@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 //
 // DumpXMLFile - report on the contents of an XML or legacy vtk file
 //  Usage: DumpXMLFile XMLFile1 XMLFile2 ...
@@ -78,7 +80,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-      std::cerr << argv[0] << " Unknown extension: " << extension << std::endl;
+      std::cerr << argv[f] << " Unknown extension: " << extension << std::endl;
       return EXIT_FAILURE;
     }
 

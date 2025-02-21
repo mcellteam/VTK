@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataObjectTreeRange.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkDataObjectTreeRange_h
 #define vtkDataObjectTreeRange_h
@@ -25,10 +13,9 @@
 
 #include <cassert>
 
-#ifndef __VTK_WRAP__
-
 namespace vtk
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 // Pass these to vtk::Range(cds, options):
 enum class DataObjectTreeOptions : unsigned int
@@ -39,15 +26,18 @@ enum class DataObjectTreeOptions : unsigned int
   TraverseSubTree = 1 << 3, // Descend into child composite datasets.
 };
 
+VTK_ABI_NAMESPACE_END
 } // end namespace vtk (for bitflag op definition)
 
+VTK_ABI_NAMESPACE_BEGIN
 VTK_GENERATE_BITFLAG_OPS(vtk::DataObjectTreeOptions)
+VTK_ABI_NAMESPACE_END
 
 namespace vtk
 {
-
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 struct DataObjectTreeRange;
 struct DataObjectTreeIterator;
@@ -56,21 +46,17 @@ using DataObjectTreeIteratorReference =
   vtk::CompositeDataSetNodeReference<vtkDataObjectTreeIterator, DataObjectTreeIterator>;
 
 struct DataObjectTreeIterator
-  : public std::iterator<std::forward_iterator_tag, vtkDataObject*, int,
-      DataObjectTreeIteratorReference, DataObjectTreeIteratorReference>
 {
 private:
-  using Superclass = std::iterator<std::forward_iterator_tag, vtkDataObject*, int,
-    DataObjectTreeIteratorReference, DataObjectTreeIteratorReference>;
   using InternalIterator = vtkDataObjectTreeIterator;
   using SmartIterator = vtkSmartPointer<InternalIterator>;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = vtkDataObject*;
+  using difference_type = int;
+  using pointer = DataObjectTreeIteratorReference;
+  using reference = DataObjectTreeIteratorReference;
 
   DataObjectTreeIterator(const DataObjectTreeIterator& o)
     : Iterator(o.Iterator ? SmartIterator::Take(o.Iterator->NewInstance()) : nullptr)
@@ -106,7 +92,7 @@ public:
 
   friend bool operator==(const DataObjectTreeIterator& lhs, const DataObjectTreeIterator& rhs)
   {
-    // A null internal iterator means it is an 'end' sentinal.
+    // A null internal iterator means it is an 'end' sentinel.
     InternalIterator* l = lhs.Iterator;
     InternalIterator* r = rhs.Iterator;
 
@@ -144,11 +130,17 @@ public:
 protected:
   // Note: This takes ownership of iter and manages its lifetime.
   // Iter should not be used past this point by the caller.
-  DataObjectTreeIterator(SmartIterator&& iter) noexcept : Iterator(std::move(iter)) {}
+  DataObjectTreeIterator(SmartIterator&& iter) noexcept
+    : Iterator(std::move(iter))
+  {
+  }
 
   // Note: Iterators constructed using this ctor will be considered
-  // 'end' iterators via a sentinal pattern.
-  DataObjectTreeIterator() noexcept : Iterator{ nullptr } {}
+  // 'end' iterators via a sentinel pattern.
+  DataObjectTreeIterator() noexcept
+    : Iterator{ nullptr }
+  {
+  }
 
 private:
   void CopyState(InternalIterator* source)
@@ -261,10 +253,9 @@ private:
   DataObjectTreeOptions Options;
 };
 
+VTK_ABI_NAMESPACE_END
 }
 } // end namespace vtk::detail
-
-#endif // __VTK_WRAP__
 
 #endif // vtkDataObjectTreeRange_h
 

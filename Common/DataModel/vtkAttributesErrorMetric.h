@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAttributesErrorMetric.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAttributesErrorMetric
  * @brief    Objects that compute
@@ -31,6 +19,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkGenericSubdivisionErrorMetric.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGenericAttributeCollection;
 class vtkGenericDataSet;
 
@@ -43,15 +32,15 @@ public:
    */
   static vtkAttributesErrorMetric* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK type and error macros.
    */
   vtkTypeMacro(vtkAttributesErrorMetric, vtkGenericSubdivisionErrorMetric);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Absolute tolerance of the active scalar (attribute+component).
    * Subdivision is required if the square distance between the real attribute
@@ -61,7 +50,7 @@ public:
    * 0.01 will give better result than 0.1.
    */
   vtkGetMacro(AbsoluteAttributeTolerance, double);
-  //@}
+  ///@}
 
   /**
    * Set the absolute attribute accuracy to `value'. See
@@ -75,7 +64,7 @@ public:
    */
   void SetAbsoluteAttributeTolerance(double value);
 
-  //@{
+  ///@{
   /**
    * Relative tolerance of the active scalar (attribute+component).
    * Subdivision is required if the square distance between the real attribute
@@ -85,7 +74,7 @@ public:
    * 0.01 will give better result than 0.1.
    */
   vtkGetMacro(AttributeTolerance, double);
-  //@}
+  ///@}
 
   /**
    * Set the relative attribute accuracy to `value'. See
@@ -160,4 +149,5 @@ private:
   void operator=(const vtkAttributesErrorMetric&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

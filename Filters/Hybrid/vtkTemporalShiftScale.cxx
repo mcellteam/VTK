@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTemporalShiftScale.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTemporalShiftScale.h"
 #include "vtkCompositeDataPipeline.h"
 #include "vtkDataObject.h"
@@ -21,11 +9,14 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 
 #include <cassert>
+#include <cmath>
+#include <map>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTemporalShiftScale);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTemporalShiftScale::vtkTemporalShiftScale()
 {
   this->PreShift = 0;
@@ -39,10 +30,10 @@ vtkTemporalShiftScale::vtkTemporalShiftScale()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTemporalShiftScale::~vtkTemporalShiftScale() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTemporalShiftScale::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -55,7 +46,7 @@ void vtkTemporalShiftScale::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "MaximumNumberOfPeriods: " << this->MaximumNumberOfPeriods << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkTemporalShiftScale::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -88,7 +79,7 @@ vtkTypeBool vtkTemporalShiftScale::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTemporalShiftScale::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -139,17 +130,29 @@ int vtkTemporalShiftScale::RequestDataObject(
   return 0;
 }
 
-//----------------------------------------------------------------------------
-inline double vtkTemporalShiftScale::ForwardConvert(double T0)
+//------------------------------------------------------------------------------
+double vtkTemporalShiftScale::ForwardConvert(double T0)
 {
-  return (T0 + this->PreShift) * this->Scale + this->PostShift;
+  double outputTime = (T0 + this->PreShift) * this->Scale + this->PostShift;
+  this->OutputToInputTimes[outputTime] = T0;
+  return outputTime;
 }
-//----------------------------------------------------------------------------
-inline double vtkTemporalShiftScale::BackwardConvert(double T1)
+//------------------------------------------------------------------------------
+double vtkTemporalShiftScale::BackwardConvert(double T1)
 {
-  return (T1 - this->PostShift) / this->Scale - this->PreShift;
+  // the fallback in case we can't find the output time in our map
+  double inputTime = (T1 - this->PostShift) / this->Scale - this->PreShift;
+  // we want the backward converted time to match a time in our input.
+  // doing a forwardconvert and then a backwardconvert may introduce
+  // round off error so see if we can find the original input time
+  if (this->OutputToInputTimes.find(T1) != this->OutputToInputTimes.end())
+  {
+    inputTime = this->OutputToInputTimes[T1];
+  }
+
+  return inputTime;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Change the information
 int vtkTemporalShiftScale::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -160,7 +163,8 @@ int vtkTemporalShiftScale::RequestInformation(vtkInformation* vtkNotUsed(request
 
   this->InRange[0] = 0.0;
   this->InRange[1] = 0.0;
-  //
+  this->OutputToInputTimes.clear();
+
   if (inInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_RANGE()))
   {
     inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), this->InRange);
@@ -271,7 +275,7 @@ int vtkTemporalShiftScale::RequestInformation(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method simply copies by reference the input data to the output.
 int vtkTemporalShiftScale::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -303,10 +307,12 @@ int vtkTemporalShiftScale::RequestData(vtkInformation* vtkNotUsed(request),
   }
   outData->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), outTime);
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTemporalShiftScale::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -343,3 +349,4 @@ int vtkTemporalShiftScale::RequestUpdateExtent(vtkInformation* vtkNotUsed(reques
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

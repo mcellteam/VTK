@@ -1,8 +1,10 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #import <Cocoa/Cocoa.h>
 
 #import "vtkRenderWindow.h"
 #import "vtkRenderer.h"
-//#import "vtkRenderWindowInteractor.h"
+// #import "vtkRenderWindowInteractor.h"
 #import "vtkCocoaRenderWindow.h"
 #import "vtkCocoaRenderWindowInteractor.h"
 

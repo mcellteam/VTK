@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSurfaceLICComposite.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSurfaceLICComposite
  *
@@ -31,6 +19,7 @@
 #include <deque>                          // for deque
 #include <vector>                         // for vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFloatArray;
 class vtkOpenGLRenderWindow;
 class vtkTextureObject;
@@ -101,7 +90,7 @@ public:
 
   /**
    * Get the extent of the domain over which to compute the LIC. This can
-   * be querried only after the Composite takes place.
+   * be queried only after the Composite takes place.
    */
   const vtkPixelExtent& GetGuardExtent(int i = 0) const { return this->GuardExt[i]; }
 
@@ -109,7 +98,7 @@ public:
 
   /**
    * Get the extent of the domain over which to compute the LIC. This can
-   * be querried only after the Composite takes place.
+   * be queried only after the Composite takes place.
    */
   const vtkPixelExtent& GetDisjointGuardExtent(int i = 0) const
   {
@@ -120,7 +109,7 @@ public:
 
   /**
    * Get the extent of the domain over which to compute the LIC. This can
-   * be querried only after the Composite takes place.
+   * be queried only after the Composite takes place.
    */
   const vtkPixelExtent& GetCompositeExtent(int i = 0) const { return this->CompositeExt[i]; }
 
@@ -232,7 +221,6 @@ protected:
    */
   float GetFudgeFactor(int nx[2]);
 
-protected:
   int Pass; // id for mpi tagging
 
   vtkPixelExtent WindowExt;             // screen extent (screen size)
@@ -247,7 +235,7 @@ protected:
 
   double StepSize;           // window coordinates step size
   int NumberOfSteps;         // number of integration steps
-  int NormalizeVectors;      // does integrator normailze
+  int NormalizeVectors;      // does integrator normalize
   int NumberOfGuardLevels;   // 1.5 if enhanced LIC 1 otherwise
   int NumberOfEEGuardPixels; // 1 if enhanced LIC 0 otherwise
   int NumberOfAAGuardPixels; // n antialias passes
@@ -260,5 +248,7 @@ private:
 };
 
 ostream& operator<<(ostream& os, vtkSurfaceLICComposite& ss);
+
+VTK_ABI_NAMESPACE_END
 
 #endif

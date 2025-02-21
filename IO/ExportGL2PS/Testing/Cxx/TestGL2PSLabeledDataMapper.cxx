@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGL2PSLabeledDataMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGL2PSExporter.h"
 #include "vtkRegressionTestImage.h"
@@ -22,7 +10,7 @@
 #include "vtkCamera.h"
 #include "vtkCellArray.h"
 #include "vtkCellCenters.h"
-#include "vtkIdFilter.h"
+#include "vtkGenerateIds.h"
 #include "vtkLabeledDataMapper.h"
 #include "vtkNew.h"
 #include "vtkPoints.h"
@@ -78,7 +66,7 @@ int TestGL2PSLabeledDataMapper(int, char*[])
   sphereActor->SetMapper(sphereMapper);
 
   // Generate ids for labeling
-  vtkNew<vtkIdFilter> ids;
+  vtkNew<vtkGenerateIds> ids;
   ids->SetInputConnection(sphere->GetOutputPort());
   ids->PointIdsOn();
   ids->CellIdsOn();

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    UnitTestDataSetSurfaceFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSmartPointer.h"
 
 #include "vtkButterflySubdivisionFilter.h"
@@ -88,8 +76,7 @@ int TestSubdivision()
   subdivision0->SetNumberOfSubdivisions(4);
   subdivision0->Update();
 
-  int status2 = errorObserver->CheckErrorMessage("No data to subdivide");
-  if (status2 == 0)
+  if (subdivision0->GetOutput()->GetNumberOfPoints() == 0)
   {
     std::cout << "PASSED" << std::endl;
   }

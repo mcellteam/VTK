@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBridgeCellIterator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME vtkBridgeCellIterator - Implementation of vtkGenericCellIterator.
 // It is just an example that show how to implement the Generic. It is also
 // used for testing and evaluating the Generic.
@@ -33,15 +21,16 @@
 #include "vtkBridgeCellIteratorOnDataSet.h"
 #include "vtkBridgeCellIteratorOne.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBridgeCellIterator);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBridgeCellIterator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBridgeCellIterator::vtkBridgeCellIterator()
 {
   //  this->DebugOn();
@@ -52,7 +41,7 @@ vtkBridgeCellIterator::vtkBridgeCellIterator()
   this->IteratorOnCellList = vtkBridgeCellIteratorOnCellList::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBridgeCellIterator::~vtkBridgeCellIterator()
 {
   this->IteratorOnDataSet->Delete();
@@ -61,7 +50,7 @@ vtkBridgeCellIterator::~vtkBridgeCellIterator()
   this->IteratorOnCellList->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Move iterator to first position if any (loop initialization).
 void vtkBridgeCellIterator::Begin()
@@ -72,7 +61,7 @@ void vtkBridgeCellIterator::Begin()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Is there no cell at iterator position? (exit condition).
 vtkTypeBool vtkBridgeCellIterator::IsAtEnd()
@@ -86,7 +75,7 @@ vtkTypeBool vtkBridgeCellIterator::IsAtEnd()
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Create an empty cell.
 // \post result_exists: result!=0
@@ -97,7 +86,7 @@ vtkGenericAdaptorCell* vtkBridgeCellIterator::NewCell()
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Cell at current position
 // \pre not_at_end: !IsAtEnd()
@@ -111,7 +100,7 @@ void vtkBridgeCellIterator::GetCell(vtkGenericAdaptorCell* c)
   this->CurrentIterator->GetCell(c);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Cell at current position.
 // NOT THREAD SAFE
@@ -125,7 +114,7 @@ vtkGenericAdaptorCell* vtkBridgeCellIterator::GetCell()
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Move iterator to next position. (loop progression).
 // \pre not_at_end: !IsAtEnd()
@@ -135,7 +124,7 @@ void vtkBridgeCellIterator::Next()
   this->CurrentIterator->Next();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Used internally by vtkBridgeDataSet.
 // Iterate over cells of `ds' of some dimension `dim'.
@@ -150,7 +139,7 @@ void vtkBridgeCellIterator::InitWithDataSet(vtkBridgeDataSet* ds, int dim)
   this->CurrentIterator = this->IteratorOnDataSet;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Used internally by vtkBridgeDataSet.
 // Iterate over boundary cells of `ds' of some dimension `dim'.
@@ -169,7 +158,7 @@ void vtkBridgeCellIterator::InitWithDataSetBoundaries(
   assert("check: TODO" && 0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Used internally by vtkBridgeDataSet.
 // Iterate on one cell `id' of `ds'.
@@ -184,7 +173,7 @@ void vtkBridgeCellIterator::InitWithOneCell(vtkBridgeDataSet* ds, vtkIdType cell
   this->CurrentIterator = this->IteratorOneCell;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Used internally by vtkBridgeCell.
 // Iterate on one cell `c'.
@@ -196,7 +185,7 @@ void vtkBridgeCellIterator::InitWithOneCell(vtkBridgeCell* c)
   this->CurrentIterator = this->IteratorOneCell;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Used internally by vtkBridgeCell.
 // Iterate on boundary cells of a cell.
@@ -210,7 +199,7 @@ void vtkBridgeCellIterator::InitWithCellBoundaries(vtkBridgeCell* cell, int dim)
   this->CurrentIterator = this->IteratorOnCellBoundaries;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Used internally by vtkBridgeCell.
 // Iterate on neighbors defined by `cells' over the dataset `ds'.
@@ -225,7 +214,7 @@ void vtkBridgeCellIterator::InitWithCells(vtkIdList* cells, vtkBridgeDataSet* ds
   this->CurrentIterator = this->IteratorOnCellList;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Used internally by vtkBridgeCell.
 // Iterate on a boundary cell (defined by its points `pts' with coordinates
@@ -245,3 +234,4 @@ void vtkBridgeCellIterator::InitWithPoints(
   this->IteratorOneCell->InitWithPoints(coords, pts, dim, cellid);
   this->CurrentIterator = this->IteratorOneCell;
 }
+VTK_ABI_NAMESPACE_END

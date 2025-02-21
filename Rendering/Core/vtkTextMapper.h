@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTextMapper
  * @brief   2D text annotation
@@ -34,6 +22,7 @@
 
 #include "vtkNew.h" // For vtkNew
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor2D;
 class vtkImageData;
 class vtkPoints;
@@ -55,7 +44,7 @@ public:
    */
   static vtkTextMapper* New();
 
-  //@{
+  ///@{
   /**
    * Return the size[2]/width/height of the rectangle required to draw this
    * mapper (in pixels).
@@ -63,30 +52,30 @@ public:
   virtual void GetSize(vtkViewport*, int size[2]);
   virtual int GetWidth(vtkViewport* v);
   virtual int GetHeight(vtkViewport* v);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The input text string to the mapper.
    */
   vtkSetStringMacro(Input);
   vtkGetStringMacro(Input);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the text property.
    */
   virtual void SetTextProperty(vtkTextProperty* p);
   vtkGetObjectMacro(TextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
   /**
    * Shallow copy of an actor.
    */
   void ShallowCopy(vtkAbstractMapper* m) override;
 
-  //@{
+  ///@{
   /**
    * Set and return the font size (in points) required to make this mapper fit
    * in a given
@@ -96,7 +85,7 @@ public:
   virtual int SetConstrainedFontSize(vtkViewport*, int targetWidth, int targetHeight);
   static int SetConstrainedFontSize(
     vtkTextMapper*, vtkViewport*, int targetWidth, int targetHeight);
-  //@}
+  ///@}
 
   /**
    * Set and return the font size (in points) required to make each element of
@@ -108,16 +97,16 @@ public:
   static int SetMultipleConstrainedFontSize(vtkViewport*, int targetWidth, int targetHeight,
     vtkTextMapper** mappers, int nbOfMappers, int* maxResultingSize);
 
-  //@{
+  ///@{
   /**
    * Use these methods when setting font size relative to the renderer's size. These
    * methods are static so that external classes (e.g., widgets) can easily use them.
    */
   static int SetRelativeFontSize(
-    vtkTextMapper*, vtkViewport*, int* winSize, int* stringSize, float sizeFactor = 0.0);
+    vtkTextMapper*, vtkViewport*, const int* winSize, int* stringSize, float sizeFactor = 0.0);
   static int SetMultipleRelativeFontSize(vtkViewport* viewport, vtkTextMapper** textMappers,
     int nbOfMappers, int* winSize, int* stringSize, float sizeFactor);
-  //@}
+  ///@}
 
   void RenderOverlay(vtkViewport*, vtkActor2D*) override;
   void ReleaseGraphicsResources(vtkWindow*) override;
@@ -149,4 +138,5 @@ private:
   vtkNew<vtkTexture> Texture;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOTFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOTFilter.h"
 
 #include "vtkDataArray.h"
@@ -26,17 +14,18 @@
 
 using namespace OT;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkOTFilter::vtkOTFilter()
 {
   this->SetInputArrayToProcess(
     0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS, vtkDataSetAttributes::SCALARS);
 }
 
-//-----------------------------------------------------------------------------
-vtkOTFilter::~vtkOTFilter() {}
+//------------------------------------------------------------------------------
+vtkOTFilter::~vtkOTFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOTFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   this->Superclass::FillInputPortInformation(port, info);
@@ -45,7 +34,7 @@ int vtkOTFilter::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOTFilter::AddToOutput(Sample* ns, const std::string& name)
 {
   vtkSmartPointer<vtkDataArray> outArray =
@@ -54,7 +43,7 @@ void vtkOTFilter::AddToOutput(Sample* ns, const std::string& name)
   this->Output->AddColumn(outArray);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOTFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -70,11 +59,14 @@ int vtkOTFilter::RequestData(vtkInformation* vtkNotUsed(request),
     ret = this->Process(ns);
     delete ns;
   }
+
+  this->CheckAbort();
   return ret;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOTFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

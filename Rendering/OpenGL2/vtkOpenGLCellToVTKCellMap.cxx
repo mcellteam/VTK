@@ -1,28 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLCellToVTKCellMap.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLCellToVTKCellMap.h"
 
 #include "vtkCellArray.h"
-#include "vtkOpenGLState.h"
 #include "vtkPoints.h"
 #include "vtkProperty.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLCellToVTKCellMap);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLCellToVTKCellMap::vtkOpenGLCellToVTKCellMap()
 {
   this->PrimitiveOffsets[0] = 0;
@@ -36,7 +24,7 @@ vtkOpenGLCellToVTKCellMap::vtkOpenGLCellToVTKCellMap()
   this->CellMapSizes[3] = 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLCellToVTKCellMap::~vtkOpenGLCellToVTKCellMap() = default;
 
 void vtkOpenGLCellToVTKCellMap::PrintSelf(ostream& os, vtkIndent indent)
@@ -65,7 +53,7 @@ void vtkOpenGLCellToVTKCellMap::BuildPrimitiveOffsetsIfNeeded(
 {
   // if the users created a full cell cell map AND it is still valid then
   // the values will be computed as part of that and we should use them
-  if (this->CellCellMap.size())
+  if (!this->CellCellMap.empty())
   {
     this->TempState.Clear();
     this->TempState.Append(prims[0]->GetNumberOfCells() ? prims[0]->GetMTime() : 0, "verts");
@@ -142,7 +130,7 @@ void vtkOpenGLCellToVTKCellMap::BuildCellSupportArrays(
   vtkCellArray* prims[4], int representation, vtkPoints* points)
 {
   // need an array to track what points to orig points
-  size_t minSize = prims[0]->GetNumberOfCells() + prims[1]->GetNumberOfCells() +
+  vtkIdType minSize = prims[0]->GetNumberOfCells() + prims[1]->GetNumberOfCells() +
     prims[2]->GetNumberOfCells() + prims[3]->GetNumberOfCells();
   const vtkIdType* indices(nullptr);
   vtkIdType npts(0);
@@ -301,7 +289,11 @@ vtkIdType vtkOpenGLCellToVTKCellMap::ConvertOpenGLCellIdToVTKCellId(
   // check if we really are a vert
   if (result < this->CellMapSizes[0])
   {
+#ifdef NDEBUG
     return this->CellCellMap[result];
+#else
+    return this->CellCellMap.at(result);
+#endif
   }
 
   // OK we are a line maybe?
@@ -327,7 +319,11 @@ vtkIdType vtkOpenGLCellToVTKCellMap::ConvertOpenGLCellIdToVTKCellId(
   }
   if (result < this->CellMapSizes[2])
   {
+#ifdef NDEBUG
     return this->CellCellMap[result + this->CellMapSizes[1] + this->CellMapSizes[0]];
+#else
+    return this->CellCellMap.at(result + this->CellMapSizes[1] + this->CellMapSizes[0]);
+#endif
   }
 
   // must be a strip
@@ -342,10 +338,16 @@ vtkIdType vtkOpenGLCellToVTKCellMap::ConvertOpenGLCellIdToVTKCellId(
   }
   if (result < this->CellMapSizes[3])
   {
+#ifdef NDEBUG
     return this
       ->CellCellMap[result + this->CellMapSizes[2] + this->CellMapSizes[1] + this->CellMapSizes[0]];
+#else
+    return this->CellCellMap.at(
+      result + this->CellMapSizes[2] + this->CellMapSizes[1] + this->CellMapSizes[0]);
+#endif
   }
 
   // error
   return 0;
 }
+VTK_ABI_NAMESPACE_END

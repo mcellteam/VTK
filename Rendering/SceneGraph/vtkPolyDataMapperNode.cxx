@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataMapperNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPolyDataMapperNode.h"
 
 #include "vtkActor.h"
@@ -26,21 +14,22 @@
 #include "vtkProperty.h"
 
 //============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPolyDataMapperNode);
 
-//----------------------------------------------------------------------------
-vtkPolyDataMapperNode::vtkPolyDataMapperNode() {}
+//------------------------------------------------------------------------------
+vtkPolyDataMapperNode::vtkPolyDataMapperNode() = default;
 
-//----------------------------------------------------------------------------
-vtkPolyDataMapperNode::~vtkPolyDataMapperNode() {}
+//------------------------------------------------------------------------------
+vtkPolyDataMapperNode::~vtkPolyDataMapperNode() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapperNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapperNode::TransformPoints(
   vtkActor* act, vtkPolyData* poly, std::vector<double>& _vertices)
 {
@@ -69,7 +58,7 @@ void vtkPolyDataMapperNode::TransformPoints(
       {
         pos = poly->GetPoints()->GetPoint(fixIndex--);
       }
-    } while (wasNan == true && fixIndex >= 0);
+    } while (wasNan && fixIndex >= 0);
     if (ident)
     {
       _vertices.push_back(pos[0]);
@@ -96,7 +85,7 @@ namespace
 // The CreateXIndexBuffer's were adapted from vtkOpenGLIndexBufferObject.
 // Apply rule of three if made again somewhere in VTK.
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Homogenizes everything into a flat list of point indexes.
 // At same time creates a reverse cell index array for obtaining cell quantities for points
@@ -122,7 +111,7 @@ void CreatePointIndexBuffer(vtkCellArray* cells, std::vector<unsigned int>& inde
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Homogenizes lines into a flat list of line segments, each containing two point indexes
 // At same time creates a reverse cell index array for obtaining cell quantities for points
@@ -150,7 +139,7 @@ void CreateLineIndexBuffer(vtkCellArray* cells, std::vector<unsigned int>& index
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Homogenizes polygons into a flat list of line segments, each containing two point indexes.
 // At same time creates a reverse cell index array for obtaining cell quantities for points
@@ -180,7 +169,7 @@ void CreateTriangleLineIndexBuffer(vtkCellArray* cells, std::vector<unsigned int
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Homogenizes polygons into a flat list of triangles, each containing three point indexes
 // At same time creates a reverse cell index array for obtaining cell quantities for points
@@ -295,7 +284,7 @@ void CreateTriangleIndexBuffer(vtkCellArray* cells, vtkPoints* points,
           triIndices[i] = i;
         }
         polygon->Initialize(npts, triIndices, triPoints);
-        polygon->Triangulate(tris);
+        polygon->TriangulateLocalIds(0, tris);
         for (int j = 0; j < tris->GetNumberOfIds(); ++j)
         {
           indexArray.push_back(static_cast<unsigned int>(indices[tris->GetId(j)]));
@@ -324,7 +313,7 @@ void CreateTriangleIndexBuffer(vtkCellArray* cells, vtkPoints* points,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Homogenizes triangle strips.
 // Depending on wireframeTriStrips it will produce either line segments (two indices per edge)
@@ -339,7 +328,7 @@ void CreateStripIndexBuffer(vtkCellArray* cells, std::vector<unsigned int>& inde
   }
   unsigned int cell_id = 0;
 
-  const vtkIdType* pts = 0;
+  const vtkIdType* pts = nullptr;
   vtkIdType npts = 0;
 
   size_t triCount = cells->GetNumberOfConnectivityIds() - 2 * cells->GetNumberOfCells();
@@ -387,7 +376,7 @@ void CreateStripIndexBuffer(vtkCellArray* cells, std::vector<unsigned int>& inde
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapperNode::MakeConnectivity(
   vtkPolyData* poly, int representation, vtkPDConnectivity& conn)
 {
@@ -423,3 +412,4 @@ void vtkPolyDataMapperNode::MakeConnectivity(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

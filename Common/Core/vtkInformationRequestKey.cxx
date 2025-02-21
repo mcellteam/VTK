@@ -1,38 +1,27 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationRequestKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationRequestKey.h"
 
 #include "vtkInformation.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationRequestKey::vtkInformationRequestKey(const char* name, const char* location)
   : vtkInformationKey(name, location)
 {
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationRequestKey::~vtkInformationRequestKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationRequestKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationRequestKey::Set(vtkInformation* info)
 {
   if (info->GetRequest() != this)
@@ -47,25 +36,25 @@ void vtkInformationRequestKey::Set(vtkInformation* info)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationRequestKey::Has(vtkInformation* info)
 {
   return (info->GetRequest() == this) ? 1 : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationRequestKey::Remove(vtkInformation* info)
 {
   info->SetRequest(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationRequestKey::ShallowCopy(vtkInformation* from, vtkInformation* to)
 {
   to->SetRequest(from->GetRequest());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationRequestKey::Print(ostream& os, vtkInformation* info)
 {
   // Print the value.
@@ -74,3 +63,4 @@ void vtkInformationRequestKey::Print(ostream& os, vtkInformation* info)
     os << "1\n";
   }
 }
+VTK_ABI_NAMESPACE_END

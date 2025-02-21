@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRearrangeFields.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRearrangeFields.h"
 
 #include "vtkCellData.h"
@@ -25,6 +13,7 @@
 #include "vtkPointData.h"
 #include <cctype>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRearrangeFields);
 
 typedef vtkRearrangeFields::Operation Operation;
@@ -35,7 +24,7 @@ char vtkRearrangeFields::OperationTypeNames[2][5] = { "COPY", "MOVE" };
 char vtkRearrangeFields::FieldLocationNames[3][12] = { "DATA_OBJECT", "POINT_DATA", "CELL_DATA" };
 char vtkRearrangeFields::AttributeNames[vtkDataSetAttributes::NUM_ATTRIBUTES][10] = { { 0 } };
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkRearrangeFields::vtkRearrangeFields()
 {
@@ -83,6 +72,10 @@ int vtkRearrangeFields::RequestData(vtkInformation* vtkNotUsed(request),
     Operation* before;
     do
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       before = cur;
       cur = cur->Next;
       this->ApplyOperation(before, input, output);
@@ -637,7 +630,7 @@ int vtkRearrangeFields::CompareOperationsByName(const Operation* op1, const Oper
   {
     return 0;
   }
-  if (!op1->FieldName || !op2->FieldName || strcmp(op1->FieldName, op2->FieldName))
+  if (!op1->FieldName || !op2->FieldName || strcmp(op1->FieldName, op2->FieldName) != 0)
   {
     return 0;
   }
@@ -719,3 +712,4 @@ void vtkRearrangeFields::PrintOperation(Operation* op, ostream& os, vtkIndent in
   os << indent << "Next operation: " << op->Next << endl;
   os << endl;
 }
+VTK_ABI_NAMESPACE_END

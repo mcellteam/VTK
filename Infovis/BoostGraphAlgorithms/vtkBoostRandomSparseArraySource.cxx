@@ -1,25 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostRandomSparseArraySource.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkBoostRandomSparseArraySource.h"
+#include "vtkArrayData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
@@ -28,11 +12,12 @@
 
 #include <boost/random.hpp>
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostRandomSparseArraySource);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkBoostRandomSparseArraySource::vtkBoostRandomSparseArraySource()
   : Extents(2, 2)
@@ -46,11 +31,11 @@ vtkBoostRandomSparseArraySource::vtkBoostRandomSparseArraySource()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-vtkBoostRandomSparseArraySource::~vtkBoostRandomSparseArraySource() {}
+vtkBoostRandomSparseArraySource::~vtkBoostRandomSparseArraySource() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoostRandomSparseArraySource::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -77,19 +62,19 @@ vtkArrayExtents vtkBoostRandomSparseArraySource::GetExtents()
   return this->Extents;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkBoostRandomSparseArraySource::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
   boost::mt19937 pattern_generator(static_cast<boost::uint32_t>(this->ElementProbabilitySeed));
   boost::bernoulli_distribution<> pattern_distribution(this->ElementProbability);
-  boost::variate_generator<boost::mt19937&, boost::bernoulli_distribution<> > pattern(
+  boost::variate_generator<boost::mt19937&, boost::bernoulli_distribution<>> pattern(
     pattern_generator, pattern_distribution);
 
   boost::mt19937 value_generator(static_cast<boost::uint32_t>(this->ElementValueSeed));
   boost::uniform_real<> value_distribution(this->MinValue, this->MaxValue);
-  boost::variate_generator<boost::mt19937&, boost::uniform_real<> > values(
+  boost::variate_generator<boost::mt19937&, boost::uniform_real<>> values(
     value_generator, value_distribution);
 
   vtkSparseArray<double>* const array = vtkSparseArray<double>::New();
@@ -116,3 +101,4 @@ int vtkBoostRandomSparseArraySource::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

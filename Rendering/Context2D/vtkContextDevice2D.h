@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContextDevice2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkContextDevice2D
@@ -32,10 +20,12 @@
 #include "vtkRenderingCoreEnums.h"       // For marker enum
 #include "vtkVector.h"                   // For vtkVector2i ivar
 
+#include <cstdint> // For std::uintptr_t
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkWindow;
 class vtkViewport;
 class vtkStdString;
-class vtkUnicodeString;
 class vtkTextProperty;
 class vtkPoints2D;
 class vtkImageData;
@@ -79,16 +69,23 @@ public:
    */
   virtual void DrawPoints(
     float* points, int n, unsigned char* colors = nullptr, int nc_comps = 0) = 0;
+  virtual void DrawPoints(vtkDataArray* positions, vtkUnsignedCharArray* colors,
+    std::uintptr_t vtkNotUsed(cacheIdentifier));
 
   /**
    * Draw a series of point sprites, images centred at the points supplied.
    * The supplied vtkImageData is the sprite to be drawn, only squares will be
    * drawn and the size is set using SetPointSize.
+   * \param sprite the image to draw
+   * \param points where to draw the sprites
+   * \param n the number of points
    * \param colors is an optional array of colors.
    * \param nc_comps is the number of components for the color.
    */
   virtual void DrawPointSprites(vtkImageData* sprite, float* points, int n,
     unsigned char* colors = nullptr, int nc_comps = 0) = 0;
+  virtual void DrawPointSprites(vtkImageData* sprite, vtkDataArray* positions,
+    vtkUnsignedCharArray* colors, std::uintptr_t vtkNotUsed(cacheIdentifier));
 
   /**
    * Draw a series of markers centered at the points supplied. The \a shape
@@ -98,21 +95,27 @@ public:
    * - VTK_MARKER_SQUARE
    * - VTK_MARKER_CIRCLE
    * - VTK_MARKER_DIAMOND
+   * \param shape the shape of the marker
+   * \param highlight whether to highlight the marker or not
+   * \param points where to draw the sprites
+   * \param n the number of points
    * \param colors is an optional array of colors.
    * \param nc_comps is the number of components for the color.
    */
   virtual void DrawMarkers(int shape, bool highlight, float* points, int n,
     unsigned char* colors = nullptr, int nc_comps = 0);
+  virtual void DrawMarkers(int shape, bool highlight, vtkDataArray* positions,
+    vtkUnsignedCharArray* colors, std::uintptr_t vtkNotUsed(cacheIdentifier));
 
   /**
    * Draw a quad using the specified number of points.
    */
-  virtual void DrawQuad(float*, int) { ; }
+  virtual void DrawQuad(float*, int) {}
 
   /**
    * Draw a quad using the specified number of points.
    */
-  virtual void DrawQuadStrip(float*, int) { ; }
+  virtual void DrawQuadStrip(float*, int) {}
 
   /**
    * Draw a polygon using the specified number of points.
@@ -159,20 +162,6 @@ public:
    * NOTE: This function does not take account of the text rotation or justification.
    */
   virtual void ComputeStringBounds(const vtkStdString& string, float bounds[4]) = 0;
-
-  /**
-   * Draw some text to the screen.
-   */
-  virtual void DrawString(float* point, const vtkUnicodeString& string) = 0;
-
-  /**
-   * Compute the bounds of the supplied string. The bounds will be copied to the
-   * supplied bounds variable, the first two elements are the bottom corner of
-   * the string, and the second two elements are the width and height of the
-   * bounding box.
-   * NOTE: This function does not take account of the text rotation or justification.
-   */
-  virtual void ComputeStringBounds(const vtkUnicodeString& string, float bounds[4]) = 0;
 
   /**
    * Compute the bounds of the supplied string while taking into account the
@@ -234,14 +223,14 @@ public:
    */
   virtual void ApplyPen(vtkPen* pen);
 
-  //@{
+  ///@{
   /**
    * Get the pen which controls the outlines of shapes, as well as lines,
    * points and related primitives. This object can be modified and the changes
    * will be reflected in subsequent drawing operations.
    */
   vtkGetObjectMacro(Pen, vtkPen);
-  //@}
+  ///@}
 
   /**
    * Apply the supplied brush which controls the outlines of shapes, as well as
@@ -250,13 +239,13 @@ public:
    */
   virtual void ApplyBrush(vtkBrush* brush);
 
-  //@{
+  ///@{
   /**
    * Get the pen which controls the outlines of shapes as well as lines, points
    * and related primitives.
    */
   vtkGetObjectMacro(Brush, vtkBrush);
-  //@}
+  ///@}
 
   /**
    * Apply the supplied text property which controls how text is rendered.
@@ -265,12 +254,12 @@ public:
    */
   virtual void ApplyTextProp(vtkTextProperty* prop);
 
-  //@{
+  ///@{
   /**
    * Get the text properties object for the vtkContext2D.
    */
   vtkGetObjectMacro(TextProp, vtkTextProperty);
-  //@}
+  ///@}
 
   /**
    * Set the color for the device using unsigned char of length 4, RGBA.
@@ -396,6 +385,13 @@ public:
   virtual void SetViewportRect(const vtkRecti& rect) { this->ViewportRect = rect; }
   vtkGetMacro(ViewportRect, vtkRecti);
 
+  /**
+   * Concrete graphics implementations maintain a cache of heavy-weight buffer objects
+   * to achieve higher interactive framerates.
+   * This method requests the devices to release the cached objects for a given cache identifier.
+   */
+  virtual void ReleaseCache(std::uintptr_t vtkNotUsed(cacheIdentifier)) {}
+
 protected:
   vtkContextDevice2D();
   ~vtkContextDevice2D() override;
@@ -426,4 +422,5 @@ private:
   void operator=(const vtkContextDevice2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkContextDevice2D_h

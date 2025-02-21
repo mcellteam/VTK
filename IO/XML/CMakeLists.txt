@@ -30,9 +30,7 @@ set(classes
   vtkXMLPUnstructuredDataReader
   vtkXMLPUnstructuredGridReader
   vtkXMLPartitionedDataSetCollectionReader
-  vtkXMLPartitionedDataSetCollectionWriter
   vtkXMLPartitionedDataSetReader
-  vtkXMLPartitionedDataSetWriter
   vtkXMLPolyDataReader
   vtkXMLPolyDataWriter
   vtkXMLReader
@@ -51,7 +49,13 @@ set(classes
   vtkXMLUnstructuredGridReader
   vtkXMLUnstructuredGridWriter
   vtkXMLWriter
+  vtkXMLWriterBase
   vtkXMLWriterC)
 
+set(private_templates
+  vtkXMLUnstructuredPolyReader.txx)
+
 vtk_module_add_module(VTK::IOXML
-  CLASSES ${classes})
+  CLASSES ${classes}
+  PRIVATE_TEMPLATES ${private_templates})
+vtk_add_test_mangling(VTK::IOXML)

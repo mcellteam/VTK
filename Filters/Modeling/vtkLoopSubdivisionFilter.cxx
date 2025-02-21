@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLoopSubdivisionFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLoopSubdivisionFilter.h"
 
 #include "vtkCell.h"
@@ -28,15 +16,20 @@
 #include "vtkSmartPointer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLoopSubdivisionFilter);
+
+void vtkLoopSubdivisionFilter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
 
 static const double LoopWeights[4] = { .375, .375, .125, .125 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLoopSubdivisionFilter::GenerateSubdivisionPoints(
   vtkPolyData* inputDS, vtkIntArray* edgeData, vtkPoints* outputPts, vtkPointData* outputPD)
 {
-  double* weights;
   const vtkIdType* pts = nullptr;
   vtkIdType numPts, cellId, newId;
   int edgeId;
@@ -49,7 +42,8 @@ int vtkLoopSubdivisionFilter::GenerateSubdivisionPoints(
   vtkPoints* inputPts = inputDS->GetPoints();
   vtkPointData* inputPD = inputDS->GetPointData();
 
-  weights = new double[256];
+  double weights[256];
+  bool abort = false;
 
   // Create an edge table to keep track of which edges we've processed
   edgeTable->InitEdgeInsertion(inputDS->GetNumberOfPoints());
@@ -58,6 +52,11 @@ int vtkLoopSubdivisionFilter::GenerateSubdivisionPoints(
   numPts = inputDS->GetNumberOfPoints();
   for (vtkIdType ptId = 0; ptId < numPts; ptId++)
   {
+    abort = this->CheckAbort();
+    if (abort)
+    {
+      break;
+    }
     if (this->GenerateEvenStencil(ptId, inputDS, stencil, weights))
     {
       this->InterpolatePosition(inputPts, outputPts, stencil, weights);
@@ -65,13 +64,13 @@ int vtkLoopSubdivisionFilter::GenerateSubdivisionPoints(
     }
     else
     {
-      delete[] weights;
       return 0;
     }
   }
 
   // Generate odd points. These will be inserted into the new dataset
-  for (cellId = 0, inputPolys->InitTraversal(); inputPolys->GetNextCell(npts, pts); cellId++)
+  for (cellId = 0, inputPolys->InitTraversal(); !abort && inputPolys->GetNextCell(npts, pts);
+       cellId++)
   {
     // start with one edge
     p1 = pts[2];
@@ -79,6 +78,11 @@ int vtkLoopSubdivisionFilter::GenerateSubdivisionPoints(
 
     for (edgeId = 0; edgeId < 3; edgeId++)
     {
+      abort = this->CheckAbort();
+      if (abort)
+      {
+        break;
+      }
       // Do we need to create a point on this edge?
       if (edgeTable->IsEdge(p1, p2) == -1)
       {
@@ -99,7 +103,6 @@ int vtkLoopSubdivisionFilter::GenerateSubdivisionPoints(
         }
         else
         {
-          delete[] weights;
           vtkErrorMacro("Dataset is non-manifold and cannot be subdivided. Edge shared by "
             << cellIds->GetNumberOfIds() << " cells");
           return 0;
@@ -120,12 +123,10 @@ int vtkLoopSubdivisionFilter::GenerateSubdivisionPoints(
     } // each interior edge
   }   // each cell
 
-  // cleanup
-  delete[] weights;
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLoopSubdivisionFilter::GenerateEvenStencil(
   vtkIdType p1, vtkPolyData* polys, vtkIdList* stencilIds, double* weights)
 {
@@ -261,7 +262,7 @@ int vtkLoopSubdivisionFilter::GenerateEvenStencil(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLoopSubdivisionFilter::GenerateOddStencil(
   vtkIdType p1, vtkIdType p2, vtkPolyData* polys, vtkIdList* stencilIds, double* weights)
 {
@@ -304,7 +305,7 @@ void vtkLoopSubdivisionFilter::GenerateOddStencil(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLoopSubdivisionFilter::RequestUpdateExtent(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -327,3 +328,4 @@ int vtkLoopSubdivisionFilter::RequestUpdateExtent(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

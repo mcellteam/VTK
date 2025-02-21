@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGLTFExporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGLTFExporter
  * @brief   export a scene into GLTF 2.0 format.
@@ -40,6 +28,7 @@
 
 #include <string> // for std::string
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOEXPORT_EXPORT vtkGLTFExporter : public vtkExporter
 {
 public:
@@ -47,15 +36,15 @@ public:
   vtkTypeMacro(vtkGLTFExporter, vtkExporter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the name of the GLTF file to write.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Should the binary data be included in the json file as a base64
    * string.
@@ -63,9 +52,9 @@ public:
   vtkGetMacro(InlineData, bool);
   vtkSetMacro(InlineData, bool);
   vtkBooleanMacro(InlineData, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * It looks for a point array called
    * NORMAL in the data and it saves it in the
@@ -76,9 +65,9 @@ public:
   vtkGetMacro(SaveNormal, bool);
   vtkSetMacro(SaveNormal, bool);
   vtkBooleanMacro(SaveNormal, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * It looks for point arrays called
    * _BATCHID in the data and it saves it in the
@@ -92,9 +81,19 @@ public:
   vtkGetMacro(SaveBatchId, bool);
   vtkSetMacro(SaveBatchId, bool);
   vtkBooleanMacro(SaveBatchId, bool);
-  //@}
+  ///@}
 
-
+  ///@{
+  /**
+   * Set/Get weither NaN color is saved in the texture associated
+   * to the mesh. Certain viewers do not support well the texture generated
+   * with NaN colors, so consider disabling this unless NaN data is present.
+   * Default value is true.
+   */
+  vtkGetMacro(SaveNaNValues, bool);
+  vtkSetMacro(SaveNaNValues, bool);
+  vtkBooleanMacro(SaveNaNValues, bool);
+  ///@}
 
   /**
    * Write the result to a string instead of a file
@@ -112,7 +111,6 @@ protected:
 
   void WriteData() override;
 
-
   char* FileName;
   bool InlineData;
   bool SaveNormal;
@@ -121,6 +119,9 @@ protected:
 private:
   vtkGLTFExporter(const vtkGLTFExporter&) = delete;
   void operator=(const vtkGLTFExporter&) = delete;
+
+  bool SaveNaNValues = true;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

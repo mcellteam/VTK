@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPMultiBlockDataWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLPMultiBlockDataWriter.h"
 
 #include "vtkCompositeDataSet.h"
@@ -27,7 +15,8 @@
 #include <sstream>
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLPMultiBlockDataWriter);
 
 vtkCxxSetObjectMacro(vtkXMLPMultiBlockDataWriter, Controller, vtkMultiProcessController);
@@ -67,7 +56,7 @@ public:
   int NumberOfProcesses;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPMultiBlockDataWriter::vtkXMLPMultiBlockDataWriter()
 {
   this->StartPiece = 0;
@@ -78,14 +67,14 @@ vtkXMLPMultiBlockDataWriter::vtkXMLPMultiBlockDataWriter()
   this->SetWriteMetaFile(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPMultiBlockDataWriter::~vtkXMLPMultiBlockDataWriter()
 {
   this->SetController(nullptr);
   delete this->XMLPMultiBlockDataWriterInternal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPMultiBlockDataWriter::SetWriteMetaFile(int flag)
 {
   this->Modified();
@@ -102,7 +91,7 @@ void vtkXMLPMultiBlockDataWriter::SetWriteMetaFile(int flag)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPMultiBlockDataWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -120,7 +109,7 @@ void vtkXMLPMultiBlockDataWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "StartPiece: " << this->StartPiece << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkXMLPMultiBlockDataWriter::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -136,7 +125,7 @@ vtkTypeBool vtkXMLPMultiBlockDataWriter::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPMultiBlockDataWriter::FillDataTypes(vtkCompositeDataSet* hdInput)
 {
   // FillDataTypes is called before the actual data writing begins.
@@ -162,11 +151,11 @@ void vtkXMLPMultiBlockDataWriter::FillDataTypes(vtkCompositeDataSet* hdInput)
   if (numBlocks)
   {
     this->Controller->Gather(
-      myDataTypes, &this->XMLPMultiBlockDataWriterInternal->PieceProcessList[0], numBlocks, 0);
+      myDataTypes, this->XMLPMultiBlockDataWriterInternal->PieceProcessList.data(), numBlocks, 0);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPMultiBlockDataWriter::WriteComposite(
   vtkCompositeDataSet* compositeData, vtkXMLDataElement* parentXML, int& currentFileIndex)
 {
@@ -253,7 +242,7 @@ int vtkXMLPMultiBlockDataWriter::WriteComposite(
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPMultiBlockDataWriter::ParallelWriteNonCompositeData(
   vtkDataObject* dObj, vtkXMLDataElement* parentXML, int currentFileIndex)
 {
@@ -265,7 +254,7 @@ int vtkXMLPMultiBlockDataWriter::ParallelWriteNonCompositeData(
     int numberOfProcesses = this->Controller->GetNumberOfProcesses();
     std::vector<int> pieceProcessList(numberOfProcesses);
     this->XMLPMultiBlockDataWriterInternal->GetPieceProcessList(
-      currentFileIndex, &pieceProcessList[0]);
+      currentFileIndex, pieceProcessList.data());
 
     int numPieces = 0;
     for (int procId = 0; procId < numberOfProcesses; procId++)
@@ -300,7 +289,7 @@ int vtkXMLPMultiBlockDataWriter::ParallelWriteNonCompositeData(
           datasetXML->Delete();
           indexCounter++;
         }
-        vtkStdString fName =
+        std::string fName =
           this->CreatePieceFileName(currentFileIndex, procId, pieceProcessList[procId]);
         datasetXML->SetAttribute("file", fName.c_str());
       }
@@ -310,14 +299,14 @@ int vtkXMLPMultiBlockDataWriter::ParallelWriteNonCompositeData(
   const int* datatypes_ptr = this->GetDataTypesPointer();
   if (dObj && datatypes_ptr[currentFileIndex] != -1)
   {
-    vtkStdString fName =
+    std::string fName =
       this->CreatePieceFileName(currentFileIndex, myProcId, datatypes_ptr[currentFileIndex]);
     return this->Superclass::WriteNonCompositeData(dObj, nullptr, currentFileIndex, fName.c_str());
   }
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkXMLPMultiBlockDataWriter::CreatePieceFileName(
   int currentFileIndex, int procId, int dataSetType)
 {
@@ -341,7 +330,29 @@ vtkStdString vtkXMLPMultiBlockDataWriter::CreatePieceFileName(
   return fname;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkXMLPMultiBlockDataWriter::MakeDirectory(const char* name)
+{
+  // Avoid every rank trying to create a directory, which can happen in parallel
+  // runs when vtkXMLCompositeDataWriter::RequestData() is called.
+  // See https://gitlab.kitware.com/paraview/paraview/-/issues/22579
+  if (this->Controller == nullptr || this->Controller->GetLocalProcessId() == 0)
+  {
+    if (!vtksys::SystemTools::MakeDirectory(name))
+    {
+      vtkErrorMacro(<< "Sorry unable to create directory: " << name << endl
+                    << "Last system error was: " << vtksys::SystemTools::GetLastSystemError());
+    }
+  }
+
+  if (this->Controller)
+  {
+    // Add barrier to ensure directory is created before other ranks try to start writing into it.
+    this->Controller->Barrier();
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkXMLPMultiBlockDataWriter::RemoveWrittenFiles(const char* SubDirectory)
 {
   if (this->Controller->GetLocalProcessId() == 0)
@@ -350,3 +361,4 @@ void vtkXMLPMultiBlockDataWriter::RemoveWrittenFiles(const char* SubDirectory)
     this->Superclass::RemoveWrittenFiles(SubDirectory);
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMySQLToTableReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDoubleArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -26,16 +14,17 @@
 
 #include "vtkMySQLToTableReader.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMySQLToTableReader);
 
-//----------------------------------------------------------------------------
-vtkMySQLToTableReader::vtkMySQLToTableReader() {}
+//------------------------------------------------------------------------------
+vtkMySQLToTableReader::vtkMySQLToTableReader() = default;
 
-//----------------------------------------------------------------------------
-vtkMySQLToTableReader::~vtkMySQLToTableReader() {}
+//------------------------------------------------------------------------------
+vtkMySQLToTableReader::~vtkMySQLToTableReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMySQLToTableReader::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -50,7 +39,7 @@ int vtkMySQLToTableReader::RequestData(
     vtkErrorMacro(<< "Wrong type of database for this reader");
     return 1;
   }
-  if (this->TableName == "")
+  if (this->TableName.empty())
   {
     vtkErrorMacro(<< "No table selected");
     return 1;
@@ -88,7 +77,7 @@ int vtkMySQLToTableReader::RequestData(
       vtkSmartPointer<vtkIntArray> column = vtkSmartPointer<vtkIntArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("int");
+      columnTypes.emplace_back("int");
     }
     else if ((columnType.find("float") != std::string::npos) ||
       (columnType.find("FLOAT") != std::string::npos) ||
@@ -104,14 +93,14 @@ int vtkMySQLToTableReader::RequestData(
       vtkSmartPointer<vtkDoubleArray> column = vtkSmartPointer<vtkDoubleArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("double");
+      columnTypes.emplace_back("double");
     }
     else
     {
       vtkSmartPointer<vtkStringArray> column = vtkSmartPointer<vtkStringArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("string");
+      columnTypes.emplace_back("string");
     }
   }
 
@@ -151,8 +140,9 @@ int vtkMySQLToTableReader::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMySQLToTableReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

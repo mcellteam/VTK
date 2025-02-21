@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMoleculeAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMoleculeAlgorithm
  * @brief   Superclass for algorithms that operate on
@@ -36,6 +24,7 @@
 #include "vtkAlgorithm.h"
 #include "vtkCommonExecutionModelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkMolecule;
 
@@ -46,14 +35,14 @@ public:
   vtkTypeMacro(vtkMoleculeAlgorithm, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm.
    */
   vtkMolecule* GetOutput();
   vtkMolecule* GetOutput(int);
   virtual void SetOutput(vtkMolecule* d);
-  //@}
+  ///@}
 
   /**
    * see vtkAlgorithm for details
@@ -67,7 +56,7 @@ public:
   vtkDataObject* GetInput(int port);
   vtkMolecule* GetMoleculeInput(int port);
 
-  //@{
+  ///@{
   /**
    * Set an input of this algorithm. You should not override these
    * methods because they are not the only way to connect a pipeline.
@@ -79,9 +68,9 @@ public:
    */
   void SetInputData(vtkDataObject*);
   void SetInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add an input of this algorithm.  Note that these methods support
    * old-style pipeline connections.  When writing new code you should
@@ -90,7 +79,7 @@ public:
    */
   void AddInputData(vtkDataObject*);
   void AddInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
 protected:
   vtkMoleculeAlgorithm();
@@ -113,6 +102,8 @@ protected:
    */
   virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
+  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+
   // see algorithm for more info
   int FillOutputPortInformation(int port, vtkInformation* info) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
@@ -122,4 +113,5 @@ private:
   void operator=(const vtkMoleculeAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

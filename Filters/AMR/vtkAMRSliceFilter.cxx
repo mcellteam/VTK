@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRSliceFilter.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAMRSliceFilter.h"
 #include "vtkAMRBox.h"
@@ -42,54 +30,58 @@
 #include <cassert>
 #include <sstream>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAMRSliceFilter);
+vtkCxxSetObjectMacro(vtkAMRSliceFilter, Controller, vtkMultiProcessController);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAMRSliceFilter::vtkAMRSliceFilter()
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
   this->OffsetFromOrigin = 0.0;
   this->Normal = X_NORMAL;
-  this->Controller = vtkMultiProcessController::GetGlobalController();
+  this->Controller = nullptr;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
   this->MaxResolution = 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkAMRSliceFilter::~vtkAMRSliceFilter()
+{
+  this->SetController(nullptr);
+}
+
+//------------------------------------------------------------------------------
 void vtkAMRSliceFilter::PrintSelf(std::ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRSliceFilter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkOverlappingAMR");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRSliceFilter::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkOverlappingAMR");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkAMRSliceFilter::IsAMRData2D(vtkOverlappingAMR* input)
 {
   assert("pre: Input AMR dataset is nullptr" && (input != nullptr));
 
-  if (input->GetGridDescription() != VTK_XYZ_GRID)
-  {
-    return true;
-  }
-
-  return false;
+  return input->GetGridDescription() != VTK_XYZ_GRID;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlane* vtkAMRSliceFilter::GetCutPlane(vtkOverlappingAMR* inp)
 {
   assert("pre: AMR dataset should not be nullptr" && (inp != nullptr));
@@ -134,7 +126,7 @@ vtkPlane* vtkAMRSliceFilter::GetCutPlane(vtkOverlappingAMR* inp)
   return (pl);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGrid* vtkAMRSliceFilter::GetSlice(
   double origin[3], int* dims, double* gorigin, double* spacing)
 {
@@ -160,7 +152,7 @@ vtkUniformGrid* vtkAMRSliceFilter::GetSlice(
       slice->SetOrigin(sliceOrigin);
       slice->SetDimensions(sliceDims);
       slice->SetSpacing(spacing);
-      assert(slice->GetGridDescription() == VTK_YZ_PLANE);
+      assert(slice->GetDataDescription() == VTK_YZ_PLANE);
       break;
     case Y_NORMAL: // -- XZ plane
       sliceDims[0] = dims[0];
@@ -174,7 +166,7 @@ vtkUniformGrid* vtkAMRSliceFilter::GetSlice(
       slice->SetOrigin(sliceOrigin);
       slice->SetDimensions(sliceDims);
       slice->SetSpacing(spacing);
-      assert(slice->GetGridDescription() == VTK_XZ_PLANE);
+      assert(slice->GetDataDescription() == VTK_XZ_PLANE);
       break;
     case Z_NORMAL: // -- XY plane
       sliceDims[0] = dims[0];
@@ -188,7 +180,7 @@ vtkUniformGrid* vtkAMRSliceFilter::GetSlice(
       slice->SetOrigin(sliceOrigin);
       slice->SetDimensions(sliceDims);
       slice->SetSpacing(spacing);
-      assert(slice->GetGridDescription() == VTK_XY_PLANE);
+      assert(slice->GetDataDescription() == VTK_XY_PLANE);
       break;
     default:
       vtkErrorMacro("Undefined normal");
@@ -199,7 +191,7 @@ vtkUniformGrid* vtkAMRSliceFilter::GetSlice(
   return (slice);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkAMRSliceFilter::PlaneIntersectsAMRBox(double plane[4], double bounds[6])
 {
   bool lowPnt = false;
@@ -236,7 +228,7 @@ bool vtkAMRSliceFilter::PlaneIntersectsAMRBox(double plane[4], double bounds[6])
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRSliceFilter::ComputeAMRBlocksToLoad(vtkPlane* p, vtkOverlappingAMR* metadata)
 {
   assert("pre: plane object is nullptr" && (p != nullptr));
@@ -269,7 +261,7 @@ void vtkAMRSliceFilter::ComputeAMRBlocksToLoad(vtkPlane* p, vtkOverlappingAMR* m
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRSliceFilter::GetAMRSliceInPlane(
   vtkPlane* p, vtkOverlappingAMR* inp, vtkOverlappingAMR* out)
 {
@@ -322,7 +314,7 @@ void vtkAMRSliceFilter::GetAMRSliceInPlane(
     }
   }
 
-  out->Initialize(static_cast<int>(blocksPerLevel.size()), &blocksPerLevel[0]);
+  out->Initialize(static_cast<int>(blocksPerLevel.size()), blocksPerLevel.data());
   out->SetGridDescription(description);
   out->SetOrigin(p->GetOrigin());
   vtkTimerLog::MarkStartEvent("AMRSlice::GetAMRSliceInPlane");
@@ -330,6 +322,10 @@ void vtkAMRSliceFilter::GetAMRSliceInPlane(
   std::vector<int> dataIndices(out->GetNumberOfLevels(), 0);
   for (unsigned int i = 0; i < this->BlocksToLoad.size(); i++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     int flatIndex = this->BlocksToLoad[i];
     unsigned int level;
     unsigned int dataIdx;
@@ -374,12 +370,17 @@ void vtkAMRSliceFilter::GetAMRSliceInPlane(
   vtkTimerLog::MarkEndEvent("AMRSlice::GetAMRSliceInPlane");
 
   vtkTimerLog::MarkStartEvent("AMRSlice::Generate Blanking");
-  vtkParallelAMRUtilities::BlankCells(out, this->Controller);
+
+  // Skipping BlankCells in case out is empty
+  if (!this->CheckAbort())
+  {
+    vtkParallelAMRUtilities::BlankCells(out, this->Controller);
+  }
   vtkTimerLog::MarkEndEvent("AMRSlice::Generate Blanking");
 }
 
-//-----------------------------------------------------------------------------
-void vtkAMRSliceFilter::ComputeCellCenter(vtkUniformGrid* ug, const int cellIdx, double centroid[3])
+//------------------------------------------------------------------------------
+void vtkAMRSliceFilter::ComputeCellCenter(vtkUniformGrid* ug, int cellIdx, double centroid[3])
 {
   assert("pre: Input grid is nullptr" && (ug != nullptr));
   assert(
@@ -394,7 +395,7 @@ void vtkAMRSliceFilter::ComputeCellCenter(vtkUniformGrid* ug, const int cellIdx,
   myCell->EvaluateLocation(subId, pCenter, centroid, weights);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRSliceFilter::GetDonorCellIdx(double x[3], vtkUniformGrid* ug)
 {
   const double* x0 = ug->GetOrigin();
@@ -411,7 +412,7 @@ int vtkAMRSliceFilter::GetDonorCellIdx(double x[3], vtkUniformGrid* ug)
   return (vtkStructuredData::ComputeCellId(dims, ijk));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRSliceFilter::GetDonorPointIdx(double x[3], vtkUniformGrid* ug)
 {
   const double* x0 = ug->GetOrigin();
@@ -428,7 +429,7 @@ int vtkAMRSliceFilter::GetDonorPointIdx(double x[3], vtkUniformGrid* ug)
   return vtkStructuredData::ComputePointId(dims, ijk);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRSliceFilter::GetSliceCellData(vtkUniformGrid* slice, vtkUniformGrid* grid3D)
 {
   // STEP 1: Allocate data-structures
@@ -457,7 +458,7 @@ void vtkAMRSliceFilter::GetSliceCellData(vtkUniformGrid* slice, vtkUniformGrid* 
     vtkUnsignedCharArray* uca = vtkArrayDownCast<vtkUnsignedCharArray>(array);
     if (uca != nullptr && uca == slice->GetCellGhostArray())
     {
-      // initiallize the ghost array
+      // initialize the ghost array
       memset(uca->WritePointer(0, numCells), 0, numCells);
     }
     array->Delete();
@@ -483,7 +484,7 @@ void vtkAMRSliceFilter::GetSliceCellData(vtkUniformGrid* slice, vtkUniformGrid* 
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRSliceFilter::GetSlicePointData(vtkUniformGrid* slice, vtkUniformGrid* grid3D)
 {
   // STEP 1: Allocate data-structures
@@ -538,7 +539,7 @@ void vtkAMRSliceFilter::GetSlicePointData(vtkUniformGrid* slice, vtkUniformGrid*
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRSliceFilter::RequestInformation(vtkInformation* vtkNotUsed(rqst),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -563,7 +564,7 @@ int vtkAMRSliceFilter::RequestInformation(vtkInformation* vtkNotUsed(rqst),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRSliceFilter::RequestUpdateExtent(vtkInformation*, vtkInformationVector** inputVector,
   vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -571,15 +572,15 @@ int vtkAMRSliceFilter::RequestUpdateExtent(vtkInformation*, vtkInformationVector
   assert("pre: inInfo is nullptr" && (inInfo != nullptr));
 
   // Send upstream request for higher resolution
-  if (this->BlocksToLoad.size() > 0)
+  if (!this->BlocksToLoad.empty())
   {
-    inInfo->Set(vtkCompositeDataPipeline::UPDATE_COMPOSITE_INDICES(), &this->BlocksToLoad[0],
+    inInfo->Set(vtkCompositeDataPipeline::UPDATE_COMPOSITE_INDICES(), this->BlocksToLoad.data(),
       static_cast<int>(this->BlocksToLoad.size()));
   }
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMRSliceFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -605,7 +606,7 @@ int vtkAMRSliceFilter::RequestData(vtkInformation* vtkNotUsed(request),
 
   if (this->IsAMRData2D(inputAMR))
   {
-    outputAMR->ShallowCopy(inputAMR);
+    outputAMR->CompositeShallowCopy(inputAMR);
     return 1;
   }
 
@@ -620,3 +621,4 @@ int vtkAMRSliceFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkTimerLog::MarkEndEvent(eventName.c_str());
   return 1;
 }
+VTK_ABI_NAMESPACE_END

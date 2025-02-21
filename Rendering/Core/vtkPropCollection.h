@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPropCollection.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPropCollection
  * @brief   an ordered list of Props
@@ -29,14 +17,17 @@
 
 #include "vtkCollection.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
 #include "vtkProp.h" // Needed for inline methods
 
-class VTKRENDERINGCORE_EXPORT vtkPropCollection : public vtkCollection
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkPropCollection : public vtkCollection
 {
 public:
   static vtkPropCollection* New();
   vtkTypeMacro(vtkPropCollection, vtkCollection);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Add a Prop to the bottom of the list.
@@ -71,14 +62,13 @@ public:
   }
 
 protected:
-  vtkPropCollection() {}
-  ~vtkPropCollection() override {}
+  vtkPropCollection() = default;
+  ~vtkPropCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
   void AddItem(vtkObject* o) { this->vtkCollection::AddItem(o); }
 
-private:
   vtkPropCollection(const vtkPropCollection&) = delete;
   void operator=(const vtkPropCollection&) = delete;
 };
@@ -105,6 +95,5 @@ inline vtkProp* vtkPropCollection::GetLastProp()
   }
 }
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkPropCollection.h

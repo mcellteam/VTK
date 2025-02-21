@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDijkstraImageGeodesicPath.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDijkstraImageGeodesicPath.h"
 
 #include "vtkCellArray.h"
@@ -27,9 +15,10 @@
 
 #include "vtkDijkstraGraphInternals.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDijkstraImageGeodesicPath);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDijkstraImageGeodesicPath::vtkDijkstraImageGeodesicPath()
 {
   this->PixelSize = 1.0;
@@ -39,10 +28,10 @@ vtkDijkstraImageGeodesicPath::vtkDijkstraImageGeodesicPath()
   this->RebuildStaticCosts = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDijkstraImageGeodesicPath::~vtkDijkstraImageGeodesicPath() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDijkstraImageGeodesicPath::SetImageWeight(double w)
 {
   w = w < 0.0 ? 0.0 : (w > 1.0 ? 1.0 : w);
@@ -54,7 +43,7 @@ void vtkDijkstraImageGeodesicPath::SetImageWeight(double w)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDijkstraImageGeodesicPath::SetEdgeLengthWeight(double w)
 {
   w = w < 0.0 ? 0.0 : (w > 1.0 ? 1.0 : w);
@@ -66,7 +55,7 @@ void vtkDijkstraImageGeodesicPath::SetEdgeLengthWeight(double w)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDijkstraImageGeodesicPath::SetInputData(vtkDataObject* input)
 {
   vtkImageData* image = vtkImageData::SafeDownCast(input);
@@ -97,8 +86,8 @@ void vtkDijkstraImageGeodesicPath::SetInputData(vtkDataObject* input)
   this->Superclass::SetInputData(image);
 }
 
-//----------------------------------------------------------------------------
-vtkImageData* vtkDijkstraImageGeodesicPath::GetInputAsImageData()
+//------------------------------------------------------------------------------
+vtkImageData* vtkDijkstraImageGeodesicPath::GetImageDataInput()
 {
   if (this->GetNumberOfInputConnections(0) < 1)
   {
@@ -107,7 +96,7 @@ vtkImageData* vtkDijkstraImageGeodesicPath::GetInputAsImageData()
   return vtkImageData::SafeDownCast(this->GetExecutive()->GetInputData(0, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDijkstraImageGeodesicPath::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -119,7 +108,7 @@ int vtkDijkstraImageGeodesicPath::FillInputPortInformation(int port, vtkInformat
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDijkstraImageGeodesicPath::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -160,7 +149,7 @@ int vtkDijkstraImageGeodesicPath::RequestData(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkDijkstraImageGeodesicPath::CalculateStaticEdgeCost(
   vtkDataSet* inData, vtkIdType u, vtkIdType v)
 {
@@ -190,7 +179,7 @@ double vtkDijkstraImageGeodesicPath::CalculateStaticEdgeCost(
   return cost;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkDijkstraImageGeodesicPath::CalculateDynamicEdgeCost(
   vtkDataSet* inData, vtkIdType u, vtkIdType v)
 {
@@ -225,7 +214,7 @@ double vtkDijkstraImageGeodesicPath::CalculateDynamicEdgeCost(
   return cost;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is probably a horribly inefficient way to do it.
 void vtkDijkstraImageGeodesicPath::BuildAdjacency(vtkDataSet* inData)
 {
@@ -272,7 +261,7 @@ void vtkDijkstraImageGeodesicPath::BuildAdjacency(vtkDataSet* inData)
   this->AdjacencyBuildTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDijkstraImageGeodesicPath::UpdateStaticCosts(vtkImageData* image)
 {
   for (int u = 0; u < static_cast<int>(this->Internals->Adjacency.size()); ++u)
@@ -288,7 +277,7 @@ void vtkDijkstraImageGeodesicPath::UpdateStaticCosts(vtkImageData* image)
   this->RebuildStaticCosts = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDijkstraImageGeodesicPath::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -297,3 +286,4 @@ void vtkDijkstraImageGeodesicPath::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "EdgeLengthWeight: " << this->EdgeLengthWeight << endl;
   os << indent << "CurvatureWeight: " << this->CurvatureWeight << endl;
 }
+VTK_ABI_NAMESPACE_END

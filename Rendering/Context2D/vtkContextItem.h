@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContextItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkContextItem
@@ -27,37 +15,48 @@
 
 #include "vtkAbstractContextItem.h"
 #include "vtkRenderingContext2DModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
-class VTKRENDERINGCONTEXT2D_EXPORT vtkContextItem : public vtkAbstractContextItem
+VTK_ABI_NAMESPACE_BEGIN
+class vtkContextTransform;
+
+class VTKRENDERINGCONTEXT2D_EXPORT VTK_MARSHALAUTO vtkContextItem : public vtkAbstractContextItem
 {
 public:
   vtkTypeMacro(vtkContextItem, vtkAbstractContextItem);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the opacity of the item.
    */
   vtkGetMacro(Opacity, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the opacity of the item.
    * 1.0 by default.
    */
   vtkSetMacro(Opacity, double);
-  //@}
+  ///@}
+
+  /**
+   * Set the transform of the item.
+   */
+  virtual void SetTransform(vtkContextTransform*);
 
 protected:
-  vtkContextItem();
+  vtkContextItem() = default;
   ~vtkContextItem() override;
 
-  double Opacity;
+  double Opacity = 1.0;
+  vtkContextTransform* Transform = nullptr;
 
 private:
   vtkContextItem(const vtkContextItem&) = delete;
   void operator=(const vtkContextItem&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkContextItem_h

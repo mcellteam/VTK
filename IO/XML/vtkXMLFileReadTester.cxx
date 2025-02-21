@@ -1,38 +1,27 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLFileReadTester.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLFileReadTester.h"
 #include "vtkObjectFactory.h"
 #include "vtksys/FStream.hxx"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLFileReadTester);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLFileReadTester::vtkXMLFileReadTester()
 {
   this->FileDataType = nullptr;
   this->FileVersion = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLFileReadTester::~vtkXMLFileReadTester()
 {
   this->SetFileDataType(nullptr);
   this->SetFileVersion(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLFileReadTester::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -40,7 +29,7 @@ void vtkXMLFileReadTester::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "FileVersion: " << (this->FileVersion ? this->FileVersion : "") << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLFileReadTester::TestReadFile()
 {
   if (!this->FileName)
@@ -62,7 +51,7 @@ int vtkXMLFileReadTester::TestReadFile()
   return this->Done ? 1 : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLFileReadTester::StartElement(const char* name, const char** atts)
 {
   this->Done = 1;
@@ -82,8 +71,9 @@ void vtkXMLFileReadTester::StartElement(const char* name, const char** atts)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLFileReadTester::ParsingComplete()
 {
   return this->Done ? 1 : 0;
 }
+VTK_ABI_NAMESPACE_END

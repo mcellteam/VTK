@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestParallelRendering.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtk_mpi.h>
 
@@ -41,7 +29,7 @@ class MyProcess : public vtkProcess
 public:
   static MyProcess* New();
 
-  virtual void Execute();
+  void Execute() override;
 
   void SetArgs(int anArgc, char* anArgv[])
   {
@@ -170,15 +158,13 @@ int TestParallelRendering(int argc, char* argv[])
   vtkMPIController* contr = vtkMPIController::New();
   contr->Initialize(&argc, &argv, 1);
 
-  int retVal = 1; // 1==failed
-
   int numProcs = contr->GetNumberOfProcesses();
 
-  if (numProcs < 2 && false)
+  if (numProcs < 2)
   {
     cout << "This test requires at least 2 processes" << endl;
     contr->Delete();
-    return retVal;
+    return EXIT_FAILURE;
   }
 
   vtkMultiProcessController::SetGlobalController(contr);
@@ -189,7 +175,7 @@ int TestParallelRendering(int argc, char* argv[])
   contr->SetSingleProcessObject(p);
   contr->SingleMethodExecute();
 
-  retVal = p->GetReturnValue();
+  int retVal = p->GetReturnValue();
 
   p->Delete();
   contr->Finalize();

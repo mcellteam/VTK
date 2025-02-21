@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPDataReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLPDataReader
  * @brief   Superclass for PVTK XML file readers that read vtkDataSets.
@@ -30,7 +18,8 @@
 #include "vtkIOXMLModule.h" // For export macro
 #include "vtkXMLPDataObjectReader.h"
 
-class vtkDataArray;
+VTK_ABI_NAMESPACE_BEGIN
+class vtkAbstractArray;
 class vtkDataSet;
 class vtkXMLDataReader;
 
@@ -50,7 +39,7 @@ protected:
   vtkXMLPDataReader();
   ~vtkXMLPDataReader() override;
 
-  // Re-use any superclass signatures that we don't override.
+  // Reuse any superclass signatures that we don't override.
   using vtkXMLPDataObjectReader::ReadPiece;
 
   /**
@@ -112,8 +101,8 @@ protected:
    */
   int ReadPrimaryElement(vtkXMLDataElement* ePrimary) override;
 
-  virtual void CopyArrayForPoints(vtkDataArray* inArray, vtkDataArray* outArray) = 0;
-  virtual void CopyArrayForCells(vtkDataArray* inArray, vtkDataArray* outArray) = 0;
+  virtual void CopyArrayForPoints(vtkAbstractArray* inArray, vtkAbstractArray* outArray) = 0;
+  virtual void CopyArrayForCells(vtkAbstractArray* inArray, vtkAbstractArray* outArray) = 0;
 
   /**
    * Callback registered with the PieceProgressObserver.
@@ -141,4 +130,5 @@ private:
   void operator=(const vtkXMLPDataReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

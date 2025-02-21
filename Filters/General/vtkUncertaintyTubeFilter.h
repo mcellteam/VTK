@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUncertaintyTubeFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkUncertaintyTubeFilter
  * @brief   generate uncertainty tubes along a polyline
@@ -38,32 +26,33 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTubeArray;
 
 class VTKFILTERSGENERAL_EXPORT vtkUncertaintyTubeFilter : public vtkPolyDataAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for printing and obtaining type information for instances of this class.
    */
   vtkTypeMacro(vtkUncertaintyTubeFilter, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Object factory method to instantiate this class.
    */
   static vtkUncertaintyTubeFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set / get the number of sides for the tube. At a minimum,
    * the number of sides is 3.
    */
   vtkSetClampMacro(NumberOfSides, int, 3, VTK_INT_MAX);
   vtkGetMacro(NumberOfSides, int);
-  //@}
+  ///@}
 
 protected:
   vtkUncertaintyTubeFilter();
@@ -86,4 +75,5 @@ private:
   void operator=(const vtkUncertaintyTubeFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkResliceCursorWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkResliceCursorWidget.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCommand.h"
@@ -29,9 +17,10 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkResliceCursorWidget);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkResliceCursorWidget::vtkResliceCursorWidget()
 {
   // Set the initial state
@@ -51,24 +40,25 @@ vtkResliceCursorWidget::vtkResliceCursorWidget()
     this, vtkResliceCursorWidget::ResizeThicknessAction);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::RightButtonReleaseEvent,
     vtkWidgetEvent::EndResize, this, vtkResliceCursorWidget::EndSelectAction);
+  this->CallbackMapper->SetCallbackMethod(vtkCommand::LeftButtonPressEvent, vtkEvent::AltModifier,
+    0, 0, nullptr, vtkWidgetEvent::Translate, this, vtkResliceCursorWidget::TranslateAction);
   this->CallbackMapper->SetCallbackMethod(
     vtkCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkResliceCursorWidget::MoveAction);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::NoModifier, 111, 1,
     "o", vtkWidgetEvent::Reset, this, vtkResliceCursorWidget::ResetResliceCursorAction);
-
   this->ManageWindowLevel = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkResliceCursorWidget::~vtkResliceCursorWidget() = default;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::SetEnabled(int enabling)
 {
   this->Superclass::SetEnabled(enabling);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -77,9 +67,14 @@ void vtkResliceCursorWidget::CreateDefaultRepresentation()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::SetCursor(int cState)
 {
+  if (!this->ManagesCursor)
+  {
+    return;
+  }
+
   switch (cState)
   {
     case vtkResliceCursorRepresentation::OnAxis1:
@@ -98,7 +93,7 @@ void vtkResliceCursorWidget::SetCursor(int cState)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::ResizeThicknessAction(vtkAbstractWidget* w)
 {
   vtkResliceCursorWidget* self = reinterpret_cast<vtkResliceCursorWidget*>(w);
@@ -142,10 +137,10 @@ void vtkResliceCursorWidget::ResizeThicknessAction(vtkAbstractWidget* w)
   rep->ActivateText(1);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::EndResizeThicknessAction(vtkAbstractWidget*) {}
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::SelectAction(vtkAbstractWidget* w)
 {
   vtkResliceCursorWidget* self = reinterpret_cast<vtkResliceCursorWidget*>(w);
@@ -201,7 +196,7 @@ void vtkResliceCursorWidget::SelectAction(vtkAbstractWidget* w)
   self->InvokeAnEvent();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::RotateAction(vtkAbstractWidget* w)
 {
   vtkResliceCursorWidget* self = reinterpret_cast<vtkResliceCursorWidget*>(w);
@@ -242,7 +237,47 @@ void vtkResliceCursorWidget::RotateAction(vtkAbstractWidget* w)
   self->InvokeAnEvent();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkResliceCursorWidget::TranslateAction(vtkAbstractWidget* w)
+{
+  vtkResliceCursorWidget* self = vtkResliceCursorWidget::SafeDownCast(w);
+  vtkResliceCursorLineRepresentation* rep =
+    vtkResliceCursorLineRepresentation::SafeDownCast(self->WidgetRep);
+
+  int X = self->Interactor->GetEventPosition()[0];
+  int Y = self->Interactor->GetEventPosition()[1];
+
+  self->ModifierActive = vtkEvent::GetModifier(self->Interactor);
+  rep->ComputeInteractionState(X, Y, self->ModifierActive);
+
+  if (self->WidgetRep->GetInteractionState() == vtkResliceCursorRepresentation::Outside)
+  {
+    return;
+  }
+
+  rep->SetManipulationMode(vtkResliceCursorRepresentation::TranslateSingleAxis);
+  self->GrabFocus(self->EventCallbackCommand);
+  double eventPos[2];
+  eventPos[0] = static_cast<double>(X);
+  eventPos[1] = static_cast<double>(Y);
+  self->WidgetRep->StartWidgetInteraction(eventPos);
+
+  // We are definitely selected
+  self->WidgetState = vtkResliceCursorWidget::Active;
+  self->SetCursor(self->WidgetRep->GetInteractionState());
+
+  // Highlight as necessary
+  self->WidgetRep->Highlight(1);
+
+  self->EventCallbackCommand->SetAbortFlag(1);
+  self->StartInteraction();
+  self->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
+  self->Render();
+
+  self->InvokeAnEvent();
+}
+
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::MoveAction(vtkAbstractWidget* w)
 {
   vtkResliceCursorWidget* self = reinterpret_cast<vtkResliceCursorWidget*>(w);
@@ -285,7 +320,7 @@ void vtkResliceCursorWidget::MoveAction(vtkAbstractWidget* w)
   self->InvokeAnEvent();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkResliceCursorWidget* self = static_cast<vtkResliceCursorWidget*>(w);
@@ -329,7 +364,7 @@ void vtkResliceCursorWidget::EndSelectAction(vtkAbstractWidget* w)
   self->InvokeAnEvent();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::ResetResliceCursorAction(vtkAbstractWidget* w)
 {
   vtkResliceCursorWidget* self = reinterpret_cast<vtkResliceCursorWidget*>(w);
@@ -342,7 +377,7 @@ void vtkResliceCursorWidget::ResetResliceCursorAction(vtkAbstractWidget* w)
   self->InvokeEvent(vtkResliceCursorWidget::ResetCursorEvent, nullptr);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::ResetResliceCursor()
 {
   vtkResliceCursorRepresentation* rep =
@@ -358,7 +393,7 @@ void vtkResliceCursorWidget::ResetResliceCursor()
   rep->InitializeReslicePlane();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::StartWindowLevel()
 {
   vtkResliceCursorRepresentation* rep =
@@ -380,7 +415,7 @@ void vtkResliceCursorWidget::StartWindowLevel()
   rep->ManageTextDisplay();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::InvokeAnEvent()
 {
   // We invoke the appropriate event. In cases where the cursor is moved
@@ -405,6 +440,11 @@ void vtkResliceCursorWidget::InvokeAnEvent()
       this->InvokeEvent(ResliceAxesChangedEvent, nullptr);
       rep->GetResliceCursor()->InvokeEvent(ResliceAxesChangedEvent, nullptr);
     }
+    else if (mode == vtkResliceCursorRepresentation::TranslateSingleAxis)
+    {
+      this->InvokeEvent(ResliceAxesChangedEvent, nullptr);
+      rep->GetResliceCursor()->InvokeEvent(ResliceAxesChangedEvent, nullptr);
+    }
     else if (mode == vtkResliceCursorRepresentation::ResizeThickness)
     {
       this->InvokeEvent(ResliceThicknessChangedEvent, nullptr);
@@ -413,7 +453,7 @@ void vtkResliceCursorWidget::InvokeAnEvent()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -423,3 +463,4 @@ void vtkResliceCursorWidget::PrintSelf(ostream& os, vtkIndent indent)
   // this->ModifierActive;
   // this->WidgetState;
 }
+VTK_ABI_NAMESPACE_END

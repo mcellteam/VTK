@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSparseArrayToTable.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkSparseArrayToTable.h"
 #include "vtkArrayData.h"
@@ -34,6 +17,7 @@
 #include <sstream>
 #include <stdexcept>
 
+VTK_ABI_NAMESPACE_BEGIN
 template <typename ValueT, typename ValueColumnT>
 static bool Convert(vtkArray* Array, const char* ValueColumn, vtkTable* Table)
 {
@@ -52,7 +36,7 @@ static bool Convert(vtkArray* Array, const char* ValueColumn, vtkTable* Table)
     vtkIdType* const array_coordinates = array->GetCoordinateStorage(dimension);
 
     vtkIdTypeArray* const table_coordinates = vtkIdTypeArray::New();
-    table_coordinates->SetName(array->GetDimensionLabel(dimension));
+    table_coordinates->SetName(array->GetDimensionLabel(dimension).c_str());
     table_coordinates->SetNumberOfTuples(value_count);
     std::copy(array_coordinates, array_coordinates + value_count, table_coordinates->GetPointer(0));
     Table->AddColumn(table_coordinates);
@@ -71,11 +55,11 @@ static bool Convert(vtkArray* Array, const char* ValueColumn, vtkTable* Table)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkSparseArrayToTable);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkSparseArrayToTable::vtkSparseArrayToTable()
   : ValueColumn(nullptr)
@@ -86,14 +70,14 @@ vtkSparseArrayToTable::vtkSparseArrayToTable()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkSparseArrayToTable::~vtkSparseArrayToTable()
 {
   this->SetValueColumn(nullptr);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkSparseArrayToTable::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -113,7 +97,7 @@ int vtkSparseArrayToTable::FillInputPortInformation(int port, vtkInformation* in
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkSparseArrayToTable::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -141,3 +125,4 @@ int vtkSparseArrayToTable::RequestData(
 
   return 0;
 }
+VTK_ABI_NAMESPACE_END

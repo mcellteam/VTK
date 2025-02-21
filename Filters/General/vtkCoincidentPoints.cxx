@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCoincidentPoints.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-NVIDIA-USGov
 
 #include "vtkCoincidentPoints.h"
 
@@ -30,9 +14,10 @@
 #include <set>
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkCoincidentPoints::implementation
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCoincidentPoints::implementation
 {
 public:
@@ -69,7 +54,7 @@ public:
       this->coord[2] = z;
     }
 
-    inline bool operator<(const Coord& other) const
+    bool operator<(const Coord& other) const
     {
       return this->coord[0] < other.coord[0] ||
         (this->coord[0] == other.coord[0] &&
@@ -78,16 +63,16 @@ public:
     }
   };
 
-  typedef std::map<Coord, vtkSmartPointer<vtkIdList> >::iterator MapCoordIter;
+  typedef std::map<Coord, vtkSmartPointer<vtkIdList>>::iterator MapCoordIter;
 
   vtkCoincidentPoints* Self;
 
-  std::map<Coord, vtkSmartPointer<vtkIdList> > CoordMap;
+  std::map<Coord, vtkSmartPointer<vtkIdList>> CoordMap;
   std::map<vtkIdType, vtkIdType> CoincidenceMap;
   MapCoordIter TraversalIterator;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkCoincidentPoints
 
 vtkStandardNewMacro(vtkCoincidentPoints);
@@ -185,7 +170,7 @@ void vtkCoincidentPoints::InitTraversal()
   this->Implementation->TraversalIterator = this->Implementation->CoordMap.begin();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkSpiralkVertices - calculate points at a regular interval along a parametric
 // spiral.
 void vtkCoincidentPoints::SpiralPoints(vtkIdType num, vtkPoints* offsets)
@@ -219,3 +204,4 @@ void vtkCoincidentPoints::SpiralPoints(vtkIdType num, vtkPoints* offsets)
     offsets->SetPoint(i, x, y, 0);
   }
 }
+VTK_ABI_NAMESPACE_END

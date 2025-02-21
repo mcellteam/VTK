@@ -1,22 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNIFTIImageReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkNIFTIImageReader.h"
 #include "vtkByteSwap.h"
 #include "vtkCommand.h"
 #include "vtkDataArray.h"
+#include "vtkEndian.h"
 #include "vtkErrorCode.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
@@ -29,7 +18,9 @@
 #include "vtkStringArray.h"
 #include "vtkVersion.h"
 
+#include "vtksys/Encoding.hxx"
 #include "vtksys/SystemTools.hxx"
+
 #include <sstream>
 
 // Header for NIFTI
@@ -43,9 +34,27 @@
 #include <cstring>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkNIFTIImageReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+namespace
+{
+
+// helper function for opening compressed files
+gzFile GZFopen(const char* path, const char* mode)
+{
+#if defined(_WIN32)
+  std::wstring wpath = vtksys::Encoding::ToWide(path);
+  return gzopen_w(wpath.c_str(), mode);
+#else
+  return gzopen(path, mode);
+#endif
+}
+
+}
+
+//------------------------------------------------------------------------------
 vtkNIFTIImageReader::vtkNIFTIImageReader()
 {
   for (int i = 0; i < 8; i++)
@@ -66,7 +75,7 @@ vtkNIFTIImageReader::vtkNIFTIImageReader()
   this->PlanarRGB = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNIFTIImageReader::~vtkNIFTIImageReader()
 {
   if (this->QFormMatrix)
@@ -83,7 +92,7 @@ vtkNIFTIImageReader::~vtkNIFTIImageReader()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 { // anonymous namespace
 
@@ -114,7 +123,7 @@ void vtkNIFTIImageReaderSwapHeader(nifti_1_header* hdr)
   vtkByteSwap::SwapVoidRange(&hdr->glmin, 1, 4);
 
   // All NIFTI-specific (meaning is totally different in Analyze 7.5)
-  if (strncmp(hdr->magic, "ni1", 4) == 0 || strncmp(hdr->magic, "n+1", 4) == 0)
+  if (strncmp(hdr->magic, "ni1", 3) == 0 || strncmp(hdr->magic, "n+1", 3) == 0)
   {
     vtkByteSwap::SwapVoidRange(&hdr->qform_code, 1, 2);
     vtkByteSwap::SwapVoidRange(&hdr->sform_code, 1, 2);
@@ -167,7 +176,7 @@ void vtkNIFTIImageReaderSwapHeader(nifti_2_header* hdr)
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkNIFTIImageHeader* vtkNIFTIImageReader::GetNIFTIHeader()
 {
   if (!this->NIFTIHeader)
@@ -177,7 +186,7 @@ vtkNIFTIImageHeader* vtkNIFTIImageReader::GetNIFTIHeader()
   return this->NIFTIHeader;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkNIFTIImageReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -225,7 +234,7 @@ void vtkNIFTIImageReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "PlanarRGB: " << (this->PlanarRGB ? "On\n" : "Off\n");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkNIFTIImageReader::CheckExtension(const char* filename, const char* ext)
 {
   if (strlen(ext) == 4 && ext[0] == '.')
@@ -245,7 +254,7 @@ bool vtkNIFTIImageReader::CheckExtension(const char* filename, const char* ext)
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkNIFTIImageReader::ReplaceExtension(
   const char* filename, const char* ext1, const char* ext2)
 {
@@ -315,7 +324,7 @@ char* vtkNIFTIImageReader::ReplaceExtension(
   return newname;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNIFTIImageReader::CheckNIFTIVersion(const nifti_1_header* hdr)
 {
   int version = 0;
@@ -344,7 +353,7 @@ int vtkNIFTIImageReader::CheckNIFTIVersion(const nifti_1_header* hdr)
   return version;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkNIFTIImageReader::CheckAnalyzeHeader(const nifti_1_header* hdr)
 {
   if (hdr->sizeof_hdr == 348 ||    // Analyze 7.5 header size
@@ -355,7 +364,7 @@ bool vtkNIFTIImageReader::CheckAnalyzeHeader(const nifti_1_header* hdr)
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNIFTIImageReader::CanReadFile(const char* filename)
 {
   vtkDebugMacro("Opening NIFTI file " << filename);
@@ -368,7 +377,7 @@ int vtkNIFTIImageReader::CanReadFile(const char* filename)
   }
 
   // try opening file
-  gzFile file = gzopen(hdrname, "rb");
+  gzFile file = GZFopen(hdrname, "rb");
 
   delete[] hdrname;
 
@@ -402,7 +411,7 @@ int vtkNIFTIImageReader::CanReadFile(const char* filename)
   return canRead;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNIFTIImageReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -431,7 +440,7 @@ int vtkNIFTIImageReader::RequestInformation(vtkInformation* vtkNotUsed(request),
     int headers = 0;
     for (vtkIdType i = 0; i < n; i++)
     {
-      filename = this->FileNames->GetValue(i);
+      filename = this->FileNames->GetValue(i).c_str();
       // this checks for .hdr and .hdr.gz, case insensitive
       if (vtkNIFTIImageReader::CheckExtension(filename, ".hdr"))
       {
@@ -476,7 +485,7 @@ int vtkNIFTIImageReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkDebugMacro("Opening NIFTI file " << hdrname);
 
   // try opening file
-  gzFile file = gzopen(hdrname, "rb");
+  gzFile file = GZFopen(hdrname, "rb");
 
   if (!file)
   {
@@ -655,7 +664,8 @@ int vtkNIFTIImageReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   int scalarType = 0;
   int numComponents = 0;
 
-  for (int i = 0; typeMap[2] != nullptr; i++)
+  // the end of the typemap has been reached when typeMap[i][2] is 0
+  for (int i = 0; typeMap[i][2] != 0; i++)
   {
     if (hdr2->datatype == typeMap[i][0])
     {
@@ -788,7 +798,7 @@ int vtkNIFTIImageReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   //    offset when R is the identity matrix.
   //
   // 3) If there is a qform and qfac is -1, then the situation is more
-  //    compilcated.  We have three choices, each of which is a compromise:
+  //    complicated.  We have three choices, each of which is a compromise:
   //    a) we can use Spacing[2] = qfac*pixdim[3], i.e. use a negative
   //       slice spacing, which might cause some VTK algorithms to
   //       misbehave (the VTK tests only use images with positive spacing).
@@ -1015,7 +1025,7 @@ int vtkNIFTIImageReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkNIFTIImageReader::RequestData(vtkInformation* request,
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -1058,7 +1068,7 @@ int vtkNIFTIImageReader::RequestData(vtkInformation* request,
     int headers = 0;
     for (vtkIdType i = 0; i < n; i++)
     {
-      filename = this->FileNames->GetValue(i);
+      filename = this->FileNames->GetValue(i).c_str();
       // this checks for .hdr and .hdr.gz, case insensitive
       if (vtkNIFTIImageReader::CheckExtension(filename, ".hdr"))
       {
@@ -1105,7 +1115,7 @@ int vtkNIFTIImageReader::RequestData(vtkInformation* request,
 
   unsigned char* dataPtr = static_cast<unsigned char*>(data->GetScalarPointer());
 
-  gzFile file = gzopen(imgname, "rb");
+  gzFile file = GZFopen(imgname, "rb");
 
   delete[] imgname;
 
@@ -1343,3 +1353,4 @@ int vtkNIFTIImageReader::RequestData(vtkInformation* request,
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

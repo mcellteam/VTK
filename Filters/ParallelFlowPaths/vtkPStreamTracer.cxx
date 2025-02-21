@@ -1,25 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPStreamTracer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPStreamTracer.h"
 
 #include "vtkAMRInterpolatedVelocityField.h"
 #include "vtkAbstractInterpolatedVelocityField.h"
+#include "vtkAppendDataSets.h"
 #include "vtkAppendPolyData.h"
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
-#include "vtkCharArray.h"
 #include "vtkCompositeDataIterator.h"
 #include "vtkCompositeDataSet.h"
 #include "vtkDoubleArray.h"
@@ -113,7 +101,7 @@
       assert(false);                                                                               \
     }                                                                                              \
   }
-//#define PRINT(id, x)
+// #define PRINT(id, x)
 #else
 #define PRINT(x)
 #define ALLPRINT(x)
@@ -125,6 +113,7 @@
 #define AssertNe(a, b)
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 inline int CNext(int i, int n)
@@ -162,7 +151,7 @@ public:
   {
     unsigned int size = sizeof(T);
     AssertGe(Size, this->Head + size - this->Data);
-    t = *(reinterpret_cast<T*>(this->Head));
+    memcpy(&t, this->Head, sizeof(T));
     this->Head += size;
     return (*this);
   }
@@ -193,8 +182,8 @@ inline void InitBB(double* Bounds)
 
 inline bool InBB(const double* x, const double* bounds)
 {
-  return bounds[0] <= x[0] && x[0] <= bounds[1] && bounds[2] <= x[1] && x[1] <= bounds[3] &&
-    bounds[4] <= x[2] && x[2] <= bounds[5];
+  constexpr double delta[3] = { 1e-6, 1e-6, 1e-6 };
+  return vtkMath::PointIsWithinBounds(x, bounds, delta);
 }
 
 inline void UpdateBB(double* a, const double* b)
@@ -216,6 +205,7 @@ inline void UpdateBB(double* a, const double* b)
 }
 }
 
+//------------------------------------------------------------------------------
 class PStreamTracerPoint : public vtkObject
 {
 public:
@@ -247,7 +237,8 @@ public:
     memcpy(this->Normal, normal, 3 * sizeof(double));
 
     this->AllocateTail(poly->GetPointData());
-    double* x = poly->GetPoints()->GetPoint(id);
+    double x[3];
+    poly->GetPoints()->GetPoint(id, x);
     this->Tail->GetPoints()->SetPoint(0, x);
     this->Tail->GetPointData()->CopyData(poly->GetPointData(), id, 0);
     this->Rank = -1; // someone else figure this out
@@ -335,7 +326,7 @@ public:
           double& xj(xi[j]);
           stream >> xj;
         }
-        pointData->GetArray(i)->InsertNextTuple(&xi[0]);
+        pointData->GetArray(i)->InsertNextTuple(xi.data());
       }
     }
     else
@@ -397,6 +388,7 @@ protected:
 
 vtkStandardNewMacro(PStreamTracerPoint);
 
+//------------------------------------------------------------------------------
 class AMRPStreamTracerPoint : public PStreamTracerPoint
 {
 public:
@@ -409,15 +401,15 @@ public:
   vtkSetMacro(GridId, int);
   vtkGetMacro(GridId, int);
 
-  virtual int GetSize() override { return PStreamTracerPoint::GetSize() + 2 * sizeof(int); }
+  int GetSize() override { return PStreamTracerPoint::GetSize() + 2 * sizeof(int); }
 
-  virtual void Read(MyStream& stream) override
+  void Read(MyStream& stream) override
   {
     PStreamTracerPoint::Read(stream);
     stream >> Level;
     stream >> GridId;
   }
-  virtual void Write(MyStream& stream) override
+  void Write(MyStream& stream) override
   {
     PStreamTracerPoint::Write(stream);
     stream << Level << GridId;
@@ -433,10 +425,11 @@ private:
   int GridId;
 };
 
-typedef std::vector<vtkSmartPointer<PStreamTracerPoint> > PStreamTracerPointArray;
+typedef std::vector<vtkSmartPointer<PStreamTracerPoint>> PStreamTracerPointArray;
 
 vtkStandardNewMacro(AMRPStreamTracerPoint);
 
+//------------------------------------------------------------------------------
 class ProcessLocator : public vtkObject
 {
 public:
@@ -444,7 +437,7 @@ public:
   static ProcessLocator* New();
   void Initialize(vtkCompositeDataSet* data)
   {
-    this->Controller = vtkMultiProcessController::GetGlobalController();
+    this->SetController(vtkMultiProcessController::GetGlobalController());
     this->Rank = this->Controller->GetLocalProcessId();
     this->NumProcs = this->Controller->GetNumberOfProcesses();
     this->InitBoundingBoxes(this->NumProcs);
@@ -467,7 +460,7 @@ public:
     }
 
     PRINT(bb[0] << " " << bb[1] << " " << bb[2] << " " << bb[3] << " " << bb[4] << " " << bb[5]);
-    this->Controller->AllGather(bb, &this->BoundingBoxes[0], 6);
+    this->Controller->AllGather(bb, this->BoundingBoxes.data(), 6);
 
 #ifdef DEBUGTRACE
     cout << "(" << Rank << ") BoundingBoxes: ";
@@ -480,6 +473,8 @@ public:
     cout << endl;
 #endif
   }
+
+  vtkSetObjectMacro(Controller, vtkMultiProcessController);
 
   bool InCurrentProcess(double* p) { return InBB(p, GetBoundingBox(Rank)); }
   int FindNextProcess(double* p)
@@ -502,6 +497,7 @@ private:
     this->NumProcs = 0;
     this->Rank = 0;
   }
+  ~ProcessLocator() override { this->SetController(nullptr); }
   vtkMultiProcessController* Controller;
   int Rank;
   int NumProcs;
@@ -519,6 +515,7 @@ private:
 };
 vtkStandardNewMacro(ProcessLocator);
 
+//------------------------------------------------------------------------------
 class AbstractPStreamTracerUtils : public vtkObject
 {
 public:
@@ -526,7 +523,7 @@ public:
 
   vtkGetMacro(VecName, char*);
   vtkGetMacro(VecType, int);
-  vtkGetMacro(Input0, vtkDataSet*);
+  vtkGetObjectMacro(Input0, vtkDataSet);
 
   virtual ProcessLocator* GetProcessLocator() { return nullptr; }
 
@@ -535,7 +532,6 @@ public:
   virtual void InitializeVelocityFunction(
     PStreamTracerPoint*, vtkAbstractInterpolatedVelocityField*)
   {
-    return;
   }
 
   virtual bool PreparePoint(PStreamTracerPoint*, vtkAbstractInterpolatedVelocityField*)
@@ -585,7 +581,7 @@ public:
     this->InputData = tracer->InputData;
     this->VecType = 0;
     this->VecName = nullptr;
-    this->Input0 = 0;
+    this->Input0 = nullptr;
     if (!tracer->EmptyData)
     {
       vtkCompositeDataIterator* iter = tracer->InputData->NewIterator();
@@ -662,6 +658,7 @@ protected:
       normals->SetNumberOfComponents(3);
       protoPD->AddArray(normals);
     }
+
     AssertEq(this->Proto->GetTail(), nullptr);
     this->Proto->AllocateTail(protoPD);
   }
@@ -678,6 +675,7 @@ protected:
   int NumProcs;
 };
 
+//------------------------------------------------------------------------------
 class PStreamTracerUtils : public AbstractPStreamTracerUtils
 {
 public:
@@ -687,18 +685,18 @@ public:
 
   PStreamTracerUtils() { this->Locator = nullptr; }
 
-  virtual void Initialize(vtkPStreamTracer* tracer) override
+  void Initialize(vtkPStreamTracer* tracer) override
   {
     this->Superclass::Initialize(tracer);
     this->Locator = vtkSmartPointer<ProcessLocator>::New();
     this->Locator->Initialize(tracer->InputData);
   }
 
-  virtual ProcessLocator* GetProcessLocator() override { return this->Locator; }
+  ProcessLocator* GetProcessLocator() override { return this->Locator; }
 
-  virtual bool InBound(PStreamTracerPoint*) override { return true; }
+  bool InBound(PStreamTracerPoint*) override { return true; }
 
-  virtual vtkSmartPointer<PStreamTracerPoint> NewPoint(int id, double* x, int dir) override
+  vtkSmartPointer<PStreamTracerPoint> NewPoint(int id, double* x, int dir) override
   {
     vtkSmartPointer<PStreamTracerPoint> p = vtkSmartPointer<PStreamTracerPoint>::New();
     p->SetId(id);
@@ -716,14 +714,15 @@ private:
 
 vtkStandardNewMacro(PStreamTracerUtils);
 
+//------------------------------------------------------------------------------
 class AMRPStreamTracerUtils : public AbstractPStreamTracerUtils
 {
 public:
   vtkTypeMacro(AMRPStreamTracerUtils, AbstractPStreamTracerUtils);
   static AMRPStreamTracerUtils* New();
-  vtkSetMacro(AMR, vtkOverlappingAMR*);
+  vtkSetObjectMacro(AMR, vtkOverlappingAMR);
 
-  virtual void InitializeVelocityFunction(
+  void InitializeVelocityFunction(
     PStreamTracerPoint* point, vtkAbstractInterpolatedVelocityField* func) override
   {
     AMRPStreamTracerPoint* amrPoint = AMRPStreamTracerPoint::SafeDownCast(point);
@@ -745,8 +744,7 @@ public:
     }
   }
 
-  virtual bool PreparePoint(
-    PStreamTracerPoint* point, vtkAbstractInterpolatedVelocityField* func) override
+  bool PreparePoint(PStreamTracerPoint* point, vtkAbstractInterpolatedVelocityField* func) override
   {
     AMRPStreamTracerPoint* amrPoint = AMRPStreamTracerPoint::SafeDownCast(point);
     vtkAMRInterpolatedVelocityField* amrFunc = vtkAMRInterpolatedVelocityField::SafeDownCast(func);
@@ -773,7 +771,7 @@ public:
 
   // this assume that p's AMR information has been set correctly
   // it makes no attempt to look for it
-  virtual bool InBound(PStreamTracerPoint* p) override
+  bool InBound(PStreamTracerPoint* p) override
   {
     AMRPStreamTracerPoint* amrp = AMRPStreamTracerPoint::SafeDownCast(p);
     if (amrp->GetLevel() < 0)
@@ -785,7 +783,7 @@ public:
     return grid != nullptr;
   }
 
-  virtual vtkSmartPointer<PStreamTracerPoint> NewPoint(int id, double* x, int dir) override
+  vtkSmartPointer<PStreamTracerPoint> NewPoint(int id, double* x, int dir) override
   {
 
     vtkSmartPointer<AMRPStreamTracerPoint> amrp = vtkSmartPointer<AMRPStreamTracerPoint>::New();
@@ -816,11 +814,11 @@ public:
 
     return p;
   }
-  virtual void Initialize(vtkPStreamTracer* tracer) override
+  void Initialize(vtkPStreamTracer* tracer) override
   {
     this->Superclass::Initialize(tracer);
     AssertNe(this->InputData, nullptr);
-    this->AMR = vtkOverlappingAMR::SafeDownCast(this->InputData);
+    this->SetAMR(vtkOverlappingAMR::SafeDownCast(this->InputData));
 
     vtkParallelAMRUtilities::DistributeProcessInformation(
       this->AMR, this->Controller, BlockProcess);
@@ -829,25 +827,21 @@ public:
 
 protected:
   AMRPStreamTracerUtils() { this->AMR = nullptr; }
+  ~AMRPStreamTracerUtils() override { this->SetAMR(nullptr); }
   vtkOverlappingAMR* AMR;
 
   std::vector<int> BlockProcess; // stores block->process information
 };
 vtkStandardNewMacro(AMRPStreamTracerUtils);
 
+//------------------------------------------------------------------------------
 namespace
 {
-inline double normvec3(double* x, double* y)
-{
-  return sqrt(
-    (x[0] - y[0]) * (x[0] - y[0]) + (x[1] - y[1]) * (x[1] - y[1]) + (x[2] - y[2]) * (x[2] - y[2]));
-}
-
 inline vtkIdType LastPointIndex(vtkPolyData* pathPoly)
 {
   vtkCellArray* pathCells = pathPoly->GetLines();
   AssertGt(pathCells->GetNumberOfCells(), 0);
-  const vtkIdType* path(0);
+  const vtkIdType* path(nullptr);
   vtkIdType nPoints(0);
   pathCells->InitTraversal();
   pathCells->GetNextCell(nPoints, path);
@@ -912,6 +906,7 @@ inline bool SameShape(vtkPointData* a, vtkPointData* b)
 }
 #endif
 
+//------------------------------------------------------------------------------
 class MessageBuffer
 {
 public:
@@ -932,6 +927,7 @@ private:
 
 typedef MyStream MessageStream;
 
+//------------------------------------------------------------------------------
 class Task : public vtkObject
 {
 public:
@@ -974,6 +970,7 @@ MessageStream& operator<<(MessageStream& stream, const Task& t)
   return stream;
 }
 
+//------------------------------------------------------------------------------
 // Description:
 // Manages the communication of traces between processes
 class TaskManager
@@ -990,8 +987,9 @@ public:
     : Locator(locator)
     , Proto(proto)
   {
-    this->Controller =
-      vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
+    this->Controller = nullptr;
+    this->SetController(
+      vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController()));
     AssertNe(this->Controller, nullptr);
     this->NumProcs = this->Controller->GetNumberOfProcesses();
     this->Rank = this->Controller->GetLocalProcessId();
@@ -1013,7 +1011,7 @@ public:
     std::fill(this->HasData.begin(), this->HasData.end(), 0);
     {
       const int self_hasdata = hasData ? 1 : 0;
-      this->Controller->AllGather(&self_hasdata, &this->HasData[0], 1);
+      this->Controller->AllGather(&self_hasdata, this->HasData.data(), 1);
     }
 
     for (int i = 0; i < NumProcs; i++)
@@ -1039,7 +1037,7 @@ public:
 
     std::vector<int> processMap(MaxId + 1);
     this->Controller->AllReduce(
-      &processMap0[0], &processMap[0], MaxId + 1, vtkCommunicator::MAX_OP);
+      processMap0.data(), processMap.data(), MaxId + 1, vtkCommunicator::MAX_OP);
 
     int totalNumTasks = std::accumulate(processMap.begin(), processMap.end(), 0,
       [](int accumlatedSum, int b) { return accumlatedSum + (b >= 0 ? 1 : 0); });
@@ -1055,7 +1053,7 @@ public:
       {
         vtkNew<Task> task;
         task->Point = seeds[i];
-        NTasks.push_back(task);
+        NTasks.emplace_back(task);
       }
     }
     ALLPRINT(NTasks.size() << " initial seeds out of " << totalNumTasks);
@@ -1155,7 +1153,7 @@ public:
         {
           if (this->HasData[i])
           {
-            this->Send(NoMoreTasks, i, 0);
+            this->Send(NoMoreTasks, i, nullptr);
           }
         }
       }
@@ -1183,14 +1181,32 @@ public:
       this->ReceiveBuffer->GetRequest().Cancel();
       delete ReceiveBuffer;
     }
+    this->SetController(nullptr);
+  }
+
+  void SetController(vtkMPIController* controller)
+  {
+    if (this->Controller != controller)
+    {
+      vtkMPIController* temp = this->Controller;
+      this->Controller = controller;
+      if (this->Controller != nullptr)
+      {
+        this->Controller->Register(nullptr);
+      }
+      if (temp != nullptr)
+      {
+        temp->UnRegister(nullptr);
+      }
+    }
   }
 
 private:
   ProcessLocator* Locator;
   vtkSmartPointer<PStreamTracerPoint> Proto;
   vtkMPIController* Controller;
-  std::vector<vtkSmartPointer<Task> > NTasks;
-  std::vector<vtkSmartPointer<Task> > PTasks;
+  std::vector<vtkSmartPointer<Task>> NTasks;
+  std::vector<vtkSmartPointer<Task>> PTasks;
   std::vector<Message> Msgs;
   int NumProcs;
   int Rank;
@@ -1313,7 +1329,7 @@ private:
     int sender(0);
 
 #ifdef DEBUGTRACE
-    this->StartTimer();
+    //    this->StartTimer();
 #endif
     if (ReceiveBuffer && wait)
     {
@@ -1347,11 +1363,11 @@ private:
     }
 
 #ifdef DEBUGTRACE
-    double time = this->StopTimer();
-    if (msg >= 0)
-    {
-      this->ReceiveTime += time;
-    }
+    // double time = this->StopTimer();
+    // if (msg >= 0)
+    // {
+    //   this->ReceiveTime += time;
+    // }
 #endif
   }
 
@@ -1366,29 +1382,30 @@ vtkCxxSetObjectMacro(vtkPStreamTracer, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkPStreamTracer, Interpolator, vtkAbstractInterpolatedVelocityField);
 vtkStandardNewMacro(vtkPStreamTracer);
 
+//------------------------------------------------------------------------------
 vtkPStreamTracer::vtkPStreamTracer()
 {
-  this->Controller = vtkMultiProcessController::GetGlobalController();
-  if (this->Controller)
-  {
-    this->Controller->Register(this);
-  }
-  this->Interpolator = 0;
-  this->GenerateNormalsInIntegrate = 0;
+  this->Controller = nullptr;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
+
+  this->Interpolator = nullptr;
+  this->GenerateNormalsInIntegrate = false;
 
   this->EmptyData = 0;
+
+  // This class does some non-thread-safe stuff (TBD). Force serial execution.
+  this->SerialExecution = true;
+  this->ForceSerialExecution = true;
 }
 
+//------------------------------------------------------------------------------
 vtkPStreamTracer::~vtkPStreamTracer()
 {
-  if (this->Controller)
-  {
-    this->Controller->UnRegister(this);
-    this->Controller = 0;
-  }
-  this->SetInterpolator(0);
+  this->SetController(nullptr);
+  this->SetInterpolator(nullptr);
 }
 
+//------------------------------------------------------------------------------
 int vtkPStreamTracer::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -1420,15 +1437,20 @@ int vtkPStreamTracer::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
+//------------------------------------------------------------------------------
 int vtkPStreamTracer::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   if (!vtkMPIController::SafeDownCast(this->Controller) ||
     this->Controller->GetNumberOfProcesses() == 1)
   {
-    this->GenerateNormalsInIntegrate = 1;
+    this->SerialExecution = false;
+    this->ForceSerialExecution = false;
+    this->GenerateNormalsInIntegrate = true;
     int result = vtkStreamTracer::RequestData(request, inputVector, outputVector);
-    this->GenerateNormalsInIntegrate = 0;
+    this->SerialExecution = true;
+    this->ForceSerialExecution = true;
+    this->GenerateNormalsInIntegrate = false;
     return result;
   }
 
@@ -1442,13 +1464,43 @@ int vtkPStreamTracer::RequestData(
     return 0;
   }
 
-  vtkInformation* sourceInfo = inputVector[1]->GetInformationObject(0);
-  vtkDataSet* source = 0;
-  if (sourceInfo)
-  {
-    source = vtkDataSet::SafeDownCast(sourceInfo->Get(vtkDataObject::DATA_OBJECT()));
-  }
   vtkPolyData* output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+  vtkInformation* sourceInfo = inputVector[1]->GetInformationObject(0);
+  vtkDataSet* localSource = vtkDataSet::SafeDownCast(sourceInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkDataSet* source = nullptr;
+  vtkNew<vtkAppendDataSets> distantAppender;
+
+  if (this->UseLocalSeedSource)
+  {
+    source = localSource;
+  }
+  else
+  {
+    std::vector<vtkSmartPointer<vtkDataObject>> allSources;
+    if (this->Controller->AllGather(localSource, allSources) == 0)
+    {
+      vtkErrorMacro("Couldn't gather seed sources, aborting StreamTracer");
+      return 0;
+    }
+    for (const auto& distantSource : allSources)
+    {
+      if (vtkDataSet* ds = vtkDataSet::SafeDownCast(distantSource))
+      {
+        distantAppender->AddInputData(ds);
+      }
+    }
+    distantAppender->MergePointsOn();
+    distantAppender->SetTolerance(0.0);
+    distantAppender->Update();
+    source = vtkDataSet::SafeDownCast(distantAppender->GetOutputDataObject(0));
+  }
+
+  if (!source)
+  {
+    vtkErrorMacro("Error while retrieving the source");
+    return 0;
+  }
 
   // init 'func' with nullptr such that we can check it later to determine
   // if we need to deallocate 'func' in case CheckInputs() fails (note
@@ -1473,7 +1525,7 @@ int vtkPStreamTracer::RequestData(
   }
   else
   {
-    func->SetCaching(0);
+    func->SetCaching(false);
     this->SetInterpolator(func);
     func->Delete();
   }
@@ -1488,7 +1540,7 @@ int vtkPStreamTracer::RequestData(
   }
   this->Utils->Initialize(this);
   ALLPRINT("Vec Name: " << this->Utils->GetVecName());
-  typedef std::vector<vtkSmartPointer<vtkPolyData> > traceOutputsType;
+  typedef std::vector<vtkSmartPointer<vtkPolyData>> traceOutputsType;
   traceOutputsType traceOutputs;
 
   TaskManager taskManager(this->Utils->GetProcessLocator(), this->Utils->GetProto());
@@ -1498,7 +1550,7 @@ int vtkPStreamTracer::RequestData(
   auto originalSeedIds = this->Utils->ComputeSeeds(source, seedPoints, maxId);
   taskManager.Initialize(this->EmptyData == 0, seedPoints, maxId);
 
-  Task* task(0);
+  Task* task(nullptr);
   std::vector<int> traceIds;
   int iterations = 0;
   while ((task = taskManager.NextTask()))
@@ -1533,11 +1585,13 @@ int vtkPStreamTracer::RequestData(
       resTerm != vtkStreamTracer::OUT_OF_DOMAIN ||
       point->GetPropagation() > this->MaximumPropagation ||
       point->GetNumSteps() >= this->MaximumNumberOfSteps);
+
     if (task->GetTraceExtended() && !task->GetTraceTerminated())
     {
       task->SetTraceTerminated(
         !this->TraceOneStep(traceOut, func, point)); // we don't know where to go, just terminate it
     }
+
     if (!task->GetTraceTerminated())
     {
       task->SetTraceTerminated(!this->Utils->PreparePoint(point, func));
@@ -1589,7 +1643,8 @@ int vtkPStreamTracer::RequestData(
   if (auto seedIds = vtkIntArray::SafeDownCast(output->GetCellData()->GetArray("SeedIds")))
   {
     vtkSMPTools::For(0, seedIds->GetNumberOfTuples(),
-      [&originalSeedIds, &seedIds](vtkIdType start, vtkIdType end) {
+      [&originalSeedIds, &seedIds](vtkIdType start, vtkIdType end)
+      {
         for (vtkIdType cc = start; cc < end; ++cc)
         {
           const auto seedIdx = seedIds->GetTypedComponent(cc, 0);
@@ -1624,7 +1679,8 @@ int vtkPStreamTracer::RequestData(
     lengths[id] += length;
   }
   std::vector<double> totalLengths(maxSeeds);
-  this->Controller->AllReduce(&lengths[0], &totalLengths[0], maxSeeds, vtkCommunicator::SUM_OP);
+  this->Controller->AllReduce(
+    lengths.data(), totalLengths.data(), maxSeeds, vtkCommunicator::SUM_OP);
 
   int numNonZeros(0);
   double totalLength(0);
@@ -1650,12 +1706,14 @@ int vtkPStreamTracer::RequestData(
   return 1;
 }
 
+//------------------------------------------------------------------------------
 void vtkPStreamTracer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
 
+//------------------------------------------------------------------------------
 void vtkPStreamTracer::Trace(vtkDataSet* input, int vecType, const char* vecName,
   PStreamTracerPoint* point, vtkSmartPointer<vtkPolyData>& traceOut,
   vtkAbstractInterpolatedVelocityField* func, int maxCellSize)
@@ -1665,7 +1723,6 @@ void vtkPStreamTracer::Trace(vtkDataSet* input, int vecType, const char* vecName
 
   this->Utils->InitializeVelocityFunction(point, func);
 
-  double lastPoint[3];
   vtkSmartPointer<vtkFloatArray> seeds = vtkSmartPointer<vtkFloatArray>::New();
   seeds->SetNumberOfComponents(3);
   seeds->InsertNextTuple(seedSource);
@@ -1682,7 +1739,10 @@ void vtkPStreamTracer::Trace(vtkDataSet* input, int vecType, const char* vecName
   double integrationTime = point->GetIntegrationTime();
 
   vtkStreamTracer::Integrate(input->GetPointData(), traceOut, seeds, seedIds, integrationDirections,
-    lastPoint, func, maxCellSize, vecType, vecName, propagation, numSteps, integrationTime);
+    func, maxCellSize, vecType, vecName, propagation, numSteps, integrationTime,
+    this->CustomTerminationCallback, this->CustomTerminationClientData,
+    this->CustomReasonForTermination);
+
   AssertGe(propagation, point->GetPropagation());
   AssertGe(numSteps, point->GetNumSteps());
 
@@ -1697,6 +1757,8 @@ void vtkPStreamTracer::Trace(vtkDataSet* input, int vecType, const char* vecName
 
   if (traceOut->GetNumberOfPoints() > 0)
   {
+    // If a point was produced, but no streamline, create arrays
+    // which are used to communicate about streamline traversal.
     if (traceOut->GetLines()->GetNumberOfCells() == 0)
     {
       PRINT("Fix Single Point Path")
@@ -1723,6 +1785,8 @@ void vtkPStreamTracer::Trace(vtkDataSet* input, int vecType, const char* vecName
   Assert(SameShape(traceOut->GetPointData(), this->Utils->GetProto()->GetTail()->GetPointData()),
     "trace data does not match prototype");
 }
+
+//------------------------------------------------------------------------------
 bool vtkPStreamTracer::TraceOneStep(
   vtkPolyData* traceOut, vtkAbstractInterpolatedVelocityField* func, PStreamTracerPoint* point)
 {
@@ -1738,12 +1802,14 @@ bool vtkPStreamTracer::TraceOneStep(
   vtkInitialValueProblemSolver* ivp = this->Integrator;
   ivp->Register(this);
 
+  // Use Runge-Kutta2 it produces better results
   vtkNew<vtkRungeKutta2> tmpSolver;
   this->SetIntegrator(tmpSolver);
 
   memcpy(outPoint, lastPoint, sizeof(double) * 3);
 
-  double timeStepTaken = this->SimpleIntegrate(0, outPoint, this->LastUsedStepSize, func);
+  double timeStepTaken = this->SimpleIntegrate(nullptr, outPoint, this->LastUsedStepSize, func);
+
   PRINT("Simple Integrate from :" << lastPoint[0] << " " << lastPoint[1] << " " << lastPoint[2]
                                   << " to " << outPoint[0] << " " << outPoint[1] << " "
                                   << outPoint[2]);
@@ -1771,6 +1837,7 @@ bool vtkPStreamTracer::TraceOneStep(
   return res;
 }
 
+//------------------------------------------------------------------------------
 void vtkPStreamTracer::Prepend(vtkPolyData* pathPoly, vtkPolyData* headPoly)
 {
   vtkCellArray* pathCells = pathPoly->GetLines();
@@ -1781,7 +1848,7 @@ void vtkPStreamTracer::Prepend(vtkPolyData* pathPoly, vtkPolyData* headPoly)
   AssertEq(
     headPoly->GetPointData()->GetNumberOfArrays(), pathPoly->GetPointData()->GetNumberOfArrays());
 
-  const vtkIdType* path(0);
+  const vtkIdType* path(nullptr);
   vtkIdType nPoints(0);
   pathCells->InitTraversal();
   pathCells->GetNextCell(nPoints, path);
@@ -1793,6 +1860,7 @@ void vtkPStreamTracer::Prepend(vtkPolyData* pathPoly, vtkPolyData* headPoly)
   vtkPointData* headData = headPoly->GetPointData();
   vtkPointData* pathData = pathPoly->GetPointData();
   Assert(SameShape(headData, pathData), "Prepend failure");
+
   int numArrays(headData->GetNumberOfArrays());
   for (int i = 0; i < numArrays; i++)
   {
@@ -1820,3 +1888,4 @@ void vtkPStreamTracer::Prepend(vtkPolyData* pathPoly, vtkPolyData* headPoly)
   AssertEq(newNumPoints, nPoints + 1);
   AssertEq(newNumPoints, pathPoly->GetNumberOfPoints());
 }
+VTK_ABI_NAMESPACE_END

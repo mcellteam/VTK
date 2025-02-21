@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestImageDataLIC2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "TestImageDataLIC2D.h"
 
 #include "vtkDataSetWriter.h"
@@ -46,7 +34,7 @@
 #include <vtksys/SystemTools.hxx>
 using std::ostringstream;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestImageDataLIC2D(int argc, char* argv[])
 {
   char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/SurfaceVectors.vtk");
@@ -80,7 +68,7 @@ int TestImageDataLIC2D(int argc, char* argv[])
 // Example demonstrating use of vtkImageDataLIC2D filter.
 // Typical usage:
 // ./bin/ImageDataLIC2D --data=<vtk file> --output=<png file>
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int ImageDataLIC2D(int argc, char* argv[])
 {
   std::string filename;
@@ -92,7 +80,7 @@ int ImageDataLIC2D(int argc, char* argv[])
   int num_steps = 40;
 
   vtksys::CommandLineArguments arg;
-  arg.StoreUnusedArguments(1);
+  arg.StoreUnusedArguments(true);
   arg.Initialize(argc, argv);
 
   typedef vtksys::CommandLineArguments argT;
@@ -110,7 +98,7 @@ int ImageDataLIC2D(int argc, char* argv[])
   arg.AddArgument("--noise", argT::EQUAL_ARGUMENT, &noise_filename,
     "(optional) Specify the filename to a png image file to use as the noise texture.");
 
-  if (!arg.Parse() || filename == "")
+  if (!arg.Parse() || filename.empty())
   {
     cerr << "Problem parsing arguments." << endl;
     cerr << arg.GetHelp() << endl;
@@ -144,7 +132,7 @@ int ImageDataLIC2D(int argc, char* argv[])
 
   // load noise
   vtkSmartPointer<vtkImageData> noise;
-  if (noise_filename != "")
+  if (!noise_filename.empty())
   {
     vtkSmartPointer<vtkPNGReader> pngReader = vtkSmartPointer<vtkPNGReader>::New();
 
@@ -304,7 +292,7 @@ int ImageDataLIC2D(int argc, char* argv[])
   licData->SetNumberOfComponents(3);
   licData->SetNumberOfTuples(licDataSize);
 
-  // for each piece in the paritioned dataset compute lic and
+  // for each piece in the partitioned dataset compute lic and
   // copy into the output.
   for (int kk = 0; kk < num_partitions; kk++)
   {
@@ -351,7 +339,7 @@ int ImageDataLIC2D(int argc, char* argv[])
   licPng = nullptr;
 
   // save a png
-  if (outputpath != "")
+  if (!outputpath.empty())
   {
     vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
 
@@ -365,7 +353,7 @@ int ImageDataLIC2D(int argc, char* argv[])
   vtkSmartPointer<vtkTrivialProducer> tp = vtkSmartPointer<vtkTrivialProducer>::New();
 
   tp->SetOutput(pngDataSet);
-  int retVal = (tester->RegressionTest(tp, 10) == vtkTesting::PASSED) ? 0 : -4;
+  int retVal = (tester->RegressionTest(tp, 0.05) == vtkTesting::PASSED) ? 0 : -4;
   if (retVal)
   {
     cerr << "ERROR: test failed." << endl;

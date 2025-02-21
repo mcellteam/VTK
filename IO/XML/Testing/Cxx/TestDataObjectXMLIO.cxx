@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include <vtkBitArray.h>
 #include <vtkCellData.h>
 #include <vtkCubeSource.h>
@@ -47,27 +49,24 @@
 namespace
 {
 
-static vtkNew<vtkTesting> TestingData; // For temporary path
+vtkTesting* TestingData = nullptr; // For temporary path
 
-static const char* BIT_ARRAY_NAME = "BitArray";
-static const char* IDTYPE_ARRAY_NAME = "IdTypeArray";
+const char* BIT_ARRAY_NAME = "BitArray";
+const char* IDTYPE_ARRAY_NAME = "IdTypeArray";
 
-static vtkInformationDoubleKey* TestDoubleKey =
-  vtkInformationDoubleKey::MakeKey("Double", "XMLTestKey");
+vtkInformationDoubleKey* TestDoubleKey = vtkInformationDoubleKey::MakeKey("Double", "XMLTestKey");
 // Test RequiredLength keys. DoubleVector must have Length() == 3
-static vtkInformationDoubleVectorKey* TestDoubleVectorKey =
+vtkInformationDoubleVectorKey* TestDoubleVectorKey =
   vtkInformationDoubleVectorKey::MakeKey("DoubleVector", "XMLTestKey", 3);
-static vtkInformationIdTypeKey* TestIdTypeKey =
-  vtkInformationIdTypeKey::MakeKey("IdType", "XMLTestKey");
-static vtkInformationIntegerKey* TestIntegerKey =
+vtkInformationIdTypeKey* TestIdTypeKey = vtkInformationIdTypeKey::MakeKey("IdType", "XMLTestKey");
+vtkInformationIntegerKey* TestIntegerKey =
   vtkInformationIntegerKey::MakeKey("Integer", "XMLTestKey");
-static vtkInformationIntegerVectorKey* TestIntegerVectorKey =
+vtkInformationIntegerVectorKey* TestIntegerVectorKey =
   vtkInformationIntegerVectorKey::MakeKey("IntegerVector", "XMLTestKey");
-static vtkInformationStringKey* TestStringKey =
-  vtkInformationStringKey::MakeKey("String", "XMLTestKey");
-static vtkInformationStringVectorKey* TestStringVectorKey =
+vtkInformationStringKey* TestStringKey = vtkInformationStringKey::MakeKey("String", "XMLTestKey");
+vtkInformationStringVectorKey* TestStringVectorKey =
   vtkInformationStringVectorKey::MakeKey("StringVector", "XMLTestKey");
-static vtkInformationUnsignedLongKey* TestUnsignedLongKey =
+vtkInformationUnsignedLongKey* TestUnsignedLongKey =
   vtkInformationUnsignedLongKey::MakeKey("UnsignedLong", "XMLTestKey");
 
 bool stringEqual(const std::string& expect, const std::string& actual)
@@ -345,14 +344,15 @@ bool CompareData(vtkImageData* Output, vtkImageData* Input)
     return false;
   }
 
-  if (memcmp(Input->GetDimensions(), Output->GetDimensions(), 3 * sizeof(int)))
+  if (memcmp(Input->GetDimensions(), Output->GetDimensions(), 3 * sizeof(int)) != 0)
     return false;
 
   const int point_count =
     Input->GetDimensions()[0] * Input->GetDimensions()[1] * Input->GetDimensions()[2];
   for (int point = 0; point != point_count; ++point)
   {
-    if (memcmp(Input->GetPoint(point), Output->GetPoint(point), 3 * sizeof(double)))
+    // NOLINTNEXTLINE(bugprone-suspicious-memory-comparison)
+    if (memcmp(Input->GetPoint(point), Output->GetPoint(point), 3 * sizeof(double)) != 0)
       return false;
   }
 
@@ -398,7 +398,7 @@ bool CompareData(vtkRectilinearGrid* Output, vtkRectilinearGrid* Input)
   {
     return false;
   }
-  if (memcmp(Input->GetDimensions(), Output->GetDimensions(), 3 * sizeof(int)))
+  if (memcmp(Input->GetDimensions(), Output->GetDimensions(), 3 * sizeof(int)) != 0)
     return false;
 
   return true;
@@ -563,6 +563,8 @@ bool TestWriterPermutations()
 
 int TestDataObjectXMLIO(int argc, char* argv[])
 {
+  vtkNew<vtkTesting> staticTestingData; // For temporary path
+  TestingData = staticTestingData;
   TestingData->AddArguments(argc, argv);
 
   int result = 0;

@@ -1,37 +1,22 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArrayReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkArrayReader.h"
 
+#include "vtkArrayData.h"
 #include "vtkCommand.h"
 #include "vtkDenseArray.h"
 #include "vtkObjectFactory.h"
 #include "vtkSmartPointer.h"
 #include "vtkSparseArray.h"
-#include "vtkUnicodeString.h"
 #include "vtksys/FStream.hxx"
 
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkArrayReader);
 
 namespace
@@ -54,21 +39,6 @@ void ExtractValue(istream& stream, vtkStdString& value)
   while ((begin < end) && isspace(value[end - 1]))
     end--;
   value = value.substr(begin, end);
-}
-
-void ExtractValue(istream& stream, vtkUnicodeString& value)
-{
-  std::string buffer;
-  std::getline(stream, buffer);
-  vtkStdString::size_type begin, end;
-  begin = 0;
-  end = buffer.size();
-  while ((begin < end) && isspace(buffer[begin]))
-    begin++;
-  while ((begin < end) && isspace(buffer[end - 1]))
-    end--;
-  buffer = buffer.substr(begin, end);
-  value = vtkUnicodeString::from_utf8(buffer);
 }
 
 void ReadHeader(
@@ -127,14 +97,14 @@ void ReadEndianOrderMark(istream& stream, bool& swap_endian)
   vtkTypeUInt32 endian_order = 0;
   stream.read(reinterpret_cast<char*>(&endian_order), sizeof(endian_order));
 
-  swap_endian = endian_order == 0x12345678 ? false : true;
+  swap_endian = endian_order != 0x12345678;
 }
 
 template <typename ValueT>
 vtkSparseArray<ValueT>* ReadSparseArrayBinary(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkSparseArray<ValueT> > array = vtkSmartPointer<vtkSparseArray<ValueT> >::New();
+  vtkSmartPointer<vtkSparseArray<ValueT>> array = vtkSmartPointer<vtkSparseArray<ValueT>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -168,8 +138,8 @@ template <>
 vtkSparseArray<vtkStdString>* ReadSparseArrayBinary<vtkStdString>(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkSparseArray<vtkStdString> > array =
-    vtkSmartPointer<vtkSparseArray<vtkStdString> >::New();
+  vtkSmartPointer<vtkSparseArray<vtkStdString>> array =
+    vtkSmartPointer<vtkSparseArray<vtkStdString>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -222,69 +192,11 @@ vtkSparseArray<vtkStdString>* ReadSparseArrayBinary<vtkStdString>(istream& strea
   return array;
 }
 
-template <>
-vtkSparseArray<vtkUnicodeString>* ReadSparseArrayBinary<vtkUnicodeString>(istream& stream)
-{
-  // Create the array ...
-  vtkSmartPointer<vtkSparseArray<vtkUnicodeString> > array =
-    vtkSmartPointer<vtkSparseArray<vtkUnicodeString> >::New();
-
-  // Read the file header ...
-  vtkArrayExtents extents;
-  vtkArrayExtents::SizeT non_null_size = 0;
-  bool swap_endian = false;
-  ReadHeader(stream, extents, non_null_size, array);
-  ReadEndianOrderMark(stream, swap_endian);
-
-  // Read the array nullptr value ...
-  std::string null_value;
-  for (int character = stream.get(); stream; character = stream.get())
-  {
-    if (character == 0)
-    {
-      array->SetNullValue(vtkUnicodeString::from_utf8(null_value));
-      break;
-    }
-    else
-    {
-      null_value += static_cast<char>(character);
-    }
-  }
-
-  // Read array coordinates ...
-  array->ReserveStorage(non_null_size);
-
-  for (vtkArray::DimensionT i = 0; i != array->GetDimensions(); ++i)
-  {
-    stream.read(reinterpret_cast<char*>(array->GetCoordinateStorage(i)),
-      non_null_size * sizeof(vtkArray::CoordinateT));
-  }
-
-  // Read array values ...
-  std::string buffer;
-  vtkArray::SizeT n = 0;
-  for (int character = stream.get(); stream; character = stream.get())
-  {
-    if (character == 0)
-    {
-      array->SetValueN(n++, vtkUnicodeString::from_utf8(buffer));
-      buffer.resize(0);
-    }
-    else
-    {
-      buffer += static_cast<char>(character);
-    }
-  }
-
-  array->Register(nullptr);
-  return array;
-}
-
 template <typename ValueT>
 vtkDenseArray<ValueT>* ReadDenseArrayBinary(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkDenseArray<ValueT> > array = vtkSmartPointer<vtkDenseArray<ValueT> >::New();
+  vtkSmartPointer<vtkDenseArray<ValueT>> array = vtkSmartPointer<vtkDenseArray<ValueT>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -309,8 +221,8 @@ template <>
 vtkDenseArray<vtkStdString>* ReadDenseArrayBinary<vtkStdString>(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkDenseArray<vtkStdString> > array =
-    vtkSmartPointer<vtkDenseArray<vtkStdString> >::New();
+  vtkSmartPointer<vtkDenseArray<vtkStdString>> array =
+    vtkSmartPointer<vtkDenseArray<vtkStdString>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -339,45 +251,11 @@ vtkDenseArray<vtkStdString>* ReadDenseArrayBinary<vtkStdString>(istream& stream)
   return array;
 }
 
-template <>
-vtkDenseArray<vtkUnicodeString>* ReadDenseArrayBinary<vtkUnicodeString>(istream& stream)
-{
-  // Create the array ...
-  vtkSmartPointer<vtkDenseArray<vtkUnicodeString> > array =
-    vtkSmartPointer<vtkDenseArray<vtkUnicodeString> >::New();
-
-  // Read the file header ...
-  vtkArrayExtents extents;
-  vtkArrayExtents::SizeT non_null_size = 0;
-  bool swap_endian = false;
-  ReadHeader(stream, extents, non_null_size, array);
-  ReadEndianOrderMark(stream, swap_endian);
-
-  // Read array values ...
-  std::string buffer;
-  vtkArray::SizeT n = 0;
-  for (int character = stream.get(); stream; character = stream.get())
-  {
-    if (character == 0)
-    {
-      array->SetValueN(n++, vtkUnicodeString::from_utf8(buffer));
-      buffer.resize(0);
-    }
-    else
-    {
-      buffer += static_cast<char>(character);
-    }
-  }
-
-  array->Register(nullptr);
-  return array;
-}
-
 template <typename ValueT>
 vtkSparseArray<ValueT>* ReadSparseArrayAscii(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkSparseArray<ValueT> > array = vtkSmartPointer<vtkSparseArray<ValueT> >::New();
+  vtkSmartPointer<vtkSparseArray<ValueT>> array = vtkSmartPointer<vtkSparseArray<ValueT>>::New();
 
   // Read the stream header ...
   vtkArrayExtents extents;
@@ -445,7 +323,7 @@ template <typename ValueT>
 vtkDenseArray<ValueT>* ReadDenseArrayAscii(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkDenseArray<ValueT> > array = vtkSmartPointer<vtkDenseArray<ValueT> >::New();
+  vtkSmartPointer<vtkDenseArray<ValueT>> array = vtkSmartPointer<vtkDenseArray<ValueT>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -523,7 +401,7 @@ int vtkArrayReader::RequestData(
     vtkArray* array = nullptr;
     if (this->ReadFromInputString)
     {
-      array = this->Read(this->InputString);
+      array = vtkArrayReader::Read(this->InputString);
     }
     else
     {
@@ -532,7 +410,7 @@ int vtkArrayReader::RequestData(
 
       vtksys::ifstream file(this->FileName, std::ios::binary);
 
-      array = this->Read(file);
+      array = vtkArrayReader::Read(file);
     }
     if (!array)
       throw std::runtime_error("Error reading array.");
@@ -600,15 +478,10 @@ vtkArray* vtkArrayReader::Read(istream& stream)
         return (read_binary ? ReadSparseArrayBinary<double>(stream)
                             : ReadSparseArrayAscii<double>(stream));
       }
-      else if (header_type == "string")
+      else if ((header_type == "string") || header_type == "unicode-string")
       {
         return (read_binary ? ReadSparseArrayBinary<vtkStdString>(stream)
                             : ReadSparseArrayAscii<vtkStdString>(stream));
-      }
-      else if (header_type == "unicode-string")
-      {
-        return (read_binary ? ReadSparseArrayBinary<vtkUnicodeString>(stream)
-                            : ReadSparseArrayAscii<vtkUnicodeString>(stream));
       }
       else
       {
@@ -627,15 +500,10 @@ vtkArray* vtkArrayReader::Read(istream& stream)
         return (
           read_binary ? ReadDenseArrayBinary<double>(stream) : ReadDenseArrayAscii<double>(stream));
       }
-      else if (header_type == "string")
+      else if ((header_type == "string") || (header_type == "unicode-string"))
       {
         return (read_binary ? ReadDenseArrayBinary<vtkStdString>(stream)
                             : ReadDenseArrayAscii<vtkStdString>(stream));
-      }
-      else if (header_type == "unicode-string")
-      {
-        return (read_binary ? ReadDenseArrayBinary<vtkUnicodeString>(stream)
-                            : ReadDenseArrayAscii<vtkUnicodeString>(stream));
       }
       else
       {
@@ -654,3 +522,4 @@ vtkArray* vtkArrayReader::Read(istream& stream)
 
   return nullptr;
 }
+VTK_ABI_NAMESPACE_END

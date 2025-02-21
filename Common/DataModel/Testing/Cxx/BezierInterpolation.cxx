@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBezierInterpolation.h"
 
 #include "vtkMultiBaselineRegressionTest.h"
@@ -12,7 +14,6 @@
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 #include "vtkXMLPolyDataWriter.h"
 
 #include "vtkAxis.h"
@@ -26,12 +27,10 @@
 #include "vtkRegressionTestImage.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
-#include "vtkTable.h"
 
+#include <cmath>
 #include <sstream>
 #include <vector>
-
-#include <math.h>
 
 #include "vtkTestConditionals.txx"
 
@@ -151,7 +150,7 @@ vtkSmartPointer<vtkTable> CreateShapeFunctionTable(const int order[N], T& testpt
   for (unsigned i = 0; i < static_cast<unsigned>(numtests); ++i)
   {
     vtkVector3d pcoord(testpts->GetPoint(i));
-    method(order, pcoord.GetData(), &shape[0]);
+    method(order, pcoord.GetData(), shape.data());
     printShape<N>(order, pcoord, shape);
     ok &= testShape(order, shape, i);
     rst->SetTuple(row, pcoord.GetData());
@@ -164,7 +163,7 @@ vtkSmartPointer<vtkTable> CreateShapeFunctionTable(const int order[N], T& testpt
       for (double xx = dd; xx < 1.0; xx += dd)
       {
         vtkVector3d xp = p0 * xx + p1 * (1. - xx);
-        method(order, xp.GetData(), &shape[0]);
+        method(order, xp.GetData(), shape.data());
         rst->SetTuple(row, xp.GetData());
         InsertTableRow(row, all, shape);
       }
@@ -252,7 +251,7 @@ bool TestShapeFunctionImage(T& tab, int argc, char* argv[], const std::string& t
       view->GetRenderWindow()->SetMultiSamples(8);
       view->GetInteractor()->Start();
     }
-    return retVal ? true : false;
+    return retVal != 0;
   }
   if (interact)
   {
@@ -308,13 +307,13 @@ bool SumShapeFunctions(const int order[N], T tab, U world, V lpd)
     switch (N)
     {
       case 1:
-        interp->Tensor1ShapeDerivatives(order, uu.GetData(), &derivs[0]);
+        interp->Tensor1ShapeDerivatives(order, uu.GetData(), derivs.data());
         break;
       case 2:
-        interp->Tensor2ShapeDerivatives(order, uu.GetData(), &derivs[0]);
+        interp->Tensor2ShapeDerivatives(order, uu.GetData(), derivs.data());
         break;
       case 3:
-        interp->Tensor3ShapeDerivatives(order, uu.GetData(), &derivs[0]);
+        interp->Tensor3ShapeDerivatives(order, uu.GetData(), derivs.data());
         break;
       default:
         std::cerr << "Unsupported dimension " << N << ". No way to obtain derivatives.\n";
@@ -361,7 +360,7 @@ bool SumShapeFunctions(const int order[N], T tab, U world, V lpd)
     }
     time->SetValue(rr, rr);
   }
-  polyline->InsertNextCell(static_cast<vtkIdType>(conn.size()), &conn[0]);
+  polyline->InsertNextCell(static_cast<vtkIdType>(conn.size()), conn.data());
   lpd->Initialize();
   lpd->SetPoints(ppt.GetPointer());
   lpd->SetLines(polyline.GetPointer());
@@ -420,7 +419,7 @@ bool SumWedgeShapeFunctions(const int order[N], T tab, U world, V lpd)
     ppt->SetPoint(rr, pt.GetData());
     time->SetValue(rr, rr);
   }
-  polyline->InsertNextCell(static_cast<vtkIdType>(conn.size()), &conn[0]);
+  polyline->InsertNextCell(static_cast<vtkIdType>(conn.size()), conn.data());
   lpd->Initialize();
   lpd->SetPoints(ppt.GetPointer());
   lpd->SetLines(polyline.GetPointer());
@@ -551,7 +550,7 @@ int BezierInterpolation(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 
   {
     const double pcoords[3] = { 1, 0, 0 };
-    vtkBezierInterpolation::deCasteljauSimplex(2, 1, pcoords, coeffs);
+    vtkBezierInterpolation::DeCasteljauSimplex(2, 1, pcoords, coeffs);
     ok &= testNearlyEqual(coeffs[0], 0.0, "Simplex lf 0");
     ok &= testNearlyEqual(coeffs[1], 1.0, "Simplex lf 1");
     ok &= testNearlyEqual(coeffs[2], 0.0, "Simplex lf 2");
@@ -559,7 +558,7 @@ int BezierInterpolation(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 
   {
     const double pcoords[3] = { 0, 1, 0 };
-    vtkBezierInterpolation::deCasteljauSimplex(2, 1, pcoords, coeffs);
+    vtkBezierInterpolation::DeCasteljauSimplex(2, 1, pcoords, coeffs);
     ok &= testNearlyEqual(coeffs[0], 0.0, "Simplex lf 0");
     ok &= testNearlyEqual(coeffs[1], 0.0, "Simplex lf 1");
     ok &= testNearlyEqual(coeffs[2], 1.0, "Simplex lf 2");
@@ -567,7 +566,7 @@ int BezierInterpolation(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 
   {
     const double pcoords[3] = { 0, 0, 1 };
-    vtkBezierInterpolation::deCasteljauSimplex(2, 1, pcoords, coeffs);
+    vtkBezierInterpolation::DeCasteljauSimplex(2, 1, pcoords, coeffs);
     ok &= testNearlyEqual(coeffs[0], 1.0, "Simplex lf 0");
     ok &= testNearlyEqual(coeffs[1], 0.0, "Simplex lf 1");
     ok &= testNearlyEqual(coeffs[2], 0.0, "Simplex lf 2");
@@ -575,7 +574,7 @@ int BezierInterpolation(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 
   {
     const double pcoords[3] = { 1, 0, 0 };
-    vtkBezierInterpolation::deCasteljauSimplex(2, 2, pcoords, coeffs);
+    vtkBezierInterpolation::DeCasteljauSimplex(2, 2, pcoords, coeffs);
     ok &= testNearlyEqual(coeffs[0], 0.0, "Simplex lf 0");
     ok &= testNearlyEqual(coeffs[1], 0.0, "Simplex lf 1");
     ok &= testNearlyEqual(coeffs[2], 1.0, "Simplex lf 2");
@@ -588,7 +587,7 @@ int BezierInterpolation(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 
   {
     const double pcoords[3] = { 0, 1, 0 };
-    vtkBezierInterpolation::deCasteljauSimplex(2, 2, pcoords, coeffs);
+    vtkBezierInterpolation::DeCasteljauSimplex(2, 2, pcoords, coeffs);
     ok &= testNearlyEqual(coeffs[0], 0.0, "Simplex lf 0");
     ok &= testNearlyEqual(coeffs[1], 0.0, "Simplex lf 1");
     ok &= testNearlyEqual(coeffs[2], 0.0, "Simplex lf 2");
@@ -601,7 +600,7 @@ int BezierInterpolation(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 
   {
     const double pcoords[3] = { 0, 0, 1 };
-    vtkBezierInterpolation::deCasteljauSimplex(2, 2, pcoords, coeffs);
+    vtkBezierInterpolation::DeCasteljauSimplex(2, 2, pcoords, coeffs);
     ok &= testNearlyEqual(coeffs[0], 1.0, "Simplex lf 0");
     ok &= testNearlyEqual(coeffs[1], 0.0, "Simplex lf 1");
     ok &= testNearlyEqual(coeffs[2], 0.0, "Simplex lf 2");
@@ -614,7 +613,7 @@ int BezierInterpolation(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 
   {
     const double pcoords[3] = { 0.5, 0.5, 0 };
-    vtkBezierInterpolation::deCasteljauSimplex(2, 2, pcoords, coeffs);
+    vtkBezierInterpolation::DeCasteljauSimplex(2, 2, pcoords, coeffs);
     ok &= testNearlyEqual(coeffs[0], 0.0, "Simplex lf 0");
     ok &= testNearlyEqual(coeffs[1], 0.0, "Simplex lf 1");
     ok &= testNearlyEqual(coeffs[2], 0.25, "Simplex lf 2");

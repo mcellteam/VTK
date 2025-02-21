@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExodusIIWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkExodusIIWriter
@@ -76,6 +61,7 @@
 #include <string> // STL Header
 #include <vector> // STL Header
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkModelMetadata;
 class vtkDoubleArray;
 class vtkIntArray;
@@ -108,8 +94,8 @@ public:
    * If not set, this class will make up a file name.
    */
 
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
 
   /**
    * If StoreDoubles is ON, the floating point fields in the Exodus file
@@ -210,8 +196,8 @@ protected:
   bool IgnoreMetaDataWarning;
 
   vtkDataObject* OriginalInput;
-  std::vector<vtkSmartPointer<vtkUnstructuredGrid> > FlattenedInput;
-  std::vector<vtkSmartPointer<vtkUnstructuredGrid> > NewFlattenedInput;
+  std::vector<vtkSmartPointer<vtkUnstructuredGrid>> FlattenedInput;
+  std::vector<vtkSmartPointer<vtkUnstructuredGrid>> NewFlattenedInput;
 
   std::vector<vtkStdString> FlattenedNames;
   std::vector<vtkStdString> NewFlattenedNames;
@@ -233,7 +219,7 @@ protected:
       this->OutputIndex = -1;
       this->NumAttributes = 0;
       this->BlockAttributes = nullptr;
-    };
+    }
     const char* Name;
     int Type;
     int NumElements;
@@ -270,7 +256,7 @@ protected:
   int NumberOfScalarElementArrays;
   int NumberOfScalarNodeArrays;
 
-  std::vector<std::vector<int> > CellToElementOffset;
+  std::vector<std::vector<int>> CellToElementOffset;
 
   // By BlockId, and within block ID by element variable, with variables
   // appearing in the same order in which they appear in OutputElementArrayNames
@@ -306,7 +292,7 @@ protected:
 
   int IsDouble();
   void RemoveGhostCells();
-  int CheckParametersInternal(int NumberOfProcesses, int MyRank);
+  int CheckParametersInternal(int numberOfProcesses, int myRank);
   virtual int CheckParameters();
   // If writing in parallel multiple time steps exchange after each time step
   // if we should continue the execution. Pass local continueExecution as a
@@ -369,4 +355,5 @@ private:
   void operator=(const vtkExodusIIWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

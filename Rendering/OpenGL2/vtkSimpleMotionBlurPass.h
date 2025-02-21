@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSimpleMotionBlurPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSimpleMotionBlurPass
  * @brief   Avergae frames to simulate motion blur.
@@ -31,13 +19,16 @@
 
 #include "vtkDepthImageProcessingPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLFramebufferObject;
 class vtkOpenGLHelper;
 class vtkOpenGLRenderWindow;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkSimpleMotionBlurPass : public vtkDepthImageProcessingPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkSimpleMotionBlurPass
+  : public vtkDepthImageProcessingPass
 {
 public:
   static vtkSimpleMotionBlurPass* New();
@@ -57,7 +48,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Set the number of sub frames for doing motion blur.
    * Once this is set greater than one, you will no longer see a new frame
@@ -68,7 +59,7 @@ public:
    */
   vtkGetMacro(SubFrames, int);
   virtual void SetSubFrames(int subFrames);
-  //@}
+  ///@}
 
   /**
    *  Set the format to use for the depth texture
@@ -109,7 +100,7 @@ protected:
   vtkTextureObject* AccumulationTexture[2]; // where we add the colors
   vtkTextureObject* DepthTexture;           // render target for the depth
 
-  //@{
+  ///@{
   /**
    * Cache viewport values for depth peeling.
    */
@@ -117,7 +108,7 @@ protected:
   int ViewportY;
   int ViewportWidth;
   int ViewportHeight;
-  //@}
+  ///@}
 
   int DepthFormat;
   int ColorFormat;
@@ -132,4 +123,5 @@ private:
   void operator=(const vtkSimpleMotionBlurPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

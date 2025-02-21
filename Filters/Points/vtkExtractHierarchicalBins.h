@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractHierarchicalBins.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractHierarchicalBins
  * @brief   manipulate the output of
@@ -43,13 +31,14 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkPointCloudFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHierarchicalBinningFilter;
 class vtkPointSet;
 
 class VTKFILTERSPOINTS_EXPORT vtkExtractHierarchicalBins : public vtkPointCloudFilter
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiating, obtaining type information, and
    * printing information.
@@ -57,9 +46,9 @@ public:
   static vtkExtractHierarchicalBins* New();
   vtkTypeMacro(vtkExtractHierarchicalBins, vtkPointCloudFilter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the level to extract. If non-negative, with a negative bin
    * number, then all points at this level are extracted and sent to the
@@ -72,13 +61,13 @@ public:
    */
   vtkSetMacro(Level, int);
   vtkGetMacro(Level, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the bin number to extract. If a non-negative value, then the
    * points from the bin number specified are extracted. If negative, then
-   * entire levels of points are extacted (assuming the Level is
+   * entire levels of points are extracted (assuming the Level is
    * non-negative). Note that the bin tree is flattened, a particular bin
    * number may refer to a bin on any level. Note that requesting a bin
    * greater than the associated vtkHierarchicalBinningFilter will clamp the
@@ -86,9 +75,9 @@ public:
    */
   vtkSetMacro(Bin, int);
   vtkGetMacro(Bin, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the vtkHierarchicalBinningFilter to query for relevant
    * information. Make sure that this filter has executed prior to the execution of
@@ -96,7 +85,7 @@ public:
    */
   virtual void SetBinningFilter(vtkHierarchicalBinningFilter*);
   vtkGetObjectMacro(BinningFilter, vtkHierarchicalBinningFilter);
-  //@}
+  ///@}
 
 protected:
   vtkExtractHierarchicalBins();
@@ -119,4 +108,5 @@ private:
   void operator=(const vtkExtractHierarchicalBins&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

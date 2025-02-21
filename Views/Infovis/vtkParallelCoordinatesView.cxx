@@ -1,21 +1,6 @@
-/*=========================================================================
-Program:   Visualization Toolkit
-Module:    vtkParallelCoordinatesView.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2009 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2009 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkParallelCoordinatesView.h"
 
 #include "vtkActor2D.h"
@@ -49,9 +34,10 @@ PURPOSE.  See the above copyright notice for more information.
 #include <cassert>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkParallelCoordinatesView);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkParallelCoordinatesView::vtkParallelCoordinatesView()
 {
@@ -106,11 +92,8 @@ vtkParallelCoordinatesView::vtkParallelCoordinatesView()
   //  this->ApplyViewTheme(theme);
 }
 
-// ----------------------------------------------------------------------
-vtkParallelCoordinatesView::~vtkParallelCoordinatesView()
-{
-  // nothing to do
-}
+//------------------------------------------------------------------------------
+vtkParallelCoordinatesView::~vtkParallelCoordinatesView() = default;
 
 void vtkParallelCoordinatesView::PrepareForRendering()
 {
@@ -143,7 +126,7 @@ void vtkParallelCoordinatesView::PrepareForRendering()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParallelCoordinatesView::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -154,7 +137,7 @@ void vtkParallelCoordinatesView::PrintSelf(ostream& os, vtkIndent indent)
   os << "CurrentBrushClass: " << this->CurrentBrushClass << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The frustum selection code is borrowed from vtkRenderView.
 void vtkParallelCoordinatesView::ProcessEvents(
   vtkObject* caller, unsigned long eventId, void* callData)
@@ -281,9 +264,9 @@ int vtkParallelCoordinatesView::SetAxisHighlightPosition(
 }
 
 int vtkParallelCoordinatesView::SetAxisHighlightPosition(
-  vtkParallelCoordinatesRepresentation* rep, double xpos)
+  vtkParallelCoordinatesRepresentation* rep, double position)
 {
-  int nearestPosition = rep->GetPositionNearXCoordinate(xpos);
+  int nearestPosition = rep->GetPositionNearXCoordinate(position);
 
   return this->SetAxisHighlightPosition(rep, nearestPosition);
 }
@@ -394,7 +377,7 @@ void vtkParallelCoordinatesView::ClearBrushPoints()
   this->BrushData->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParallelCoordinatesView::AddLassoBrushPoint(double* p)
 {
   if (this->NumberOfBrushPoints >= this->MaximumNumberOfBrushPoints)
@@ -426,13 +409,13 @@ int vtkParallelCoordinatesView::SetAngleBrushLine(double* p1, double* p2)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParallelCoordinatesView::SetFunctionBrushLine1(double* p1, double* p2)
 {
   this->SetBrushLine(2, p1, p2);
   return 1;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParallelCoordinatesView::SetFunctionBrushLine2(double* p1, double* p2)
 {
   this->SetBrushLine(3, p1, p2);
@@ -492,7 +475,7 @@ int vtkParallelCoordinatesView::SetBrushLine(int line, double* p1, double* p2)
   }
 
   // find the points that line (p1-p2) intersects on the left/right axes
-  double m = (double)(p2y - p1y) / (double)(p2x - p1x);
+  double m = (p2y - p1y) / (p2x - p1x);
   double lefty = p1y - m * (p1x - xs[left]);
   double righty = p1y - m * (p1x - xs[right]);
 
@@ -512,11 +495,11 @@ int vtkParallelCoordinatesView::SetBrushLine(int line, double* p1, double* p2)
 
   int pointOffset = line * this->MaximumNumberOfBrushPoints;
 
-  double dx = (double)(p2x - p1x) / (this->MaximumNumberOfBrushPoints - 1);
+  double dx = (p2x - p1x) / (this->MaximumNumberOfBrushPoints - 1);
 
   if (!rep->GetUseCurves())
   {
-    double dy = (double)(p2y - p1y) / (this->MaximumNumberOfBrushPoints - 1);
+    double dy = (p2y - p1y) / (this->MaximumNumberOfBrushPoints - 1);
 
     for (int i = 0; i < this->MaximumNumberOfBrushPoints; i++)
     {
@@ -552,7 +535,7 @@ int vtkParallelCoordinatesView::SetBrushLine(int line, double* p1, double* p2)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParallelCoordinatesView::GetBrushLine(int line, vtkIdType& npts, vtkIdType const*& ptids)
 {
   int cellNum = 0;
@@ -932,3 +915,4 @@ void vtkParallelCoordinatesView::ApplyViewTheme(vtkViewTheme* theme)
   this->Balloon->GetFrameProperty()->SetColor(theme->GetBackgroundColor()); // CellColor());
   this->Balloon->GetTextProperty()->SetColor(theme->GetCellColor());        // BackgroundColor());
 }
+VTK_ABI_NAMESPACE_END

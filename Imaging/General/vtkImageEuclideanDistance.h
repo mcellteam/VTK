@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageEuclideanDistance.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageEuclideanDistance
  * @brief   computes 3D Euclidean DT
@@ -29,7 +17,7 @@
  * 2^N with a large N (typically for 256x256 slices), Saito's algorithm
  * encounters a lot of cache conflicts during the 3rd iteration which can
  * slow it very significantly. In that case, one should use
- * ::SetAlgorithmToSaitoCached() instead for better performance.
+ * vtkImageEuclideanDistance::SetAlgorithmToSaitoCached() instead for better performance.
  *
  * References:
  *
@@ -51,6 +39,7 @@
 #define VTK_EDT_SAITO_CACHED 0
 #define VTK_EDT_SAITO 1
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGGENERAL_EXPORT vtkImageEuclideanDistance : public vtkImageDecomposeFilter
 {
 public:
@@ -58,7 +47,7 @@ public:
   vtkTypeMacro(vtkImageEuclideanDistance, vtkImageDecomposeFilter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Used to set all non-zero voxels to MaximumDistance before starting
    * the distance transformation. Setting Initialize off keeps the current
@@ -68,9 +57,9 @@ public:
   vtkSetMacro(Initialize, vtkTypeBool);
   vtkGetMacro(Initialize, vtkTypeBool);
   vtkBooleanMacro(Initialize, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Used to define whether Spacing should be used in the computation of the
    * distances
@@ -78,18 +67,18 @@ public:
   vtkSetMacro(ConsiderAnisotropy, vtkTypeBool);
   vtkGetMacro(ConsiderAnisotropy, vtkTypeBool);
   vtkBooleanMacro(ConsiderAnisotropy, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Any distance bigger than this->MaximumDistance will not ne computed but
    * set to this->MaximumDistance instead.
    */
   vtkSetMacro(MaximumDistance, double);
   vtkGetMacro(MaximumDistance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Selects a Euclidean DT algorithm.
    * 1. Saito
@@ -100,13 +89,13 @@ public:
   vtkGetMacro(Algorithm, int);
   void SetAlgorithmToSaito() { this->SetAlgorithm(VTK_EDT_SAITO); }
   void SetAlgorithmToSaitoCached() { this->SetAlgorithm(VTK_EDT_SAITO_CACHED); }
-  //@}
+  ///@}
 
   int IterativeRequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 protected:
   vtkImageEuclideanDistance();
-  ~vtkImageEuclideanDistance() override {}
+  ~vtkImageEuclideanDistance() override = default;
 
   double MaximumDistance;
   vtkTypeBool Initialize;
@@ -124,4 +113,5 @@ private:
   void operator=(const vtkImageEuclideanDistance&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

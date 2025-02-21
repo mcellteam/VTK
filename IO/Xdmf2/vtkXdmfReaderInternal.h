@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXdmfReaderInternal.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXdmfReaderInternal
  *
@@ -19,8 +7,6 @@
 
 #ifndef vtkXdmfReaderInternal_h
 #define vtkXdmfReaderInternal_h
-#ifndef __VTK_WRAP__
-#ifndef VTK_WRAPPING_CXX
 
 // NAMING CONVENTION *********************************************************
 // * all member variables of the type XdmfXml* begin with XML eg. XMLNode
@@ -62,12 +48,13 @@
 #include <vector>
 #include <vtksys/SystemTools.hxx>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkXdmfDomain;
 class VTKIOXDMF2_EXPORT vtkXdmfDocument
 {
 public:
   //---------------------------------------------------------------------------
-  //@{
+  ///@{
   /**
    * Parse an xmf file (or string). Both these methods use caching hence calling
    * these methods repeatedly with the same argument will NOT result in
@@ -75,7 +62,7 @@ public:
    */
   bool Parse(const char* xmffilename);
   bool ParseString(const char* xmfdata, size_t length);
-  //@}
+  ///@}
 
   //---------------------------------------------------------------------------
   /**
@@ -84,14 +71,14 @@ public:
   const std::vector<std::string>& GetDomains() { return this->Domains; }
 
   //---------------------------------------------------------------------------
-  //@{
+  ///@{
   /**
    * Set the active domain. This will result in processing of the domain xmf if
    * the selected domain is different from the active one.
    */
   bool SetActiveDomain(const char* domainname);
   bool SetActiveDomain(int index);
-  //@}
+  ///@}
 
   //---------------------------------------------------------------------------
   /**
@@ -100,19 +87,18 @@ public:
   vtkXdmfDomain* GetActiveDomain() { return this->ActiveDomain; }
 
   //---------------------------------------------------------------------------
-  //@{
+  ///@{
   /**
    * Constructor/Destructor
    */
   vtkXdmfDocument();
   ~vtkXdmfDocument();
-  //@}
+  ///@}
 
 private:
   // Populates the list of domains.
   void UpdateDomains();
 
-private:
   int ActiveDomainIndex;
   xdmf2::XdmfDOM XMLDOM;
   vtkXdmfDomain* ActiveDomain;
@@ -193,7 +179,7 @@ private:
   // these are node indices used when building the SIL.
   vtkIdType SILBlocksRoot;
   std::map<std::string, vtkIdType> GridCenteredAttrbuteRoots;
-  std::map<vtkIdType, std::map<XdmfInt64, vtkIdType> > GridCenteredAttrbuteValues;
+  std::map<vtkIdType, std::map<XdmfInt64, vtkIdType>> GridCenteredAttrbuteValues;
 
   vtkSILBuilder* SILBuilder;
   vtkMutableDirectedGraph* SIL;
@@ -216,7 +202,7 @@ public:
    * After instantiating, check that the domain is valid. If this returns false,
    * it means that the specified domain could not be located.
    */
-  bool IsValid() { return (this->XMLDomain != 0); }
+  bool IsValid() { return (this->XMLDomain != nullptr); }
 
   //---------------------------------------------------------------------------
   vtkGraph* GetSIL() { return this->SIL; }
@@ -256,7 +242,7 @@ public:
   int GetIndexForTime(double time);
 
   //---------------------------------------------------------------------------
-  //@{
+  ///@{
   /**
    * Returns the time value at the given index.
    */
@@ -265,7 +251,7 @@ public:
     std::map<int, XdmfFloat64>::iterator iter = this->TimeStepsRev.find(index);
     return (iter != this->TimeStepsRev.end()) ? iter->second : 0.0;
   }
-  //@}
+  ///@}
 
   //---------------------------------------------------------------------------
   /**
@@ -334,16 +320,15 @@ private:
   // Used by CollectMetaData().
   void CollectLeafMetaData(xdmf2::XdmfGrid* xmfGrid, vtkIdType silParent);
 
-  //@{
+  ///@{
   /**
    * Use this to add an association with the grid attribute with the node for
    * the grid in the SIL if applicable. Returns true if the attribute was added.
    */
   bool UpdateGridAttributeInSIL(xdmf2::XdmfAttribute* xmfAttribute, vtkIdType gridSILId);
-  //@}
+  ///@}
 };
 
-#endif
-#endif
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkXdmfReaderInternal.h

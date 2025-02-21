@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPeriodicFiler.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPeriodicFilter.h"
 
@@ -22,7 +10,8 @@
 #include "vtkMultiBlockDataSet.h"
 #include "vtkMultiProcessController.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkPeriodicFilter::vtkPeriodicFilter()
 {
   this->IterationMode = VTK_ITERATION_MODE_MAX;
@@ -30,10 +19,10 @@ vtkPeriodicFilter::vtkPeriodicFilter()
   this->ReducePeriodNumbers = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPeriodicFilter::~vtkPeriodicFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPeriodicFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -48,28 +37,28 @@ void vtkPeriodicFilter::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPeriodicFilter::AddIndex(unsigned int index)
 {
   this->Indices.insert(index);
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPeriodicFilter::RemoveIndex(unsigned int index)
 {
   this->Indices.erase(index);
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPeriodicFilter::RemoveAllIndices()
 {
   this->Indices.clear();
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPeriodicFilter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   // now add our info
@@ -77,7 +66,7 @@ int vtkPeriodicFilter::FillInputPortInformation(int vtkNotUsed(port), vtkInforma
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPeriodicFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -100,7 +89,7 @@ int vtkPeriodicFilter::RequestData(vtkInformation* vtkNotUsed(request),
   else if (this->Indices.empty())
   {
     // Trivial case
-    output->ShallowCopy(input);
+    output->CompositeShallowCopy(input);
     return 1;
   }
 
@@ -171,3 +160,4 @@ int vtkPeriodicFilter::RequestData(vtkInformation* vtkNotUsed(request),
   }
   return 1;
 }
+VTK_ABI_NAMESPACE_END

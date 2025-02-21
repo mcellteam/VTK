@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSkybox.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSkybox.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkSkybox);
 
 //------------------------------------------------------------------------------
@@ -26,7 +15,7 @@ void vtkSkybox::PrintSelf(std::ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Always return uninitialized
 double* vtkSkybox::GetBounds()
 {
@@ -44,7 +33,10 @@ vtkSkybox::vtkSkybox()
   this->FloorRight[0] = 1.0;
   this->FloorRight[1] = 0.0;
   this->FloorRight[2] = 0.0;
+  this->FloorTexCoordScale[0] = 1.0;
+  this->FloorTexCoordScale[1] = 1.0;
 }
 
 //------------------------------------------------------------------------------
 vtkSkybox::~vtkSkybox() = default;
+VTK_ABI_NAMESPACE_END

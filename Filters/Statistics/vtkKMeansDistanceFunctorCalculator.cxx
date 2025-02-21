@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkKMeansDistanceFunctorCalculator.h"
 
 #include "vtkDoubleArray.h"
@@ -10,10 +12,11 @@
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkKMeansDistanceFunctorCalculator);
 vtkCxxSetObjectMacro(vtkKMeansDistanceFunctorCalculator, FunctionParser, vtkFunctionParser);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkKMeansDistanceFunctorCalculator::vtkKMeansDistanceFunctorCalculator()
 {
   this->FunctionParser = vtkFunctionParser::New();
@@ -21,14 +24,14 @@ vtkKMeansDistanceFunctorCalculator::vtkKMeansDistanceFunctorCalculator()
   this->TupleSize = -1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkKMeansDistanceFunctorCalculator::~vtkKMeansDistanceFunctorCalculator()
 {
   this->SetFunctionParser(nullptr);
   this->SetDistanceExpression(nullptr);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKMeansDistanceFunctorCalculator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -40,7 +43,7 @@ void vtkKMeansDistanceFunctorCalculator::PrintSelf(ostream& os, vtkIndent indent
   os << indent << "TupleSize: " << this->TupleSize << "\n";
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkKMeansDistanceFunctorCalculator::operator()(
   double& distance, vtkVariantArray* clusterCoord, vtkVariantArray* dataCoord)
 {
@@ -94,3 +97,4 @@ void vtkKMeansDistanceFunctorCalculator::operator()(
   cout << " ]) = " << distance << "\n";
   */
 }
+VTK_ABI_NAMESPACE_END

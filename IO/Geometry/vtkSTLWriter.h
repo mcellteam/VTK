@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSTLWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSTLWriter
  * @brief   write stereo lithography files
@@ -33,6 +21,7 @@
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkPoints;
 class vtkPolyData;
@@ -45,32 +34,32 @@ public:
   vtkTypeMacro(vtkSTLWriter, vtkWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkPolyData* GetInput();
   vtkPolyData* GetInput(int port);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify file name of vtk polygon data file to write.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the header for the file as text. The header cannot contain 0x00 characters.
    * \sa SetBinaryHeader()
    */
   vtkSetStringMacro(Header);
   vtkGetStringMacro(Header);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set binary header for the file.
    * Binary header is only used when writing binary type files.
@@ -79,9 +68,9 @@ public:
    */
   virtual void SetBinaryHeader(vtkUnsignedCharArray* binaryHeader);
   vtkGetObjectMacro(BinaryHeader, vtkUnsignedCharArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify file type (ASCII or BINARY) for vtk data file.
    */
@@ -89,7 +78,7 @@ public:
   vtkGetMacro(FileType, int);
   void SetFileTypeToASCII() { this->SetFileType(VTK_ASCII); }
   void SetFileTypeToBinary() { this->SetFileType(VTK_BINARY); }
-  //@}
+  ///@}
 
 protected:
   vtkSTLWriter();
@@ -112,4 +101,5 @@ private:
   void operator=(const vtkSTLWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

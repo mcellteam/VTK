@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBlockItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkBlockItem
@@ -33,13 +21,15 @@
 #include "vtkNew.h"                      // For vtkNew
 #include "vtkRenderingContext2DModule.h" // For export macro
 #include "vtkStdString.h"                // For vtkStdString ivars
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkContext2D;
 class vtkTextProperty;
 class vtkBrush;
 class vtkPen;
 
-class VTKRENDERINGCONTEXT2D_EXPORT vtkBlockItem : public vtkContextItem
+class VTKRENDERINGCONTEXT2D_EXPORT VTK_MARSHALAUTO vtkBlockItem : public vtkContextItem
 {
 public:
   vtkTypeMacro(vtkBlockItem, vtkContextItem);
@@ -92,7 +82,7 @@ public:
    */
   virtual vtkStdString GetLabel();
 
-  //@{
+  ///@{
   /**
    * Set the dimensions of the block, elements 0 and 1 are the x and y
    * coordinate of the bottom corner. Elements 2 and 3 are the width and
@@ -100,9 +90,9 @@ public:
    * Initial value is (0,0,0,0).
    */
   vtkSetVector4Macro(Dimensions, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the dimensions of the block, elements 0 and 1 are the x and y
    * coordinate of the bottom corner. Elements 2 and 3 are the width and
@@ -110,9 +100,9 @@ public:
    * Initial value is (0,0,0,0)
    */
   vtkGetVector4Macro(Dimensions, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When set to true, the dimensions for the block are computed automatically
    * using the anchor point, alignment at the size of the label.
@@ -123,7 +113,7 @@ public:
   vtkSetMacro(AutoComputeDimensions, bool);
   vtkGetMacro(AutoComputeDimensions, bool);
   vtkBooleanMacro(AutoComputeDimensions, bool);
-  //@}
+  ///@}
 
   enum
   {
@@ -135,25 +125,25 @@ public:
     CUSTOM
   };
 
-  //@{
+  ///@{
   /**
    * Set/Get the horizontal alignment of the legend to the point specified.
    * Valid values are LEFT, CENTER and RIGHT.
    */
   vtkSetMacro(HorizontalAlignment, int);
   vtkGetMacro(HorizontalAlignment, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the vertical alignment of the legend to the point specified.
    * Valid values are TOP, CENTER and BOTTOM.
    */
   vtkSetMacro(VerticalAlignment, int);
   vtkGetMacro(VerticalAlignment, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When AutoComputeDimensions is true, these are the padding for the label
    * within the block.
@@ -162,9 +152,9 @@ public:
    */
   vtkSetVector2Macro(Padding, int);
   vtkGetVector2Macro(Padding, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When AutoComputeDimensions is true, these are the margins from the edge of
    * the viewport to use when placing the block based on HorizontalAlignment and
@@ -172,38 +162,38 @@ public:
    */
   vtkSetVector2Macro(Margins, int);
   vtkGetVector2Macro(Margins, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get pen used to draw the block item outline.
    */
   vtkGetObjectMacro(Pen, vtkPen);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the brush used to draw the block item background.
    */
   vtkGetObjectMacro(Brush, vtkBrush);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the brush used to draw the block item background when the
    * item is "hit" i.e. interaction is enabled and the mouse is over the block.
    */
   vtkGetObjectMacro(MouseOverBrush, vtkBrush);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Provides access to the vtkTextProperty object that controls the way the
    * label is rendered.
    */
   void SetLabelProperties(vtkTextProperty*);
   vtkGetObjectMacro(LabelProperties, vtkTextProperty);
-  //@}
+  ///@}
 
   void SetScalarFunctor(double (*scalarFunction)(double, double));
 
@@ -241,4 +231,5 @@ private:
   int Margins[2];
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkBlockItem_h

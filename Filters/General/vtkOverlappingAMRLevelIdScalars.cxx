@@ -1,38 +1,27 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOverlappingAMRLevelIdScalars.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOverlappingAMRLevelIdScalars.h"
 
 #include "vtkCellData.h"
+#include "vtkConstantArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 #include "vtkOverlappingAMR.h"
 #include "vtkUniformGrid.h"
 #include "vtkUniformGridAMR.h"
-#include "vtkUnsignedCharArray.h"
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOverlappingAMRLevelIdScalars);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOverlappingAMRLevelIdScalars::vtkOverlappingAMRLevelIdScalars() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOverlappingAMRLevelIdScalars::~vtkOverlappingAMRLevelIdScalars() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOverlappingAMRLevelIdScalars::AddColorLevels(
   vtkUniformGridAMR* input, vtkUniformGridAMR* output)
 {
@@ -43,6 +32,10 @@ void vtkOverlappingAMRLevelIdScalars::AddColorLevels(
   output->CopyStructure(input);
   for (unsigned int levelIdx = 0; levelIdx < numLevels; levelIdx++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     unsigned int numDS = input->GetNumberOfDataSets(levelIdx);
     for (unsigned int cc = 0; cc < numDS; cc++)
     {
@@ -57,7 +50,7 @@ void vtkOverlappingAMRLevelIdScalars::AddColorLevels(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Map ids into attribute data
 int vtkOverlappingAMRLevelIdScalars::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -82,27 +75,27 @@ int vtkOverlappingAMRLevelIdScalars::RequestData(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGrid* vtkOverlappingAMRLevelIdScalars::ColorLevel(vtkUniformGrid* input, int group)
 {
   vtkUniformGrid* output = input->NewInstance();
   output->ShallowCopy(input);
   vtkDataSet* dsOutput = vtkDataSet::SafeDownCast(output);
   vtkIdType numCells = dsOutput->GetNumberOfCells();
-  vtkUnsignedCharArray* cArray = vtkUnsignedCharArray::New();
-  cArray->SetNumberOfTuples(numCells);
-  for (vtkIdType cellIdx = 0; cellIdx < numCells; cellIdx++)
-  {
-    cArray->SetValue(cellIdx, group);
-  }
-  cArray->SetName("BlockIdScalars");
-  dsOutput->GetCellData()->AddArray(cArray);
-  cArray->Delete();
+
+  vtkNew<vtkConstantArray<unsigned char>> levelIdArray;
+  levelIdArray->ConstructBackend(group);
+  levelIdArray->SetNumberOfComponents(1);
+  levelIdArray->SetNumberOfTuples(numCells);
+  levelIdArray->SetName("LevelIdScalars");
+  dsOutput->GetCellData()->AddArray(levelIdArray);
+
   return output;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOverlappingAMRLevelIdScalars::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

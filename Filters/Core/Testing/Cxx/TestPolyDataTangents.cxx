@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPolyDataTangents.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test covers the vtkPolyDataTangents filter
 
 #include "vtkActor.h"
@@ -28,6 +16,7 @@
 #include "vtkPolyDataNormals.h"
 #include "vtkPolyDataTangents.h"
 #include "vtkProperty.h"
+#include "vtkRandomAttributeGenerator.h"
 #include "vtkRegressionTestImage.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
@@ -39,7 +28,7 @@
 #include "vtkTriangleFilter.h"
 #include "vtkXMLPolyDataReader.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestPolyDataTangents(int argc, char* argv[])
 {
   vtkNew<vtkXMLPolyDataReader> reader;
@@ -47,8 +36,13 @@ int TestPolyDataTangents(int argc, char* argv[])
   reader->SetFileName(fname);
   delete[] fname;
 
+  vtkNew<vtkRandomAttributeGenerator> randomAttributes;
+  randomAttributes->SetInputConnection(reader->GetOutputPort());
+  randomAttributes->GenerateAllDataOff();
+  randomAttributes->GenerateCellScalarsOn();
+
   vtkNew<vtkPolyDataNormals> normals;
-  normals->SetInputConnection(reader->GetOutputPort());
+  normals->SetInputConnection(randomAttributes->GetOutputPort());
   normals->SplittingOff();
 
   vtkNew<vtkTriangleFilter> triangle;

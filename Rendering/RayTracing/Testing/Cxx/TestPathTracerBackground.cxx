@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPathTracerBackground.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test verifies that environmental background options work with path tracer
 //
 // The command line arguments are:
@@ -49,7 +37,7 @@ int TestPathTracerBackground(int argc, char* argv[])
   iren->SetRenderWindow(renWin);
   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
   renWin->AddRenderer(renderer);
-  vtkOSPRayRendererNode::SetBackgroundMode(2, renderer);
+  vtkOSPRayRendererNode::SetBackgroundMode(vtkOSPRayRendererNode::Environment, renderer);
   vtkOSPRayRendererNode::SetSamplesPerPixel(16, renderer);
 
   vtkSmartPointer<vtkLight> l = vtkSmartPointer<vtkLight>::New();

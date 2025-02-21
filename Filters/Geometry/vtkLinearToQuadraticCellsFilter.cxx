@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkLinearToQuadraticCellsFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkLinearToQuadraticCellsFilter.h"
 
 #include "vtkAlgorithm.h"
@@ -44,6 +33,7 @@
 #include "vtkUnstructuredGrid.h"
 #include "vtkWedge.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLinearToQuadraticCellsFilter);
 
 namespace
@@ -100,7 +90,6 @@ void DegreeElevate(vtkCell* lowerOrderCell, vtkIncrementalPointLocator* pointLoc
       //     must use local indexing here (i.e. <lp> instead of
       //     <lowerOrderCell->GetPointIds()->GetId(lp)>).
       lowerOrderCell->GetPoints()->GetPoint(lp, lowerOrderPoint);
-      ;
       for (int i = 0; i < 3; i++)
       {
         higherOrderPoint[i] += lowerOrderPoint[i] * lowerOrderCoeffs[lp];
@@ -123,14 +112,14 @@ void DegreeElevate(vtkCell* lowerOrderCell, vtkIncrementalPointLocator* pointLoc
 
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLinearToQuadraticCellsFilter::vtkLinearToQuadraticCellsFilter()
 {
   this->Locator = nullptr;
   this->OutputPointsPrecision = DEFAULT_PRECISION;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLinearToQuadraticCellsFilter::~vtkLinearToQuadraticCellsFilter()
 {
   if (this->Locator)
@@ -140,7 +129,7 @@ vtkLinearToQuadraticCellsFilter::~vtkLinearToQuadraticCellsFilter()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By default,
 // an instance of vtkMergePoints is used.
 void vtkLinearToQuadraticCellsFilter::SetLocator(vtkIncrementalPointLocator* locator)
@@ -165,7 +154,7 @@ void vtkLinearToQuadraticCellsFilter::SetLocator(vtkIncrementalPointLocator* loc
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearToQuadraticCellsFilter::CreateDefaultLocator()
 {
   if (this->Locator == nullptr)
@@ -174,7 +163,7 @@ void vtkLinearToQuadraticCellsFilter::CreateDefaultLocator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function.
 vtkMTimeType vtkLinearToQuadraticCellsFilter::GetMTime()
 {
@@ -190,7 +179,7 @@ vtkMTimeType vtkLinearToQuadraticCellsFilter::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLinearToQuadraticCellsFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -245,6 +234,10 @@ int vtkLinearToQuadraticCellsFilter::RequestData(vtkInformation* vtkNotUsed(requ
   vtkCellIterator* it = input->NewCellIterator();
   for (it->InitTraversal(); !it->IsDoneWithTraversal(); it->GoToNextCell())
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     it->GetCell(cell);
     DegreeElevate(cell, this->Locator, outputCellTypes, outputCellConnectivities,
       input->GetPointData(), output->GetPointData(), input->GetCellData(), it->GetCellId(),
@@ -261,8 +254,9 @@ int vtkLinearToQuadraticCellsFilter::RequestData(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLinearToQuadraticCellsFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

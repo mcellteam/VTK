@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTerrainDataPointPlacer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTerrainDataPointPlacer.h"
 
 #include "vtkAssemblyNode.h"
@@ -22,9 +10,10 @@
 #include "vtkPropPicker.h"
 #include "vtkRenderer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTerrainDataPointPlacer);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTerrainDataPointPlacer::vtkTerrainDataPointPlacer()
 {
   this->TerrainProps = vtkPropCollection::New();
@@ -34,21 +23,21 @@ vtkTerrainDataPointPlacer::vtkTerrainDataPointPlacer()
   this->HeightOffset = 0.0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTerrainDataPointPlacer::~vtkTerrainDataPointPlacer()
 {
   this->TerrainProps->Delete();
   this->PropPicker->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTerrainDataPointPlacer::AddProp(vtkProp* prop)
 {
   this->TerrainProps->AddItem(prop);
   this->PropPicker->AddPickList(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTerrainDataPointPlacer::RemoveAllProps()
 {
   this->TerrainProps->RemoveAllItems();
@@ -56,14 +45,14 @@ void vtkTerrainDataPointPlacer::RemoveAllProps()
                                           // old props from it...
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTerrainDataPointPlacer::ComputeWorldPosition(vtkRenderer* ren, double displayPos[2],
   double* vtkNotUsed(refWorldPos), double worldPos[3], double worldOrient[9])
 {
   return this->ComputeWorldPosition(ren, displayPos, worldPos, worldOrient);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTerrainDataPointPlacer::ComputeWorldPosition(
   vtkRenderer* ren, double displayPos[2], double worldPos[3], double vtkNotUsed(worldOrient)[9])
 {
@@ -105,20 +94,20 @@ int vtkTerrainDataPointPlacer::ComputeWorldPosition(
   return 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTerrainDataPointPlacer::ValidateWorldPosition(
   double worldPos[3], double* vtkNotUsed(worldOrient))
 {
   return this->ValidateWorldPosition(worldPos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTerrainDataPointPlacer::ValidateWorldPosition(double vtkNotUsed(worldPos)[3])
 {
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTerrainDataPointPlacer::ValidateDisplayPosition(
   vtkRenderer*, double vtkNotUsed(displayPos)[2])
 {
@@ -134,7 +123,7 @@ int vtkTerrainDataPointPlacer::ValidateDisplayPosition(
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTerrainDataPointPlacer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -152,3 +141,4 @@ void vtkTerrainDataPointPlacer::PrintSelf(ostream& os, vtkIndent indent)
   }
   os << indent << "HeightOffset: " << this->HeightOffset << endl;
 }
+VTK_ABI_NAMESPACE_END

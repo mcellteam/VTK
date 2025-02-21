@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAngularPeriodicDataArray.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkAngularPeriodicDataArray
@@ -35,6 +23,7 @@
 #define VTK_PERIODIC_ARRAY_AXIS_Y 1
 #define VTK_PERIODIC_ARRAY_AXIS_Z 2
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMatrix3x3;
 
 template <class Scalar>
@@ -51,32 +40,32 @@ public:
    */
   void InitializeArray(vtkAOSDataArrayTemplate<Scalar>* inputData);
 
-  //@{
+  ///@{
   /**
    * Set/Get the rotation angle in degrees. Default is 0.
    */
   void SetAngle(double angle);
   vtkGetMacro(Angle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the rotation center. Default is 0,0,0.
    */
   void SetCenter(double* center);
   vtkGetVector3Macro(Center, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the rotation axis. Default is VTK_PERIODIC_ARRAY_AXIS_X axis.
    */
   void SetAxis(int axis);
   vtkGetMacro(Axis, int);
-  void SetAxisToX(void) { this->SetAxisType(VTK_PERIODIC_ARRAY_AXIS_X); }
-  void SetAxisToY(void) { this->SetAxisType(VTK_PERIODIC_ARRAY_AXIS_Y); }
-  void SetAxisToZ(void) { this->SetAxisType(VTK_PERIODIC_ARRAY_AXIS_Z); }
-  //@}
+  void SetAxisToX() { this->SetAxisType(VTK_PERIODIC_ARRAY_AXIS_X); }
+  void SetAxisToY() { this->SetAxisType(VTK_PERIODIC_ARRAY_AXIS_Y); }
+  void SetAxisToZ() { this->SetAxisType(VTK_PERIODIC_ARRAY_AXIS_Z); }
+  ///@}
 
 protected:
   vtkAngularPeriodicDataArray();
@@ -104,6 +93,7 @@ private:
   vtkMatrix3x3* RotationMatrix;
 };
 
+VTK_ABI_NAMESPACE_END
 #include "vtkAngularPeriodicDataArray.txx"
 
 #endif // vtkAngularPeriodicDataArray_h

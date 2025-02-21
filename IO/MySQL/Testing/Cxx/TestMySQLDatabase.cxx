@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestMySQLDatabase.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 // .SECTION Thanks
 // Thanks to Andrew Wilson and Philippe Pebay from Sandia National Laboratories
 // for implementing this test.
@@ -39,10 +23,8 @@
 #include "vtkRowQueryToTable.h"
 #include "vtkSQLDatabaseSchema.h"
 #include "vtkSQLQuery.h"
-#include "vtkStdString.h"
 #include "vtkTable.h"
 #include "vtkTimePointUtility.h"
-#include "vtkToolkits.h"
 #include "vtkVariant.h"
 #include "vtkVariantArray.h"
 
@@ -65,7 +47,7 @@ int TestMySQLDatabase(int, char** const)
   }
 
   vtkSQLQuery* query = db->GetQueryInstance();
-  vtkStdString createQuery(
+  std::string createQuery(
     "CREATE TABLE IF NOT EXISTS people (name TEXT, age INTEGER, weight FLOAT)");
   cout << createQuery << endl;
   query->SetQuery(createQuery.c_str());
@@ -117,7 +99,7 @@ int TestMySQLDatabase(int, char** const)
       {
         cerr << ", ";
       }
-      cerr << query->DataValue(field).ToString().c_str();
+      cerr << query->DataValue(field).ToString();
     }
     cerr << endl;
   }
@@ -146,7 +128,7 @@ int TestMySQLDatabase(int, char** const)
       {
         cerr << ", ";
       }
-      cerr << va->GetValue(field).ToString().c_str();
+      cerr << va->GetValue(field).ToString();
     }
     cerr << endl;
   }
@@ -220,7 +202,7 @@ int TestMySQLDatabase(int, char** const)
     return 1;
   }
 
-  std::vector<vtkStdString> tables;
+  std::vector<std::string> tables;
   while (query->NextRow())
   {
     tables.push_back(query->DataValue(0).ToString());
@@ -241,12 +223,12 @@ int TestMySQLDatabase(int, char** const)
   cerr << "@@ Inspecting these tables..."
        << "\n";
 
-  vtkStdString queryStr;
+  std::string queryStr;
   int tblHandle = schema.GetTableBHandle();
 
   for (tblHandle = 0; tblHandle < numTbl; ++tblHandle)
   {
-    vtkStdString tblName(schema->GetTableNameFromHandle(tblHandle));
+    std::string tblName(schema->GetTableNameFromHandle(tblHandle));
     cerr << "   Table: " << tblName << "\n";
 
     if (tblName != tables[tblHandle])
@@ -277,7 +259,7 @@ int TestMySQLDatabase(int, char** const)
         }
         else // if ( field )
         {
-          vtkStdString colName(schema->GetColumnNameFromHandle(tblHandle, colHandle));
+          std::string colName(schema->GetColumnNameFromHandle(tblHandle, colHandle));
           if (colName != query->DataValue(field).ToString())
           {
             cerr << "Found an incorrect column name: " << query->DataValue(field).ToString()
@@ -286,7 +268,7 @@ int TestMySQLDatabase(int, char** const)
           }
           cerr << "     Column: ";
         }
-        cerr << query->DataValue(field).ToString().c_str();
+        cerr << query->DataValue(field).ToString();
       }
       cerr << endl;
     }
@@ -318,7 +300,7 @@ int TestMySQLDatabase(int, char** const)
         ++idxHandle;
       }
 
-      vtkStdString colName(schema->GetIndexColumnNameFromHandle(tblHandle, idxHandle, cnmHandle));
+      std::string colName(schema->GetIndexColumnNameFromHandle(tblHandle, idxHandle, cnmHandle));
       for (int field = 0; field < numFields; ++field)
       {
         if (field)
@@ -329,7 +311,7 @@ int TestMySQLDatabase(int, char** const)
         {
           cerr << "     Index: ";
         }
-        cerr << query->DataValue(field).ToString().c_str();
+        cerr << query->DataValue(field).ToString();
       }
       cerr << endl;
 
@@ -427,7 +409,7 @@ int TestMySQLDatabase(int, char** const)
   cerr << "@@ Escaping a naughty string...";
 
   queryStr = "INSERT INTO atable (somename,somenmbr) VALUES ( " +
-    query->EscapeString(vtkStdString("Str\"ang'eS\ntring"), true) + ", 2 )";
+    query->EscapeString(std::string("Str\"ang'eS\ntring"), true) + ", 2 )";
   query->SetQuery(queryStr);
   if (!query->Execute())
   {
@@ -460,13 +442,13 @@ int TestMySQLDatabase(int, char** const)
     return 1;
   }
 
-  cerr << query->DataValue(0).ToString().c_str() << "> ";
+  cerr << query->DataValue(0).ToString() << "> ";
   cerr << " done." << endl;
 
   // 8. Drop tables
   cerr << "@@ Dropping these tables...";
 
-  for (std::vector<vtkStdString>::iterator it = tables.begin(); it != tables.end(); ++it)
+  for (std::vector<std::string>::iterator it = tables.begin(); it != tables.end(); ++it)
   {
     queryStr = "DROP TABLE ";
     queryStr += *it;

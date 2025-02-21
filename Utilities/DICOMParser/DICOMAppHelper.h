@@ -1,19 +1,5 @@
-/*=========================================================================
-
-  Program:   DICOMParser
-  Module:    DICOMAppHelper.h
-  Language:  C++
-
-  Copyright (c) 2003 Matt Turek
-  All rights reserved.
-  See Copyright.txt for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) 2003 Matt Turek
+// SPDX-License-Identifier: BSD-4-Clause
 #ifndef __DICOM_APP_HELPER_H_
 #define __DICOM_APP_HELPER_H_
 
@@ -23,6 +9,7 @@
 #pragma warning(push, 3)
 #endif
 
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -34,15 +21,13 @@
 #pragma warning(default : 4018)
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 class DICOMParser;
 
 // Function object for sorting strings
 struct ltstdstr
 {
-  bool operator()(const dicom_stl::string& s1, const dicom_stl::string& s2) const
-  {
-    return s1 < s2;
-  }
+  bool operator()(const std::string& s1, const std::string& s2) const { return s1 < s2; }
 };
 
 // Helper structure for DICOM elements
@@ -95,7 +80,7 @@ class DICOMAppHelperImplementation;
  * DICOMAppHelper for the resolution, pixel size, and pixel data.
  *
  * If a DICOMParser scans more than one file, the DICOMAppHelper will
- * group filesnames by SeriesUID.  This allows an application to pass
+ * group filenames by SeriesUID.  This allows an application to pass
  * a series of DICOM files to the DICOMParser (which via the callback
  * mechanism allows the DICOMAppHelper to cache information) and then
  * query the DICOMAppHelper for the files that are from the same
@@ -233,8 +218,8 @@ public:
     // be ignored for CS types.  We don't handle this
     // well yet.
     //
-    dicom_stl::string str1(*this->PhotometricInterpretation);
-    dicom_stl::string rgb("RGB ");
+    std::string str1(*this->PhotometricInterpretation);
+    std::string rgb("RGB ");
 
     if (str1 == rgb)
     {
@@ -248,7 +233,7 @@ public:
 
   /** Get the transfer syntax UID for the last image processed by the
    *  DICOMParser. */
-  dicom_stl::string GetTransferSyntaxUID() { return *(this->TransferSyntaxUID); }
+  std::string GetTransferSyntaxUID() { return *(this->TransferSyntaxUID); }
 
   /** Get a textual description of the transfer syntax of the last
    *  image processed by the DICOMParser. */
@@ -280,47 +265,47 @@ public:
 
   /** Get the series UIDs for the files processed since the last
    * clearing of the cache. */
-  void GetSeriesUIDs(dicom_stl::vector<dicom_stl::string>& v);
+  void GetSeriesUIDs(std::vector<std::string>& v);
 
   /** Get the filenames for a series ordered by slice number. */
-  void GetSliceNumberFilenamePairs(const dicom_stl::string& seriesUID,
-    dicom_stl::vector<dicom_stl::pair<int, dicom_stl::string> >& v, bool ascending = true);
+  void GetSliceNumberFilenamePairs(const std::string& seriesUID,
+    std::vector<std::pair<int, std::string>>& v, bool ascending = true);
 
   /** Get the filenames for a series order by slice number.  Use the
       first series by default. */
   void GetSliceNumberFilenamePairs(
-    dicom_stl::vector<dicom_stl::pair<int, dicom_stl::string> >& v, bool ascending = true);
+    std::vector<std::pair<int, std::string>>& v, bool ascending = true);
 
   /* Get the filenames for a series ordered by slice location. */
-  void GetSliceLocationFilenamePairs(const dicom_stl::string& seriesUID,
-    dicom_stl::vector<dicom_stl::pair<float, dicom_stl::string> >& v, bool ascending = true);
+  void GetSliceLocationFilenamePairs(const std::string& seriesUID,
+    std::vector<std::pair<float, std::string>>& v, bool ascending = true);
 
   /* Get the filenames for a series ordered by slice location. Use the
    * first series by default. */
   void GetSliceLocationFilenamePairs(
-    dicom_stl::vector<dicom_stl::pair<float, dicom_stl::string> >& v, bool ascending = true);
+    std::vector<std::pair<float, std::string>>& v, bool ascending = true);
 
   /* Get the filenames for a series ordered by image position
      patient. This is the most reliable way to order the images in a
      series. */
-  void GetImagePositionPatientFilenamePairs(const dicom_stl::string& seriesUID,
-    dicom_stl::vector<dicom_stl::pair<float, dicom_stl::string> >& v, bool ascending = true);
+  void GetImagePositionPatientFilenamePairs(const std::string& seriesUID,
+    std::vector<std::pair<float, std::string>>& v, bool ascending = true);
 
   /* Get the filenames for a series ordered by image position
      patient. This is the most reliable way to order the images in a
      series. Use the first series by default. */
   void GetImagePositionPatientFilenamePairs(
-    dicom_stl::vector<dicom_stl::pair<float, dicom_stl::string> >& v, bool ascending = true);
+    std::vector<std::pair<float, std::string>>& v, bool ascending = true);
 
   float GetRescaleSlope() { return this->RescaleSlope; }
 
   float GetRescaleOffset() { return this->RescaleOffset; }
 
-  dicom_stl::string GetPatientName() { return *(this->PatientName); }
+  std::string GetPatientName() { return *(this->PatientName); }
 
-  dicom_stl::string GetStudyUID() { return *(this->StudyUID); }
+  std::string GetStudyUID() { return *(this->StudyUID); }
 
-  dicom_stl::string GetStudyID() { return *(this->StudyID); }
+  std::string GetStudyID() { return *(this->StudyID); }
 
   void PatientNameCallback(
     DICOMParser*, doublebyte, doublebyte, DICOMParser::VRTypes, unsigned char* val, quadbyte);
@@ -348,30 +333,30 @@ protected:
   float ImageOrientationPatient[6];
 
   // map from series UID to vector of files in the series
-  // dicom_stl::map<dicom_stl::string, dicom_stl::vector<dicom_stl::string>, ltstdstr> SeriesUIDMap;
+  // std::map<std::string, std::vector<std::string>, ltstdstr> SeriesUIDMap;
 
   // map from filename to intraseries sortable tags
-  // dicom_stl::map<dicom_stl::string, DICOMOrderingElements, ltstdstr> SliceOrderingMap;
+  // std::map<std::string, DICOMOrderingElements, ltstdstr> SliceOrderingMap;
 
-  typedef dicom_stl::map<dicom_stl::pair<doublebyte, doublebyte>, DICOMTagInfo> TagMapType;
+  typedef std::map<std::pair<doublebyte, doublebyte>, DICOMTagInfo> TagMapType;
   // TagMapType TagMap;
 
-  dicom_stream::ofstream* HeaderFile;
+  std::ofstream* HeaderFile;
 
   // 0 unsigned
   // 1 2s complement (signed)
   int PixelRepresentation;
-  dicom_stl::string* PhotometricInterpretation;
-  dicom_stl::string* TransferSyntaxUID;
+  std::string* PhotometricInterpretation;
+  std::string* TransferSyntaxUID;
   float RescaleOffset;
   float RescaleSlope;
   void* ImageData;
   DICOMParser::VRTypes ImageDataType;
   unsigned long ImageDataLengthInBytes;
 
-  dicom_stl::string* PatientName;
-  dicom_stl::string* StudyUID;
-  dicom_stl::string* StudyID;
+  std::string* PatientName;
+  std::string* StudyUID;
+  std::string* StudyID;
   float GantryAngle;
 
   DICOMMemberCallback<DICOMAppHelper>* SeriesUIDCB;
@@ -413,4 +398,5 @@ private:
 #pragma warning(pop)
 #endif
 
+VTK_ABI_NAMESPACE_END
 #endif

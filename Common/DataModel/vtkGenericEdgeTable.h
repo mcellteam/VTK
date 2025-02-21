@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericEdgeTable.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericEdgeTable
  * @brief   keep track of edges (defined by pair of integer id's)
@@ -33,6 +21,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkEdgeTableEdge;
 class vtkEdgeTablePoints;
 
@@ -44,13 +33,13 @@ public:
    */
   static vtkGenericEdgeTable* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK type and print macros.
    */
   vtkTypeMacro(vtkGenericEdgeTable, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Split the edge with the indicated point id.
@@ -114,14 +103,14 @@ public:
    */
   int CheckPoint(vtkIdType ptId, double point[3], double* scalar);
 
-  //@{
+  ///@{
   /**
    * Insert point associated with an edge.
    */
   void InsertPoint(vtkIdType ptId, double point[3]);
   // \pre: sizeof(s)==GetNumberOfComponents()
   void InsertPointAndScalar(vtkIdType ptId, double pt[3], double* s);
-  //@}
+  ///@}
 
   /**
    * Remove a point from the point table.
@@ -133,7 +122,7 @@ public:
    */
   void IncrementPointReferenceCount(vtkIdType ptId);
 
-  //@{
+  ///@{
   /**
    * For debugging purposes. It is particularly useful to dump the table
    * and check that nothing is left after a complete iteration. LoadFactor
@@ -141,7 +130,7 @@ public:
    */
   void DumpTable();
   void LoadFactor();
-  //@}
+  ///@}
 
   class PointEntry
   {
@@ -213,7 +202,7 @@ public:
       this->Reference = 0;
       this->CellId = -1;
     }
-    ~EdgeEntry() {}
+    ~EdgeEntry() = default;
 
     EdgeEntry(const EdgeEntry& copy)
     {
@@ -252,7 +241,7 @@ protected:
   void InsertEdge(
     vtkIdType e1, vtkIdType e2, vtkIdType cellId, int ref, int toSplit, vtkIdType& ptId);
 
-  // Hash table that contiain entry based on edges:
+  // Hash table that contain entry based on edges:
   vtkEdgeTableEdge* EdgeTable;
 
   // At end of process we should be able to retrieve points coord based on pointid
@@ -275,4 +264,5 @@ private:
   void operator=(const vtkGenericEdgeTable&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

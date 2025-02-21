@@ -1,18 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPPolyDataReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLPPolyDataReader.h"
+
+#include "vtkAbstractArray.h"
 #include "vtkCellArray.h"
 #include "vtkInformation.h"
 #include "vtkObjectFactory.h"
@@ -22,39 +12,40 @@
 #include "vtkXMLDataElement.h"
 #include "vtkXMLPolyDataReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLPPolyDataReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPPolyDataReader::vtkXMLPPolyDataReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPPolyDataReader::~vtkXMLPPolyDataReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPPolyDataReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkXMLPPolyDataReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkXMLPPolyDataReader::GetOutput(int idx)
 {
   return vtkPolyData::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLPPolyDataReader::GetDataSetName()
 {
   return "PPolyData";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPPolyDataReader::GetOutputUpdateExtent(int& piece, int& numberOfPieces, int& ghostLevel)
 {
   vtkInformation* outInfo = this->GetCurrentOutputInformation();
@@ -63,7 +54,7 @@ void vtkXMLPPolyDataReader::GetOutputUpdateExtent(int& piece, int& numberOfPiece
   ghostLevel = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPPolyDataReader::GetNumberOfCellsInPiece(int piece)
 {
   if (this->PieceReaders[piece])
@@ -73,7 +64,7 @@ vtkIdType vtkXMLPPolyDataReader::GetNumberOfCellsInPiece(int piece)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPPolyDataReader::GetNumberOfVertsInPiece(int piece)
 {
   if (this->PieceReaders[piece])
@@ -84,7 +75,7 @@ vtkIdType vtkXMLPPolyDataReader::GetNumberOfVertsInPiece(int piece)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPPolyDataReader::GetNumberOfLinesInPiece(int piece)
 {
   if (this->PieceReaders[piece])
@@ -95,7 +86,7 @@ vtkIdType vtkXMLPPolyDataReader::GetNumberOfLinesInPiece(int piece)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPPolyDataReader::GetNumberOfStripsInPiece(int piece)
 {
   if (this->PieceReaders[piece])
@@ -106,7 +97,7 @@ vtkIdType vtkXMLPPolyDataReader::GetNumberOfStripsInPiece(int piece)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPPolyDataReader::GetNumberOfPolysInPiece(int piece)
 {
   if (this->PieceReaders[piece])
@@ -117,7 +108,7 @@ vtkIdType vtkXMLPPolyDataReader::GetNumberOfPolysInPiece(int piece)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPPolyDataReader::SetupOutputTotals()
 {
   this->Superclass::SetupOutputTotals();
@@ -143,7 +134,7 @@ void vtkXMLPPolyDataReader::SetupOutputTotals()
   this->StartPoly = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPPolyDataReader::SetupOutputData()
 {
   this->Superclass::SetupOutputData();
@@ -167,7 +158,7 @@ void vtkXMLPPolyDataReader::SetupOutputData()
   outVerts->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPPolyDataReader::SetupNextPiece()
 {
   this->Superclass::SetupNextPiece();
@@ -177,7 +168,7 @@ void vtkXMLPPolyDataReader::SetupNextPiece()
   this->StartPoly += this->GetNumberOfPolysInPiece(this->Piece);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPPolyDataReader::ReadPieceData()
 {
   if (!this->Superclass::ReadPieceData())
@@ -204,8 +195,8 @@ int vtkXMLPPolyDataReader::ReadPieceData()
   return 1;
 }
 
-//----------------------------------------------------------------------------
-void vtkXMLPPolyDataReader::CopyArrayForCells(vtkDataArray* inArray, vtkDataArray* outArray)
+//------------------------------------------------------------------------------
+void vtkXMLPPolyDataReader::CopyArrayForCells(vtkAbstractArray* inArray, vtkAbstractArray* outArray)
 {
   if (!this->PieceReaders[this->Piece])
   {
@@ -249,15 +240,16 @@ void vtkXMLPPolyDataReader::CopyArrayForCells(vtkDataArray* inArray, vtkDataArra
     inArray->GetVoidPointer(inStartCell * components), numCells * tupleSize);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLDataReader* vtkXMLPPolyDataReader::CreatePieceReader()
 {
   return vtkXMLPolyDataReader::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPPolyDataReader::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

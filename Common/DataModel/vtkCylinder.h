@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCylinder.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCylinder
  * @brief   implicit function for a cylinder
@@ -30,6 +18,9 @@
  * The cylinder is infinite in extent. To truncate the cylinder in
  * modeling operations use the vtkImplicitBoolean in combination with
  * clipping planes.
+ *
+ * @sa
+ * vtkCylinderSource
  */
 
 #ifndef vtkCylinder_h
@@ -38,6 +29,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkImplicitFunction.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONDATAMODEL_EXPORT vtkCylinder : public vtkImplicitFunction
 {
 public:
@@ -50,36 +42,36 @@ public:
    */
   static vtkCylinder* New();
 
-  //@{
+  ///@{
   /**
    * Evaluate cylinder equation F(r) = r^2 - Radius^2.
    */
   using vtkImplicitFunction::EvaluateFunction;
   double EvaluateFunction(double x[3]) override;
-  //@}
+  ///@}
 
   /**
    * Evaluate cylinder function gradient.
    */
   void EvaluateGradient(double x[3], double g[3]) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the cylinder radius.
    */
-  vtkSetMacro(Radius, double);
+  vtkSetClampMacro(Radius, double, 0, VTK_DOUBLE_MAX);
   vtkGetMacro(Radius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the cylinder center.
    */
   vtkSetVector3Macro(Center, double);
   vtkGetVector3Macro(Center, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the axis of the cylinder. If the axis is not specified as
    * a unit vector, it will be normalized. If zero-length axis vector
@@ -88,11 +80,11 @@ public:
   void SetAxis(double ax, double ay, double az);
   void SetAxis(double a[3]);
   vtkGetVector3Macro(Axis, double);
-  //@}
+  ///@}
 
 protected:
   vtkCylinder();
-  ~vtkCylinder() override {}
+  ~vtkCylinder() override = default;
 
   double Radius;
   double Center[3];
@@ -103,4 +95,5 @@ private:
   void operator=(const vtkCylinder&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

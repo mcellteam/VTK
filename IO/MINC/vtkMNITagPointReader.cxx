@@ -1,50 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMNITagPointReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=========================================================================
-
-Copyright (c) 2006 Atamai, Inc.
-
-Use, modification and redistribution of the software, in source or
-binary forms, are permitted provided that the following terms and
-conditions are met:
-
-1) Redistribution of the source code, in verbatim or modified
-   form, must retain the above copyright notice, this license,
-   the following disclaimer, and any notices that refer to this
-   license and/or the following disclaimer.
-
-2) Redistribution in binary form must include the above copyright
-   notice, a copy of this license and the following disclaimer
-   in the documentation or with other materials provided with the
-   distribution.
-
-3) Modified copies of the source code must be clearly marked as such,
-   and must not be misrepresented as verbatim copies of the source code.
-
-THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE SOFTWARE "AS IS"
-WITHOUT EXPRESSED OR IMPLIED WARRANTY INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  IN NO EVENT SHALL ANY COPYRIGHT HOLDER OR OTHER PARTY WHO MAY
-MODIFY AND/OR REDISTRIBUTE THE SOFTWARE UNDER THE TERMS OF THIS LICENSE
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, LOSS OF DATA OR DATA BECOMING INACCURATE
-OR LOSS OF PROFIT OR BUSINESS INTERRUPTION) ARISING IN ANY WAY OUT OF
-THE USE OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGES.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2006 Atamai, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMNITagPointReader.h"
 
@@ -69,10 +25,11 @@ POSSIBILITY OF SUCH DAMAGES.
 #include <vtksys/FStream.hxx>
 #include <vtksys/SystemTools.hxx>
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMNITagPointReader);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMNITagPointReader::vtkMNITagPointReader()
 {
   this->FileName = nullptr;
@@ -84,14 +41,14 @@ vtkMNITagPointReader::vtkMNITagPointReader()
   this->SetNumberOfOutputPorts(2);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMNITagPointReader::~vtkMNITagPointReader()
 {
   delete[] this->FileName;
   delete[] this->Comments;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNITagPointReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -101,7 +58,7 @@ void vtkMNITagPointReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Comments: " << (this->Comments ? this->Comments : "none") << "\n";
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITagPointReader::CanReadFile(const char* fname)
 {
   // First make sure the file exists.  This prevents an empty file
@@ -133,7 +90,7 @@ int vtkMNITagPointReader::CanReadFile(const char* fname)
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Internal function to read in a line up to 256 characters and then
 // skip to the next line in the file.
 int vtkMNITagPointReader::ReadLine(
@@ -155,7 +112,7 @@ int vtkMNITagPointReader::ReadLine(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Skip all blank lines or comment lines and return the first useful line
 int vtkMNITagPointReader::ReadLineAfterComments(
   istream& infile, std::string& linetext, std::string::iterator& pos)
@@ -170,18 +127,18 @@ int vtkMNITagPointReader::ReadLineAfterComments(
     {
       ++pos;
     }
-    if (linetext.length() != 0 && linetext[0] == '%')
+    if (!linetext.empty() && linetext[0] == '%')
     {
-      if (comments.length() > 0)
+      if (!comments.empty())
       {
         comments.push_back('\n');
       }
-      if (linetext.length())
+      if (!linetext.empty())
       {
         comments.append(linetext);
       }
     }
-    else if (linetext.length() != 0 && pos != linetext.end())
+    else if (!linetext.empty() && pos != linetext.end())
     {
       delete[] this->Comments;
       this->Comments = new char[comments.length() + 1];
@@ -195,7 +152,7 @@ int vtkMNITagPointReader::ReadLineAfterComments(
   return 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Skip all whitespace, reading additional lines if necessary if nl != 0
 int vtkMNITagPointReader::SkipWhitespace(
   istream& infile, std::string& linetext, std::string::iterator& pos, int nl)
@@ -224,7 +181,7 @@ int vtkMNITagPointReader::SkipWhitespace(
   return 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Read the left hand side of a statement, including the equals sign
 // and any whitespace following the equals.
 int vtkMNITagPointReader::ParseLeftHandSide(
@@ -258,7 +215,7 @@ int vtkMNITagPointReader::ParseLeftHandSide(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Read a string value.  The terminating semicolon will be read, but
 // won't be included in the output string.  Neither will any
 // whitespace occurring before the semicolon. The string may not be
@@ -344,7 +301,7 @@ int vtkMNITagPointReader::ParseStringValue(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Read an int value
 int vtkMNITagPointReader::ParseIntValues(
   istream& infile, std::string& linetext, std::string::iterator& pos, int* values, int n)
@@ -376,7 +333,7 @@ int vtkMNITagPointReader::ParseIntValues(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Read floating-point values into a point triplet.
 int vtkMNITagPointReader::ParseFloatValues(
   istream& infile, std::string& linetext, std::string::iterator& pos, double* values, int n)
@@ -408,7 +365,7 @@ int vtkMNITagPointReader::ParseFloatValues(
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITagPointReader::ReadFile(vtkPolyData* output1, vtkPolyData* output2)
 {
   // Check that the file name has been set.
@@ -452,8 +409,7 @@ int vtkMNITagPointReader::ReadFile(vtkPolyData* output1, vtkPolyData* output2)
   this->SkipWhitespace(infile, linetext, pos, 1);
   int numVolumes = 1;
   std::string identifier;
-  if (!this->ParseLeftHandSide(infile, linetext, pos, identifier) ||
-    strcmp(identifier.c_str(), "Volumes") != 0 ||
+  if (!this->ParseLeftHandSide(infile, linetext, pos, identifier) || identifier != "Volumes" ||
     !this->ParseIntValues(infile, linetext, pos, &numVolumes, 1) ||
     (numVolumes != 1 && numVolumes != 2) || !this->SkipWhitespace(infile, linetext, pos, 0) ||
     *pos != ';')
@@ -470,8 +426,7 @@ int vtkMNITagPointReader::ReadFile(vtkPolyData* output1, vtkPolyData* output2)
   this->ReadLineAfterComments(infile, linetext, pos);
 
   // Rad the tag points
-  if (!this->ParseLeftHandSide(infile, linetext, pos, identifier) ||
-    strcmp(identifier.c_str(), "Points") != 0)
+  if (!this->ParseLeftHandSide(infile, linetext, pos, identifier) || identifier != "Points")
   {
     vtkErrorMacro("ReadFile: Cannot find Points in file; " << this->FileName);
     infile.close();
@@ -537,7 +492,7 @@ int vtkMNITagPointReader::ReadFile(vtkPolyData* output1, vtkPolyData* output2)
     this->SkipWhitespace(infile, linetext, pos, 0);
     if (pos != linetext.end() && *pos == '\"')
     {
-      vtkStdString stringval;
+      std::string stringval;
       if (!this->ParseStringValue(infile, linetext, pos, stringval))
       {
         errorOccurred = 1;
@@ -601,7 +556,7 @@ int vtkMNITagPointReader::ReadFile(vtkPolyData* output1, vtkPolyData* output2)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITagPointReader::GetNumberOfVolumes()
 {
   this->Update();
@@ -609,7 +564,7 @@ int vtkMNITagPointReader::GetNumberOfVolumes()
   return this->NumberOfVolumes;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPoints* vtkMNITagPointReader::GetPoints(int port)
 {
   this->Update();
@@ -629,7 +584,7 @@ vtkPoints* vtkMNITagPointReader::GetPoints(int port)
   return nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStringArray* vtkMNITagPointReader::GetLabelText()
 {
   this->Update();
@@ -644,7 +599,7 @@ vtkStringArray* vtkMNITagPointReader::GetLabelText()
   return nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDoubleArray* vtkMNITagPointReader::GetWeights()
 {
   this->Update();
@@ -659,7 +614,7 @@ vtkDoubleArray* vtkMNITagPointReader::GetWeights()
   return nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIntArray* vtkMNITagPointReader::GetStructureIds()
 {
   this->Update();
@@ -674,7 +629,7 @@ vtkIntArray* vtkMNITagPointReader::GetStructureIds()
   return nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIntArray* vtkMNITagPointReader::GetPatientIds()
 {
   this->Update();
@@ -689,7 +644,7 @@ vtkIntArray* vtkMNITagPointReader::GetPatientIds()
   return nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkMNITagPointReader::GetComments()
 {
   this->Update();
@@ -697,7 +652,7 @@ const char* vtkMNITagPointReader::GetComments()
   return this->Comments;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNITagPointReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -719,3 +674,4 @@ int vtkMNITagPointReader::RequestData(vtkInformation* vtkNotUsed(request),
   // read the file
   return this->ReadFile(output1, output2);
 }
+VTK_ABI_NAMESPACE_END

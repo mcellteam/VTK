@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransform2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkTransform2D
@@ -37,12 +25,14 @@
 
 #include "vtkCommonTransformsModule.h" // For export macro
 #include "vtkObject.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
 #include "vtkMatrix3x3.h" // Needed for inline methods
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints2D;
 
-class VTKCOMMONTRANSFORMS_EXPORT vtkTransform2D : public vtkObject
+class VTKCOMMONTRANSFORMS_EXPORT VTK_MARSHALAUTO vtkTransform2D : public vtkObject
 {
 public:
   static vtkTransform2D* New();
@@ -87,15 +77,15 @@ public:
   void SetMatrix(vtkMatrix3x3* matrix) { this->SetMatrix(matrix->GetData()); }
   void SetMatrix(const double elements[9]);
 
-  //@{
+  ///@{
   /**
    * Get the underlying 3x3 matrix.
    */
   vtkGetObjectMacro(Matrix, vtkMatrix3x3);
   void GetMatrix(vtkMatrix3x3* matrix);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return the position from the current transformation matrix as an array
    * of two floating point numbers. This is simply returning the translation
@@ -109,9 +99,9 @@ public:
     pos[0] = static_cast<float>(temp[0]);
     pos[1] = static_cast<float>(temp[1]);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return the x and y scale from the current transformation matrix as an array
    * of two floating point numbers. This is simply returning the scale
@@ -125,7 +115,7 @@ public:
     pos[0] = static_cast<float>(temp[0]);
     pos[1] = static_cast<float>(temp[1]);
   }
-  //@}
+  ///@}
 
   /**
    * Return a matrix which is the inverse of the current transformation
@@ -185,7 +175,7 @@ public:
    */
   void InverseTransformPoints(vtkPoints2D* inPts, vtkPoints2D* outPts);
 
-  //@{
+  ///@{
   /**
    * Use this method only if you wish to compute the transformation in
    * homogeneous (x,y,w) coordinates, otherwise use TransformPoint().
@@ -196,7 +186,7 @@ public:
   {
     this->GetMatrix()->MultiplyPoint(in, out);
   }
-  //@}
+  ///@}
 
 protected:
   vtkTransform2D();
@@ -212,4 +202,5 @@ private:
   void operator=(const vtkTransform2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

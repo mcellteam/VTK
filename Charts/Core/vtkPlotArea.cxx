@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkPlotArea.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkPlotArea.h"
 
 #include "vtkArrayDispatch.h"
@@ -28,7 +17,7 @@
 #include "vtkPen.h"
 #include "vtkPoints2D.h"
 #include "vtkTable.h"
-#include "vtkVectorOperators.h"
+#include "vtkVector.h"
 #include "vtkWeakPointer.h"
 
 #include <algorithm>
@@ -36,6 +25,7 @@
 #include <set>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 inline bool vtkIsBadPoint(const vtkVector2f& vec)
@@ -56,14 +46,7 @@ class vtkPlotArea::vtkTableCache
     vtkVector2f pos;
     static bool compVector3fX(const vtkIndexedVector2f& v1, const vtkIndexedVector2f& v2)
     {
-      if (v1.pos.GetX() < v2.pos.GetX())
-      {
-        return true;
-      }
-      else
-      {
-        return false;
-      }
+      return v1.pos.GetX() < v2.pos.GetX();
     }
     // See if the point is within tolerance.
     static bool inRange(
@@ -152,8 +135,8 @@ private:
       assert(array->GetNumberOfComponents() == this->ValidPointMask->GetNumberOfComponents());
 
       using Dispatcher =
-        vtkArrayDispatch::Dispatch2ByArray<vtkArrayDispatch::Arrays, // First array is input, can be
-                                                                     // anything.
+        vtkArrayDispatch::Dispatch2ByArray<vtkArrayDispatch::AllArrays, // First array is input, can
+                                                                        // be anything.
           vtkTypeList::Create<vtkCharArray> // Second is always vtkCharArray.
           >;
       ComputeArrayRange worker;
@@ -483,64 +466,59 @@ public:
 };
 
 vtkStandardNewMacro(vtkPlotArea);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlotArea::vtkPlotArea()
   : TableCache(new vtkPlotArea::vtkTableCache())
 {
   this->TooltipDefaultLabelFormat = "%l: %x:(%a, %b)";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlotArea::~vtkPlotArea()
 {
   delete this->TableCache;
   this->TableCache = nullptr;
 }
 
-//----------------------------------------------------------------------------
-void vtkPlotArea::Update()
+//------------------------------------------------------------------------------
+bool vtkPlotArea::UpdateCache()
 {
-  if (!this->Visible)
+  if (!this->Superclass::UpdateCache())
   {
-    return;
+    return false;
   }
 
-  vtkTable* table = this->GetInput();
-  if (!table)
-  {
-    vtkDebugMacro("Update event called with no input table set.");
-    this->TableCache->Reset();
-    return;
-  }
-
-  if (this->Data->GetMTime() > this->UpdateTime || table->GetMTime() > this->UpdateTime ||
-    this->GetMTime() > this->UpdateTime)
-  {
-    vtkTableCache& cache = (*this->TableCache);
-
-    cache.Reset();
-    cache.ValidPointMask = (this->ValidPointMaskName.empty() == false)
-      ? vtkArrayDownCast<vtkCharArray>(table->GetColumnByName(this->ValidPointMaskName))
-      : nullptr;
-    cache.SetPoints(
-      this->UseIndexForXSeries ? nullptr : this->Data->GetInputArrayToProcess(0, table),
-      this->Data->GetInputArrayToProcess(1, table), this->Data->GetInputArrayToProcess(2, table));
-    this->UpdateTime.Modified();
-  }
-}
-
-//----------------------------------------------------------------------------
-void vtkPlotArea::UpdateCache()
-{
+  vtkTable* table = this->Data->GetInput();
   vtkTableCache& cache = (*this->TableCache);
-  if (!this->Visible || !cache.IsInputDataValid())
+  cache.Reset();
+
+  if (!this->ValidPointMaskName.empty())
   {
-    return;
+    cache.ValidPointMask =
+      vtkArrayDownCast<vtkCharArray>(table->GetColumnByName(this->ValidPointMaskName.c_str()));
   }
+  else
+  {
+    cache.ValidPointMask = nullptr;
+  }
+
+  if (this->UseIndexForXSeries)
+  {
+    cache.SetPoints(nullptr, this->Data->GetInputArrayToProcess(1, table),
+      this->Data->GetInputArrayToProcess(2, table));
+  }
+  else
+  {
+    cache.SetPoints(this->Data->GetInputArrayToProcess(0, table),
+      this->Data->GetInputArrayToProcess(1, table), this->Data->GetInputArrayToProcess(2, table));
+  }
+
+  this->UpdateTime.Modified();
   cache.UpdateCache(this);
+  return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotArea::GetBounds(double bounds[4])
 {
   vtkTableCache& cache = (*this->TableCache);
@@ -551,7 +529,7 @@ void vtkPlotArea::GetBounds(double bounds[4])
   cache.GetDataBounds(bounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPlotArea::Paint(vtkContext2D* painter)
 {
   vtkTableCache& cache = (*this->TableCache);
@@ -582,7 +560,7 @@ bool vtkPlotArea::Paint(vtkContext2D* painter)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPlotArea::PaintLegend(
   vtkContext2D* painter, const vtkRectf& rect, int vtkNotUsed(legendIndex))
 {
@@ -592,29 +570,10 @@ bool vtkPlotArea::PaintLegend(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPlotArea::GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
   vtkVector2f* location, vtkIdType* vtkNotUsed(segmentId))
 {
-
-#ifndef VTK_LEGACY_REMOVE
-  if (!this->LegacyRecursionFlag)
-  {
-    this->LegacyRecursionFlag = true;
-    vtkIdType ret = this->GetNearestPoint(point, tolerance, location);
-    this->LegacyRecursionFlag = false;
-    if (ret != -1)
-    {
-      VTK_LEGACY_REPLACED_BODY(vtkPlotArea::GetNearestPoint(const vtkVector2f& point,
-                                 const vtkVector2f& tolerance, vtkVector2f* location),
-        "VTK 9.0",
-        vtkPlotArea::GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
-          vtkVector2f* location, vtkIdType* segmentId));
-      return ret;
-    }
-  }
-#endif // VTK_LEGACY_REMOVE
-
   vtkTableCache& cache = (*this->TableCache);
   if (!this->Visible || !cache.IsInputDataValid() || cache.Points->GetNumberOfPoints() == 0)
   {
@@ -623,12 +582,12 @@ vtkIdType vtkPlotArea::GetNearestPoint(const vtkVector2f& point, const vtkVector
   return cache.GetNearestPoint(point, tolerance, location);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkPlotArea::GetTooltipLabel(
   const vtkVector2d& plotPos, vtkIdType seriesIndex, vtkIdType segmentIndex)
 {
-  vtkStdString tooltipLabel;
-  vtkStdString format = this->Superclass::GetTooltipLabel(plotPos, seriesIndex, segmentIndex);
+  std::string tooltipLabel;
+  std::string format = this->Superclass::GetTooltipLabel(plotPos, seriesIndex, segmentIndex);
 
   vtkIdType idx = (seriesIndex / 2) * 2;
 
@@ -671,22 +630,37 @@ vtkStdString vtkPlotArea::GetTooltipLabel(
   return tooltipLabel;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotArea::SetColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
   this->Brush->SetColor(r, g, b, a);
   this->Superclass::SetColor(r, g, b, a);
 }
 
-//----------------------------------------------------------------------------
-void vtkPlotArea::SetColor(double r, double g, double b)
+//------------------------------------------------------------------------------
+void vtkPlotArea::SetColor(unsigned char r, unsigned char g, unsigned char b)
 {
-  this->Brush->SetColorF(r, g, b);
+  this->Brush->SetColor(r, g, b);
   this->Superclass::SetColor(r, g, b);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkPlotArea::SetColorF(double r, double g, double b, double a)
+{
+  this->Brush->SetColorF(r, g, b, a);
+  this->Superclass::SetColorF(r, g, b);
+}
+
+//------------------------------------------------------------------------------
+void vtkPlotArea::SetColorF(double r, double g, double b)
+{
+  this->Brush->SetColorF(r, g, b);
+  this->Superclass::SetColorF(r, g, b);
+}
+
+//------------------------------------------------------------------------------
 void vtkPlotArea::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

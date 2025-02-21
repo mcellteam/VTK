@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPiecewiseFunctionItem.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPiecewiseFunctionItem.h"
 #include "vtkBrush.h"
@@ -27,18 +15,19 @@
 #include <cassert>
 #include <vector>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPiecewiseFunctionItem);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPiecewiseFunctionItem::vtkPiecewiseFunctionItem()
 {
   this->PolyLinePen->SetLineType(vtkPen::SOLID_LINE);
   this->PiecewiseFunction = nullptr;
-  this->SetColor(1., 1., 1.);
+  this->SetColorF(1., 1., 1.);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPiecewiseFunctionItem::~vtkPiecewiseFunctionItem()
 {
   if (this->PiecewiseFunction)
@@ -49,7 +38,7 @@ vtkPiecewiseFunctionItem::~vtkPiecewiseFunctionItem()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPiecewiseFunctionItem::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -65,7 +54,7 @@ void vtkPiecewiseFunctionItem::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPiecewiseFunctionItem::ComputeBounds(double* bounds)
 {
   this->Superclass::ComputeBounds(bounds);
@@ -77,7 +66,7 @@ void vtkPiecewiseFunctionItem::ComputeBounds(double* bounds)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPiecewiseFunctionItem::SetPiecewiseFunction(vtkPiecewiseFunction* t)
 {
   if (t == this->PiecewiseFunction)
@@ -96,7 +85,7 @@ void vtkPiecewiseFunctionItem::SetPiecewiseFunction(vtkPiecewiseFunction* t)
   this->ScalarsToColorsModified(this->PiecewiseFunction, vtkCommand::ModifiedEvent, nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPiecewiseFunctionItem::ComputeTexture()
 {
   double bounds[4];
@@ -143,3 +132,4 @@ void vtkPiecewiseFunctionItem::ComputeTexture()
     }
   }
 }
+VTK_ABI_NAMESPACE_END

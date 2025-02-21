@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestVector.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Charts includes
 #include "vtkChartXY.h"
@@ -32,7 +20,7 @@
 #include <iostream>
 #include <map>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkTFCallback : public vtkCommand
 {
 public:
@@ -57,7 +45,7 @@ public:
   std::map<unsigned long, int> EventSpy;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestControlPointsItemEvents(int, char*[])
 {
   vtkNew<vtkColorTransferFunction> transferFunction;

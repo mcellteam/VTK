@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAppendPoints.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAppendPoints.h"
 
 #include "vtkDataSetAttributes.h"
@@ -28,22 +16,23 @@
 #include <set>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAppendPoints);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAppendPoints::vtkAppendPoints()
 {
   this->InputIdArrayName = nullptr;
   this->OutputPointsPrecision = vtkAlgorithm::DEFAULT_PRECISION;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAppendPoints::~vtkAppendPoints()
 {
   this->SetInputIdArrayName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is much too long, and has to be broken up!
 // Append data sets into single polygonal data set.
 int vtkAppendPoints::RequestData(vtkInformation* vtkNotUsed(request),
@@ -59,6 +48,10 @@ int vtkAppendPoints::RequestData(vtkInformation* vtkNotUsed(request),
   std::set<std::string> arrayNames;
   for (int idx = 0; idx < numInputs; ++idx)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkInformation* inInfo = inputVector[0]->GetInformationObject(idx);
     vtkPolyData* input = vtkPolyData::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
     if (input && input->GetNumberOfPoints() > 0)
@@ -94,9 +87,13 @@ int vtkAppendPoints::RequestData(vtkInformation* vtkNotUsed(request),
     }
   }
 
-  std::vector<vtkSmartPointer<vtkPolyData> > inputs;
+  std::vector<vtkSmartPointer<vtkPolyData>> inputs;
   for (int idx = 0; idx < numInputs; ++idx)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkInformation* inInfo = inputVector[0]->GetInformationObject(idx);
     vtkPolyData* input = vtkPolyData::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
     if (input && input->GetNumberOfPoints() > 0)
@@ -113,7 +110,7 @@ int vtkAppendPoints::RequestData(vtkInformation* vtkNotUsed(request),
     }
     else
     {
-      inputs.push_back(nullptr);
+      inputs.emplace_back(nullptr);
     }
   }
 
@@ -158,6 +155,10 @@ int vtkAppendPoints::RequestData(vtkInformation* vtkNotUsed(request),
   }
   for (size_t idx = 0; idx < inputs.size(); ++idx)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkPolyData* input = inputs[idx];
     if (input)
     {
@@ -189,7 +190,7 @@ int vtkAppendPoints::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAppendPoints::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -198,7 +199,7 @@ void vtkAppendPoints::PrintSelf(ostream& os, vtkIndent indent)
      << indent << "Output Points Precision: " << this->OutputPointsPrecision << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAppendPoints::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -209,3 +210,4 @@ int vtkAppendPoints::FillInputPortInformation(int port, vtkInformation* info)
   info->Set(vtkAlgorithm::INPUT_IS_OPTIONAL(), 1);
   return 1;
 }
+VTK_ABI_NAMESPACE_END

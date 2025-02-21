@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    UnitTestTriangleIntersection.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <algorithm>
 #include <array>
@@ -120,10 +108,10 @@ void DrawTriangles(double* p1, double* q1, double* r1, double* p2, double* q2, d
 
 namespace
 {
-static const double EPSILON = 1.e-6;
+const double EPSILON = 1.e-6;
 
-static const int VTK_NO_INTERSECTION = 0;
-static const int VTK_YES_INTERSECTION = 1;
+const int VTK_NO_INTERSECTION = 0;
+const int VTK_YES_INTERSECTION = 1;
 
 typedef vtkMinimalStandardRandomSequence vtkRandom;
 
@@ -530,24 +518,24 @@ int TestReciprocalResult(vtkRandom* seq, unsigned nTests)
   {
     for (int i = 0; i < 6; i++)
     {
-      RandomPoint(seq, &p[i][0]);
+      RandomPoint(seq, p[i].data());
     }
     std::sort(std::begin(p), std::end(p));
     do
     {
-      int returnValue1 =
-        vtkTriangle::TrianglesIntersect(&p[0][0], &p[1][0], &p[2][0], &p[3][0], &p[4][0], &p[5][0]);
-      int returnValue2 =
-        vtkTriangle::TrianglesIntersect(&p[3][0], &p[4][0], &p[5][0], &p[0][0], &p[1][0], &p[2][0]);
+      int returnValue1 = vtkTriangle::TrianglesIntersect(
+        p[0].data(), p[1].data(), p[2].data(), p[3].data(), p[4].data(), p[5].data());
+      int returnValue2 = vtkTriangle::TrianglesIntersect(
+        p[3].data(), p[4].data(), p[5].data(), p[0].data(), p[1].data(), p[2].data());
 
       if (returnValue1 != returnValue2)
       {
-        std::cout << "Triangles " << TriangleToString(&p[0][0], &p[1][0], &p[2][0]) << " and "
-                  << TriangleToString(&p[3][0], &p[4][0], &p[5][0])
+        std::cout << "Triangles " << TriangleToString(p[0].data(), p[1].data(), p[2].data())
+                  << " and " << TriangleToString(p[3].data(), p[4].data(), p[5].data())
                   << " disagree about intersection." << std::endl;
         std::cout << "return values: " << returnValue1 << " " << returnValue2 << std::endl;
 #ifdef VISUAL_DEBUG
-        DrawTriangles(&p[0][0], &p[1][0], &p[2][0], &p[3][0], &p[4][0], &p[5][0]);
+        DrawTriangles(p[0].data(), p[1].data(), p[2].data(), p[3].data(), p[4].data(), p[5].data());
 #endif
         return EXIT_FAILURE;
       }
@@ -560,8 +548,8 @@ int TestReciprocalResult(vtkRandom* seq, unsigned nTests)
 int TestIssue17092()
 {
   // An instance where triangle intersection failed was reported here:
-  // https://gitlab.kitware.com/vtk/vtk/issues/17092. It was fixed here:
-  // https://gitlab.kitware.com/vtk/vtk/merge_requests/3886
+  // https://gitlab.kitware.com/vtk/vtk/-/issues/17092. It was fixed here:
+  // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/3886
 
   double t1[3][3] = { { 0., 0., 0. }, { 5., 0., 0. }, { 0., 5., 0. } };
   double t2[3][3] = { { 10., 5., 0. }, { 5., 10., 0. }, { 1., 1., 0. } };
@@ -582,7 +570,7 @@ int TestIssue17092()
 int TestMR4529()
 {
   // An instance where triangle intersection failed (along with its fix) was
-  // reported here: https://gitlab.kitware.com/vtk/vtk/merge_requests/4529
+  // reported here: https://gitlab.kitware.com/vtk/vtk/-/merge_requests/4529
 
   double t1[3][3] = { { 1.751, -.993, 0. }, { -3.021, 2.885, 0. }, { 4.14, -4.025, 0. } };
   double t2[3][3] = { { 1.751, -.5, 0. }, { 1.751, 1.326, 0. }, { -3.382, 2.276, 0. } };

@@ -1,38 +1,50 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCleanPolyData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCleanPolyData.h"
 
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
+#include "vtkIdTypeArray.h"
 #include "vtkIncrementalPointLocator.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMergePoints.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
+#include "vtkPoints.h"
 #include "vtkPolyData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+#include <unordered_map>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCleanPolyData);
 
-//---------------------------------------------------------------------------
+namespace
+{
+void InsertPointUsingGlobalId(vtkIdType globalId, vtkPoints* newPts,
+  std::unordered_map<vtkIdType, vtkIdType>& addedGlobalIdMap, const double* x, vtkIdType& ptId)
+{
+  auto it = addedGlobalIdMap.find(globalId);
+  if (it == addedGlobalIdMap.end())
+  {
+    ptId = newPts->GetNumberOfPoints();
+    newPts->InsertNextPoint(x);
+    addedGlobalIdMap[globalId] = ptId;
+  }
+  else
+  {
+    ptId = it->second;
+  }
+}
+} // anonymous namespace
+
+//------------------------------------------------------------------------------
 // Specify a spatial locator for speeding the search process. By
 // default an instance of vtkPointLocator is used.
 vtkCxxSetObjectMacro(vtkCleanPolyData, Locator, vtkIncrementalPointLocator);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with initial Tolerance of 0.0
 vtkCleanPolyData::vtkCleanPolyData()
 {
@@ -48,13 +60,13 @@ vtkCleanPolyData::vtkCleanPolyData()
   this->OutputPointsPrecision = vtkAlgorithm::DEFAULT_PRECISION;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCleanPolyData::~vtkCleanPolyData()
 {
   this->SetLocator(nullptr);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCleanPolyData::OperateOnPoint(double in[3], double out[3])
 {
   out[0] = in[0];
@@ -62,7 +74,7 @@ void vtkCleanPolyData::OperateOnPoint(double in[3], double out[3])
   out[2] = in[2];
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCleanPolyData::OperateOnBounds(double in[6], double out[6])
 {
   out[0] = in[0];
@@ -73,7 +85,7 @@ void vtkCleanPolyData::OperateOnBounds(double in[6], double out[6])
   out[5] = in[5];
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCleanPolyData::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -108,7 +120,36 @@ int vtkCleanPolyData::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+bool vtkCleanPolyData::IsPointDataAlreadyCopied(vtkIdType ptId)
+{
+  return this->CopiedPoints.find(ptId) != this->CopiedPoints.end();
+}
+
+//------------------------------------------------------------------------------
+bool vtkCleanPolyData::IsPrimaryPoint(vtkPolyData* input, vtkIdType ptIndex)
+{
+  return !input->HasAnyGhostPoints() ||
+    input->GetGhostArray(vtkDataObject::POINT)->GetValue(ptIndex) == 0;
+}
+
+//------------------------------------------------------------------------------
+void vtkCleanPolyData::InsertUniquePoint(vtkIdTypeArray* globalIdsArray, vtkIdType ptIndex,
+  vtkPoints* newPts, std::unordered_map<vtkIdType, vtkIdType>& addedGlobalIdsMap, double* point,
+  vtkIdType& ptId)
+{
+  if (globalIdsArray)
+  {
+    ::InsertPointUsingGlobalId(
+      globalIdsArray->GetValue(ptIndex), newPts, addedGlobalIdsMap, point, ptId);
+  }
+  else
+  {
+    this->Locator->InsertUniquePoint(point, ptId);
+  }
+}
+
+//------------------------------------------------------------------------------
 int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -154,7 +195,7 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   // we'll be needing these
   vtkIdType inCellID, newId;
   vtkIdType i;
-  vtkIdType ptId;
+  vtkIdType ptId = 0;
   vtkIdType npts = 0;
   const vtkIdType* pts = nullptr;
   double x[3];
@@ -189,6 +230,8 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   }
   else
   {
+    // Start with original number of points, shrink when done
+    newPts->SetNumberOfPoints(numPts);
     pointMap = new vtkIdType[numPts];
     for (i = 0; i < numPts; ++i)
     {
@@ -196,9 +239,14 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
     }
   }
 
+  std::unordered_map<vtkIdType, vtkIdType> addedGlobalIdsMap;
+  vtkIdTypeArray* globalIdsArray = vtkIdTypeArray::SafeDownCast(inputPD->GetGlobalIds());
+
   vtkPointData* outputPD = output->GetPointData();
   vtkCellData* outputCD = output->GetCellData();
-  if (!this->PointMerging)
+  // Since paraview/paraview#19961, global point ids can be used for the merging
+  // decision. In this case, they can be merged.
+  if (!this->PointMerging || (this->PointMerging && globalIdsArray))
   {
     outputPD->CopyAllOn(vtkDataSetAttributes::COPYTUPLE);
   }
@@ -217,19 +265,26 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   vtkCellData* outStrpData = nullptr;
   vtkIdType vertIDcounter = 0, lineIDcounter = 0;
   vtkIdType polyIDcounter = 0, strpIDcounter = 0;
+  vtkIdType checkAbortInterval = 0;
+  vtkIdType progressCounter = 0;
 
   // Begin to adjust topology.
   //
   // Vertices are renumbered and we remove duplicates
   inCellID = 0;
-  if (!this->GetAbortExecute() && inVerts->GetNumberOfCells() > 0)
+  if (!this->CheckAbort() && inVerts->GetNumberOfCells() > 0)
   {
     newVerts = vtkCellArray::New();
     newVerts->AllocateEstimate(inVerts->GetNumberOfCells(), 1);
-
+    checkAbortInterval = std::min(inVerts->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
     vtkDebugMacro(<< "Starting Verts " << inCellID);
     for (inVerts->InitTraversal(); inVerts->GetNextCell(npts, pts); inCellID++)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       for (numNewPts = 0, i = 0; i < npts; ++i)
       {
         inPts->GetPoint(pts[i], x);
@@ -243,9 +298,14 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
             outputPD->CopyData(inputPD, pts[i], ptId);
           }
         }
-        else if (this->Locator->InsertUniquePoint(newx, ptId))
+        else
         {
-          outputPD->CopyData(inputPD, pts[i], ptId);
+          this->InsertUniquePoint(globalIdsArray, pts[i], newPts, addedGlobalIdsMap, newx, ptId);
+          if (this->IsPrimaryPoint(input, pts[i]) || !this->IsPointDataAlreadyCopied(ptId))
+          {
+            this->CopiedPoints.insert(ptId);
+            outputPD->CopyData(inputPD, pts[i], ptId);
+          }
         }
         updatedPts[numNewPts++] = ptId;
       } // for all points of vertex cell
@@ -265,7 +325,7 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   this->UpdateProgress(0.25);
 
   // lines reduced to one point are eliminated or made into verts
-  if (!this->GetAbortExecute() && inLines->GetNumberOfCells() > 0)
+  if (!this->CheckAbort() && inLines->GetNumberOfCells() > 0)
   {
     newLines = vtkCellArray::New();
     newLines->AllocateEstimate(inLines->GetNumberOfCells(), 2);
@@ -274,8 +334,15 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
     outLineData->CopyAllocate(inputCD);
     //
     vtkDebugMacro(<< "Starting Lines " << inCellID);
+    checkAbortInterval = std::min(inLines->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
+    progressCounter = 0;
     for (inLines->InitTraversal(); inLines->GetNextCell(npts, pts); inCellID++)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       for (numNewPts = 0, i = 0; i < npts; i++)
       {
         inPts->GetPoint(pts[i], x);
@@ -289,9 +356,14 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
             outputPD->CopyData(inputPD, pts[i], ptId);
           }
         }
-        else if (this->Locator->InsertUniquePoint(newx, ptId))
+        else
         {
-          outputPD->CopyData(inputPD, pts[i], ptId);
+          this->InsertUniquePoint(globalIdsArray, pts[i], newPts, addedGlobalIdsMap, newx, ptId);
+          if (this->IsPrimaryPoint(input, pts[i]) || !this->IsPointDataAlreadyCopied(ptId))
+          {
+            this->CopiedPoints.insert(ptId);
+            outputPD->CopyData(inputPD, pts[i], ptId);
+          }
         }
         if (i == 0 || ptId != updatedPts[numNewPts - 1])
         {
@@ -335,7 +407,7 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
 
   // polygons reduced to two points or less are either eliminated
   // or converted to lines or points if enabled
-  if (!this->GetAbortExecute() && inPolys->GetNumberOfCells() > 0)
+  if (!this->CheckAbort() && inPolys->GetNumberOfCells() > 0)
   {
     newPolys = vtkCellArray::New();
     newPolys->AllocateExact(inPolys->GetNumberOfCells(), inPolys->GetNumberOfConnectivityIds());
@@ -344,8 +416,15 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
     outPolyData->CopyAllocate(inputCD);
 
     vtkDebugMacro(<< "Starting Polys " << inCellID);
+    checkAbortInterval = std::min(inPolys->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
+    progressCounter = 0;
     for (inPolys->InitTraversal(); inPolys->GetNextCell(npts, pts); inCellID++)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       for (numNewPts = 0, i = 0; i < npts; i++)
       {
         inPts->GetPoint(pts[i], x);
@@ -359,9 +438,14 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
             outputPD->CopyData(inputPD, pts[i], ptId);
           }
         }
-        else if (this->Locator->InsertUniquePoint(newx, ptId))
+        else
         {
-          outputPD->CopyData(inputPD, pts[i], ptId);
+          this->InsertUniquePoint(globalIdsArray, pts[i], newPts, addedGlobalIdsMap, newx, ptId);
+          if (this->IsPrimaryPoint(input, pts[i]) || !this->IsPointDataAlreadyCopied(ptId))
+          {
+            this->CopiedPoints.insert(ptId);
+            outputPD->CopyData(inputPD, pts[i], ptId);
+          }
         }
         if (i == 0 || ptId != updatedPts[numNewPts - 1])
         {
@@ -427,16 +511,23 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   this->UpdateProgress(0.75);
 
   // triangle strips can reduced to polys/lines/points etc
-  if (!this->GetAbortExecute() && inStrips->GetNumberOfCells() > 0)
+  if (!this->CheckAbort() && inStrips->GetNumberOfCells() > 0)
   {
     newStrips = vtkCellArray::New();
     newStrips->AllocateExact(inStrips->GetNumberOfCells(), inStrips->GetNumberOfConnectivityIds());
     outStrpData = vtkCellData::New();
     outStrpData->CopyAllOn(vtkDataSetAttributes::COPYTUPLE);
     outStrpData->CopyAllocate(inputCD);
+    checkAbortInterval = std::min(inStrips->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
+    progressCounter = 0;
 
     for (inStrips->InitTraversal(); inStrips->GetNextCell(npts, pts); inCellID++)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       for (numNewPts = 0, i = 0; i < npts; i++)
       {
         inPts->GetPoint(pts[i], x);
@@ -450,9 +541,14 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
             outputPD->CopyData(inputPD, pts[i], ptId);
           }
         }
-        else if (this->Locator->InsertUniquePoint(newx, ptId))
+        else
         {
-          outputPD->CopyData(inputPD, pts[i], ptId);
+          this->InsertUniquePoint(globalIdsArray, pts[i], newPts, addedGlobalIdsMap, newx, ptId);
+          if (this->IsPrimaryPoint(input, pts[i]) || !this->IsPointDataAlreadyCopied(ptId))
+          {
+            this->CopiedPoints.insert(ptId);
+            outputPD->CopyData(inputPD, pts[i], ptId);
+          }
         }
         if (i == 0 || ptId != updatedPts[numNewPts - 1])
         {
@@ -610,7 +706,7 @@ int vtkCleanPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Method manages creation of locators. It takes into account the potential
 // change of tolerance (zero to non-zero).
 void vtkCleanPolyData::CreateDefaultLocator(vtkPolyData* input)
@@ -660,7 +756,7 @@ void vtkCleanPolyData::CreateDefaultLocator(vtkPolyData* input)
   }
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCleanPolyData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -684,7 +780,7 @@ void vtkCleanPolyData::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkCleanPolyData::GetMTime()
 {
   vtkMTimeType mTime = this->vtkObject::GetMTime();
@@ -696,3 +792,4 @@ vtkMTimeType vtkCleanPolyData::GetMTime()
   }
   return mTime;
 }
+VTK_ABI_NAMESPACE_END

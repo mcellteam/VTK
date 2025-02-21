@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCenterOfMass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCenterOfMass
  * @brief   Find the center of mass of a set of points.
@@ -31,6 +19,7 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkPointSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 class vtkDataArray;
 
@@ -41,21 +30,21 @@ public:
   vtkTypeMacro(vtkCenterOfMass, vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output of the center of mass computation.
    */
   vtkSetVector3Macro(Center, double);
   vtkGetVector3Macro(Center, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set a flag to determine if the points are weighted.
    */
   vtkSetMacro(UseScalarsAsWeights, bool);
   vtkGetMacro(UseScalarsAsWeights, bool);
-  //@}
+  ///@}
 
   /**
    * This function is called by RequestData. It exists so that
@@ -82,4 +71,5 @@ private:
   double Center[3];
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

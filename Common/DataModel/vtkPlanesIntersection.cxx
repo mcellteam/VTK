@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlanesIntersection.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPlanesIntersection.h"
 #include "vtkCell.h"
@@ -24,6 +9,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointsProjectedHull.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPlanesIntersection);
 
 // Experiment shows that we get plane equation values on the
@@ -130,10 +116,10 @@ int vtkPlanesIntersection::GetNumberOfRegionVertices()
   return this->RegionPts->GetNumberOfPoints();
 }
 
-//---------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Determine whether the axis aligned box provided intersects
 // the convex region bounded by the planes.
-//---------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkPlanesIntersection::IntersectsRegion(vtkPoints* R)
 {
@@ -417,10 +403,10 @@ int vtkPlanesIntersection::PolygonIntersectsBBox(double bounds[6], vtkPoints* pt
   return intersects;
 }
 
-//---------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Some convenience functions that build a vtkPlanesIntersection object
 // out of a convex region.
-//---------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // a static convenience function that converts a 3D cell into a
 // vtkPlanesIntersection object
@@ -530,7 +516,7 @@ vtkPlanesIntersection* vtkPlanesIntersection::Convert3DCell(vtkCell* cell)
   return pi;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkPlanesIntersection::ComputeNormal(double* p1, double* p2, double* p3, double normal[3])
 {
@@ -648,7 +634,7 @@ void vtkPlanesIntersection::ComputeRegionVertices()
       {
         this->planesMatrix(i, j, k, M);
 
-        int notInvertible = this->Invert3x3(M);
+        int notInvertible = vtkPlanesIntersection::Invert3x3(M);
 
         if (notInvertible)
         {
@@ -900,3 +886,4 @@ void vtkPlanesIntersection::PrintSelf(ostream& os, vtkIndent indent)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

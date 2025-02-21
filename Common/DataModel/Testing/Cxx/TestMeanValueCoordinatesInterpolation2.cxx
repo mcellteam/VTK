@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestMeanValueCoordinatesInterpolation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkActor.h"
 #include "vtkCamera.h"
 #include "vtkCellArray.h"
@@ -91,7 +79,7 @@ int TestMeanValueCoordinatesInterpolation2(int argc, char* argv[])
   polydata->GetPointData()->SetScalars(pointDataArray);
 
   vtkPolygon* polygon = static_cast<vtkPolygon*>(polydata->GetCell(0));
-  polygon->SetUseMVCInterpolation(1);
+  polygon->SetUseMVCInterpolation(true);
 
   // Okay now sample on a plane and see how it interpolates
   vtkSmartPointer<vtkPlaneSource> pSource = vtkSmartPointer<vtkPlaneSource>::New();
@@ -146,7 +134,7 @@ int TestMeanValueCoordinatesInterpolation2(int argc, char* argv[])
   polydata1->GetPointData()->SetScalars(pointDataArray1);
 
   vtkPolygon* polygon1 = static_cast<vtkPolygon*>(polydata1->GetCell(0));
-  polygon1->SetUseMVCInterpolation(1);
+  polygon1->SetUseMVCInterpolation(true);
 
   // Okay now sample on a plane and see how it interpolates
   vtkSmartPointer<vtkPlaneSource> pSource1 = vtkSmartPointer<vtkPlaneSource>::New();

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLFileOutputWindow.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLFileOutputWindow
  * @brief   XML File Specific output window class
@@ -20,15 +8,15 @@
  * tags for each text display method. The text is processed to replace
  * XML markup characters.
  *
- *   DisplayText - <Text>
+ *   DisplayText - \<Text\>
  *
- *   DisplayErrorText - <Error>
+ *   DisplayErrorText - \<Error\>
  *
- *   DisplayWarningText - <Warning>
+ *   DisplayWarningText - \<Warning\>
  *
- *   DisplayGenericWarningText - <GenericWarning>
+ *   DisplayGenericWarningText - \<GenericWarning\>
  *
- *   DisplayDebugText - <Debug>
+ *   DisplayDebugText - \<Debug\>
  *
  * The method DisplayTag outputs the text unprocessed. To use this
  * class, instantiate it and then call SetInstance(this).
@@ -40,14 +28,16 @@
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkFileOutputWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCORE_EXPORT vtkXMLFileOutputWindow : public vtkFileOutputWindow
 {
 public:
   vtkTypeMacro(vtkXMLFileOutputWindow, vtkFileOutputWindow);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   static vtkXMLFileOutputWindow* New();
 
-  //@{
+  ///@{
   /**
    * Put the text into the log file. The text is processed to
    * replace &, <, > with &amp, &lt, and &gt.
@@ -58,7 +48,7 @@ public:
   void DisplayWarningText(const char*) override;
   void DisplayGenericWarningText(const char*) override;
   void DisplayDebugText(const char*) override;
-  //@}
+  ///@}
 
   /**
    * Put the text into the log file without processing it.
@@ -66,8 +56,8 @@ public:
   virtual void DisplayTag(const char*);
 
 protected:
-  vtkXMLFileOutputWindow() {}
-  ~vtkXMLFileOutputWindow() override {}
+  vtkXMLFileOutputWindow() = default;
+  ~vtkXMLFileOutputWindow() override = default;
 
   void Initialize();
   virtual void DisplayXML(const char*, const char*);
@@ -77,5 +67,5 @@ private:
   void operator=(const vtkXMLFileOutputWindow&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-// VTK-HeaderTest-Exclude: vtkXMLFileOutputWindow.h

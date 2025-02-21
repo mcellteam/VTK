@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDiscreteFlyingEdges2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDiscreteFlyingEdges2D
  * @brief   generate isoline(s) from 2D image data
@@ -48,6 +36,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 
 class VTKFILTERSGENERAL_EXPORT vtkDiscreteFlyingEdges2D : public vtkPolyDataAlgorithm
@@ -101,7 +90,7 @@ public:
    */
   vtkIdType GetNumberOfContours() { return this->ContourValues->GetNumberOfContours(); }
 
-  //@{
+  ///@{
   /**
    * Generate numContours equally spaced contour values between specified
    * range. Contour values will include min/max range values.
@@ -114,25 +103,25 @@ public:
   {
     this->ContourValues->GenerateValues(numContours, rangeStart, rangeEnd);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Option to set the point scalars of the output.  The scalars will be the
    * label values.  By default this flag is on.
    */
-  vtkSetMacro(ComputeScalars, int);
-  vtkGetMacro(ComputeScalars, int);
-  vtkBooleanMacro(ComputeScalars, int);
-  //@}
+  vtkSetMacro(ComputeScalars, vtkTypeBool);
+  vtkGetMacro(ComputeScalars, vtkTypeBool);
+  vtkBooleanMacro(ComputeScalars, vtkTypeBool);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get which component of the scalar array to contour on; defaults to 0.
    */
   vtkSetMacro(ArrayComponent, int);
   vtkGetMacro(ArrayComponent, int);
-  //@}
+  ///@}
 
 protected:
   vtkDiscreteFlyingEdges2D();
@@ -142,7 +131,7 @@ protected:
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
   vtkContourValues* ContourValues;
-  int ComputeScalars;
+  vtkTypeBool ComputeScalars;
   int ArrayComponent;
 
 private:
@@ -150,4 +139,5 @@ private:
   void operator=(const vtkDiscreteFlyingEdges2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

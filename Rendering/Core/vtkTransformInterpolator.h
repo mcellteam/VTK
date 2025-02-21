@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransformInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTransformInterpolator
  * @brief   interpolate a series of transformation matrices
@@ -53,6 +41,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTransform;
 class vtkMatrix4x4;
 class vtkProp3D;
@@ -76,7 +65,7 @@ public:
    */
   int GetNumberOfTransforms();
 
-  //@{
+  ///@{
   /**
    * Obtain some information about the interpolation range. The numbers
    * returned (corresponding to parameter t, usually thought of as time)
@@ -84,14 +73,14 @@ public:
    */
   double GetMinimumT();
   double GetMaximumT();
-  //@}
+  ///@}
 
   /**
    * Clear the list of transforms.
    */
   void Initialize();
 
-  //@{
+  ///@{
   /**
    * Add another transform to the list of transformations defining
    * the transform function. Note that using the same time t value
@@ -103,7 +92,7 @@ public:
   void AddTransform(double t, vtkTransform* xform);
   void AddTransform(double t, vtkMatrix4x4* matrix);
   void AddTransform(double t, vtkProp3D* prop3D);
-  //@}
+  ///@}
 
   /**
    * Delete the transform at a particular parameter t. If there is no
@@ -128,7 +117,7 @@ public:
     INTERPOLATION_TYPE_MANUAL
   };
 
-  //@{
+  ///@{
   /**
    * These are convenience methods to switch between linear and spline
    * interpolation. The methods simply forward the request for linear or
@@ -143,9 +132,9 @@ public:
   void SetInterpolationTypeToLinear() { this->SetInterpolationType(INTERPOLATION_TYPE_LINEAR); }
   void SetInterpolationTypeToSpline() { this->SetInterpolationType(INTERPOLATION_TYPE_SPLINE); }
   void SetInterpolationTypeToManual() { this->SetInterpolationType(INTERPOLATION_TYPE_MANUAL); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the position portion
    * of the transformation matrix. Note that you can modify the behavior of
@@ -154,9 +143,9 @@ public:
    */
   virtual void SetPositionInterpolator(vtkTupleInterpolator*);
   vtkGetObjectMacro(PositionInterpolator, vtkTupleInterpolator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the scale portion
    * of the transformation matrix. Note that you can modify the behavior of
@@ -165,9 +154,9 @@ public:
    */
   virtual void SetScaleInterpolator(vtkTupleInterpolator*);
   vtkGetObjectMacro(ScaleInterpolator, vtkTupleInterpolator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tuple interpolator used to interpolate the orientation portion
    * of the transformation matrix. Note that you can modify the behavior of
@@ -176,7 +165,7 @@ public:
    */
   virtual void SetRotationInterpolator(vtkQuaternionInterpolator*);
   vtkGetObjectMacro(RotationInterpolator, vtkQuaternionInterpolator);
-  //@}
+  ///@}
 
   /**
    * Override GetMTime() because we depend on the interpolators which may be
@@ -209,4 +198,5 @@ private:
   void operator=(const vtkTransformInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

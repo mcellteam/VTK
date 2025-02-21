@@ -1,5 +1,7 @@
-#ifndef __octree_cursor
-#define __octree_cursor
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
+#ifndef octree_cursor_
+#define octree_cursor_
 // Included by octree
 
 /**\brief An octree cursor.
@@ -14,6 +16,7 @@
  * A cursor contains no storage beyond its base class, octree_path, so you may assign to a
  * cursor from any descendant of octree_path including octree_iterator.
  */
+VTK_ABI_NAMESPACE_BEGIN
 template <typename T_, typename R_, typename P_, typename O_, typename OP_, int d_ = 3>
 class octree_cursor : public octree_path<T_, R_, P_, O_, OP_, d_>
 {
@@ -52,4 +55,5 @@ public:
   self_path& operator=(const const_path& it);
 };
 
-#endif // __octree_cursor
+VTK_ABI_NAMESPACE_END
+#endif // octree_cursor_

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDualDepthPeelingPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkDualDepthPeelingPass
@@ -53,9 +41,11 @@
 
 #include "vtkDepthPeelingPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
 #include <array> // For std::array!
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLFramebufferObject;
 class vtkOpenGLQuadHelper;
 class vtkOpenGLVertexArrayObject;
@@ -63,7 +53,8 @@ class vtkRenderTimerLog;
 class vtkShaderProgram;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkDualDepthPeelingPass : public vtkDepthPeelingPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkDualDepthPeelingPass
+  : public vtkDepthPeelingPass
 {
 public:
   static vtkDualDepthPeelingPass* New();
@@ -73,15 +64,15 @@ public:
   void Render(const vtkRenderState* s) override;
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Delegate for rendering the volumetric geometry, if needed.
    * It is usually set to a vtkVolumetricPass.
    * Initial value is a NULL pointer.
    */
-  vtkGetObjectMacro(VolumetricPass, vtkRenderPass) virtual void SetVolumetricPass(
-    vtkRenderPass* volumetricPass);
-  //@}
+  vtkGetObjectMacro(VolumetricPass, vtkRenderPass)
+  virtual void SetVolumetricPass(vtkRenderPass* volumetricPass);
+  ///@}
 
   // vtkOpenGLRenderPass virtuals:
   bool PreReplaceShaderValues(std::string& vertexShader, std::string& geometryShader,
@@ -162,7 +153,7 @@ protected:
    */
   void Initialize(const vtkRenderState* state);
 
-  //@{
+  ///@{
   /**
    * Initialize helpers.
    */
@@ -170,7 +161,7 @@ protected:
   void InitDepthTexture(vtkTextureObject* tex, const vtkRenderState* s);
   void InitOpaqueDepthTexture(vtkTextureObject* tex, const vtkRenderState* s);
   void InitFramebuffer(const vtkRenderState* s);
-  //@}
+  ///@}
 
   /**
    * Bind and activate draw buffers.
@@ -279,4 +270,5 @@ private:
   void operator=(const vtkDualDepthPeelingPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkDualDepthPeelingPass_h

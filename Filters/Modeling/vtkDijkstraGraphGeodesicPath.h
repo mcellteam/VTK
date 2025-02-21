@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDijkstraGraphGeodesicPath.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDijkstraGraphGeodesicPath
  * @brief   Dijkstra algorithm to compute the graph geodesic.
@@ -42,6 +30,7 @@
 #include "vtkFiltersModelingModule.h" // For export macro
 #include "vtkGraphGeodesicPath.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDijkstraGraphInternals;
 class vtkIdList;
 
@@ -53,22 +42,22 @@ public:
    */
   static vtkDijkstraGraphGeodesicPath* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for printing and determining type information.
    */
   vtkTypeMacro(vtkDijkstraGraphGeodesicPath, vtkGraphGeodesicPath);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The vertex ids (of the input polydata) on the shortest path
    */
   vtkGetObjectMacro(IdList, vtkIdList);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Stop when the end vertex is reached
    * or calculate shortest path to all vertices
@@ -76,33 +65,33 @@ public:
   vtkSetMacro(StopWhenEndReached, vtkTypeBool);
   vtkGetMacro(StopWhenEndReached, vtkTypeBool);
   vtkBooleanMacro(StopWhenEndReached, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use scalar values in the edge weight (experimental)
    */
   vtkSetMacro(UseScalarWeights, vtkTypeBool);
   vtkGetMacro(UseScalarWeights, vtkTypeBool);
   vtkBooleanMacro(UseScalarWeights, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use the input point to repel the path by assigning high costs.
    */
   vtkSetMacro(RepelPathFromVertices, vtkTypeBool);
   vtkGetMacro(RepelPathFromVertices, vtkTypeBool);
   vtkBooleanMacro(RepelPathFromVertices, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify vtkPoints to use to repel the path from.
    */
   virtual void SetRepelVertices(vtkPoints*);
   vtkGetObjectMacro(RepelVertices, vtkPoints);
-  //@}
+  ///@}
 
   /**
    * Fill the array with the cumulative weights.
@@ -161,4 +150,5 @@ private:
   void operator=(const vtkDijkstraGraphGeodesicPath&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

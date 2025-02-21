@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPTSReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPTSReader.h"
 
 #include "vtkCellArray.h"
@@ -28,9 +16,10 @@
 #include "vtkUnsignedCharArray.h"
 #include "vtksys/FStream.hxx"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPTSReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPTSReader::vtkPTSReader()
   : FileName(nullptr)
   , OutputDataTypeIsDouble(false)
@@ -46,7 +35,7 @@ vtkPTSReader::vtkPTSReader()
   this->IncludeColorAndLuminance = true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPTSReader::~vtkPTSReader()
 {
   if (this->FileName)
@@ -56,7 +45,7 @@ vtkPTSReader::~vtkPTSReader()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkSetStringMacro except we clear some variables if we update the value
 void vtkPTSReader::SetFileName(const char* filename)
 {
@@ -88,7 +77,7 @@ void vtkPTSReader::SetFileName(const char* filename)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPTSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -101,7 +90,7 @@ int vtkPTSReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPTSReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -138,7 +127,7 @@ void vtkPTSReader::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPTSReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -173,7 +162,7 @@ int vtkPTSReader::RequestData(vtkInformation* vtkNotUsed(request),
     int numArgs = sscanf(buffer.c_str(), "%d%s", &tempNumPts, junk);
     if (numArgs == 1)
     {
-      numPts = static_cast<vtkTypeInt32>(tempNumPts);
+      numPts = tempNumPts;
       break;
     }
     if (numArgs != -1)
@@ -400,3 +389,4 @@ int vtkPTSReader::RequestData(vtkInformation* vtkNotUsed(request),
   this->UpdateProgress(1.0);
   return 1;
 }
+VTK_ABI_NAMESPACE_END

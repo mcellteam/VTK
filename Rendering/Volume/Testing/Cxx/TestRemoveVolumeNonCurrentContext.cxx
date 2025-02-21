@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestRemoveVolumeNonCurrentContext.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Test for releasing graphics resources from a non-current
 // render window with vtkGPUVolumeRayCastMapper
 // Thanks to Stephan Rademacher for providing the testing code.
@@ -32,7 +21,7 @@
 #include "vtkVolume.h"
 #include "vtkVolumeProperty.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static const char* TestRemoveVolumeNonCurrentContextLog =
   "# StreamVersion 1\n"
   "EnterEvent 263 265 0 0 0 0 0\n"
@@ -526,7 +515,7 @@ static const char* TestRemoveVolumeNonCurrentContextLog =
   "MouseMoveEvent 277 140 0 0 0 0 9\n"
   "MouseMoveEvent 277 145 0 0 0 0 9\n";
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class TestRemoveVolumeNonCurrentContextCallback : public vtkCommand
 {
 public:
@@ -550,7 +539,7 @@ public:
 
     char* pressedKey = interactor->GetKeySym();
 
-    if (strcmp(pressedKey, "9") == 0)
+    if (pressedKey && strcmp(pressedKey, "9") == 0)
     {
       renderer2->RemoveAllViewProps();
       renderWindow1->Render();
@@ -564,7 +553,7 @@ public:
   vtkRenderWindow* renderWindow2;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestRemoveVolumeNonCurrentContext(int argc, char* argv[])
 {
   const char* volumeFile = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/ironProt.vtk");

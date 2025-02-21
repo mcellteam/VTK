@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParseType.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkParseType_h
 #define vtkParseType_h
@@ -74,15 +62,7 @@
 #define VTK_PARSE_THREAD_LOCAL 0x00800000
 
 /**
- * Attributes (used for hints)
- */
-#define VTK_PARSE_ATTRIBUTES 0x07000000
-#define VTK_PARSE_NEWINSTANCE 0x01000000
-#define VTK_PARSE_ZEROCOPY 0x02000000
-#define VTK_PARSE_WRAPEXCLUDE 0x04000000
-
-/**
- * Special
+ * Special internal-use specifiers
  */
 #define VTK_PARSE_SPECIALS 0x70000000
 #define VTK_PARSE_TYPEDEF 0x10000000
@@ -176,14 +156,11 @@
 #define VTK_PARSE_OBJECT 0x09
 #define VTK_PARSE_LONG_LONG 0x0B
 #define VTK_PARSE_UNSIGNED_LONG_LONG 0x1B
-#define VTK_PARSE___INT64 0x0C
-#define VTK_PARSE_UNSIGNED___INT64 0x1C
 #define VTK_PARSE_SIGNED_CHAR 0x0D
 #define VTK_PARSE_BOOL 0x0E
 #define VTK_PARSE_SSIZE_T 0x0F
 #define VTK_PARSE_SIZE_T 0x1F
 #define VTK_PARSE_STRING 0x21
-#define VTK_PARSE_UNICODE_STRING 0x22
 #define VTK_PARSE_OSTREAM 0x23
 #define VTK_PARSE_ISTREAM 0x24
 #define VTK_PARSE_FUNCTION 0x25
@@ -212,14 +189,11 @@
 #define VTK_PARSE_OBJECT_PTR 0x209
 #define VTK_PARSE_LONG_LONG_PTR 0x20B
 #define VTK_PARSE_UNSIGNED_LONG_LONG_PTR 0x21B
-#define VTK_PARSE___INT64_PTR 0x20C
-#define VTK_PARSE_UNSIGNED___INT64_PTR 0x21C
 #define VTK_PARSE_SIGNED_CHAR_PTR 0x20D
 #define VTK_PARSE_BOOL_PTR 0x20E
 #define VTK_PARSE_SSIZE_T_PTR 0x20F
 #define VTK_PARSE_SIZE_T_PTR 0x21F
 #define VTK_PARSE_STRING_PTR 0x221
-#define VTK_PARSE_UNICODE_STRING_PTR 0x222
 #define VTK_PARSE_OSTREAM_PTR 0x223
 #define VTK_PARSE_ISTREAM_PTR 0x224
 #define VTK_PARSE_FUNCTION_PTR 0x225
@@ -248,14 +222,11 @@
 #define VTK_PARSE_OBJECT_REF 0x109
 #define VTK_PARSE_LONG_LONG_REF 0x10B
 #define VTK_PARSE_UNSIGNED_LONG_LONG_REF 0x11B
-#define VTK_PARSE___INT64_REF 0x10C
-#define VTK_PARSE_UNSIGNED___INT64_REF 0x11C
 #define VTK_PARSE_SIGNED_CHAR_REF 0x10D
 #define VTK_PARSE_BOOL_REF 0x10E
 #define VTK_PARSE_SSIZE_T_REF 0x10F
 #define VTK_PARSE_SIZE_T_REF 0x11F
 #define VTK_PARSE_STRING_REF 0x121
-#define VTK_PARSE_UNICODE_STRING_REF 0x122
 #define VTK_PARSE_OSTREAM_REF 0x123
 #define VTK_PARSE_ISTREAM_REF 0x124
 #define VTK_PARSE_QOBJECT_REF 0x126

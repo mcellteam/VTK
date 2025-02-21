@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageButterworthHighPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageButterworthHighPass
  * @brief   Frequency domain high pass.
@@ -34,6 +22,7 @@
 #include "vtkImagingFourierModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGFOURIER_EXPORT vtkImageButterworthHighPass : public vtkThreadedImageAlgorithm
 {
 public:
@@ -41,7 +30,7 @@ public:
   vtkTypeMacro(vtkImageButterworthHighPass, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the cutoff frequency for each axis.
    * The values are specified in the order X, Y, Z, Time.
@@ -56,19 +45,19 @@ public:
   double GetXCutOff() { return this->CutOff[0]; }
   double GetYCutOff() { return this->CutOff[1]; }
   double GetZCutOff() { return this->CutOff[2]; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The order determines sharpness of the cutoff curve.
    */
   vtkSetMacro(Order, int);
   vtkGetMacro(Order, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageButterworthHighPass();
-  ~vtkImageButterworthHighPass() override {}
+  ~vtkImageButterworthHighPass() override = default;
 
   int Order;
   double CutOff[3];
@@ -82,4 +71,5 @@ private:
   void operator=(const vtkImageButterworthHighPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

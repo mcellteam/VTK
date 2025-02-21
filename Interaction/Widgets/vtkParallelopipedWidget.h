@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParallelopipedWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParallelopipedWidget
  * @brief   a widget to manipulate 3D parallelopipeds
@@ -43,12 +31,15 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkParallelopipedRepresentation;
 class vtkHandleWidget;
 class vtkWidgetSet;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkParallelopipedWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkParallelopipedWidget
+  : public vtkAbstractWidget
 {
 
   friend class vtkWidgetSet;
@@ -87,7 +78,7 @@ public:
     return reinterpret_cast<vtkParallelopipedRepresentation*>(this->WidgetRep);
   }
 
-  //@{
+  ///@{
   /**
    * Enable/disable the creation of a chair on this widget. If off,
    * chairs cannot be created.
@@ -95,7 +86,7 @@ public:
   vtkSetMacro(EnableChairCreation, vtkTypeBool);
   vtkGetMacro(EnableChairCreation, vtkTypeBool);
   vtkBooleanMacro(EnableChairCreation, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Create the default widget representation if one is not set.
@@ -122,10 +113,10 @@ protected:
   // Control whether chairs can be created
   vtkTypeBool EnableChairCreation;
 
-  //@{
+  ///@{
   void BeginTranslateAction(vtkParallelopipedWidget* dispatcher);
   void TranslateAction(vtkParallelopipedWidget* dispatcher);
-  //@}
+  ///@}
 
   // helper methods for cursor management
   void SetCursor(int state) override;
@@ -153,4 +144,5 @@ private:
   void operator=(const vtkParallelopipedWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

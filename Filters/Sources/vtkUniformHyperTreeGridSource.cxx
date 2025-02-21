@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkHyperTreeGridSource.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkUniformHyperTreeGridSource.h"
 
 #include "vtkCellData.h"
@@ -21,28 +9,29 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkObjectFactory.h"
 #include "vtkUniformHyperTreeGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkUniformHyperTreeGridSource);
 
-//----------------------------------------------------------------------------
-vtkUniformHyperTreeGridSource::vtkUniformHyperTreeGridSource() {}
+//------------------------------------------------------------------------------
+vtkUniformHyperTreeGridSource::vtkUniformHyperTreeGridSource() = default;
 
-//----------------------------------------------------------------------------
-vtkUniformHyperTreeGridSource::~vtkUniformHyperTreeGridSource() {}
+//------------------------------------------------------------------------------
+vtkUniformHyperTreeGridSource::~vtkUniformHyperTreeGridSource() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUniformHyperTreeGridSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkUniformHyperTreeGridSource::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkUniformHyperTreeGrid");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkUniformHyperTreeGridSource::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -197,3 +186,4 @@ int vtkUniformHyperTreeGridSource::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

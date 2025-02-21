@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageDataGeometryFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageDataGeometryFilter
  * @brief   extract geometry for structured points
@@ -41,6 +29,7 @@
 #include "vtkFiltersGeometryModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGEOMETRY_EXPORT vtkImageDataGeometryFilter : public vtkPolyDataAlgorithm
 {
 public:
@@ -52,16 +41,16 @@ public:
    */
   static vtkImageDataGeometryFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set / get the extent (imin,imax, jmin,jmax, kmin,kmax) indices.
    */
   void SetExtent(int extent[6]);
   void SetExtent(int iMin, int iMax, int jMin, int jMax, int kMin, int kMax);
-  int* GetExtent() { return this->Extent; }
-  //@}
+  int* GetExtent() VTK_SIZEHINT(6) { return this->Extent; }
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set ThresholdCells to true if you wish to skip any voxel/pixels which have scalar
    * values less than the specified threshold.
@@ -70,9 +59,9 @@ public:
   vtkSetMacro(ThresholdCells, vtkTypeBool);
   vtkGetMacro(ThresholdCells, vtkTypeBool);
   vtkBooleanMacro(ThresholdCells, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set ThresholdValue to the scalar value by which to threshold cells when extracting geometry
    * when ThresholdCells is true. Cells with scalar values greater than the threshold will be
@@ -81,9 +70,9 @@ public:
   vtkSetMacro(ThresholdValue, double);
   vtkGetMacro(ThresholdValue, double);
   vtkBooleanMacro(ThresholdValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set OutputTriangles to true if you wish to generate triangles instead of quads
    * when extracting cells from 2D imagedata
@@ -92,11 +81,11 @@ public:
   vtkSetMacro(OutputTriangles, vtkTypeBool);
   vtkGetMacro(OutputTriangles, vtkTypeBool);
   vtkBooleanMacro(OutputTriangles, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageDataGeometryFilter();
-  ~vtkImageDataGeometryFilter() override {}
+  ~vtkImageDataGeometryFilter() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
@@ -111,4 +100,5 @@ private:
   void operator=(const vtkImageDataGeometryFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

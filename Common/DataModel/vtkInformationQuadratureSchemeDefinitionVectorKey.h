@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationQuadratureSchemeDefinitionVectorKey.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInformationQuadratureSchemeDefinitionVectorKey
  * @brief   Key for vtkQuadratureSchemeDefinition vector values.
@@ -29,6 +17,7 @@
 #include "vtkCommonInformationKeyManager.h" // Manage instances of this type.
 #include "vtkInformationKey.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformationQuadratureSchemeDefinitionVectorValue;
 class vtkXMLDataElement;
 class vtkQuadratureSchemeDefinition;
@@ -39,7 +28,7 @@ class VTKCOMMONDATAMODEL_EXPORT vtkInformationQuadratureSchemeDefinitionVectorKe
 public:
   vtkTypeMacro(vtkInformationQuadratureSchemeDefinitionVectorKey, vtkInformationKey);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@{
+  ///@{
   /**
    * The name of the static instance and the class in which
    * it is defined(location) should be passed to the constructor.
@@ -47,7 +36,7 @@ public:
   vtkInformationQuadratureSchemeDefinitionVectorKey(const char* name, const char* location);
   //
   ~vtkInformationQuadratureSchemeDefinitionVectorKey() override;
-  //@}
+  ///@}
 
   /**
    * Clear the vector.
@@ -99,7 +88,7 @@ public:
   // implement.
   // vtkQuadratureSchemeDefinition **Get(vtkInformation* info);
 
-  //@{
+  ///@{
   /**
    * Copy the entry associated with this key from one information
    * object to another.  If there is no entry in the first information
@@ -107,7 +96,7 @@ public:
    */
   void ShallowCopy(vtkInformation* from, vtkInformation* to) override;
   void DeepCopy(vtkInformation* from, vtkInformation* to) override;
-  //@}
+  ///@}
 
   /**
    * Print the key's value in an information object to a stream.
@@ -151,4 +140,5 @@ private:
   void operator=(const vtkInformationQuadratureSchemeDefinitionVectorKey&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

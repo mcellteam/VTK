@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTessellatorFilter.cxx
-  Language:  C++
-
-  Copyright 2003 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the
-  U.S. Government. Redistribution and use in source and binary forms, with
-  or without modification, are permitted provided that this Notice and any
-  statement of authorship are reproduced on all copies.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-NVIDIA-USGov
 #include "vtkObjectFactory.h"
 
 #include "vtkCell.h"
@@ -34,6 +23,7 @@
 #include "vtkTessellatorFilter.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTessellatorFilter);
 
 namespace
@@ -339,11 +329,11 @@ void vtkTessellatorFilter::SetSubdivider(vtkDataSetEdgeSubdivisionCriterion* s)
   this->Modified();
 }
 
-void vtkTessellatorFilter::SetFieldCriterion(int s, double err)
+void vtkTessellatorFilter::SetFieldCriterion(int field, double err)
 {
   if (this->Subdivider)
   {
-    this->Subdivider->SetFieldError2(s, err > 0. ? err * err : -1.);
+    this->Subdivider->SetFieldError2(field, err > 0. ? err * err : -1.);
   }
 }
 
@@ -1221,11 +1211,15 @@ int vtkTessellatorFilter::RequestData(
   vtkIdType progCells = 0;
 
   vtkTessellatorHasPolys = 0; // print error message once per invocation, if needed
-  for (progress = 0; progress < progMax; ++progress)
+  for (progress = 0; progress < progMax && !this->CheckAbort(); ++progress)
   {
     progCells += deltaProg;
     for (; (cell < progCells) && (cell < numCells); ++cell)
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       const vtkIdType nextOutCellId = this->OutputMesh->GetNumberOfCells();
 
       this->Subdivider->SetCellId(cell);
@@ -1606,35 +1600,69 @@ int vtkTessellatorFilter::RequestData(
       }
 
       // OK, now output the primitives
-      int tet, tri, edg;
-      switch (dim)
+      if (cp->IsLinear())
       {
-        case 3:
-          for (tet = 0; tet < nprim; ++tet, outconn += 4)
-          {
-            this->Tessellator->AdaptivelySample3Facet(
-              pts[outconn[0]], pts[outconn[1]], pts[outconn[2]], pts[outconn[3]]);
-          }
-          break;
-        case 2:
-          for (tri = 0; tri < nprim; ++tri, outconn += 3)
-          {
-            this->Tessellator->AdaptivelySample2Facet(
-              pts[outconn[0]], pts[outconn[1]], pts[outconn[2]]);
-          }
-          break;
-        case 1:
-          for (edg = 0; edg < nprim; ++edg, outconn += 2)
-          {
-            this->Tessellator->AdaptivelySample1Facet(pts[outconn[0]], pts[outconn[1]]);
-          }
-          break;
-        case 0:
-          this->Tessellator->AdaptivelySample0Facet(pts[0]);
-          break;
-        default:
-          // do nothing
-          break;
+        switch (dim)
+        {
+          case 3:
+            for (int tet = 0; tet < nprim; ++tet, outconn += 4)
+            {
+              this->Tessellator->AdaptivelySample3FacetLinear(
+                pts[outconn[0]], pts[outconn[1]], pts[outconn[2]], pts[outconn[3]]);
+            }
+            break;
+          case 2:
+            for (int tri = 0; tri < nprim; ++tri, outconn += 3)
+            {
+              this->Tessellator->AdaptivelySample2FacetLinear(
+                pts[outconn[0]], pts[outconn[1]], pts[outconn[2]]);
+            }
+            break;
+          case 1:
+            for (int edg = 0; edg < nprim; ++edg, outconn += 2)
+            {
+              this->Tessellator->AdaptivelySample1FacetLinear(pts[outconn[0]], pts[outconn[1]]);
+            }
+            break;
+          case 0:
+            this->Tessellator->AdaptivelySample0Facet(pts[0]);
+            break;
+          default:
+            // do nothing
+            break;
+        }
+      }
+      else
+      {
+        switch (dim)
+        {
+          case 3:
+            for (int tet = 0; tet < nprim; ++tet, outconn += 4)
+            {
+              this->Tessellator->AdaptivelySample3Facet(
+                pts[outconn[0]], pts[outconn[1]], pts[outconn[2]], pts[outconn[3]]);
+            }
+            break;
+          case 2:
+            for (int tri = 0; tri < nprim; ++tri, outconn += 3)
+            {
+              this->Tessellator->AdaptivelySample2Facet(
+                pts[outconn[0]], pts[outconn[1]], pts[outconn[2]]);
+            }
+            break;
+          case 1:
+            for (int edg = 0; edg < nprim; ++edg, outconn += 2)
+            {
+              this->Tessellator->AdaptivelySample1Facet(pts[outconn[0]], pts[outconn[1]]);
+            }
+            break;
+          case 0:
+            this->Tessellator->AdaptivelySample0Facet(pts[0]);
+            break;
+          default:
+            // do nothing
+            break;
+        }
       }
 
       // Copy cell data.
@@ -1654,9 +1682,10 @@ int vtkTessellatorFilter::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTessellatorFilter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

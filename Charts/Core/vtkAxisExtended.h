@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCellLocator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAxisExtended
  * @brief   extended axis tick positioning
@@ -31,9 +19,11 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkObject.h"
-#include "vtkVector.h" // Needed for vtkVector
+#include "vtkVector.h"        // Needed for vtkVector
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
-class VTKCHARTSCORE_EXPORT vtkAxisExtended : public vtkObject
+VTK_ABI_NAMESPACE_BEGIN
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkAxisExtended : public vtkObject
 {
 public:
   vtkTypeMacro(vtkAxisExtended, vtkObject);
@@ -92,13 +82,13 @@ public:
    */
   vtkVector3d GenerateExtendedTickLabels(double dmin, double dmax, double m, double scaling);
 
-  //@{
+  ///@{
   /**
    * Set/Get methods for variables
    */
   vtkGetMacro(FontSize, int);
   vtkSetMacro(FontSize, int);
-  //@}
+  ///@}
 
   vtkGetMacro(DesiredFontSize, int);
   vtkSetMacro(DesiredFontSize, int);
@@ -136,3 +126,4 @@ private:
   vtkAxisExtended(const vtkAxisExtended&) = delete;
   void operator=(const vtkAxisExtended&) = delete;
 };
+VTK_ABI_NAMESPACE_END

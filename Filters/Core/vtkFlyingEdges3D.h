@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFlyingEdges3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFlyingEdges3D
  * @brief   generate isosurface from 3D image data (volume)
@@ -45,12 +33,15 @@
  * Algorithm" by Schroeder, Maynard, Geveci. Proc. of LDAV 2015. Chicago, IL.
  *
  * @warning
- * This filter is specialized to 3D volumes. This implementation can produce
- * degenerate triangles (i.e., zero-area triangles).
+ * This filter is specialized to 3D volumes. Note that Flying Edges can produce
+ * degenerate triangles (i.e., zero-area triangles). Consequently, this filter
+ * may not produce the exact same output as Marching Cubes (since many
+ * implementations of MC remove degenerate triangles / duplicate points on
+ * output).
  *
  * @warning
  * If you are interested in extracting segmented regions from a label mask,
- * consider using vtkDiscreteFlyingEdges3D.
+ * consider using vtkSurfaceNets3D or vtkDiscreteFlyingEdges3D.
  *
  * @warning
  * This class has been threaded with vtkSMPTools. Using TBB or other
@@ -59,7 +50,8 @@
  *
  * @sa
  * vtkContourFilter vtkFlyingEdges2D vtkSynchronizedTemplates3D
- * vtkMarchingCubes vtkDiscreteFlyingEdges3D vtkContour3DLinearGrid
+ * vtkMarchingCubes vtkSurfaceNets3D vtkDiscreteFlyingEdges3D
+ * vtkContour3DLinearGrid vtkFlyingEdgesPlaneCutter
  */
 
 #ifndef vtkFlyingEdges3D_h
@@ -69,21 +61,28 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 
 class VTKFILTERSCORE_EXPORT vtkFlyingEdges3D : public vtkPolyDataAlgorithm
 {
 public:
+  ///@{
+  /**
+   * Standard methods for instantiation, obtaining type information, and printing
+   * information.
+   */
   static vtkFlyingEdges3D* New();
   vtkTypeMacro(vtkFlyingEdges3D, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+  ///@}
 
   /**
    * Because we delegate to vtkContourValues.
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of normals. Normal computation is fairly
    * expensive in both time and storage. If the output data will be processed
@@ -93,9 +92,9 @@ public:
   vtkSetMacro(ComputeNormals, vtkTypeBool);
   vtkGetMacro(ComputeNormals, vtkTypeBool);
   vtkBooleanMacro(ComputeNormals, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of gradients. Gradient computation is fairly
    * expensive in both time and storage. Note that if ComputeNormals is on,
@@ -107,18 +106,18 @@ public:
   vtkSetMacro(ComputeGradients, vtkTypeBool);
   vtkGetMacro(ComputeGradients, vtkTypeBool);
   vtkBooleanMacro(ComputeGradients, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of scalars.
    */
   vtkSetMacro(ComputeScalars, vtkTypeBool);
   vtkGetMacro(ComputeScalars, vtkTypeBool);
   vtkBooleanMacro(ComputeScalars, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether to interpolate other attribute data. That is, as the
    * isosurface is generated, interpolate all point attribute data across
@@ -128,7 +127,7 @@ public:
   vtkSetMacro(InterpolateAttributes, vtkTypeBool);
   vtkGetMacro(InterpolateAttributes, vtkTypeBool);
   vtkBooleanMacro(InterpolateAttributes, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Set a particular contour value at contour number i. The index i ranges
@@ -184,13 +183,13 @@ public:
     this->ContourValues->GenerateValues(numContours, rangeStart, rangeEnd);
   }
 
-  //@{
+  ///@{
   /**
    * Set/get which component of the scalar array to contour on; defaults to 0.
    */
   vtkSetMacro(ArrayComponent, int);
   vtkGetMacro(ArrayComponent, int);
-  //@}
+  ///@}
 
 protected:
   vtkFlyingEdges3D();
@@ -212,4 +211,5 @@ private:
   void operator=(const vtkFlyingEdges3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

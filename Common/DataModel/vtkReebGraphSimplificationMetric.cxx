@@ -1,36 +1,25 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReebGraphSimplificationMetric.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkReebGraphSimplificationMetric.h"
 
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkReebGraphSimplificationMetric);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReebGraphSimplificationMetric::vtkReebGraphSimplificationMetric()
 {
   this->LowerBound = 0;
   this->UpperBound = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReebGraphSimplificationMetric::~vtkReebGraphSimplificationMetric() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReebGraphSimplificationMetric::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -38,7 +27,7 @@ void vtkReebGraphSimplificationMetric::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Lower Bound: " << this->LowerBound << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkReebGraphSimplificationMetric::ComputeMetric(vtkDataSet* vtkNotUsed(mesh),
   vtkDataArray* vtkNotUsed(scalarField), vtkIdType vtkNotUsed(startCriticalPoint),
   vtkAbstractArray* vtkNotUsed(vertexList), vtkIdType vtkNotUsed(endCriticalPoint))
@@ -46,3 +35,4 @@ double vtkReebGraphSimplificationMetric::ComputeMetric(vtkDataSet* vtkNotUsed(me
   printf("too bad, wrong code\n");
   return 0;
 }
+VTK_ABI_NAMESPACE_END

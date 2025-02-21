@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWebInteractionEvent.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWebInteractionEvent
  *
@@ -24,6 +12,7 @@
 #include "vtkObject.h"
 #include "vtkWebCoreModule.h" // needed for exports
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKWEBCORE_EXPORT vtkWebInteractionEvent : public vtkObject
 {
 public:
@@ -46,31 +35,31 @@ public:
     META_KEY = 0x08
   };
 
-  //@{
+  ///@{
   /**
    * Set/Get the mouse buttons state.
    */
   vtkSetMacro(Buttons, unsigned int);
   vtkGetMacro(Buttons, unsigned int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get modifier state.
    */
   vtkSetMacro(Modifiers, unsigned int);
   vtkGetMacro(Modifiers, unsigned int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the chart code.
    */
   vtkSetMacro(KeyCode, char);
   vtkGetMacro(KeyCode, char);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get event position.
    */
@@ -80,7 +69,7 @@ public:
   vtkGetMacro(Y, double);
   vtkSetMacro(Scroll, double);
   vtkGetMacro(Scroll, double);
-  //@}
+  ///@}
 
   // Handle double click
   vtkSetMacro(RepeatCount, int);
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkWebInteractionEvent&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

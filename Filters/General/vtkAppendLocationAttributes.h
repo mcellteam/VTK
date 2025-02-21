@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAppendLocationAttributes.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAppendLocationAttributes
  * @brief   add point locations to point data and/or cell centers cell data, respectively
@@ -35,6 +23,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPassInputTypeAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkAppendLocationAttributes : public vtkPassInputTypeAlgorithm
 {
 public:
@@ -42,6 +31,7 @@ public:
   vtkTypeMacro(vtkAppendLocationAttributes, vtkPassInputTypeAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
+  ///@{
   /**
    * Enable/disable whether input point locations should be saved as a point data array.
    * Default is `true` i.e. the points will be propagated as a point data array named
@@ -50,9 +40,9 @@ public:
   vtkSetMacro(AppendPointLocations, bool);
   vtkGetMacro(AppendPointLocations, bool);
   vtkBooleanMacro(AppendPointLocations, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable whether input cell center locations should be saved as a cell data array.
    * Default is `true` i.e. the cell centers will be propagated as a cell data array named
@@ -61,7 +51,7 @@ public:
   vtkSetMacro(AppendCellCenters, bool);
   vtkGetMacro(AppendCellCenters, bool);
   vtkBooleanMacro(AppendCellCenters, bool);
-  //@}
+  ///@}
 
 protected:
   vtkAppendLocationAttributes() = default;
@@ -78,4 +68,5 @@ private:
   void operator=(const vtkAppendLocationAttributes&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

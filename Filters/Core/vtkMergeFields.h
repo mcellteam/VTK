@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMergeFields.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMergeFields
  * @brief   Merge multiple fields into one.
@@ -40,6 +28,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkFieldData;
 
@@ -72,14 +61,14 @@ public:
    */
   void Merge(int component, const char* arrayName, int sourceComp);
 
-  //@{
+  ///@{
   /**
    * Set the number of the components in the output field.
    * This has to be set before execution. Default value is 0.
    */
   vtkSetMacro(NumberOfComponents, int);
   vtkGetMacro(NumberOfComponents, int);
-  //@}
+  ///@}
 
   enum FieldLocations
   {
@@ -153,4 +142,5 @@ private:
   void operator=(const vtkMergeFields&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

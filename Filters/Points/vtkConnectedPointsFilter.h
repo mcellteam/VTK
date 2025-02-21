@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkConnectedPointsFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkConnectedPointsFilter
  * @brief   extract / segment points based on geometric connectivity
@@ -61,6 +49,7 @@
 #define VTK_EXTRACT_ALL_REGIONS 5
 #define VTK_EXTRACT_CLOSEST_POINT_REGION 6
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractPointLocator;
 class vtkDataArray;
 class vtkFloatArray;
@@ -79,16 +68,16 @@ public:
    */
   static vtkConnectedPointsFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set / get the radius variable specifying a local sphere used to define
    * local point neighborhood.
    */
   vtkSetClampMacro(Radius, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Radius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the extraction of connected regions.
    */
@@ -110,16 +99,16 @@ public:
   }
   void SetExtractionModeToAllRegions() { this->SetExtractionMode(VTK_EXTRACT_ALL_REGIONS); }
   const char* GetExtractionModeAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use to specify x-y-z point coordinates when extracting the region
    * closest to a specified point.
    */
   vtkSetVector3Macro(ClosestPoint, double);
   vtkGetVectorMacro(ClosestPoint, double, 3);
-  //@}
+  ///@}
 
   /**
    * Initialize list of point ids ids used to seed regions.
@@ -151,7 +140,7 @@ public:
    */
   void DeleteSpecifiedRegion(vtkIdType id);
 
-  //@{
+  ///@{
   /**
    * Turn on/off connectivity based on point normal consistency. If on, and
    * point normals are defined, points are connected only if they satisfy
@@ -161,19 +150,19 @@ public:
   vtkSetMacro(AlignedNormals, int);
   vtkGetMacro(AlignedNormals, int);
   vtkBooleanMacro(AlignedNormals, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a threshold for normal angles. If AlignedNormalsOn is set, then
    * points are connected if the angle between their normals is within this
-   * angle threshold (expressed in degress).
+   * angle threshold (expressed in degrees).
    */
   vtkSetClampMacro(NormalAngle, double, 0.0001, 90.0);
   vtkGetMacro(NormalAngle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off connectivity based on scalar value. If on, points are
    * connected only if they satisfy the various geometric criterion AND one
@@ -182,15 +171,15 @@ public:
   vtkSetMacro(ScalarConnectivity, int);
   vtkGetMacro(ScalarConnectivity, int);
   vtkBooleanMacro(ScalarConnectivity, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scalar range to use to extract points based on scalar connectivity.
    */
   vtkSetVector2Macro(ScalarRange, double);
   vtkGetVector2Macro(ScalarRange, double);
-  //@}
+  ///@}
 
   /**
    * Obtain the number of connected regions. The return value is valid only
@@ -198,7 +187,7 @@ public:
    */
   int GetNumberOfExtractedRegions();
 
-  //@{
+  ///@{
   /**
    * Specify a point locator. By default a vtkStaticPointLocator is
    * used. The locator performs efficient searches to locate points
@@ -206,7 +195,7 @@ public:
    */
   void SetLocator(vtkAbstractPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkAbstractPointLocator);
-  //@}
+  ///@}
 
 protected:
   vtkConnectedPointsFilter();
@@ -257,16 +246,14 @@ private:
   vtkIdList* Wave;
   vtkIdList* Wave2;
 
-private:
   vtkConnectedPointsFilter(const vtkConnectedPointsFilter&) = delete;
   void operator=(const vtkConnectedPointsFilter&) = delete;
 };
 
-//@{
 /**
  * Return the method of extraction as a string.
  */
-inline const char* vtkConnectedPointsFilter::GetExtractionModeAsString(void)
+inline const char* vtkConnectedPointsFilter::GetExtractionModeAsString()
 {
   if (this->ExtractionMode == VTK_EXTRACT_POINT_SEEDED_REGIONS)
   {
@@ -289,6 +276,6 @@ inline const char* vtkConnectedPointsFilter::GetExtractionModeAsString(void)
     return "ExtractLargestRegion";
   }
 }
-//@}
 
+VTK_ABI_NAMESPACE_END
 #endif

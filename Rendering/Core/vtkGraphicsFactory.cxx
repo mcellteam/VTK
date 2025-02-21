@@ -1,29 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphicsFactory.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkObjectFactory.h"
 
 #include "vtkDebugLeaks.h"
 #include "vtkGraphicsFactory.h"
-#include "vtkToolkits.h"
-
-#include "vtkCriticalSection.h"
 
 #include <cstdlib>
+#include <mutex>
 
-static vtkSimpleCriticalSection vtkUseMesaClassesCriticalSection;
-static vtkSimpleCriticalSection vtkOffScreenOnlyModeCriticalSection;
+VTK_ABI_NAMESPACE_BEGIN
+static std::mutex vtkUseMesaClassesCriticalSection;
+static std::mutex vtkOffScreenOnlyModeCriticalSection;
 int vtkGraphicsFactory::UseMesaClasses = 0;
 
 #ifdef VTK_USE_OFFSCREEN
@@ -52,7 +39,7 @@ const char* vtkGraphicsFactory::GetRenderLibrary()
     {
       temp = "Win32OpenGL";
     }
-    else if (strcmp("OpenGL", temp) && strcmp("Win32OpenGL", temp))
+    else if (strcmp("OpenGL", temp) != 0 && strcmp("Win32OpenGL", temp) != 0)
     {
       vtkGenericWarningMacro(<< "VTK_RENDERER set to unsupported type:" << temp);
       temp = nullptr;
@@ -62,7 +49,7 @@ const char* vtkGraphicsFactory::GetRenderLibrary()
   // if nothing is set then work down the list of possible renderers
   if (!temp)
   {
-#if defined(VTK_DISPLAY_X11_OGL) || defined(VTK_OPENGL_HAS_OSMESA)
+#if defined(VTK_DISPLAY_X11_OGL)
     temp = "OpenGL";
 #endif
 #ifdef VTK_DISPLAY_WIN32_OGL
@@ -87,36 +74,37 @@ vtkObject* vtkGraphicsFactory::CreateInstance(const char* vtkclassname)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphicsFactory::SetUseMesaClasses(int use)
 {
-  vtkUseMesaClassesCriticalSection.Lock();
+  vtkUseMesaClassesCriticalSection.lock();
   vtkGraphicsFactory::UseMesaClasses = use;
-  vtkUseMesaClassesCriticalSection.Unlock();
+  vtkUseMesaClassesCriticalSection.unlock();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGraphicsFactory::GetUseMesaClasses()
 {
   return vtkGraphicsFactory::UseMesaClasses;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphicsFactory::SetOffScreenOnlyMode(int use)
 {
-  vtkOffScreenOnlyModeCriticalSection.Lock();
+  vtkOffScreenOnlyModeCriticalSection.lock();
   vtkGraphicsFactory::OffScreenOnlyMode = use;
-  vtkOffScreenOnlyModeCriticalSection.Unlock();
+  vtkOffScreenOnlyModeCriticalSection.unlock();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGraphicsFactory::GetOffScreenOnlyMode()
 {
   return vtkGraphicsFactory::OffScreenOnlyMode;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphicsFactory::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

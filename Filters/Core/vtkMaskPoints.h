@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMaskPoints.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMaskPoints
  * @brief   selectively filter points
@@ -34,6 +22,7 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkMaskPoints : public vtkPolyDataAlgorithm
 {
 public:
@@ -43,6 +32,7 @@ public:
     RANDOMIZED_ID_STRIDES,
     RANDOM_SAMPLING,
     SPATIALLY_STRATIFIED,
+    UNIFORM_SPATIAL_BOUNDS,
     UNIFORM_SPATIAL_SURFACE,
     UNIFORM_SPATIAL_VOLUME
   };
@@ -51,50 +41,50 @@ public:
   vtkTypeMacro(vtkMaskPoints, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Turn on every nth point (strided sampling), ignored by random modes.
    */
   vtkSetClampMacro(OnRatio, int, 1, VTK_INT_MAX);
   vtkGetMacro(OnRatio, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Limit the number of points that can be passed through (i.e.,
    * sets the output sample size).
    */
   vtkSetClampMacro(MaximumNumberOfPoints, vtkIdType, 0, VTK_ID_MAX);
   vtkGetMacro(MaximumNumberOfPoints, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Start sampling with this point. Ignored by certain random modes.
    */
   vtkSetClampMacro(Offset, vtkIdType, 0, VTK_ID_MAX);
   vtkGetMacro(Offset, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Special flag causes randomization of point selection.
    */
   vtkSetMacro(RandomMode, bool);
   vtkGetMacro(RandomMode, bool);
   vtkBooleanMacro(RandomMode, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get Seed used for generating a spatially uniform distributions.
    * default is 1.
    */
   vtkSetMacro(RandomSeed, int);
   vtkGetMacro(RandomSeed, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Special mode selector that switches between random mode types.
    * 0 - randomized strides: randomly strides through the data (default);
@@ -106,7 +96,7 @@ public:
    * a statistically random sample - the closest would be algorithm S)
    * 1 - random sample: create a statistically random sample using Vitter's
    * incremental algorithm D without A described in Vitter
-   * "Faster Mthods for Random Sampling", Communications of the ACM
+   * "Faster Methods for Random Sampling", Communications of the ACM
    * Volume 27, Issue 7, 1984
    * (OnRatio and Offset are ignored) O(sample size)
    * 2 - spatially stratified random sample: create a spatially
@@ -115,18 +105,21 @@ public:
    * Simulation for Interactive Visualization and Analysis",
    * Computer Graphics Forum, 2011 (EuroVis 2011).
    * (OnRatio and Offset are ignored) O(N log N)
-   * 3 - spatially uniform (surface based): points randomly sampled
+   * 3 - spatially uniform (bound based): point randomly sampled
+   * using a point locator and random positions inside the bounds
+   * of the data set.
+   * 4 - spatially uniform (surface based): points randomly sampled
    * via an inverse transform on surface area of each cell.
    * Note that 3D cells are ignored.
-   * 4 - spatially uniform (volume based): points randomly sampled via an
+   * 5 - spatially uniform (volume based): points randomly sampled via an
    * inverse transform on volume area of each cell.
    * Note that 2D cells are ignored.
    */
   vtkSetClampMacro(RandomModeType, int, RANDOMIZED_ID_STRIDES, UNIFORM_SPATIAL_VOLUME);
   vtkGetMacro(RandomModeType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * THIS ONLY WORKS WITH THE PARALLEL IMPLEMENTATION vtkPMaskPoints RUNNING
    * IN PARALLEL.
@@ -143,9 +136,9 @@ public:
   vtkSetMacro(ProportionalMaximumNumberOfPoints, bool);
   vtkGetMacro(ProportionalMaximumNumberOfPoints, bool);
   vtkBooleanMacro(ProportionalMaximumNumberOfPoints, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Generate output polydata vertices as well as points. A useful
    * convenience method because vertices are drawn (they are topology) while
@@ -154,9 +147,9 @@ public:
   vtkSetMacro(GenerateVertices, bool);
   vtkGetMacro(GenerateVertices, bool);
   vtkBooleanMacro(GenerateVertices, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When vertex generation is enabled, by default vertices are produced
    * as multi-vertex cells (more than one per cell), if you wish to have
@@ -165,9 +158,9 @@ public:
   vtkSetMacro(SingleVertexPerCell, bool);
   vtkGetMacro(SingleVertexPerCell, bool);
   vtkBooleanMacro(SingleVertexPerCell, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -175,7 +168,7 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkMaskPoints();
@@ -213,4 +206,5 @@ private:
   void operator=(const vtkMaskPoints&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

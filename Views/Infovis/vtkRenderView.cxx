@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderView.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkRenderView.h"
 
@@ -52,7 +36,6 @@
 #include "vtkTexturedActor2D.h"
 #include "vtkTransform.h"
 #include "vtkTransformCoordinateSystems.h"
-#include "vtkUnicodeString.h"
 #include "vtkViewTheme.h"
 
 #ifdef VTK_USE_QT
@@ -61,6 +44,7 @@
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRenderView);
 vtkCxxSetObjectMacro(vtkRenderView, Transform, vtkAbstractTransform);
 vtkCxxSetObjectMacro(vtkRenderView, IconTexture, vtkTexture);
@@ -504,8 +488,7 @@ void vtkRenderView::UpdateHoverWidgetState()
   this->RenderWindow->MakeCurrent();
   if (this->RenderWindow->IsCurrent())
   {
-    if (!this->Interacting &&
-      (this->HoverWidget->GetEnabled() ? true : false) != this->DisplayHoverText)
+    if (!this->Interacting && (this->HoverWidget->GetEnabled() != 0) != this->DisplayHoverText)
     {
       vtkDebugMacro(<< "turning " << (this->DisplayHoverText ? "on" : "off") << " hover widget");
       this->HoverWidget->SetEnabled(this->DisplayHoverText);
@@ -575,21 +558,21 @@ void vtkRenderView::UpdateHoverText()
   // this->Balloon->SetBalloonText(oss.str().c_str());
   // this->Balloon->StartWidgetInteraction(loc);
 
-  vtkUnicodeString hoverText;
+  std::string hoverText;
   for (int i = 0; i < this->GetNumberOfRepresentations(); ++i)
   {
     vtkRenderedRepresentation* rep =
       vtkRenderedRepresentation::SafeDownCast(this->GetRepresentation(i));
     if (rep && this->RenderWindow->GetInteractor())
     {
-      hoverText = rep->GetHoverText(this, prop, cell);
+      hoverText = rep->GetHoverString(this, prop, cell);
       if (!hoverText.empty())
       {
         break;
       }
     }
   }
-  this->Balloon->SetBalloonText(hoverText.utf8_str());
+  this->Balloon->SetBalloonText(hoverText.c_str());
   this->Balloon->StartWidgetInteraction(loc);
   this->InvokeEvent(vtkCommand::HoverEvent, &hoverText);
 }
@@ -741,3 +724,4 @@ void vtkRenderView::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "InteractionMode: " << this->InteractionMode << endl;
   os << indent << "RenderOnMouseMove: " << this->RenderOnMouseMove << endl;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSplineGraphEdges.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkSplineGraphEdges
  * @brief   subsample graph edges to make smooth curves
@@ -34,6 +18,7 @@
 #include "vtkInfovisLayoutModule.h" // For export macro
 #include "vtkSmartPointer.h"        // For ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSpline;
 
 class VTKINFOVISLAYOUT_EXPORT vtkSplineGraphEdges : public vtkGraphAlgorithm
@@ -43,13 +28,13 @@ public:
   vtkTypeMacro(vtkSplineGraphEdges, vtkGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * If SplineType is CUSTOM, uses this spline.
    */
   virtual void SetSpline(vtkSpline* s);
   vtkGetObjectMacro(Spline, vtkSpline);
-  //@}
+  ///@}
 
   enum
   {
@@ -57,7 +42,7 @@ public:
     CUSTOM
   };
 
-  //@{
+  ///@{
   /**
    * Spline type used by the filter.
    * BSPLINE (0) - Use optimized b-spline (default).
@@ -65,15 +50,15 @@ public:
    */
   vtkSetMacro(SplineType, int);
   vtkGetMacro(SplineType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The number of subdivisions in the spline.
    */
   vtkSetMacro(NumberOfSubdivisions, vtkIdType);
   vtkGetMacro(NumberOfSubdivisions, vtkIdType);
-  //@}
+  ///@}
 
 protected:
   vtkSplineGraphEdges();
@@ -101,4 +86,5 @@ private:
   void operator=(const vtkSplineGraphEdges&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

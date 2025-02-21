@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataMapperNode.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPolyDataMapperNode
  * @brief   vtkViewNode specialized for vtkPolyDataMappers
@@ -29,6 +17,7 @@
 
 #include <vector> //for results
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkPolyDataMapper;
 class vtkPolyData;
@@ -40,7 +29,7 @@ public:
   vtkTypeMacro(vtkPolyDataMapperNode, vtkMapperNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  typedef struct
+  struct vtkPDConnectivity_t
   {
     std::vector<unsigned int> vertex_index;
     std::vector<unsigned int> vertex_reverse;
@@ -50,7 +39,8 @@ public:
     std::vector<unsigned int> triangle_reverse;
     std::vector<unsigned int> strip_index;
     std::vector<unsigned int> strip_reverse;
-  } vtkPDConnectivity;
+  };
+  using vtkPDConnectivity = struct vtkPDConnectivity_t;
 
 protected:
   vtkPolyDataMapperNode();
@@ -76,4 +66,5 @@ private:
   void operator=(const vtkPolyDataMapperNode&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

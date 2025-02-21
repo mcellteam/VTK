@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSphericalDirectionEncoder.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSphericalDirectionEncoder
  * @brief   A direction encoder based on spherical coordinates
@@ -29,6 +17,7 @@
 #include "vtkDirectionEncoder.h"
 #include "vtkRenderingVolumeModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGVOLUME_EXPORT vtkSphericalDirectionEncoder : public vtkDirectionEncoder
 {
 public:
@@ -55,7 +44,7 @@ public:
   /**
    * Return the number of encoded directions
    */
-  int GetNumberOfEncodedDirections(void) override { return 65536; }
+  int GetNumberOfEncodedDirections() override { return 65536; }
 
   /**
    * Get the decoded gradient table. There are
@@ -63,7 +52,10 @@ public:
    * containing a normal (direction) vector. This is a flat structure -
    * 3 times the number of directions floats in an array.
    */
-  float* GetDecodedGradientTable(void) override { return &(this->DecodedGradientTable[0]); }
+  float* GetDecodedGradientTable() override
+  {
+    return &(vtkSphericalDirectionEncoder::DecodedGradientTable[0]);
+  }
 
 protected:
   vtkSphericalDirectionEncoder();
@@ -71,17 +63,18 @@ protected:
 
   static float DecodedGradientTable[65536 * 3];
 
-  //@{
+  ///@{
   /**
    * Initialize the table at startup
    */
   static void InitializeDecodedGradientTable();
   static int DecodedGradientTableInitialized;
-  //@}
+  ///@}
 
 private:
   vtkSphericalDirectionEncoder(const vtkSphericalDirectionEncoder&) = delete;
   void operator=(const vtkSphericalDirectionEncoder&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

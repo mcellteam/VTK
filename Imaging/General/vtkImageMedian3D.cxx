@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMedian3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageMedian3D.h"
 
 #include "vtkCellData.h"
@@ -25,9 +13,10 @@
 
 #include <algorithm> // for std::nth_element
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageMedian3D);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageMedian3D filter.
 vtkImageMedian3D::vtkImageMedian3D()
 {
@@ -36,10 +25,10 @@ vtkImageMedian3D::vtkImageMedian3D()
   this->HandleBoundaries = 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageMedian3D::~vtkImageMedian3D() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageMedian3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -47,7 +36,7 @@ void vtkImageMedian3D::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "NumberOfElements: " << this->NumberOfElements << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method sets the size of the neighborhood.  It also sets the
 // default middle of the neighborhood
 void vtkImageMedian3D::SetKernelSize(int size0, int size1, int size2)
@@ -82,7 +71,7 @@ void vtkImageMedian3D::SetKernelSize(int size0, int size1, int size2)
 namespace
 {
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the median with std::nth_element
 template <class T>
 T vtkComputeMedianOfArray(T* aBegin, T* aEnd)
@@ -103,7 +92,7 @@ T vtkComputeMedianOfArray(T* aBegin, T* aEnd)
 
 } // end anonymous namespace
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains the second switch statement that calls the correct
 // templated function for the mask types.
 template <class T>
@@ -270,7 +259,7 @@ void vtkImageMedian3DExecute(vtkImageMedian3D* self, vtkImageData* inData, T* in
   delete[] workArray;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains the first switch statement that calls the correct
 // templated function for the input and output region types.
 void vtkImageMedian3D::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
@@ -305,3 +294,4 @@ void vtkImageMedian3D::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
       return;
   }
 }
+VTK_ABI_NAMESPACE_END

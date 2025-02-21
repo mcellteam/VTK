@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkIdFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkIdFilter
  * @brief   generate scalars or field data from point and cell ids
@@ -31,9 +19,13 @@
 #define vtkIdFilter_h
 
 #include "vtkDataSetAlgorithm.h"
+#include "vtkDeprecation.h"       // For VTK_DEPRECATED_IN_9_4_0
 #include "vtkFiltersCoreModule.h" // For export macro
 
-class VTKFILTERSCORE_EXPORT vtkIdFilter : public vtkDataSetAlgorithm
+VTK_ABI_NAMESPACE_BEGIN
+class VTK_DEPRECATED_IN_9_4_0(
+  "Please use `vtkGenerateIds` instead.") VTKFILTERSCORE_EXPORT vtkIdFilter
+  : public vtkDataSetAlgorithm
 {
 public:
   vtkTypeMacro(vtkIdFilter, vtkDataSetAlgorithm);
@@ -45,25 +37,25 @@ public:
    */
   static vtkIdFilter* New();
 
-  //@{
+  ///@{
   /**
    * Enable/disable the generation of point ids. Default is on.
    */
   vtkSetMacro(PointIds, vtkTypeBool);
   vtkGetMacro(PointIds, vtkTypeBool);
   vtkBooleanMacro(PointIds, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable the generation of point ids. Default is on.
    */
   vtkSetMacro(CellIds, vtkTypeBool);
   vtkGetMacro(CellIds, vtkTypeBool);
   vtkBooleanMacro(CellIds, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the flag which controls whether to generate scalar data
    * or field data. If this flag is off, scalar data is generated.
@@ -72,34 +64,25 @@ public:
   vtkSetMacro(FieldData, vtkTypeBool);
   vtkGetMacro(FieldData, vtkTypeBool);
   vtkBooleanMacro(FieldData, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
-  /**
-   * @deprecated use SetPointIdsArrayName/GetPointIdsArrayName or
-   * SetCellIdsArrayName/GetCellIdsArrayName.
-   */
-  VTK_LEGACY(void SetIdsArrayName(const char*));
-  VTK_LEGACY(const char* GetIdsArrayName());
-  //@}
-
-  //@{
+  ///@{
   /**
    * Set/Get the name of the Ids array for points, if generated. By default,
    * set to "vtkIdFilter_Ids" for backwards compatibility.
    */
   vtkSetStringMacro(PointIdsArrayName);
   vtkGetStringMacro(PointIdsArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the name of the Ids array for points, if generated. By default,
    * set to "vtkIdFilter_Ids" for backwards compatibility.
    */
   vtkSetStringMacro(CellIdsArrayName);
   vtkGetStringMacro(CellIdsArrayName);
-  //@}
+  ///@}
 protected:
   vtkIdFilter();
   ~vtkIdFilter() override;
@@ -117,4 +100,5 @@ private:
   void operator=(const vtkIdFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

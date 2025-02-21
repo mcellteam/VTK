@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLabelHierarchy.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkLabelHierarchy
  * @brief   contains an octree of labels
@@ -63,7 +47,9 @@
 
 #include "vtkPointSet.h"
 #include "vtkRenderingLabelModule.h" // For export macro
+#include "vtkWrappingHints.h"        // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractArray;
 class vtkCamera;
 class vtkCoincidentPoints;
@@ -76,7 +62,7 @@ class vtkPolyData;
 class vtkRenderer;
 class vtkTextProperty;
 
-class VTKRENDERINGLABEL_EXPORT vtkLabelHierarchy : public vtkPointSet
+class VTKRENDERINGLABEL_EXPORT VTK_MARSHALAUTO vtkLabelHierarchy : public vtkPointSet
 {
 public:
   static vtkLabelHierarchy* New();
@@ -93,22 +79,22 @@ public:
    */
   virtual void ComputeHierarchy();
 
-  //@{
+  ///@{
   /**
    * The number of labels that is ideally present at any octree node.
    * It is best if this is a multiple of \f$2^d\f$.
    */
   vtkSetMacro(TargetLabelCount, int);
   vtkGetMacro(TargetLabelCount, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The maximum depth of the octree.
    */
   vtkSetMacro(MaximumDepth, int);
   vtkGetMacro(MaximumDepth, int);
-  //@}
+  ///@}
 
   /**
    * Enumeration of iterator types.
@@ -121,61 +107,61 @@ public:
     FRUSTUM
   };
 
-  //@{
+  ///@{
   /**
    * The default text property assigned to labels in this hierarchy.
    */
   virtual void SetTextProperty(vtkTextProperty* tprop);
   vtkGetObjectMacro(TextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the array specifying the importance (priority) of each label.
    */
   virtual void SetPriorities(vtkDataArray* arr);
   vtkGetObjectMacro(Priorities, vtkDataArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the array specifying the text of each label.
    */
   virtual void SetLabels(vtkAbstractArray* arr);
   vtkGetObjectMacro(Labels, vtkAbstractArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the array specifying the orientation of each label.
    */
   virtual void SetOrientations(vtkDataArray* arr);
   vtkGetObjectMacro(Orientations, vtkDataArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the array specifying the icon index of each label.
    */
   virtual void SetIconIndices(vtkIntArray* arr);
   vtkGetObjectMacro(IconIndices, vtkIntArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the array specifying the size of each label.
    */
   virtual void SetSizes(vtkDataArray* arr);
   vtkGetObjectMacro(Sizes, vtkDataArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the array specifying the maximum width and height in world coordinates of each label.
    */
   virtual void SetBoundedSizes(vtkDataArray* arr);
   vtkGetObjectMacro(BoundedSizes, vtkDataArray);
-  //@}
+  ///@}
 
   /**
    * Returns an iterator for this data object.
@@ -217,7 +203,7 @@ public:
    */
   static bool GetPathForNodalCoordinates(int* path, int ijk[3], int level);
 
-  //@{
+  ///@{
   /**
    * Inherited members (from vtkDataSet)
    */
@@ -226,34 +212,35 @@ public:
   vtkCell* GetCell(vtkIdType) override;
   void GetCell(vtkIdType, vtkGenericCell*) override;
   int GetCellType(vtkIdType) override;
+  using vtkDataSet::GetCellPoints;
   void GetCellPoints(vtkIdType, vtkIdList*) override;
   void GetPointCells(vtkIdType, vtkIdList*) override;
   vtkIdType FindCell(double*, vtkCell*, vtkIdType, double, int&, double*, double*) override;
   vtkIdType FindCell(
     double*, vtkCell*, vtkGenericCell*, vtkIdType, double, int&, double*, double*) override;
   int GetMaxCellSize() override;
-  //@}
+  ///@}
 
   class Implementation;
   Implementation* GetImplementation() { return this->Impl; }
 
-  //@{
+  ///@{
   /**
    * Provide access to original coordinates of sets of coincident points
    */
   vtkGetObjectMacro(CenterPts, vtkPoints);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Provide access to the set of coincident points that have been
    * perturbed by the hierarchy in order to render labels for each
    * without overlap.
    */
   vtkGetObjectMacro(CoincidentPoints, vtkCoincidentPoints);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Compute frustum for quickly excluding labels from rendering
    * that are outside the visible region.
@@ -261,7 +248,7 @@ public:
    */
   static void GetAnchorFrustumPlanes(
     double frustumPlanes[24], vtkRenderer* ren, vtkCoordinate* anchorTransform);
-  //@}
+  ///@}
 
 protected:
   vtkLabelHierarchy();
@@ -290,4 +277,5 @@ private:
   void operator=(const vtkLabelHierarchy&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkLabelHierarchy_h

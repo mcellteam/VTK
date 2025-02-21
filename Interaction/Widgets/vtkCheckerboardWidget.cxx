@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCheckerboardWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCheckerboardWidget.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCheckerboardRepresentation.h"
@@ -22,6 +10,7 @@
 #include "vtkSliderRepresentation3D.h"
 #include "vtkSliderWidget.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCheckerboardWidget);
 
 // The checkerboard simply observes the behavior of four vtkSliderWidgets.
@@ -55,7 +44,7 @@ public:
   vtkCheckerboardWidget* CheckerboardWidget;
 };
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCheckerboardWidget::vtkCheckerboardWidget()
 {
   this->TopSlider = vtkSliderWidget::New();
@@ -101,7 +90,7 @@ vtkCheckerboardWidget::vtkCheckerboardWidget()
   cwCallback3->Delete(); // okay reference counting
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCheckerboardWidget::~vtkCheckerboardWidget()
 {
   this->TopSlider->Delete();
@@ -110,7 +99,7 @@ vtkCheckerboardWidget::~vtkCheckerboardWidget()
   this->LeftSlider->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -119,7 +108,7 @@ void vtkCheckerboardWidget::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardWidget::SetEnabled(int enabling)
 {
   if (!this->Interactor)
@@ -207,28 +196,28 @@ void vtkCheckerboardWidget::SetEnabled(int enabling)
   this->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardWidget::StartCheckerboardInteraction()
 {
   this->Superclass::StartInteraction();
   this->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardWidget::CheckerboardInteraction(int sliderNum)
 {
   reinterpret_cast<vtkCheckerboardRepresentation*>(this->WidgetRep)->SliderValueChanged(sliderNum);
   this->InvokeEvent(vtkCommand::InteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardWidget::EndCheckerboardInteraction()
 {
   this->Superclass::EndInteraction();
   this->InvokeEvent(vtkCommand::EndInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -270,3 +259,4 @@ void vtkCheckerboardWidget::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Left Slider: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

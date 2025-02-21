@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLineWidget2.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLineWidget2
  * @brief   3D widget for manipulating a finite, straight line
@@ -36,7 +24,7 @@
  *   LeftButtonReleaseEvent - release the handle widget associated with the point
  *   MouseMoveEvent - move the point
  * If the line is selected:
- *   LeftButtonPressEvent - activate a handle widget accociated with the line
+ *   LeftButtonPressEvent - activate a handle widget associated with the line
  *   LeftButtonReleaseEvent - release the handle widget associated with the line
  *   MouseMoveEvent - translate the line
  * In all the cases, independent of what is picked, the widget responds to the
@@ -84,11 +72,13 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLineRepresentation;
 class vtkHandleWidget;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkLineWidget2 : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkLineWidget2 : public vtkAbstractWidget
 {
 public:
   /**
@@ -96,13 +86,13 @@ public:
    */
   static vtkLineWidget2* New();
 
-  //@{
+  ///@{
   /**
    * Standard vtkObject methods
    */
   vtkTypeMacro(vtkLineWidget2, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Override superclasses' SetEnabled() method because the line
@@ -145,11 +135,12 @@ protected:
 
   // Manage the state of the widget
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Active
   };
+
   int CurrentHandle;
 
   // These methods handle events
@@ -172,4 +163,5 @@ private:
   void operator=(const vtkLineWidget2&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

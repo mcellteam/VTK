@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWidgetRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWidgetRepresentation
  * @brief   abstract class defines interface between the widget and widget representation classes
@@ -31,6 +19,22 @@
  * way the representation responds to the registered widget events, so the API
  * may vary from widget to widget to reflect this complexity.
  *
+ * Clients of VTK, like ParaView, need a uniform way to set colors on widgets.
+ * Most widgets have standard color setters - new widgets should follow this pattern.
+ * The intended use of these colors is as follows:
+ * | Color       | Description |
+ * | ----------- | ----------- |
+ * | `HandleColor`      | Widget handles that are available to interact with via click+drag. | |
+ * `InteractionColor` | Widget handles the user is interacting with (via a click+drag) or hovering
+ * over.     | | `ForegroundColor`  | Widget elements meant to contrast with the background and
+ * which are not interactive. |
+ *
+ * When hovering, the `InteractionColor` can also be used to show which parts
+ * of the widget will change if this handle is dragged. For instance, using the
+ * `vtkDisplaySizedImplicitPlaneRepresentation`, hovering the axis also displays
+ * the plane disc in the `InteractionColor`, to show it will change when the
+ * axis is rotated.
+ *
  * @warning
  * The separation of the widget event handling and representation enables
  * users and developers to create new appearances for the widget. It also
@@ -45,8 +49,12 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkNew.h"                      // for ivars
 #include "vtkProp.h"
-#include "vtkWeakPointer.h" // needed for vtkWeakPointer iVar.
+#include "vtkVector.h"        // for vtkVector3d
+#include "vtkWeakPointer.h"   // needed for vtkWeakPointer iVar.
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
+class vtkAbstractPicker;
 class vtkAbstractPropPicker;
 class vtkAbstractWidget;
 class vtkMatrix4x4;
@@ -56,18 +64,18 @@ class vtkRenderWindowInteractor;
 class vtkRenderer;
 class vtkTransform;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkWidgetRepresentation : public vtkProp
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkWidgetRepresentation : public vtkProp
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkWidgetRepresentation, vtkProp);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/Disable the use of a manager to process the picking.
    * Enabled by default.
@@ -75,9 +83,9 @@ public:
   vtkBooleanMacro(PickingManaged, bool);
   void SetPickingManaged(bool managed);
   vtkGetMacro(PickingManaged, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Subclasses of vtkWidgetRepresentation must implement these methods. This is
    * considered the minimum API for a widget representation.
@@ -97,14 +105,14 @@ public:
   virtual void SetRenderer(vtkRenderer* ren);
   virtual vtkRenderer* GetRenderer();
   virtual void BuildRepresentation() = 0;
-  //@}
+  ///@}
 
   /**
    * The following is a suggested API for widget representations. These methods
    * define the communication between the widget and its representation. These
    * methods are only suggestions because widgets take on so many different
    * forms that a universal API is not deemed practical. However, these methods
-   * should be implemented when possible to insure that the VTK widget hierarchy
+   * should be implemented when possible to ensure that the VTK widget hierarchy
    * remains self-consistent.
    * <pre>
    * PlaceWidget() - given a bounding box (xmin,xmax,ymin,ymax,zmin,zmax), place
@@ -131,7 +139,7 @@ public:
    * Note that subclasses may ignore some of these methods and implement their own
    * depending on the specifics of the widget.
    */
-  virtual void PlaceWidget(double* vtkNotUsed(bounds[6])) {}
+  virtual void PlaceWidget(double vtkNotUsed(bounds)[6]);
   virtual void StartWidgetInteraction(double eventPos[2]) { (void)eventPos; }
   virtual void WidgetInteraction(double newEventPos[2]) { (void)newEventPos; }
   virtual void EndWidgetInteraction(double newEventPos[2]) { (void)newEventPos; }
@@ -139,7 +147,7 @@ public:
   virtual int GetInteractionState() { return this->InteractionState; }
   virtual void Highlight(int vtkNotUsed(highlightOn)) {}
 
-  //@{
+  ///@{
   // Widgets were originally designed to be driven by 2D mouse events
   // With Virtual Reality and multitouch we get mnore complex events
   // that may involve multiple pointers as well as 3D pointers and
@@ -160,9 +168,9 @@ public:
   }
   virtual int ComputeComplexInteractionState(vtkRenderWindowInteractor* iren,
     vtkAbstractWidget* widget, unsigned long event, void* callData, int modify = 0);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a factor representing the scaling of the widget upon placement
    * (via the PlaceWidget() method). Normally the widget is placed so that
@@ -172,9 +180,9 @@ public:
    */
   vtkSetClampMacro(PlaceFactor, double, 0.01, VTK_DOUBLE_MAX);
   vtkGetMacro(PlaceFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the factor that controls the size of the handles that appear as
    * part of the widget (if any). These handles (like spheres, etc.)  are
@@ -186,9 +194,9 @@ public:
    */
   vtkSetClampMacro(HandleSize, double, 0.001, 1000);
   vtkGetMacro(HandleSize, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Some subclasses use this data member to keep track of whether to render
    * or not (i.e., to minimize the total number of renders).
@@ -196,11 +204,11 @@ public:
   vtkGetMacro(NeedToRender, vtkTypeBool);
   vtkSetClampMacro(NeedToRender, vtkTypeBool, 0, 1);
   vtkBooleanMacro(NeedToRender, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Methods to make this class behave as a vtkProp. They are repeated here (from the
-   * vtkProp superclass) as a reminder to the widget implementor. Failure to implement
+   * vtkProp superclass) as a reminder to the widget implementer. Failure to implement
    * these methods properly may result in the representation not appearing in the scene
    * (i.e., not implementing the Render() methods properly) or leaking graphics resources
    * (i.e., not implementing ReleaseGraphicsResources() properly).
@@ -229,7 +237,7 @@ public:
    */
   virtual void UnRegisterPickers();
 
-  //@{
+  ///@{
   /**
    * Axis labels
    */
@@ -238,13 +246,19 @@ public:
     NONE = -1,
     XAxis = 0,
     YAxis = 1,
-    ZAxis = 2
+    ZAxis = 2,
+    Custom = 3
   };
-  //@}
+  ///@}
 
 protected:
   vtkWidgetRepresentation();
   ~vtkWidgetRepresentation() override;
+
+  /**
+   * Return the given screen point in world coordinates, based on picked position.
+   */
+  vtkVector3d GetWorldPoint(vtkAbstractPicker* picker, double screenPos[2]);
 
   // The renderer in which this widget is placed
   vtkWeakPointer<vtkRenderer> Renderer;
@@ -320,4 +334,5 @@ private:
   void operator=(const vtkWidgetRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

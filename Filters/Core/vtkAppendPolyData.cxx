@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAppendPolyData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAppendPolyData.h"
 
 #include "vtkAlgorithmOutput.h"
@@ -32,9 +20,10 @@
 #include <cassert>
 #include <cstdlib>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAppendPolyData);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAppendPolyData::vtkAppendPolyData()
 {
   this->ParallelStreaming = 0;
@@ -42,10 +31,10 @@ vtkAppendPolyData::vtkAppendPolyData()
   this->OutputPointsPrecision = vtkAlgorithm::DEFAULT_PRECISION;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAppendPolyData::~vtkAppendPolyData() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Add a dataset to the list of data to append.
 void vtkAppendPolyData::AddInputData(vtkPolyData* ds)
 {
@@ -57,7 +46,7 @@ void vtkAppendPolyData::AddInputData(vtkPolyData* ds)
   this->Superclass::AddInputData(ds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Remove a dataset from the list of data to append.
 void vtkAppendPolyData::RemoveInputData(vtkPolyData* ds)
 {
@@ -81,7 +70,7 @@ void vtkAppendPolyData::RemoveInputData(vtkPolyData* ds)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // make ProcessObject function visible
 // should only be used when UserManagedInputs is true.
 void vtkAppendPolyData::SetNumberOfInputs(int num)
@@ -96,7 +85,7 @@ void vtkAppendPolyData::SetNumberOfInputs(int num)
   this->SetNumberOfInputConnections(0, num);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAppendPolyData::SetInputDataByNumber(int num, vtkPolyData* input)
 {
   vtkTrivialProducer* tp = vtkTrivialProducer::New();
@@ -105,7 +94,7 @@ void vtkAppendPolyData::SetInputDataByNumber(int num, vtkPolyData* input)
   tp->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set Nth input, should only be used when UserManagedInputs is true.
 void vtkAppendPolyData::SetInputConnectionByNumber(int num, vtkAlgorithmOutput* input)
 {
@@ -119,7 +108,7 @@ void vtkAppendPolyData::SetInputConnectionByNumber(int num, vtkAlgorithmOutput* 
   this->SetNthInputConnection(0, num, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAppendPolyData::ExecuteAppend(vtkPolyData* output, vtkPolyData* inputs[], int numInputs)
 {
   int idx;
@@ -339,8 +328,13 @@ int vtkAppendPolyData::ExecuteAppend(vtkPolyData* output, vtkPolyData* inputs[],
   vtkIdType polysOffset = numVerts + numLines;
   vtkIdType stripsOffset = numVerts + numLines + numPolys;
   countPD = countCD = 0;
+  int checkAbortInterval = std::min(numInputs / 10 + 1, 1000);
   for (idx = 0; idx < numInputs; ++idx)
   {
+    if (idx % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     this->UpdateProgress(0.2 + 0.8 * idx / numInputs);
     ds = inputs[idx];
     // this check is not necessary, but I'll put it in anyway
@@ -438,7 +432,7 @@ int vtkAppendPolyData::ExecuteAppend(vtkPolyData* output, vtkPolyData* inputs[],
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is much too long, and has to be broken up!
 // Append data sets into single polygonal data set.
 int vtkAppendPolyData::RequestData(vtkInformation* vtkNotUsed(request),
@@ -465,7 +459,7 @@ int vtkAppendPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAppendPolyData::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -529,13 +523,13 @@ int vtkAppendPolyData::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkAppendPolyData::GetInput(int idx)
 {
   return vtkPolyData::SafeDownCast(this->GetExecutive()->GetInputData(0, idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAppendPolyData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -545,7 +539,7 @@ void vtkAppendPolyData::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 struct AppendDataWorker
@@ -571,7 +565,7 @@ struct AppendDataWorker
 };
 } // end anon namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAppendPolyData::AppendData(vtkDataArray* dest, vtkDataArray* src, vtkIdType offset)
 {
   assert("Arrays have same number of components." &&
@@ -587,13 +581,13 @@ void vtkAppendPolyData::AppendData(vtkDataArray* dest, vtkDataArray* src, vtkIdT
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAppendPolyData::AppendCells(vtkCellArray* dst, vtkCellArray* src, vtkIdType offset)
 {
   dst->Append(src, offset);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAppendPolyData::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -603,3 +597,4 @@ int vtkAppendPolyData::FillInputPortInformation(int port, vtkInformation* info)
   info->Set(vtkAlgorithm::INPUT_IS_REPEATABLE(), 1);
   return 1;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBlueObeliskDataParser.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBlueObeliskDataParser
  * @brief   Fill a vtkBlueObeliskData
@@ -41,10 +29,10 @@
 
 #include "vtkSmartPointer.h" // For vtkSmartPointer
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractArray;
 class vtkBlueObeliskData;
 class vtkFloatArray;
-class vtkStdString;
 class vtkStringArray;
 class vtkUnsignedShortArray;
 
@@ -67,7 +55,7 @@ public:
    */
   int Parse() override;
 
-  //@{
+  ///@{
   /**
    * These are only implemented to prevent compiler warnings about hidden
    * virtual overloads. This function simply call Parse(); the arguments are
@@ -75,7 +63,7 @@ public:
    */
   int Parse(const char*) override;
   int Parse(const char*, unsigned int) override;
-  //@}
+  ///@}
 
 protected:
   vtkBlueObeliskDataParser();
@@ -125,11 +113,11 @@ protected:
   } CurrentValueType;
 
   int CurrentAtomicNumber;
-  vtkStdString* CurrentSymbol;
-  vtkStdString* CurrentName;
-  vtkStdString* CurrentPeriodicTableBlock;
-  vtkStdString* CurrentElectronicConfiguration;
-  vtkStdString* CurrentFamily;
+  std::string* CurrentSymbol;
+  std::string* CurrentName;
+  std::string* CurrentPeriodicTableBlock;
+  std::string* CurrentElectronicConfiguration;
+  std::string* CurrentFamily;
   float CurrentMass;
   float CurrentExactMass;
   float CurrentIonizationEnergy;
@@ -147,17 +135,17 @@ private:
   vtkBlueObeliskDataParser(const vtkBlueObeliskDataParser&) = delete;
   void operator=(const vtkBlueObeliskDataParser&) = delete;
 
-  //@{
+  ///@{
   /**
    * Resize array if needed and set the entry at ind to val.
    */
   static void ResizeArrayIfNeeded(vtkAbstractArray* arr, vtkIdType ind);
-  static void ResizeAndSetValue(vtkStdString* val, vtkStringArray* arr, vtkIdType ind);
+  static void ResizeAndSetValue(std::string* val, vtkStringArray* arr, vtkIdType ind);
   static void ResizeAndSetValue(float val, vtkFloatArray* arr, vtkIdType ind);
   static void ResizeAndSetValue(unsigned short val, vtkUnsignedShortArray* arr, vtkIdType ind);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Parse types from const char *
    */
@@ -165,15 +153,16 @@ private:
   static float parseFloat(const char*);
   static void parseFloat3(const char* str, float[3]);
   static unsigned short parseUnsignedShort(const char*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Convert a string to lower case. This will modify the input string
    * and return the input pointer.
    */
-  static vtkStdString* ToLower(vtkStdString*);
-  //@}
+  static std::string* ToLower(std::string*);
+  ///@}
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

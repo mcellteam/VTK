@@ -1,21 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoundingBox.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBoundingBox.h"
 #include "vtkArrayDispatch.h"
 #include "vtkDataArrayRange.h"
 #include "vtkMath.h"
+#include "vtkMathUtilities.h"
 #include "vtkPlane.h"
 #include "vtkPoints.h"
 #include "vtkSMPThreadLocal.h"
@@ -25,7 +14,8 @@
 #include <cassert>
 #include <cmath>
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 inline double Sign(const double& a)
@@ -36,9 +26,9 @@ inline bool OppSign(const double& a, const double& b)
 {
   return (a <= 0 && b >= 0) || (a >= 0 && b <= 0);
 }
-};
+}
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::AddPoint(double px, double py, double pz)
 {
   double p[3];
@@ -48,7 +38,7 @@ void vtkBoundingBox::AddPoint(double px, double py, double pz)
   this->AddPoint(p);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::AddPoint(double p[3])
 {
   int i;
@@ -66,7 +56,7 @@ void vtkBoundingBox::AddPoint(double p[3])
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::AddBox(const vtkBoundingBox& bbox)
 {
   double bds[6];
@@ -74,7 +64,7 @@ void vtkBoundingBox::AddBox(const vtkBoundingBox& bbox)
   this->AddBounds(bds);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::AddBounds(const double bounds[6])
 {
   bool this_valid = (this->IsValid() != 0);
@@ -122,7 +112,7 @@ void vtkBoundingBox::AddBounds(const double bounds[6])
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::SetBounds(
   double xMin, double xMax, double yMin, double yMax, double zMin, double zMax)
 {
@@ -134,7 +124,7 @@ void vtkBoundingBox::SetBounds(
   this->MaxPnt[2] = zMax;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::SetMinPoint(double x, double y, double z)
 {
   this->MinPnt[0] = x;
@@ -156,7 +146,7 @@ void vtkBoundingBox::SetMinPoint(double x, double y, double z)
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::SetMaxPoint(double x, double y, double z)
 {
   this->MaxPnt[0] = x;
@@ -178,7 +168,7 @@ void vtkBoundingBox::SetMaxPoint(double x, double y, double z)
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::Inflate(double deltaX, double deltaY, double deltaZ)
 {
   this->MinPnt[0] -= deltaX;
@@ -189,13 +179,13 @@ void vtkBoundingBox::Inflate(double deltaX, double deltaY, double deltaZ)
   this->MaxPnt[2] += deltaZ;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::Inflate(double delta)
 {
   this->Inflate(delta, delta, delta);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Adjust bounding box so that it contains a non-zero volume.  Note that zero
 // widths are expanded by the arbitrary 1% of the maximum width. If all
 // edge widths are zero, then the box is expanded by 0.5 in each direction.
@@ -235,7 +225,23 @@ void vtkBoundingBox::Inflate()
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Make sure the length of all sides of the bounding box are non-zero, and at
+// least 2*delta thick.
+void vtkBoundingBox::InflateSlice(double delta)
+{
+  for (auto i = 0; i < 3; ++i)
+  {
+    double w = this->MaxPnt[i] - this->MinPnt[i];
+    if (w < (2.0 * delta))
+    {
+      this->MinPnt[i] -= delta;
+      this->MaxPnt[i] += delta;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 int vtkBoundingBox::IntersectBox(const vtkBoundingBox& bbox)
 {
   // if either box is not valid don't do the operation
@@ -284,7 +290,7 @@ int vtkBoundingBox::IntersectBox(const vtkBoundingBox& bbox)
   return 1;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundingBox::Intersects(const vtkBoundingBox& bbox) const
 {
   // if either box is not valid they don't intersect
@@ -316,7 +322,7 @@ int vtkBoundingBox::Intersects(const vtkBoundingBox& bbox) const
   return 1;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundingBox::Contains(const vtkBoundingBox& bbox) const
 {
   // if either box is not valid or they don't intersect
@@ -337,7 +343,52 @@ int vtkBoundingBox::Contains(const vtkBoundingBox& bbox) const
   return 1;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+bool vtkBoundingBox::ContainsLine(const double x[3], const double s[3], const double lineEnd[3],
+  double& t, double xInt[3], int& plane)
+{
+  double v[3], tMin = VTK_DOUBLE_MAX;
+  double halfBox[3] = { s[0] / 2.0, s[1] / 2.0, s[2] / 2.0 };
+  for (auto i = 0; i < 3; ++i)
+  {
+    v[i] = (lineEnd[i] - x[i]);
+
+    // Compare to - plane
+    if (v[i] < -halfBox[i])
+    {
+      if ((t = (-halfBox[i] / v[i])) < tMin)
+      {
+        tMin = t;
+        plane = 2 * i;
+      }
+    }
+    // else compare to + plane
+    else if (v[i] > halfBox[i])
+    {
+      if ((t = (halfBox[i] / v[i])) < tMin)
+      {
+        tMin = t;
+        plane = 2 * i + 1;
+      }
+    }
+  } // for all 3 pairs of +/- planes
+
+  // See if there are any intersections, and if so compute intersection point.
+  if (tMin == VTK_DOUBLE_MAX)
+  {
+    return true; // line is contained by box
+  }
+  else
+  {
+    t = tMin;
+    xInt[0] = x[0] + t * v[0];
+    xInt[1] = x[1] + t * v[1];
+    xInt[2] = x[2] + t * v[2];
+    return false; // line is not contained by box
+  }
+}
+
+//------------------------------------------------------------------------------
 double vtkBoundingBox::GetMaxLength() const
 {
   double l[3];
@@ -357,18 +408,24 @@ double vtkBoundingBox::GetMaxLength() const
   return l[2];
 }
 
-// ---------------------------------------------------------------------------
-double vtkBoundingBox::GetDiagonalLength() const
+//------------------------------------------------------------------------------
+double vtkBoundingBox::GetDiagonalLength2() const
 {
   assert("pre: not_empty" && this->IsValid());
 
   double l[3];
   this->GetLengths(l);
 
-  return sqrt(l[0] * l[0] + l[1] * l[1] + l[2] * l[2]);
+  return l[0] * l[0] + l[1] * l[1] + l[2] * l[2];
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+double vtkBoundingBox::GetDiagonalLength() const
+{
+  return std::sqrt(this->GetDiagonalLength2());
+}
+
+//------------------------------------------------------------------------------
 // Description:
 // Scale each dimension of the box by some given factor.
 // If the box is not valid, it stays unchanged.
@@ -416,19 +473,19 @@ void vtkBoundingBox::Scale(double sx, double sy, double sz)
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::Scale(double s[3])
 {
   this->Scale(s[0], s[1], s[2]);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::ScaleAboutCenter(double s)
 {
   this->ScaleAboutCenter(s, s, s);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Scale the box around the bounding box center point.
 void vtkBoundingBox::ScaleAboutCenter(double sx, double sy, double sz)
 {
@@ -448,13 +505,13 @@ void vtkBoundingBox::ScaleAboutCenter(double sx, double sy, double sz)
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundingBox::ScaleAboutCenter(double s[3])
 {
   this->ScaleAboutCenter(s[0], s[1], s[2]);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the number of divisions given the current bounding box and a
 // target number of buckets/bins. Note that degenerate bounding boxes (i.e.,
 // one or more of the edges are zero length) are handled properly.
@@ -521,6 +578,10 @@ vtkIdType vtkBoundingBox::ComputeDivisions(vtkIdType totalBins, double bounds[6]
     divs[i] = (divs[i] < 1 ? 1 : divs[i]);
   }
 
+  // Make sure that we do not exceed the totalBins, brute force the divs[]
+  // as necessary.
+  vtkBoundingBox::ClampDivisions(totalBins, divs);
+
   // Now compute the final bounds, making sure it is a non-zero volume.
   double delta = 0.5 * lengths[maxIdx] / static_cast<double>(divs[maxIdx]);
   for (int i = 0; i < 3; ++i)
@@ -537,6 +598,24 @@ vtkIdType vtkBoundingBox::ComputeDivisions(vtkIdType totalBins, double bounds[6]
     }
   }
   return static_cast<vtkIdType>(divs[0]) * divs[1] * divs[2];
+}
+
+//------------------------------------------------------------------------------
+void vtkBoundingBox::ClampDivisions(vtkIdType targetBins, int divs[3])
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    divs[i] = ((divs[i] < 1) ? 1 : divs[i]);
+  }
+  vtkIdType numBins = divs[0] * divs[1] * divs[2];
+  while (numBins > targetBins)
+  {
+    for (int i = 0; i < 3; ++i)
+    {
+      divs[i] = ((divs[i] > 1) ? (divs[i] - 1) : 1);
+    }
+    numBins = divs[0] * divs[1] * divs[2];
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -627,140 +706,635 @@ bool vtkBoundingBox::IntersectPlane(double origin[3], double normal[3])
   return true;
 }
 
-// ---------------------------------------------------------------------------
-// Support ComputeBounds()
-namespace
+//------------------------------------------------------------------------------
+bool vtkBoundingBox::IntersectsSphere(double center[3], double radius) const
 {
-
-template <typename PointsT>
-struct FastBounds
-{
-  PointsT* Points;
-  const unsigned char* PointUses;
-  double* Bounds;
-  vtkSMPThreadLocal<std::array<double, 6> > LocalBounds;
-
-  FastBounds(PointsT* pts, const unsigned char* ptUses, double* bds)
-    : Points(pts)
-    , PointUses(ptUses)
-    , Bounds(bds)
-  {
-  }
-
-  void Initialize()
-  {
-    std::array<double, 6>& localBds = this->LocalBounds.Local();
-
-    localBds[0] = VTK_DOUBLE_MAX;
-    localBds[2] = VTK_DOUBLE_MAX;
-    localBds[4] = VTK_DOUBLE_MAX;
-
-    localBds[1] = VTK_DOUBLE_MIN;
-    localBds[3] = VTK_DOUBLE_MIN;
-    localBds[5] = VTK_DOUBLE_MIN;
-  }
-
-  void operator()(vtkIdType beginPtId, vtkIdType endPtId)
-  {
-    std::array<double, 6>& localBds = this->LocalBounds.Local();
-    const auto tuples = vtk::DataArrayTupleRange<3>(this->Points, beginPtId, endPtId);
-    const unsigned char usedConst[1] = { 1 };
-    const unsigned char* used =
-      (this->PointUses != nullptr ? this->PointUses + beginPtId : usedConst);
-
-    for (const auto tuple : tuples)
-    {
-      if (*used)
-      {
-        double x = static_cast<double>(tuple[0]);
-        double y = static_cast<double>(tuple[1]);
-        double z = static_cast<double>(tuple[2]);
-
-        localBds[0] = std::min(x, localBds[0]);
-        localBds[1] = std::max(x, localBds[1]);
-        localBds[2] = std::min(y, localBds[2]);
-        localBds[3] = std::max(y, localBds[3]);
-        localBds[4] = std::min(z, localBds[4]);
-        localBds[5] = std::max(z, localBds[5]);
-      }
-      if (this->PointUses != nullptr)
-      {
-        ++used;
-      }
-    }
-  }
-
-  void Reduce()
-  {
-    // Composite bounds from all threads
-    double xmin = VTK_DOUBLE_MAX;
-    double ymin = VTK_DOUBLE_MAX;
-    double zmin = VTK_DOUBLE_MAX;
-    double xmax = VTK_DOUBLE_MIN;
-    double ymax = VTK_DOUBLE_MIN;
-    double zmax = VTK_DOUBLE_MIN;
-
-    for (auto iter = this->LocalBounds.begin(); iter != this->LocalBounds.end(); ++iter)
-    {
-      xmin = std::min((*iter)[0], xmin);
-      xmax = std::max((*iter)[1], xmax);
-      ymin = std::min((*iter)[2], ymin);
-      ymax = std::max((*iter)[3], ymax);
-      zmin = std::min((*iter)[4], zmin);
-      zmax = std::max((*iter)[5], zmax);
-    }
-
-    this->Bounds[0] = xmin;
-    this->Bounds[1] = xmax;
-    this->Bounds[2] = ymin;
-    this->Bounds[3] = ymax;
-    this->Bounds[4] = zmin;
-    this->Bounds[5] = zmax;
-  }
-};
-
-// Hooks into dispatcher vtkArrayDispatch by providing a callable generic
-struct BoundsWorker
-{
-  template <typename PointsT>
-  void operator()(PointsT* pts, const unsigned char* ptUses, double* bds)
-  {
-    vtkIdType numPts = pts->GetNumberOfTuples();
-    FastBounds<PointsT> fastBds(pts, ptUses, bds);
-    vtkSMPTools::For(0, numPts, fastBds);
-  }
-};
-
-} // anonymous namespace
-
-// ---------------------------------------------------------------------------
-// Fast computing of bounding box from vtkPoints.
-void vtkBoundingBox::ComputeBounds(vtkPoints* pts, double bounds[6])
-{
-  return vtkBoundingBox::ComputeBounds(pts, nullptr, bounds);
+  return center[0] >= this->MinPnt[0] - radius && center[0] <= this->MaxPnt[0] + radius &&
+    center[1] >= this->MinPnt[1] - radius && center[1] <= this->MaxPnt[1] + radius &&
+    center[2] >= this->MinPnt[2] - radius && center[2] <= this->MaxPnt[2] + radius;
 }
 
 // ---------------------------------------------------------------------------
-// Fast computing of bounding box from vtkPoints and optional array that marks
-// points that should be used in the computation.
-void vtkBoundingBox::ComputeBounds(vtkPoints* pts, const unsigned char* ptUses, double bounds[6])
+bool vtkBoundingBox::IntersectsLine(const double p1[3], const double p2[3]) const
 {
-  // Check for valid
-  vtkIdType numPts;
-  if (pts == nullptr || (numPts = pts->GetNumberOfPoints()) < 1)
+  if (this->ContainsPoint(p1) || this->ContainsPoint(p2))
   {
-    bounds[0] = bounds[2] = bounds[4] = VTK_DOUBLE_MAX;
-    bounds[1] = bounds[3] = bounds[5] = VTK_DOUBLE_MIN;
-    return;
+    return true;
   }
 
+  if (vtkMathUtilities::NearlyEqual(p1[0], p2[0]) && vtkMathUtilities::NearlyEqual(p1[1], p2[1]) &&
+    vtkMathUtilities::NearlyEqual(p1[2], p2[2]))
+  {
+    return false;
+  }
+
+  double line[3];
+  vtkMath::Subtract(p2, p1, line);
+  vtkMath::Normalize(line);
+
+  const double* points[2] = { p1, p2 };
+  const double* bbPoints[2] = { this->MinPnt, this->MaxPnt };
+
+  for (int dim = 0; dim < 3; ++dim)
+  {
+    if (std::abs(line[dim]) > VTK_DBL_EPSILON)
+    {
+      for (int pointId = 0; pointId < 2; ++pointId)
+      {
+        const double* p = points[pointId];
+        const double* bbp = bbPoints[pointId];
+        double t = (bbp[dim] - p[dim]) / line[dim];
+        int orthdimx = (dim + 1) % 3;
+        int orthdimy = (dim + 2) % 3;
+        double x = p[orthdimx] + t * line[orthdimx];
+        double y = p[orthdimy] + t * line[orthdimy];
+        if (x - this->MinPnt[orthdimx] >=
+            -VTK_DBL_EPSILON * std::max(std::abs(x), std::abs(this->MinPnt[orthdimx])) &&
+          x - this->MaxPnt[orthdimx] <=
+            VTK_DBL_EPSILON * std::max(std::abs(x), std::abs(this->MaxPnt[orthdimx])) &&
+          y - this->MinPnt[orthdimy] >=
+            -VTK_DBL_EPSILON * std::max(std::abs(x), std::abs(this->MinPnt[orthdimy])) &&
+          y - this->MaxPnt[orthdimy] <=
+            VTK_DBL_EPSILON * std::max(std::abs(x), std::abs(this->MaxPnt[orthdimy])))
+        {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+void vtkBoundingBox::GetDistance(double point[3], double distance[3])
+{
+  for (int i = 0; i < 3; i++)
+  {
+    if (point[i] < this->MinPnt[i])
+    {
+      distance[i] = point[i] - this->MinPnt[i];
+    }
+    else if (point[i] > this->MaxPnt[i])
+    {
+      distance[i] = point[i] - this->MaxPnt[i];
+    }
+    else
+    {
+      distance[i] = 0;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+void vtkBoundingBox::Translate(double motion[3])
+{
+  for (int i = 0; i < 3; i++)
+  {
+    this->MinPnt[i] += motion[i];
+    this->MaxPnt[i] += motion[i];
+  }
+}
+
+// ---------------------------------------------------------------------------
+void vtkBoundingBox::ClampPoint(double point[3])
+{
+  for (int i = 0; i < 3; i++)
+  {
+    if (point[i] < this->MinPnt[i])
+    {
+      point[i] = this->MinPnt[i];
+    }
+    else if (point[i] > this->MaxPnt[i])
+    {
+      point[i] = this->MaxPnt[i];
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+int vtkBoundingBox::ComputeInnerDimension() const
+{
+  double thickness = this->MaxPnt[0] - this->MinPnt[0];
+  int dim = 3;
+  if (std::abs(thickness) <=
+    std::max(std::fabs(this->MaxPnt[0]), std::fabs(this->MinPnt[0])) * VTK_DBL_EPSILON)
+  {
+    --dim;
+  }
+  thickness = this->MaxPnt[1] - this->MinPnt[1];
+  if (std::abs(thickness) <=
+    std::max(std::fabs(this->MaxPnt[1]), std::fabs(this->MinPnt[1])) * VTK_DBL_EPSILON)
+  {
+    --dim;
+  }
+  thickness = this->MaxPnt[2] - this->MinPnt[2];
+  if (std::fabs(thickness) <=
+    std::max(std::fabs(this->MaxPnt[2]), std::fabs(this->MinPnt[2])) * VTK_DBL_EPSILON)
+  {
+    --dim;
+  }
+  return dim;
+}
+
+// Support ComputeBounds()
+namespace
+{
+// ---------------------------------------------------------------------------
+// Base Bounds Functor
+template <typename TPointsArray>
+struct BaseBoundsFunctor
+{
+  TPointsArray* PointsArray;
+  double* Bounds;
+
+  BaseBoundsFunctor(TPointsArray* pointsArray, double* bounds)
+    : PointsArray(pointsArray)
+    , Bounds(bounds)
+  {
+  }
+  virtual ~BaseBoundsFunctor() = default;
+};
+
+// ---------------------------------------------------------------------------
+// Threaded Base Bounds Functor
+template <typename TPointsArray>
+struct ThreadedBaseBoundsFunctor : public BaseBoundsFunctor<TPointsArray>
+{
+  vtkSMPThreadLocal<std::array<double, 6>> LocalBounds;
+
+  ThreadedBaseBoundsFunctor(TPointsArray* pts, double* bds)
+    : BaseBoundsFunctor<TPointsArray>(pts, bds)
+  {
+  }
+  ~ThreadedBaseBoundsFunctor() override = default;
+  virtual void Initialize()
+  {
+    std::array<double, 6>& localBds = this->LocalBounds.Local();
+    localBds[0] = localBds[2] = localBds[4] = VTK_DOUBLE_MAX;
+    localBds[1] = localBds[3] = localBds[5] = VTK_DOUBLE_MIN;
+  }
+  virtual void operator()(vtkIdType begin, vtkIdType end) = 0;
+  virtual void Reduce()
+  {
+    // Composite bounds from all threads
+    this->Bounds[0] = this->Bounds[2] = this->Bounds[4] = VTK_DOUBLE_MAX;
+    this->Bounds[1] = this->Bounds[3] = this->Bounds[5] = VTK_DOUBLE_MIN;
+    for (const auto& localBds : this->LocalBounds)
+    {
+      this->Bounds[0] = std::min(this->Bounds[0], localBds[0]);
+      this->Bounds[1] = std::max(this->Bounds[1], localBds[1]);
+      this->Bounds[2] = std::min(this->Bounds[2], localBds[2]);
+      this->Bounds[3] = std::max(this->Bounds[3], localBds[3]);
+      this->Bounds[4] = std::min(this->Bounds[4], localBds[4]);
+      this->Bounds[5] = std::max(this->Bounds[5], localBds[5]);
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Serial bounds functor
+template <typename TPointsArray>
+struct SerialBoundsFunctor : public BaseBoundsFunctor<TPointsArray>
+{
+  SerialBoundsFunctor(TPointsArray* pts, double* bds)
+    : BaseBoundsFunctor<TPointsArray>(pts, bds)
+  {
+  }
+  ~SerialBoundsFunctor() override = default;
+
+  void operator()(vtkIdType numberOfPoints)
+  {
+    if (numberOfPoints == 0)
+    {
+      vtkMath::UninitializeBounds(this->Bounds);
+      return;
+    }
+    const auto points = vtk::DataArrayTupleRange<3>(this->PointsArray);
+    double point[3];
+    // Initialize bounds to first point:
+    {
+      // Explicitly reusing a local will improve performance when virtual
+      // calls are involved in the iterator read:
+      points.GetTuple(0, point);
+
+      this->Bounds[0] = point[0];
+      this->Bounds[1] = point[0];
+      this->Bounds[2] = point[1];
+      this->Bounds[3] = point[1];
+      this->Bounds[4] = point[2];
+      this->Bounds[5] = point[2];
+    }
+    // Reduce bounds with the rest of the ids:
+    for (vtkIdType i = 1; i < numberOfPoints; ++i)
+    {
+      // Explicitly reusing a local will improve performance when virtual
+      // calls are involved in the iterator read:
+      points.GetTuple(i, point);
+
+      this->Bounds[0] = std::min(this->Bounds[0], point[0]);
+      this->Bounds[1] = std::max(this->Bounds[1], point[0]);
+      this->Bounds[2] = std::min(this->Bounds[2], point[1]);
+      this->Bounds[3] = std::max(this->Bounds[3], point[1]);
+      this->Bounds[4] = std::min(this->Bounds[4], point[2]);
+      this->Bounds[5] = std::max(this->Bounds[5], point[2]);
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Threaded bounds functor
+template <typename TPointsArray>
+struct ThreadedBoundsFunctor : public ThreadedBaseBoundsFunctor<TPointsArray>
+{
+  ThreadedBoundsFunctor(TPointsArray* pts, double* bds)
+    : ThreadedBaseBoundsFunctor<TPointsArray>(pts, bds)
+  {
+  }
+  ~ThreadedBoundsFunctor() override = default;
+
+  void Initialize() override { this->ThreadedBaseBoundsFunctor<TPointsArray>::Initialize(); }
+
+  void operator()(vtkIdType beginPtId, vtkIdType endPtId) override
+  {
+    std::array<double, 6>& localBds = this->LocalBounds.Local();
+    const auto points = vtk::DataArrayTupleRange<3>(this->PointsArray);
+    double point[3];
+
+    for (vtkIdType i = beginPtId; i < endPtId; ++i)
+    {
+      // Explicitly reusing a local will improve performance when virtual
+      // calls are involved in the iterator read:
+      points.GetTuple(i, point);
+
+      localBds[0] = std::min(localBds[0], point[0]);
+      localBds[1] = std::max(localBds[1], point[0]);
+      localBds[2] = std::min(localBds[2], point[1]);
+      localBds[3] = std::max(localBds[3], point[1]);
+      localBds[4] = std::min(localBds[4], point[2]);
+      localBds[5] = std::max(localBds[5], point[2]);
+    }
+  }
+
+  void Reduce() override { this->ThreadedBaseBoundsFunctor<TPointsArray>::Reduce(); }
+};
+
+// ---------------------------------------------------------------------------
+// Serial bounds with point uses
+template <typename TPointsArray, typename TUsed>
+struct SerialBoundsPointUsesFunctor : public BaseBoundsFunctor<TPointsArray>
+{
+  const TUsed* PointUses;
+  SerialBoundsPointUsesFunctor(TPointsArray* pts, const TUsed* ptUses, double* bds)
+    : BaseBoundsFunctor<TPointsArray>(pts, bds)
+    , PointUses(ptUses)
+  {
+  }
+  ~SerialBoundsPointUsesFunctor() override = default;
+
+  void operator()(vtkIdType numberOfPoints)
+  {
+    if (numberOfPoints == 0)
+    {
+      vtkMath::UninitializeBounds(this->Bounds);
+      return;
+    }
+
+    this->Bounds[0] = this->Bounds[2] = this->Bounds[4] = VTK_DOUBLE_MAX;
+    this->Bounds[1] = this->Bounds[3] = this->Bounds[5] = VTK_DOUBLE_MIN;
+
+    const auto points = vtk::DataArrayTupleRange<3>(this->PointsArray);
+    const TUsed* used = this->PointUses;
+    double point[3];
+
+    for (vtkIdType i = 0; i < numberOfPoints; ++i)
+    {
+      if (*used)
+      {
+        // Explicitly reusing a local will improve performance when virtual
+        // calls are involved in the iterator read:
+        points.GetTuple(i, point);
+
+        this->Bounds[0] = std::min(this->Bounds[0], point[0]);
+        this->Bounds[1] = std::max(this->Bounds[1], point[0]);
+        this->Bounds[2] = std::min(this->Bounds[2], point[1]);
+        this->Bounds[3] = std::max(this->Bounds[3], point[1]);
+        this->Bounds[4] = std::min(this->Bounds[4], point[2]);
+        this->Bounds[5] = std::max(this->Bounds[5], point[2]);
+      }
+      ++used;
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Threaded bounds with point uses
+template <typename TPointsArray, typename TUsed>
+struct ThreadedBoundsPointUsesFunctor : public ThreadedBaseBoundsFunctor<TPointsArray>
+{
+  const TUsed* PointUses;
+
+  ThreadedBoundsPointUsesFunctor(TPointsArray* pts, const TUsed* ptUses, double* bds)
+    : ThreadedBaseBoundsFunctor<TPointsArray>(pts, bds)
+    , PointUses(ptUses)
+  {
+  }
+  ~ThreadedBoundsPointUsesFunctor() override = default;
+
+  void Initialize() override { this->ThreadedBaseBoundsFunctor<TPointsArray>::Initialize(); }
+
+  void operator()(vtkIdType beginPtId, vtkIdType endPtId) override
+  {
+    std::array<double, 6>& localBds = this->LocalBounds.Local();
+    const auto points = vtk::DataArrayTupleRange<3>(this->PointsArray);
+    const TUsed* used = static_cast<const TUsed*>(this->PointUses + beginPtId);
+    double point[3];
+
+    for (vtkIdType i = beginPtId; i < endPtId; ++i)
+    {
+      if (*used)
+      {
+        // Explicitly reusing a local will improve performance when virtual
+        // calls are involved in the iterator read:
+        points.GetTuple(i, point);
+
+        localBds[0] = std::min(localBds[0], point[0]);
+        localBds[1] = std::max(localBds[1], point[0]);
+        localBds[2] = std::min(localBds[2], point[1]);
+        localBds[3] = std::max(localBds[3], point[1]);
+        localBds[4] = std::min(localBds[4], point[2]);
+        localBds[5] = std::max(localBds[5], point[2]);
+      }
+      ++used;
+    }
+  }
+
+  void Reduce() override { this->ThreadedBaseBoundsFunctor<TPointsArray>::Reduce(); }
+};
+
+// ---------------------------------------------------------------------------
+// Serial bounds with point ids
+template <typename TPointsArray, typename TId>
+struct SerialBoundsPointIdsFunctor : public BaseBoundsFunctor<TPointsArray>
+{
+  const TId* PointIds;
+
+  SerialBoundsPointIdsFunctor(TPointsArray* pts, const TId* ptIds, double* bds)
+    : BaseBoundsFunctor<TPointsArray>(pts, bds)
+    , PointIds(ptIds)
+  {
+  }
+  ~SerialBoundsPointIdsFunctor() override = default;
+
+  void operator()(vtkIdType numberOfPoints)
+  {
+    if (numberOfPoints == 0)
+    {
+      vtkMath::UninitializeBounds(this->Bounds);
+      return;
+    }
+    const auto points = vtk::DataArrayTupleRange<3>(this->PointsArray);
+    double point[3];
+    // Initialize bounds to first point:
+    {
+      // Explicitly reusing a local will improve performance when virtual
+      // calls are involved in the iterator read:
+      points.GetTuple(this->PointIds[0], point);
+
+      this->Bounds[0] = point[0];
+      this->Bounds[1] = point[0];
+      this->Bounds[2] = point[1];
+      this->Bounds[3] = point[1];
+      this->Bounds[4] = point[2];
+      this->Bounds[5] = point[2];
+    }
+    // Reduce bounds with the rest of the ids:
+    for (vtkIdType i = 1; i < numberOfPoints; ++i)
+    {
+      // Explicitly reusing a local will improve performance when virtual
+      // calls are involved in the iterator read:
+      points.GetTuple(this->PointIds[i], point);
+
+      this->Bounds[0] = std::min(this->Bounds[0], point[0]);
+      this->Bounds[1] = std::max(this->Bounds[1], point[0]);
+      this->Bounds[2] = std::min(this->Bounds[2], point[1]);
+      this->Bounds[3] = std::max(this->Bounds[3], point[1]);
+      this->Bounds[4] = std::min(this->Bounds[4], point[2]);
+      this->Bounds[5] = std::max(this->Bounds[5], point[2]);
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Threaded bounds with point ids
+template <typename TPointsArray, typename TId>
+struct ThreadedBoundsPointIdsFunctor : public ThreadedBaseBoundsFunctor<TPointsArray>
+{
+  const TId* PointIds;
+
+  ThreadedBoundsPointIdsFunctor(TPointsArray* pts, const TId* ptIds, double* bds)
+    : ThreadedBaseBoundsFunctor<TPointsArray>(pts, bds)
+    , PointIds(ptIds)
+  {
+  }
+  ~ThreadedBoundsPointIdsFunctor() override = default;
+
+  void Initialize() override { this->ThreadedBaseBoundsFunctor<TPointsArray>::Initialize(); }
+
+  void operator()(vtkIdType beginPtId, vtkIdType endPtId) override
+  {
+    std::array<double, 6>& localBds = this->LocalBounds.Local();
+    const auto points = vtk::DataArrayTupleRange<3>(this->PointsArray);
+    double point[3];
+    // Reduce bounds with the rest of the ids:
+    for (vtkIdType i = beginPtId; i < endPtId; ++i)
+    {
+      // Explicitly reusing a local will improve performance when virtual
+      // calls are involved in the iterator read:
+      points.GetTuple(this->PointIds[i], point);
+
+      localBds[0] = std::min(localBds[0], point[0]);
+      localBds[1] = std::max(localBds[1], point[0]);
+      localBds[2] = std::min(localBds[2], point[1]);
+      localBds[3] = std::max(localBds[3], point[1]);
+      localBds[4] = std::min(localBds[4], point[2]);
+      localBds[5] = std::max(localBds[5], point[2]);
+    }
+  }
+
+  void Reduce() override { this->ThreadedBaseBoundsFunctor<TPointsArray>::Reduce(); }
+};
+
+// ---------------------------------------------------------------------------
+struct BoundsWorker
+{
+  template <typename TPointsArray>
+  void operator()(TPointsArray* pts, double* bds)
+  {
+    const vtkIdType numPts = pts->GetNumberOfTuples();
+    // We use THRESHOLD to test if the data size is small enough
+    // to execute the functor serially. This is faster.
+    // and also potentially avoids nested multithreading which creates race conditions.
+    if (numPts <= vtkSMPTools::THRESHOLD)
+    {
+      SerialBoundsFunctor<TPointsArray> serialBds(pts, bds);
+      serialBds(numPts);
+    }
+    else
+    {
+      ThreadedBoundsFunctor<TPointsArray> threadedBds(pts, bds);
+      vtkSMPTools::For(0, numPts, threadedBds);
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+struct BoundsPointUsesWorker
+{
+  template <typename TPointsArray, typename TUsed>
+  void operator()(TPointsArray* pts, const TUsed* ptUses, double* bds)
+  {
+    const vtkIdType numPts = pts->GetNumberOfTuples();
+    // We use THRESHOLD to test if the data size is small enough
+    // to execute the functor serially. This is faster.
+    // and also potentially avoids nested multithreading which creates race conditions.
+    if (numPts <= vtkSMPTools::THRESHOLD)
+    {
+      SerialBoundsPointUsesFunctor<TPointsArray, TUsed> serialBds(pts, ptUses, bds);
+      serialBds(numPts);
+    }
+    else
+    {
+      ThreadedBoundsPointUsesFunctor<TPointsArray, TUsed> threadedBds(pts, ptUses, bds);
+      vtkSMPTools::For(0, numPts, threadedBds);
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+struct BoundsPointIdsWorker
+{
+  template <typename TPointsArray, typename TId>
+  void operator()(TPointsArray* pts, const TId* ptIds, TId numberOfPointsIds, double* bds)
+  {
+    // We use THRESHOLD to test if the data size is small enough
+    // to execute the functor serially. This is faster.
+    // and also potentially avoids nested multithreading which creates race conditions.
+    if (numberOfPointsIds <= vtkSMPTools::THRESHOLD)
+    {
+      SerialBoundsPointIdsFunctor<TPointsArray, TId> serialBds(pts, ptIds, bds);
+      serialBds(numberOfPointsIds);
+    }
+    else
+    {
+      ThreadedBoundsPointIdsFunctor<TPointsArray, TId> threadedBds(pts, ptIds, bds);
+      vtkSMPTools::For(0, numberOfPointsIds, threadedBds);
+    }
+  }
+};
+} // anonymous namespace
+
+//------------------------------------------------------------------------------
+void vtkBoundingBox::ComputeBounds(vtkPoints* pts, double bounds[6])
+{
   // Compute bounds: dispatch to real types, fallback for other types.
-  using vtkArrayDispatch::Reals;
-  using Dispatcher = vtkArrayDispatch::DispatchByValueType<Reals>;
+  using Dispatcher = vtkArrayDispatch::DispatchByValueTypeUsingArrays<vtkArrayDispatch::AllArrays,
+    vtkArrayDispatch::Reals>;
   BoundsWorker worker;
+
+  if (!Dispatcher::Execute(pts->GetData(), worker, bounds))
+  { // Fallback to slowpath for other point types
+    worker(pts->GetData(), bounds);
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkBoundingBox::ComputeBounds(vtkPoints* pts, const unsigned char* ptUses, double bounds[6])
+{
+  // Compute bounds: dispatch to real types, fallback for other types.
+  using Dispatcher = vtkArrayDispatch::DispatchByValueTypeUsingArrays<vtkArrayDispatch::AllArrays,
+    vtkArrayDispatch::Reals>;
+  BoundsPointUsesWorker worker;
 
   if (!Dispatcher::Execute(pts->GetData(), worker, ptUses, bounds))
   { // Fallback to slowpath for other point types
     worker(pts->GetData(), ptUses, bounds);
   }
 }
+
+//------------------------------------------------------------------------------
+void vtkBoundingBox::ComputeBounds(
+  vtkPoints* pts, const std::atomic<unsigned char>* ptUses, double bounds[6])
+{
+  // Compute bounds: dispatch to real types, fallback for other types.
+  using Dispatcher = vtkArrayDispatch::DispatchByValueTypeUsingArrays<vtkArrayDispatch::AllArrays,
+    vtkArrayDispatch::Reals>;
+  BoundsPointUsesWorker worker;
+
+  if (!Dispatcher::Execute(pts->GetData(), worker, ptUses, bounds))
+  { // Fallback to slowpath for other point types
+    worker(pts->GetData(), ptUses, bounds);
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkBoundingBox::ComputeBounds(
+  vtkPoints* pts, const long long* ptIds, long long numberOfPointsIds, double bounds[6])
+{
+  // Compute bounds: dispatch to real types, fallback for other types.
+  using Dispatcher = vtkArrayDispatch::DispatchByValueTypeUsingArrays<vtkArrayDispatch::AllArrays,
+    vtkArrayDispatch::Reals>;
+  BoundsPointIdsWorker worker;
+
+  if (!Dispatcher::Execute(pts->GetData(), worker, ptIds, numberOfPointsIds, bounds))
+  { // Fallback to slowpath for other point types
+    worker(pts->GetData(), ptIds, numberOfPointsIds, bounds);
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkBoundingBox::ComputeBounds(
+  vtkPoints* pts, const long* ptIds, long numberOfPointsIds, double bounds[6])
+{
+  // Compute bounds: dispatch to real types, fallback for other types.
+  using Dispatcher = vtkArrayDispatch::DispatchByValueTypeUsingArrays<vtkArrayDispatch::AllArrays,
+    vtkArrayDispatch::Reals>;
+  BoundsPointIdsWorker worker;
+
+  if (!Dispatcher::Execute(pts->GetData(), worker, ptIds, numberOfPointsIds, bounds))
+  { // Fallback to slowpath for other point types
+    worker(pts->GetData(), ptIds, numberOfPointsIds, bounds);
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkBoundingBox::ComputeBounds(
+  vtkPoints* pts, const int* ptIds, int numberOfPointsIds, double bounds[6])
+{
+  // Compute bounds: dispatch to real types, fallback for other types.
+  using Dispatcher = vtkArrayDispatch::DispatchByValueTypeUsingArrays<vtkArrayDispatch::AllArrays,
+    vtkArrayDispatch::Reals>;
+  BoundsPointIdsWorker worker;
+
+  if (!Dispatcher::Execute(pts->GetData(), worker, ptIds, numberOfPointsIds, bounds))
+  { // Fallback to slowpath for other point types
+    worker(pts->GetData(), ptIds, numberOfPointsIds, bounds);
+  }
+}
+
+// ---------------------------------------------------------------------------
+void vtkBoundingBox::ComputeLocalBounds(
+  vtkPoints* points, double u[3], double v[3], double w[3], double outputBounds[6])
+{
+  vtkBoundingBox bbox;
+
+  for (vtkIdType i = 0; i < points->GetNumberOfPoints(); i++)
+  {
+    double* point = points->GetPoint(i);
+    double du = vtkMath::Dot(point, u);
+    double dv = vtkMath::Dot(point, v);
+    double dw = vtkMath::Dot(point, w);
+    bbox.AddPoint(du, dv, dw);
+  }
+  bbox.GetBounds(outputBounds);
+}
+VTK_ABI_NAMESPACE_END

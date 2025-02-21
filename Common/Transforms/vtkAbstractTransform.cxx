@@ -1,57 +1,77 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractTransform.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAbstractTransform.h"
 
-#include "vtkCriticalSection.h"
 #include "vtkDataArray.h"
 #include "vtkDebugLeaks.h"
-#include "vtkHomogeneousTransform.h"
+#include "vtkIndent.h"
+#include "vtkLinearTransform.h"
 #include "vtkMath.h"
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
 #include "vtkPoints.h"
+#include "vtkSMPTools.h"
 
-//----------------------------------------------------------------------------
+#include <mutex> // for std::mutex
+
+VTK_ABI_NAMESPACE_BEGIN
+
+class vtkAbstractTransform::vtkInternals
+{
+public:
+  // We need to record the time of the last update, and we also need
+  // to do mutex locking so updates don't collide.  These are private
+  // because Update() is not virtual.
+  // If DependsOnInverse is set, then this transform object will
+  // check its inverse on every update, and update itself accordingly
+  // if necessary.
+
+  vtkTimeStamp UpdateTime;
+  std::mutex UpdateMutex;
+  std::mutex InverseMutex;
+
+  // MyInverse is a transform which is the inverse of this one.
+
+  vtkAbstractTransform* MyInverse;
+
+  bool DependsOnInverse;
+  bool InUpdate;
+  bool InUnRegister;
+};
+
+//------------------------------------------------------------------------------
 vtkAbstractTransform::vtkAbstractTransform()
 {
-  this->MyInverse = nullptr;
-  this->DependsOnInverse = 0;
-  this->InUnRegister = 0;
-  this->UpdateMutex = new vtkSimpleCriticalSection;
-  this->InverseMutex = new vtkSimpleCriticalSection;
+  this->Internals = new vtkInternals;
+  this->Internals->MyInverse = nullptr;
+  this->Internals->DependsOnInverse = false;
+  this->Internals->InUpdate = false;
+  this->Internals->InUnRegister = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractTransform::~vtkAbstractTransform()
 {
-  if (this->MyInverse)
+  if (this->Internals->MyInverse)
   {
-    this->MyInverse->Delete();
+    this->Internals->MyInverse->Delete();
   }
-  delete this->UpdateMutex;
-  delete this->InverseMutex;
+
+  if (this->Internals)
+  {
+    delete this->Internals;
+    this->Internals = nullptr;
+  }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractTransform::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "Inverse: (" << this->MyInverse << ")\n";
+  os << indent << "Inverse: (" << this->Internals->MyInverse << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractTransform::TransformNormalAtPoint(
   const double point[3], const double in[3], double out[3])
 {
@@ -87,7 +107,7 @@ void vtkAbstractTransform::TransformNormalAtPoint(
   out[2] = static_cast<float>(normal[2]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractTransform::TransformVectorAtPoint(
   const double point[3], const double in[3], double out[3])
 {
@@ -121,25 +141,30 @@ void vtkAbstractTransform::TransformVectorAtPoint(
   out[2] = static_cast<float>(vector[2]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Transform a series of points.
-void vtkAbstractTransform::TransformPoints(vtkPoints* in, vtkPoints* out)
+void vtkAbstractTransform::TransformPoints(vtkPoints* inPts, vtkPoints* outPts)
 {
   this->Update();
 
-  double point[3];
-  vtkIdType i;
-  vtkIdType n = in->GetNumberOfPoints();
+  vtkIdType n = inPts->GetNumberOfPoints();
+  vtkIdType m = outPts->GetNumberOfPoints();
+  outPts->SetNumberOfPoints(m + n);
 
-  for (i = 0; i < n; i++)
-  {
-    in->GetPoint(i, point);
-    this->InternalTransformPoint(point, point);
-    out->InsertNextPoint(point);
-  }
+  vtkSMPTools::For(0, n,
+    [&](vtkIdType ptId, vtkIdType endPtId)
+    {
+      double point[3];
+      for (; ptId < endPtId; ++ptId)
+      {
+        inPts->GetPoint(ptId, point);
+        this->InternalTransformPoint(point, point);
+        outPts->SetPoint(m + ptId, point);
+      }
+    });
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Transform the normals and vectors using the derivative of the
 // transformation.  Either inNms or inVrs can be set to nullptr.
 // Normals are multiplied by the inverse transpose of the transform
@@ -153,62 +178,83 @@ void vtkAbstractTransform::TransformPointsNormalsVectors(vtkPoints* inPts, vtkPo
 {
   this->Update();
 
-  double matrix[3][3];
-  double coord[3];
-
-  vtkIdType i;
   vtkIdType n = inPts->GetNumberOfPoints();
-
-  for (i = 0; i < n; i++)
+  vtkIdType m = outPts->GetNumberOfPoints();
+  outPts->SetNumberOfPoints(m + n);
+  if (inVrs)
   {
-    inPts->GetPoint(i, coord);
-    this->InternalTransformDerivative(coord, coord, matrix);
-    outPts->InsertNextPoint(coord);
-
-    if (inVrs)
+    outVrs->SetNumberOfTuples(m + n);
+  }
+  if (inVrsArr)
+  {
+    for (int iArr = 0; iArr < nOptionalVectors; iArr++)
     {
-      inVrs->GetTuple(i, coord);
-      vtkMath::Multiply3x3(matrix, coord, coord);
-      outVrs->InsertNextTuple(coord);
-    }
-    if (inVrsArr)
-    {
-      for (int iArr = 0; iArr < nOptionalVectors; iArr++)
-      {
-        inVrsArr[iArr]->GetTuple(i, coord);
-        vtkMath::Multiply3x3(matrix, coord, coord);
-        outVrsArr[iArr]->InsertNextTuple(coord);
-      }
-    }
-    if (inNms)
-    {
-      inNms->GetTuple(i, coord);
-      vtkMath::Transpose3x3(matrix, matrix);
-      vtkMath::LinearSolve3x3(matrix, coord, coord);
-      vtkMath::Normalize(coord);
-      outNms->InsertNextTuple(coord);
+      outVrsArr[iArr]->SetNumberOfTuples(m + n);
     }
   }
+  if (inNms)
+  {
+    outNms->SetNumberOfTuples(m + n);
+  }
+
+  vtkSMPTools::For(0, n,
+    [&](vtkIdType ptId, vtkIdType endPtId)
+    {
+      double matrix[3][3];
+      double point[3];
+      for (; ptId < endPtId; ++ptId)
+      {
+        inPts->GetPoint(ptId, point);
+        this->InternalTransformDerivative(point, point, matrix);
+        outPts->SetPoint(m + ptId, point);
+
+        if (inVrs)
+        {
+          inVrs->GetTuple(ptId, point);
+          vtkMath::Multiply3x3(matrix, point, point);
+          outVrs->SetTuple(m + ptId, point);
+        }
+        if (inVrsArr)
+        {
+          for (int iArr = 0; iArr < nOptionalVectors; iArr++)
+          {
+            inVrsArr[iArr]->GetTuple(ptId, point);
+            vtkMath::Multiply3x3(matrix, point, point);
+            outVrsArr[iArr]->SetTuple(m + ptId, point);
+          }
+        }
+        if (inNms)
+        {
+          inNms->GetTuple(ptId, point);
+          vtkMath::Transpose3x3(matrix, matrix);
+          vtkMath::LinearSolve3x3(matrix, point, point);
+          vtkMath::Normalize(point);
+          outNms->SetTuple(m + ptId, point);
+        }
+      }
+    });
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractTransform* vtkAbstractTransform::GetInverse()
 {
-  this->InverseMutex->Lock();
-  if (this->MyInverse == nullptr)
+  auto& internals = *(this->Internals);
+  internals.InverseMutex.lock();
+  if (internals.MyInverse == nullptr)
   {
     // we create a circular reference here, it is dealt with in UnRegister
-    this->MyInverse = this->MakeTransform();
-    this->MyInverse->SetInverse(this);
+    internals.MyInverse = this->MakeTransform();
+    internals.MyInverse->SetInverse(this);
   }
-  this->InverseMutex->Unlock();
-  return this->MyInverse;
+  internals.InverseMutex.unlock();
+  return internals.MyInverse;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractTransform::SetInverse(vtkAbstractTransform* transform)
 {
-  if (this->MyInverse == transform)
+  auto& internals = *(this->Internals);
+  if (internals.MyInverse == transform)
   {
     return;
   }
@@ -227,21 +273,21 @@ void vtkAbstractTransform::SetInverse(vtkAbstractTransform* transform)
     return;
   }
 
-  if (this->MyInverse)
+  if (internals.MyInverse)
   {
-    this->MyInverse->Delete();
+    internals.MyInverse->Delete();
   }
 
   transform->Register(this);
-  this->MyInverse = transform;
+  internals.MyInverse = transform;
 
   // we are now a special 'inverse transform'
-  this->DependsOnInverse = (transform != nullptr);
+  internals.DependsOnInverse = (transform != nullptr);
 
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractTransform::DeepCopy(vtkAbstractTransform* transform)
 {
   // check whether we're trying to copy a transform to itself
@@ -270,48 +316,55 @@ void vtkAbstractTransform::DeepCopy(vtkAbstractTransform* transform)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractTransform::Update()
 {
-  // locking is require to ensure that the class is thread-safe
-  this->UpdateMutex->Lock();
+  auto& internals = *(this->Internals);
+
+  // locking is required to ensure that the class is thread-safe
+  internals.UpdateMutex.lock();
+  internals.InUpdate = true;
 
   // check to see if we are a special 'inverse' transform
-  if (this->DependsOnInverse && this->MyInverse->GetMTime() >= this->UpdateTime.GetMTime())
+  if (internals.DependsOnInverse &&
+    internals.MyInverse->GetMTime() >= internals.UpdateTime.GetMTime())
   {
     vtkDebugMacro("Updating transformation from its inverse");
-    this->InternalDeepCopy(this->MyInverse);
+    this->InternalDeepCopy(internals.MyInverse);
     this->Inverse();
     vtkDebugMacro("Calling InternalUpdate on the transformation");
     this->InternalUpdate();
   }
   // otherwise just check our MTime against our last update
-  else if (this->GetMTime() >= this->UpdateTime.GetMTime())
+  else if (this->GetMTime() >= internals.UpdateTime.GetMTime())
   {
     // do internal update for subclass
     vtkDebugMacro("Calling InternalUpdate on the transformation");
     this->InternalUpdate();
   }
 
-  this->UpdateTime.Modified();
-  this->UpdateMutex->Unlock();
+  internals.InUpdate = false;
+  internals.UpdateTime.Modified();
+  internals.UpdateMutex.unlock();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAbstractTransform::CircuitCheck(vtkAbstractTransform* transform)
 {
-  return (
-    transform == this || (this->DependsOnInverse && this->MyInverse->CircuitCheck(transform)));
+  auto& internals = *(this->Internals);
+  return (transform == this ||
+    (internals.DependsOnInverse && internals.MyInverse->CircuitCheck(transform)));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Need to check inverse's MTime if we are an inverse transform
 vtkMTimeType vtkAbstractTransform::GetMTime()
 {
+  auto& internals = *(this->Internals);
   vtkMTimeType mtime = this->vtkObject::GetMTime();
-  if (this->DependsOnInverse)
+  if (internals.DependsOnInverse)
   {
-    vtkMTimeType inverseMTime = this->MyInverse->GetMTime();
+    vtkMTimeType inverseMTime = internals.MyInverse->GetMTime();
     if (inverseMTime > mtime)
     {
       return inverseMTime;
@@ -321,12 +374,26 @@ vtkMTimeType vtkAbstractTransform::GetMTime()
   return mtime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// During an update, we don't want to generate ModifiedEvent because code
+// observing the event might modify the transform while the transform's
+// update is in progress (leading to corrupt state, deadlocks, infinite
+// recursion, or other nastiness).
+void vtkAbstractTransform::Modified()
+{
+  if (!this->Internals->InUpdate)
+  {
+    this->Superclass::Modified();
+  }
+}
+
+//------------------------------------------------------------------------------
 // We need to handle the circular reference between a transform and its
 // inverse.
 void vtkAbstractTransform::UnRegister(vtkObjectBase* o)
 {
-  if (this->InUnRegister)
+  auto& internals = *(this->Internals);
+  if (internals.InUnRegister)
   { // we don't want to go into infinite recursion...
     vtkDebugMacro(<< "UnRegister: circular reference eliminated");
     --this->ReferenceCount;
@@ -335,31 +402,31 @@ void vtkAbstractTransform::UnRegister(vtkObjectBase* o)
 
   // check to see if the only reason our reference count is not 1
   // is the circular reference from MyInverse
-  if (this->MyInverse && this->ReferenceCount == 2 && this->MyInverse->MyInverse == this &&
-    this->MyInverse->ReferenceCount == 1)
+  if (internals.MyInverse && this->ReferenceCount == 2 &&
+    internals.MyInverse->Internals->MyInverse == this && internals.MyInverse->ReferenceCount == 1)
   { // break the cycle
     vtkDebugMacro(<< "UnRegister: eliminating circular reference");
-    this->InUnRegister = 1;
-    this->MyInverse->UnRegister(this);
-    this->MyInverse = nullptr;
-    this->InUnRegister = 0;
+    internals.InUnRegister = true;
+    internals.MyInverse->UnRegister(this);
+    internals.MyInverse = nullptr;
+    internals.InUnRegister = false;
   }
 
   this->vtkObject::UnRegister(o);
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // All of the following methods are for vtkTransformConcatenation
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // A very, very minimal transformation
-class vtkSimpleTransform : public vtkHomogeneousTransform
+class vtkSimpleTransform : public vtkLinearTransform
 {
 public:
-  vtkTypeMacro(vtkSimpleTransform, vtkHomogeneousTransform);
+  vtkTypeMacro(vtkSimpleTransform, vtkLinearTransform);
   static vtkSimpleTransform* New() { VTK_STANDARD_NEW_BODY(vtkSimpleTransform); }
   vtkAbstractTransform* MakeTransform() override { return vtkSimpleTransform::New(); }
   void Inverse() override
@@ -374,7 +441,7 @@ protected:
   vtkSimpleTransform& operator=(const vtkSimpleTransform&);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransformConcatenation::vtkTransformConcatenation()
 {
   this->PreMatrix = nullptr;
@@ -393,7 +460,7 @@ vtkTransformConcatenation::vtkTransformConcatenation()
   this->TransformList = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransformConcatenation::~vtkTransformConcatenation()
 {
   if (this->NumberOfTransforms > 0)
@@ -414,7 +481,7 @@ vtkTransformConcatenation::~vtkTransformConcatenation()
   delete[] this->TransformList;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::Concatenate(vtkAbstractTransform* trans)
 {
   // in case either PreMatrix or PostMatrix is going to be pushed
@@ -476,7 +543,7 @@ void vtkTransformConcatenation::Concatenate(vtkAbstractTransform* trans)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::Concatenate(const double elements[16])
 {
   // concatenate the matrix with either the Pre- or PostMatrix
@@ -512,7 +579,7 @@ void vtkTransformConcatenation::Concatenate(const double elements[16])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::Translate(double x, double y, double z)
 {
   if (x == 0.0 && y == 0.0 && z == 0.0)
@@ -530,59 +597,15 @@ void vtkTransformConcatenation::Translate(double x, double y, double z)
   this->Concatenate(*matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::Rotate(double angle, double x, double y, double z)
 {
-  if (angle == 0.0 || (x == 0.0 && y == 0.0 && z == 0.0))
-  {
-    return;
-  }
-
-  // convert to radians
-  angle = vtkMath::RadiansFromDegrees(angle);
-
-  // make a normalized quaternion
-  double w = cos(0.5 * angle);
-  double f = sin(0.5 * angle) / sqrt(x * x + y * y + z * z);
-  x *= f;
-  y *= f;
-  z *= f;
-
-  // convert the quaternion to a matrix
   double matrix[4][4];
-  vtkMatrix4x4::Identity(*matrix);
-
-  double ww = w * w;
-  double wx = w * x;
-  double wy = w * y;
-  double wz = w * z;
-
-  double xx = x * x;
-  double yy = y * y;
-  double zz = z * z;
-
-  double xy = x * y;
-  double xz = x * z;
-  double yz = y * z;
-
-  double s = ww - xx - yy - zz;
-
-  matrix[0][0] = xx * 2 + s;
-  matrix[1][0] = (xy + wz) * 2;
-  matrix[2][0] = (xz - wy) * 2;
-
-  matrix[0][1] = (xy - wz) * 2;
-  matrix[1][1] = yy * 2 + s;
-  matrix[2][1] = (yz + wx) * 2;
-
-  matrix[0][2] = (xz + wy) * 2;
-  matrix[1][2] = (yz - wx) * 2;
-  matrix[2][2] = zz * 2 + s;
-
+  vtkMatrix4x4::MatrixFromRotation(angle, x, y, z, *matrix);
   this->Concatenate(*matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::Scale(double x, double y, double z)
 {
   if (x == 1.0 && y == 1.0 && z == 1.0)
@@ -600,7 +623,7 @@ void vtkTransformConcatenation::Scale(double x, double y, double z)
   this->Concatenate(*matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::Inverse()
 {
   // invert the matrices
@@ -634,7 +657,7 @@ void vtkTransformConcatenation::Inverse()
   this->InverseFlag = !this->InverseFlag;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::Identity()
 {
   // forget the Pre- and PostMatrix
@@ -665,7 +688,7 @@ void vtkTransformConcatenation::Identity()
   this->NumberOfPreTransforms = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractTransform* vtkTransformConcatenation::GetTransform(int i)
 {
   // we walk through the list in reverse order if InverseFlag is set
@@ -694,7 +717,7 @@ vtkAbstractTransform* vtkTransformConcatenation::GetTransform(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkTransformConcatenation::GetMaxMTime()
 {
   vtkMTimeType result = 0;
@@ -721,7 +744,7 @@ vtkMTimeType vtkTransformConcatenation::GetMaxMTime()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::DeepCopy(vtkTransformConcatenation* concat)
 {
   // allocate a larger list if necessary
@@ -746,7 +769,7 @@ void vtkTransformConcatenation::DeepCopy(vtkTransformConcatenation* concat)
     this->TransformList = newList;
   }
 
-  // save the PreMatrix and PostMatrix in case they can be re-used
+  // save the PreMatrix and PostMatrix in case they can be reused
   vtkSimpleTransform* oldPreMatrixTransform = nullptr;
   vtkSimpleTransform* oldPostMatrixTransform = nullptr;
 
@@ -961,7 +984,7 @@ void vtkTransformConcatenation::DeepCopy(vtkTransformConcatenation* concat)
     }
   }
 
-  // delete the old PreMatrix and PostMatrix transforms if not re-used
+  // delete the old PreMatrix and PostMatrix transforms if not reused
   if (oldPreMatrixTransform)
   {
     oldPreMatrixTransform->Delete();
@@ -979,7 +1002,7 @@ void vtkTransformConcatenation::DeepCopy(vtkTransformConcatenation* concat)
   this->NumberOfPreTransforms = concat->NumberOfPreTransforms;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenation::PrintSelf(ostream& os, vtkIndent indent)
 {
   os << indent << "InverseFlag: " << this->InverseFlag << "\n";
@@ -988,13 +1011,13 @@ void vtkTransformConcatenation::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "NumberOfPostTransforms: " << this->GetNumberOfPostTransforms() << "\n";
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // All of the following methods are for vtkTransformConcatenationStack
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransformConcatenationStack::vtkTransformConcatenationStack()
 {
   this->StackSize = 0;
@@ -1002,7 +1025,7 @@ vtkTransformConcatenationStack::vtkTransformConcatenationStack()
   this->Stack = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransformConcatenationStack::~vtkTransformConcatenationStack()
 {
   int n = static_cast<int>(this->Stack - this->StackBottom);
@@ -1014,7 +1037,7 @@ vtkTransformConcatenationStack::~vtkTransformConcatenationStack()
   delete[] this->StackBottom;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenationStack::Pop(vtkTransformConcatenation** concat)
 {
   // if we're at the bottom of the stack, don't pop
@@ -1024,7 +1047,7 @@ void vtkTransformConcatenationStack::Pop(vtkTransformConcatenation** concat)
   }
 
   // get the previous PreMultiplyFlag
-  int preMultiplyFlag = (*concat)->GetPreMultiplyFlag();
+  vtkTypeBool preMultiplyFlag = (*concat)->GetPreMultiplyFlag();
 
   // delete the previous item
   (*concat)->Delete();
@@ -1036,7 +1059,7 @@ void vtkTransformConcatenationStack::Pop(vtkTransformConcatenation** concat)
   (*concat)->SetPreMultiplyFlag(preMultiplyFlag);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenationStack::Push(vtkTransformConcatenation** concat)
 {
   // check stack size and grow if necessary
@@ -1062,7 +1085,7 @@ void vtkTransformConcatenationStack::Push(vtkTransformConcatenation** concat)
   (*concat)->DeepCopy(*(this->Stack - 1));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformConcatenationStack::DeepCopy(vtkTransformConcatenationStack* stack)
 {
   int n = static_cast<int>(stack->Stack - stack->StackBottom);
@@ -1101,3 +1124,4 @@ void vtkTransformConcatenationStack::DeepCopy(vtkTransformConcatenationStack* st
     this->StackBottom[k]->DeepCopy(stack->StackBottom[k]);
   }
 }
+VTK_ABI_NAMESPACE_END

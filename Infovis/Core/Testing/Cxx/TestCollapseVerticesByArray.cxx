@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestCollapseVerticesByArray.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCollapseVerticesByArray.h"
 #include "vtkDataSetAttributes.h"
@@ -96,9 +84,9 @@ int TestCollapseVerticesByArray(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
   inGraph->GetEdgeData()->AddArray(avgDataTransfer);
 
   vtkCollapseVerticesByArrayRefPtr cvs(vtkCollapseVerticesByArrayRefPtr::New());
-  cvs->SetCountEdgesCollapsed(1);
+  cvs->SetCountEdgesCollapsed(true);
   cvs->SetEdgesCollapsedArray("weight_edges");
-  cvs->SetCountVerticesCollapsed(1);
+  cvs->SetCountVerticesCollapsed(true);
   cvs->SetVerticesCollapsedArray("weight_vertices");
   cvs->SetVertexArray("owner_company");
   cvs->AddAggregateEdgeArray("data_transfer");

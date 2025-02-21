@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageHistogramStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageHistogramStatistics.h"
 
 #include "vtkIdTypeArray.h"
@@ -19,9 +7,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageHistogramStatistics);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor sets default values
 vtkImageHistogramStatistics::vtkImageHistogramStatistics()
 {
@@ -42,10 +31,10 @@ vtkImageHistogramStatistics::vtkImageHistogramStatistics()
   this->AutoRangeExpansionFactors[1] = 0.1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageHistogramStatistics::~vtkImageHistogramStatistics() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageHistogramStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -63,7 +52,7 @@ void vtkImageHistogramStatistics::PrintSelf(ostream& os, vtkIndent indent)
      << this->AutoRangeExpansionFactors[1] << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageHistogramStatistics::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -161,3 +150,4 @@ int vtkImageHistogramStatistics::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

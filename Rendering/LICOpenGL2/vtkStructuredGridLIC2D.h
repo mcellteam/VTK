@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStructuredGridLIC2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkStructuredGridLIC2D
  *
@@ -46,6 +34,7 @@
 #include "vtkStructuredGridAlgorithm.h"
 #include "vtkWeakPointer.h" // needed for vtkWeakPointer.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageNoiseSource;
 class vtkOpenGLHelper;
 class vtkRenderWindow;
@@ -57,19 +46,19 @@ public:
   vtkTypeMacro(vtkStructuredGridLIC2D, vtkStructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the context. Context must be a vtkOpenGLRenderWindow.
    * This does not increase the reference count of the
    * context to avoid reference loops.
-   * SetContext() may raise an error is the OpenGL context does not support the
+   * SetContext() may raise an error if the OpenGL context does not support the
    * required OpenGL extensions. Return 0 upon failure and 1 upon success.
    */
   int SetContext(vtkRenderWindow* context);
   vtkRenderWindow* GetContext();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Number of steps. Initial value is 1.
    * class invariant: Steps>0.
@@ -77,9 +66,9 @@ public:
    */
   vtkSetMacro(Steps, int);
   vtkGetMacro(Steps, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Step size.
    * WE ARE NOT SURE YET about the space where we define the step.
@@ -94,15 +83,15 @@ public:
    */
   vtkSetMacro(StepSize, double);
   vtkGetMacro(StepSize, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The magnification factor. Default is 1
    */
   vtkSetClampMacro(Magnification, int, 1, VTK_INT_MAX);
   vtkGetMacro(Magnification, int);
-  //@}
+  ///@}
 
   /**
    * Check if FBO is started properly.
@@ -173,4 +162,5 @@ private:
   void operator=(const vtkStructuredGridLIC2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTriangularTexture.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTriangularTexture
  * @brief   generate 2D triangular texture map
@@ -34,6 +22,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingHybridModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGHYBRID_EXPORT vtkTriangularTexture : public vtkImageAlgorithm
 {
 public:
@@ -46,31 +35,31 @@ public:
    */
   static vtkTriangularTexture* New();
 
-  //@{
+  ///@{
   /**
    * Set a Scale Factor.
    */
   vtkSetMacro(ScaleFactor, double);
   vtkGetMacro(ScaleFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the X texture map dimension. Default is 64.
    */
   vtkSetMacro(XSize, int);
   vtkGetMacro(XSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the Y texture map dimension. Default is 64.
    */
   vtkSetMacro(YSize, int);
   vtkGetMacro(YSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the texture pattern.
    * 1 = opaque at centroid (default)
@@ -79,11 +68,11 @@ public:
    */
   vtkSetClampMacro(TexturePattern, int, 1, 3);
   vtkGetMacro(TexturePattern, int);
-  //@}
+  ///@}
 
 protected:
   vtkTriangularTexture();
-  ~vtkTriangularTexture() override {}
+  ~vtkTriangularTexture() override = default;
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   void ExecuteDataWithInformation(vtkDataObject* data, vtkInformation* outInfo) override;
@@ -99,4 +88,5 @@ private:
   void operator=(const vtkTriangularTexture&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

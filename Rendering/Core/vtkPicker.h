@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPicker.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPicker
  * @brief   superclass for 3D geometric pickers (uses ray cast)
@@ -44,6 +32,7 @@
 #include "vtkAbstractPropPicker.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractMapper3D;
 class vtkCompositeDataSet;
 class vtkDataSet;
@@ -59,7 +48,7 @@ public:
   vtkTypeMacro(vtkPicker, vtkAbstractPropPicker);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify tolerance for performing pick operation. Tolerance is specified
    * as fraction of rendering window size. (Rendering window size is measured
@@ -67,47 +56,47 @@ public:
    */
   vtkSetMacro(Tolerance, double);
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return position in mapper (i.e., non-transformed) coordinates of
    * pick point.
    */
   vtkGetVectorMacro(MapperPosition, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return mapper that was picked (if any).
    */
   vtkGetObjectMacro(Mapper, vtkAbstractMapper3D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get a pointer to the dataset that was picked (if any). If nothing
    * was picked then NULL is returned.
    */
   vtkGetObjectMacro(DataSet, vtkDataSet);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get a pointer to the composite dataset that was picked (if any). If nothing
    * was picked or a non-composite data object was picked then NULL is returned.
    */
   vtkGetObjectMacro(CompositeDataSet, vtkCompositeDataSet);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the flat block index of the vtkDataSet in the composite dataset
    * that was picked (if any). If nothing
    * was picked or a non-composite data object was picked then -1 is returned.
    */
   vtkGetMacro(FlatBlockIndex, vtkIdType);
-  //@}
+  ///@}
 
   /**
    * Return a collection of all the prop 3D's that were intersected
@@ -204,4 +193,5 @@ private:
   void operator=(const vtkPicker&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

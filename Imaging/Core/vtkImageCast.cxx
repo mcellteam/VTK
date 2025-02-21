@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageCast.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageCast.h"
 
 #include "vtkImageData.h"
@@ -21,9 +9,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageCast);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageCast::vtkImageCast()
 {
   this->SetNumberOfInputPorts(1);
@@ -32,7 +21,7 @@ vtkImageCast::vtkImageCast()
   this->ClampOverflow = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Just change the Image type.
 int vtkImageCast::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
@@ -43,7 +32,7 @@ int vtkImageCast::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class IT, class OT>
 void vtkImageCastExecute(
@@ -101,7 +90,7 @@ void vtkImageCastExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 void vtkImageCastExecute(
   vtkImageCast* self, vtkImageData* inData, vtkImageData* outData, int outExt[6], int id, T*)
@@ -116,7 +105,7 @@ void vtkImageCastExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output region, and executes the filter
 // algorithm to fill the output from the input.
 // It just executes a switch statement to call the correct function for
@@ -134,7 +123,7 @@ void vtkImageCast::ThreadedExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageCast::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -150,3 +139,4 @@ void vtkImageCast::PrintSelf(ostream& os, vtkIndent indent)
     os << "Off\n";
   }
 }
+VTK_ABI_NAMESPACE_END

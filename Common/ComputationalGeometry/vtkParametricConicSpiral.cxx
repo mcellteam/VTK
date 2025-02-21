@@ -1,24 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParametricConicSpiral.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParametricConicSpiral.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkParametricConicSpiral);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParametricConicSpiral::vtkParametricConicSpiral()
 {
   // Preset triangulation parameters
@@ -41,10 +30,10 @@ vtkParametricConicSpiral::vtkParametricConicSpiral()
   this->N = 2;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParametricConicSpiral::~vtkParametricConicSpiral() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParametricConicSpiral::Evaluate(double uvw[3], double Pt[3], double Duvw[9])
 {
   double u = uvw[0];
@@ -75,13 +64,13 @@ void vtkParametricConicSpiral::Evaluate(double uvw[3], double Pt[3], double Duvw
   Dv[2] = this->B * inv2pi - this->A * inv2pi * su;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkParametricConicSpiral::EvaluateScalar(double*, double*, double*)
 {
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParametricConicSpiral::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -91,3 +80,4 @@ void vtkParametricConicSpiral::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "C: " << this->C << "\n";
   os << indent << "N: " << this->N << "\n";
 }
+VTK_ABI_NAMESPACE_END

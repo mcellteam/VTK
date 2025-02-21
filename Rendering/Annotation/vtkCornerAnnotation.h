@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCornerAnnotation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCornerAnnotation
  * @brief   text annotation in four corners
@@ -20,14 +8,14 @@
  * to provide annotation in the four corners of a viewport
  *
  * @par Special input text::
- * - <image> : will be replaced with slice number (relative number)
- * - <slice> : will be replaced with slice number (relative number)
- * - <image_and_max> : will be replaced with slice number and slice max (relative)
- * - <slice_and_max> : will be replaced with slice number and slice max (relative)
- * - <slice_pos> : will be replaced by the position of the current slice
- * - <window> : will be replaced with window value
- * - <level> : will be replaced with level value
- * - <window_level> : will be replaced with window and level value
+ * - <tt>\<image\></tt> : will be replaced with slice number (relative number)
+ * - <tt>\<slice\></tt> : will be replaced with slice number (relative number)
+ * - <tt>\<image_and_max\></tt> : will be replaced with slice number and slice max (relative)
+ * - <tt>\<slice_and_max\></tt> : will be replaced with slice number and slice max (relative)
+ * - <tt>\<slice_pos\></tt> : will be replaced by the position of the current slice
+ * - <tt>\<window\></tt> : will be replaced with window value
+ * - <tt>\<level\></tt> : will be replaced with level value
+ * - <tt>\<window_level\></tt> : will be replaced with window and level value
  *
  * @sa
  * vtkActor2D vtkTextMapper
@@ -38,13 +26,15 @@
 
 #include "vtkActor2D.h"
 #include "vtkRenderingAnnotationModule.h" // For export macro
+#include "vtkWrappingHints.h"             // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTextMapper;
 class vtkImageMapToWindowLevelColors;
 class vtkImageActor;
 class vtkTextProperty;
 
-class VTKRENDERINGANNOTATION_EXPORT vtkCornerAnnotation : public vtkActor2D
+class VTKRENDERINGANNOTATION_EXPORT VTK_MARSHALAUTO vtkCornerAnnotation : public vtkActor2D
 {
 public:
   vtkTypeMacro(vtkCornerAnnotation, vtkActor2D);
@@ -56,21 +46,21 @@ public:
    */
   static vtkCornerAnnotation* New();
 
-  //@{
+  ///@{
   /**
    * Draw the scalar bar and annotation text to the screen.
    */
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override { return 0; }
   int RenderOverlay(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Does this prop have some translucent polygonal geometry?
    */
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the maximum height of a line of text as a
    * percentage of the vertical area allocated to this
@@ -78,9 +68,9 @@ public:
    */
   vtkSetMacro(MaximumLineHeight, double);
   vtkGetMacro(MaximumLineHeight, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the minimum/maximum size font that will be shown.
    * If the font drops below the minimum size it will not be rendered.
@@ -89,9 +79,9 @@ public:
   vtkGetMacro(MinimumFontSize, int);
   vtkSetMacro(MaximumFontSize, int);
   vtkGetMacro(MaximumFontSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get font scaling factors
    * The font size, f, is calculated as the largest possible value
@@ -105,7 +95,7 @@ public:
   vtkGetMacro(LinearFontScaleFactor, double);
   vtkSetMacro(NonlinearFontScaleFactor, double);
   vtkGetMacro(NonlinearFontScaleFactor, double);
-  //@}
+  ///@}
 
   /**
    * Release any graphics resources that are being consumed by this actor.
@@ -114,7 +104,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow*) override;
 
-  //@{
+  ///@{
   /**
    * Position used to get or set the corner annotation text.
    * \sa GetText(), SetText()
@@ -131,9 +121,9 @@ public:
     UpperEdge      ///< Uses the upper edge center.
   };
   static const int NumTextPositions = 8;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the text to be displayed for each corner
    * \sa TextPosition
@@ -142,57 +132,59 @@ public:
   const char* GetText(int i);
   void ClearAllTexts();
   void CopyAllTextsFrom(vtkCornerAnnotation* ca);
-  //@}
+  std::vector<std::string> GetAllTexts() const;
+  void SetAllTexts(const std::vector<std::string>& values);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set an image actor to look at for slice information
    */
   void SetImageActor(vtkImageActor*);
   vtkGetObjectMacro(ImageActor, vtkImageActor);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set an instance of vtkImageMapToWindowLevelColors to use for
    * looking at window level changes
    */
   void SetWindowLevel(vtkImageMapToWindowLevelColors*);
   vtkGetObjectMacro(WindowLevel, vtkImageMapToWindowLevelColors);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the value to shift the level by.
    */
   vtkSetMacro(LevelShift, double);
   vtkGetMacro(LevelShift, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the value to scale the level by.
    */
   vtkSetMacro(LevelScale, double);
   vtkGetMacro(LevelScale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the text property of all corners.
    */
   virtual void SetTextProperty(vtkTextProperty* p);
   vtkGetObjectMacro(TextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Even if there is an image actor, should `slice' and `image' be displayed?
    */
   vtkBooleanMacro(ShowSliceAndImage, vtkTypeBool);
   vtkSetMacro(ShowSliceAndImage, vtkTypeBool);
   vtkGetMacro(ShowSliceAndImage, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkCornerAnnotation();
@@ -229,17 +221,18 @@ protected:
    */
   virtual void TextReplace(vtkImageActor* ia, vtkImageMapToWindowLevelColors* wl);
 
-  //@{
+  ///@{
   /**
    * Set text actor positions given a viewport size and justification
    */
-  virtual void SetTextActorsPosition(int vsize[2]);
+  virtual void SetTextActorsPosition(const int vsize[2]);
   virtual void SetTextActorsJustification();
-  //@}
+  ///@}
 
 private:
   vtkCornerAnnotation(const vtkCornerAnnotation&) = delete;
   void operator=(const vtkCornerAnnotation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

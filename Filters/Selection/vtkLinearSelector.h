@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkLinearSelector.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLinearSelector
  * @brief   select cells intersecting a line (possibly broken)
@@ -33,6 +21,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkFiltersSelectionModule.h" // For export macro
 #include "vtkSelectionAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAlgorithmOutput;
 class vtkDataSet;
 class vtkDoubleArray;
@@ -47,54 +36,54 @@ public:
 
   static vtkLinearSelector* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get starting point of intersecting segment
    */
   vtkSetVector3Macro(StartPoint, double);
   vtkGetVectorMacro(StartPoint, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get end point of intersecting segment
    */
   vtkSetVector3Macro(EndPoint, double);
   vtkGetVectorMacro(EndPoint, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the list of points defining the intersecting broken line
    */
   virtual void SetPoints(vtkPoints*);
   vtkGetObjectMacro(Points, vtkPoints);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get tolerance to be used by intersection algorithm
    */
   vtkSetMacro(Tolerance, double);
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get whether lines vertice are included in selection
    */
   vtkSetMacro(IncludeVertices, bool);
   vtkGetMacro(IncludeVertices, bool);
   vtkBooleanMacro(IncludeVertices, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get relative tolerance for vertex elimination
    */
   vtkSetClampMacro(VertexEliminationTolerance, double, 0., .1);
   vtkGetMacro(VertexEliminationTolerance, double);
-  //@}
+  ///@}
 
 protected:
   vtkLinearSelector();
@@ -115,14 +104,14 @@ private:
   vtkLinearSelector(const vtkLinearSelector&) = delete;
   void operator=(const vtkLinearSelector&) = delete;
 
-  //@{
+  ///@{
   /**
    * Start and end point of the intersecting line segment
    * NB: These are used if and only if Points is null.
    */
   double StartPoint[3];
   double EndPoint[3];
-  //@}
+  ///@}
 
   /**
    * The list of points defining the intersecting broken line
@@ -141,13 +130,14 @@ private:
    */
   bool IncludeVertices;
 
-  //@{
+  ///@{
   /**
    * Relative tolerance for vertex elimination
    * Default: 1e-6
    */
   double VertexEliminationTolerance;
-  //@}
+  ///@}
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkLinearSelector_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataConnectivityFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPolyDataConnectivityFilter
  * @brief   extract polygonal data based on geometric connectivity
@@ -60,6 +48,7 @@
 #define VTK_EXTRACT_ALL_REGIONS 5
 #define VTK_EXTRACT_CLOSEST_POINT_REGION 6
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkIdList;
 class vtkIdTypeArray;
@@ -70,20 +59,20 @@ public:
   vtkTypeMacro(vtkPolyDataConnectivityFilter, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Obtain the array containing the region sizes of the extracted
    * regions
    */
   vtkGetObjectMacro(RegionSizes, vtkIdTypeArray);
-  //@}
+  ///@}
 
   /**
    * Construct with default extraction mode to extract largest regions.
    */
   static vtkPolyDataConnectivityFilter* New();
 
-  //@{
+  ///@{
   /**
    * Turn on/off connectivity based on scalar value. If on, cells are connected
    * only if they share points AND one of the cells scalar values falls in the
@@ -92,9 +81,9 @@ public:
   vtkSetMacro(ScalarConnectivity, vtkTypeBool);
   vtkGetMacro(ScalarConnectivity, vtkTypeBool);
   vtkBooleanMacro(ScalarConnectivity, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the use of Fully connected scalar connectivity. This is off
    * by default. The flag is used only if ScalarConnectivity is on. If
@@ -107,17 +96,17 @@ public:
   vtkSetMacro(FullScalarConnectivity, vtkTypeBool);
   vtkGetMacro(FullScalarConnectivity, vtkTypeBool);
   vtkBooleanMacro(FullScalarConnectivity, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scalar range to use to extract cells based on scalar connectivity.
    */
   vtkSetVector2Macro(ScalarRange, double);
   vtkGetVector2Macro(ScalarRange, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the extraction of connected surfaces.
    */
@@ -143,7 +132,7 @@ public:
   }
   void SetExtractionModeToAllRegions() { this->SetExtractionMode(VTK_EXTRACT_ALL_REGIONS); }
   const char* GetExtractionModeAsString();
-  //@}
+  ///@}
 
   /**
    * Initialize list of point ids/cell ids used to seed regions.
@@ -175,30 +164,30 @@ public:
    */
   void DeleteSpecifiedRegion(int id);
 
-  //@{
+  ///@{
   /**
    * Use to specify x-y-z point coordinates when extracting the region
    * closest to a specified point.
    */
   vtkSetVector3Macro(ClosestPoint, double);
   vtkGetVectorMacro(ClosestPoint, double, 3);
-  //@}
+  ///@}
 
   /**
    * Obtain the number of connected regions.
    */
   int GetNumberOfExtractedRegions();
 
-  //@{
+  ///@{
   /**
    * Turn on/off the coloring of connected regions.
    */
   vtkSetMacro(ColorRegions, vtkTypeBool);
   vtkGetMacro(ColorRegions, vtkTypeBool);
   vtkBooleanMacro(ColorRegions, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether to record input point ids that appear in the output connected
    * components. It may be useful to extract the visited point ids for use by a
@@ -207,17 +196,17 @@ public:
   vtkSetMacro(MarkVisitedPointIds, vtkTypeBool);
   vtkGetMacro(MarkVisitedPointIds, vtkTypeBool);
   vtkBooleanMacro(MarkVisitedPointIds, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the input point ids that appear in the output connected components. This is
    * non-empty only if MarkVisitedPointIds has been set.
    */
   vtkGetObjectMacro(VisitedPointIds, vtkIdList);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -225,7 +214,7 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkPolyDataConnectivityFilter();
@@ -277,11 +266,10 @@ private:
   void operator=(const vtkPolyDataConnectivityFilter&) = delete;
 };
 
-//@{
 /**
  * Return the method of extraction as a string.
  */
-inline const char* vtkPolyDataConnectivityFilter::GetExtractionModeAsString(void)
+inline const char* vtkPolyDataConnectivityFilter::GetExtractionModeAsString()
 {
   if (this->ExtractionMode == VTK_EXTRACT_POINT_SEEDED_REGIONS)
   {
@@ -308,6 +296,6 @@ inline const char* vtkPolyDataConnectivityFilter::GetExtractionModeAsString(void
     return "ExtractLargestRegion";
   }
 }
-//@}
 
+VTK_ABI_NAMESPACE_END
 #endif

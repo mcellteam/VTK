@@ -1,40 +1,29 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationKeyVectorKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationKeyVectorKey.h"
 
 #include "vtkInformation.h"
 #include <algorithm> // find()
 #include <vector>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationKeyVectorKey::vtkInformationKeyVectorKey(const char* name, const char* location)
   : vtkInformationKey(name, location)
 {
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationKeyVectorKey::~vtkInformationKeyVectorKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationKeyVectorKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkInformationKeyVectorValue : public vtkObjectBase
 {
 public:
@@ -42,7 +31,7 @@ public:
   std::vector<vtkInformationKey*> Value;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationKeyVectorKey::Append(vtkInformation* info, vtkInformationKey* value)
 {
   vtkInformationKeyVectorValue* v =
@@ -57,7 +46,7 @@ void vtkInformationKeyVectorKey::Append(vtkInformation* info, vtkInformationKey*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationKeyVectorKey::AppendUnique(vtkInformation* info, vtkInformationKey* value)
 {
   vtkInformationKeyVectorValue* v =
@@ -85,7 +74,7 @@ void vtkInformationKeyVectorKey::AppendUnique(vtkInformation* info, vtkInformati
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationKeyVectorKey::Set(
   vtkInformation* info, vtkInformationKey* const* value, int length)
 {
@@ -103,7 +92,7 @@ void vtkInformationKeyVectorKey::Set(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationKeyVectorKey::RemoveItem(vtkInformation* info, vtkInformationKey* value)
 {
   vtkInformationKeyVectorValue* v =
@@ -120,15 +109,15 @@ void vtkInformationKeyVectorKey::RemoveItem(vtkInformation* info, vtkInformation
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationKey** vtkInformationKeyVectorKey::Get(vtkInformation* info)
 {
   vtkInformationKeyVectorValue* v =
     static_cast<vtkInformationKeyVectorValue*>(this->GetAsObjectBase(info));
-  return (v && !v->Value.empty()) ? (&v->Value[0]) : nullptr;
+  return (v && !v->Value.empty()) ? v->Value.data() : nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationKey* vtkInformationKeyVectorKey::Get(vtkInformation* info, int idx)
 {
   if (idx >= this->Length(info))
@@ -141,7 +130,7 @@ vtkInformationKey* vtkInformationKeyVectorKey::Get(vtkInformation* info, int idx
   return values[idx];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationKeyVectorKey::Get(vtkInformation* info, vtkInformationKey** value)
 {
   vtkInformationKeyVectorValue* v =
@@ -155,7 +144,7 @@ void vtkInformationKeyVectorKey::Get(vtkInformation* info, vtkInformationKey** v
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationKeyVectorKey::Length(vtkInformation* info)
 {
   vtkInformationKeyVectorValue* v =
@@ -163,13 +152,13 @@ int vtkInformationKeyVectorKey::Length(vtkInformation* info)
   return v ? static_cast<int>(v->Value.size()) : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationKeyVectorKey::ShallowCopy(vtkInformation* from, vtkInformation* to)
 {
   this->Set(to, this->Get(from), this->Length(from));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationKeyVectorKey::Print(ostream& os, vtkInformation* info)
 {
   // Print the value.
@@ -185,3 +174,4 @@ void vtkInformationKeyVectorKey::Print(ostream& os, vtkInformation* info)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

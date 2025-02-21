@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLTableReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLTableReader
  * @brief   Read VTK XML Table files.
@@ -29,6 +17,7 @@
 
 #include <map> // needed for std::map
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkIdTypeArray;
 class vtkUnsignedCharArray;
@@ -41,13 +30,13 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkXMLTableReader* New();
 
-  //@{
+  ///@{
   /**
    * Get the reader's output.
    */
   vtkTable* GetOutput();
   vtkTable* GetOutput(int idx);
-  //@}
+  ///@}
 
   /**
    * Get the number of rows in the output.
@@ -204,4 +193,5 @@ private:
   void operator=(const vtkXMLTableReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMaskBits.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageMaskBits
  * @brief   applies a bit-mask pattern to each component.
@@ -28,6 +16,7 @@
 #include "vtkImagingMathModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGMATH_EXPORT vtkImageMaskBits : public vtkThreadedImageAlgorithm
 {
 public:
@@ -35,7 +24,7 @@ public:
   vtkTypeMacro(vtkImageMaskBits, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the bit-masks. Default is 0xffffffff.
    */
@@ -50,9 +39,9 @@ public:
     this->SetMasks(mask1, mask2, mask3, 0xffffffff);
   }
   vtkGetVector4Macro(Masks, unsigned int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the boolean operator. Default is AND.
    */
@@ -63,11 +52,11 @@ public:
   void SetOperationToXor() { this->SetOperation(VTK_XOR); }
   void SetOperationToNand() { this->SetOperation(VTK_NAND); }
   void SetOperationToNor() { this->SetOperation(VTK_NOR); }
-  //@}
+  ///@}
 
 protected:
   vtkImageMaskBits();
-  ~vtkImageMaskBits() override {}
+  ~vtkImageMaskBits() override = default;
 
   void ThreadedExecute(vtkImageData* inData, vtkImageData* outData, int ext[6], int id) override;
 
@@ -79,4 +68,5 @@ private:
   void operator=(const vtkImageMaskBits&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMaskFields.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMaskFields
  * @brief   Allow control of which fields get passed
@@ -35,6 +23,7 @@
 
 #include "vtkDataSetAttributes.h" // Needed for NUM_ATTRIBUTES
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 
 class VTKFILTERSCORE_EXPORT vtkMaskFields : public vtkDataSetAlgorithm
@@ -106,7 +95,7 @@ public:
   void CopyFieldsOn() { this->CopyFields = 1; }
   void CopyAttributesOn() { this->CopyAttributes = 1; }
 
-  //@{
+  ///@{
   /**
    * Helper methods used by other language bindings. Allows the caller to
    * specify arguments as strings instead of enums.
@@ -115,7 +104,7 @@ public:
   void CopyAttributeOff(const char* attributeLoc, const char* attributeType);
   void CopyFieldOn(const char* fieldLoc, const char* name);
   void CopyFieldOff(const char* fieldLoc, const char* name);
-  //@}
+  ///@}
 
   /**
    * Turn on copying of all data.
@@ -183,4 +172,5 @@ private:
   void operator=(const vtkMaskFields&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

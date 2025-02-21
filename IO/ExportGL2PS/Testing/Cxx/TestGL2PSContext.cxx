@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestContextGL2PS.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkBrush.h"
 #include "vtkContext2D.h"
@@ -39,7 +27,7 @@
 
 #include <string>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class ContextGL2PSTest : public vtkContextItem
 {
 public:
@@ -49,7 +37,7 @@ public:
   bool Paint(vtkContext2D* painter) override;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestGL2PSContext(int, char*[])
 {
   // Set up a 2D context view, context test object and add it to the scene
@@ -103,7 +91,14 @@ bool ContextGL2PSTest::Paint(vtkContext2D* painter)
   painter->GetTextProp()->SetFontFamilyToArial();
   painter->GetPen()->SetColor(0, 0, 0, 255);
   painter->GetBrush()->SetColor(0, 0, 0, 255);
-  painter->DrawString(400, 25, "GL2PS is used as a backend to the context.");
+
+  // Ensure transform works
+  vtkNew<vtkTransform2D> tform;
+  tform->Translate(400, 25);
+  painter->PushMatrix();
+  painter->AppendTransform(tform);
+  painter->DrawString(0, 0, "GL2PS is used as a backend to the context.");
+  painter->PopMatrix();
 
   // Draw some individual lines of different thicknesses.
   for (int i = 0; i < 10; ++i)
@@ -262,7 +257,16 @@ bool ContextGL2PSTest::Paint(vtkContext2D* painter)
   }
   image->GetPointData()->SetScalars(scalars);
   scalars->Delete();
-  painter->DrawImage(10, 525, image);
+  painter->PushMatrix();
+
+  // Ensure transform works
+  tform->Identity();
+  tform->Translate(10, 525);
+  painter->PushMatrix();
+  painter->AppendTransform(tform);
+  painter->DrawImage(0, 0, image);
+  painter->PopMatrix();
+
   painter->DrawImage(65, 500, 2.f, image);
   painter->DrawImage(vtkRectf(170, 537.5f, 25, 25), image);
 

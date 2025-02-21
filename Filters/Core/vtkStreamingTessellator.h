@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStreamingTessellator.h
-  Language:  C++
-
-  Copyright 2003 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the
-  U.S. Government. Redistribution and use in source and binary forms, with
-  or without modification, are permitted provided that this Notice and any
-  statement of authorship are reproduced on all copies.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkStreamingTessellator
  * @brief   An algorithm that refines an initial simplicial tessellation using edge subdivision
@@ -80,6 +69,7 @@
 
 #undef PARAVIEW_DEBUG_TESSELLATOR
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkEdgeSubdivisionCriterion;
 
 class VTKFILTERSCORE_EXPORT vtkStreamingTessellator : public vtkObject
@@ -103,58 +93,58 @@ public:
     MaxFieldSize = 18
   };
 
-  //@{
+  ///@{
   /**
    * Get/Set the function called for each output tetrahedron (3-facet).
    */
   virtual void SetTetrahedronCallback(TetrahedronProcessorFunction);
   virtual TetrahedronProcessorFunction GetTetrahedronCallback() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the function called for each output triangle (2-facet).
    */
   virtual void SetTriangleCallback(TriangleProcessorFunction);
   virtual TriangleProcessorFunction GetTriangleCallback() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the function called for each output line segment (1-facet).
    */
   virtual void SetEdgeCallback(EdgeProcessorFunction);
   virtual EdgeProcessorFunction GetEdgeCallback() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the function called for each output line segment (1-facet).
    */
   virtual void SetVertexCallback(VertexProcessorFunction);
   virtual VertexProcessorFunction GetVertexCallback() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set a void pointer passed to the triangle and edge output functions.
    */
   virtual void SetPrivateData(void* Private);
   virtual void* GetPrivateData() const;
-  //@}
+  ///@}
 
   // can't wrap const private data because python wrapper will try to cast it to void*, not const
   // void*
 
-  //@{
+  ///@{
   /**
    * Get/Set a constant void pointer passed to the simplex output functions.
    */
   virtual void SetConstPrivateData(const void* ConstPrivate);
   virtual const void* GetConstPrivateData() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the algorithm used to determine whether an edge should be
    * subdivided or left as-is. This is used once for each call to
@@ -164,11 +154,11 @@ public:
    */
   virtual void SetSubdivisionAlgorithm(vtkEdgeSubdivisionCriterion*);
   virtual vtkEdgeSubdivisionCriterion* GetSubdivisionAlgorithm();
-  //@}
+  ///@}
 
   virtual const vtkEdgeSubdivisionCriterion* GetSubdivisionAlgorithm() const;
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of parameter-space coordinates associated with each input and output point.
    * The default is \a k for \a k -facets. You may
@@ -183,9 +173,9 @@ public:
    */
   virtual void SetEmbeddingDimension(int k, int d);
   int GetEmbeddingDimension(int k) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of field value coordinates associated with each input and output point.
    * The default is 0; no field values are interpolated.
@@ -217,17 +207,17 @@ public:
    */
   virtual void SetFieldSize(int k, int s);
   int GetFieldSize(int k) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the maximum number of subdivisions that may occur.
    */
   virtual void SetMaximumNumberOfSubdivisions(int num_subdiv_in);
   int GetMaximumNumberOfSubdivisions();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will adaptively subdivide the tetrahedron (3-facet),
    * triangle (2-facet), or edge (1-facet) until the subdivision
@@ -247,13 +237,17 @@ public:
    * SetEdgeCallback(), SetTriangleCallback(), and SetTetrahedronCallback()
    * with valid values!
    */
+  void AdaptivelySample3FacetLinear(double* v0, double* v1, double* v2, double* v3) const;
+  void AdaptivelySample2FacetLinear(double* v0, double* v1, double* v2) const;
+  void AdaptivelySample1FacetLinear(double* v0, double* v1) const;
+
   void AdaptivelySample3Facet(double* v0, double* v1, double* v2, double* v3) const;
   void AdaptivelySample2Facet(double* v0, double* v1, double* v2) const;
   void AdaptivelySample1Facet(double* v0, double* v1) const;
   void AdaptivelySample0Facet(double* v0) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Reset/access the histogram of subdivision cases encountered.
    * The histogram may be used to examine coverage during testing as well as characterizing the
@@ -298,7 +292,7 @@ public:
     return 0;
 #endif // PARAVIEW_DEBUG_TESSELLATOR
   }
-  //@}
+  ///@}
 
 protected:
   static int EdgeCodesToCaseCodesPlusPermutation[64][2];
@@ -388,4 +382,5 @@ inline int vtkStreamingTessellator::GetMaximumNumberOfSubdivisions()
   return this->MaximumNumberOfSubdivisions;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkStreamingTessellator_h

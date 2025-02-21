@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEdgeTable.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkEdgeTable
  * @brief   keep track of edges (edge is pair of integer id's)
@@ -33,6 +21,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 class vtkPoints;
 class vtkVoidArray;
@@ -131,12 +120,12 @@ public:
    */
   int InsertUniquePoint(vtkIdType p1, vtkIdType p2, double x[3], vtkIdType& ptId);
 
-  //@{
+  ///@{
   /**
    * Return the number of edges that have been inserted thus far.
    */
   vtkGetMacro(NumberOfEdges, vtkIdType);
-  //@}
+  ///@}
 
   /**
    * Initialize traversal of edges in table.
@@ -186,4 +175,5 @@ private:
   void operator=(const vtkEdgeTable&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

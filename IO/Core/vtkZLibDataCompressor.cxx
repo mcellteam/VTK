@@ -1,33 +1,22 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkZLibDataCompressor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkZLibDataCompressor.h"
 #include "vtkObjectFactory.h"
 #include "vtk_zlib.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkZLibDataCompressor);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkZLibDataCompressor::vtkZLibDataCompressor()
 {
   this->CompressionLevel = Z_DEFAULT_COMPRESSION;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkZLibDataCompressor::~vtkZLibDataCompressor() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkZLibDataCompressor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -35,7 +24,7 @@ void vtkZLibDataCompressor::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "CompressionLevel: " << this->CompressionLevel << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 size_t vtkZLibDataCompressor::CompressBuffer(unsigned char const* uncompressedData,
   size_t uncompressedSize, unsigned char* compressedData, size_t compressionSpace)
 {
@@ -54,7 +43,7 @@ size_t vtkZLibDataCompressor::CompressBuffer(unsigned char const* uncompressedDa
   return static_cast<size_t>(cs);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 size_t vtkZLibDataCompressor::UncompressBuffer(unsigned char const* compressedData,
   size_t compressedSize, unsigned char* uncompressedData, size_t uncompressedSize)
 {
@@ -81,14 +70,14 @@ size_t vtkZLibDataCompressor::UncompressBuffer(unsigned char const* compressedDa
 
   return static_cast<size_t>(us);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkZLibDataCompressor::GetCompressionLevel()
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning CompressionLevel "
                 << this->CompressionLevel);
   return this->CompressionLevel;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkZLibDataCompressor::SetCompressionLevel(int compressionLevel)
 {
   int min = 1;
@@ -104,9 +93,10 @@ void vtkZLibDataCompressor::SetCompressionLevel(int compressionLevel)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 size_t vtkZLibDataCompressor::GetMaximumCompressionSpace(size_t size)
 {
   // ZLib specifies that destination buffer must be 0.1% larger + 12 bytes.
   return size + (size + 999) / 1000 + 12;
 }
+VTK_ABI_NAMESPACE_END

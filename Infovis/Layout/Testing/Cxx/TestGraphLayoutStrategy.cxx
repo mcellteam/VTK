@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGraphLayoutStrategy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkCircularLayoutStrategy.h"
 #include "vtkEdgeListIterator.h"
 #include "vtkFast2DLayoutStrategy.h"
@@ -30,6 +14,8 @@
 #include "vtkSmartPointer.h"
 #include "vtkTestUtilities.h"
 #include "vtkTreeLayoutStrategy.h"
+
+#include <cmath>
 
 #define VTK_CREATE(type, name) vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 
@@ -62,7 +48,7 @@ int TestGraphLayoutStrategy(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
   {
     output->GetPoint(i, pt);
     double dist = pt[0] * pt[0] + pt[1] * pt[1] - 1.0;
-    dist = dist > 0 ? dist : -dist;
+    dist = std::abs(dist);
     if (dist > eps || pt[2] != 0.0)
     {
       cerr << "ERROR: Point " << i << " is not on the unit circle." << endl;

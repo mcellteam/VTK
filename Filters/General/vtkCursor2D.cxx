@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCursor2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCursor2D.h"
 #include "vtkCellArray.h"
 #include "vtkInformation.h"
@@ -20,9 +8,10 @@
 #include "vtkPolyData.h"
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCursor2D);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with model bounds = (-10,10,-10,10, 0,0), focal point = (0,0,0),
 // radius=2, all parts of cursor visible, and wrapping off.
 vtkCursor2D::vtkCursor2D()
@@ -48,7 +37,7 @@ vtkCursor2D::vtkCursor2D()
   this->SetNumberOfInputPorts(0);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCursor2D::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -72,8 +61,8 @@ int vtkCursor2D::RequestData(vtkInformation* vtkNotUsed(request),
     for (i = 0; i < 2; i++)
     {
       this->FocalPoint[i] = this->ModelBounds[2 * i] +
-        fmod(static_cast<double>(this->FocalPoint[i] - this->ModelBounds[2 * i]),
-          static_cast<double>(this->ModelBounds[2 * i + 1] - this->ModelBounds[2 * i]));
+        fmod(this->FocalPoint[i] - this->ModelBounds[2 * i],
+          this->ModelBounds[2 * i + 1] - this->ModelBounds[2 * i]);
     }
   }
   else
@@ -103,6 +92,8 @@ int vtkCursor2D::RequestData(vtkInformation* vtkNotUsed(request),
   }
   else
   {
+    this->CheckAbort();
+
     return 1;
   }
 
@@ -220,10 +211,12 @@ int vtkCursor2D::RequestData(vtkInformation* vtkNotUsed(request),
     newLines->Delete();
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the boundary of the 3D cursor.
 void vtkCursor2D::SetModelBounds(
   double xmin, double xmax, double ymin, double ymax, double zmin, double zmax)
@@ -251,7 +244,7 @@ void vtkCursor2D::SetModelBounds(
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCursor2D::SetFocalPoint(double x[3])
 {
   if (x[0] == this->FocalPoint[0] && x[1] == this->FocalPoint[1])
@@ -275,8 +268,8 @@ void vtkCursor2D::SetFocalPoint(double x[3])
     else if (this->Wrap) // wrap
     {
       this->FocalPoint[i] = this->ModelBounds[2 * i] +
-        fmod(static_cast<double>(this->FocalPoint[i] - this->ModelBounds[2 * i]),
-          static_cast<double>(this->ModelBounds[2 * i + 1] - this->ModelBounds[2 * i]));
+        fmod(this->FocalPoint[i] - this->ModelBounds[2 * i],
+          this->ModelBounds[2 * i + 1] - this->ModelBounds[2 * i]);
     }
     else // clamp
     {
@@ -292,13 +285,13 @@ void vtkCursor2D::SetFocalPoint(double x[3])
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCursor2D::SetModelBounds(const double bounds[6])
 {
   this->SetModelBounds(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Turn every part of the 3D cursor on.
 void vtkCursor2D::AllOn()
 {
@@ -307,7 +300,7 @@ void vtkCursor2D::AllOn()
   this->PointOn();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Turn every part of the 3D cursor off.
 void vtkCursor2D::AllOff()
 {
@@ -316,7 +309,7 @@ void vtkCursor2D::AllOff()
   this->PointOff();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCursor2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -336,3 +329,4 @@ void vtkCursor2D::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Wrap: " << (this->Wrap ? "On\n" : "Off\n");
   os << indent << "Translation Mode: " << (this->TranslationMode ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

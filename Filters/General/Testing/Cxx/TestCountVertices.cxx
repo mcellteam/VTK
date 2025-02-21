@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCountVertices.h"
 
@@ -22,12 +11,13 @@
 #include "vtkPoints.h"
 #include "vtkUnstructuredGrid.h"
 
-int TestCountVertices(int, char*[])
+int TestCountVerticesMode(bool useImplicitArray)
 {
   vtkNew<vtkUnstructuredGrid> data;
   vtkNew<vtkPoints> points;
   vtkNew<vtkIdList> cell;
   vtkNew<vtkCountVertices> filter;
+  filter->SetUseImplicitArray(useImplicitArray);
 
   // Need 12 points to test all cell types:
   for (int i = 0; i < 12; ++i)
@@ -90,8 +80,7 @@ int TestCountVertices(int, char*[])
     return EXIT_FAILURE;
   }
 
-  vtkIdTypeArray* verts =
-    vtkIdTypeArray::SafeDownCast(output->GetCellData()->GetArray(filter->GetOutputArrayName()));
+  vtkDataArray* verts = output->GetCellData()->GetArray(filter->GetOutputArrayName());
   if (!verts)
   {
     std::cerr << "No output array!\n";
@@ -113,15 +102,16 @@ int TestCountVertices(int, char*[])
   }
 
 #define TEST_VERTICES(idx, expected)                                                               \
+  do                                                                                               \
   {                                                                                                \
-    vtkIdType numVerts = verts->GetTypedComponent(idx, 0);                                         \
+    vtkIdType numVerts = static_cast<vtkIdType>(verts->GetTuple1(idx));                            \
     if (numVerts != (expected))                                                                    \
     {                                                                                              \
       std::cerr << "Expected cell @idx=" << (idx) << " to have " << (expected)                     \
                 << " vertices, but found " << numVerts << "\n";                                    \
       return EXIT_FAILURE;                                                                         \
     }                                                                                              \
-  }
+  } while (false)
 
   int idx = 0;
   // VTK_VERTEX = 1
@@ -148,4 +138,12 @@ int TestCountVertices(int, char*[])
 #undef TEST_VERTICES
 
   return EXIT_SUCCESS;
+}
+
+int TestCountVertices(int, char*[])
+{
+  int ret = EXIT_SUCCESS;
+  ret |= ::TestCountVerticesMode(false);
+  ret |= ::TestCountVerticesMode(true);
+  return ret;
 }

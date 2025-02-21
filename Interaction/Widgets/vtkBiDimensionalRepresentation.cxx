@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBiDimensionalRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBiDimensionalRepresentation.h"
 #include "vtkActor2D.h"
 #include "vtkCellArray.h"
@@ -34,7 +22,8 @@
 
 #include <sstream>
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkBiDimensionalRepresentation::vtkBiDimensionalRepresentation()
 {
   // By default, use one of these handles
@@ -61,7 +50,7 @@ vtkBiDimensionalRepresentation::vtkBiDimensionalRepresentation()
   this->ShowLabelAboveWidget = 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBiDimensionalRepresentation::~vtkBiDimensionalRepresentation()
 {
   if (this->HandleRepresentation)
@@ -88,7 +77,7 @@ vtkBiDimensionalRepresentation::~vtkBiDimensionalRepresentation()
   this->SetLabelFormat(nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation ::SetHandleRepresentation(vtkHandleRepresentation* handle)
 {
   if (handle == nullptr || handle == this->HandleRepresentation)
@@ -114,31 +103,31 @@ void vtkBiDimensionalRepresentation ::SetHandleRepresentation(vtkHandleRepresent
   this->InstantiateHandleRepresentation();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::GetPoint1WorldPosition(double pos[3])
 {
   this->Point1Representation->GetWorldPosition(pos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::GetPoint2WorldPosition(double pos[3])
 {
   this->Point2Representation->GetWorldPosition(pos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::GetPoint3WorldPosition(double pos[3])
 {
   this->Point3Representation->GetWorldPosition(pos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::GetPoint4WorldPosition(double pos[3])
 {
   this->Point4Representation->GetWorldPosition(pos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetPoint1DisplayPosition(double x[3])
 {
   this->Point1Representation->SetDisplayPosition(x);
@@ -147,7 +136,7 @@ void vtkBiDimensionalRepresentation::SetPoint1DisplayPosition(double x[3])
   this->Point1Representation->SetWorldPosition(p);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetPoint2DisplayPosition(double x[3])
 {
   this->Point2Representation->SetDisplayPosition(x);
@@ -156,7 +145,7 @@ void vtkBiDimensionalRepresentation::SetPoint2DisplayPosition(double x[3])
   this->Point2Representation->SetWorldPosition(p);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetPoint3DisplayPosition(double x[3])
 {
   this->Point3Representation->SetDisplayPosition(x);
@@ -165,7 +154,7 @@ void vtkBiDimensionalRepresentation::SetPoint3DisplayPosition(double x[3])
   this->Point3Representation->SetWorldPosition(p);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetPoint4DisplayPosition(double x[3])
 {
   this->Point4Representation->SetDisplayPosition(x);
@@ -174,59 +163,59 @@ void vtkBiDimensionalRepresentation::SetPoint4DisplayPosition(double x[3])
   this->Point4Representation->SetWorldPosition(p);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetPoint1WorldPosition(double x[3])
 {
   this->Point1Representation->SetWorldPosition(x);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetPoint2WorldPosition(double x[3])
 {
   this->Point2Representation->SetWorldPosition(x);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetPoint3WorldPosition(double x[3])
 {
   this->Point3Representation->SetWorldPosition(x);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetPoint4WorldPosition(double x[3])
 {
   this->Point4Representation->SetWorldPosition(x);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::GetPoint1DisplayPosition(double pos[3])
 {
   this->Point1Representation->GetDisplayPosition(pos);
   pos[2] = 0.0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::GetPoint2DisplayPosition(double pos[3])
 {
   this->Point2Representation->GetDisplayPosition(pos);
   pos[2] = 0.0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::GetPoint3DisplayPosition(double pos[3])
 {
   this->Point3Representation->GetDisplayPosition(pos);
   pos[2] = 0.0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::GetPoint4DisplayPosition(double pos[3])
 {
   this->Point4Representation->GetDisplayPosition(pos);
   pos[2] = 0.0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::InstantiateHandleRepresentation()
 {
   if (!this->Point1Representation)
@@ -254,7 +243,7 @@ void vtkBiDimensionalRepresentation::InstantiateHandleRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkBiDimensionalRepresentation::GetLength1()
 {
   double x1[3], x2[3];
@@ -265,7 +254,7 @@ double vtkBiDimensionalRepresentation::GetLength1()
   return sqrt(vtkMath::Distance2BetweenPoints(x1, x2));
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkBiDimensionalRepresentation::GetLength2()
 {
   double x3[3], x4[3];
@@ -276,7 +265,7 @@ double vtkBiDimensionalRepresentation::GetLength2()
   return sqrt(vtkMath::Distance2BetweenPoints(x3, x4));
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::SetID(vtkIdType id)
 {
   if (id == this->ID)
@@ -289,7 +278,7 @@ void vtkBiDimensionalRepresentation::SetID(vtkIdType id)
   this->Modified();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -345,3 +334,4 @@ void vtkBiDimensionalRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Show Label Above Widget: " << (this->ShowLabelAboveWidget ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

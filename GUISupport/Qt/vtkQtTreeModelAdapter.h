@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQtTreeModelAdapter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkQtTreeModelAdapter
  * @brief   Adapts a tree to a Qt item model.
@@ -39,11 +23,12 @@
 #include <QHash>     // Needed for the decoration map
 #include <QVector>   // Needed for the index map
 
+class QMimeData;
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSelection;
 class vtkTree;
 class vtkAdjacentVertexIterator;
-
-class QMimeData;
 
 class VTKGUISUPPORTQT_EXPORT vtkQtTreeModelAdapter : public vtkQtAbstractModelAdapter
 {
@@ -53,13 +38,13 @@ public:
   vtkQtTreeModelAdapter(QObject* parent = nullptr, vtkTree* tree = nullptr);
   ~vtkQtTreeModelAdapter() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the VTK data object as input to this adapter
    */
   void SetVTKDataObject(vtkDataObject* data) override;
   vtkDataObject* GetVTKDataObject() const override;
-  //@}
+  ///@}
 
   /**
    * Get the stored VTK data object modification time of when the
@@ -71,13 +56,13 @@ public:
    */
   vtkMTimeType GetVTKDataObjectMTime() const;
 
-  //@{
+  ///@{
   /**
    * Selection conversion from VTK land to Qt land
    */
-  vtkSelection* QModelIndexListToVTKIndexSelection(const QModelIndexList qmil) const override;
+  vtkSelection* QModelIndexListToVTKIndexSelection(QModelIndexList qmil) const override;
   QItemSelection VTKIndexSelectionToQItemSelection(vtkSelection* vtksel) const override;
-  //@}
+  ///@}
 
   void SetKeyColumnName(const char* name) override;
 
@@ -99,7 +84,7 @@ public:
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
-  //@{
+  ///@{
   /**
    * If drag/drop is enabled in the view, the model will package up the current
    * pedigreeid vtkSelection into a QMimeData when items are dragged.
@@ -108,7 +93,7 @@ public:
   Qt::DropActions supportedDragActions() const override;
   QMimeData* mimeData(const QModelIndexList& indexes) const override;
   QStringList mimeTypes() const override;
-  //@}
+  ///@}
 
 protected:
   void treeModified();
@@ -125,5 +110,6 @@ private:
   void operator=(const vtkQtTreeModelAdapter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkQtTreeModelAdapter.h

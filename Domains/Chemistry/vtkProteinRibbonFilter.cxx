@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProteinRibbonFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkProteinRibbonFilter.h"
 
@@ -33,11 +21,11 @@
 #include "vtkTubeFilter.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
 #include <map>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkProteinRibbonFilter);
 
 namespace
@@ -158,15 +146,15 @@ int vtkProteinRibbonFilter::RequestData(
     atomsColors, atomTypes, atom_ss, ToColor3ubFromHex3(0xFF0080), ToColor3ubFromHex3(0xFFC800));
 
   std::vector<vtkColor3ub> colors;
-  std::vector<std::pair<vtkVector3f, bool> > borderPoints[2];
+  std::vector<std::pair<vtkVector3f, bool>> borderPoints[2];
 
   // Need this for radius / color lookups
   vtkNew<vtkPeriodicTable> pTab;
 
   for (int i = 0; i < input->GetNumberOfPoints(); i++)
   {
-    vtkStdString type = atomTypes->GetValue(i);
-    unsigned short atomicNum = static_cast<unsigned short>(atomType->GetValue(i) + 1);
+    std::string type = atomTypes->GetValue(i);
+    unsigned short atomicNum = static_cast<unsigned short>(atomType->GetValue(i));
 
     if (ishetatm->GetValue(i) && this->DrawSmallMoleculesAsSpheres)
     {
@@ -212,8 +200,8 @@ int vtkProteinRibbonFilter::RequestData(
       hasPrevCO = true;
       prevCO = p;
       bool isSheet = (ss == 's');
-      borderPoints[0].push_back(std::pair<vtkVector3f, bool>(currentCA - prevCO, isSheet));
-      borderPoints[1].push_back(std::pair<vtkVector3f, bool>(currentCA + prevCO, isSheet));
+      borderPoints[0].emplace_back(currentCA - prevCO, isSheet);
+      borderPoints[1].emplace_back(currentCA + prevCO, isSheet);
     }
   }
 
@@ -321,8 +309,8 @@ void vtkProteinRibbonFilter::CreateAtomAsSphere(vtkPolyData* poly,
 }
 
 void vtkProteinRibbonFilter::CreateThinStrip(vtkPolyData* poly, vtkUnsignedCharArray* pointsColors,
-  vtkPoints* p, std::vector<std::pair<vtkVector3f, bool> >& p1,
-  std::vector<std::pair<vtkVector3f, bool> >& p2, std::vector<vtkColor3ub>& colors)
+  vtkPoints* p, std::vector<std::pair<vtkVector3f, bool>>& p1,
+  std::vector<std::pair<vtkVector3f, bool>>& p2, std::vector<vtkColor3ub>& colors)
 {
   if (p1.size() < 2 || p2.size() < 2)
   {
@@ -370,7 +358,7 @@ void vtkProteinRibbonFilter::CreateThinStrip(vtkPolyData* poly, vtkUnsignedCharA
 }
 
 std::vector<vtkVector3f>* vtkProteinRibbonFilter::Subdivide(
-  std::vector<std::pair<vtkVector3f, bool> >& p, int div)
+  std::vector<std::pair<vtkVector3f, bool>>& p, int div)
 {
   std::vector<vtkVector3f>* ret = new std::vector<vtkVector3f>;
   std::vector<vtkVector3f> points;
@@ -414,7 +402,7 @@ std::vector<vtkVector3f>* vtkProteinRibbonFilter::Subdivide(
       double z = p1.GetZ() + t * v0.GetZ() +
         t2 * (-3 * p1.GetZ() + 3 * p2.GetZ() - 2 * v0.GetZ() - v1.GetZ()) +
         t2 * t * (2 * p1.GetZ() - 2 * p2.GetZ() + v0.GetZ() + v1.GetZ());
-      ret->push_back(vtkVector3f(x, y, z));
+      ret->emplace_back(x, y, z);
     }
   }
   ret->push_back(points[points.size() - 1]);
@@ -425,3 +413,4 @@ void vtkProteinRibbonFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

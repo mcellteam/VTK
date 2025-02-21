@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEllipticalButtonSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkEllipticalButtonSource.h"
 
 #include "vtkCellArray.h"
@@ -25,9 +13,10 @@
 #include "vtkPolyData.h"
 #include "vtkTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkEllipticalButtonSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct
 vtkEllipticalButtonSource::vtkEllipticalButtonSource()
 {
@@ -43,7 +32,7 @@ vtkEllipticalButtonSource::vtkEllipticalButtonSource()
   this->RadialRatio = 1.1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEllipticalButtonSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -318,7 +307,7 @@ int vtkEllipticalButtonSource::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEllipticalButtonSource::InterpolateCurve(int inTextureRegion, vtkPoints* newPts, int numPts,
   vtkFloatArray* normals, vtkFloatArray* tcoords, int res, int c1StartPt, int c1Incr, int c2StartPt,
   int c2Incr, int startPt, int incr)
@@ -351,7 +340,7 @@ void vtkEllipticalButtonSource::InterpolateCurve(int inTextureRegion, vtkPoints*
   } // for all points
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEllipticalButtonSource::CreatePolygons(
   vtkCellArray* newPolys, int num, int res, int startIdx)
 {
@@ -380,7 +369,7 @@ void vtkEllipticalButtonSource::CreatePolygons(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEllipticalButtonSource::IntersectEllipseWithLine(
   double a2, double b2, double dX, double dY, double& xe, double& ye)
 {
@@ -404,7 +393,7 @@ void vtkEllipticalButtonSource::IntersectEllipseWithLine(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkEllipticalButtonSource::ComputeDepth(
   int vtkNotUsed(inTextureRegion), double x, double y, double n[3])
 {
@@ -428,7 +417,7 @@ double vtkEllipticalButtonSource::ComputeDepth(
   return (z + this->Center[2]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEllipticalButtonSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -445,3 +434,4 @@ void vtkEllipticalButtonSource::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

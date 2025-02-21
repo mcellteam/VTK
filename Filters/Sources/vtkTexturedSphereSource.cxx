@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTexturedSphereSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTexturedSphereSource.h"
 
 #include "vtkCellArray.h"
@@ -24,6 +12,7 @@
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTexturedSphereSource);
 
 // Construct sphere with radius=0.5 and default resolution 8 in both Phi
@@ -103,10 +92,10 @@ int vtkTexturedSphereSource::RequestData(vtkInformation* vtkNotUsed(request),
     for (j = 0; j <= this->PhiResolution; j++)
     {
       phi = j * deltaPhi;
-      radius = this->Radius * sin((double)phi);
-      x[0] = radius * cos((double)theta);
-      x[1] = radius * sin((double)theta);
-      x[2] = this->Radius * cos((double)phi);
+      radius = this->Radius * sin(phi);
+      x[0] = radius * cos(theta);
+      x[1] = radius * sin(theta);
+      x[2] = this->Radius * cos(phi);
       newPoints->InsertNextPoint(x);
 
       if ((norm = vtkMath::Norm(x)) == 0.0)
@@ -169,3 +158,4 @@ void vtkTexturedSphereSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Radius: " << this->Radius << "\n";
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

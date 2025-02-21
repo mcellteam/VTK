@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPDistributedDataFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPDistributedDataFilter
@@ -92,6 +77,7 @@
 #include "vtkDistributedDataFilter.h"
 #include "vtkFiltersParallelGeometryModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBSPCuts;
 class vtkDataArray;
 class vtkFloatArray;
@@ -121,7 +107,7 @@ protected:
    * by all processes, or it will hang.
    */
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   void SingleProcessExecute(vtkDataSet* input, vtkUnstructuredGrid* output);
 
   /**
@@ -208,43 +194,43 @@ private:
    */
   void SetUpPairWiseExchange();
 
-  //@{
+  ///@{
   /**
    * ?
    */
   void FreeIntArrays(vtkIdTypeArray** ar);
   static void FreeIdLists(vtkIdList** lists, int nlists);
   static vtkIdType GetIdListSize(vtkIdList** lists, int nlists);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This transfers counts (array sizes) between processes.
    */
   vtkIdTypeArray* ExchangeCounts(vtkIdType myCount, int tag);
   vtkIdTypeArray* ExchangeCountsLean(vtkIdType myCount, int tag);
   vtkIdTypeArray* ExchangeCountsFast(vtkIdType myCount, int tag);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This transfers id valued data arrays between processes.
    */
   vtkIdTypeArray** ExchangeIdArrays(vtkIdTypeArray** arIn, int deleteSendArrays, int tag);
   vtkIdTypeArray** ExchangeIdArraysLean(vtkIdTypeArray** arIn, int deleteSendArrays, int tag);
   vtkIdTypeArray** ExchangeIdArraysFast(vtkIdTypeArray** arIn, int deleteSendArrays, int tag);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This transfers float valued data arrays between processes.
    */
   vtkFloatArray** ExchangeFloatArrays(vtkFloatArray** myArray, int deleteSendArrays, int tag);
   vtkFloatArray** ExchangeFloatArraysLean(vtkFloatArray** myArray, int deleteSendArrays, int tag);
   vtkFloatArray** ExchangeFloatArraysFast(vtkFloatArray** myArray, int deleteSendArrays, int tag);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * ?
    */
@@ -258,17 +244,17 @@ private:
   vtkUnstructuredGrid* ExchangeMergeSubGridsFast(vtkIdList*** cellIds, int* numLists,
     int deleteCellIds, vtkDataSet* myGrid, int deleteMyGrid, int filterOutDuplicateCells,
     int ghostCellFlag, int tag);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * ?
    */
   char* MarshallDataSet(vtkUnstructuredGrid* extractedGrid, vtkIdType& size);
   vtkUnstructuredGrid* UnMarshallDataSet(char* buf, vtkIdType size);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * ?
    */
@@ -277,12 +263,12 @@ private:
   void ClipWithVtkClipDataSet(vtkUnstructuredGrid *grid, double *bounds,
            vtkUnstructuredGrid **outside, vtkUnstructuredGrid **inside);
 #endif
-  //@}
+  ///@}
 
   void ClipWithBoxClipDataSet(vtkUnstructuredGrid* grid, double* bounds,
     vtkUnstructuredGrid** outside, vtkUnstructuredGrid** inside);
 
-  //@{
+  ///@{
   /**
    * Accessors to the "GLOBALID" point and cell arrays of the dataset.
    * Global ids are used by D3 to uniquely name all points and cells
@@ -297,7 +283,7 @@ private:
   int AssignGlobalElementIds(vtkDataSet* in);
   vtkIdTypeArray** FindGlobalPointIds(vtkFloatArray** ptarray, vtkIdTypeArray* ids,
     vtkUnstructuredGrid* grid, vtkIdType& numUniqueMissingPoints);
-  //@}
+  ///@}
 
   /**
    * ?
@@ -311,7 +297,7 @@ private:
   vtkIdList** BuildRequestedGrids(vtkIdTypeArray** globalPtIds, vtkUnstructuredGrid* grid,
     vtkPDistributedDataFilterSTLCloak* ptIdMap);
 
-  //@{
+  ///@{
   /**
    * ?
    */
@@ -319,9 +305,9 @@ private:
   int InMySpatialRegion(double x, double y, double z);
   int StrictlyInsideMyBounds(float x, float y, float z);
   int StrictlyInsideMyBounds(double x, double y, double z);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * ?
    */
@@ -334,9 +320,9 @@ private:
   vtkUnstructuredGrid* SetMergeGhostGrid(vtkUnstructuredGrid* ghostCellGrid,
     vtkUnstructuredGrid* incomingGhostCells, int ghostLevel,
     vtkPDistributedDataFilterSTLCloak* idMap);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * ?
    */
@@ -344,9 +330,9 @@ private:
   vtkUnstructuredGrid* ExtractCells(
     vtkIdList** lists, int nlists, int deleteCellLists, vtkDataSet* in);
   vtkUnstructuredGrid* ExtractZeroCellGrid(vtkDataSet* in);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * ?
    */
@@ -354,7 +340,7 @@ private:
     vtkUnstructuredGrid* grid, int ptId, vtkPDistributedDataFilterSTLCloak* globalToLocal);
   static int LocalPointIdIsUsed(vtkUnstructuredGrid* grid, int ptId);
   static vtkIdType FindId(vtkIdTypeArray* ids, vtkIdType gid, vtkIdType startLoc);
-  //@}
+  ///@}
 
   /**
    * ?
@@ -362,7 +348,7 @@ private:
   static vtkIdTypeArray* AddPointAndCells(vtkIdType gid, vtkIdType localId,
     vtkUnstructuredGrid* grid, vtkIdType* gidCells, vtkIdTypeArray* ids);
 
-  //@{
+  ///@{
   /**
    * ?
    */
@@ -370,7 +356,7 @@ private:
     vtkUnstructuredGrid* grid, const char* arrayName, unsigned char val);
   static void AddConstantUnsignedCharCellArray(
     vtkUnstructuredGrid* grid, const char* arrayName, unsigned char val);
-  //@}
+  ///@}
 
   /**
    * ?
@@ -384,8 +370,8 @@ private:
   static vtkUnstructuredGrid* MergeGrids(vtkDataSet** sets, int nsets, int deleteDataSets,
     int useGlobalNodeIds, float pointMergeTolerance, int useGlobalCellIds);
 
-private:
   vtkPDistributedDataFilter(const vtkPDistributedDataFilter&) = delete;
   void operator=(const vtkPDistributedDataFilter&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLRectilinearGridWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLRectilinearGridWriter.h"
 
 #include "vtkCellData.h"
@@ -25,51 +13,52 @@
 #include "vtkXMLOffsetsManager.h"
 #undef vtkXMLOffsetsManager_DoNotInclude
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLRectilinearGridWriter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLRectilinearGridWriter::vtkXMLRectilinearGridWriter()
 {
   this->CoordinateOM = new OffsetsManagerArray;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLRectilinearGridWriter::~vtkXMLRectilinearGridWriter()
 {
   delete this->CoordinateOM;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLRectilinearGridWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearGrid* vtkXMLRectilinearGridWriter::GetInput()
 {
   return static_cast<vtkRectilinearGrid*>(this->Superclass::GetInput());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLRectilinearGridWriter::GetInputExtent(int* extent)
 {
   this->GetInput()->GetExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLRectilinearGridWriter::GetDataSetName()
 {
   return "RectilinearGrid";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLRectilinearGridWriter::GetDefaultFileExtension()
 {
   return "vtr";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLRectilinearGridWriter::AllocatePositionArrays()
 {
   this->Superclass::AllocatePositionArrays();
@@ -77,13 +66,13 @@ void vtkXMLRectilinearGridWriter::AllocatePositionArrays()
   this->CoordinateOM->Allocate(this->NumberOfPieces);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLRectilinearGridWriter::DeletePositionArrays()
 {
   this->Superclass::DeletePositionArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLRectilinearGridWriter::WriteAppendedPiece(int index, vtkIndent indent)
 {
   this->Superclass::WriteAppendedPiece(index, indent);
@@ -97,7 +86,7 @@ void vtkXMLRectilinearGridWriter::WriteAppendedPiece(int index, vtkIndent indent
     &this->CoordinateOM->GetPiece(index));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLRectilinearGridWriter::WriteAppendedPieceData(int index)
 {
   // Split progress range by the approximate fractions of data written
@@ -128,7 +117,7 @@ void vtkXMLRectilinearGridWriter::WriteAppendedPieceData(int index)
   this->CoordinateOM->GetPiece(index).Allocate(0); // mark it invalid
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLRectilinearGridWriter::WriteInlinePiece(vtkIndent indent)
 {
   // Split progress range by the approximate fractions of data written
@@ -156,7 +145,7 @@ void vtkXMLRectilinearGridWriter::WriteInlinePiece(vtkIndent indent)
     this->GetInput()->GetYCoordinates(), this->GetInput()->GetZCoordinates(), indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLRectilinearGridWriter::CalculateSuperclassFraction(float* fractions)
 {
   int extent[6];
@@ -184,9 +173,10 @@ void vtkXMLRectilinearGridWriter::CalculateSuperclassFraction(float* fractions)
   fractions[2] = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLRectilinearGridWriter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkRectilinearGrid");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

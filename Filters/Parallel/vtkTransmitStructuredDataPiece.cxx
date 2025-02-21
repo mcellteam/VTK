@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransmitStructuredDataPiece.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTransmitStructuredDataPiece.h"
 
 #include "vtkDataSet.h"
@@ -22,11 +10,12 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTransmitStructuredDataPiece);
 
 vtkCxxSetObjectMacro(vtkTransmitStructuredDataPiece, Controller, vtkMultiProcessController);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransmitStructuredDataPiece::vtkTransmitStructuredDataPiece()
 {
   this->Controller = nullptr;
@@ -35,13 +24,13 @@ vtkTransmitStructuredDataPiece::vtkTransmitStructuredDataPiece()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransmitStructuredDataPiece::~vtkTransmitStructuredDataPiece()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTransmitStructuredDataPiece::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -60,7 +49,7 @@ int vtkTransmitStructuredDataPiece::RequestInformation(vtkInformation* vtkNotUse
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTransmitStructuredDataPiece::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -76,7 +65,7 @@ int vtkTransmitStructuredDataPiece::RequestUpdateExtent(vtkInformation* vtkNotUs
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTransmitStructuredDataPiece::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -105,7 +94,7 @@ int vtkTransmitStructuredDataPiece::RequestData(vtkInformation* vtkNotUsed(reque
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransmitStructuredDataPiece::RootExecute(
   vtkDataSet* input, vtkDataSet* output, vtkInformation* outInfo)
 {
@@ -166,7 +155,7 @@ void vtkTransmitStructuredDataPiece::RootExecute(
   et->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransmitStructuredDataPiece::SatelliteExecute(
   int, vtkDataSet* output, vtkInformation* outInfo)
 {
@@ -190,7 +179,7 @@ void vtkTransmitStructuredDataPiece::SatelliteExecute(
   this->Controller->Receive(output, 0, 22342);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransmitStructuredDataPiece::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -199,3 +188,4 @@ void vtkTransmitStructuredDataPiece::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Controller: (" << this->Controller << ")\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageFoo.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageFoo
  * @brief   foo and scale an input image
@@ -25,6 +13,7 @@
 #include "vtkThreadedImageAlgorithm.h"
 #include "vtkmyImagingModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBar;
 
 class VTKMYIMAGING_EXPORT vtkImageFoo : public vtkThreadedImageAlgorithm
@@ -34,15 +23,15 @@ public:
   vtkTypeMacro(vtkImageFoo, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the foo value.
    */
   vtkSetMacro(Foo, float);
   vtkGetMacro(Foo, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the desired output scalar type.
    */
@@ -59,7 +48,7 @@ public:
   void SetOutputScalarTypeToChar() { this->SetOutputScalarType(VTK_CHAR); }
   void SetOutputScalarTypeToSignedChar() { this->SetOutputScalarType(VTK_SIGNED_CHAR); }
   void SetOutputScalarTypeToUnsignedChar() { this->SetOutputScalarType(VTK_UNSIGNED_CHAR); }
-  //@}
+  ///@}
 
 protected:
   vtkImageFoo();
@@ -80,4 +69,5 @@ private:
   void operator=(const vtkImageFoo&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

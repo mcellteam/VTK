@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGDALRasterReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPDALReader
  * @brief   Reads LIDAR data using the PDAL library.
@@ -38,6 +26,8 @@ namespace pdal
 class Stage;
 };
 
+VTK_ABI_NAMESPACE_BEGIN
+
 class VTKIOPDAL_EXPORT vtkPDALReader : public vtkPolyDataAlgorithm
 {
 public:
@@ -45,13 +35,13 @@ public:
   void operator=(const vtkPDALReader&) = delete;
   static vtkPDALReader* New();
   vtkTypeMacro(vtkPDALReader, vtkPolyDataAlgorithm);
-  virtual void PrintSelf(ostream& os, vtkIndent indent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Name of the file that will be opened
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
 
 protected:
   vtkPDALReader();
@@ -71,4 +61,5 @@ protected:
   char* FileName;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPDALReader_h

@@ -1,23 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleUnicam.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /*
  * This work (vtkInteractorStyleUnicam.h) was produced under a grant from
- * the Department of Energy to Brown University.  Neither Brown University
- * nor the authors assert any copyright with respect to this work and it may
- * be used, reproduced, and distributed without permission.
+ * the Department of Energy to Brown University.
  */
 
 /**
@@ -54,7 +40,7 @@
  * Rotations can be done without placing a focus dot first by moving the
  * mouse cursor to within 10% of the window border & pressing and holding the
  * left button followed by dragging the mouse.  The last focus dot position
- * will be re-used.
+ * will be reused.
  *
  * 2. PAN:
  *
@@ -81,27 +67,14 @@
 
 #include "vtkInteractionStyleModule.h" // For export macro
 #include "vtkInteractorStyle.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCamera;
 class vtkWorldPointPicker;
 
-#ifndef VTK_LEGACY_REMOVE
-// Replaced with the enum types in the `vtkInteractorStyleUnicam` class.
-
-// buttons pressed
-#define VTK_UNICAM_NONE 0
-#define VTK_UNICAM_BUTTON_LEFT 1
-#define VTK_UNICAM_BUTTON_MIDDLE 2
-#define VTK_UNICAM_BUTTON_RIGHT 3
-//
-// camera modes
-#define VTK_UNICAM_CAM_INT_ROT 0
-#define VTK_UNICAM_CAM_INT_CHOOSE 1
-#define VTK_UNICAM_CAM_INT_PAN 2
-#define VTK_UNICAM_CAM_INT_DOLLY 3
-#endif
-
-class VTKINTERACTIONSTYLE_EXPORT vtkInteractorStyleUnicam : public vtkInteractorStyle
+class VTKINTERACTIONSTYLE_EXPORT VTK_MARSHALAUTO vtkInteractorStyleUnicam
+  : public vtkInteractorStyle
 {
 public:
   enum
@@ -127,7 +100,7 @@ public:
   void SetWorldUpVector(double x, double y, double z);
   vtkGetVectorMacro(WorldUpVector, double, 3);
 
-  //@{
+  ///@{
   /**
    * Concrete implementation of event bindings
    */
@@ -135,7 +108,7 @@ public:
   void OnLeftButtonDown() override;
   void OnLeftButtonUp() override;
   virtual void OnLeftButtonMove();
-  //@}
+  ///@}
 
   /**
    * OnTimer calls RotateCamera, RotateActor etc which should be overridden by
@@ -171,7 +144,7 @@ protected:
   void DollyXY(int X, int Y);  // method for dollying
   void PanXY(int X, int Y);    // method for panning
 
-  // conveinence methods for translating & rotating the camera
+  // convenience methods for translating & rotating the camera
   void MyTranslateCamera(double v[3]);
   void MyRotateCamera(
     double cx, double cy, double cz, double ax, double ay, double az, double angle);
@@ -194,4 +167,5 @@ private:
   void operator=(const vtkInteractorStyleUnicam&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkInteractorStyleUnicam_h

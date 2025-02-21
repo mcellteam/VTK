@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleRubberBandPick.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInteractorStyleRubberBandPick
  * @brief   Like TrackBallCamera, but this can pick props underneath a rubber band selection
@@ -35,10 +23,12 @@
 
 #include "vtkInteractionStyleModule.h" // For export macro
 #include "vtkInteractorStyleTrackballCamera.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUnsignedCharArray;
 
-class VTKINTERACTIONSTYLE_EXPORT vtkInteractorStyleRubberBandPick
+class VTKINTERACTIONSTYLE_EXPORT VTK_MARSHALAUTO vtkInteractorStyleRubberBandPick
   : public vtkInteractorStyleTrackballCamera
 {
 public:
@@ -48,7 +38,7 @@ public:
 
   void StartSelect();
 
-  //@{
+  ///@{
   /**
    * Event bindings
    */
@@ -56,7 +46,7 @@ public:
   void OnLeftButtonDown() override;
   void OnLeftButtonUp() override;
   void OnChar() override;
-  //@}
+  ///@}
 
 protected:
   vtkInteractorStyleRubberBandPick();
@@ -79,4 +69,5 @@ private:
   void operator=(const vtkInteractorStyleRubberBandPick&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

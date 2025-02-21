@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRectangularButtonSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRectangularButtonSource
  * @brief   create a rectangular button
@@ -47,6 +35,7 @@
 #include "vtkButtonSource.h"
 #include "vtkFiltersSourcesModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkFloatArray;
 class vtkPoints;
@@ -62,31 +51,31 @@ public:
    */
   static vtkRectangularButtonSource* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the width of the button.
    */
   vtkSetClampMacro(Width, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Width, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the height of the button.
    */
   vtkSetClampMacro(Height, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Height, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the depth of the button (the z-eliipsoid axis length).
    */
   vtkSetClampMacro(Depth, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Depth, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the ratio of the bottom of the button with the
    * shoulder region. Numbers greater than one produce buttons
@@ -95,9 +84,9 @@ public:
    */
   vtkSetClampMacro(BoxRatio, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(BoxRatio, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the ratio of the texture region to the
    * shoulder region. This number must be 0<=tr<=1.
@@ -108,9 +97,9 @@ public:
    */
   vtkSetClampMacro(TextureRatio, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(TextureRatio, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the ratio of the height of the texture region
    * to the shoulder height. Values greater than 1.0 yield
@@ -120,9 +109,9 @@ public:
    */
   vtkSetClampMacro(TextureHeightRatio, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(TextureHeightRatio, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output points.
    * vtkAlgorithm::SINGLE_PRECISION - Output single-precision floating point.
@@ -130,11 +119,11 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkRectangularButtonSource();
-  ~vtkRectangularButtonSource() override {}
+  ~vtkRectangularButtonSource() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -153,4 +142,5 @@ private:
   void operator=(const vtkRectangularButtonSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

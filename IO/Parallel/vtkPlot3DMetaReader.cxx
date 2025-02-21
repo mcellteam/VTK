@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkPlot3DMetaReader.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPlot3DMetaReader.h"
 
 #include "vtkInformation.h"
@@ -33,6 +22,7 @@
 
 #define CALL_MEMBER_FN(object, ptrToMember) ((object).*(ptrToMember))
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPlot3DMetaReader);
 
 typedef void (vtkPlot3DMetaReader::*Plot3DFunction)(Json::Value* val);
@@ -67,7 +57,7 @@ struct vtkPlot3DMetaReaderInternals
   }
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlot3DMetaReader::vtkPlot3DMetaReader()
 {
   this->SetNumberOfInputPorts(0);
@@ -95,7 +85,7 @@ vtkPlot3DMetaReader::vtkPlot3DMetaReader()
   this->Internal->FunctionMap["function-names"] = &vtkPlot3DMetaReader::SetFunctionNames;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlot3DMetaReader::~vtkPlot3DMetaReader()
 {
   this->Reader->Delete();
@@ -105,7 +95,7 @@ vtkPlot3DMetaReader::~vtkPlot3DMetaReader()
   delete[] this->FileName;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetAutoDetectFormat(Json::Value* val)
 {
   bool value = val->asBool();
@@ -119,7 +109,7 @@ void vtkPlot3DMetaReader::SetAutoDetectFormat(Json::Value* val)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetByteOrder(Json::Value* val)
 {
   std::string value = val->asString();
@@ -133,14 +123,14 @@ void vtkPlot3DMetaReader::SetByteOrder(Json::Value* val)
   }
   else
   {
-    vtkErrorMacro("Unrecognized byte order: " << value.c_str()
+    vtkErrorMacro("Unrecognized byte order: " << value
                                               << ". Valid options are \"little\" and \"big\"."
                                                  " Setting to little endian");
     this->Reader->SetByteOrderToLittleEndian();
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetLanguage(Json::Value* val)
 {
   std::string value = val->asString();
@@ -154,14 +144,14 @@ void vtkPlot3DMetaReader::SetLanguage(Json::Value* val)
   }
   else
   {
-    vtkErrorMacro("Unrecognized language: " << value.c_str()
+    vtkErrorMacro("Unrecognized language: " << value
                                             << ". Valid options are \"fortran\" and \"C\"."
                                                " Setting to little fortran");
     this->Reader->HasByteCountOn();
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetPrecision(Json::Value* val)
 {
   int value = val->asInt();
@@ -182,7 +172,7 @@ void vtkPlot3DMetaReader::SetPrecision(Json::Value* val)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetMultiGrid(Json::Value* val)
 {
   bool value = val->asBool();
@@ -196,7 +186,7 @@ void vtkPlot3DMetaReader::SetMultiGrid(Json::Value* val)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetFormat(Json::Value* val)
 {
   std::string value = val->asString();
@@ -210,14 +200,14 @@ void vtkPlot3DMetaReader::SetFormat(Json::Value* val)
   }
   else
   {
-    vtkErrorMacro("Unrecognized file type: " << value.c_str()
+    vtkErrorMacro("Unrecognized file type: " << value
                                              << ". Valid options are \"binary\" and \"ascii\"."
                                                 " Setting to binary");
     this->Reader->BinaryFileOn();
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetBlanking(Json::Value* val)
 {
   bool value = val->asBool();
@@ -231,7 +221,7 @@ void vtkPlot3DMetaReader::SetBlanking(Json::Value* val)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::Set2D(Json::Value* val)
 {
   bool value = val->asBool();
@@ -245,21 +235,21 @@ void vtkPlot3DMetaReader::Set2D(Json::Value* val)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetR(Json::Value* val)
 {
   double R = val->asDouble();
   this->Reader->SetR(R);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetGamma(Json::Value* val)
 {
   double gamma = val->asDouble();
   this->Reader->SetGamma(gamma);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::AddFunctions(Json::Value* val)
 {
   const Json::Value& functions = *val;
@@ -269,7 +259,7 @@ void vtkPlot3DMetaReader::AddFunctions(Json::Value* val)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetFileNames(Json::Value* val)
 {
   const Json::Value& filenames = *val;
@@ -318,7 +308,7 @@ void vtkPlot3DMetaReader::SetFileNames(Json::Value* val)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::SetFunctionNames(Json::Value* val)
 {
   const Json::Value& functionNames = *val;
@@ -328,7 +318,7 @@ void vtkPlot3DMetaReader::SetFunctionNames(Json::Value* val)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPlot3DMetaReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -376,8 +366,7 @@ int vtkPlot3DMetaReader::RequestInformation(vtkInformation* vtkNotUsed(request),
     }
     else
     {
-      vtkErrorMacro(
-        "Syntax error in file. Option \"" << memberIterator->c_str() << "\" is not valid.");
+      vtkErrorMacro("Syntax error in file. Option \"" << *memberIterator << "\" is not valid.");
     }
   }
 
@@ -391,7 +380,7 @@ int vtkPlot3DMetaReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   size_t numSteps = timeValues.size();
   if (numSteps > 0)
   {
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timeValues[0], (int)numSteps);
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), timeValues.data(), (int)numSteps);
 
     double timeRange[2];
     timeRange[0] = timeValues[0];
@@ -402,7 +391,7 @@ int vtkPlot3DMetaReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPlot3DMetaReader::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -467,8 +456,8 @@ int vtkPlot3DMetaReader::RequestData(
     this->Reader->UpdatePiece(outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER()),
       outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES()),
       outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS()));
-    vtkDataObject* ioutput = this->Reader->GetOutput();
-    output->ShallowCopy(ioutput);
+    vtkMultiBlockDataSet* ioutput = this->Reader->GetOutput();
+    output->CompositeShallowCopy(ioutput);
     output->GetInformation()->Set(vtkDataObject::DATA_NUMBER_OF_GHOST_LEVELS(),
       ioutput->GetInformation()->Get(vtkDataObject::DATA_NUMBER_OF_GHOST_LEVELS()));
   }
@@ -481,8 +470,9 @@ int vtkPlot3DMetaReader::RequestData(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlot3DMetaReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

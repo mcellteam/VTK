@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkYoungsMaterialInterface.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .SECTION Thanks
 // This file is part of the generalized Youngs material interface reconstruction algorithm
 // contributed by CEA/DIF - Commissariat a l'Energie Atomique, Centre DAM Ile-De-France <br> BP12,
@@ -25,9 +13,10 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPYoungsMaterialInterface);
 vtkCxxSetObjectMacro(vtkPYoungsMaterialInterface, Controller, vtkMultiProcessController);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPYoungsMaterialInterface::vtkPYoungsMaterialInterface()
 {
   this->Controller = nullptr;
@@ -36,20 +25,20 @@ vtkPYoungsMaterialInterface::vtkPYoungsMaterialInterface()
   vtkDebugMacro(<< "vtkPYoungsMaterialInterface::vtkPYoungsMaterialInterface() ok\n");
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPYoungsMaterialInterface::~vtkPYoungsMaterialInterface()
 {
   this->SetController(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPYoungsMaterialInterface::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPYoungsMaterialInterface::Aggregate(int nmat, int* inputsPerMaterial)
 {
   vtkIdType nprocs = this->Controller->GetNumberOfProcesses();
@@ -96,3 +85,4 @@ void vtkPYoungsMaterialInterface::Aggregate(int nmat, int* inputsPerMaterial)
   }
   delete[] tmp;
 }
+VTK_ABI_NAMESPACE_END

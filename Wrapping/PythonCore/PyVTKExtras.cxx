@@ -1,20 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    PyVTKExtras.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "PyVTKExtras.h"
 #include "PyVTKReference.h"
+#include "vtkABINamespace.h"
 #include "vtkPythonCompatibility.h"
 
 // Silence warning like
@@ -24,7 +13,7 @@
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper function for the buffer_shared() check: get the pointer and
 // size (in bytes) of the buffer of the provided object.  A return
 // value of zero indicates that an exception was raised.
@@ -32,9 +21,8 @@ static void* buffer_pointer_and_size(PyObject* o, Py_ssize_t* size)
 {
   void* ptr = nullptr;
 
-#if PY_VERSION_HEX >= 0x02060000
   // New buffer protocol
-  Py_buffer view = VTK_PYBUFFER_INITIALIZER;
+  Py_buffer view = { nullptr, nullptr, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr };
   if (PyObject_CheckBuffer(o))
   {
     // Check for a simple buffer
@@ -58,35 +46,13 @@ static void* buffer_pointer_and_size(PyObject* o, Py_ssize_t* size)
       return ptr;
     }
   }
-#endif
-
-#ifndef VTK_PY3K
-  // Old buffer protocol
-  PyBufferProcs* b = Py_TYPE(o)->tp_as_buffer;
-  if (b && b->bf_getreadbuffer && b->bf_getsegcount)
-  {
-    if (b->bf_getsegcount(o, nullptr) == 1)
-    {
-      *size = b->bf_getreadbuffer(o, 0, &ptr);
-      if (ptr)
-      {
-        return ptr;
-      }
-    }
-    else
-    {
-      PyErr_SetString(PyExc_TypeError, "buffer must be single-segment");
-      return nullptr;
-    }
-  }
-#endif
 
   PyErr_SetString(PyExc_TypeError, "object does not have a readable buffer");
 
   return nullptr;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static PyObject* PyVTKExtras_buffer_shared(PyObject*, PyObject* args)
 {
   PyObject* ob[2] = { nullptr, nullptr };
@@ -118,7 +84,7 @@ static PyObject* PyVTKExtras_buffer_shared(PyObject*, PyObject* args)
   return nullptr;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static PyMethodDef PyVTKExtras_Methods[] = {
   { "buffer_shared", PyVTKExtras_buffer_shared, METH_VARARGS,
     "Check if two objects share the same buffer, meaning that they"
@@ -127,7 +93,7 @@ static PyMethodDef PyVTKExtras_Methods[] = {
   { nullptr, nullptr, 0, nullptr }
 };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Exported method called by vtkCommonCorePythonInit
 void PyVTKAddFile_PyVTKExtras(PyObject* dict)
 {

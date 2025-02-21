@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPixelExtenth.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPixelExtent
  *
@@ -35,6 +23,7 @@
 #include <deque>     // for inline impl
 #include <iostream>  // for inline impl
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONDATAMODEL_EXPORT vtkPixelExtent
 {
 public:
@@ -87,14 +76,14 @@ public:
 
   const unsigned int* GetDataU() const { return reinterpret_cast<const unsigned int*>(this->Data); }
 
-  //@{
+  ///@{
   /**
    * Get the start/end index.
    */
   void GetStartIndex(int first[2]) const;
   void GetStartIndex(int first[2], const int origin[2]) const;
   void GetEndIndex(int last[2]) const;
-  //@}
+  ///@}
 
   /**
    * Return true if empty.
@@ -106,13 +95,13 @@ public:
    */
   bool operator==(const vtkPixelExtent& other) const;
 
-  //@{
+  ///@{
   /**
    * Return non-zero if this extent contains the other.
    */
   int Contains(const vtkPixelExtent& other) const;
   int Contains(int i, int j) const;
-  //@}
+  ///@}
 
   /**
    * Return non-zero if the extent is disjoint from the other
@@ -140,7 +129,7 @@ public:
    */
   void operator|=(const vtkPixelExtent& other);
 
-  //@{
+  ///@{
   /**
    * Expand the extents by n.
    */
@@ -148,15 +137,15 @@ public:
   void Grow(int q, int n);
   void GrowLow(int q, int n);
   void GrowHigh(int q, int n);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Shrink the extent by n.
    */
   void Shrink(int n);
   void Shrink(int q, int n);
-  //@}
+  ///@}
 
   /**
    * Shifts by low corner of this, moving to the origin.
@@ -186,13 +175,13 @@ public:
    */
   vtkPixelExtent Split(int dir);
 
-  //@{
+  ///@{
   /**
    * In-place conversion from cell based to node based extent, and vise-versa.
    */
   void CellToNode();
   void NodeToCell();
-  //@}
+  ///@}
 
   /**
    * Get the number in each direction.
@@ -240,13 +229,13 @@ public:
    */
   static vtkPixelExtent CellToNode(const vtkPixelExtent& inputExt);
 
-  //@{
+  ///@{
   /**
    * Shift by the given amount while respecting mode.
    */
   static void Shift(int* ij, int n);
   static void Shift(int* ij, int* n);
-  //@}
+  ///@}
 
   /**
    * Split ext at i,j, resulting extents (up to 4) are appended
@@ -266,7 +255,7 @@ public:
 
   /**
    * Merge compatible extents in the list. Extents are compatible
-   * if they are directly adjacent nad have the same extent along
+   * if they are directly adjacent and have the same extent along
    * the adjacent edge.
    */
   static void Merge(std::deque<vtkPixelExtent>& exts);
@@ -424,9 +413,9 @@ inline bool vtkPixelExtent::operator==(const vtkPixelExtent& other) const
   if ((this->Data[0] == other.Data[0]) && (this->Data[1] == other.Data[1]) &&
     (this->Data[2] == other.Data[2]) && (this->Data[3] == other.Data[3]))
   {
-    return 1;
+    return true;
   }
-  return 0;
+  return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -464,10 +453,10 @@ inline void vtkPixelExtent::operator&=(const vtkPixelExtent& other)
     return;
   }
 
-  this->Data[0] = std::max(this->Data[0], other.Data[0]);
-  this->Data[1] = std::min(this->Data[1], other.Data[1]);
-  this->Data[2] = std::max(this->Data[2], other.Data[2]);
-  this->Data[3] = std::min(this->Data[3], other.Data[3]);
+  this->Data[0] = (std::max)(this->Data[0], other.Data[0]);
+  this->Data[1] = (std::min)(this->Data[1], other.Data[1]);
+  this->Data[2] = (std::max)(this->Data[2], other.Data[2]);
+  this->Data[3] = (std::min)(this->Data[3], other.Data[3]);
 
   if (this->Empty())
   {
@@ -489,10 +478,10 @@ inline void vtkPixelExtent::operator|=(const vtkPixelExtent& other)
     return;
   }
 
-  this->Data[0] = std::min(this->Data[0], other.Data[0]);
-  this->Data[1] = std::max(this->Data[1], other.Data[1]);
-  this->Data[2] = std::min(this->Data[2], other.Data[2]);
-  this->Data[3] = std::max(this->Data[3], other.Data[3]);
+  this->Data[0] = (std::min)(this->Data[0], other.Data[0]);
+  this->Data[1] = (std::max)(this->Data[1], other.Data[1]);
+  this->Data[2] = (std::min)(this->Data[2], other.Data[2]);
+  this->Data[3] = (std::max)(this->Data[3], other.Data[3]);
 }
 
 //-----------------------------------------------------------------------------
@@ -632,5 +621,6 @@ inline bool operator<(const vtkPixelExtent& l, const vtkPixelExtent& r)
   return l.Size() < r.Size();
 }
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkPixelExtent.h

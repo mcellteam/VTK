@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageReader.h"
 
 #include "vtkByteSwap.h"
@@ -24,19 +12,15 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkTransform.h"
 
+#include <cmath>
+#include <ios>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkImageReader);
 
 vtkCxxSetObjectMacro(vtkImageReader, Transform, vtkTransform);
 
-#ifdef read
-#undef read
-#endif
-
-#ifdef close
-#undef close
-#endif
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageReader::vtkImageReader()
 {
   int idx;
@@ -53,14 +37,14 @@ vtkImageReader::vtkImageReader()
   this->SetScalarArrayName("ImageFile");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageReader::~vtkImageReader()
 {
   this->SetTransform(nullptr);
   this->SetScalarArrayName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   int idx;
@@ -130,7 +114,7 @@ int vtkImageReader::RequestInformation(vtkInformation* vtkNotUsed(request),
 
 int vtkImageReader::OpenAndSeekFile(int dataExtent[6], int idx)
 {
-  unsigned long streamStart;
+  std::streamoff startOffset;
 
   if (!this->FileName && !this->FilePattern)
   {
@@ -144,31 +128,35 @@ int vtkImageReader::OpenAndSeekFile(int dataExtent[6], int idx)
     return 0;
   }
   // convert data extent into constants that can be used to seek.
-  streamStart = (dataExtent[0] - this->DataExtent[0]) * this->DataIncrements[0];
+  startOffset =
+    static_cast<std::streamoff>(dataExtent[0] - this->DataExtent[0]) * this->DataIncrements[0];
 
   if (this->FileLowerLeft)
   {
-    streamStart = streamStart + (dataExtent[2] - this->DataExtent[2]) * this->DataIncrements[1];
+    startOffset +=
+      static_cast<std::streamoff>(dataExtent[2] - this->DataExtent[2]) * this->DataIncrements[1];
   }
   else
   {
-    streamStart = streamStart +
-      (this->DataExtent[3] - this->DataExtent[2] - dataExtent[2]) * this->DataIncrements[1];
+    startOffset +=
+      static_cast<std::streamoff>(this->DataExtent[3] - this->DataExtent[2] - dataExtent[2]) *
+      this->DataIncrements[1];
   }
 
   // handle three and four dimensional files
   if (this->GetFileDimensionality() >= 3)
   {
-    streamStart = streamStart + (dataExtent[4] - this->DataExtent[4]) * this->DataIncrements[2];
+    startOffset +=
+      static_cast<std::streamoff>(dataExtent[4] - this->DataExtent[4]) * this->DataIncrements[2];
   }
 
-  streamStart += this->GetHeaderSize(idx);
+  startOffset += this->GetHeaderSize(idx);
 
   // error checking
-  this->File->seekg(static_cast<long>(streamStart), ios::beg);
+  this->File->seekg(startOffset, ios::beg);
   if (this->File->fail())
   {
-    vtkErrorMacro(<< "File operation failed: " << streamStart << ", ext: " << dataExtent[0] << ", "
+    vtkErrorMacro(<< "File operation failed: " << startOffset << ", ext: " << dataExtent[0] << ", "
                   << dataExtent[1] << ", " << dataExtent[2] << ", " << dataExtent[3] << ", "
                   << dataExtent[4] << ", " << dataExtent[5]);
     vtkErrorMacro(<< "Header size: " << this->GetHeaderSize(idx)
@@ -180,7 +168,7 @@ int vtkImageReader::OpenAndSeekFile(int dataExtent[6], int idx)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads in one data of data.
 // templated to handle different data types.
 template <class IT, class OT>
@@ -345,7 +333,7 @@ void vtkImageReaderUpdate2(vtkImageReader* self, vtkImageData* data, IT* inPtr, 
   delete[] buf;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads in one data of one slice.
 // templated to handle different data types.
 template <class T>
@@ -362,7 +350,7 @@ void vtkImageReaderUpdate1(vtkImageReader* self, vtkImageData* data, T* inPtr)
       vtkGenericWarningMacro("Update1: Unknown data type\n");
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads a data from a file.  The datas extent/axes
 // are assumed to be the same as the file extent/order.
 void vtkImageReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
@@ -666,3 +654,4 @@ void vtkImageReader::ComputeInverseTransformedIncrements(vtkIdType inIncr[3], vt
                   << outIncr[2]);
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractCellsByType.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractCellsByType.h"
 
 #include "vtkCellArray.h"
@@ -20,6 +8,7 @@
 #include "vtkImageData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkPointSet.h"
@@ -30,30 +19,33 @@
 #include "vtkUniformGrid.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractCellsByType);
 
+VTK_ABI_NAMESPACE_END
 #include <set>
 
 // Special token marks any cell type
 #define VTK_ANY_CELL_TYPE 1000000
 
+VTK_ABI_NAMESPACE_BEGIN
 struct vtkCellTypeSet : public std::set<unsigned int>
 {
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractCellsByType::vtkExtractCellsByType()
 {
   this->CellTypes = new vtkCellTypeSet;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractCellsByType::~vtkExtractCellsByType()
 {
   delete this->CellTypes;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCellsByType::AddCellType(unsigned int cellType)
 {
   auto prevSize = this->CellTypes->size();
@@ -64,7 +56,7 @@ void vtkExtractCellsByType::AddCellType(unsigned int cellType)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCellsByType::RemoveCellType(unsigned int cellType)
 {
   auto prevSize = this->CellTypes->size();
@@ -76,7 +68,7 @@ void vtkExtractCellsByType::RemoveCellType(unsigned int cellType)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCellsByType::RemoveAllCellTypes()
 {
   if (!this->CellTypes->empty())
@@ -86,7 +78,7 @@ void vtkExtractCellsByType::RemoveAllCellTypes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Special value indicates that all cells are to be selected. This is better
 // than populating from the list vtkCellType.h due to the associated
 // maintenance burden.
@@ -100,21 +92,14 @@ void vtkExtractCellsByType::AddAllCellTypes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkExtractCellsByType::ExtractCellType(unsigned int cellType)
 {
-  if (this->CellTypes->find(cellType) != this->CellTypes->end() ||
-    this->CellTypes->find(VTK_ANY_CELL_TYPE) != this->CellTypes->end())
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return this->CellTypes->find(cellType) != this->CellTypes->end() ||
+    this->CellTypes->find(VTK_ANY_CELL_TYPE) != this->CellTypes->end();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCellsByType::ExtractUnstructuredData(vtkDataSet* inDS, vtkDataSet* outDS)
 {
   vtkPointData* inPD = inDS->GetPointData();
@@ -140,29 +125,32 @@ void vtkExtractCellsByType::ExtractUnstructuredData(vtkDataSet* inDS, vtkDataSet
     this->ExtractUnstructuredGridCells(inDS, outDS, ptMap, numNewPts);
   }
 
-  // Copy referenced input points to new points array
-  outPD->CopyAllocate(inPD);
-  vtkPointSet* inPtSet = vtkPointSet::SafeDownCast(inDS);
-  vtkPointSet* outPtSet = vtkPointSet::SafeDownCast(outDS);
-  vtkPoints* inPts = inPtSet->GetPoints();
-  vtkPoints* outPts = vtkPoints::New();
-  outPts->SetNumberOfPoints(numNewPts);
-  for (vtkIdType ptId = 0; ptId < numPts; ++ptId)
+  // Define points using point mapping for extracted cells
+  if (numNewPts > 0)
   {
-    if (ptMap[ptId] >= 0)
+    // Copy referenced input points to new points array
+    outPD->CopyAllocate(inPD);
+    vtkPointSet* inPtSet = vtkPointSet::SafeDownCast(inDS);
+    vtkPointSet* outPtSet = vtkPointSet::SafeDownCast(outDS);
+    vtkPoints* inPts = inPtSet->GetPoints();
+    vtkNew<vtkPoints> outPts;
+    outPts->SetNumberOfPoints(numNewPts);
+    for (vtkIdType ptId = 0; ptId < numPts; ++ptId)
     {
-      outPts->SetPoint(ptMap[ptId], inPts->GetPoint(ptId));
-      outPD->CopyData(inPD, ptId, ptMap[ptId]);
+      if (ptMap[ptId] >= 0)
+      {
+        outPts->SetPoint(ptMap[ptId], inPts->GetPoint(ptId));
+        outPD->CopyData(inPD, ptId, ptMap[ptId]);
+      }
     }
+    outPtSet->SetPoints(outPts);
   }
-  outPtSet->SetPoints(outPts);
 
   // Clean up
-  outPts->Delete();
   delete[] ptMap;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCellsByType::ExtractPolyDataCells(
   vtkDataSet* inDS, vtkDataSet* outDS, vtkIdType* ptMap, vtkIdType& numNewPts)
 {
@@ -187,11 +175,18 @@ void vtkExtractCellsByType::ExtractPolyDataCells(
   vtkIdType npts;
   const vtkIdType* pts;
   vtkCellArray* inVerts = input->GetVerts();
+  vtkIdType progressCounter = 0;
+  vtkIdType checkAbortInterval = std::min(inVerts->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
   if (this->ExtractCellType(VTK_VERTEX) || this->ExtractCellType(VTK_POLY_VERTEX))
   {
     vtkCellArray* verts = vtkCellArray::New();
     for (inVerts->InitTraversal(); inVerts->GetNextCell(npts, pts); ++currentCellId)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       if (this->ExtractCellType(input->GetCellType(currentCellId)))
       {
         ptIds->Reset();
@@ -220,8 +215,15 @@ void vtkExtractCellsByType::ExtractPolyDataCells(
   if (this->ExtractCellType(VTK_LINE) || this->ExtractCellType(VTK_POLY_LINE))
   {
     vtkCellArray* lines = vtkCellArray::New();
+    progressCounter = 0;
+    checkAbortInterval = std::min(inLines->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
     for (inLines->InitTraversal(); inLines->GetNextCell(npts, pts); ++currentCellId)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       if (this->ExtractCellType(input->GetCellType(currentCellId)))
       {
         ptIds->Reset();
@@ -251,8 +253,15 @@ void vtkExtractCellsByType::ExtractPolyDataCells(
     this->ExtractCellType(VTK_POLYGON))
   {
     vtkCellArray* polys = vtkCellArray::New();
+    progressCounter = 0;
+    checkAbortInterval = std::min(inPolys->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
     for (inPolys->InitTraversal(); inPolys->GetNextCell(npts, pts); ++currentCellId)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       if (this->ExtractCellType(input->GetCellType(currentCellId)))
       {
         ptIds->Reset();
@@ -281,9 +290,16 @@ void vtkExtractCellsByType::ExtractPolyDataCells(
   if (this->ExtractCellType(VTK_TRIANGLE_STRIP))
   {
     vtkCellArray* strips = vtkCellArray::New();
+    checkAbortInterval = std::min(inStrips->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
+    progressCounter++;
     // All cells are of type VTK_TRIANGLE_STRIP
     for (inStrips->InitTraversal(); inStrips->GetNextCell(npts, pts); ++currentCellId)
     {
+      if (progressCounter % checkAbortInterval == 0 && this->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       ptIds->Reset();
       for (i = 0; i < npts; ++i)
       {
@@ -304,7 +320,33 @@ void vtkExtractCellsByType::ExtractPolyDataCells(
   ptIds->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Helper
+namespace
+{
+struct ExtractPolyVisitor
+{
+  // Insert full cell
+  template <typename CellStateT>
+  vtkIdType operator()(CellStateT& state, vtkIdType* ptMap, vtkIdType numNewPts)
+  {
+    using ValueType = typename CellStateT::ValueType;
+    auto* conn = state.GetConnectivity();
+    const vtkIdType nids = conn->GetNumberOfValues();
+    for (vtkIdType i = 0; i < nids; ++i)
+    {
+      ValueType ptId = conn->GetValue(i);
+      if (ptMap[ptId] < 0)
+      {
+        ptMap[ptId] = numNewPts++;
+      }
+      conn->SetValue(i, ptMap[ptId]);
+    }
+    return numNewPts;
+  }
+};
+}
+//------------------------------------------------------------------------------
 void vtkExtractCellsByType::ExtractUnstructuredGridCells(
   vtkDataSet* inDS, vtkDataSet* outDS, vtkIdType* ptMap, vtkIdType& numNewPts)
 {
@@ -333,35 +375,59 @@ void vtkExtractCellsByType::ExtractUnstructuredGridCells(
   // appropriate types to the output. Along the way keep track of the points
   // that are used.
   vtkIdType i, cellId, newCellId, npts, ptId;
-  vtkIdList* ptIds = vtkIdList::New();
+  vtkNew<vtkIdList> ptIds;
+  vtkNew<vtkCellArray> faces;
   int cellType;
   output->Allocate(numCells);
+  outCD->CopyAllocate(inCD);
+
+  vtkIdType checkAbortInterval = std::min(numCells / 10 + 1, (vtkIdType)1000);
+
   for (cellId = 0; cellId < numCells; ++cellId)
   {
+    if (cellId % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     cellType = input->GetCellType(cellId);
     if (this->ExtractCellType(cellType))
     {
-      input->GetCellPoints(cellId, ptIds);
-      npts = ptIds->GetNumberOfIds();
-      for (i = 0; i < npts; ++i)
+      if (cellType == VTK_POLYHEDRON)
       {
-        ptId = ptIds->GetId(i);
-        if (ptMap[ptId] < 0)
+        faces->Reset();
+        input->GetPolyhedronFaces(cellId, faces);
+        numNewPts = faces->Visit(ExtractPolyVisitor{}, ptMap, numNewPts);
+        input->GetCellPoints(cellId, ptIds);
+        npts = ptIds->GetNumberOfIds();
+        for (i = 0; i < npts; ++i)
         {
-          ptMap[ptId] = numNewPts++;
+          ptId = ptIds->GetId(i);
+          ptIds->InsertId(i, ptMap[ptId]);
         }
-        ptIds->InsertId(i, ptMap[ptId]);
+        newCellId = output->InsertNextCell(VTK_POLYHEDRON, npts, ptIds->GetPointer(0), faces);
       }
-      newCellId = output->InsertNextCell(cellType, ptIds);
+      else
+      {
+        input->GetCellPoints(cellId, ptIds);
+        npts = ptIds->GetNumberOfIds();
+        for (i = 0; i < npts; ++i)
+        {
+          ptId = ptIds->GetId(i);
+          if (ptMap[ptId] < 0)
+          {
+            ptMap[ptId] = numNewPts++;
+          }
+          ptIds->InsertId(i, ptMap[ptId]);
+        }
+        newCellId = output->InsertNextCell(cellType, ptIds);
+      }
       outCD->CopyData(inCD, cellId, newCellId);
+      ptIds->Reset();
     }
   }
-
-  // Clean up
-  ptIds->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractCellsByType::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -414,17 +480,19 @@ int vtkExtractCellsByType::RequestData(vtkInformation* vtkNotUsed(request),
     output->Initialize(); // output is empty
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractCellsByType::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCellsByType::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -432,3 +500,4 @@ void vtkExtractCellsByType::PrintSelf(ostream& os, vtkIndent indent)
   // Output the number of types specified
   os << indent << "Number of types specified: " << this->CellTypes->size() << "\n";
 }
+VTK_ABI_NAMESPACE_END

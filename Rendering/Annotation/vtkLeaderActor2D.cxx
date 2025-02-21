@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLeaderActor2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLeaderActor2D.h"
 
 #include "vtkCellArray.h"
@@ -25,11 +13,12 @@
 #include "vtkViewport.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLeaderActor2D);
 
 vtkCxxSetObjectMacro(vtkLeaderActor2D, LabelTextProperty, vtkTextProperty);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate this object.
 vtkLeaderActor2D::vtkLeaderActor2D()
 {
@@ -49,6 +38,8 @@ vtkLeaderActor2D::vtkLeaderActor2D()
   this->AutoLabel = 0;
   this->LabelFormat = new char[8];
   snprintf(this->LabelFormat, 8, "%s", "%-#6.3g");
+
+  this->UseFontSizeFromProperty = 0;
 
   this->ArrowPlacement = vtkLeaderActor2D::VTK_ARROW_BOTH;
   this->ArrowStyle = vtkLeaderActor2D::VTK_ARROW_FILLED;
@@ -93,7 +84,7 @@ vtkLeaderActor2D::vtkLeaderActor2D()
   this->LastSize[0] = this->LastSize[1] = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLeaderActor2D::~vtkLeaderActor2D()
 {
   this->LabelMapper->Delete();
@@ -115,7 +106,7 @@ vtkLeaderActor2D::~vtkLeaderActor2D()
   this->SetLabelTextProperty(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLeaderActor2D::BuildLeader(vtkViewport* viewport)
 {
   // Check to see whether we need to rebuild-----------------------------
@@ -132,7 +123,7 @@ void vtkLeaderActor2D::BuildLeader(vtkViewport* viewport)
     }
   }
 
-  int* size = viewport->GetSize();
+  const int* size = viewport->GetSize();
   int viewportSizeHasChanged = 0;
   // See whether fonts have to be rebuilt (font size depends on viewport size)
   if (this->LastSize[0] != size[0] || this->LastSize[1] != size[1])
@@ -286,7 +277,7 @@ void vtkLeaderActor2D::BuildLeader(vtkViewport* viewport)
   // Build the arrows---------------------------------------
   if (this->ArrowPlacement == vtkLeaderActor2D::VTK_ARROW_NONE)
   {
-    ; // do nothin
+    // do nothing
   }
   else // we are creating arrows
   {
@@ -396,10 +387,10 @@ void vtkLeaderActor2D::BuildLeader(vtkViewport* viewport)
   this->BuildTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #define VTK_LA2D_FACTOR 0.015
-int vtkLeaderActor2D::SetFontSize(
-  vtkViewport* viewport, vtkTextMapper* textMapper, int* targetSize, double factor, int* stringSize)
+int vtkLeaderActor2D::SetFontSize(vtkViewport* viewport, vtkTextMapper* textMapper,
+  const int* targetSize, double factor, int* stringSize)
 {
   int fontSize, targetWidth, targetHeight;
 
@@ -407,14 +398,28 @@ int vtkLeaderActor2D::SetFontSize(
   targetHeight = static_cast<int>(
     VTK_LA2D_FACTOR * factor * targetSize[0] + VTK_LA2D_FACTOR * factor * targetSize[1]);
 
-  fontSize = textMapper->SetConstrainedFontSize(viewport, targetWidth, targetHeight);
+  if (!this->UseFontSizeFromProperty)
+  {
+    fontSize = textMapper->SetConstrainedFontSize(viewport, targetWidth, targetHeight);
+  }
+  else
+  {
+    vtkTextProperty* tprop = textMapper->GetTextProperty();
+    if (!tprop)
+    {
+      vtkGenericWarningMacro(<< "Need text property to apply font size");
+      return 0;
+    }
+    fontSize = tprop->GetFontSize();
+  }
+
   textMapper->GetSize(viewport, stringSize);
 
   return fontSize;
 }
 #undef VTK_LA2D_FACTOR
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLeaderActor2D::ClipLeader(
   double center[3], int box[2], double p1[3], double ray[3], double c1[3], double c2[3])
 {
@@ -462,7 +467,7 @@ int vtkLeaderActor2D::ClipLeader(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLeaderActor2D::BuildCurvedLeader(double p1[3], double p2[3], double ray[3],
   double rayLength, double theta, vtkViewport* viewport, int viewportChanged)
 {
@@ -494,7 +499,7 @@ void vtkLeaderActor2D::BuildCurvedLeader(double p1[3], double p2[3], double ray[
   if ((theta1 >= 0.0 && theta1 <= vtkMath::Pi() && theta2 >= 0.0 && theta2 <= vtkMath::Pi()) ||
     (theta1 <= 0.0 && theta1 >= -vtkMath::Pi() && theta2 <= 0.0 && theta2 >= -vtkMath::Pi()))
   {
-    ; // do nothin angles are fine
+    // do nothing angles are fine
   }
   else if (theta1 >= 0.0 && theta2 <= 0.0)
   {
@@ -546,7 +551,7 @@ void vtkLeaderActor2D::BuildCurvedLeader(double p1[3], double p2[3], double ray[
 
     if (viewportChanged || this->LabelTextProperty->GetMTime() > this->BuildTime)
     {
-      int* size = viewport->GetSize();
+      const int* size = viewport->GetSize();
       this->SetFontSize(viewport, this->LabelMapper, size, this->LabelFactor, stringSize);
     }
     else
@@ -600,7 +605,7 @@ int vtkLeaderActor2D::InStringBox(double center[3], int stringSize[2], double x[
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -610,7 +615,7 @@ void vtkLeaderActor2D::ReleaseGraphicsResources(vtkWindow* win)
   this->LeaderActor->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Build the axis, ticks, title, and labels and render.
 
 int vtkLeaderActor2D::RenderOpaqueGeometry(vtkViewport* viewport)
@@ -629,7 +634,7 @@ int vtkLeaderActor2D::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Render the axis, ticks, title, and labels.
 
 int vtkLeaderActor2D::RenderOverlay(vtkViewport* viewport)
@@ -648,7 +653,7 @@ int vtkLeaderActor2D::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkLeaderActor2D::HasTranslucentPolygonalGeometry()
@@ -656,7 +661,7 @@ vtkTypeBool vtkLeaderActor2D::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLeaderActor2D::ShallowCopy(vtkProp* prop)
 {
   vtkLeaderActor2D* a = vtkLeaderActor2D::SafeDownCast(prop);
@@ -676,7 +681,7 @@ void vtkLeaderActor2D::ShallowCopy(vtkProp* prop)
   // Now do superclass
   this->vtkActor2D::ShallowCopy(prop);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLeaderActor2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -736,3 +741,4 @@ void vtkLeaderActor2D::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Angle: " << this->Angle << "\n";
   os << indent << "Length: " << this->Length << "\n";
 }
+VTK_ABI_NAMESPACE_END

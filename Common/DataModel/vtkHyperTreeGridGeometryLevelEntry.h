@@ -1,20 +1,7 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridGeometryLevelEntry.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridGeometryLevelEntry
- *
  * @brief   Cursor cache data with coordinates and level info
  *
  * cf. vtkHyperTreeGridEntry
@@ -37,8 +24,6 @@
 #ifndef vtkHyperTreeGridGeometryLevelEntry_h
 #define vtkHyperTreeGridGeometryLevelEntry_h
 
-#ifndef __VTK_WRAP__
-
 #include "assert.h"
 
 #include "vtkObject.h"
@@ -47,6 +32,7 @@
 #include "vtkHyperTreeGridNonOrientedGeometryCursor.h"
 #include "vtkHyperTreeGridOrientedGeometryCursor.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHyperTree;
 class vtkHyperTreeGrid;
 
@@ -71,6 +57,10 @@ public:
       this->Origin[d] = 0.;
     }
   }
+
+  vtkHyperTreeGridGeometryLevelEntry(vtkHyperTreeGridGeometryLevelEntry const&) = default;
+  vtkHyperTreeGridGeometryLevelEntry& operator=(
+    vtkHyperTreeGridGeometryLevelEntry const&) = default;
 
   /**
    * Destructor
@@ -199,7 +189,7 @@ public:
   void SubdivideLeaf(const vtkHyperTreeGrid* grid);
 
   /**
-   * Is the cursor pointing to a coarse with all childrens being leaves ?
+   * Is the cursor pointing to a coarse with all children being leaves ?
    * \pre not_tree: tree
    */
   bool IsTerminalNode(const vtkHyperTreeGrid* grid) const;
@@ -267,7 +257,6 @@ private:
   double Origin[3];
 };
 
-#endif // __VTK_WRAP__
-
+VTK_ABI_NAMESPACE_END
 #endif // vtkHyperTreeGridGeometryLevelEntry
 // VTK-HeaderTest-Exclude: vtkHyperTreeGridGeometryLevelEntry.h

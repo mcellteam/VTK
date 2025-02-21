@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkValueSelector.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkValueSelector.h"
 
 #include "vtkArrayDispatch.h"
@@ -29,6 +17,7 @@
 
 #include <cassert>
 #include <type_traits>
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -59,7 +48,7 @@ public:
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is used for the cases where the SelectionList is a 1-component array,
 // implying that the values are exact matches.
 struct ArrayValueMatchFunctor
@@ -78,8 +67,8 @@ struct ArrayValueMatchFunctor
   template <typename InputArrayType, typename SelectionListArrayType>
   void operator()(InputArrayType* fArray, SelectionListArrayType* selList)
   {
-    static_assert(std::is_same<vtk::GetAPIType<InputArrayType>,
-                    vtk::GetAPIType<SelectionListArrayType> >::value,
+    static_assert(
+      std::is_same<vtk::GetAPIType<InputArrayType>, vtk::GetAPIType<SelectionListArrayType>>::value,
       "value types mismatched!");
     VTK_ASSUME(selList->GetNumberOfComponents() == 1);
     VTK_ASSUME(fArray->GetNumberOfComponents() > this->ComponentNo);
@@ -94,35 +83,40 @@ struct ArrayValueMatchFunctor
     VTK_ASSUME(insidednessArray->GetNumberOfTuples() == fArray->GetNumberOfTuples());
     if (comp >= 0)
     {
-      vtkSMPTools::For(0, fArray->GetNumberOfTuples(), [=](vtkIdType begin, vtkIdType end) {
-        const auto fRange = vtk::DataArrayTupleRange(fArray, begin, end);
-        auto insideRange = vtk::DataArrayValueRange<1>(insidednessArray, begin, end);
-        auto insideIter = insideRange.begin();
-        for (auto i = fRange.cbegin(); i != fRange.cend(); ++i, ++insideIter)
+      vtkSMPTools::For(0, fArray->GetNumberOfTuples(),
+        [=](vtkIdType begin, vtkIdType end)
         {
-          auto result = std::binary_search(haystack_begin, haystack_end, (*i)[comp]);
-          *insideIter = result ? 1 : 0;
-        }
-      });
+          const auto fRange = vtk::DataArrayTupleRange(fArray, begin, end);
+          auto insideRange = vtk::DataArrayValueRange<1>(insidednessArray, begin, end);
+          auto insideIter = insideRange.begin();
+          for (auto i = fRange.cbegin(); i != fRange.cend(); ++i, ++insideIter)
+          {
+            auto result = std::binary_search(haystack_begin, haystack_end, (*i)[comp]);
+            *insideIter = result ? 1 : 0;
+          }
+        });
     }
     else
     {
       // compare vector magnitude.
-      vtkSMPTools::For(0, fArray->GetNumberOfTuples(), [=](vtkIdType begin, vtkIdType end) {
-        const auto fRange = vtk::DataArrayTupleRange(fArray, begin, end);
-        auto insideRange = vtk::DataArrayValueRange<1>(insidednessArray, begin, end);
-        using FTupleCRefType = typename decltype(fRange)::ConstTupleReferenceType;
-        std::transform(fRange.cbegin(), fRange.cend(), insideRange.begin(),
-          [&](FTupleCRefType fTuple) -> signed char {
-            ValueType val = ValueType(0);
-            for (const ValueType fComp : fTuple)
+      vtkSMPTools::For(0, fArray->GetNumberOfTuples(),
+        [=](vtkIdType begin, vtkIdType end)
+        {
+          const auto fRange = vtk::DataArrayTupleRange(fArray, begin, end);
+          auto insideRange = vtk::DataArrayValueRange<1>(insidednessArray, begin, end);
+          using FTupleCRefType = typename decltype(fRange)::ConstTupleReferenceType;
+          std::transform(fRange.cbegin(), fRange.cend(), insideRange.begin(),
+            [&](FTupleCRefType fTuple) -> signed char
             {
-              val += fComp * fComp;
-            }
-            const auto mag = static_cast<ValueType>(std::sqrt(val));
-            return std::binary_search(haystack_begin, haystack_end, mag) ? 1 : 0;
-          });
-      });
+              ValueType val = ValueType(0);
+              for (const ValueType fComp : fTuple)
+              {
+                val += fComp * fComp;
+              }
+              const auto mag = static_cast<ValueType>(std::sqrt(val));
+              return std::binary_search(haystack_begin, haystack_end, mag) ? 1 : 0;
+            });
+        });
     }
   }
 
@@ -137,17 +131,19 @@ struct ArrayValueMatchFunctor
     const auto selRange = vtk::DataArrayValueRange<1>(selList);
 
     this->InsidednessArray->FillValue(0);
-    std::for_each(selRange.cbegin(), selRange.cend(), [&](const T selVal) {
-      const auto cid = static_cast<vtkIdType>(selVal);
-      if (cid >= 0 && cid < numDataValues)
+    std::for_each(selRange.cbegin(), selRange.cend(),
+      [&](const T selVal)
       {
-        this->InsidednessArray->SetValue(cid, 1);
-      }
-    });
+        const auto cid = static_cast<vtkIdType>(selVal);
+        if (cid >= 0 && cid < numDataValues)
+        {
+          this->InsidednessArray->SetValue(cid, 1);
+        }
+      });
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is used for the cases where the SelectionList is a 2-component array,
 // implying that the values are ranges.
 struct ArrayValueRangeFunctor
@@ -165,8 +161,8 @@ struct ArrayValueRangeFunctor
   template <typename InputArrayType, typename SelectionListArrayType>
   void operator()(InputArrayType* fArray, SelectionListArrayType* selList)
   {
-    static_assert(std::is_same<vtk::GetAPIType<InputArrayType>,
-                    vtk::GetAPIType<SelectionListArrayType> >::value,
+    static_assert(
+      std::is_same<vtk::GetAPIType<InputArrayType>, vtk::GetAPIType<SelectionListArrayType>>::value,
       "value types mismatched!");
 
     using ValueType = vtk::GetAPIType<SelectionListArrayType>;
@@ -179,49 +175,53 @@ struct ArrayValueRangeFunctor
 
     if (comp >= 0)
     {
-      vtkSMPTools::For(0, fArray->GetNumberOfTuples(), [=](vtkIdType begin, vtkIdType end) {
-        const auto fRange = vtk::DataArrayTupleRange(fArray, begin, end);
-        const auto selRange = vtk::DataArrayTupleRange<2>(selList);
-        auto insideRange = vtk::DataArrayValueRange<1>(this->InsidednessArray, begin, end);
-
-        using FTupleCRefType = typename decltype(fRange)::ConstTupleReferenceType;
-        using STupleCRefType = typename decltype(selRange)::ConstTupleReferenceType;
-
-        auto insideIter = insideRange.begin();
-        for (FTupleCRefType fTuple : fRange)
+      vtkSMPTools::For(0, fArray->GetNumberOfTuples(),
+        [this, comp, fArray, selList](vtkIdType begin, vtkIdType end)
         {
-          const ValueType val = fTuple[comp];
-          auto matchIter = std::find_if(selRange.cbegin(), selRange.cend(),
-            [&](STupleCRefType range) -> bool { return val >= range[0] && val <= range[1]; });
-          *insideIter++ = matchIter != selRange.cend() ? 1 : 0;
-        }
-      });
+          const auto fRange = vtk::DataArrayTupleRange(fArray, begin, end);
+          const auto selRange = vtk::DataArrayTupleRange<2>(selList);
+          auto insideRange = vtk::DataArrayValueRange<1>(this->InsidednessArray, begin, end);
+
+          using FTupleCRefType = typename decltype(fRange)::ConstTupleReferenceType;
+          using STupleCRefType = typename decltype(selRange)::ConstTupleReferenceType;
+
+          auto insideIter = insideRange.begin();
+          for (FTupleCRefType fTuple : fRange)
+          {
+            const ValueType val = fTuple[comp];
+            auto matchIter = std::find_if(selRange.cbegin(), selRange.cend(),
+              [&](STupleCRefType range) -> bool { return val >= range[0] && val <= range[1]; });
+            *insideIter++ = matchIter != selRange.cend() ? 1 : 0;
+          }
+        });
     }
     else
     {
       // compare vector magnitude.
-      vtkSMPTools::For(0, fArray->GetNumberOfTuples(), [=](vtkIdType begin, vtkIdType end) {
-        const auto fRange = vtk::DataArrayTupleRange(fArray, begin, end);
-        const auto selRange = vtk::DataArrayTupleRange<2>(selList);
-        auto insideRange = vtk::DataArrayValueRange<1>(this->InsidednessArray, begin, end);
-
-        using FTupleCRefType = typename decltype(fRange)::ConstTupleReferenceType;
-        using STupleCRefType = typename decltype(selRange)::ConstTupleReferenceType;
-
-        auto insideIter = insideRange.begin();
-        for (FTupleCRefType fTuple : fRange)
+      vtkSMPTools::For(0, fArray->GetNumberOfTuples(),
+        [this, fArray, selList](vtkIdType begin, vtkIdType end)
         {
-          ValueType val{ 0 };
-          for (const ValueType fComp : fTuple)
+          const auto fRange = vtk::DataArrayTupleRange(fArray, begin, end);
+          const auto selRange = vtk::DataArrayTupleRange<2>(selList);
+          auto insideRange = vtk::DataArrayValueRange<1>(this->InsidednessArray, begin, end);
+
+          using FTupleCRefType = typename decltype(fRange)::ConstTupleReferenceType;
+          using STupleCRefType = typename decltype(selRange)::ConstTupleReferenceType;
+
+          auto insideIter = insideRange.begin();
+          for (FTupleCRefType fTuple : fRange)
           {
-            val += fComp * fComp;
+            ValueType val{ 0 };
+            for (const ValueType fComp : fTuple)
+            {
+              val += fComp * fComp;
+            }
+            const auto mag = static_cast<ValueType>(std::sqrt(val));
+            auto matchIter = std::find_if(selRange.cbegin(), selRange.cend(),
+              [&](STupleCRefType range) -> bool { return mag >= range[0] && mag <= range[1]; });
+            *insideIter++ = matchIter != selRange.cend() ? 1 : 0;
           }
-          const auto mag = static_cast<ValueType>(std::sqrt(val));
-          auto matchIter = std::find_if(selRange.cbegin(), selRange.cend(),
-            [&](STupleCRefType range) -> bool { return mag >= range[0] && mag <= range[1]; });
-          *insideIter++ = matchIter != selRange.cend() ? 1 : 0;
-        }
-      });
+        });
     }
   }
 
@@ -251,7 +251,7 @@ struct ArrayValueRangeFunctor
 };
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkValueSelector::vtkInternals
 {
   vtkSmartPointer<vtkAbstractArray> SelectionList;
@@ -380,43 +380,48 @@ private:
 
         if (comp >= 0)
         {
-          vtkSMPTools::For(0, darray->GetNumberOfTuples(), [=](vtkIdType begin, vtkIdType end) {
-            for (vtkIdType cc = begin; cc < end; ++cc)
+          vtkSMPTools::For(0, darray->GetNumberOfTuples(),
+            [=](vtkIdType begin, vtkIdType end)
             {
-              const auto val = darray->GetComponent(cc, comp);
-              bool match = false;
-              for (vtkIdType r = 0; r < numRanges && !match; ++r)
+              for (vtkIdType cc = begin; cc < end; ++cc)
               {
-                match = (val >= selList->GetComponent(r, 0) && val <= selList->GetComponent(r, 1));
+                const auto val = darray->GetComponent(cc, comp);
+                bool match = false;
+                for (vtkIdType r = 0; r < numRanges && !match; ++r)
+                {
+                  match =
+                    (val >= selList->GetComponent(r, 0) && val <= selList->GetComponent(r, 1));
+                }
+                insidednessArray->SetValue(cc, match ? 1 : 0);
               }
-              insidednessArray->SetValue(cc, match ? 1 : 0);
-            }
-          });
+            });
         }
         else
         {
           const int num_components = darray->GetNumberOfComponents();
 
           // compare vector magnitude.
-          vtkSMPTools::For(0, darray->GetNumberOfTuples(), [=](vtkIdType begin, vtkIdType end) {
-            for (vtkIdType cc = begin; cc < end; ++cc)
+          vtkSMPTools::For(0, darray->GetNumberOfTuples(),
+            [=](vtkIdType begin, vtkIdType end)
             {
-              double val = double(0);
-              for (int kk = 0; kk < num_components; ++kk)
+              for (vtkIdType cc = begin; cc < end; ++cc)
               {
-                const auto valKK = darray->GetComponent(cc, comp);
-                val += valKK * valKK;
+                double val = double(0);
+                for (int kk = 0; kk < num_components; ++kk)
+                {
+                  const auto valKK = darray->GetComponent(cc, comp);
+                  val += valKK * valKK;
+                }
+                const auto magnitude = std::sqrt(val);
+                bool match = false;
+                for (vtkIdType r = 0; r < numRanges && !match; ++r)
+                {
+                  match = (magnitude >= selList->GetComponent(r, 0) &&
+                    magnitude <= selList->GetComponent(r, 1));
+                }
+                insidednessArray->SetValue(cc, match ? 1 : 0);
               }
-              const auto magnitude = std::sqrt(val);
-              bool match = false;
-              for (vtkIdType r = 0; r < numRanges && !match; ++r)
-              {
-                match = (magnitude >= selList->GetComponent(r, 0) &&
-                  magnitude <= selList->GetComponent(r, 1));
-              }
-              insidednessArray->SetValue(cc, match ? 1 : 0);
-            }
-          });
+            });
         }
       }
     }
@@ -459,7 +464,7 @@ private:
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkValueSelector::vtkInternals::Execute(
   vtkDataObject* dobj, vtkSignedCharArray* insidednessArray)
 {
@@ -485,16 +490,16 @@ bool vtkValueSelector::vtkInternals::Execute(
 
 //============================================================================
 vtkStandardNewMacro(vtkValueSelector);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkValueSelector::vtkValueSelector()
   : Internals(nullptr)
 {
 }
 
-//----------------------------------------------------------------------------
-vtkValueSelector::~vtkValueSelector() {}
+//------------------------------------------------------------------------------
+vtkValueSelector::~vtkValueSelector() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkValueSelector::Initialize(vtkSelectionNode* node)
 {
   assert(node);
@@ -536,12 +541,10 @@ void vtkValueSelector::Initialize(vtkSelectionNode* node)
       case vtkSelectionNode::THRESHOLDS:
         if (selectionList->GetNumberOfComponents() == 1)
         {
-#ifndef VTK_LEGACY_SILENT
           vtkWarningMacro(
             "Warning: range selections should use two-component arrays to specify the"
             " range.  Using single component arrays with a tuple for the low and high ends of the"
             " range is legacy behavior and may be removed in future releases.");
-#endif
           auto selList = vtkDataArray::SafeDownCast(selectionList.GetPointer());
           if (selList)
           {
@@ -583,7 +586,7 @@ void vtkValueSelector::Initialize(vtkSelectionNode* node)
       default:
         vtkErrorMacro("vtkValueSelector doesn't support content-type: " << contentType);
         break;
-    };
+    }
   }
   catch (const std::runtime_error& e)
   {
@@ -591,13 +594,13 @@ void vtkValueSelector::Initialize(vtkSelectionNode* node)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkValueSelector::Finalize()
 {
   this->Internals.reset();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkValueSelector::ComputeSelectedElements(
   vtkDataObject* input, vtkSignedCharArray* insidednessArray)
 {
@@ -605,8 +608,9 @@ bool vtkValueSelector::ComputeSelectedElements(
   return this->Internals ? this->Internals->Execute(input, insidednessArray) : false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkValueSelector::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

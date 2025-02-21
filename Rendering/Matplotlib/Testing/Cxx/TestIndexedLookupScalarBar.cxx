@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestScalarBarWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSmartPointer.h"
 
 #include "vtkActor.h"
@@ -380,8 +368,8 @@ class vtkScalarKeyboardCommand : public vtkCommand
 {
 public:
   static vtkScalarKeyboardCommand* New() { return new vtkScalarKeyboardCommand; }
-  virtual void Execute(
-    vtkObject* caller, unsigned long vtkNotUsed(eventId), void* vtkNotUsed(callData))
+  void Execute(
+    vtkObject* caller, unsigned long vtkNotUsed(eventId), void* vtkNotUsed(callData)) override
   {
     vtkRenderWindowInteractor* ri = vtkRenderWindowInteractor::SafeDownCast(caller);
     if (this->Lookup && this->RenderWindow && ri)
@@ -413,7 +401,7 @@ public:
         vtkIdType idx = this->Lookup->GetAnnotatedValueIndex(4.00);
         if (idx >= 0)
         {
-          vtkStdString prev = this->Lookup->GetAnnotation(idx);
+          std::string prev = this->Lookup->GetAnnotation(idx);
           this->Lookup->SetAnnotation(4.00, prev.empty() ? "No" : "");
         }
       }

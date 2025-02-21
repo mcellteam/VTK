@@ -1,20 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestQtTreeModelAdapter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Tests vtkQtDebugLeaksModel and vtkQtDebugLeaksView.
 
 #include "vtkConeSource.h"
+#include "vtkDebug.h"
 #include "vtkDebugLeaks.h"
 #include "vtkQtDebugLeaksModel.h"
 #include "vtkQtDebugLeaksView.h"
@@ -49,7 +38,7 @@ int TestQtDebugLeaksView(int argc, char* argv[])
   // Normally the model is updated asynchronously during the application event loop.
   // Since there is no event loop running during this test we'll call processEvents()
   // whenever we need the model to update.
-  app.processEvents();
+  QApplication::processEvents();
 
   std::cout << "Expect a warning message to be printed:" << std::endl;
   QList<vtkObjectBase*> cones = model->getObjects("vtkConeSource");
@@ -64,7 +53,7 @@ int TestQtDebugLeaksView(int argc, char* argv[])
 #ifdef VTK_DEBUG_LEAKS
 
   vtkSmartPointer<vtkConeSource> cone = vtkSmartPointer<vtkConeSource>::New();
-  app.processEvents();
+  QApplication::processEvents();
 
   cones = model->getObjects("vtkConeSource");
   if (cones.size() != 1 || cones[0] != cone)
@@ -141,7 +130,7 @@ int TestQtDebugLeaksView(int argc, char* argv[])
   }
 
   newReference = vtkSmartPointer<vtkConeSource>::New();
-  app.processEvents();
+  QApplication::processEvents();
 
   if (referenceModel->rowCount() != 2)
   {
@@ -150,7 +139,7 @@ int TestQtDebugLeaksView(int argc, char* argv[])
 
   newReference = nullptr;
   cone = nullptr;
-  app.processEvents();
+  QApplication::processEvents();
   view.setFilterEnabled(true);
 
   if (classTable->model()->rowCount() != 0)

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMappedUnstructuredGridCellIterator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkMappedUnstructuredGridCellIterator
@@ -30,6 +18,7 @@
 #include "vtkCellIterator.h"
 #include "vtkSmartPointer.h" // For vtkSmartPointer
 
+VTK_ABI_NAMESPACE_BEGIN
 template <class Implementation, class CellIterator>
 class vtkMappedUnstructuredGrid;
 
@@ -37,8 +26,8 @@ template <class Implementation>
 class vtkMappedUnstructuredGridCellIterator : public vtkCellIterator
 {
 public:
-  vtkTemplateTypeMacro(vtkMappedUnstructuredGridCellIterator<Implementation>,
-    vtkCellIterator) typedef Implementation ImplementationType;
+  vtkTemplateTypeMacro(vtkMappedUnstructuredGridCellIterator<Implementation>, vtkCellIterator);
+  typedef Implementation ImplementationType;
   typedef vtkMappedUnstructuredGridCellIterator<ImplementationType> ThisType;
   static vtkMappedUnstructuredGridCellIterator<ImplementationType>* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
@@ -68,7 +57,8 @@ private:
   vtkIdType NumberOfCells;
 };
 
-#include "vtkMappedUnstructuredGridCellIterator.txx"
+VTK_ABI_NAMESPACE_END
+#include "vtkMappedUnstructuredGridCellIterator.txx" // template implementations
 
 #endif // vtkMappedUnstructuredGridCellIterator_h
 

@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
  *
@@ -73,9 +46,8 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
 {
   int         dimid, varid;
   int         status;
-  int *       stat_vals = NULL;
+  int        *stat_vals = NULL;
   size_t      numel     = 0;
-  size_t      offset;
   size_t      num_obj, i;
   size_t      num_entries_this_obj = 0;
   size_t      start[2], count[2];
@@ -84,14 +56,16 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   const char *varobstat;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   switch (var_type) {
   case EX_GLOBAL:
-    status = ex__get_glob_var_time(exoid, var_index, beg_time_step, end_time_step, var_vals);
+    status = exi_get_glob_var_time(exoid, var_index, beg_time_step, end_time_step, var_vals);
     EX_FUNC_LEAVE(status);
   case EX_NODAL:
-    status = ex__get_nodal_var_time(exoid, var_index, id, beg_time_step, end_time_step, var_vals);
+    status = exi_get_nodal_var_time(exoid, var_index, id, beg_time_step, end_time_step, var_vals);
     EX_FUNC_LEAVE(status);
   case EX_EDGE_BLOCK:
     varobjids = VAR_ID_ED_BLK;
@@ -140,7 +114,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   /* find what object the entry is in */
 
   /* first, find out how many objects there are */
-  status = ex__get_dimension(exoid, ex__dim_num_objects(var_type), ex_name_of_object(var_type),
+  status = exi_get_dimension(exoid, exi_dim_num_objects(var_type), ex_name_of_object(var_type),
                              &num_obj, &dimid, __func__);
   if (status != NC_NOERR) {
     EX_FUNC_LEAVE(status);
@@ -158,7 +132,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   }
 
   /* allocate space for stat array */
-  if (!(stat_vals = malloc(num_obj * sizeof(int)))) {
+  if (!(stat_vals = calloc(num_obj, sizeof(int)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate memory for %s status array for file id %d",
              ex_name_of_object(var_type), exoid);
@@ -195,7 +169,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
 
   i = 0;
   if (stat_vals[i] != 0) {
-    if ((status = nc_inq_dimid(exoid, ex__dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
+    if ((status = nc_inq_dimid(exoid, exi_dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
         NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate number of entries in %zuth %s in file id %d", i,
@@ -219,7 +193,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
 
   while (numel <= id) {
     if (stat_vals[++i] != 0) {
-      if ((status = nc_inq_dimid(exoid, ex__dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
+      if ((status = nc_inq_dimid(exoid, exi_dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
           NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate number of entries in %zuth %s in file id %d", i,
@@ -240,10 +214,10 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
       numel += num_entries_this_obj;
     }
   }
-  offset = id - (numel - num_entries_this_obj);
+  size_t offset = id - (numel - num_entries_this_obj);
 
   /* inquire previously defined variable */
-  if ((status = nc_inq_varid(exoid, ex__name_var_of_object(var_type, var_index, i + 1), &varid)) !=
+  if ((status = nc_inq_varid(exoid, exi_name_var_of_object(var_type, var_index, i + 1), &varid)) !=
       NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate variable %zu for %dth %s in file id %d", i, var_index,
@@ -300,7 +274,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   count[0] = end_time_step - beg_time_step + 1;
   count[1] = 1;
 
-  if (ex__comp_ws(exoid) == 4) {
+  if (exi_comp_ws(exoid) == 4) {
     status = nc_get_vara_float(exoid, varid, start, count, var_vals);
   }
   else {

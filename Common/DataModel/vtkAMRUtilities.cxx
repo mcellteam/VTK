@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRUtilities.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMRUtilities.h"
 #include "vtkAMRBox.h"
 #include "vtkAMRInformation.h"
@@ -36,6 +24,7 @@
 #define KMAX(ext) ext[5]
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 void vtkAMRUtilities::PrintSelf(std::ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -280,7 +269,7 @@ void vtkAMRUtilities::StripGhostLayers(
 
   if (!vtkAMRUtilities::HasPartiallyOverlappingGhostCells(ghostedAMRData))
   {
-    strippedAMRData->ShallowCopy(ghostedAMRData);
+    strippedAMRData->CompositeShallowCopy(ghostedAMRData);
     return;
   }
 
@@ -292,7 +281,7 @@ void vtkAMRUtilities::StripGhostLayers(
   {
     blocksPerLevel[i] = ghostedAMRData->GetNumberOfDataSets(i);
   }
-  strippedAMRData->Initialize(static_cast<int>(blocksPerLevel.size()), &blocksPerLevel[0]);
+  strippedAMRData->Initialize(static_cast<int>(blocksPerLevel.size()), blocksPerLevel.data());
   strippedAMRData->SetOrigin(ghostedAMRData->GetOrigin());
   strippedAMRData->SetGridDescription(ghostedAMRData->GetGridDescription());
 
@@ -332,7 +321,7 @@ void vtkAMRUtilities::StripGhostLayers(
         assert(strippedBox ==
           vtkAMRBox(strippedGrid->GetOrigin(), strippedGrid->GetDimensions(),
             strippedGrid->GetSpacing(), strippedAMRData->GetOrigin(),
-            strippedGrid->GetGridDescription()));
+            strippedGrid->GetDataDescription()));
         strippedAMRData->SetAMRBox(levelIdx, dataIdx, strippedBox);
         strippedAMRData->SetDataSet(levelIdx, dataIdx, strippedGrid);
         strippedGrid->Delete();
@@ -375,7 +364,7 @@ void vtkAMRUtilities::BlankCells(vtkOverlappingAMR* amr)
 
 //------------------------------------------------------------------------------
 void vtkAMRUtilities::BlankGridsAtLevel(vtkOverlappingAMR* amr, int levelIdx,
-  std::vector<std::vector<unsigned int> >& children, const std::vector<int>& processMap)
+  std::vector<std::vector<unsigned int>>& children, const std::vector<int>& processMap)
 {
   unsigned int numDataSets = amr->GetNumberOfDataSets(levelIdx);
   int N;
@@ -434,7 +423,34 @@ void vtkAMRUtilities::BlankGridsAtLevel(vtkOverlappingAMR* amr, int levelIdx,
       } // Processing all higher boxes for a specific coarse grid
     }
 
+    if (grid->GetCellData()->HasArray(vtkDataSetAttributes::GhostArrayName()))
+    {
+      MergeGhostArrays(
+        grid->GetCellData()->GetArray(vtkDataSetAttributes::GhostArrayName()), ghosts);
+    }
+
     grid->GetCellData()->AddArray(ghosts);
+
     ghosts->Delete();
   }
 }
+
+//------------------------------------------------------------------------------
+void vtkAMRUtilities::MergeGhostArrays(vtkDataArray* existingArray, vtkUnsignedCharArray* ghosts)
+{
+  vtkUnsignedCharArray* existingGhostArray = vtkUnsignedCharArray::SafeDownCast(existingArray);
+  if (existingGhostArray != nullptr)
+  {
+    for (int valueIndex = 0; valueIndex < ghosts->GetNumberOfValues(); valueIndex++)
+    {
+      unsigned char ghostValue = ghosts->GetValue(valueIndex);
+      unsigned char existingGhostValue = existingGhostArray->GetValue(valueIndex);
+
+      // Clear the REFINEDCELL flag that is transient and not expected at this step.
+      unsigned char filteredValue = existingGhostValue & ~vtkDataSetAttributes::REFINEDCELL;
+      unsigned char mergedValue = ghostValue | filteredValue;
+      ghosts->SetValue(valueIndex, mergedValue);
+    }
+  }
+}
+VTK_ABI_NAMESPACE_END

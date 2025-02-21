@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFFMPEGWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkFFMPEGWriter.h"
 
@@ -21,9 +9,16 @@
 
 extern "C"
 {
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 }
+
+#if LIBAVFORMAT_VERSION_MAJOR < 59
+#define vtk_ff_const59
+#else
+#define vtk_ff_const59 const
+#endif
 
 #if defined(LIBAVFORMAT_VERSION_MAJOR) && LIBAVFORMAT_VERSION_MAJOR >= 57
 extern "C"
@@ -32,7 +27,9 @@ extern "C"
 }
 #endif
 
-//---------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+
+//------------------------------------------------------------------------------
 class vtkFFMPEGWriterInternal
 {
 public:
@@ -51,7 +48,7 @@ private:
 
   AVFormatContext* avFormatContext;
 
-  AVOutputFormat* avOutputFormat;
+  vtk_ff_const59 AVOutputFormat* avOutputFormat;
 
   AVStream* avStream;
 
@@ -64,7 +61,7 @@ private:
   int closedFile;
 };
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFFMPEGWriterInternal::vtkFFMPEGWriterInternal(vtkFFMPEGWriter* creator)
 {
   this->Writer = creator;
@@ -86,7 +83,7 @@ vtkFFMPEGWriterInternal::vtkFFMPEGWriterInternal(vtkFFMPEGWriter* creator)
   this->FrameRate = 25;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFFMPEGWriterInternal::~vtkFFMPEGWriterInternal()
 {
   if (!this->closedFile)
@@ -98,7 +95,7 @@ vtkFFMPEGWriterInternal::~vtkFFMPEGWriterInternal()
 // for newer versions of ffmpeg use the new API as the old has been deprecated
 #if defined(LIBAVFORMAT_VERSION_MAJOR) && LIBAVFORMAT_VERSION_MAJOR >= 57
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFFMPEGWriterInternal::Start()
 {
   this->closedFile = 0;
@@ -115,15 +112,9 @@ int vtkFFMPEGWriterInternal::Start()
     return 0;
   }
 
-  if (this->Writer->GetCompression())
-  {
-    // choose a codec that is easily playable on windows
-    this->avOutputFormat->video_codec = AV_CODEC_ID_MJPEG;
-  }
-  else
-  {
-    this->avOutputFormat->video_codec = AV_CODEC_ID_RAWVIDEO;
-  }
+  enum AVCodecID video_codec = this->Writer->GetCompression()
+    ? AV_CODEC_ID_MJPEG // choose a codec that is easily playable on windows
+    : AV_CODEC_ID_RAWVIDEO;
 
   // create the format context that wraps all of the media output structures
   if (avformat_alloc_output_context2(
@@ -133,8 +124,8 @@ int vtkFFMPEGWriterInternal::Start()
     return 0;
   }
 
-  AVCodec* codec;
-  if (!(codec = avcodec_find_encoder(this->avOutputFormat->video_codec)))
+  vtk_ff_const59 AVCodec* codec;
+  if (!(codec = avcodec_find_encoder(video_codec)))
   {
     vtkGenericWarningMacro(<< "Failed to get video codec.");
     return 0;
@@ -155,7 +146,7 @@ int vtkFFMPEGWriterInternal::Start()
     return 0;
   }
 
-  this->avStream->codecpar->codec_id = static_cast<AVCodecID>(this->avOutputFormat->video_codec);
+  this->avStream->codecpar->codec_id = video_codec;
   this->avStream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
   this->avStream->codecpar->width = this->Dim[0];
   this->avStream->codecpar->height = this->Dim[1];
@@ -263,7 +254,7 @@ int vtkFFMPEGWriterInternal::Start()
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFFMPEGWriterInternal::Write(vtkImageData* id)
 {
   this->Writer->GetInputAlgorithm(0, 0)->UpdateWholeExtent();
@@ -310,19 +301,18 @@ int vtkFFMPEGWriterInternal::Write(vtkImageData* id)
   }
 
   // run the encoder
-  AVPacket pkt;
-  av_init_packet(&pkt);
-  pkt.data = nullptr;
-  pkt.size = 0;
+  AVPacket* pkt = av_packet_alloc();
+  pkt->data = nullptr;
+  pkt->size = 0;
 
   while (!ret)
   {
     // dump the compressed result to file
-    ret = avcodec_receive_packet(this->avCodecContext, &pkt);
+    ret = avcodec_receive_packet(this->avCodecContext, pkt);
     if (!ret)
     {
-      pkt.stream_index = this->avStream->index;
-      int wret = av_write_frame(this->avFormatContext, &pkt);
+      pkt->stream_index = this->avStream->index;
+      int wret = av_write_frame(this->avFormatContext, pkt);
       if (wret < 0)
       {
         vtkGenericWarningMacro(<< "Problem encoding frame.");
@@ -330,11 +320,12 @@ int vtkFFMPEGWriterInternal::Write(vtkImageData* id)
       }
     }
   }
+  av_packet_free(&pkt);
 
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFFMPEGWriterInternal::End()
 {
   if (this->yuvOutput)
@@ -359,7 +350,7 @@ void vtkFFMPEGWriterInternal::End()
     }
 
     avformat_free_context(this->avFormatContext);
-    this->avFormatContext = 0;
+    this->avFormatContext = nullptr;
   }
 
   if (this->avOutputFormat)
@@ -367,12 +358,14 @@ void vtkFFMPEGWriterInternal::End()
     // Next line was done inside av_free(this->avFormatContext).
     // av_free(this->avOutputFormat);
 
-    this->avOutputFormat = 0;
+    this->avOutputFormat = nullptr;
   }
 
   if (this->avCodecContext)
   {
+#if defined(LIBAVCODEC_VERSION_MAJOR) && LIBAVCODEC_VERSION_MAJOR < 62
     avcodec_close(this->avCodecContext);
+#endif
     avcodec_free_context(&this->avCodecContext);
     this->avCodecContext = nullptr;
   }
@@ -384,7 +377,7 @@ void vtkFFMPEGWriterInternal::End()
 // The new API was introduced around 2016
 #else
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFFMPEGWriterInternal::Start()
 {
   this->closedFile = 0;
@@ -546,7 +539,7 @@ int vtkFFMPEGWriterInternal::Start()
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFFMPEGWriterInternal::Write(vtkImageData* id)
 {
   this->Writer->GetInputAlgorithm(0, 0)->UpdateWholeExtent();
@@ -609,7 +602,7 @@ int vtkFFMPEGWriterInternal::Write(vtkImageData* id)
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFFMPEGWriterInternal::End()
 {
   if (this->yuvOutput)
@@ -658,13 +651,13 @@ void vtkFFMPEGWriterInternal::End()
 
 #endif
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkFFMPEGWriter);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFFMPEGWriter::vtkFFMPEGWriter()
 {
-  this->Internals = 0;
+  this->Internals = nullptr;
   this->Quality = 2;
   this->Compression = true;
   this->Rate = 25;
@@ -672,13 +665,13 @@ vtkFFMPEGWriter::vtkFFMPEGWriter()
   this->BitRateTolerance = 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFFMPEGWriter::~vtkFFMPEGWriter()
 {
   delete this->Internals;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFFMPEGWriter::Start()
 {
   this->Error = 1;
@@ -709,7 +702,7 @@ void vtkFFMPEGWriter::Start()
   this->Initialized = 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFFMPEGWriter::Write()
 {
   if (this->Error)
@@ -766,16 +759,16 @@ void vtkFFMPEGWriter::Write()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFFMPEGWriter::End()
 {
   this->Internals->End();
 
   delete this->Internals;
-  this->Internals = 0;
+  this->Internals = nullptr;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFFMPEGWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -785,3 +778,4 @@ void vtkFFMPEGWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "BitRate: " << this->BitRate << endl;
   os << indent << "BitRateTolerance: " << this->BitRateTolerance << endl;
 }
+VTK_ABI_NAMESPACE_END

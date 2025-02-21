@@ -67,6 +67,9 @@ except ImportError:
     raise RuntimeError("This module depends on the numpy module. Please make\
 sure that it is installed properly.")
 
+# version 2 has many API changes from version 1
+NUMPY_MAJOR_VERSION = int(numpy.__version__.split('.')[0])
+
 import itertools
 import operator
 import sys
@@ -75,11 +78,6 @@ from ..util import numpy_support
 from ..vtkCommonDataModel import vtkDataObject
 from ..vtkCommonCore import vtkWeakReference
 import weakref
-
-if sys.hexversion < 0x03000000:
-    izip = itertools.izip
-else:
-    izip = zip
 
 def reshape_append_ones (a1, a2):
     """Returns a list with the two arguments, any of them may be
@@ -220,8 +218,6 @@ class VTKArrayMetaClass(type):
         add_default_numeric_ops("add")
         add_default_numeric_ops("sub")
         add_default_numeric_ops("mul")
-        if sys.hexversion < 0x03000000:
-            add_default_numeric_ops("div")
         add_default_numeric_ops("truediv")
         add_default_numeric_ops("floordiv")
         add_default_numeric_ops("mod")
@@ -300,8 +296,8 @@ class VTKArray(numpy.ndarray):
                                  (self.__class__.__name__, name))
         return getattr(o, name)
 
-    def __array_wrap__(self, out_arr, context=None):
-        if out_arr.shape == ():
+    def __array_wrap__(self, out_arr, context=None, return_scalar=False):
+        if return_scalar or (NUMPY_MAJOR_VERSION < 2 and out_arr.shape == ()):
             # Convert to scalar value
             return out_arr[()]
         else:
@@ -362,8 +358,6 @@ class VTKNoneArrayMetaClass(type):
         _add_default_ops("add")
         _add_default_ops("sub")
         _add_default_ops("mul")
-        if sys.hexversion < 0x03000000:
-            _add_default_ops("div")
         _add_default_ops("truediv")
         _add_default_ops("floordiv")
         _add_default_ops("mod")
@@ -447,8 +441,6 @@ class VTKCompositeDataArrayMetaClass(type):
         add_default_numeric_ops("add")
         add_default_numeric_ops("sub")
         add_default_numeric_ops("mul")
-        if sys.hexversion < 0x03000000:
-            add_default_numeric_ops("div")
         add_default_numeric_ops("truediv")
         add_default_numeric_ops("floordiv")
         add_default_numeric_ops("mod")
@@ -554,7 +546,7 @@ class VTKCompositeDataArray(object):
         self.__init_from_composite()
         res = []
         if type(index) == VTKCompositeDataArray:
-            for a, idx in izip(self._Arrays, index.Arrays):
+            for a, idx in zip(self._Arrays, index.Arrays):
                 if a is not NoneArray:
                     res.append(a.__getitem__(idx))
                 else:
@@ -573,7 +565,7 @@ class VTKCompositeDataArray(object):
         self.__init_from_composite()
         res = []
         if type(other) == VTKCompositeDataArray:
-            for a1, a2 in izip(self._Arrays, other.Arrays):
+            for a1, a2 in zip(self._Arrays, other.Arrays):
                 if a1 is not NoneArray and a2 is not NoneArray:
                     l = reshape_append_ones(a1, a2)
                     res.append(op(l[0],l[1]))
@@ -595,7 +587,7 @@ class VTKCompositeDataArray(object):
         self.__init_from_composite()
         res = []
         if type(other) == VTKCompositeDataArray:
-            for a1, a2 in izip(self._Arrays, other.Arrays):
+            for a1, a2 in zip(self._Arrays, other.Arrays):
                 if a1 is not NoneArray and a2 is notNoneArray:
                     l = reshape_append_ones(a2,a1)
                     res.append(op(l[0],l[1]))
@@ -629,7 +621,10 @@ class VTKCompositeDataArray(object):
 
 class DataSetAttributes(VTKObjectWrapper):
     """This is a python friendly wrapper of vtkDataSetAttributes. It
-    returns VTKArrays. It also provides the dictionary interface."""
+    returns VTKArrays. It also provides the dictionary interface.
+    Note that the stored array should have a shape that matches the number
+    of elements. E.g. for a PointData, narray.shape[0] should be equal
+    to dataset.GetNumberOfPoints()"""
 
     def __init__(self, vtkobject, dataset, association):
         super(DataSetAttributes, self).__init__(vtkobject)
@@ -684,7 +679,14 @@ class DataSetAttributes(VTKObjectWrapper):
             self.VTKObject.PassData(other.VTKObject)
 
     def append(self, narray, name):
-        """Appends a new array to the dataset attributes."""
+        """Appends narray to the dataset attributes.
+
+        If narray is a scalar, create an array with this scalar for each element.
+        If narray is an array with a size not matching the array association
+        (e.g. size should be equal to GetNumberOfPoints() for PointData),
+        copy the input narray for each element. This is intended to ease
+        initialization, typically using same 3d vector for each element.
+        In any case, be careful about memory explosion."""
         if narray is NoneArray:
             # if NoneArray, nothing to do.
             return
@@ -693,13 +695,17 @@ class DataSetAttributes(VTKObjectWrapper):
             arrLength = self.DataSet.GetNumberOfPoints()
         elif self.Association == ArrayAssociation.CELL:
             arrLength = self.DataSet.GetNumberOfCells()
+        elif self.Association == ArrayAssociation.ROW \
+          and self.DataSet.GetNumberOfColumns() > 0:
+            arrLength = self.DataSet.GetNumberOfRows()
         else:
             if not isinstance(narray, numpy.ndarray):
                 arrLength = 1
             else:
                 arrLength = narray.shape[0]
 
-        # Fixup input array length:
+        # if input is not a valid array (i.e. unexpected shape[0]),
+        # create a new array and copy input for each element
         if not isinstance(narray, numpy.ndarray) or numpy.ndim(narray) == 0: # Scalar input
             dtype = narray.dtype if isinstance(narray, numpy.ndarray) else type(narray)
             tmparray = numpy.empty(arrLength, dtype=dtype)
@@ -709,7 +715,19 @@ class DataSetAttributes(VTKObjectWrapper):
             components = 1
             for l in narray.shape:
                 components *= l
-            tmparray = numpy.empty((arrLength, components), dtype=narray.dtype)
+            try:
+                tmparray = numpy.empty((arrLength, components), dtype=narray.dtype)
+            except numpy.core._exceptions._ArrayMemoryError as npErr:
+                sys.stderr.write("Fail to copy input array for each dataset element: array is too big to be duplicated.\n"
+                "Input should either be small enough to be duplicated for each element, or shape[0] should "
+                "match number of element.\n"
+                "Example of correct usage: to add a point PointData array, it is common to have\n"
+                "array.shape[0] == 3 or array.shape[0] == dataset.GetNumberOfPoints()\n"
+                )
+                sys.stderr.write(str(type(npErr)) + "\n")
+                sys.stderr.write(str(npErr))
+                return
+
             tmparray[:] = narray.flatten()
             narray = tmparray
 
@@ -748,8 +766,8 @@ class DataSetAttributes(VTKObjectWrapper):
 
 class CompositeDataSetAttributes():
     """This is a python friendly wrapper for vtkDataSetAttributes for composite
-    datsets. Since composite datasets themselves don't have attribute data, but
-    the attribute data is associated with the leaf nodes in the composite
+    datasets. Since composite datasets themselves don't have attribute data,
+    but the attribute data is associated with the leaf nodes in the composite
     dataset, this class simulates a DataSetAttributes interface by taking a
     union of DataSetAttributes associated with all leaf nodes."""
 
@@ -801,7 +819,7 @@ class CompositeDataSetAttributes():
                 # don't add the narray since it's a scalar. GetArray() will create a
                 # VTKCompositeArray on-demand.
         else:
-            for ds, array in izip(self.DataSet, narray.Arrays):
+            for ds, array in zip(self.DataSet, narray.Arrays):
                 if array is not None:
                     ds.GetAttributes(self.Association).append(array, name)
                     added = True
@@ -825,8 +843,9 @@ class CompositeDataSetAttributes():
     def PassData(self, other):
         """Emulate PassData for composite datasets."""
         for this,that in zip(self.DataSet, other.DataSet):
-            for assoc in [ArrayAssociation.POINT, ArrayAssociation.CELL]:
-                this.GetAttributes(assoc).PassData(that.GetAttributes(assoc))
+            for assoc in [ArrayAssociation.POINT, ArrayAssociation.CELL, ArrayAssociation.ROW]:
+                if this.HasAttributes(assoc) and that.HasAttributes(assoc):
+                    this.GetAttributes(assoc).PassData(that.GetAttributes(assoc))
 
 class CompositeDataIterator(object):
     """Wrapper for a vtkCompositeDataIterator class to satisfy
@@ -899,8 +918,12 @@ class DataObject(VTKObjectWrapper):
         """Returns the attributes specified by the type as a DataSetAttributes
          instance."""
         if type == ArrayAssociation.FIELD:
-            return DataSetAttributes(self.VTKObject.GetFieldData(), self, type)
+            return self.GetFieldData()
         return DataSetAttributes(self.VTKObject.GetAttributes(type), self, type)
+
+    def HasAttributes(self, type):
+        "Returns if current object support this attributes type"
+        return type == ArrayAssociation.FIELD
 
     def GetFieldData(self):
         "Returns the field data as a DataSetAttributes instance."
@@ -909,14 +932,32 @@ class DataObject(VTKObjectWrapper):
     FieldData = property(GetFieldData, None, None, "This property returns the field data of a data object.")
 
 class Table(DataObject):
-    """A wrapper for vtkFielData that makes it easier to access RowData array as
+    """A wrapper for vtkTable that makes it easier to access RowData array as
     VTKArrays
     """
     def GetRowData(self):
         "Returns the row data as a DataSetAttributes instance."
         return self.GetAttributes(ArrayAssociation.ROW)
 
+    def HasAttributes(self, type):
+        "Returns if current object support this attributes type"
+        return type == ArrayAssociation.ROW or DataObject.HasAttributes(self, type)
+
     RowData = property(GetRowData, None, None, "This property returns the row data of the table.")
+
+class HyperTreeGrid(DataObject):
+    """A wrapper for vtkHyperTreeGrid that makes it easier to access CellData
+    arrays as VTKArrays.
+    """
+    def GetCellData(self):
+        "Returns the cell data as DataSetAttributes instance."
+        return self.GetAttributes(ArrayAssociation.CELL)
+
+    def HasAttributes(self, type):
+        "Returns if current object support this attributes type"
+        return type == ArrayAssociation.CELL or DataObject.HasAttributes(self, type)
+
+    CellData = property(GetCellData, None, None, "This property returns the cell data of the hypertree grid.")
 
 class CompositeDataSet(DataObject):
     """A wrapper for vtkCompositeData and subclasses that makes it easier
@@ -928,6 +969,7 @@ class CompositeDataSet(DataObject):
         self._PointData = None
         self._CellData = None
         self._FieldData = None
+        self._GlobalData = None
         self._Points = None
 
     def __iter__(self):
@@ -962,26 +1004,43 @@ class CompositeDataSet(DataObject):
         CompositeDataSetAttributes instance."""
         return CompositeDataSetAttributes(self, type)
 
+    def HasAttributes(self, type):
+        "Returns true if every leaves of current composite object support this attributes type"
+        for dataset in self:
+            if not dataset.HasAttributes(type):
+                return False
+
+        return True
+
     def GetPointData(self):
-        "Returns the point data as a DataSetAttributes instance."
+        "Returns the point data as a CompositeDataSetAttributes instance."
         if self._PointData is None or self._PointData() is None:
             pdata = self.GetAttributes(ArrayAssociation.POINT)
             self._PointData = weakref.ref(pdata)
         return self._PointData()
 
     def GetCellData(self):
-        "Returns the cell data as a DataSetAttributes instance."
+        "Returns the cell data as a CompositeDataSetAttributes instance."
         if self._CellData is None or self._CellData() is None:
             cdata = self.GetAttributes(ArrayAssociation.CELL)
             self._CellData = weakref.ref(cdata)
         return self._CellData()
 
     def GetFieldData(self):
-        "Returns the field data as a DataSetAttributes instance."
+        """
+        "Returns the field data as a CompositeDataSetAttributes instance."
+        """
         if self._FieldData is None or self._FieldData() is None:
             fdata = self.GetAttributes(ArrayAssociation.FIELD)
             self._FieldData = weakref.ref(fdata)
         return self._FieldData()
+
+    def GetGlobalData(self):
+        "Returns the global data (field data of the root) as a DataSetAttributes instance."
+        if self._GlobalData is None or self._GlobalData() is None:
+            gdata = super(CompositeDataSet, self).GetFieldData()
+            self._GlobalData = weakref.ref(gdata)
+        return self._GlobalData()
 
     def GetPoints(self):
         "Returns the points as a VTKCompositeDataArray instance."
@@ -1004,9 +1063,10 @@ class CompositeDataSet(DataObject):
             self._Points = weakref.ref(cpts)
         return self._Points()
 
-    PointData = property(GetPointData, None, None, "This property returns the point data of the dataset.")
-    CellData = property(GetCellData, None, None, "This property returns the cell data of a dataset.")
-    FieldData = property(GetFieldData, None, None, "This property returns the field data of a dataset.")
+    PointData = property(GetPointData, None, None, "This property returns the point data of the leafs of a composite dataset.")
+    CellData = property(GetCellData, None, None, "This property returns the cell data of the leafs of a composite dataset.")
+    FieldData = property(GetFieldData, None, None, "This property returns the field data of the leafs of a composite dataset.")
+    GlobalData = property(GetGlobalData, None, None, "This property returns the global data, i.e. field data of the root of a composite dataset.")
     Points = property(GetPoints, None, None, "This property returns the points of the dataset.")
 
 class DataSet(DataObject):
@@ -1020,6 +1080,10 @@ class DataSet(DataObject):
     def GetCellData(self):
         "Returns the cell data as a DataSetAttributes instance."
         return self.GetAttributes(ArrayAssociation.CELL)
+
+    def HasAttributes(self, type):
+        "Returns if current object support this attributes type"
+        return type == ArrayAssociation.POINT or type == ArrayAssociation.CELL or DataObject.HasAttributes(self, type)
 
     PointData = property(GetPointData, None, None, "This property returns the point data of the dataset.")
     CellData = property(GetCellData, None, None, "This property returns the cell data of a dataset.")
@@ -1151,5 +1215,7 @@ def WrapDataObject(ds):
         return Molecule(ds)
     elif ds.IsA("vtkGraph"):
         return Table(ds)
+    elif ds.IsA("vtkHyperTreeGrid"):
+        return HyperTreeGrid(ds)
     elif ds.IsA("vtkDataObject"):
         return DataObject(ds)

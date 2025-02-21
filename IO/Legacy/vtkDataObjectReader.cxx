@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataObjectReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDataObjectReader.h"
 
 #include "vtkDataObject.h"
@@ -21,24 +9,25 @@
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDataObjectReader);
 
 vtkDataObjectReader::vtkDataObjectReader() = default;
 vtkDataObjectReader::~vtkDataObjectReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkDataObjectReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkDataObjectReader::GetOutput(int port)
 {
   return vtkDataObject::SafeDownCast(this->GetOutputDataObject(port));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectReader::SetOutput(vtkDataObject* output)
 {
   this->GetExecutive()->SetOutputData(0, output);
@@ -70,7 +59,7 @@ int vtkDataObjectReader::ReadMeshSimple(const std::string& fname, vtkDataObject*
       }
     }
 
-    else if (!strncmp(this->LowerCase(line), "dataset", (unsigned long)7))
+    else if (!strncmp(this->LowerCase(line), "dataset", 7))
     {
       vtkErrorMacro(<< "Field reader cannot read datasets");
       this->CloseVTKFile();
@@ -101,3 +90,4 @@ void vtkDataObjectReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

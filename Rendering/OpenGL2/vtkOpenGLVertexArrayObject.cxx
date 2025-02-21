@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLVertexArrayObject.h"
 #include "vtkObjectFactory.h"
@@ -23,8 +12,9 @@
 #include <map>
 #include <vector>
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLVertexArrayObject);
 
 namespace
@@ -109,7 +99,7 @@ public:
   {
     // We either probed and allocated a VAO, or are falling back as the current
     // hardware does not support VAOs.
-    return (this->HandleVAO != 0 || this->Supported == false);
+    return (this->HandleVAO != 0 || !this->Supported);
   }
 
   void ReleaseGraphicsResources()
@@ -128,7 +118,7 @@ public:
   bool Supported;
   bool ForceEmulation;
 
-  typedef std::map<GLuint, std::vector<VertexAttributes> > AttributeMap;
+  typedef std::map<GLuint, std::vector<VertexAttributes>> AttributeMap;
   AttributeMap Attributes;
 };
 
@@ -180,7 +170,7 @@ void vtkOpenGLVertexArrayObject::Bind()
 #ifdef GL_ES_VERSION_3_0
             glVertexAttribDivisor(attrIt->Index + i, 1);
 #else
-            if (GLEW_ARB_instanced_arrays)
+            if (GLAD_GL_ARB_instanced_arrays)
             {
               glVertexAttribDivisorARB(attrIt->Index + i, 1);
             }
@@ -215,7 +205,7 @@ void vtkOpenGLVertexArrayObject::Release()
 #ifdef GL_ES_VERSION_3_0
             glVertexAttribDivisor(attrIt->Index + i, 0);
 #else
-            if (GLEW_ARB_instanced_arrays)
+            if (GLAD_GL_ARB_instanced_arrays)
             {
               glVertexAttribDivisorARB(attrIt->Index + i, 0);
             }
@@ -326,7 +316,7 @@ bool vtkOpenGLVertexArrayObject::AddAttributeArrayWithDivisor(vtkShaderProgram* 
 #ifdef GL_ES_VERSION_3_0
     glVertexAttribDivisor(attribs.Index, 1);
 #else
-    if (GLEW_ARB_instanced_arrays)
+    if (GLAD_GL_ARB_instanced_arrays)
     {
       glVertexAttribDivisorARB(attribs.Index, 1);
     }
@@ -392,7 +382,7 @@ bool vtkOpenGLVertexArrayObject::AddAttributeMatrixWithDivisor(vtkShaderProgram*
 #ifdef GL_ES_VERSION_3_0
       glVertexAttribDivisor(attribs.Index + i, 1);
 #else
-      if (GLEW_ARB_instanced_arrays)
+      if (GLAD_GL_ARB_instanced_arrays)
       {
         glVertexAttribDivisorARB(attribs.Index + i, 1);
       }
@@ -439,8 +429,9 @@ bool vtkOpenGLVertexArrayObject::RemoveAttributeArray(const std::string& name)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLVertexArrayObject::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

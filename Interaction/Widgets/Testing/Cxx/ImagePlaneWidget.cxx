@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ImagePlaneWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSmartPointer.h"
 
 #include "vtkActor.h"
@@ -328,7 +316,7 @@ static char IPWeventLog[] = "# StreamVersion 1\n"
                             "MouseMoveEvent 86 274 0 0 0 0 Shift_L\n"
                             "MiddleButtonReleaseEvent 86 274 0 0 0 0 Shift_L\n";
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkWidgetWindowLevelCallback : public vtkCommand
 {
 public:
@@ -504,9 +492,11 @@ int ImagePlaneWidget(int argc, char* argv[])
   renWin->Render();
   iren->SetEventPosition(175, 175);
   iren->SetKeyCode('r');
+  iren->SetKeySym("r");
   iren->InvokeEvent(vtkCommand::CharEvent, nullptr);
   iren->SetEventPosition(475, 175);
   iren->SetKeyCode('r');
+  iren->SetKeySym("r");
   iren->InvokeEvent(vtkCommand::CharEvent, nullptr);
   renWin->Render();
 
@@ -527,8 +517,10 @@ int ImagePlaneWidget(int argc, char* argv[])
   // Test SetKeyPressActivationValue for one of the widgets
   //
   iren->SetKeyCode('z');
+  iren->SetKeySym("z");
   iren->InvokeEvent(vtkCommand::CharEvent, nullptr);
   iren->SetKeyCode('z');
+  iren->SetKeySym("z");
   iren->InvokeEvent(vtkCommand::CharEvent, nullptr);
 
   recorder->Play();

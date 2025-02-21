@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageAlgorithm
  * @brief   Generic algorithm superclass for image algs
@@ -30,24 +18,28 @@
 
 #include "vtkAlgorithm.h"
 #include "vtkCommonExecutionModelModule.h" // For export macro
+#include "vtkWrappingHints.h"              // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkImageData;
 
-class VTKCOMMONEXECUTIONMODEL_EXPORT vtkImageAlgorithm : public vtkAlgorithm
+class VTKCOMMONEXECUTIONMODEL_EXPORT VTK_MARSHALAUTO vtkImageAlgorithm : public vtkAlgorithm
 {
 public:
   vtkTypeMacro(vtkImageAlgorithm, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   vtkImageData* GetOutput();
   vtkImageData* GetOutput(int);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   virtual void SetOutput(vtkDataObject* d);
-  //@}
+  ///@}
 
   /**
    * Process a request from the executive.  For vtkImageAlgorithm, the
@@ -57,7 +49,7 @@ public:
   vtkTypeBool ProcessRequest(
     vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection to
@@ -65,9 +57,9 @@ public:
    */
   void SetInputData(vtkDataObject*);
   void SetInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get a data object for one of the input port connections.  The use
    * of this method is strongly discouraged, but some filters that were
@@ -76,9 +68,9 @@ public:
   vtkDataObject* GetInput(int port);
   vtkDataObject* GetInput() { return this->GetInput(0); }
   vtkImageData* GetImageDataInput(int port);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection to
@@ -86,7 +78,7 @@ public:
    */
   virtual void AddInputData(vtkDataObject*);
   virtual void AddInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
 protected:
   vtkImageAlgorithm();
@@ -105,6 +97,8 @@ protected:
    * for the input connections.
    */
   virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+
+  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   /**
    * Convenience method to copy the scalar type and number of components
@@ -132,23 +126,23 @@ protected:
    */
   virtual void ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo);
 
-  //@{
+  ///@{
   /**
    * This method is the old style execute method, provided for the sake
    * of backwards compatibility with older filters and readers.
    */
   virtual void ExecuteData(vtkDataObject* output);
   virtual void Execute();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Allocate the output data.  This will be called before RequestData,
    * it is not necessary for subclasses to call this method themselves.
    */
   virtual void AllocateOutputData(vtkImageData* out, vtkInformation* outInfo, int* uExtent);
   virtual vtkImageData* AllocateOutputData(vtkDataObject* out, vtkInformation* outInfo);
-  //@}
+  ///@}
 
   /**
    * Copy the other point and cell data.  Subclasses will almost never
@@ -157,7 +151,7 @@ protected:
   virtual void CopyAttributeData(
     vtkImageData* in, vtkImageData* out, vtkInformationVector** inputVector);
 
-  //@{
+  ///@{
   /**
    * These method should be reimplemented by subclasses that have
    * more than a single input or single output.
@@ -165,11 +159,12 @@ protected:
    */
   int FillOutputPortInformation(int port, vtkInformation* info) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
-  //@}
+  ///@}
 
 private:
   vtkImageAlgorithm(const vtkImageAlgorithm&) = delete;
   void operator=(const vtkImageAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

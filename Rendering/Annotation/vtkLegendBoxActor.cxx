@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLegendBoxActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLegendBoxActor.h"
 
 #include "vtkActor.h"
@@ -33,11 +21,12 @@
 #include "vtkTransformPolyDataFilter.h"
 #include "vtkViewport.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLegendBoxActor);
 
 vtkCxxSetObjectMacro(vtkLegendBoxActor, EntryTextProperty, vtkTextProperty);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLegendBoxActor::vtkLegendBoxActor()
 {
   // Positioning information
@@ -131,7 +120,7 @@ vtkLegendBoxActor::vtkLegendBoxActor()
   this->BackgroundActor->SetMapper(this->BackgroundMapper);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLegendBoxActor::~vtkLegendBoxActor()
 {
   this->InitializeEntries();
@@ -160,7 +149,7 @@ vtkLegendBoxActor::~vtkLegendBoxActor()
   this->SetEntryTextProperty(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::InitializeEntries()
 {
   int i;
@@ -225,7 +214,7 @@ void vtkLegendBoxActor::InitializeEntries()
   } // if entries have been defined
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetNumberOfEntries(int num)
 {
   if (num == this->NumberOfEntries)
@@ -381,7 +370,7 @@ void vtkLegendBoxActor::SetNumberOfEntries(int num)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetEntry(int i, vtkPolyData* symbol, const char* string, double color[3])
 {
   if (i >= 0 && i < this->NumberOfEntries)
@@ -392,7 +381,7 @@ void vtkLegendBoxActor::SetEntry(int i, vtkPolyData* symbol, const char* string,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetEntry(int i, vtkImageData* icon, const char* string, double color[3])
 {
   if (i >= 0 && i < this->NumberOfEntries)
@@ -403,7 +392,7 @@ void vtkLegendBoxActor::SetEntry(int i, vtkImageData* icon, const char* string, 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetEntry(
   int i, vtkPolyData* symbol, vtkImageData* icon, const char* string, double color[3])
 {
@@ -414,7 +403,7 @@ void vtkLegendBoxActor::SetEntry(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetEntrySymbol(int i, vtkPolyData* symbol)
 {
   if (i >= 0 && i < this->NumberOfEntries)
@@ -436,7 +425,7 @@ void vtkLegendBoxActor::SetEntrySymbol(int i, vtkPolyData* symbol)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetEntryIcon(int i, vtkImageData* icon)
 {
   if (i >= 0 && i < this->NumberOfEntries)
@@ -458,7 +447,7 @@ void vtkLegendBoxActor::SetEntryIcon(int i, vtkImageData* icon)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetEntryString(int i, const char* string)
 {
   if (i >= 0 && i < this->NumberOfEntries)
@@ -473,7 +462,7 @@ void vtkLegendBoxActor::SetEntryString(int i, const char* string)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetEntryColor(int i, double color[3])
 {
   if (i >= 0 && i < this->NumberOfEntries)
@@ -489,7 +478,7 @@ void vtkLegendBoxActor::SetEntryColor(int i, double color[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::SetEntryColor(int i, double r, double g, double b)
 {
   double rgb[3];
@@ -499,7 +488,7 @@ void vtkLegendBoxActor::SetEntryColor(int i, double r, double g, double b)
   this->SetEntryColor(i, rgb);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkLegendBoxActor::GetEntrySymbol(int i)
 {
   if (i < 0 || i >= this->NumberOfEntries)
@@ -512,7 +501,7 @@ vtkPolyData* vtkLegendBoxActor::GetEntrySymbol(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkLegendBoxActor::GetEntryIcon(int i)
 {
   if (i < 0 || i >= this->NumberOfEntries)
@@ -525,7 +514,7 @@ vtkImageData* vtkLegendBoxActor::GetEntryIcon(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkLegendBoxActor::GetEntryString(int i)
 {
   if (i < 0 || i >= this->NumberOfEntries)
@@ -538,7 +527,7 @@ const char* vtkLegendBoxActor::GetEntryString(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkLegendBoxActor::GetEntryColor(int i)
 {
   if (i < 0 || i >= this->NumberOfEntries)
@@ -551,7 +540,7 @@ double* vtkLegendBoxActor::GetEntryColor(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -580,7 +569,7 @@ void vtkLegendBoxActor::ReleaseGraphicsResources(vtkWindow* win)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLegendBoxActor::RenderOverlay(vtkViewport* viewport)
 {
   if (this->NumberOfEntries <= 0)
@@ -624,7 +613,7 @@ int vtkLegendBoxActor::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLegendBoxActor::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   int i;
@@ -642,7 +631,7 @@ int vtkLegendBoxActor::RenderOpaqueGeometry(vtkViewport* viewport)
   }
 
   // Check to see whether we have to rebuild everything
-  int* vsize = viewport->GetSize();
+  const int* vsize = viewport->GetSize();
   if (this->GetMTime() > this->BuildTime || this->EntryTextProperty->GetMTime() > this->BuildTime ||
     vsize[0] != this->CachedSize[0] || vsize[1] != this->CachedSize[1])
   {
@@ -887,7 +876,7 @@ int vtkLegendBoxActor::RenderOpaqueGeometry(vtkViewport* viewport)
         posY = p2[1] - this->Padding - (double)i * size[1] - 0.5 * size[1] - 0.25 * tempi[1];
         this->Transform[i]->Identity();
         this->Transform[i]->Translate(posX, posY, 0.0);
-        this->Transform[i]->Scale(0.5 * sf, 0.5 * sf, 1);
+        this->Transform[i]->Scale(0.5 * sf, 0.5 * sf, 0);
         this->SymbolMapper[i]->SetScalarVisibility(this->ScalarVisibility);
         this->SymbolActor[i]->GetProperty()->DeepCopy(this->GetProperty());
         this->Colors->GetTuple(i, color);
@@ -987,7 +976,7 @@ int vtkLegendBoxActor::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkLegendBoxActor::HasTranslucentPolygonalGeometry()
@@ -995,7 +984,7 @@ vtkTypeBool vtkLegendBoxActor::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1025,7 +1014,7 @@ void vtkLegendBoxActor::PrintSelf(ostream& os, vtkIndent indent)
      << this->BackgroundColor[1] << ", " << this->BackgroundColor[2] << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLegendBoxActor::ShallowCopy(vtkProp* prop)
 {
   vtkLegendBoxActor* a = vtkLegendBoxActor::SafeDownCast(prop);
@@ -1049,3 +1038,4 @@ void vtkLegendBoxActor::ShallowCopy(vtkProp* prop)
   // Now do superclass
   this->vtkActor2D::ShallowCopy(prop);
 }
+VTK_ABI_NAMESPACE_END

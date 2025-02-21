@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAreaPicker.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAreaPicker.h"
 #include "vtkAbstractMapper3D.h"
 #include "vtkAbstractVolumeMapper.h"
 #include "vtkActor.h"
 #include "vtkAssemblyPath.h"
+#include "vtkCellGridMapper.h"
 #include "vtkCommand.h"
 #include "vtkExtractSelectedFrustum.h"
 #include "vtkImageData.h"
@@ -36,9 +25,10 @@
 #include "vtkRenderer.h"
 #include "vtkVolume.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAreaPicker);
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAreaPicker::vtkAreaPicker()
 {
   this->FrustumExtractor = vtkExtractSelectedFrustum::New();
@@ -58,7 +48,7 @@ vtkAreaPicker::vtkAreaPicker()
   this->Y1 = 0.0;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAreaPicker::~vtkAreaPicker()
 {
   this->Prop3Ds->Delete();
@@ -67,21 +57,23 @@ vtkAreaPicker::~vtkAreaPicker()
   this->FrustumExtractor->Delete();
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize the picking process.
 void vtkAreaPicker::Initialize()
 {
   this->vtkAbstractPropPicker::Initialize();
   this->Prop3Ds->RemoveAllItems();
   this->Mapper = nullptr;
+  this->DataSet = nullptr;
+  this->DataObject = nullptr;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAreaPicker::SetRenderer(vtkRenderer* renderer)
 {
   this->Renderer = renderer;
 }
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAreaPicker::SetPickCoords(double x0, double y0, double x1, double y1)
 {
   this->X0 = x0;
@@ -89,13 +81,13 @@ void vtkAreaPicker::SetPickCoords(double x0, double y0, double x1, double y1)
   this->X1 = x1;
   this->Y1 = y1;
 }
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAreaPicker::Pick()
 {
   return this->AreaPick(this->X0, this->Y0, this->X1, this->Y1, this->Renderer);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Does what this class is meant to do.
 int vtkAreaPicker::AreaPick(double x0, double y0, double x1, double y1, vtkRenderer* renderer)
 {
@@ -124,7 +116,7 @@ int vtkAreaPicker::AreaPick(double x0, double y0, double x1, double y1, vtkRende
   return this->PickProps(this->Renderer);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Converts the given screen rectangle into a selection frustum.
 // Saves the results in ClipPoints and Frustum.
 void vtkAreaPicker::DefineFrustum(double x0, double y0, double x1, double y1, vtkRenderer* renderer)
@@ -193,7 +185,7 @@ void vtkAreaPicker::DefineFrustum(double x0, double y0, double x1, double y1, vt
   this->FrustumExtractor->CreateFrustum(verts);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Decides which props are within the frustum.
 // Adds each to the prop3d list and fires pick events.
 // Remembers the dataset, mapper, and assembly path for the nearest.
@@ -258,7 +250,7 @@ int vtkAreaPicker::PickProps(vtkRenderer* renderer)
           double dist;
           if (this->ABoxFrustumIsect(bounds, dist))
           {
-            if (!this->Prop3Ds->IsItemPresent(prop))
+            if (this->Prop3Ds->IndexOfFirstOccurence(prop) < 0)
             {
               this->Prop3Ds->AddItem(static_cast<vtkProp3D*>(prop));
               if (dist < mindist) // new nearest, remember it
@@ -272,21 +264,25 @@ int vtkAreaPicker::PickProps(vtkRenderer* renderer)
                 if ((map1 = vtkMapper::SafeDownCast(mapper)) != nullptr)
                 {
                   this->DataSet = map1->GetInput();
+                  this->DataObject = map1->GetInputDataObject(0, 0);
                   this->Mapper = map1;
                 }
                 else if ((vmap = vtkAbstractVolumeMapper::SafeDownCast(mapper)) != nullptr)
                 {
                   this->DataSet = vmap->GetDataSetInput();
+                  this->DataObject = this->DataSet;
                   this->Mapper = vmap;
                 }
                 else if ((imap = vtkImageMapper3D::SafeDownCast(mapper)) != nullptr)
                 {
                   this->DataSet = imap->GetDataSetInput();
+                  this->DataObject = this->DataSet;
                   this->Mapper = imap;
                 }
                 else
                 {
                   this->DataSet = nullptr;
+                  this->DataObject = nullptr;
                 }
               }
             }
@@ -367,7 +363,7 @@ int vtkAreaPicker::TypeDecipher(vtkProp* propCandidate, vtkAbstractMapper3D** ma
   return pickable;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Intersect the bbox represented by the bounds with the clipping frustum.
 // Return true if partially inside.
 // Also return a distance to the near plane.
@@ -412,7 +408,7 @@ int vtkAreaPicker::ABoxFrustumIsect(double* bounds, double& mindist)
   return this->FrustumExtractor->OverallBoundsTest(bounds);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAreaPicker::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -421,4 +417,6 @@ void vtkAreaPicker::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ClipPoints: " << this->ClipPoints << "\n";
   os << indent << "Mapper: " << this->Mapper << "\n";
   os << indent << "DataSet: " << this->DataSet << "\n";
+  os << indent << "DataObject: " << this->DataObject << "\n";
 }
+VTK_ABI_NAMESPACE_END

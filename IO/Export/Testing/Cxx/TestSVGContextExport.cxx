@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSVGContextExport.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSVGExporter.h"
 
@@ -28,8 +16,8 @@
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLContextDevice2D.h"
 #include "vtkPen.h"
-#include "vtkPoints.h"
 #include "vtkPointData.h"
+#include "vtkPoints.h"
 #include "vtkPoints2D.h"
 #include "vtkPolyData.h"
 #include "vtkPolyLine.h"
@@ -38,15 +26,15 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
 #include "vtkSmartPointer.h"
-#include "vtkTriangle.h"
 #include "vtkTestingInteractor.h"
 #include "vtkTextProperty.h"
 #include "vtkTransform2D.h"
+#include "vtkTriangle.h"
 #include "vtkUnsignedCharArray.h"
 
 #include <string>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class ContextSVGTest : public vtkContextItem
 {
   void SetSpritePoint(int x, int y, vtkImageData* sprite);
@@ -58,24 +46,20 @@ public:
   bool Paint(vtkContext2D* painter) override;
 };
 
-void drawPolyLinePolyData(vtkContext2D *painter)
+void drawPolyLinePolyData(vtkContext2D* painter)
 {
   // Setup points
-  vtkSmartPointer<vtkPoints> points =
-    vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   points->InsertNextPoint(50.0, 0.0, 0.0);
   points->InsertNextPoint(0.0, 0.0, 0.0);
   points->InsertNextPoint(0.0, 50.0, 0.0);
   points->InsertNextPoint(50.0, 0.0, 0.0);
 
-
   // Define some colors
-  unsigned char black[4] = {0, 0, 0, 255};
-
+  unsigned char black[4] = { 0, 0, 0, 255 };
 
   // Setup the colors array
-  vtkSmartPointer<vtkUnsignedCharArray> colors =
-    vtkSmartPointer<vtkUnsignedCharArray>::New();
+  vtkSmartPointer<vtkUnsignedCharArray> colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
   colors->SetNumberOfComponents(4);
   colors->SetName("Colors");
 
@@ -95,14 +79,12 @@ void drawPolyLinePolyData(vtkContext2D *painter)
   polylines->InsertNextCell(polyline);
 
   // Create a polydata object and add everything to it
-  vtkSmartPointer<vtkPolyData> polydata =
-    vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
   polydata->SetPoints(points);
   polydata->SetLines(polylines);
   painter->GetPen()->SetWidth(2.0);
-  painter->DrawPolyData(475,  200, polydata, colors, VTK_SCALAR_MODE_USE_POINT_DATA);
+  painter->DrawPolyData(475, 200, polydata, colors, VTK_SCALAR_MODE_USE_POINT_DATA);
 }
-
 
 int TestSVGContextExport(int, char*[])
 {
@@ -300,7 +282,7 @@ bool ContextSVGTest::Paint(vtkContext2D* painter)
   painter->DrawEllipseWedge(100.0, 89.0, 20, 100, 15, 75, -26.23, 333.77);
   painter->DrawEllipseWedge(100.0, 89.0, 15, 15, 0, 0, -26.23, 333.77);
   painter->DrawEllipseWedge(125.0, 89.0, 20, 100, 0, 0, -26.23, 333.77);
-  // Parital circle, more odd angles:
+  // Partial circle, more odd angles:
   painter->DrawEllipseWedge(150.0, 89.0, 20, 100, 15, 75, 403.f, 541.f);
   painter->DrawEllipseWedge(150.0, 89.0, 15, 75, 0, 0, 181.f, 403.f);
   // Smooth path:

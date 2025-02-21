@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPieChartActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPieChartActor.h"
 
 #include "vtkAxisActor2D.h"
@@ -35,6 +23,7 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPieChartActor);
 
 vtkCxxSetObjectMacro(vtkPieChartActor, LabelTextProperty, vtkTextProperty);
@@ -56,7 +45,7 @@ public:
 
 vtkStandardNewMacro(vtkPieChartActorConnection);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object
 vtkPieChartActor::vtkPieChartActor()
 {
@@ -134,7 +123,7 @@ vtkPieChartActor::vtkPieChartActor()
   this->P1[0] = this->P1[1] = this->P2[0] = this->P2[1] = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPieChartActor::~vtkPieChartActor()
 {
   this->ConnectionHolder->Delete();
@@ -166,13 +155,13 @@ vtkPieChartActor::~vtkPieChartActor()
   this->PlotActor->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPieChartActor::SetInputConnection(vtkAlgorithmOutput* ao)
 {
   this->ConnectionHolder->SetInputConnection(ao);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPieChartActor::SetInputData(vtkDataObject* dobj)
 {
   vtkTrivialProducer* tp = vtkTrivialProducer::New();
@@ -181,13 +170,13 @@ void vtkPieChartActor::SetInputData(vtkDataObject* dobj)
   tp->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkPieChartActor::GetInput()
 {
   return this->ConnectionHolder->GetInputDataObject(0, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Free-up axes and related stuff
 void vtkPieChartActor::Initialize()
 {
@@ -209,7 +198,7 @@ void vtkPieChartActor::Initialize()
   delete[] this->Fractions;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Plot scalar data for each input dataset.
 int vtkPieChartActor::RenderOverlay(vtkViewport* viewport)
 {
@@ -252,7 +241,7 @@ int vtkPieChartActor::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Plot scalar data for each input dataset.
 int vtkPieChartActor::RenderOpaqueGeometry(vtkViewport* viewport)
 {
@@ -295,7 +284,7 @@ int vtkPieChartActor::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkPieChartActor::HasTranslucentPolygonalGeometry()
@@ -303,7 +292,7 @@ vtkTypeBool vtkPieChartActor::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPieChartActor::BuildPlot(vtkViewport* viewport)
 {
   // Initialize
@@ -357,7 +346,7 @@ int vtkPieChartActor::BuildPlot(vtkViewport* viewport)
     vtkDebugMacro(<< "Rebuilding plot");
 
     // Build axes
-    int* size = viewport->GetSize();
+    const int* size = viewport->GetSize();
     if (!this->PlaceAxes(viewport, size))
     {
       return 0;
@@ -369,8 +358,8 @@ int vtkPieChartActor::BuildPlot(vtkViewport* viewport)
   return 1;
 }
 
-//----------------------------------------------------------------------------
-int vtkPieChartActor::PlaceAxes(vtkViewport* viewport, int* vtkNotUsed(size))
+//------------------------------------------------------------------------------
+int vtkPieChartActor::PlaceAxes(vtkViewport* viewport, const int* vtkNotUsed(size))
 {
   vtkIdType i, j;
   vtkDataObject* input = this->GetInput();
@@ -634,7 +623,7 @@ int vtkPieChartActor::PlaceAxes(vtkViewport* viewport, int* vtkNotUsed(size))
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -650,7 +639,7 @@ void vtkPieChartActor::ReleaseGraphicsResources(vtkWindow* win)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPieChartActor::SetPieceLabel(const int i, const char* label)
 {
   if (i < 0)
@@ -666,7 +655,7 @@ void vtkPieChartActor::SetPieceLabel(const int i, const char* label)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkPieChartActor::GetPieceLabel(int i)
 {
   if (i < 0 || static_cast<unsigned int>(i) >= this->Labels->size())
@@ -677,19 +666,19 @@ const char* vtkPieChartActor::GetPieceLabel(int i)
   return this->Labels->at(i).c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPieChartActor::SetPieceColor(int i, double r, double g, double b)
 {
   this->LegendActor->SetEntryColor(i, r, g, b);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkPieChartActor::GetPieceColor(int i)
 {
   return this->LegendActor->GetEntryColor(i);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPieChartActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -727,3 +716,4 @@ void vtkPieChartActor::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Legend Actor: " << this->LegendActor << "\n";
   this->LegendActor->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

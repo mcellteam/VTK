@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVPICReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkVPICReader.h"
 
 #include "vtkCallbackCommand.h"
@@ -26,7 +14,6 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkToolkits.h"
 
 #include "vtkMultiProcessController.h"
 
@@ -34,11 +21,13 @@
 #include "vtkvpic/VPICDataSet.h"
 #include "vtkvpic/VPICView.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkVPICReader);
+vtkCxxSetObjectMacro(vtkVPICReader, MPIController, vtkMultiProcessController);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor for VPIC Reader
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVPICReader::vtkVPICReader()
 {
   this->SetNumberOfInputPorts(0);
@@ -56,13 +45,13 @@ vtkVPICReader::vtkVPICReader()
   this->SelectionObserver->SetClientData(this);
   this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
   // External VPICDataSet for actually reading files
-  this->vpicData = 0;
-  this->exchanger = 0;
-  this->VariableName = 0;
-  this->VariableStruct = 0;
-  this->TimeSteps = 0;
-  this->dataLoaded = 0;
-  this->data = 0;
+  this->vpicData = nullptr;
+  this->exchanger = nullptr;
+  this->VariableName = nullptr;
+  this->VariableStruct = nullptr;
+  this->TimeSteps = nullptr;
+  this->dataLoaded = nullptr;
+  this->data = nullptr;
 
   // One overlap cell on first plane and one extra on last plane
   this->ghostLevel0 = 1;
@@ -79,7 +68,8 @@ vtkVPICReader::vtkVPICReader()
   this->YLayout[1] = -1;
   this->ZLayout[1] = -1;
 
-  this->MPIController = vtkMultiProcessController::GetGlobalController();
+  this->MPIController = nullptr;
+  this->SetMPIController(vtkMultiProcessController::GetGlobalController());
 
   if (this->MPIController)
   {
@@ -101,9 +91,9 @@ vtkVPICReader::vtkVPICReader()
   this->Stride[0] = this->Stride[1] = this->Stride[2] = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Destructor for VPIC Reader
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVPICReader::~vtkVPICReader()
 {
   delete[] this->FileName;
@@ -131,14 +121,12 @@ vtkVPICReader::~vtkVPICReader()
 
   this->SelectionObserver->Delete();
 
-  // Do not delete the MPIController it is Singleton like and will
-  // cleanup itself;
-  this->MPIController = nullptr;
+  this->SetMPIController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Verify that the file exists
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVPICReader::RequestInformation(vtkInformation* vtkNotUsed(reqInfo),
   vtkInformationVector** vtkNotUsed(inVector), vtkInformationVector* outVector)
 {
@@ -158,7 +146,7 @@ int vtkVPICReader::RequestInformation(vtkInformation* vtkNotUsed(reqInfo),
   // is changed it will be called again
   // Only want to create the VPICDataSet one time
 
-  if (this->vpicData == 0)
+  if (this->vpicData == nullptr)
   {
 
     // Create the general VPICDataSet structure first time method is called
@@ -249,7 +237,7 @@ int vtkVPICReader::RequestInformation(vtkInformation* vtkNotUsed(reqInfo),
   // Repartition only has to be done when the stride changes
   // To handle the loading for the very first time, vpicData stride is set
   // to 0 so that by setting to the default of 1, the partition has be to done
-  if (this->vpicData->needsGridCalculation() == true)
+  if (this->vpicData->needsGridCalculation())
   {
 
     // If grid is recalculated all data must be realoaded
@@ -350,10 +338,10 @@ int vtkVPICReader::RequestInformation(vtkInformation* vtkNotUsed(reqInfo),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Data is read into a vtkImageData
 // BLOCK structured means data is organized by variable and then by cell
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVPICReader::RequestData(vtkInformation* vtkNotUsed(reqInfo),
   vtkInformationVector** vtkNotUsed(inVector), vtkInformationVector* outVector)
 {
@@ -392,8 +380,7 @@ int vtkVPICReader::RequestData(vtkInformation* vtkNotUsed(reqInfo),
 
   // Collect the time step requested
   double requestedTimeStep(0);
-  vtkInformationDoubleKey* timeKey =
-    static_cast<vtkInformationDoubleKey*>(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+  vtkInformationDoubleKey* timeKey = vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP();
 
   // Actual time for the time step
   double dTime = this->TimeSteps[0];
@@ -447,9 +434,9 @@ int vtkVPICReader::RequestData(vtkInformation* vtkNotUsed(reqInfo),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Load one variable data array of BLOCK structure into ParaView
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVPICReader::LoadVariableData(int var, int timeStep)
 {
   this->data[var]->Delete();
@@ -538,13 +525,13 @@ void vtkVPICReader::LoadVariableData(int var, int timeStep)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Load one component from the local VPIC ghost enhanced block into the
 // ParaView vtkFloatArray taking into account whether the processor is
 // on the front plane, the back plane or in the middle which affects
 // the ghost cells which can be loaded.  ParaView array is contiguous
 // memory so start at the right location and offset by number of components
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVPICReader::LoadComponent(float* varData, float* block, int comp, int numberOfComponents)
 {
 
@@ -570,20 +557,20 @@ void vtkVPICReader::LoadComponent(float* varData, float* block, int comp, int nu
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVPICReader::SelectionCallback(
   vtkObject*, unsigned long vtkNotUsed(eventid), void* clientdata, void* vtkNotUsed(calldata))
 {
   static_cast<vtkVPICReader*>(clientdata)->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkVPICReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkVPICReader::GetOutput(int idx)
 {
   if (idx)
@@ -596,37 +583,37 @@ vtkImageData* vtkVPICReader::GetOutput(int idx)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVPICReader::GetNumberOfPointArrays()
 {
   return this->PointDataArraySelection->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVPICReader::EnableAllPointArrays()
 {
   this->PointDataArraySelection->EnableAllArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVPICReader::DisableAllPointArrays()
 {
   this->PointDataArraySelection->DisableAllArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkVPICReader::GetPointArrayName(int index)
 {
   return this->VariableName[index].c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVPICReader::GetPointArrayStatus(const char* name)
 {
   return this->PointDataArraySelection->ArrayIsEnabled(name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVPICReader::SetPointArrayStatus(const char* name, int status)
 {
   if (status)
@@ -649,3 +636,4 @@ void vtkVPICReader::PrintSelf(ostream& os, vtkIndent indent)
 
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

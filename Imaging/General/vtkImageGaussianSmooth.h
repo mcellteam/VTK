@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageGaussianSmooth.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageGaussianSmooth
  * @brief   Performs a gaussian convolution.
@@ -26,6 +14,7 @@
 #include "vtkImagingGeneralModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGGENERAL_EXPORT vtkImageGaussianSmooth : public vtkThreadedImageAlgorithm
 {
 public:
@@ -39,7 +28,7 @@ public:
    */
   static vtkImageGaussianSmooth* New();
 
-  //@{
+  ///@{
   /**
    * Sets/Gets the Standard deviation of the gaussian in pixel units.
    */
@@ -47,7 +36,7 @@ public:
   void SetStandardDeviation(double std) { this->SetStandardDeviations(std, std, std); }
   void SetStandardDeviations(double a, double b) { this->SetStandardDeviations(a, b, 0.0); }
   vtkGetVector3Macro(StandardDeviations, double);
-  //@}
+  ///@}
 
   /**
    * Sets/Gets the Standard deviation of the gaussian in pixel units.
@@ -56,7 +45,7 @@ public:
   void SetStandardDeviation(double a, double b) { this->SetStandardDeviations(a, b, 0.0); }
   void SetStandardDeviation(double a, double b, double c) { this->SetStandardDeviations(a, b, c); }
 
-  //@{
+  ///@{
   /**
    * Sets/Gets the Radius Factors of the gaussian (no unit).
    * The radius factors determine how far out the gaussian kernel will
@@ -66,16 +55,16 @@ public:
   void SetRadiusFactors(double f, double f2) { this->SetRadiusFactors(f, f2, 1.5); }
   void SetRadiusFactor(double f) { this->SetRadiusFactors(f, f, f); }
   vtkGetVector3Macro(RadiusFactors, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the dimensionality of this filter. This determines whether
    * a one, two, or three dimensional gaussian is performed.
    */
   vtkSetMacro(Dimensionality, int);
   vtkGetMacro(Dimensionality, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageGaussianSmooth();
@@ -99,4 +88,5 @@ private:
   void operator=(const vtkImageGaussianSmooth&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

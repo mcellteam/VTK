@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWrapPythonTemplate.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkWrapPythonTemplate.h"
 #include "vtkWrapPythonClass.h"
@@ -19,6 +7,7 @@
 #include "vtkWrapPythonType.h"
 
 #include "vtkParseExtras.h"
+#include "vtkWrap.h"
 #include "vtkWrapText.h"
 
 #include <ctype.h>
@@ -88,11 +77,9 @@ size_t vtkWrapPython_PyTemplateName(const char* name, char* pname)
       ptype = "uint";
       break;
     case VTK_PARSE_LONG_LONG:
-    case VTK_PARSE___INT64:
       ptype = "int64";
       break;
     case VTK_PARSE_UNSIGNED_LONG_LONG:
-    case VTK_PARSE_UNSIGNED___INT64:
       ptype = "uint64";
       break;
     case VTK_PARSE_FLOAT:
@@ -117,11 +104,6 @@ size_t vtkWrapPython_PyTemplateName(const char* name, char* pname)
     strcpy(pname, "str");
     return n;
   }
-  else if (n == 16 && strncmp(name, "vtkUnicodeString", n) == 0)
-  {
-    strcpy(pname, "unicode");
-    return n;
-  }
 
   /* check whether name is templated */
   for (i = 0; i < n; i++)
@@ -132,7 +114,7 @@ size_t vtkWrapPython_PyTemplateName(const char* name, char* pname)
     }
   }
 
-  strncpy(pname, name, i);
+  memcpy(pname, name, i);
 
   if (name[i] != '<')
   {
@@ -196,11 +178,11 @@ int vtkWrapPython_WrapTemplatedClass(
   FILE* fp, ClassInfo* data, FileInfo* file_info, HierarchyInfo* hinfo)
 {
   char classname[1024];
-  const char* instantiations[1024];
+  const char** instantiations = NULL;
   int ninstantiations = 0;
   int i, j, k, nargs;
   ClassInfo* sdata;
-  ValueInfo* tdef;
+  const ValueInfo* tdef;
   HierarchyEntry* entry;
   const char* name;
   char* cp;
@@ -210,12 +192,6 @@ int vtkWrapPython_WrapTemplatedClass(
   const char* name_with_args;
   int is_vtkobject = 0;
   const char** types;
-
-  /* do not directly wrap vtkTypeTemplate */
-  if (strcmp(data->Name, "vtkTypeTemplate") == 0)
-  {
-    return 0;
-  }
 
   if (hinfo == 0)
   {
@@ -244,8 +220,8 @@ int vtkWrapPython_WrapTemplatedClass(
     if (entry->IsTypedef)
     {
       tdef = entry->Typedef;
-      if ((tdef->Type & VTK_PARSE_BASE_TYPE) == VTK_PARSE_OBJECT &&
-        entry->NumberOfTemplateParameters == 0)
+
+      if (vtkWrap_IsObject(tdef) && entry->NumberOfTemplateParameters == 0)
       {
         if (tdef->Class && tdef->Class[0] != '\0' && tdef->Class[strlen(tdef->Class) - 1] == '>')
         {
@@ -297,11 +273,11 @@ int vtkWrapPython_WrapTemplatedClass(
         {
           if (nargs == 0)
           {
-            sprintf(classname, "%s", entry->Name);
+            snprintf(classname, sizeof(classname), "%s", entry->Name);
           }
           else
           {
-            sprintf(classname, "%s<%s>", entry->Name, types[i]);
+            snprintf(classname, sizeof(classname), "%s<%s>", entry->Name, types[i]);
           }
         }
 
@@ -332,7 +308,7 @@ int vtkWrapPython_WrapTemplatedClass(
           }
           if (k == ninstantiations)
           {
-            instantiations[ninstantiations++] = name_with_args;
+            vtkParse_AddStringToArray(&instantiations, &ninstantiations, name_with_args);
           }
           else
           {
@@ -383,7 +359,7 @@ int vtkWrapPython_WrapTemplatedClass(
     fprintf(fp, ";\n\n");
 
     fprintf(fp,
-      "PyObject *Py%s_TemplateNew()\n"
+      "static PyObject *Py%s_TemplateNew()\n"
       "{\n"
       "  PyObject *o;\n"
       "\n"
@@ -421,6 +397,8 @@ int vtkWrapPython_WrapTemplatedClass(
       "  return temp;\n"
       "}\n"
       "\n");
+
+    free((char**)instantiations);
 
     return 1;
   }

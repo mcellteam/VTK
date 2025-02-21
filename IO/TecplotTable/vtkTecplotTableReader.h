@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTecplotTableReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2016 Menno Deij - van Rijswijk (MARIN)
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2016 Menno Deij - van Rijswijk (MARIN)
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTecplotTableReader
  * @brief   reads in Tecplot tabular data
@@ -36,8 +21,8 @@
 #include "vtkIOTecplotTableModule.h" // For export macro
 #include "vtkStdString.h"            // Needed for vtkStdString
 #include "vtkTableAlgorithm.h"
-#include "vtkUnicodeString.h" // Needed for vtkUnicodeString
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOTECPLOTTABLE_EXPORT vtkTecplotTableReader : public vtkTableAlgorithm
 {
 public:
@@ -45,57 +30,57 @@ public:
   vtkTypeMacro(vtkTecplotTableReader, vtkTableAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specifies the delimited text file to be loaded.
    */
-  vtkGetStringMacro(FileName);
-  vtkSetStringMacro(FileName);
-  //@}
+  vtkGetFilePathMacro(FileName);
+  vtkSetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specifies the maximum number of records to read from the file.  Limiting the
    * number of records to read is useful for previewing the contents of a file.
    */
   vtkGetMacro(MaxRecords, vtkIdType);
   vtkSetMacro(MaxRecords, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specifies the number of lines that form the header of the file. Default is 2.
    */
   vtkGetMacro(HeaderLines, vtkIdType);
   vtkSetMacro(HeaderLines, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specifies the line number that holds the column names. Default is 1.
    */
   vtkGetMacro(ColumnNamesOnLine, vtkIdType);
   vtkSetMacro(ColumnNamesOnLine, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specifies the number of fields to skip while reading the column names. Default is 1.
    */
   vtkGetMacro(SkipColumnNames, vtkIdType);
   vtkSetMacro(SkipColumnNames, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The name of the array for generating or assigning pedigree ids
    * (default "id").
    */
   vtkSetStringMacro(PedigreeIdArrayName);
   vtkGetStringMacro(PedigreeIdArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If on (default), generates pedigree ids automatically.
    * If off, assign one of the arrays to be the pedigree id.
@@ -103,16 +88,16 @@ public:
   vtkSetMacro(GeneratePedigreeIds, bool);
   vtkGetMacro(GeneratePedigreeIds, bool);
   vtkBooleanMacro(GeneratePedigreeIds, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If on, assigns pedigree ids to output. Defaults to off.
    */
   vtkSetMacro(OutputPedigreeIds, bool);
   vtkGetMacro(OutputPedigreeIds, bool);
   vtkBooleanMacro(OutputPedigreeIds, bool);
-  //@}
+  ///@}
 
   /**
    * Returns a human-readable description of the most recent error, if any.
@@ -142,4 +127,5 @@ private:
   void operator=(const vtkTecplotTableReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

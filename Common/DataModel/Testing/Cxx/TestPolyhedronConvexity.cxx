@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPolyhedronConvexity.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vector>
 
@@ -37,7 +25,8 @@ enum Shape
   colinear_cube,
   degenerate_cube,
   convex_pyramid,
-  nonconvex_pyramid
+  nonconvex_pyramid,
+  convex_prism
 };
 
 bool IsConvex(Shape shape)
@@ -355,14 +344,46 @@ bool IsConvex(Shape shape)
       polyhedronFaces->InsertNextCell((i == 0 ? 4 : 3), pyramidShapeFace[i]);
     }
   }
+  else if (shape == convex_prism)
+  {
+    // create a simple convex prism
+    const int nPoints = 6;
+    const int nFaces = 5;
 
-  vtkNew<vtkIdTypeArray> legacyFaces;
-  polyhedronFaces->ExportLegacyFormat(legacyFaces);
+    double prismShapePoint[nPoints][3] = {
+      { -41.6027, 0., 10.2556 },
+      { -37.5, 0., 10.6045 },
+      { -41.8135, 0., 13.8533 },
+      { -41.6027, 4., 10.2556 },
+      { -37.5, 4., 10.6045 },
+      { -41.8135, 4., 13.8533 },
+    };
+
+    polyhedronPoints->SetNumberOfPoints(nPoints);
+    for (int i = 0; i < nPoints; i++)
+    {
+      polyhedronPoints->SetPoint(i, prismShapePoint[i]);
+      polyhedronPointsIds.push_back(i);
+    }
+
+    vtkIdType f1[3] = { 0, 1, 2 };
+    vtkIdType f2[3] = { 3, 5, 4 };
+    vtkIdType f3[4] = { 0, 3, 4, 1 };
+    vtkIdType f4[4] = { 1, 4, 5, 2 };
+    vtkIdType f5[4] = { 0, 2, 5, 3 };
+
+    vtkIdType* prismShapeFace[nFaces] = { f1, f2, f3, f4, f5 };
+
+    for (int i = 0; i < nFaces; i++)
+    {
+      polyhedronFaces->InsertNextCell((i < 2 ? 3 : 4), prismShapeFace[i]);
+    }
+  }
 
   vtkSmartPointer<vtkUnstructuredGrid> ugrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
   ugrid->SetPoints(polyhedronPoints);
   ugrid->InsertNextCell(VTK_POLYHEDRON, polyhedronPoints->GetNumberOfPoints(),
-    &polyhedronPointsIds[0], polyhedronFaces->GetNumberOfCells(), legacyFaces->GetPointer(0));
+    polyhedronPointsIds.data(), polyhedronFaces);
 
   vtkPolyhedron* polyhedron = static_cast<vtkPolyhedron*>(ugrid->GetCell(0));
 
@@ -374,45 +395,51 @@ int TestPolyhedronConvexity(int argc, char* argv[])
   (void)argc;
   (void)argv;
 
-  if (IsConvex(dodecahedron) != true)
+  if (!IsConvex(dodecahedron))
   {
     cerr << "convex dodehecahedron incorrectly classified as non-convex" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (IsConvex(u_shape) != false)
+  if (IsConvex(u_shape))
   {
     cerr << "non-convex u-shape incorrectly classified as convex" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (IsConvex(cube) != true)
+  if (!IsConvex(cube))
   {
     cerr << "convex cube incorrectly classified as non-convex" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (IsConvex(colinear_cube) != true)
+  if (!IsConvex(colinear_cube))
   {
     cerr << "convex colinear cube incorrectly classified as non-convex" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (IsConvex(degenerate_cube) != true)
+  if (!IsConvex(degenerate_cube))
   {
     cerr << "convex degenerate cube incorrectly classified as non-convex" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (IsConvex(convex_pyramid) != true)
+  if (!IsConvex(convex_pyramid))
   {
     cerr << "convex pyramid incorrectly classified as non-convex" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (IsConvex(nonconvex_pyramid) != false)
+  if (IsConvex(nonconvex_pyramid))
   {
     cerr << "non-convex pyramid incorrectly classified as convex" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  if (!IsConvex(convex_prism))
+  {
+    cerr << "convex prism incorrectly classified as non-convex" << std::endl;
     return EXIT_FAILURE;
   }
 

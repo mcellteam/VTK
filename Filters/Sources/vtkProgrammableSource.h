@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProgrammableSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkProgrammableSource
  * @brief   generate source dataset via a user-specified function
@@ -41,6 +29,7 @@
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkFiltersSourcesModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGraph;
 class vtkMolecule;
 class vtkPolyData;
@@ -55,6 +44,7 @@ class VTKFILTERSSOURCES_EXPORT vtkProgrammableSource : public vtkDataObjectAlgor
 public:
   static vtkProgrammableSource* New();
   vtkTypeMacro(vtkProgrammableSource, vtkDataObjectAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Signature definition for programmable method callbacks. Methods passed
@@ -83,7 +73,7 @@ public:
    */
   void SetRequestInformationMethod(void (*f)(void*));
 
-  //@{
+  ///@{
   /**
    * Get the output as a concrete type. This method is typically used by the
    * writer of the source function to get the output as a particular type
@@ -98,7 +88,7 @@ public:
   vtkGraph* GetGraphOutput();
   vtkMolecule* GetMoleculeOutput();
   vtkTable* GetTableOutput();
-  //@}
+  ///@}
 
 protected:
   vtkProgrammableSource();
@@ -121,6 +111,5 @@ private:
   void operator=(const vtkProgrammableSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-
-// VTK-HeaderTest-Exclude: vtkProgrammableSource.h

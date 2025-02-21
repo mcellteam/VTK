@@ -1,6 +1,9 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "vtkActor.h"
 #include "vtkCompositeDataDisplayAttributes.h"
-#include "vtkCompositePolyDataMapper2.h"
+#include "vtkCompositePolyDataMapper.h"
 #include "vtkCubeSource.h"
 #include "vtkDataArray.h"
 #include "vtkLookupTable.h"
@@ -63,8 +66,8 @@ int TestBlockVisibility(int argc, char* argv[])
 
   auto mbds = vtkCreateData();
 
-  vtkSmartPointer<vtkCompositePolyDataMapper2> mapper =
-    vtkSmartPointer<vtkCompositePolyDataMapper2>::New();
+  vtkSmartPointer<vtkCompositePolyDataMapper> mapper =
+    vtkSmartPointer<vtkCompositePolyDataMapper>::New();
   mapper->SetInputDataObject(mbds);
   // mapper->SetColorModeToMapScalars();
   // mapper->SetScalarModeToUsePointData();
@@ -80,19 +83,21 @@ int TestBlockVisibility(int argc, char* argv[])
   for (int i = 0; i < static_cast<int>(mbds->GetNumberOfBlocks()); ++i)
   {
     vtkDataObject* blk = mbds->GetBlock(i);
-    attrs->SetBlockVisibility(blk, vis.find(i) != vis.end() ? 1 : 0);
+    attrs->SetBlockVisibility(blk, vis.find(i) != vis.end());
   }
 
   int numVisited = 0;
   int numVisible = 0;
-  attrs->VisitVisibilities([&numVisited, &numVisible](vtkDataObject*, bool visible) {
-    if (visible)
+  attrs->VisitVisibilities(
+    [&numVisited, &numVisible](vtkDataObject*, bool visible)
     {
-      ++numVisible;
-    }
-    ++numVisited;
-    return false; // do not terminate loop early.
-  });
+      if (visible)
+      {
+        ++numVisible;
+      }
+      ++numVisited;
+      return false; // do not terminate loop early.
+    });
 
   if (numVisited != static_cast<int>(mbds->GetNumberOfBlocks()))
   {

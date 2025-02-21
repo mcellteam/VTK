@@ -1,18 +1,5 @@
-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastVolumeUpdate.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test volume tests whether updating the volume MTime updates the ,
 // geometry in the volume mapper.
 
@@ -97,7 +84,6 @@ int TestGPURayCastCellData(int argc, char* argv[])
   scalarOpacity->AddPoint(75, 1.0);
 
   vtkNew<vtkVolumeProperty> volumeProperty;
-  volumeProperty->ShadeOn();
   volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
   volumeProperty->SetScalarOpacity(scalarOpacity);
 

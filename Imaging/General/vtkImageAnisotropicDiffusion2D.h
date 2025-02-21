@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageAnisotropicDiffusion2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageAnisotropicDiffusion2D
  * @brief   edge preserving smoothing.
@@ -42,6 +30,7 @@
 
 #include "vtkImageSpatialAlgorithm.h"
 #include "vtkImagingGeneralModule.h" // For export macro
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGGENERAL_EXPORT vtkImageAnisotropicDiffusion2D : public vtkImageSpatialAlgorithm
 {
 public:
@@ -57,14 +46,14 @@ public:
    */
   void SetNumberOfIterations(int num);
 
-  //@{
+  ///@{
   /**
    * Get the number of iterations.
    */
   vtkGetMacro(NumberOfIterations, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the difference threshold that stops diffusion.
    * when the difference between two pixel is greater than this threshold,
@@ -74,9 +63,9 @@ public:
    */
   vtkSetMacro(DiffusionThreshold, double);
   vtkGetMacro(DiffusionThreshold, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The diffusion factor specifies how much neighboring pixels effect each other.
    * No diffusion occurs with a factor of 0, and a diffusion factor of 1 causes
@@ -84,9 +73,9 @@ public:
    */
   vtkSetMacro(DiffusionFactor, double);
   vtkGetMacro(DiffusionFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Choose neighbors to diffuse (6 faces, 12 edges, 8 corners).
    */
@@ -99,20 +88,20 @@ public:
   vtkSetMacro(Corners, vtkTypeBool);
   vtkGetMacro(Corners, vtkTypeBool);
   vtkBooleanMacro(Corners, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Switch between gradient magnitude threshold and pixel gradient threshold.
    */
   vtkSetMacro(GradientMagnitudeThreshold, vtkTypeBool);
   vtkGetMacro(GradientMagnitudeThreshold, vtkTypeBool);
   vtkBooleanMacro(GradientMagnitudeThreshold, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageAnisotropicDiffusion2D();
-  ~vtkImageAnisotropicDiffusion2D() override {}
+  ~vtkImageAnisotropicDiffusion2D() override = default;
 
   int NumberOfIterations;
   double DiffusionThreshold;
@@ -135,4 +124,5 @@ private:
   void operator=(const vtkImageAnisotropicDiffusion2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

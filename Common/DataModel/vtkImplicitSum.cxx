@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitSum.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImplicitSum.h"
 
 #include "vtkDoubleArray.h"
@@ -20,9 +8,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImplicitSum);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor.
 vtkImplicitSum::vtkImplicitSum()
 {
@@ -33,14 +22,14 @@ vtkImplicitSum::vtkImplicitSum()
   this->NormalizeByWeight = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImplicitSum::~vtkImplicitSum()
 {
   this->FunctionList->Delete();
   this->Weights->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImplicitSum::GetMTime()
 {
   vtkMTimeType fMtime;
@@ -66,7 +55,7 @@ vtkMTimeType vtkImplicitSum::GetMTime()
   return mtime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Add another implicit function to the list of functions.
 void vtkImplicitSum::AddFunction(vtkImplicitFunction* f, double scale)
 {
@@ -76,16 +65,15 @@ void vtkImplicitSum::AddFunction(vtkImplicitFunction* f, double scale)
   this->CalculateTotalWeight();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitSum::SetFunctionWeight(vtkImplicitFunction* f, double scale)
 {
-  int loc = this->FunctionList->IsItemPresent(f);
-  if (!loc)
+  int loc = this->FunctionList->IndexOfFirstOccurence(f);
+  if (loc < 0)
   {
     vtkWarningMacro("Function not found in function list");
     return;
   }
-  loc--; // IsItemPresent returns index+1.
 
   if (this->Weights->GetValue(loc) != scale)
   {
@@ -95,7 +83,7 @@ void vtkImplicitSum::SetFunctionWeight(vtkImplicitFunction* f, double scale)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitSum::RemoveAllFunctions()
 {
   this->Modified();
@@ -104,7 +92,7 @@ void vtkImplicitSum::RemoveAllFunctions()
   this->TotalWeight = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitSum::CalculateTotalWeight()
 {
   this->TotalWeight = 0.0;
@@ -115,7 +103,7 @@ void vtkImplicitSum::CalculateTotalWeight()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate sum of implicit functions.
 double vtkImplicitSum::EvaluateFunction(double x[3])
 {
@@ -142,7 +130,7 @@ double vtkImplicitSum::EvaluateFunction(double x[3])
   return sum;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate gradient of sum of functions (valid only if linear)
 void vtkImplicitSum::EvaluateGradient(double x[3], double g[3])
 {
@@ -175,7 +163,7 @@ void vtkImplicitSum::EvaluateGradient(double x[3], double g[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitSum::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -188,3 +176,4 @@ void vtkImplicitSum::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Weights:\n";
   this->Weights->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

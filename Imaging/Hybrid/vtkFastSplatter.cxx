@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFastSplatter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkFastSplatter.h"
 
@@ -31,9 +16,10 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkFastSplatter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkFastSplatter::vtkFastSplatter()
 {
@@ -79,7 +65,7 @@ void vtkFastSplatter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "NumberOfPointsSplatted: " << this->NumberOfPointsSplatted << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkFastSplatter::FillInputPortInformation(int port, vtkInformation* info)
 {
@@ -97,7 +83,7 @@ int vtkFastSplatter::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // For those familiar with the old pipeline, this is equivalent to the
 // ExecuteInformation method.
@@ -154,7 +140,7 @@ int vtkFastSplatter::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFastSplatter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -197,7 +183,7 @@ int vtkFastSplatter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template <class T>
 void vtkFastSplatterBucketPoints(const T* points, vtkIdType numPoints, unsigned int* buckets,
@@ -229,7 +215,7 @@ void vtkFastSplatterBucketPoints(const T* points, vtkIdType numPoints, unsigned 
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template <class T>
 void vtkFastSplatterConvolve(T* splat, const int splatDims[3], unsigned int* buckets, T* output,
@@ -317,7 +303,7 @@ void vtkFastSplatterConvolve(T* splat, const int splatDims[3], unsigned int* buc
   *numPointsSplatted = numPoints;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // For those of you familiar with the old pipeline, this is equivalent to the
 // Execute method.
@@ -458,3 +444,4 @@ void vtkFastSplatter::SetSplatConnection(vtkAlgorithmOutput* input)
 {
   this->SetInputConnection(1, input);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastBlendModes.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * Tests support for blend modes with translucent geometry (similar to
@@ -57,9 +45,9 @@ int TestGPURayCastDepthPeelingBlendModes(int argc, char* argv[])
   vtkOpenGLRenderer* oglRen = vtkOpenGLRenderer::SafeDownCast(ren);
   assert(oglRen); // This test should only be enabled for OGL2 backend.
   // This will print details about why depth peeling is unsupported:
-  oglRen->SetDebug(1);
+  oglRen->SetDebug(true);
   bool supported = oglRen->IsDualDepthPeelingSupported();
-  oglRen->SetDebug(0);
+  oglRen->SetDebug(false);
   if (!supported)
   {
     std::cerr << "Skipping test; volume peeling not supported.\n";

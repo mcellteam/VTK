@@ -1,27 +1,17 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPassSelectedArrays.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPassSelectedArrays.h"
 
+#include "vtkCellGrid.h"
 #include "vtkCommand.h"
 #include "vtkDataArraySelection.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkInformation.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPassSelectedArrays);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPassSelectedArrays::vtkPassSelectedArrays()
   : Enabled(true)
 {
@@ -40,10 +30,10 @@ vtkPassSelectedArrays::vtkPassSelectedArrays()
   }
 }
 
-//----------------------------------------------------------------------------
-vtkPassSelectedArrays::~vtkPassSelectedArrays() {}
+//------------------------------------------------------------------------------
+vtkPassSelectedArrays::~vtkPassSelectedArrays() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataArraySelection* vtkPassSelectedArrays::GetArraySelection(int association)
 {
   if (association >= 0 && association < vtkDataObject::NUMBER_OF_ASSOCIATIONS)
@@ -54,11 +44,12 @@ vtkDataArraySelection* vtkPassSelectedArrays::GetArraySelection(int association)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPassSelectedArrays::FillInputPortInformation(int, vtkInformation* info)
 {
   // Skip composite data sets so that executives will treat this as a simple filter
   info->Remove(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE());
+  info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkCellGrid");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkGenericDataSet");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkGraph");
@@ -67,7 +58,7 @@ int vtkPassSelectedArrays::FillInputPortInformation(int, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPassSelectedArrays::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -80,9 +71,18 @@ int vtkPassSelectedArrays::RequestData(
     return 1;
   }
 
+  if (auto* cellGrid = vtkCellGrid::SafeDownCast(output))
+  {
+    return this->HandleCellGridAttributes(cellGrid);
+  }
+
   // now filter arrays for each of the associations.
   for (int association = 0; association < vtkDataObject::NUMBER_OF_ASSOCIATIONS; ++association)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     if (association == vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS)
     {
       continue;
@@ -129,7 +129,37 @@ int vtkPassSelectedArrays::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkPassSelectedArrays::HandleCellGridAttributes(vtkCellGrid* output)
+{
+  if (!output)
+  {
+    return 0;
+  }
+
+  auto* shape = output->GetShapeAttribute();
+  auto* selection = this->GetCellDataArraySelection();
+  std::set<vtkCellAttribute*> removeAttributes;
+  for (const auto& attribute : output->GetCellAttributeList())
+  {
+    // Never remove the shape attribute:
+    if (attribute == shape)
+    {
+      continue;
+    }
+    if (!selection->ArrayIsEnabled(attribute->GetName().Data().c_str()))
+    {
+      removeAttributes.insert(attribute);
+    }
+  }
+  for (const auto& attribute : removeAttributes)
+  {
+    output->RemoveCellAttribute(attribute);
+  }
+  return 1;
+}
+
+//------------------------------------------------------------------------------
 void vtkPassSelectedArrays::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -147,3 +177,4 @@ void vtkPassSelectedArrays::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "RowDataArraySelection: " << endl;
   this->GetRowDataArraySelection()->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

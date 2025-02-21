@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestLinePlot2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAxis.h"
 #include "vtkChartXY.h"
@@ -32,7 +20,7 @@ static double data_y[] = { 59.9, 60.5, 54.1, 54.25, 49, 50, 48, 45.2, 51.1, 47, 
   47.2, 52, 46, 48, 47.6, 49, 41.5, 45.5, 44.7, 46.5, 44.1, 48.5, 44.8, 45.1, 39, 38.7, 38.9,
   37.8 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestLinePlot2(int, char*[])
 {
   // Set up a 2D scene, add an XY chart to it

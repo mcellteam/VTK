@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageDataToHyperTreeGrid.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageDataToHyperTreeGrid
  * @brief
@@ -32,6 +20,7 @@
 #include "vtkFiltersHyperTreeModule.h" // For export macro
 #include "vtkHyperTreeGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 class vtkIntArray;
 class vtkUnsignedCharArray;
@@ -44,7 +33,7 @@ class VTKFILTERSHYPERTREE_EXPORT vtkImageDataToHyperTreeGrid : public vtkHyperTr
 public:
   static vtkImageDataToHyperTreeGrid* New();
   vtkTypeMacro(vtkImageDataToHyperTreeGrid, vtkHyperTreeGridAlgorithm);
-  void PrintSelf(ostream&, vtkIndent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkSetMacro(DepthMax, int);
   vtkGetMacro(DepthMax, int);
@@ -56,9 +45,9 @@ protected:
   vtkImageDataToHyperTreeGrid();
   ~vtkImageDataToHyperTreeGrid() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
-  virtual int ProcessTrees(vtkHyperTreeGrid*, vtkDataObject*) override;
+  int ProcessTrees(vtkHyperTreeGrid*, vtkDataObject*) override;
 
   void ProcessPixels(vtkIntArray*, vtkHyperTreeGridNonOrientedCursor*);
 
@@ -80,4 +69,5 @@ private:
   int GlobalId;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkImageDataToHyperTreeGrid_h

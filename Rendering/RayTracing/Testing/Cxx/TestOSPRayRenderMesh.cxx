@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestOSPRayRenderMesh.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test verifies that we can do simple mesh rendering with ospray
 // and that VTK's many standard rendering modes (points, lines, surface, with
 // a variety of color controls (actor, point, cell, texture) etc work as
@@ -263,6 +251,11 @@ int TestOSPRayRenderMesh(int argc, char* argv[])
 
     for (int i = 0; i < argc; ++i)
     {
+      if (!strcmp(argv[i], "--OSPRayPT"))
+      {
+        vtkOSPRayRendererNode::SetRendererType("OSPRay pathtracer", renderer);
+        break;
+      }
       if (!strcmp(argv[i], "--OptiX"))
       {
         vtkOSPRayRendererNode::SetRendererType("optix pathtracer", renderer);
@@ -271,9 +264,10 @@ int TestOSPRayRenderMesh(int argc, char* argv[])
     }
   }
   // Now, vary most of the many parameters that rendering can vary by.
+  renderable* ren;
 
   // representations points, wireframe, surface
-  renderable* ren = MakeSphereAt(5, 0, -5, 10, type, rep, "points");
+  ren = MakeSphereAt(5, 0, -5, 10, type, rep, "points");
   ren->a->GetProperty()->SetRepresentationToPoints();
   renderer->AddActor(ren->a);
   delete (ren);

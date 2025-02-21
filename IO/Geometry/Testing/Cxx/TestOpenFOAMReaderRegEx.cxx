@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSimplePointsReaderWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenFOAMReader.h"
 
@@ -47,7 +35,7 @@ int TestOpenFOAMReaderRegEx(int argc, char* argv[])
   // Every time a field at a given patch is read and verified, its data
   // are erased from this data structure, until at the end it should remain
   // totally empty.
-  std::map<std::string, std::map<std::string, std::vector<double> > > expected_data = {
+  std::map<std::string, std::map<std::string, std::vector<double>>> expected_data = {
     {
       "inlet",
       {

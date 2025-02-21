@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBiDimensionalWidget.h,v
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBiDimensionalWidget
  * @brief   measure the bi-dimensional lengths of an object
@@ -96,12 +84,14 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBiDimensionalRepresentation;
 class vtkHandleWidget;
 class vtkBiDimensionalWidgetCallback;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkBiDimensionalWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkBiDimensionalWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -109,13 +99,13 @@ public:
    */
   static vtkBiDimensionalWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for a VTK class.
    */
   vtkTypeMacro(vtkBiDimensionalWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * The method for activating and deactivating this widget. This method
@@ -180,7 +170,7 @@ public:
     Manipulate
   };
 
-  //@{
+  ///@{
   /**
    * Set the state of the widget. If the state is set to "Manipulate" then it
    * is assumed that the widget and its representation will be initialized
@@ -193,7 +183,7 @@ public:
    */
   virtual void SetWidgetStateToStart();
   virtual void SetWidgetStateToManipulate();
-  //@}
+  ///@}
 
   /**
    * Return the current widget state.
@@ -243,4 +233,5 @@ private:
   void operator=(const vtkBiDimensionalWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

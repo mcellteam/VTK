@@ -1,20 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextureObject.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTextureObject.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include "vtkObjectFactory.h"
 
@@ -37,8 +25,8 @@
 
 #include <cassert>
 
-//#define VTK_TO_DEBUG
-//#define VTK_TO_TIMING
+// #define VTK_TO_DEBUG
+// #define VTK_TO_TIMING
 
 #ifdef VTK_TO_TIMING
 #include "vtkTimerLog.h"
@@ -50,46 +38,47 @@
 #define BUFFER_OFFSET(i) (reinterpret_cast<char*>(i))
 
 // Mapping from DepthTextureCompareFunction values to OpenGL values.
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 static GLint OpenGLDepthTextureCompareFunction[8] = { GL_LEQUAL, GL_GEQUAL, GL_LESS, GL_GREATER,
   GL_EQUAL, GL_NOTEQUAL, GL_ALWAYS, GL_NEVER };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static const char* DepthTextureCompareFunctionAsString[8] = { "Lequal", "Gequal", "Less", "Greater",
   "Equal", "NotEqual", "AlwaysTrue", "Never" };
 
 // Mapping from Wrap values to OpenGL values
 #ifndef GL_ES_VERSION_3_0
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static GLint OpenGLWrap[4] = { GL_CLAMP_TO_EDGE, GL_REPEAT, GL_MIRRORED_REPEAT,
   GL_CLAMP_TO_BORDER };
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static const char* WrapAsString[4] = { "ClampToEdge", "Repeat", "MirroredRepeat", "ClampToBorder" };
 
 #else
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static GLint OpenGLWrap[3] = { GL_CLAMP_TO_EDGE, GL_REPEAT, GL_MIRRORED_REPEAT };
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static const char* WrapAsString[3] = { "ClampToEdge", "Repeat", "MirroredRepeat" };
 
 #endif
 
 // Mapping MinificationFilter values to OpenGL values.
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static GLint OpenGLMinFilter[6] = { GL_NEAREST, GL_LINEAR, GL_NEAREST_MIPMAP_NEAREST,
   GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR };
 
 // Mapping MagnificationFilter values to OpenGL values.
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static GLint OpenGLMagFilter[6] = { GL_NEAREST, GL_LINEAR };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static const char* MinMagFilterAsString[6] = { "Nearest", "Linear", "NearestMipmapNearest",
   "NearestMipmapLinear", "LinearMipmapNearest", "LinearMipmapLinear" };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static GLenum OpenGLDepthInternalFormat[7] = {
   GL_DEPTH_COMPONENT,   // native
   GL_DEPTH_COMPONENT,   // fixed8
@@ -112,7 +101,7 @@ static GLenum OpenGLDepthInternalFormat[7] = {
 #endif
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static GLenum OpenGLDepthInternalFormatType[7] = {
   GL_UNSIGNED_INT, GL_UNSIGNED_INT, GL_UNSIGNED_INT, GL_UNSIGNED_INT, GL_UNSIGNED_INT,
 #ifdef GL_DEPTH_COMPONENT32F
@@ -122,10 +111,10 @@ static GLenum OpenGLDepthInternalFormatType[7] = {
 #endif
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkTextureObject);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextureObject::vtkTextureObject()
 {
   this->Context = nullptr;
@@ -172,7 +161,7 @@ vtkTextureObject::vtkTextureObject()
   this->ResetFormatAndType();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextureObject::~vtkTextureObject()
 {
   if (this->ResourceCallback)
@@ -187,8 +176,69 @@ vtkTextureObject::~vtkTextureObject()
     this->ShaderProgram = nullptr;
   }
 }
+//----------------------------------------------------------------------------
+bool vtkTextureObject::IsSupported(vtkOpenGLRenderWindow* vtkNotUsed(win), bool requireTexFloat,
+  bool requireDepthFloat, bool requireTexInt)
+{
+#ifdef GL_ES_VERSION_3_0
+  (void)requireTexFloat;
+  (void)requireDepthFloat;
+  (void)requireTexInt;
+  return true;
+#elif defined(__APPLE__)
+  // Cannot trust glad on apple systems
+  (void)requireTexFloat;
+  (void)requireDepthFloat;
+  (void)requireTexInt;
+  return true;
+#else
+  bool texFloat = true;
+  if (requireTexFloat)
+  {
+    texFloat = (GLAD_GL_ARB_texture_float != 0 && GLAD_GL_ARB_texture_rg != 0);
+  }
+
+  bool depthFloat = true;
+  if (requireDepthFloat)
+  {
+    depthFloat = (GLAD_GL_ARB_depth_buffer_float != 0);
+  }
+
+  bool texInt = true;
+  if (requireTexInt)
+  {
+    texInt = (GLAD_GL_EXT_texture_integer != 0);
+  }
+
+  return texFloat && depthFloat && texInt;
+#endif
+}
 
 //----------------------------------------------------------------------------
+bool vtkTextureObject::LoadRequiredExtensions(vtkOpenGLRenderWindow* renWin)
+{
+#ifdef GL_ES_VERSION_3_0
+  this->SupportsTextureInteger = true;
+  this->SupportsTextureFloat = true;
+  this->SupportsDepthBufferFloat = true;
+#elif defined(__APPLE__)
+  // Cannot trust glad on apple systems. OpenGL 3.2 on apple supports these features.
+  this->SupportsTextureInteger = true;
+  this->SupportsTextureFloat = true;
+  this->SupportsDepthBufferFloat = true;
+#else
+  this->SupportsTextureInteger = (GLAD_GL_EXT_texture_integer != 0);
+
+  this->SupportsTextureFloat = (GLAD_GL_ARB_texture_float != 0 && GLAD_GL_ARB_texture_rg != 0);
+
+  this->SupportsDepthBufferFloat = (GLAD_GL_ARB_depth_buffer_float != 0);
+#endif
+
+  return this->IsSupported(
+    renWin, this->RequireTextureFloat, this->RequireDepthBufferFloat, this->RequireTextureInteger);
+}
+
+//------------------------------------------------------------------------------
 void vtkTextureObject::SetContext(vtkOpenGLRenderWindow* renWin)
 {
   this->ResourceCallback->RegisterGraphicsResources(renWin);
@@ -209,18 +259,24 @@ void vtkTextureObject::SetContext(vtkOpenGLRenderWindow* renWin)
     return;
   }
 
+  if (!this->LoadRequiredExtensions(renWin))
+  {
+    vtkErrorMacro("Required OpenGL extensions not supported by the context.");
+    return;
+  }
+
   // initialize
   this->Context = renWin;
   this->Context->MakeCurrent();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLRenderWindow* vtkTextureObject::GetContext()
 {
   return this->Context;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::DestroyTexture()
 {
   // deactivate it first
@@ -258,7 +314,7 @@ void vtkTextureObject::AssignToExistingTexture(unsigned int handle, unsigned int
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::CreateTexture()
 {
   assert(this->Context);
@@ -286,7 +342,7 @@ void vtkTextureObject::CreateTexture()
       // See: http://www.opengl.org/wiki/Common_Mistakes#Creating_a_complete_texture
       // turn off mip map filter or set the base and max level correctly. here
       // both are done.
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
       if (this->Target != GL_TEXTURE_2D_MULTISAMPLE)
 #endif
       {
@@ -317,7 +373,7 @@ void vtkTextureObject::CreateTexture()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextureObject::GetTextureUnit()
 {
   if (this->Context)
@@ -327,15 +383,18 @@ int vtkTextureObject::GetTextureUnit()
   return -1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::Activate()
 {
   // activate a free texture unit for this texture
-  this->Context->ActivateTexture(this);
-  this->Bind();
+  if (this->Context)
+  {
+    this->Context->ActivateTexture(this);
+    this->Bind();
+  }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::Deactivate()
 {
   if (this->Context)
@@ -344,7 +403,7 @@ void vtkTextureObject::Deactivate()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::ReleaseGraphicsResources(vtkWindow* win)
 {
   if (!this->ResourceCallback->IsReleasing())
@@ -374,16 +433,18 @@ void vtkTextureObject::ReleaseGraphicsResources(vtkWindow* win)
     this->Type = 0;
     this->Components = 0;
     this->Width = this->Height = this->Depth = 0;
+    this->Modified();
   }
   if (this->ShaderProgram)
   {
     this->ShaderProgram->ReleaseGraphicsResources(win);
     delete this->ShaderProgram;
     this->ShaderProgram = nullptr;
+    this->Modified();
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::Bind()
 {
   assert(this->Context);
@@ -398,7 +459,7 @@ void vtkTextureObject::Bind()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::IsBound()
 {
   bool result = false;
@@ -446,7 +507,7 @@ bool vtkTextureObject::IsBound()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::SendParameters()
 {
   assert("pre: is_bound" && this->IsBound());
@@ -458,7 +519,7 @@ void vtkTextureObject::SendParameters()
   }
 #endif
 
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
   if (this->Target == GL_TEXTURE_2D_MULTISAMPLE)
   {
     return;
@@ -472,12 +533,53 @@ void vtkTextureObject::SendParameters()
   glTexParameteri(this->Target, GL_TEXTURE_WRAP_R, OpenGLWrap[this->WrapR]);
 #endif
 
+#ifdef __EMSCRIPTEN__
+  // Web browsers are over-eager in validating texture completeness.
+  // Even though spec says that depth textures can be filterable by treating
+  // them as red textures, browsers do not seem to implement it.
+  // This section of code ignores requests to enable linear filtering for depth textures. Otherwise,
+  // 1. In firefox, sampling this texture in a shader will return 0 and console throws a warning
+  // saying that texture is incomplete.
+  // 2. In chromium, this texture cannot be sampled.
+  // See https://groups.google.com/g/webgl-dev-list/c/T4_bKNzEhqk
+  if (this->Format == GL_DEPTH_COMPONENT)
+  {
+    if (this->MinificationFilter != Nearest && this->MinificationFilter != NearestMipmapNearest)
+    {
+      vtkDebugMacro(<< "Ignoring request to enable linear minification filtering for texture with "
+                       "format=GL_DEPTH_COMPONENT");
+    }
+    else
+    {
+      glTexParameteri(
+        this->Target, GL_TEXTURE_MIN_FILTER, OpenGLMinFilter[this->MinificationFilter]);
+    }
+    if (this->MagnificationFilter != Nearest && this->MagnificationFilter != NearestMipmapNearest)
+    {
+      vtkDebugMacro(<< "Ignoring request to enable linear magnification filtering for texture with "
+                       "format=GL_DEPTH_COMPONENT");
+    }
+    else
+    {
+      glTexParameteri(
+        this->Target, GL_TEXTURE_MAG_FILTER, OpenGLMagFilter[this->MagnificationFilter]);
+    }
+  }
+  else
+  {
+    glTexParameteri(this->Target, GL_TEXTURE_MIN_FILTER, OpenGLMinFilter[this->MinificationFilter]);
+    glTexParameteri(
+      this->Target, GL_TEXTURE_MAG_FILTER, OpenGLMagFilter[this->MagnificationFilter]);
+  }
+#else
   glTexParameteri(this->Target, GL_TEXTURE_MIN_FILTER, OpenGLMinFilter[this->MinificationFilter]);
 
   glTexParameteri(this->Target, GL_TEXTURE_MAG_FILTER, OpenGLMagFilter[this->MagnificationFilter]);
+#endif
 
 #ifndef GL_ES_VERSION_3_0
   glTexParameterfv(this->Target, GL_TEXTURE_BORDER_COLOR, this->BorderColor);
+#endif
 
   if (this->DepthTextureCompare)
   {
@@ -487,11 +589,10 @@ void vtkTextureObject::SendParameters()
   {
     glTexParameteri(this->Target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
   }
-#endif
 
   // if mipmaps are requested also turn on anisotropic if available
 #ifdef GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
-  if (GLEW_EXT_texture_filter_anisotropic)
+  if (GLAD_GL_EXT_texture_filter_anisotropic)
   {
     float aniso = 0.0f;
     glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso);
@@ -515,7 +616,7 @@ void vtkTextureObject::SendParameters()
   this->SendParametersTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetInternalFormat(
   int vtktype, int numComps, bool shaderSupportsTextureInt)
 {
@@ -545,7 +646,7 @@ unsigned int vtkTextureObject::GetInternalFormat(
   return this->InternalFormat;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetDefaultInternalFormat(
   int vtktype, int numComps, bool shaderSupportsTextureInt)
 {
@@ -585,7 +686,7 @@ unsigned int vtkTextureObject::GetDefaultInternalFormat(
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::SetInternalFormat(unsigned int glInternalFormat)
 {
   if (this->InternalFormat != glInternalFormat)
@@ -595,7 +696,7 @@ void vtkTextureObject::SetInternalFormat(unsigned int glInternalFormat)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int vtkGetVTKType(GLenum gltype)
 {
   // DON'T DEAL with VTK_CHAR as this is platform dependent.
@@ -667,7 +768,7 @@ void vtkTextureObject::GetShiftAndScale(float& shift, float& scale)
       shift = scale + VTK_INT_MIN;
       break;
     case GL_UNSIGNED_INT:
-      scale = VTK_UNSIGNED_INT_MAX;
+      scale = static_cast<float>(VTK_UNSIGNED_INT_MAX);
       shift = 0.0;
       break;
     case GL_FLOAT:
@@ -676,7 +777,7 @@ void vtkTextureObject::GetShiftAndScale(float& shift, float& scale)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetFormat(int vtktype, int numComps, bool shaderSupportsTextureInt)
 {
   if (!this->Format)
@@ -686,7 +787,7 @@ unsigned int vtkTextureObject::GetFormat(int vtktype, int numComps, bool shaderS
   return this->Format;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetDefaultFormat(
   int vtktype, int numComps, bool shaderSupportsTextureInt)
 {
@@ -695,7 +796,6 @@ unsigned int vtkTextureObject::GetDefaultFormat(
     return GL_DEPTH_COMPONENT;
   }
 
-#ifndef GL_ES_VERSION_3_0
   if (this->SupportsTextureInteger && shaderSupportsTextureInt &&
     (vtktype == VTK_SIGNED_CHAR || vtktype == VTK_UNSIGNED_CHAR || vtktype == VTK_SHORT ||
       vtktype == VTK_UNSIGNED_SHORT || vtktype == VTK_INT || vtktype == VTK_UNSIGNED_INT))
@@ -706,10 +806,17 @@ unsigned int vtkTextureObject::GetDefaultFormat(
         return GL_RED_INTEGER;
       case 2:
         return GL_RG_INTEGER;
+#ifdef GL_ES_VERSION_3_0
+      case 3:
+        return GL_RGB_INTEGER;
+      case 4:
+        return GL_RGBA_INTEGER;
+#else
       case 3:
         return GL_RGB_INTEGER_EXT;
       case 4:
         return GL_RGBA_INTEGER_EXT;
+#endif
     }
   }
   else
@@ -725,32 +832,11 @@ unsigned int vtkTextureObject::GetDefaultFormat(
       case 4:
         return GL_RGBA;
     }
-#else
-  {
-    switch (numComps)
-    {
-#ifdef GL_RED
-      case 1:
-        return GL_RED;
-      case 2:
-        return GL_RG;
-#else
-      case 1:
-        return GL_LUMINANCE;
-      case 2:
-        return GL_LUMINANCE_ALPHA;
-#endif
-      case 3:
-        return GL_RGB;
-      case 4:
-        return GL_RGBA;
-    }
-#endif
   }
   return GL_RGB;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::SetFormat(unsigned int glFormat)
 {
   if (this->Format != glFormat)
@@ -760,7 +846,7 @@ void vtkTextureObject::SetFormat(unsigned int glFormat)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::ResetFormatAndType()
 {
   this->Format = 0;
@@ -768,7 +854,7 @@ void vtkTextureObject::ResetFormatAndType()
   this->Type = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextureObject::GetDefaultDataType(int vtk_scalar_type)
 {
   // DON'T DEAL with VTK_CHAR as this is platform dependent.
@@ -799,13 +885,13 @@ int vtkTextureObject::GetDefaultDataType(int vtk_scalar_type)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextureObject::GetVTKDataType()
 {
   return ::vtkGetVTKType(this->Type);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextureObject::GetDataType(int vtk_scalar_type)
 {
   if (!this->Type)
@@ -816,7 +902,7 @@ int vtkTextureObject::GetDataType(int vtk_scalar_type)
   return this->Type;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::SetDataType(unsigned int glType)
 {
   if (this->Type != glType)
@@ -826,7 +912,7 @@ void vtkTextureObject::SetDataType(unsigned int glType)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetMinificationFilterMode(int vtktype)
 {
   switch (vtktype)
@@ -848,7 +934,7 @@ unsigned int vtkTextureObject::GetMinificationFilterMode(int vtktype)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetMagnificationFilterMode(int vtktype)
 {
   switch (vtktype)
@@ -862,7 +948,7 @@ unsigned int vtkTextureObject::GetMagnificationFilterMode(int vtktype)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetWrapSMode(int vtktype)
 {
   switch (vtktype)
@@ -882,13 +968,13 @@ unsigned int vtkTextureObject::GetWrapSMode(int vtktype)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetWrapTMode(int vtktype)
 {
   return this->GetWrapSMode(vtktype);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkTextureObject::GetWrapRMode(int vtktype)
 {
   return this->GetWrapSMode(vtktype);
@@ -897,7 +983,7 @@ unsigned int vtkTextureObject::GetWrapRMode(int vtktype)
 // 1D  textures are not supported in ES 2.0 or 3.0
 #ifndef GL_ES_VERSION_3_0
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::Create1D(
   int numComps, vtkPixelBufferObject* pbo, bool shaderSupportsTextureInt)
 {
@@ -932,7 +1018,7 @@ bool vtkTextureObject::Create1D(
   pbo->Bind(vtkPixelBufferObject::UNPACKED_BUFFER);
 
   // Source texture data from the PBO.
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  this->Context->GetState()->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexImage1D(target, 0, static_cast<GLint>(internalFormat),
     static_cast<GLsizei>(pbo->GetSize() / static_cast<unsigned int>(numComps)), 0, format, type,
     BUFFER_OFFSET(0));
@@ -951,7 +1037,7 @@ bool vtkTextureObject::Create1D(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::Create1DFromRaw(unsigned int width, int numComps, int dataType, void* data)
 {
   assert(this->Context);
@@ -1018,6 +1104,16 @@ bool vtkTextureObject::CreateTextureBuffer(
   this->CreateTexture();
   this->Bind();
 
+  int maxSize = -1;
+  this->Context->GetState()->vtkglGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &maxSize);
+  if (maxSize > 0 && static_cast<unsigned int>(maxSize) < numValues)
+  {
+    vtkErrorMacro("Attempt to use a texture buffer exceeding your hardware's limits. "
+                  "This can happen when trying to color by cell data with a large dataset. "
+                  "Hardware limit is "
+      << maxSize << " values while " << numValues << " was requested.");
+  }
+
   // Source texture data from the PBO.
   glTexBuffer(this->Target, this->InternalFormat, this->BufferObject->GetHandle());
 
@@ -1030,21 +1126,171 @@ bool vtkTextureObject::CreateTextureBuffer(
 
 #else
 
+// Emulate 1D textures as 2D. Note that the any shader code will likely
+// have to be modified as well for this to work.
+
+//------------------------------------------------------------------------------
+bool vtkTextureObject::Create1D(
+  int numComps, vtkPixelBufferObject* pbo, bool shaderSupportsTextureInt)
+{
+  assert(this->Context);
+  assert(pbo->GetContext() == this->Context.GetPointer());
+
+  GLenum target = GL_TEXTURE_2D;
+
+  // Now, determine texture parameters using the information from the pbo.
+
+  // * internalFormat depends on number of components and the data type.
+  GLenum internalFormat =
+    this->GetInternalFormat(pbo->GetType(), numComps, shaderSupportsTextureInt);
+
+  // * format depends on the number of components.
+  GLenum format = this->GetFormat(pbo->GetType(), numComps, shaderSupportsTextureInt);
+
+  // * type if the data type in the pbo
+  GLenum type = this->GetDefaultDataType(pbo->GetType());
+
+  if (!internalFormat || !format || !type)
+  {
+    vtkErrorMacro("Failed to determine texture parameters.");
+    return false;
+  }
+
+  this->Target = target;
+  this->Context->ActivateTexture(this);
+  this->CreateTexture();
+  this->Bind();
+
+  pbo->Bind(vtkPixelBufferObject::UNPACKED_BUFFER);
+
+  // Source texture data from the PBO.
+  this->Context->GetState()->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glTexImage2D(target, 0, static_cast<GLint>(internalFormat),
+    static_cast<GLsizei>(pbo->GetSize() / static_cast<unsigned int>(numComps)), 1, 0, format, type,
+    BUFFER_OFFSET(0));
+  vtkOpenGLCheckErrorMacro("failed at glTexImage1D");
+  pbo->UnBind();
+  this->Deactivate();
+
+  this->Target = target;
+  this->Format = format;
+  this->Type = type;
+  this->Components = numComps;
+  this->Width = pbo->GetSize();
+  this->Height = 1;
+  this->Depth = 1;
+  this->NumberOfDimensions = 1;
+  return true;
+}
+
+//------------------------------------------------------------------------------
+bool vtkTextureObject::Create1DFromRaw(unsigned int width, int numComps, int dataType, void* data)
+{
+  assert(this->Context);
+
+  // Now determine the texture parameters using the arguments.
+  this->GetDataType(dataType);
+  this->GetInternalFormat(dataType, numComps, false);
+  this->GetFormat(dataType, numComps, false);
+
+  if (!this->InternalFormat || !this->Format || !this->Type)
+  {
+    vtkErrorMacro("Failed to determine texture parameters.");
+    return false;
+  }
+
+  GLenum target = GL_TEXTURE_2D;
+  this->Target = target;
+  this->Components = numComps;
+  this->Width = width;
+  this->Height = 1;
+  this->Depth = 1;
+  this->NumberOfDimensions = 1;
+  this->Context->ActivateTexture(this);
+  this->CreateTexture();
+  this->Bind();
+
+  glTexImage2D(this->Target, 0, this->InternalFormat, static_cast<GLsizei>(this->Width), 1, 0,
+    this->Format, this->Type, static_cast<const GLvoid*>(data));
+
+  vtkOpenGLCheckErrorMacro("failed at glTexImage1D");
+
+  this->Deactivate();
+  return true;
+}
+
 // Description:
 // Create a texture buffer basically a 1D texture that can be
 // very large for passing data into the fragment shader
+//------------------------------------------------------------------------------
 bool vtkTextureObject::CreateTextureBuffer(
   unsigned int numValues, int numComps, int dataType, vtkOpenGLBufferObject* bo)
 {
-  assert(this->Context);
-  vtkErrorMacro("TextureBuffers not supported in OPenGL ES");
-  // TODO: implement 1D and Texture buffers using 2D textures
-  return false;
+  return this->EmulateTextureBufferWith2DTextures(numValues, numComps, dataType, bo);
 }
 
 #endif // not ES 2.0 or 3.0
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+bool vtkTextureObject::EmulateTextureBufferWith2DTextures(
+  unsigned int numValues, int numComps, int dataType, vtkOpenGLBufferObject* bo)
+{
+  assert(this->Context);
+  auto ostate = this->GetContext()->GetState();
+  int maxSize = 0;
+  ostate->vtkglGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
+  if (numValues > static_cast<unsigned int>(maxSize * maxSize))
+  {
+    vtkErrorMacro("Requested texture buffer size exceeds hardware limits. "
+                  "On the current OpenGL device, GL_MAX_TEXTURE_SIZE x GL_MAX_TEXTURE_SIZE = "
+      << maxSize << " values. However, requested size is " << numValues << ".");
+    return false;
+  }
+  else
+  {
+    unsigned int maxTexDim = maxSize;
+    int width = numValues > maxTexDim ? maxTexDim : numValues % (maxTexDim + 1);
+    int height = vtkMath::Ceil(static_cast<double>(numValues) / width);
+
+    // copy data from 'src' array buffer object to a pbo's unpacked buffer.
+    GLenum srcTarget = GL_ARRAY_BUFFER;
+    GLenum dstTarget = GL_PIXEL_UNPACK_BUFFER;
+    if (bo->GetType() == vtkOpenGLBufferObject::ElementArrayBuffer)
+    {
+      srcTarget = GL_ELEMENT_ARRAY_BUFFER;
+    }
+    bo->Bind();
+    // issue 3 (https://registry.khronos.org/OpenGL/extensions/ARB/ARB_pixel_buffer_object.txt)
+    // says it's alright to bind any b.o (GL_ARRAY_BUFFER, etc) to unpacked buffer
+    // and go ahead with glTexImage,
+    // however, issue 4 cautions that some driver implementations
+    // may perform sub-optimally. so let's do a b.o->b.o copy instead of shortcuts.
+    vtkNew<vtkPixelBufferObject> pbo;
+    pbo->SetContext(this->GetContext());
+    pbo->Allocate(dataType, width * height, numComps, vtkPixelBufferObject::UNPACKED_BUFFER);
+    pbo->BindToUnPackedBuffer();
+    // transfers within gpu memory space on most GL driver implementations.
+    glCopyBufferSubData(srcTarget, dstTarget, 0, 0, bo->GetSize());
+    vtkOpenGLCheckErrors("glCopyBufferSubData ");
+
+    // Get rid of the original buffer data
+    bo->ReleaseGraphicsResources();
+    // unbind
+    pbo->UnBind();
+
+    // source a 2D texture with the pbo.
+    const int vtktype = pbo->GetType();
+    bool isIntegral = false;
+    switch (vtktype)
+    {
+      vtkTemplateMacro(isIntegral = std::is_integral<VTK_TT>());
+    }
+    this->Create2D(width, height, numComps, pbo, isIntegral);
+    return true;
+  }
+}
+
+//------------------------------------------------------------------------------
 bool vtkTextureObject::Create2D(unsigned int width, unsigned int height, int numComps,
   vtkPixelBufferObject* pbo, bool shaderSupportsTextureInt)
 {
@@ -1083,7 +1329,7 @@ bool vtkTextureObject::Create2D(unsigned int width, unsigned int height, int num
 
   // Source texture data from the PBO.
   pbo->Bind(vtkPixelBufferObject::UNPACKED_BUFFER);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  this->Context->GetState()->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   glTexImage2D(target, 0, internalFormat, static_cast<GLsizei>(width), static_cast<GLsizei>(height),
     0, format, type, BUFFER_OFFSET(0));
@@ -1105,7 +1351,7 @@ bool vtkTextureObject::Create2D(unsigned int width, unsigned int height, int num
   return true;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Create a 2D depth texture using a PBO.
 bool vtkTextureObject::CreateDepth(
@@ -1137,7 +1383,7 @@ bool vtkTextureObject::CreateDepth(
   pbo->Bind(vtkPixelBufferObject::UNPACKED_BUFFER);
 
   // Source texture data from the PBO.
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  this->Context->GetState()->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexImage2D(this->Target, 0, static_cast<GLint>(inFormat), static_cast<GLsizei>(width),
     static_cast<GLsizei>(height), 0, this->Format, this->Type, BUFFER_OFFSET(0));
   vtkOpenGLCheckErrorMacro("failed at glTexImage2D");
@@ -1146,7 +1392,7 @@ bool vtkTextureObject::CreateDepth(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::Create3D(unsigned int width, unsigned int height, unsigned int depth,
   int numComps, vtkPixelBufferObject* pbo, bool shaderSupportsTextureInt)
 {
@@ -1211,7 +1457,7 @@ bool vtkTextureObject::Create3D(unsigned int width, unsigned int height, unsigne
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject* vtkTextureObject::Download(unsigned int target, unsigned int level)
 {
   assert(this->Context);
@@ -1244,6 +1490,8 @@ vtkPixelBufferObject* vtkTextureObject::Download(unsigned int target, unsigned i
 #ifndef GL_ES_VERSION_3_0
   glGetTexImage(target, level, this->Format, this->Type, BUFFER_OFFSET(0));
 #else
+  (void)level;
+  (void)target;
   // you can do something with glReadPixels and binding a texture as a FBO
   // I believe for ES 2.0
 #endif
@@ -1257,13 +1505,13 @@ vtkPixelBufferObject* vtkTextureObject::Download(unsigned int target, unsigned i
   return pbo;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixelBufferObject* vtkTextureObject::Download()
 {
   return this->Download(this->Target, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::Create3DFromRaw(unsigned int width, unsigned int height, unsigned int depth,
   int numComps, int dataType, void* data)
 {
@@ -1293,7 +1541,7 @@ bool vtkTextureObject::Create3DFromRaw(unsigned int width, unsigned int height, 
   this->Bind();
 
   // Source texture data from the PBO.
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  this->Context->GetState()->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   glTexImage3D(this->Target, 0, this->InternalFormat, static_cast<GLsizei>(this->Width),
     static_cast<GLsizei>(this->Height), static_cast<GLsizei>(this->Depth), 0, this->Format,
@@ -1304,9 +1552,9 @@ bool vtkTextureObject::Create3DFromRaw(unsigned int width, unsigned int height, 
   return vtkOpenGLCheckErrors("Failed to allocate 3D texture.");
 }
 
-//----------------------------------------------------------------------------
-bool vtkTextureObject::AllocateProxyTexture3D(unsigned int const width, unsigned int const height,
-  unsigned int depth, int const numComps, int const dataType)
+//------------------------------------------------------------------------------
+bool vtkTextureObject::AllocateProxyTexture3D(
+  unsigned int width, unsigned int height, unsigned int depth, int numComps, int dataType)
 {
 #ifndef GL_ES_VERSION_3_0
   assert(this->Context);
@@ -1336,15 +1584,18 @@ bool vtkTextureObject::AllocateProxyTexture3D(unsigned int const width, unsigned
   vtkOpenGLCheckErrorMacro("Failed after glTexImage3D with PROXY target");
   this->Deactivate();
 
-  if (testWidth == 0)
-  {
-    return false;
-  }
-#endif
+  return testWidth != 0;
+#else
+  (void)width;
+  (void)height;
+  (void)depth;
+  (void)numComps;
+  (void)dataType;
   return true;
+#endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::Create2DFromRaw(
   unsigned int width, unsigned int height, int numComps, int dataType, void* data)
 {
@@ -1374,7 +1625,7 @@ bool vtkTextureObject::Create2DFromRaw(
   this->Bind();
 
   // Source texture data from the PBO.
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  this->Context->GetState()->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   glTexImage2D(this->Target, 0, this->InternalFormat, static_cast<GLsizei>(this->Width),
     static_cast<GLsizei>(this->Height), 0, this->Format, this->Type,
@@ -1386,7 +1637,7 @@ bool vtkTextureObject::Create2DFromRaw(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::CreateCubeFromRaw(
   unsigned int width, unsigned int height, int numComps, int dataType, void* data[6])
 {
@@ -1416,7 +1667,7 @@ bool vtkTextureObject::CreateCubeFromRaw(
   this->Bind();
 
   // Source texture data from the PBO.
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  this->Context->GetState()->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   for (int i = 0; i < 6; i++)
   {
@@ -1429,13 +1680,14 @@ bool vtkTextureObject::CreateCubeFromRaw(
   if (this->GenerateMipmap)
   {
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    vtkOpenGLCheckErrorMacro("failed at glGenerateMipmap ");
   }
 
   this->Deactivate();
   return true;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Create a 2D depth texture using a raw pointer.
 // This is a blocking call. If you can, use PBO instead.
@@ -1473,7 +1725,7 @@ bool vtkTextureObject::CreateDepthFromRaw(
   this->CreateTexture();
   this->Bind();
 
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  this->Context->GetState()->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexImage2D(this->Target, 0, static_cast<GLint>(this->InternalFormat),
     static_cast<GLsizei>(this->Width), static_cast<GLsizei>(this->Height), 0, this->Format,
     this->Type, raw);
@@ -1482,14 +1734,14 @@ bool vtkTextureObject::CreateDepthFromRaw(
   return true;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::AllocateDepth(unsigned int width, unsigned int height, int internalFormat)
 {
   assert("pre: context_exists" && this->GetContext() != nullptr);
   assert(
     "pre: valid_internalFormat" && internalFormat >= 0 && internalFormat < NumberOfDepthFormats);
 
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
   this->Target = (this->Samples ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D);
 #else
   this->Target = GL_TEXTURE_2D;
@@ -1518,7 +1770,7 @@ bool vtkTextureObject::AllocateDepth(unsigned int width, unsigned int height, in
   this->CreateTexture();
   this->Bind();
 
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
   if (this->Samples)
   {
     glTexImage2DMultisample(this->Target, this->Samples, static_cast<GLint>(this->InternalFormat),
@@ -1542,7 +1794,7 @@ bool vtkTextureObject::AllocateDepthStencil(unsigned int width, unsigned int hei
 {
   assert("pre: context_exists" && this->GetContext() != nullptr);
 
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
   this->Target = (this->Samples ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D);
 #else
   this->Target = GL_TEXTURE_2D;
@@ -1562,7 +1814,7 @@ bool vtkTextureObject::AllocateDepthStencil(unsigned int width, unsigned int hei
   this->CreateTexture();
   this->Bind();
 
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
   if (this->Samples)
   {
     glTexImage2DMultisample(this->Target, this->Samples, static_cast<GLint>(this->InternalFormat),
@@ -1582,7 +1834,7 @@ bool vtkTextureObject::AllocateDepthStencil(unsigned int width, unsigned int hei
   return true;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTextureObject::Allocate1D(unsigned int width, int numComps, int vtkType)
 {
 #ifdef GL_TEXTURE_1D
@@ -1609,11 +1861,14 @@ bool vtkTextureObject::Allocate1D(unsigned int width, int numComps, int vtkType)
   this->Deactivate();
   return true;
 #else
+  (void)width;
+  (void)numComps;
+  (void)vtkType;
   return false;
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Create a 2D color texture but does not initialize its values.
 // Internal format is deduced from numComps and vtkType.
@@ -1622,7 +1877,7 @@ bool vtkTextureObject::Allocate2D(
 {
   assert(this->Context);
 
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
   this->Target = (this->Samples ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D);
 #else
   this->Target = GL_TEXTURE_2D;
@@ -1642,7 +1897,7 @@ bool vtkTextureObject::Allocate2D(
   this->CreateTexture();
   this->Bind();
 
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
   if (this->Samples)
   {
     glTexImage2DMultisample(this->Target, this->Samples, static_cast<GLint>(this->InternalFormat),
@@ -1660,7 +1915,7 @@ bool vtkTextureObject::Allocate2D(
   return true;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Create a 3D color texture but does not initialize its values.
 // Internal format is deduced from numComps and vtkType.
@@ -1700,13 +1955,13 @@ bool vtkTextureObject::Allocate3D(
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::CopyToFrameBuffer(vtkShaderProgram* program, vtkOpenGLVertexArrayObject* vao)
 {
   // the following math really only works when texture
   // and viewport are of the same dimensions
-  float minXTexCoord = static_cast<float>(static_cast<double>(0.5) / this->Width);
-  float minYTexCoord = static_cast<float>(static_cast<double>(0.5) / this->Height);
+  float minXTexCoord = static_cast<float>(0.5 / this->Width);
+  float minYTexCoord = static_cast<float>(0.5 / this->Height);
 
   float maxXTexCoord = static_cast<float>(static_cast<double>(this->Width - 0.5) / this->Width);
   float maxYTexCoord = static_cast<float>(static_cast<double>(this->Height - 0.5) / this->Height);
@@ -1719,7 +1974,7 @@ void vtkTextureObject::CopyToFrameBuffer(vtkShaderProgram* program, vtkOpenGLVer
   this->CopyToFrameBuffer(tcoords, verts, program, vao);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::CopyToFrameBuffer(int srcXmin, int srcYmin, int srcXmax, int srcYmax,
   int dstXmin, int dstYmin, int dstSizeX, int dstSizeY, vtkShaderProgram* program,
   vtkOpenGLVertexArrayObject* vao)
@@ -1731,7 +1986,7 @@ void vtkTextureObject::CopyToFrameBuffer(int srcXmin, int srcYmin, int srcXmax, 
     dstSizeX, dstSizeY, program, vao);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::CopyToFrameBuffer(int srcXmin, int srcYmin, int srcXmax, int srcYmax,
   int dstXmin, int dstYmin, int dstXmax, int dstYmax, int vtkNotUsed(dstSizeX),
   int vtkNotUsed(dstSizeY), vtkShaderProgram* program, vtkOpenGLVertexArrayObject* vao)
@@ -1821,7 +2076,7 @@ void vtkTextureObject::CopyToFrameBuffer(
   vtkOpenGLCheckErrorMacro("failed after CopyToFrameBuffer");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Copy a sub-part of a logical buffer of the framebuffer (color or depth)
 // to the texture object. src is the framebuffer, dst is the texture.
@@ -1864,11 +2119,8 @@ void vtkTextureObject::CopyFromFrameBuffer(
 
     // Now blit to resolve the MSAA and get an anti-aliased rendering in
     // resolvedFBO.
-    // Note: extents are (x-min, x-max, y-min, y-max).
-    const int srcExtents[4] = { srcXmin, srcXmin + width, srcYmin, srcYmin + height };
-    const int destExtents[4] = { 0, width, 0, height };
-    vtkOpenGLFramebufferObject::Blit(
-      srcExtents, destExtents, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    this->Context->GetState()->vtkglBlitFramebuffer(srcXmin, srcYmin, srcXmin + width,
+      srcYmin + height, 0, 0, width, height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
     // Now make the resolvedFBO the read buffer and read from it.
     this->Context->GetState()->PushReadFramebufferBinding();
@@ -1891,7 +2143,7 @@ void vtkTextureObject::CopyFromFrameBuffer(
   vtkOpenGLCheckErrorMacro("failed at glCopyTexImage2D " << this->InternalFormat);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextureObject::GetMaximumTextureSize(vtkOpenGLRenderWindow* context)
 {
   int maxSize = -1;
@@ -1903,7 +2155,7 @@ int vtkTextureObject::GetMaximumTextureSize(vtkOpenGLRenderWindow* context)
   return maxSize;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextureObject::GetMaximumTextureSize3D(vtkOpenGLRenderWindow* context)
 {
   GLint maxSize = -1;
@@ -1915,14 +2167,14 @@ int vtkTextureObject::GetMaximumTextureSize3D(vtkOpenGLRenderWindow* context)
   return static_cast<int>(maxSize);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextureObject::GetMaximumTextureSize3D()
 {
   assert("Context == nullptr" && this->Context);
   return vtkTextureObject::GetMaximumTextureSize3D(this->Context);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::Resize(unsigned int width, unsigned int height)
 {
   if (this->Width == width && this->Height == height)
@@ -1938,7 +2190,7 @@ void vtkTextureObject::Resize(unsigned int width, unsigned int height)
 
   if (this->NumberOfDimensions == 2)
   {
-#ifdef GL_TEXTURE_2D_MULTISAMPLE
+#ifdef glTexImage2DMultisample
     if (this->Samples)
     {
       glTexImage2DMultisample(this->Target, this->Samples, static_cast<GLint>(this->InternalFormat),
@@ -1970,7 +2222,7 @@ void vtkTextureObject::Resize(unsigned int width, unsigned int height)
   this->Deactivate();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureObject::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -2026,3 +2278,4 @@ void vtkTextureObject::PrintSelf(ostream& os, vtkIndent indent)
      << DepthTextureCompareFunctionAsString[this->DepthTextureCompareFunction] << endl;
   os << indent << "GenerateMipmap: " << this->GenerateMipmap << endl;
 }
+VTK_ABI_NAMESPACE_END

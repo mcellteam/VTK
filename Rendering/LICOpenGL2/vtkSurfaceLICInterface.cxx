@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSurfaceLICInterface.h"
 
 #include "vtkFloatArray.h"
@@ -31,7 +20,6 @@
 #include "vtkScalarsToColors.h"
 #include "vtkShaderProgram.h"
 #include "vtkSurfaceLICComposite.h"
-#include "vtkTextureObjectVS.h"
 
 #include "vtkOpenGLIndexBufferObject.h"
 #include "vtkOpenGLVertexArrayObject.h"
@@ -41,6 +29,7 @@
 #include "vtkSurfaceLICHelper.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <deque>
@@ -60,18 +49,21 @@ typedef vtkLineIntegralConvolution2D vtkLIC2D;
 #include "vtkTextureIO.h"
 #include <sstream>
 using std::ostringstream;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 static std::string mpifn(vtkPainterCommunicator* comm, const char* fn)
 {
   ostringstream oss;
   oss << comm->GetRank() << "_" << fn;
   return oss.str();
 }
+VTK_ABI_NAMESPACE_END
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkSurfaceLICInterface);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSurfaceLICInterface::vtkSurfaceLICInterface()
 {
   this->Internals = new vtkSurfaceLICHelper();
@@ -116,7 +108,7 @@ vtkSurfaceLICInterface::vtkSurfaceLICInterface()
   this->CompositeStrategy = COMPOSITE_AUTO;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSurfaceLICInterface::~vtkSurfaceLICInterface()
 {
 #if vtkSurfaceLICInterfaceDEBUG >= 1
@@ -339,7 +331,7 @@ void vtkSurfaceLICInterface::ApplyLIC()
   // of aspect ratio which is pretty insane...
   // convert from window units to texture units
   // this isn't correct since there's no way to account
-  // for anisotropy in the trasnform to texture space
+  // for anisotropy in the transform to texture space
   double tcScale[2] = { 1.0 / this->Internals->Viewsize[0], 1.0 / this->Internals->Viewsize[1] };
 
   double stepSize = this->StepSize * sqrt(tcScale[0] * tcScale[0] + tcScale[1] * tcScale[1]);
@@ -518,7 +510,7 @@ void vtkSurfaceLICInterface::CombineColorsAndLIC()
 
     vtkSurfaceLICHelper::StreamingFindMinMax(fbo, this->Internals->BlockExts, LMin, LMax);
 
-    if (this->Internals->BlockExts.size() && ((LMax <= LMin) || (LMin < 0.0f) || (LMax > 1.0f)))
+    if (!this->Internals->BlockExts.empty() && ((LMax <= LMin) || (LMin < 0.0f) || (LMax > 1.0f)))
     {
       vtkErrorMacro(<< comm->GetRank() << ": Invalid range " << LMin << ", " << LMax
                     << " for color contrast enhancement");
@@ -634,14 +626,14 @@ void vtkSurfaceLICInterface::CopyToScreen()
   this->Internals->Updated();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::ReleaseGraphicsResources(vtkWindow* win)
 {
   this->Internals->ReleaseGraphicsResources(win);
   this->Internals->Context = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #define vtkSetMonitoredParameterMacro(_name, _type, _code)                                         \
   void vtkSurfaceLICInterface::Set##_name(_type val)                                               \
   {                                                                                                \
@@ -735,7 +727,7 @@ vtkSetMonitoredParameterMacro(
   HighColorContrastEnhancementFactor, double, val = val < 0.0 ? 0.0 : val;
   val = val > 1.0 ? 1.0 : val;);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::SetMaskColor(double* val)
 {
   double rgb[3];
@@ -757,7 +749,7 @@ void vtkSurfaceLICInterface::SetMaskColor(double* val)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::SetEnhanceContrast(int val)
 {
   val = val < ENHANCE_CONTRAST_OFF ? ENHANCE_CONTRAST_OFF : val;
@@ -771,7 +763,7 @@ void vtkSurfaceLICInterface::SetEnhanceContrast(int val)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::SetNoiseDataSet(vtkImageData* data)
 {
   if (data == this->Internals->Noise)
@@ -783,7 +775,7 @@ void vtkSurfaceLICInterface::SetNoiseDataSet(vtkImageData* data)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkSurfaceLICInterface::GetNoiseDataSet()
 {
   if (this->Internals->Noise == nullptr)
@@ -849,7 +841,7 @@ vtkImageData* vtkSurfaceLICInterface::GetNoiseDataSet()
   return this->Internals->Noise;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::UpdateNoiseImage(vtkRenderWindow* renWin)
 {
   vtkOpenGLRenderWindow* rw = vtkOpenGLRenderWindow::SafeDownCast(renWin);
@@ -886,7 +878,7 @@ void vtkSurfaceLICInterface::UpdateNoiseImage(vtkRenderWindow* renWin)
   tex->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSurfaceLICInterface::IsSupported(vtkRenderWindow* renWin)
 {
   vtkOpenGLRenderWindow* context = vtkOpenGLRenderWindow::SafeDownCast(renWin);
@@ -894,7 +886,7 @@ bool vtkSurfaceLICInterface::IsSupported(vtkRenderWindow* renWin)
   return vtkSurfaceLICHelper::IsSupported(context);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSurfaceLICInterface::CanRenderSurfaceLIC(vtkActor* actor)
 {
   // check the render context for GL feature support
@@ -942,7 +934,7 @@ void BuildAShader(
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::InitializeResources()
 {
   bool initialized = true;
@@ -1019,7 +1011,7 @@ void vtkSurfaceLICInterface::InitializeResources()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSurfaceLICInterface::NeedToUpdateCommunicator()
 {
   // no comm or externally modified parameters
@@ -1038,7 +1030,7 @@ bool vtkSurfaceLICInterface::NeedToUpdateCommunicator()
   return this->Internals->CommunicatorNeedsUpdate;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::ValidateContext(vtkRenderer* renderer)
 {
   bool modified = false;
@@ -1094,19 +1086,19 @@ bool vtkSurfaceLICInterface::GetHasVectors()
   return this->Internals->HasVectors;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPainterCommunicator* vtkSurfaceLICInterface::GetCommunicator()
 {
   return this->Internals->Communicator;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPainterCommunicator* vtkSurfaceLICInterface::CreateCommunicator(int)
 {
   return new vtkPainterCommunicator;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::CreateCommunicator(
   vtkRenderer* ren, vtkActor* act, vtkDataObject* input)
 {
@@ -1127,13 +1119,13 @@ void vtkSurfaceLICInterface::CreateCommunicator(
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::SetUpdateAll()
 {
   this->Internals->UpdateAll();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICInterface::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1172,3 +1164,4 @@ void vtkSurfaceLICInterface::PrintSelf(ostream& os, vtkIndent indent)
      << indent << "AlwaysUpdate=" << this->AlwaysUpdate << endl
      << indent << "CompositeStrategy=" << this->CompositeStrategy << endl;
 }
+VTK_ABI_NAMESPACE_END

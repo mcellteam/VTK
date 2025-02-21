@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageGaussianSmooth.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageGaussianSmooth.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageGaussianSmooth);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageGaussianSmooth::vtkImageGaussianSmooth()
 {
   this->Dimensionality = 3; // note: this overrides Standard deviation.
@@ -36,10 +25,10 @@ vtkImageGaussianSmooth::vtkImageGaussianSmooth()
   this->RadiusFactors[2] = 1.5;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageGaussianSmooth::~vtkImageGaussianSmooth() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageGaussianSmooth::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -57,7 +46,7 @@ void vtkImageGaussianSmooth::PrintSelf(ostream& os, vtkIndent indent)
      << this->StandardDeviations[1] << ", " << this->StandardDeviations[2] << " )\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageGaussianSmooth::ComputeKernel(double* kernel, int min, int max, double std)
 {
   int x;
@@ -84,7 +73,7 @@ void vtkImageGaussianSmooth::ComputeKernel(double* kernel, int min, int max, dou
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageGaussianSmooth::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -106,7 +95,7 @@ int vtkImageGaussianSmooth::RequestUpdateExtent(vtkInformation* vtkNotUsed(reque
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageGaussianSmooth::InternalRequestUpdateExtent(int* inExt, int* wholeExtent)
 {
   int idx, radius;
@@ -129,7 +118,7 @@ void vtkImageGaussianSmooth::InternalRequestUpdateExtent(int* inExt, int* wholeE
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // For a given position along the convolution axis, this method loops over
 // all other axes, and performs the convolution. Boundary conditions handled
 // previously.
@@ -228,14 +217,14 @@ void vtkImageGaussianSmoothExecute(vtkImageGaussianSmooth* self, int axis, doubl
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 size_t vtkImageGaussianSmoothGetTypeSize(T*)
 {
   return sizeof(T);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method convolves over one axis. It loops over the convolved axis,
 // and handles boundary conditions.
 void vtkImageGaussianSmooth::ExecuteAxis(int axis, vtkImageData* inData, int inExt[6],
@@ -245,7 +234,7 @@ void vtkImageGaussianSmooth::ExecuteAxis(int axis, vtkImageData* inData, int inE
   int idxA, max;
   int wholeExtent[6], wholeMax, wholeMin;
   double* kernel;
-  // previousClip and currentClip rembers that the previous was not clipped
+  // previousClip and currentClip remembers that the previous was not clipped
   // keeps from recomputing kernels for center pixels.
   int kernelSize = 0;
   int kernelLeftClip, kernelRightClip;
@@ -314,8 +303,8 @@ void vtkImageGaussianSmooth::ExecuteAxis(int axis, vtkImageData* inData, int inE
     currentClipped = kernelLeftClip + kernelRightClip;
     if (currentClipped || previousClipped)
     {
-      this->ComputeKernel(kernel, -radius + kernelLeftClip, radius - kernelRightClip,
-        static_cast<double>(this->StandardDeviations[axis]));
+      this->ComputeKernel(
+        kernel, -radius + kernelLeftClip, radius - kernelRightClip, this->StandardDeviations[axis]);
       kernelSize = size - kernelLeftClip - kernelRightClip;
     }
     previousClipped = currentClipped;
@@ -338,7 +327,7 @@ void vtkImageGaussianSmooth::ExecuteAxis(int axis, vtkImageData* inData, int inE
   delete[] kernel;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method decomposes the gaussian and smooths along each axis.
 void vtkImageGaussianSmooth::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector, vtkImageData*** inData,
@@ -448,3 +437,4 @@ void vtkImageGaussianSmooth::ThreadedRequestData(vtkInformation* vtkNotUsed(requ
       break;
   }
 }
+VTK_ABI_NAMESPACE_END

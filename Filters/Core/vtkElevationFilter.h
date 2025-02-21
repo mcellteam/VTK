@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkElevationFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkElevationFilter
  * @brief   generate scalars along a specified direction
@@ -41,6 +29,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkElevationFilter : public vtkDataSetAlgorithm
 {
 public:
@@ -48,31 +37,31 @@ public:
   vtkTypeMacro(vtkElevationFilter, vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Define one end of the line (small scalar values).  Default is
    * (0,0,0).
    */
   vtkSetVector3Macro(LowPoint, double);
   vtkGetVectorMacro(LowPoint, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Define other end of the line (large scalar values).  Default is
    * (0,0,1).
    */
   vtkSetVector3Macro(HighPoint, double);
   vtkGetVectorMacro(HighPoint, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify range to map scalars into.  Default is [0, 1].
    */
   vtkSetVector2Macro(ScalarRange, double);
   vtkGetVectorMacro(ScalarRange, double, 2);
-  //@}
+  ///@}
 
 protected:
   vtkElevationFilter();
@@ -89,4 +78,5 @@ private:
   void operator=(const vtkElevationFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

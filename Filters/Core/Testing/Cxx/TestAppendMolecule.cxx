@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestAppendMolecule.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkDataSetAttributes.h"
 #include "vtkDoubleArray.h"
@@ -23,12 +11,15 @@
 #include "vtkUnsignedShortArray.h"
 
 #define CheckNumbers(name, first, second)                                                          \
-  if (first != second)                                                                             \
+  do                                                                                               \
   {                                                                                                \
-    cerr << "Error : wrong number of " << #name << ". Got " << first << " but expects " << second  \
-         << endl;                                                                                  \
-    return EXIT_FAILURE;                                                                           \
-  }
+    if (first != second)                                                                           \
+    {                                                                                              \
+      cerr << "Error : wrong number of " << #name << ". Got " << first << " but expects "          \
+           << second << endl;                                                                      \
+      return EXIT_FAILURE;                                                                         \
+    }                                                                                              \
+  } while (false)
 
 // Used to creates different atoms and data for each molecule
 static int NB_OF_MOL = 0;
@@ -170,10 +161,12 @@ int TestAppendMolecule(int, char*[])
   vtkAtom ghostAtom2 =
     fullMolecule2->AppendAtom(firstAtom3.GetAtomicNumber(), firstAtom3.GetPosition());
   vtkBond ghostBond2 = fullMolecule2->AppendBond(firstAtom2, ghostAtom2, 1);
+  AddAtomData(fullMolecule2);
 
   vtkAtom ghostAtom3 =
     fullMolecule3->AppendAtom(firstAtom2.GetAtomicNumber(), firstAtom2.GetPosition());
   vtkBond ghostBond3 = fullMolecule3->AppendBond(firstAtom3, ghostAtom3, 1);
+  AddAtomData(fullMolecule3);
 
   // set ghost flag on relevant atoms and bonds.
   fullMolecule1->AllocateAtomGhostArray();

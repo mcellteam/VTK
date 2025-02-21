@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkClipConvexPolyData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkClipConvexPolyData
  * @brief   clip any dataset with user-specified implicit function or input scalar data
@@ -27,6 +15,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPlaneCollection;
 class vtkPlane;
 class vtkClipConvexPolyDataInternals;
@@ -38,14 +27,14 @@ public:
   vtkTypeMacro(vtkClipConvexPolyData, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set all the planes at once using a vtkPlanes implicit function.
    * This also sets the D value.
    */
   void SetPlanes(vtkPlaneCollection* planes);
   vtkGetObjectMacro(Planes, vtkPlaneCollection);
-  //@}
+  ///@}
 
   /**
    * Redefines this method, as this filter depends on time of its components
@@ -95,4 +84,5 @@ private:
   void operator=(const vtkClipConvexPolyData&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

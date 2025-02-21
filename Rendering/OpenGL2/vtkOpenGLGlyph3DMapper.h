@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLGlyph3DMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLGlyph3DMapper
  * @brief   vtkOpenGLGlyph3D on the GPU.
@@ -29,13 +17,21 @@
 #define vtkOpenGLGlyph3DMapper_h
 
 #include "vtkGlyph3DMapper.h"
+
+#include "vtkColor.h"                  // for ivar
+#include "vtkDataObjectTree.h"         // for arg
 #include "vtkNew.h"                    // For vtkNew
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkVector.h"                 // for ivar
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+#include <stack> // for ivar
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLGlyph3DHelper;
 class vtkBitArray;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkOpenGLGlyph3DMapper : public vtkGlyph3DMapper
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkOpenGLGlyph3DMapper : public vtkGlyph3DMapper
 {
 public:
   static vtkOpenGLGlyph3DMapper* New();
@@ -55,17 +51,17 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* window) override;
 
-  //@{
+  ///@{
   /**
    * Get the maximum number of LOD. OpenGL context must be bound.
    * The maximum number of LOD depends on GPU capabilities.
    */
-  virtual vtkIdType GetMaxNumberOfLOD() override;
+  vtkIdType GetMaxNumberOfLOD() override;
 
   /**
    * Set the number of LOD.
    */
-  virtual void SetNumberOfLOD(vtkIdType nb) override;
+  void SetNumberOfLOD(vtkIdType nb) override;
 
   /**
    * Configure LODs. Culling must be enabled.
@@ -75,9 +71,9 @@ public:
    *
    * @sa vtkDecimatePro::SetTargetReduction
    */
-  virtual void SetLODDistanceAndTargetReduction(
+  void SetLODDistanceAndTargetReduction(
     vtkIdType index, float distance, float targetReduction) override;
-  //@}
+  ///@}
 
 protected:
   vtkOpenGLGlyph3DMapper();
@@ -95,6 +91,14 @@ protected:
   void CopyInformationToSubMapper(vtkOpenGLGlyph3DHelper*);
 
   void SetupColorMapper();
+
+  /**
+   * Renders children of the given dobjTree recursively.
+   * Display attributes which are specified on parents are applied to children
+   * unless a child overrides the value.
+   */
+  void RenderChildren(
+    vtkRenderer* renderer, vtkActor* actor, vtkDataObject* dobjTree, unsigned int& flatIndex);
 
   vtkMapper* ColorMapper;
 
@@ -114,6 +118,16 @@ protected:
 private:
   vtkOpenGLGlyph3DMapper(const vtkOpenGLGlyph3DMapper&) = delete;
   void operator=(const vtkOpenGLGlyph3DMapper&) = delete;
+
+  struct RenderBlockState
+  {
+    std::stack<double> Opacity;
+    std::stack<bool> Visibility;
+    std::stack<bool> Pickability;
+    std::stack<vtkColor3d> Color;
+  };
+  RenderBlockState BlockState;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

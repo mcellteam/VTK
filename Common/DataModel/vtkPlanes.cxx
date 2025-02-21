@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlanes.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPlanes.h"
 
 #include "vtkDoubleArray.h"
@@ -21,10 +9,11 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPlanes);
 vtkCxxSetObjectMacro(vtkPlanes, Points, vtkPoints);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlanes::vtkPlanes()
 {
   int i;
@@ -43,7 +32,7 @@ vtkPlanes::vtkPlanes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlanes::~vtkPlanes()
 {
   if (this->Points)
@@ -57,7 +46,7 @@ vtkPlanes::~vtkPlanes()
   this->Plane->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlanes::SetNormals(vtkDataArray* normals)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting Normals to " << normals);
@@ -83,7 +72,7 @@ void vtkPlanes::SetNormals(vtkDataArray* normals)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate plane equations. Return the largest value.
 double vtkPlanes::EvaluateFunction(double x[3])
 {
@@ -117,7 +106,7 @@ double vtkPlanes::EvaluateFunction(double x[3])
   return maxVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate planes gradient.
 void vtkPlanes::EvaluateGradient(double x[3], double n[3])
 {
@@ -153,7 +142,7 @@ void vtkPlanes::EvaluateGradient(double x[3], double n[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlanes::SetFrustumPlanes(double planes[24])
 {
   int i;
@@ -209,7 +198,7 @@ void vtkPlanes::SetFrustumPlanes(double planes[24])
   normals->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlanes::SetBounds(const double bounds[6])
 {
   int i;
@@ -288,7 +277,7 @@ void vtkPlanes::SetBounds(const double bounds[6])
   normals->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlanes::SetBounds(
   double xmin, double xmax, double ymin, double ymax, double zmin, double zmax)
 {
@@ -303,7 +292,7 @@ void vtkPlanes::SetBounds(
   this->SetBounds(bounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPlanes::GetNumberOfPlanes()
 {
   if (this->Points && this->Normals)
@@ -318,7 +307,7 @@ int vtkPlanes::GetNumberOfPlanes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlane* vtkPlanes::GetPlane(int i)
 {
   double normal[3];
@@ -338,7 +327,7 @@ vtkPlane* vtkPlanes::GetPlane(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlanes::GetPlane(int i, vtkPlane* plane)
 {
   if (i >= 0 && i < this->GetNumberOfPlanes())
@@ -352,7 +341,7 @@ void vtkPlanes::GetPlane(int i, vtkPlane* plane)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlanes::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -377,3 +366,4 @@ void vtkPlanes::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Normals: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

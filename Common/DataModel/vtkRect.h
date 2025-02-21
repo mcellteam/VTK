@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVector.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkRect
@@ -31,11 +19,12 @@
 
 #include "vtkMath.h" // for Min, Max
 
+VTK_ABI_NAMESPACE_BEGIN
 template <typename T>
 class vtkRect : public vtkVector<T, 4>
 {
 public:
-  vtkRect() {}
+  vtkRect() = default;
 
   vtkRect(const T& x, const T& y, const T& width, const T& height)
   {
@@ -50,7 +39,7 @@ public:
   {
   }
 
-  //@{
+  ///@{
   /**
    * Set the x, y components of the rectangle, and the width/height.
    */
@@ -61,7 +50,7 @@ public:
     this->Data[2] = width;
     this->Data[3] = height;
   }
-  //@}
+  ///@}
 
   /**
    * Set the x component of the rectangle bottom corner, i.e. element 0.
@@ -146,7 +135,7 @@ public:
    */
   vtkVector<T, 2> GetTopRight() const { return vtkVector2<T>(this->GetRight(), this->GetTop()); }
 
-  //@{
+  ///@{
   /**
    * Expand this rect to contain the point passed in.
    */
@@ -166,7 +155,7 @@ public:
       T dx = point[0] - this->GetX();
       this->SetWidth(vtkMath::Max(dx, this->GetWidth()));
     }
-    //@}
+    ///@}
 
     if (point[1] < this->GetY())
     {
@@ -182,7 +171,7 @@ public:
     }
   }
 
-  //@{
+  ///@{
   /**
    * Expand this rect to contain the point passed in.
    */
@@ -191,9 +180,9 @@ public:
     T point[2] = { x, y };
     this->AddPoint(point);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Expand this rect to contain the rect passed in.
    */
@@ -216,7 +205,7 @@ public:
       // this->GetX() is already correct
       this->SetWidth(vtkMath::Max(rect.GetWidth(), this->GetWidth()));
     }
-    //@}
+    ///@}
 
     if (rect.GetY() < this->GetY())
     {
@@ -307,12 +296,21 @@ public:
     }
     return false;
   }
+
+  /**
+   * Returns the center of the rect as a vtkVector2d.
+   */
+  vtkVector2d GetCenter() const
+  {
+    return vtkVector2d(
+      this->GetX() + 0.5 * this->GetWidth(), this->GetY() + 0.5 * this->GetHeight());
+  }
 };
 
 class vtkRecti : public vtkRect<int>
 {
 public:
-  vtkRecti() {}
+  vtkRecti() = default;
   vtkRecti(int x, int y, int width, int height)
     : vtkRect<int>(x, y, width, height)
   {
@@ -326,7 +324,7 @@ public:
 class vtkRectf : public vtkRect<float>
 {
 public:
-  vtkRectf() {}
+  vtkRectf() = default;
   vtkRectf(float x, float y, float width, float height)
     : vtkRect<float>(x, y, width, height)
   {
@@ -340,7 +338,7 @@ public:
 class vtkRectd : public vtkRect<double>
 {
 public:
-  vtkRectd() {}
+  vtkRectd() = default;
   vtkRectd(double x, double y, double width, double height)
     : vtkRect<double>(x, y, width, height)
   {
@@ -351,5 +349,6 @@ public:
   }
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkRect_h
 // VTK-HeaderTest-Exclude: vtkRect.h

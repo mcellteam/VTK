@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRendererCollection.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRendererCollection
  * @brief   an ordered list of renderers
@@ -30,8 +18,10 @@
 #include "vtkCollection.h"
 #include "vtkRenderer.h"            // Needed for static cast
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
-class VTKRENDERINGCORE_EXPORT vtkRendererCollection : public vtkCollection
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkRendererCollection : public vtkCollection
 {
 public:
   static vtkRendererCollection* New();
@@ -70,8 +60,8 @@ public:
   }
 
 protected:
-  vtkRendererCollection() {}
-  ~vtkRendererCollection() override {}
+  vtkRendererCollection() = default;
+  ~vtkRendererCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
@@ -81,4 +71,5 @@ private:
   void operator=(const vtkRendererCollection&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

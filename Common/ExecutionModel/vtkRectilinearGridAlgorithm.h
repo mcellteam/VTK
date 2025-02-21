@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRectilinearGridAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRectilinearGridAlgorithm
  * @brief   Superclass for algorithms that produce only rectilinear grid as output
@@ -37,6 +25,7 @@
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkRectilinearGrid.h"            // makes things a bit easier
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkRectilinearGrid;
 
@@ -47,14 +36,14 @@ public:
   vtkTypeMacro(vtkRectilinearGridAlgorithm, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm.
    */
   vtkRectilinearGrid* GetOutput();
   vtkRectilinearGrid* GetOutput(int);
   virtual void SetOutput(vtkDataObject* d);
-  //@}
+  ///@}
 
   /**
    * see vtkAlgorithm for details
@@ -68,7 +57,7 @@ public:
   vtkDataObject* GetInput(int port);
   vtkRectilinearGrid* GetRectilinearGridInput(int port);
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection() to
@@ -76,9 +65,9 @@ public:
    */
   void SetInputData(vtkDataObject*);
   void SetInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use AddInputConnection() to
@@ -86,7 +75,7 @@ public:
    */
   void AddInputData(vtkDataObject*);
   void AddInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
 protected:
   vtkRectilinearGridAlgorithm();
@@ -103,7 +92,7 @@ protected:
   virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector);
 
-  //@{
+  ///@{
   /**
    * This is called by the superclass.
    * This is the method you should override.
@@ -111,8 +100,13 @@ protected:
   virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*)
   {
     return 1;
-  };
-  //@}
+  }
+  ///@}
+
+  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*)
+  {
+    return 1;
+  }
 
   // see algorithm for more info
   int FillOutputPortInformation(int port, vtkInformation* info) override;
@@ -123,4 +117,5 @@ private:
   void operator=(const vtkRectilinearGridAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

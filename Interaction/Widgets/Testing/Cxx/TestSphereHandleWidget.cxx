@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSphereHandleWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Tests the vtkHandleWidget when it uses a vtkSphereHandleRepresentation.
 // See also TestPolygonalRepresentationHandleWidget.cxx to plug in any
 // generic polydata as a handle.
@@ -230,7 +218,7 @@ const char TestSphereHandleWidgetEventLog[] = "# StreamVersion 1\n"
                                               "MouseMoveEvent 272 170 0 0 0 0 0\n"
                                               "MouseMoveEvent 271 170 0 0 0 0 0\n";
 
-//#define RECORD
+// #define RECORD
 
 int TestSphereHandleWidget(int argc, char* argv[])
 {

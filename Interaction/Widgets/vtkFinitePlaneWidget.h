@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFinitePlaneWidget.h
-
-  Copyright (c)
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFinitePlaneWidget
  * @brief   3D widget for manipulating a finite plane
@@ -71,11 +59,13 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFinitePlaneRepresentation;
 class vtkHandleWidget;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkFinitePlaneWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkFinitePlaneWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -83,13 +73,13 @@ public:
    */
   static vtkFinitePlaneWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard vtkObject methods
    */
   vtkTypeMacro(vtkFinitePlaneWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -109,7 +99,7 @@ protected:
   ~vtkFinitePlaneWidget() override;
 
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Active
@@ -131,4 +121,5 @@ private:
   void operator=(const vtkFinitePlaneWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

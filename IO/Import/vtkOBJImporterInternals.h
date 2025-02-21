@@ -1,26 +1,17 @@
-/*=========================================================================
-  Program:   Visualization Toolkit
-  Module:    vtkOBJImporterInternals.h
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkOBJImporterInternals_h
 #define vtkOBJImporterInternals_h
-#ifndef __VTK_WRAP__
 
-#include "vtkActor.h"
-#include "vtkOBJImporter.h"
+#include "vtkIOImportModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
+#include <map>    // for std::map
+#include <string> // for std::string
+#include <vector> // for std::vector
+
+VTK_ABI_NAMESPACE_BEGIN
+class vtkActor;
+class vtkActorCollection;
 
 struct VTKIOIMPORT_EXPORT vtkOBJImportedMaterial
 {
@@ -62,11 +53,11 @@ public:
     {
       return;
     }
-    if (!strcmp(this->FileName.c_str(), arg))
+    if (this->FileName == arg)
     {
       return;
     }
-    FileName = std::string(arg);
+    this->FileName = std::string(arg);
   }
   void SetMTLfileName(const char* arg)
   {
@@ -74,31 +65,36 @@ public:
     {
       return;
     }
-    if (!strcmp(this->MTLFileName.c_str(), arg))
+    if (this->MTLFileName == arg)
     {
       return;
     }
-    MTLFileName = std::string(arg);
+    this->MTLFileName = std::string(arg);
     this->DefaultMTLFileName = false;
   }
   void SetTexturePath(const char* arg)
   {
-    TexturePath = std::string(arg);
-    if (TexturePath.empty())
+    this->TexturePath = std::string(arg);
+    if (this->TexturePath.empty())
+    {
       return;
+    }
 #if defined(_WIN32)
     const char sep = '\\';
 #else
     const char sep = '/';
 #endif
-    if (TexturePath.at(TexturePath.size() - 1) != sep)
-      TexturePath += sep;
+    if (this->TexturePath.at(this->TexturePath.size() - 1) != sep)
+    {
+      this->TexturePath += sep;
+    }
+    this->DefaultTexturePath = false;
   }
-  const std::string& GetTexturePath() const { return TexturePath; }
+  const std::string& GetTexturePath() const { return this->TexturePath; }
 
-  const std::string& GetFileName() const { return FileName; }
+  const std::string& GetFileName() const { return this->FileName; }
 
-  const std::string& GetMTLFileName() const { return MTLFileName; }
+  const std::string& GetMTLFileName() const { return this->MTLFileName; }
 
   vtkSetMacro(VertexScale, double);
   vtkGetMacro(VertexScale, double);
@@ -121,15 +117,15 @@ public:
   std::vector<vtkOBJImportedPolyDataWithMaterial*> poly_list;
 
   // what gets returned to client code via GetOutput()
-  std::vector<vtkSmartPointer<vtkPolyData> > outVector_of_vtkPolyData;
+  std::vector<vtkSmartPointer<vtkPolyData>> outVector_of_vtkPolyData;
 
-  std::vector<vtkSmartPointer<vtkActor> > actor_list;
+  std::vector<vtkSmartPointer<vtkActor>> actor_list;
   /////////////////////
 
   std::vector<vtkOBJImportedMaterial*> ParseOBJandMTL(std::string filename, int& result_code);
 
-  void ReadVertices(bool gotFirstUseMaterialTag, char* pLine, float xyz, int lineNr,
-    const double v_scale, bool everything_ok, vtkPoints* points, const bool use_scale);
+  void ReadVertices(bool gotFirstUseMaterialTag, char* pLine, float xyz, int lineNr, double v_scale,
+    bool everything_ok, vtkPoints* points, bool use_scale);
 
 protected:
   vtkOBJPolyDataProcessor();
@@ -141,8 +137,9 @@ protected:
 
   std::string FileName;    // filename (.obj) being read
   std::string MTLFileName; // associated .mtl to *.obj, typically it is *.obj.mtl
-  bool DefaultMTLFileName; // tells whether default of *.obj.mtl to be used
+  bool DefaultMTLFileName; // tells whether default MTL should be used
   std::string TexturePath;
+  bool DefaultTexturePath; // tells whether default texture path should be used
   int SuccessParsingFiles;
 
 private:
@@ -153,9 +150,8 @@ private:
 class vtkRenderWindow;
 class vtkRenderer;
 VTKIOIMPORT_EXPORT
-void bindTexturedPolydataToRenderWindow(
-  vtkRenderWindow* renderWindow, vtkRenderer* renderer, vtkOBJPolyDataProcessor* reader);
+bool bindTexturedPolydataToRenderWindow(vtkRenderWindow* renderWindow, vtkRenderer* renderer,
+  vtkOBJPolyDataProcessor* reader, vtkActorCollection* actorCollection);
 
+VTK_ABI_NAMESPACE_END
 #endif
-#endif
-// VTK-HeaderTest-Exclude: vtkOBJImporterInternals.h

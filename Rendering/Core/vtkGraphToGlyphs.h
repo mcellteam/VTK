@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphToGlyphs.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkGraphToGlyphs
  * @brief   create glyphs for graph vertices
@@ -37,6 +21,7 @@
 #include "vtkRenderingCoreModule.h" // For export macro
 #include "vtkSmartPointer.h"        // for SP ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDistanceToCamera;
 class vtkGraphToPoints;
 class vtkGlyph3D;
@@ -64,7 +49,7 @@ public:
     SPHERE
   };
 
-  //@{
+  ///@{
   /**
    * The glyph type, specified as one of the enumerated values in this
    * class. VERTEX is a special glyph that cannot be scaled, but instead
@@ -73,18 +58,18 @@ public:
    */
   vtkSetMacro(GlyphType, int);
   vtkGetMacro(GlyphType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Whether to fill the glyph, or to just render the outline.
    */
   vtkSetMacro(Filled, bool);
   vtkGetMacro(Filled, bool);
   vtkBooleanMacro(Filled, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the desired screen size of each glyph. If you are using scaling,
    * this will be the size of the glyph when rendering an object with
@@ -92,24 +77,24 @@ public:
    */
   vtkSetMacro(ScreenSize, double);
   vtkGetMacro(ScreenSize, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The renderer in which the glyphs will be placed.
    */
   virtual void SetRenderer(vtkRenderer* ren);
   virtual vtkRenderer* GetRenderer();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Whether to use the input array to process in order to scale the
    * vertices.
    */
   virtual void SetScaling(bool b);
   virtual bool GetScaling();
-  //@}
+  ///@}
 
   /**
    * The modified time of this filter.
@@ -144,4 +129,5 @@ private:
   void operator=(const vtkGraphToGlyphs&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

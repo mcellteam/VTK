@@ -1,26 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitHalo.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImplicitHalo.h"
 
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImplicitHalo);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImplicitHalo::vtkImplicitHalo()
 {
   this->Center[0] = 0.0;
@@ -30,10 +19,10 @@ vtkImplicitHalo::vtkImplicitHalo()
   this->FadeOut = 0.01;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImplicitHalo::~vtkImplicitHalo() = default;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkImplicitHalo::EvaluateFunction(double x[3])
 {
   double result;
@@ -59,13 +48,13 @@ double vtkImplicitHalo::EvaluateFunction(double x[3])
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitHalo::EvaluateGradient(double vtkNotUsed(x)[3], double vtkNotUsed(g)[3])
 {
   assert("check: TODO" && false);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitHalo::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -75,3 +64,4 @@ void vtkImplicitHalo::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Radius: " << this->Radius << endl;
   os << indent << "FadeOut: " << this->FadeOut << endl;
 }
+VTK_ABI_NAMESPACE_END

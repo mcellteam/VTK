@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadraticTriangle.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkQuadraticTriangle.h"
 
 #include "vtkDoubleArray.h"
@@ -21,10 +9,12 @@
 #include "vtkPoints.h"
 #include "vtkQuadraticEdge.h"
 #include "vtkTriangle.h"
+#include <algorithm> //std::copy
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkQuadraticTriangle);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the line with two points.
 vtkQuadraticTriangle::vtkQuadraticTriangle()
 {
@@ -42,7 +32,7 @@ vtkQuadraticTriangle::vtkQuadraticTriangle()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadraticTriangle::~vtkQuadraticTriangle()
 {
   this->Edge->Delete();
@@ -50,7 +40,7 @@ vtkQuadraticTriangle::~vtkQuadraticTriangle()
   this->Scalars->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkQuadraticTriangle::GetEdge(int edgeId)
 {
   edgeId = (edgeId < 0 ? 0 : (edgeId > 2 ? 2 : edgeId));
@@ -69,7 +59,7 @@ vtkCell* vtkQuadraticTriangle::GetEdge(int edgeId)
   return this->Edge;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // order picked carefully for parametric coordinate conversion
 static int LinearTris[4][3] = {
   { 0, 3, 5 },
@@ -86,15 +76,24 @@ int vtkQuadraticTriangle::EvaluatePosition(const double* x, double closestPoint[
   double tempWeights[3];
   double closest[3];
 
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
   // four linear triangles are used
   for (minDist2 = VTK_DOUBLE_MAX, i = 0; i < 4; i++)
   {
-    this->Face->Points->SetPoint(0, this->Points->GetPoint(LinearTris[i][0]));
-    this->Face->Points->SetPoint(1, this->Points->GetPoint(LinearTris[i][1]));
-    this->Face->Points->SetPoint(2, this->Points->GetPoint(LinearTris[i][2]));
+    this->Face->Points->SetPoint(0, pts + 3 * LinearTris[i][0]);
+    this->Face->Points->SetPoint(1, pts + 3 * LinearTris[i][1]);
+    this->Face->Points->SetPoint(2, pts + 3 * LinearTris[i][2]);
 
     status = this->Face->EvaluatePosition(x, closest, ignoreId, pc, dist2, tempWeights);
-    if (status != -1 && dist2 < minDist2)
+    if (status != -1 && ((dist2 < minDist2) || ((dist2 == minDist2) && (returnStatus == 0))))
     {
       returnStatus = status;
       minDist2 = dist2;
@@ -136,27 +135,37 @@ int vtkQuadraticTriangle::EvaluatePosition(const double* x, double closestPoint[
     else
     {
       // Compute weights only
-      this->InterpolationFunctions(pcoords, weights);
+      vtkQuadraticTriangle::InterpolationFunctions(pcoords, weights);
     }
   }
 
   return returnStatus;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticTriangle::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
   int i;
-  double a0[3], a1[3], a2[3], a3[3], a4[3], a5[3];
-  this->Points->GetPoint(0, a0);
-  this->Points->GetPoint(1, a1);
-  this->Points->GetPoint(2, a2);
-  this->Points->GetPoint(3, a3);
-  this->Points->GetPoint(4, a4);
-  this->Points->GetPoint(5, a5);
+  const double *a0, *a1, *a2, *a3, *a4, *a5;
 
-  this->InterpolationFunctions(pcoords, weights);
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
+  a0 = pts;
+  a1 = pts + 3;
+  a2 = pts + 6;
+  a3 = pts + 9;
+  a4 = pts + 12;
+  a5 = pts + 15;
+
+  vtkQuadraticTriangle::InterpolationFunctions(pcoords, weights);
 
   for (i = 0; i < 3; i++)
   {
@@ -165,13 +174,13 @@ void vtkQuadraticTriangle::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraticTriangle::CellBoundary(int subId, const double pcoords[3], vtkIdList* pts)
 {
   return this->Face->CellBoundary(subId, pcoords, pts);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticTriangle::Contour(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* verts, vtkCellArray* lines,
   vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
@@ -199,7 +208,7 @@ void vtkQuadraticTriangle::Contour(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Line-line intersection. Intersection has to occur within [0,1] parametric
 // coordinates and with specified tolerance.
 int vtkQuadraticTriangle::IntersectWithLine(
@@ -223,42 +232,25 @@ int vtkQuadraticTriangle::IntersectWithLine(
   return 0;
 }
 
-//----------------------------------------------------------------------------
-int vtkQuadraticTriangle::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkQuadraticTriangle::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
-
   // Create four linear triangles
-  for (int i = 0; i < 4; i++)
-  {
-    ptIds->InsertId(3 * i, this->PointIds->GetId(LinearTris[i][0]));
-    pts->InsertPoint(3 * i, this->Points->GetPoint(LinearTris[i][0]));
-    ptIds->InsertId(3 * i + 1, this->PointIds->GetId(LinearTris[i][1]));
-    pts->InsertPoint(3 * i + 1, this->Points->GetPoint(LinearTris[i][1]));
-    ptIds->InsertId(3 * i + 2, this->PointIds->GetId(LinearTris[i][2]));
-    pts->InsertPoint(3 * i + 2, this->Points->GetPoint(LinearTris[i][2]));
-  }
-
+  ptIds->SetNumberOfIds(12);
+  std::copy(&LinearTris[0][0], &LinearTris[0][0] + 12, ptIds->begin());
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticTriangle::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
-  double sum[3];
+  double sum[2], p[3];
   double functionDerivs[12];
-  double elemNodes[6][3];
   double *J[3], J0[3], J1[3], J2[3];
   double *JI[3], JI0[3], JI1[3], JI2[3];
 
-  for (int i = 0; i < 6; i++)
-  {
-    this->Points->GetPoint(i, elemNodes[i]);
-  }
-
-  this->InterpolationDerivs(pcoords, functionDerivs);
+  vtkQuadraticTriangle::InterpolationDerivs(pcoords, functionDerivs);
 
   // Compute transposed Jacobian and inverse Jacobian
   J[0] = J0;
@@ -274,11 +266,12 @@ void vtkQuadraticTriangle::Derivatives(
 
   for (int i = 0; i < 6; i++)
   {
+    this->Points->GetPoint(i, p);
     for (int j = 0; j < 2; j++)
     {
       for (int k = 0; k < 3; k++)
       {
-        J[j][k] += elemNodes[i][k] * functionDerivs[j * 6 + i];
+        J[j][k] += p[k] * functionDerivs[j * 6 + i];
       }
     }
   }
@@ -303,7 +296,7 @@ void vtkQuadraticTriangle::Derivatives(
   // First compute derivatives in local x'-y' coordinate system
   for (int j = 0; j < dim; j++)
   {
-    sum[0] = sum[1] = sum[2] = 0.0;
+    sum[0] = sum[1] = 0.0;
     for (int i = 0; i < 6; i++) // loop over interp. function derivatives
     {
       sum[0] += functionDerivs[i] * values[dim * i + j];
@@ -317,7 +310,7 @@ void vtkQuadraticTriangle::Derivatives(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip this quadratic triangle using the scalar value provided. Like
 // contouring, except that it cuts the triangle to produce other quads
 // and triangles.
@@ -344,7 +337,7 @@ void vtkQuadraticTriangle::Clip(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute maximum parametric distance to cell
 double vtkQuadraticTriangle::GetParametricDistance(const double pcoords[3])
 {
@@ -379,7 +372,7 @@ double vtkQuadraticTriangle::GetParametricDistance(const double pcoords[3])
   return pDistMax;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute interpolation functions. The first three nodes are the triangle
 // vertices; the others are mid-edge nodes.
 void vtkQuadraticTriangle::InterpolationFunctions(const double pcoords[3], double weights[6])
@@ -396,7 +389,7 @@ void vtkQuadraticTriangle::InterpolationFunctions(const double pcoords[3], doubl
   weights[5] = 4.0 * s * t;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Derivatives in parametric space.
 void vtkQuadraticTriangle::InterpolationDerivs(const double pcoords[3], double derivs[12])
 {
@@ -420,7 +413,7 @@ void vtkQuadraticTriangle::InterpolationDerivs(const double pcoords[3], double d
   derivs[11] = 4.0 - 8.0 * s - 4.0 * r;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkQTriangleCellPCoords[18] = {
   0.0, 0.0, 0.0, //
   1.0, 0.0, 0.0, //
@@ -434,7 +427,7 @@ double* vtkQuadraticTriangle::GetParametricCoords()
   return vtkQTriangleCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticTriangle::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -446,3 +439,4 @@ void vtkQuadraticTriangle::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Scalars:\n";
   this->Scalars->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

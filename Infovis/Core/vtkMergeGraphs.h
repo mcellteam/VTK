@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMergeGraphs.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkMergeGraphs
  * @brief   combines two graphs
@@ -50,6 +34,7 @@
 #include "vtkGraphAlgorithm.h"
 #include "vtkInfovisCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 class vtkMutableGraphHelper;
 class vtkStringArray;
@@ -68,7 +53,7 @@ public:
    */
   int ExtendGraph(vtkMutableGraphHelper* g1, vtkGraph* g2);
 
-  //@{
+  ///@{
   /**
    * Whether to use an edge window array. The default is to
    * not use a window array.
@@ -76,17 +61,17 @@ public:
   vtkSetMacro(UseEdgeWindow, bool);
   vtkGetMacro(UseEdgeWindow, bool);
   vtkBooleanMacro(UseEdgeWindow, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The edge window array. The default array name is "time".
    */
   vtkSetStringMacro(EdgeWindowArrayName);
   vtkGetStringMacro(EdgeWindowArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The time window amount. Edges with values lower
    * than the maximum value minus this window will be
@@ -95,7 +80,7 @@ public:
    */
   vtkSetMacro(EdgeWindow, double);
   vtkGetMacro(EdgeWindow, double);
-  //@}
+  ///@}
 
 protected:
   vtkMergeGraphs();
@@ -114,4 +99,5 @@ private:
   void operator=(const vtkMergeGraphs&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestAssignAttribute.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This tests vtkAssignAttribute.
 
 #include "vtkAssignAttribute.h"
@@ -144,7 +132,7 @@ int TestAssignAttribute(int, char*[])
   vtkInformation* outFieldInfo = vtkDataObject::GetActiveFieldInformation(
     outInfo, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::VECTORS);
   if (!outFieldInfo || !outFieldInfo->Has(vtkDataObject::FIELD_NAME()) ||
-    std::strcmp(outFieldInfo->Get(vtkDataObject::FIELD_NAME()), scalars->GetName()) ||
+    std::strcmp(outFieldInfo->Get(vtkDataObject::FIELD_NAME()), scalars->GetName()) != 0 ||
     outFieldInfo->Get(vtkDataObject::FIELD_NUMBER_OF_COMPONENTS()) !=
       scalars->GetNumberOfComponents() ||
     outFieldInfo->Get(vtkDataObject::FIELD_NUMBER_OF_TUPLES()) != scalars->GetNumberOfTuples() ||
@@ -167,7 +155,7 @@ int TestAssignAttribute(int, char*[])
   outFieldInfo = vtkDataObject::GetActiveFieldInformation(
     outInfo, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::VECTORS);
   if (!outFieldInfo || !outFieldInfo->Has(vtkDataObject::FIELD_NAME()) ||
-    std::strcmp(outFieldInfo->Get(vtkDataObject::FIELD_NAME()), scalars->GetName()) ||
+    std::strcmp(outFieldInfo->Get(vtkDataObject::FIELD_NAME()), scalars->GetName()) != 0 ||
     outFieldInfo->Get(vtkDataObject::FIELD_NUMBER_OF_COMPONENTS()) !=
       scalars->GetNumberOfComponents() ||
     outFieldInfo->Get(vtkDataObject::FIELD_NUMBER_OF_TUPLES()) != scalars->GetNumberOfTuples() ||
@@ -191,7 +179,7 @@ int TestAssignAttribute(int, char*[])
   outFieldInfo = vtkDataObject::GetActiveFieldInformation(
     outInfo, vtkDataObject::FIELD_ASSOCIATION_EDGES, vtkDataSetAttributes::SCALARS);
   if (!outFieldInfo || !outFieldInfo->Has(vtkDataObject::FIELD_NAME()) ||
-    std::strcmp(outFieldInfo->Get(vtkDataObject::FIELD_NAME()), tensors->GetName()) ||
+    std::strcmp(outFieldInfo->Get(vtkDataObject::FIELD_NAME()), tensors->GetName()) != 0 ||
     outFieldInfo->Get(vtkDataObject::FIELD_NUMBER_OF_COMPONENTS()) !=
       tensors->GetNumberOfComponents() ||
     outFieldInfo->Get(vtkDataObject::FIELD_NUMBER_OF_TUPLES()) != tensors->GetNumberOfTuples() ||
@@ -214,7 +202,7 @@ int TestAssignAttribute(int, char*[])
   outFieldInfo = vtkDataObject::GetActiveFieldInformation(
     outInfo, vtkDataObject::FIELD_ASSOCIATION_EDGES, vtkDataSetAttributes::SCALARS);
   if (!outFieldInfo || !outFieldInfo->Has(vtkDataObject::FIELD_NAME()) ||
-    std::strcmp(outFieldInfo->Get(vtkDataObject::FIELD_NAME()), tensors->GetName()) ||
+    std::strcmp(outFieldInfo->Get(vtkDataObject::FIELD_NAME()), tensors->GetName()) != 0 ||
     outFieldInfo->Get(vtkDataObject::FIELD_NUMBER_OF_COMPONENTS()) !=
       tensors->GetNumberOfComponents() ||
     outFieldInfo->Get(vtkDataObject::FIELD_NUMBER_OF_TUPLES()) != tensors->GetNumberOfTuples() ||
@@ -222,6 +210,10 @@ int TestAssignAttribute(int, char*[])
   {
     cerr << "Tensor information not passed when attribute is assigned by type." << endl;
     ++errors;
+  }
+  if (errors > 0)
+  {
+    return 1;
   }
   return 0;
 }

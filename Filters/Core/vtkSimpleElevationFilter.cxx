@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSimpleElevationFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSimpleElevationFilter.h"
 
 #include "vtkArrayDispatch.h"
@@ -26,9 +14,11 @@
 #include "vtkPointSet.h"
 #include "vtkSMPTools.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSimpleElevationFilter);
 
-namespace {
+namespace
+{
 
 // The heart of the algorithm plus interface to the SMP tools.
 template <class PointArrayT>
@@ -37,15 +27,16 @@ class vtkSimpleElevationAlgorithm
 public:
   vtkIdType NumPts;
   double Vector[3];
-  PointArrayT *PointArray;
-  float *Scalars;
+  PointArrayT* PointArray;
+  float* Scalars;
+  vtkSimpleElevationFilter* Filter;
 
-  vtkSimpleElevationAlgorithm(PointArrayT* pointArray,
-                              vtkSimpleElevationFilter* filter,
-                              float* scalars)
-    : NumPts{pointArray->GetNumberOfTuples()}
-    , PointArray{pointArray}
-    , Scalars{scalars}
+  vtkSimpleElevationAlgorithm(
+    PointArrayT* pointArray, vtkSimpleElevationFilter* filter, float* scalars)
+    : NumPts{ pointArray->GetNumberOfTuples() }
+    , PointArray{ pointArray }
+    , Scalars{ scalars }
+    , Filter(filter)
   {
     filter->GetVector(this->Vector);
   }
@@ -56,27 +47,39 @@ public:
     const double* v = this->Vector;
     float* s = this->Scalars + begin;
 
-    const auto pointRange = vtk::DataArrayTupleRange<3>(this->PointArray,
-                                                        begin, end);
+    const auto pointRange = vtk::DataArrayTupleRange<3>(this->PointArray, begin, end);
+    bool isFirst = vtkSMPTools::GetSingleThread();
+    vtkIdType checkAbortInterval = std::min((end - begin) / 10 + 1, (vtkIdType)1000);
 
     for (const auto p : pointRange)
     {
-      *s = v[0]*p[0] + v[1]*p[1] + v[2]*p[2];
+      if (begin % checkAbortInterval == 0)
+      {
+        if (isFirst)
+        {
+          this->Filter->CheckAbort();
+        }
+        if (this->Filter->GetAbortOutput())
+        {
+          break;
+        }
+      }
+      begin++;
+
+      *s = v[0] * p[0] + v[1] * p[1] + v[2] * p[2];
       ++s;
     }
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Templated class is glue between VTK and templated algorithms.
 struct Elevate
 {
   template <typename PointArrayT>
-  void operator()(PointArrayT* pointArray,
-                  vtkSimpleElevationFilter* filter,
-                  float* scalars)
+  void operator()(PointArrayT* pointArray, vtkSimpleElevationFilter* filter, float* scalars)
   {
-    vtkSimpleElevationAlgorithm<PointArrayT> algo{pointArray, filter, scalars};
+    vtkSimpleElevationAlgorithm<PointArrayT> algo{ pointArray, filter, scalars };
     vtkSMPTools::For(0, pointArray->GetNumberOfTuples(), algo);
   }
 };
@@ -84,7 +87,7 @@ struct Elevate
 } // end anon namespace
 
 // Okay begin the class proper
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with Vector=(0,0,1).
 vtkSimpleElevationFilter::vtkSimpleElevationFilter()
 {
@@ -93,7 +96,7 @@ vtkSimpleElevationFilter::vtkSimpleElevationFilter()
   this->Vector[2] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Convert position along the ray into scalar value.  Example use includes
 // coloring terrain by elevation.
 //
@@ -171,7 +174,7 @@ int vtkSimpleElevationFilter::RequestData(vtkInformation* vtkNotUsed(request),
       if (!(i % progressInterval))
       {
         this->UpdateProgress((double)i / numPts);
-        abort = this->GetAbortExecute();
+        abort = this->CheckAbort();
       }
 
       input->GetPoint(i, x);
@@ -195,7 +198,7 @@ int vtkSimpleElevationFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSimpleElevationFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -203,3 +206,4 @@ void vtkSimpleElevationFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Vector: (" << this->Vector[0] << ", " << this->Vector[1] << ", "
      << this->Vector[2] << ")\n";
 }
+VTK_ABI_NAMESPACE_END

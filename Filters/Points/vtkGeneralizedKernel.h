@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeneralizedKernel.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGeneralizedKernel
  * @brief   flexible, general interpolation kernels
@@ -66,16 +54,17 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkInterpolationKernel.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSPOINTS_EXPORT vtkGeneralizedKernel : public vtkInterpolationKernel
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for type and printing.
    */
   vtkTypeMacro(vtkGeneralizedKernel, vtkInterpolationKernel);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Based on the kernel style, invoke the appropriate locator method to
@@ -132,7 +121,7 @@ public:
     N_CLOSEST = 1
   };
 
-  //@{
+  ///@{
   /**
    * Specify the interpolation basis style. By default, a Radius style is
    * used (i.e., the basis is defined from all points within a specified
@@ -145,27 +134,27 @@ public:
   vtkGetMacro(KernelFootprint, int);
   void SetKernelFootprintToRadius() { this->SetKernelFootprint(RADIUS); }
   void SetKernelFootprintToNClosest() { this->SetKernelFootprint(N_CLOSEST); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the interpolation basis style is Radius, then this method specifies
    * the radius within which the basis points must lie.
    */
   vtkSetClampMacro(Radius, double, 0.0, VTK_FLOAT_MAX);
   vtkGetMacro(Radius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the interpolation basis style is NClosest, then this method specifies
    * the number of the closest points used to form the interpolation basis.
    */
   vtkSetClampMacro(NumberOfPoints, int, 1, VTK_INT_MAX);
   vtkGetMacro(NumberOfPoints, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether the interpolation weights should be normalized after they
    * are computed. Generally this is left on as it results in more reasonable
@@ -174,7 +163,7 @@ public:
   vtkSetMacro(NormalizeWeights, bool);
   vtkGetMacro(NormalizeWeights, bool);
   vtkBooleanMacro(NormalizeWeights, bool);
-  //@}
+  ///@}
 
 protected:
   vtkGeneralizedKernel();
@@ -190,4 +179,5 @@ private:
   void operator=(const vtkGeneralizedKernel&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

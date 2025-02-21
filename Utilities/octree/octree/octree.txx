@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // Included from octree
 
 /**\var template< typename T_, int d_, typename A_ > \
@@ -96,13 +98,14 @@
  * @param[in] x_center An array of coordinates specifying the center of the octree
  * @param[in] length The length (size) of each side of the octree
  */
+VTK_ABI_NAMESPACE_BEGIN
 template <typename T_, int d_, typename A_>
 octree<T_, d_, A_>::octree(const double* x_center, double length)
 {
   for (int i = 0; i < d_; ++i)
-    this->_M_center[i] = x_center[i];
-  this->_M_size = length;
-  this->_M_root = new octree_node<T_, d_, A_>();
+    this->m_center[i] = x_center[i];
+  this->m_size = length;
+  this->m_root = new octree_node<T_, d_, A_>();
 }
 
 /**\brief Octree constructor.
@@ -123,9 +126,9 @@ template <typename T_, int d_, typename A_>
 octree<T_, d_, A_>::octree(const double* x_center, double length, const value_type& value)
 {
   for (int i = 0; i < d_; ++i)
-    this->_M_center[i] = x_center[i];
-  this->_M_size = length;
-  this->_M_root = new octree_node<T_, d_, A_>(nullptr, value);
+    this->m_center[i] = x_center[i];
+  this->m_size = length;
+  this->m_root = new octree_node<T_, d_, A_>(nullptr, value);
 }
 
 /**\brief Octree destructor.
@@ -135,7 +138,7 @@ octree<T_, d_, A_>::octree(const double* x_center, double length, const value_ty
 template <typename T_, int d_, typename A_>
 octree<T_, d_, A_>::~octree()
 {
-  delete this->_M_root;
+  delete this->m_root;
 }
 
 /**\fn template< typename T_, int d_, typename A_ > \
@@ -180,17 +183,18 @@ size_t octree<T_, d_, A_>::size(bool only_leaves)
  */
 
 /**\var template< typename T_, int d_, typename A_ > \
- *     octree_node_pointer octree<T_,d_,A_>::_M_root
+ *     octree_node_pointer octree<T_,d_,A_>::m_root
  *\brief The root (top-level) node of the octree.
  */
 
 /**\var template< typename T_, int d_, typename A_ > \
- *     double octree<T_,d_,A_>::_M_center[d_]
+ *     double octree<T_,d_,A_>::m_center[d_]
  *\brief The geometric center point of the octree.
  */
 
 /**\var template< typename T_, int d_, typename A_ > \
- *     double octree<T_,d_,A_>::_M_size
+ *     double octree<T_,d_,A_>::m_size
  *\brief The geometric length of each side of the hypercube defining the octree. Also called the
  *size of the node.
  */
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageFourierCenter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageFourierCenter.h"
 
 #include "vtkImageData.h"
@@ -22,13 +10,20 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageFourierCenter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageFourierCenter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageFourierCenter filter.
 vtkImageFourierCenter::vtkImageFourierCenter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method tells the superclass which input extent is needed.
 // This gets the whole input (even though it may not be needed).
 int vtkImageFourierCenter::IterativeRequestUpdateExtent(
@@ -45,7 +40,7 @@ int vtkImageFourierCenter::IterativeRequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed input and output regions, and executes the fft
 // algorithm to fill the output from the input.
 void vtkImageFourierCenter::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
@@ -95,13 +90,21 @@ void vtkImageFourierCenter::ThreadedRequestData(vtkInformation* vtkNotUsed(reque
     outputVector->GetInformationObject(0)->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT());
   // permute to make the filtered axis come first
   this->PermuteExtent(outExt, min0, max0, min1, max1, min2, max2);
-  this->PermuteIncrements(inData->GetIncrements(), inInc0, inInc1, inInc2);
-  this->PermuteIncrements(outData->GetIncrements(), outInc0, outInc1, outInc2);
+
+  // Compute the increments into a local array as `GetIncrements()` introduces
+  // a data race on `vtkImageData::Increments`.
+  vtkIdType inIncrements[3];
+  vtkIdType outIncrements[3];
+  inData->GetIncrements(inIncrements);
+  outData->GetIncrements(outIncrements);
+
+  this->PermuteIncrements(inIncrements, inInc0, inInc1, inInc2);
+  this->PermuteIncrements(outIncrements, outInc0, outInc1, outInc2);
 
   // Determine the mid for the filtered axis
   wholeMin0 = wholeExtent[this->Iteration * 2];
   wholeMax0 = wholeExtent[this->Iteration * 2 + 1];
-  mid0 = (wholeMin0 + wholeMax0) / 2;
+  mid0 = (wholeMin0 + wholeMax0 + 1) / 2;
 
   // initialize input coordinates
   inCoords[0] = outExt[0];
@@ -157,3 +160,4 @@ void vtkImageFourierCenter::ThreadedRequestData(vtkInformation* vtkNotUsed(reque
     outPtr0 += outInc0;
   }
 }
+VTK_ABI_NAMESPACE_END

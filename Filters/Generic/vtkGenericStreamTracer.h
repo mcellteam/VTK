@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericStreamTracer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericStreamTracer
  * @brief   Streamline generator
@@ -71,6 +59,7 @@
 
 #include "vtkInitialValueProblemSolver.h" // Needed for constants
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkGenericAdaptorCell;
 class vtkIdList;
@@ -94,7 +83,7 @@ public:
    */
   static vtkGenericStreamTracer* New();
 
-  //@{
+  ///@{
   /**
    * Specify the start of the streamline in the global coordinate
    * system. Search must be performed to find initial cell to start
@@ -102,15 +91,15 @@ public:
    */
   vtkSetVector3Macro(StartPosition, double);
   vtkGetVector3Macro(StartPosition, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the source object used to generate starting points.
    */
   void SetSourceData(vtkDataSet* source);
   vtkDataSet* GetSource();
-  //@}
+  ///@}
 
   /**
    * Specify the source object used to generate starting points (seeds).
@@ -146,7 +135,7 @@ public:
     STAGNATION = 6
   };
 
-  //@{
+  ///@{
   /**
    * Set/get the integrator type to be used in the stream line
    * calculation. The object passed is not actually used but
@@ -165,9 +154,9 @@ public:
   void SetIntegratorTypeToRungeKutta2() { this->SetIntegratorType(RUNGE_KUTTA2); }
   void SetIntegratorTypeToRungeKutta4() { this->SetIntegratorType(RUNGE_KUTTA4); }
   void SetIntegratorTypeToRungeKutta45() { this->SetIntegratorType(RUNGE_KUTTA45); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the maximum length of the streamlines expressed in
    * one of the:
@@ -186,9 +175,9 @@ public:
   {
     this->SetMaximumPropagationUnit(CELL_LENGTH_UNIT);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the minimum step used in the integration expressed in
    * one of the:
@@ -211,9 +200,9 @@ public:
   {
     this->SetMinimumIntegrationStepUnit(CELL_LENGTH_UNIT);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the maximum step used in the integration expressed in
    * one of the:
@@ -236,9 +225,9 @@ public:
   {
     this->SetMaximumIntegrationStepUnit(CELL_LENGTH_UNIT);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the initial step used in the integration expressed in
    * one of the:
@@ -262,9 +251,9 @@ public:
   {
     this->SetInitialIntegrationStepUnit(CELL_LENGTH_UNIT);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the maximum error in the integration. This value
    * is passed to the integrator. Therefore, it's meaning depends
@@ -272,26 +261,26 @@ public:
    */
   vtkSetMacro(MaximumError, double);
   vtkGetMacro(MaximumError, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the maximum number of steps used in the integration.
    */
   vtkSetMacro(MaximumNumberOfSteps, vtkIdType);
   vtkGetMacro(MaximumNumberOfSteps, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If at any point, the speed is below this value, the integration
    * is terminated.
    */
   vtkSetMacro(TerminalSpeed, double);
   vtkGetMacro(TerminalSpeed, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Simplified API to set an homogeneous unit across Min/Max/Init IntegrationStepUnit
    */
@@ -301,7 +290,7 @@ public:
     this->SetMinimumIntegrationStepUnit(unit);
     this->SetMaximumIntegrationStepUnit(unit);
   }
-  //@}
+  ///@}
 
   enum
   {
@@ -310,7 +299,7 @@ public:
     BOTH
   };
 
-  //@{
+  ///@{
   /**
    * Specify whether the streamtrace will be generated in the
    * upstream or downstream direction.
@@ -320,9 +309,9 @@ public:
   void SetIntegrationDirectionToForward() { this->SetIntegrationDirection(FORWARD); }
   void SetIntegrationDirectionToBackward() { this->SetIntegrationDirection(BACKWARD); }
   void SetIntegrationDirectionToBoth() { this->SetIntegrationDirection(BOTH); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off calculation of vorticity at streamline points
    * (necessary for generating proper streamribbons using the
@@ -331,18 +320,18 @@ public:
   vtkSetMacro(ComputeVorticity, vtkTypeBool);
   vtkGetMacro(ComputeVorticity, vtkTypeBool);
   vtkBooleanMacro(ComputeVorticity, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This can be used to scale the rate with which the streamribbons
    * twist. The default is 1.
    */
   vtkSetMacro(RotationScale, double);
   vtkGetMacro(RotationScale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If you want to generate traces using an arbitrary vector array,
    * then set its name here. By default this in nullptr and the filter will
@@ -350,7 +339,7 @@ public:
    */
   vtkGetStringMacro(InputVectorsSelection);
   void SelectInputVectors(const char* fieldName) { this->SetInputVectorsSelection(fieldName); }
-  //@}
+  ///@}
 
   /**
    * Add a dataset to the list inputs
@@ -448,4 +437,5 @@ private:
   void operator=(const vtkGenericStreamTracer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

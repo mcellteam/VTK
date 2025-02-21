@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkViewNodeFactory.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkViewNodeFactory.h"
 #include "vtkObjectFactory.h"
 #include "vtkViewNode.h"
@@ -20,12 +8,13 @@
 #include <string>
 
 //============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 class vtkViewNodeFactory::vtkInternals
 {
 public:
   std::map<std::string, vtkViewNode* (*)()> Overrides;
 
-  vtkInternals() {}
+  vtkInternals() = default;
 
   ~vtkInternals() { this->Overrides.clear(); }
 };
@@ -33,25 +22,25 @@ public:
 //============================================================================
 vtkStandardNewMacro(vtkViewNodeFactory);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNodeFactory::vtkViewNodeFactory()
 {
   this->Internals = new vtkInternals;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNodeFactory::~vtkViewNodeFactory()
 {
   delete this->Internals;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNodeFactory::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode* vtkViewNodeFactory::CreateNode(vtkObject* who)
 {
   if (!who)
@@ -105,8 +94,9 @@ vtkViewNode* vtkViewNodeFactory::CreateNode(vtkObject* who)
   return vn;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNodeFactory::RegisterOverride(const char* name, vtkViewNode* (*func)())
 {
   this->Internals->Overrides[name] = func;
 }
+VTK_ABI_NAMESPACE_END

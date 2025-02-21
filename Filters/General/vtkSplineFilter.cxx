@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSplineFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSplineFilter.h"
 
 #include "vtkCardinalSpline.h"
@@ -26,6 +14,7 @@
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSplineFilter);
 vtkCxxSetObjectMacro(vtkSplineFilter, Spline, vtkSpline);
 
@@ -37,6 +26,7 @@ vtkSplineFilter::vtkSplineFilter()
   this->Length = 0.1;
   this->GenerateTCoords = VTK_TCOORDS_FROM_NORMALIZED_LENGTH;
   this->TextureLength = 1.0;
+  this->OutputPointsPrecision = DEFAULT_PRECISION;
 
   this->Spline = vtkCardinalSpline::New();
   this->TCoordMap = vtkFloatArray::New();
@@ -83,7 +73,7 @@ int vtkSplineFilter::RequestData(vtkInformation* vtkNotUsed(request),
   const vtkIdType* pts = nullptr;
   vtkIdType offset = 0;
   vtkFloatArray* newTCoords = nullptr;
-  int abort = 0;
+  bool abort = false;
   vtkIdType inCellId, numGenPts;
   int genTCoords = VTK_TCOORDS_OFF;
 
@@ -106,6 +96,20 @@ int vtkSplineFilter::RequestData(vtkInformation* vtkNotUsed(request),
   // Create the geometry and topology
   numNewPts = this->NumberOfSubdivisions * numLines;
   newPts = vtkPoints::New();
+
+  // Set the desired precision for the points in the output.
+  if (this->OutputPointsPrecision == vtkAlgorithm::DEFAULT_PRECISION)
+  {
+    newPts->SetDataType(input->GetPoints()->GetDataType());
+  }
+  else if (this->OutputPointsPrecision == vtkAlgorithm::SINGLE_PRECISION)
+  {
+    newPts->SetDataType(VTK_FLOAT);
+  }
+  else if (this->OutputPointsPrecision == vtkAlgorithm::DOUBLE_PRECISION)
+  {
+    newPts->SetDataType(VTK_DOUBLE);
+  }
   newPts->Allocate(numNewPts);
   newLines = vtkCellArray::New();
   newLines->AllocateEstimate(1, numNewPts);
@@ -144,7 +148,7 @@ int vtkSplineFilter::RequestData(vtkInformation* vtkNotUsed(request),
        inCellId++)
   {
     this->UpdateProgress(static_cast<double>(inCellId) / numLines);
-    abort = this->GetAbortExecute();
+    abort = this->CheckAbort();
 
     if (npts < 2)
     {
@@ -374,4 +378,6 @@ void vtkSplineFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Spline: " << this->Spline << "\n";
   os << indent << "Generate TCoords: " << this->GetGenerateTCoordsAsString() << endl;
   os << indent << "Texture Length: " << this->TextureLength << endl;
+  os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

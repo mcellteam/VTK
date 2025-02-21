@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCellData.h"
 #include "vtkDoubleArray.h"
 #include "vtkMPIController.h"
@@ -11,7 +13,7 @@ int PCellSizeFilter(int argc, char* argv[])
 {
   vtkMPIController* contr = vtkMPIController::New();
   contr->Initialize(&argc, &argv);
-  contr->SetGlobalController(contr);
+  vtkMPIController::SetGlobalController(contr);
   contr->CreateOutputWindow();
 
   vtkNew<vtkUnstructuredGridReader> reader;

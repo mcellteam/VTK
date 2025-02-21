@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridEntry.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridEntry
  * @brief   Entries are cache data for cursors
@@ -64,10 +52,9 @@
 #ifndef vtkHyperTreeGridEntry_h
 #define vtkHyperTreeGridEntry_h
 
-#ifndef __VTK_WRAP__
-
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHyperTree;
 class vtkHyperTreeGrid;
 
@@ -88,6 +75,9 @@ public:
    * Constructor
    */
   vtkHyperTreeGridEntry() { this->Index = 0; }
+
+  vtkHyperTreeGridEntry(vtkHyperTreeGridEntry const&) = default;
+  vtkHyperTreeGridEntry& operator=(vtkHyperTreeGridEntry const&) = default;
 
   /**
    * Constructor
@@ -166,7 +156,7 @@ public:
   void SubdivideLeaf(const vtkHyperTreeGrid* grid, vtkHyperTree* tree, unsigned int level);
 
   /**
-   * Is the cursor pointing to a coarse with all childrens being leaves?
+   * Is the cursor pointing to a coarse with all children being leaves?
    * \pre not_tree: tree
    */
   bool IsTerminalNode(
@@ -195,7 +185,6 @@ protected:
   vtkIdType Index;
 };
 
-#endif // __VTK_WRAP__
-
+VTK_ABI_NAMESPACE_END
 #endif // vtkHyperTreeGridEntry_h
 // VTK-HeaderTest-Exclude: vtkHyperTreeGridEntry.h

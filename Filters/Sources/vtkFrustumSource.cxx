@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFrustumSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkFrustumSource.h"
 #include "vtkCellArray.h"
 #include "vtkInformation.h"
@@ -22,10 +10,11 @@
 #include "vtkPlanes.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkFrustumSource);
 vtkCxxSetObjectMacro(vtkFrustumSource, Planes, vtkPlanes);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFrustumSource::vtkFrustumSource()
 {
   this->Planes = nullptr;
@@ -37,7 +26,7 @@ vtkFrustumSource::vtkFrustumSource()
   this->SetNumberOfInputPorts(0);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFrustumSource::~vtkFrustumSource()
 {
   if (this->Planes != nullptr)
@@ -46,7 +35,7 @@ vtkFrustumSource::~vtkFrustumSource()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFrustumSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -381,7 +370,7 @@ void vtkFrustumSource::ComputePoint(int planes[3], double* pt)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Modified GetMTime because of Planes.
 vtkMTimeType vtkFrustumSource::GetMTime()
@@ -399,7 +388,7 @@ vtkMTimeType vtkFrustumSource::GetMTime()
   return mTime;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFrustumSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -427,3 +416,4 @@ void vtkFrustumSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "LinesLength:" << this->LinesLength << endl;
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << endl;
 }
+VTK_ABI_NAMESPACE_END

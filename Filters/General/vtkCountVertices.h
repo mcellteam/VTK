@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCountVertices.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkCountVertices
@@ -29,6 +17,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPassInputTypeAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkCountVertices : public vtkPassInputTypeAlgorithm
 {
 public:
@@ -36,13 +25,26 @@ public:
   vtkTypeMacro(vtkCountVertices, vtkPassInputTypeAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The name of the new output array containing the vertex counts.
    */
   vtkSetStringMacro(OutputArrayName);
   vtkGetStringMacro(OutputArrayName);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * When set, use an alternative implementation of the filter that uses an implicit array looking
+   * up the number of vertices of the requested cell on-demand. This option reduces the memory
+   * footprint of the filter, because we don't need to store the whole number of vertices array
+   * anymore. However, using an implicit array can be slower when accessing many elements
+   * from the output array, especially for structured datasets.
+   * This option is disabled by default.
+   */
+  vtkSetMacro(UseImplicitArray, bool);
+  vtkGetMacro(UseImplicitArray, bool);
+  ///@}
 
 protected:
   vtkCountVertices();
@@ -57,8 +59,11 @@ protected:
   char* OutputArrayName;
 
 private:
+  bool UseImplicitArray = false;
+
   vtkCountVertices(const vtkCountVertices&) = delete;
   void operator=(const vtkCountVertices&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkCountVertices_h

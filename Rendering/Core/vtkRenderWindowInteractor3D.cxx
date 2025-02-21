@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderWindowInteractor3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -28,9 +16,10 @@
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRenderWindowInteractor3D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object so that light follows camera motion.
 vtkRenderWindowInteractor3D::vtkRenderWindowInteractor3D()
 {
@@ -40,10 +29,10 @@ vtkRenderWindowInteractor3D::vtkRenderWindowInteractor3D()
   this->SetInteractorStyle(style);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderWindowInteractor3D::~vtkRenderWindowInteractor3D() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderWindowInteractor3D::Enable()
 {
   if (this->Enabled)
@@ -54,7 +43,7 @@ void vtkRenderWindowInteractor3D::Enable()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderWindowInteractor3D::Disable()
 {
   if (!this->Enabled)
@@ -66,14 +55,14 @@ void vtkRenderWindowInteractor3D::Disable()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderWindowInteractor3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "StartedMessageLoop: " << this->StartedMessageLoop << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderWindowInteractor3D::SetTranslation3D(double val[3])
 {
   this->LastTranslation3D[0] = this->Translation3D[0];
@@ -89,7 +78,7 @@ void vtkRenderWindowInteractor3D::SetTranslation3D(double val[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderWindowInteractor3D::RecognizeGesture(vtkCommand::EventIds event)
 {
   // we know we are in multitouch now, so start recognizing
@@ -440,3 +429,37 @@ void vtkRenderWindowInteractor3D::GetStartingPhysicalEventPose(
   }
   poseMatrix->DeepCopy(StartingPhysicalEventPoses[pointerIndex]);
 }
+
+//------------------------------------------------------------------------------
+void vtkRenderWindowInteractor3D::GetStartingPhysicalToWorldMatrix(
+  vtkMatrix4x4* startingPhysicalToWorldMatrix)
+{
+  if (startingPhysicalToWorldMatrix)
+  {
+    startingPhysicalToWorldMatrix->DeepCopy(this->StartingPhysicalToWorldMatrix);
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkRenderWindowInteractor3D::SetStartingPhysicalToWorldMatrix(
+  vtkMatrix4x4* startingPhysicalToWorldMatrix)
+{
+  if (!startingPhysicalToWorldMatrix)
+  {
+    return;
+  }
+  this->StartingPhysicalToWorldMatrix->DeepCopy(startingPhysicalToWorldMatrix);
+}
+
+//------------------------------------------------------------------------------
+void vtkRenderWindowInteractor3D::SetStartingPhysicalEventPose(
+  vtkMatrix4x4* poseMatrix, vtkEventDataDevice device)
+{
+  int pointerIndex = static_cast<int>(device);
+  if (pointerIndex < 0 || pointerIndex >= VTKI_MAX_POINTERS || !poseMatrix)
+  {
+    return;
+  }
+  this->StartingPhysicalEventPoses[pointerIndex]->DeepCopy(poseMatrix);
+}
+VTK_ABI_NAMESPACE_END

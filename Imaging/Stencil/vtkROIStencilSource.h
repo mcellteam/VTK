@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkROIStencilSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkROIStencilSource
  * @brief   create simple mask shapes
@@ -32,6 +20,7 @@
 #include "vtkImageStencilSource.h"
 #include "vtkImagingStencilModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGSTENCIL_EXPORT vtkROIStencilSource : public vtkImageStencilSource
 {
 public:
@@ -48,7 +37,7 @@ public:
     CYLINDERZ = 4
   };
 
-  //@{
+  ///@{
   /**
    * The shape of the region of interest.  Cylinders can be oriented
    * along the X, Y, or Z axes.  The default shape is "Box".
@@ -61,16 +50,16 @@ public:
   void SetShapeToCylinderY() { this->SetShape(CYLINDERY); }
   void SetShapeToCylinderZ() { this->SetShape(CYLINDERZ); }
   virtual const char* GetShapeAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the bounds of the region of interest.  The bounds take
    * the spacing and origin into account.
    */
   vtkGetVector6Macro(Bounds, double);
   vtkSetVector6Macro(Bounds, double);
-  //@}
+  ///@}
 
 protected:
   vtkROIStencilSource();
@@ -86,4 +75,5 @@ private:
   void operator=(const vtkROIStencilSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

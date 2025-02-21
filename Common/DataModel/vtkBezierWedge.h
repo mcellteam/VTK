@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBezierWedge.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBezierWedge
  * @brief   A 3D cell that represents an arbitrary order Bezier wedge
@@ -40,6 +28,7 @@
 #include "vtkNew.h"          // For member variable.
 #include "vtkSmartPointer.h" // For member variable.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellData;
 class vtkDoubleArray;
 class vtkWedge;
@@ -64,25 +53,21 @@ public:
   int GetCellType() override { return VTK_BEZIER_WEDGE; }
   vtkCell* GetEdge(int edgeId) override;
   vtkCell* GetFace(int faceId) override;
-  void EvaluateLocationProjectedNode(
-    int& subId, const vtkIdType point_id, double x[3], double* weights);
   void InterpolateFunctions(const double pcoords[3], double* weights) override;
   void InterpolateDerivs(const double pcoords[3], double* derivs) override;
 
-  void SetRationalWeightsFromPointData(vtkPointData* point_data, const vtkIdType numPts);
+  void SetRationalWeightsFromPointData(vtkPointData* point_data, vtkIdType numPts);
 
-  virtual vtkHigherOrderQuadrilateral* getBdyQuad() override;
-  virtual vtkHigherOrderTriangle* getBdyTri() override;
-  virtual vtkHigherOrderCurve* getEdgeCell() override;
-  virtual vtkHigherOrderInterpolation* getInterp() override;
+  vtkHigherOrderQuadrilateral* GetBoundaryQuad() override;
+  vtkHigherOrderTriangle* GetBoundaryTri() override;
+  vtkHigherOrderCurve* GetEdgeCell() override;
+  vtkHigherOrderInterpolation* GetInterpolation() override;
 
   vtkDoubleArray* GetRationalWeights();
 
 protected:
   vtkBezierWedge();
   ~vtkBezierWedge() override;
-  vtkBezierTriangle* GetTriangularFace(int iAxis, int k);
-  vtkBezierQuadrilateral* GetQuadrilateralFace(int di, int dj);
 
   vtkNew<vtkDoubleArray> RationalWeights;
   vtkNew<vtkBezierQuadrilateral> BdyQuad;
@@ -96,4 +81,5 @@ private:
   void operator=(const vtkBezierWedge&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkBezierWedge_h

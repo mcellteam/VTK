@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkNew.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkNew
  * @brief   Allocate and hold a VTK object.
@@ -49,7 +37,15 @@
 
 #include <type_traits> // for is_base_of
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkObjectBase;
+class vtkGarbageCollector;
+
+template <class T>
+class vtkNew;
+
+template <class T>
+void vtkGarbageCollectorReport(vtkGarbageCollector* collector, vtkNew<T>& ptr, const char* desc);
 
 template <class T>
 class vtkNew
@@ -96,18 +92,23 @@ public:
    * reference. The argument is reset to nullptr.
    * @{
    */
-  vtkNew(vtkNew&& o) noexcept : Object(o.Object) { o.Object = nullptr; }
+  vtkNew(vtkNew&& o) noexcept
+    : Object(o.Object)
+  {
+    o.Object = nullptr;
+  }
 
   template <typename U>
-  vtkNew(vtkNew<U>&& o) noexcept : Object(o.Object)
+  vtkNew(vtkNew<U>&& o) noexcept
+    : Object(o.Object)
   {
     vtkNew::CheckTypes<U>();
 
     o.Object = nullptr;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Deletes reference to instance of T.
    */
@@ -122,7 +123,7 @@ public:
       obj->Delete();
     }
   }
-  //@}
+  ///@}
 
   /**
    * Enable pointer-like dereference syntax. Returns a pointer to the contained
@@ -130,7 +131,7 @@ public:
    */
   T* operator->() const noexcept { return this->Object; }
 
-  //@{
+  ///@{
   /**
    * Get a raw pointer to the contained object. When using this function be
    * careful that the reference count does not drop to 0 when using the pointer
@@ -140,7 +141,7 @@ public:
   T* GetPointer() const noexcept { return this->Object; }
   T* Get() const noexcept { return this->Object; }
   operator T*() const noexcept { return static_cast<T*>(this->Object); }
-  //@}
+  ///@}
   /**
    * Dereference the pointer and return a reference to the contained object.
    * When using this function be careful that the reference count does not
@@ -149,11 +150,25 @@ public:
    */
   T& operator*() const noexcept { return *static_cast<T*>(this->Object); }
 
+  /**
+   * Move assignment operator.
+   */
+  vtkNew<T>& operator=(vtkNew<T>&& other) noexcept
+  {
+    this->Reset();
+    this->Object = other.Object;
+    other.Object = nullptr;
+    return *this;
+  }
+
 private:
   vtkNew(vtkNew<T> const&) = delete;
   void operator=(vtkNew<T> const&) = delete;
+  friend void vtkGarbageCollectorReport<T>(
+    vtkGarbageCollector* collector, vtkNew<T>& ptr, const char* desc);
   T* Object;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkNew.h

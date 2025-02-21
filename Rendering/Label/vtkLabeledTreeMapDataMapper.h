@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLabeledTreeMapDataMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkLabeledTreeMapDataMapper
  * @brief   draw text labels on a tree map
@@ -46,7 +30,9 @@
 
 #include "vtkLabeledDataMapper.h"
 #include "vtkRenderingLabelModule.h" // For export macro
+#include "vtkWrappingHints.h"        // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTree;
 class vtkPoints;
 class vtkCoordinate;
@@ -54,20 +40,21 @@ class vtkFloatArray;
 class vtkStringArray;
 class vtkIdList;
 
-class VTKRENDERINGLABEL_EXPORT vtkLabeledTreeMapDataMapper : public vtkLabeledDataMapper
+class VTKRENDERINGLABEL_EXPORT VTK_MARSHALAUTO vtkLabeledTreeMapDataMapper
+  : public vtkLabeledDataMapper
 {
 public:
   static vtkLabeledTreeMapDataMapper* New();
   vtkTypeMacro(vtkLabeledTreeMapDataMapper, vtkLabeledDataMapper);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Draw the text to the screen at each input point.
    */
   void RenderOpaqueGeometry(vtkViewport* viewport, vtkActor2D* actor) override;
   void RenderOverlay(vtkViewport* viewport, vtkActor2D* actor) override;
-  //@}
+  ///@}
 
   /**
    * The input to this filter.
@@ -79,7 +66,7 @@ public:
    */
   virtual void SetRectanglesArrayName(const char* name);
 
-  //@{
+  ///@{
   /**
    * Indicates if the label can be displayed clipped by the Window
    * mode = 0 - ok to clip labels
@@ -87,38 +74,38 @@ public:
    */
   vtkGetMacro(ClipTextMode, int);
   vtkSetMacro(ClipTextMode, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicates if the label can be moved by its ancestors
    */
   vtkGetMacro(ChildMotion, int);
   vtkSetMacro(ChildMotion, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicates at which level labeling should be dynamic
    */
   vtkGetMacro(DynamicLevel, int);
   vtkSetMacro(DynamicLevel, int);
-  //@}
+  ///@}
 
   /**
    * Release any graphics resources that are being consumed by this actor.
    */
   void ReleaseGraphicsResources(vtkWindow*) override;
 
-  //@{
+  ///@{
   /**
    * The range of font sizes to use when rendering the labels.
    */
   void SetFontSizeRange(int maxSize, int minSize, int delta = 4);
   void GetFontSizeRange(int range[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The range of levels to attempt to label.
    * The level of a vertex is the length of the path to the root
@@ -126,7 +113,7 @@ public:
    */
   void SetLevelRange(int startLevel, int endLevel);
   void GetLevelRange(int range[2]);
-  //@}
+  ///@}
 
 protected:
   vtkLabeledTreeMapDataMapper();
@@ -172,4 +159,5 @@ private:
   void operator=(const vtkLabeledTreeMapDataMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

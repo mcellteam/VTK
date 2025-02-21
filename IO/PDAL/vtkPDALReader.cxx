@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGDALRasterReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPDALReader.h"
 
@@ -52,9 +40,10 @@
 #include <pdal/PointView.hpp>
 #include <pdal/StageFactory.hpp>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPDALReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPDALReader::vtkPDALReader()
 {
   this->FileName = nullptr;
@@ -63,16 +52,13 @@ vtkPDALReader::vtkPDALReader()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPDALReader::~vtkPDALReader()
 {
-  if (this->FileName)
-  {
-    delete[] this->FileName;
-  }
+  delete[] this->FileName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDALReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(request), vtkInformationVector* outputVector)
 {
@@ -85,7 +71,7 @@ int vtkPDALReader::RequestData(vtkInformation* vtkNotUsed(request),
     vtkPolyData* output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
     pdal::StageFactory factory;
-    std::string driverName = factory.inferReaderDriver(this->FileName);
+    std::string driverName = pdal::StageFactory::inferReaderDriver(this->FileName);
     if (driverName.empty())
     {
       vtkErrorMacro("Cannot infer the reader driver for " << this->FileName);
@@ -124,7 +110,7 @@ int vtkPDALReader::RequestData(vtkInformation* vtkNotUsed(request),
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDALReader::ReadPointRecordData(pdal::Stage& reader, vtkPolyData* pointsPolyData)
 {
   vtkNew<vtkPoints> points;
@@ -148,12 +134,17 @@ void vtkPDALReader::ReadPointRecordData(pdal::Stage& reader, vtkPolyData* points
   std::vector<vtkTypeInt64Array*> int64Array(dims.size(), nullptr);
   vtkTypeUInt16Array* colorArray = nullptr;
   // check if we have a color field, and create the required array
-  bool hasColor = false, hasRed = false, hasGreen = false, hasBlue = false;
+  bool hasCoords = false, hasColor = false, hasRed = false, hasGreen = false, hasBlue = false;
   for (size_t i = 0; i < dims.size(); ++i)
   {
     pdal::Dimension::Id dimensionId = dims[i];
     switch (dimensionId)
     {
+      case pdal::Dimension::Id::X:
+      case pdal::Dimension::Id::Y:
+      case pdal::Dimension::Id::Z:
+        hasCoords = true;
+        break;
       case pdal::Dimension::Id::Red:
         hasRed = true;
         break;
@@ -166,6 +157,16 @@ void vtkPDALReader::ReadPointRecordData(pdal::Stage& reader, vtkPolyData* points
       default:
         continue;
     }
+  }
+  if (!hasCoords)
+  {
+    std::string noCoordsError("PDAL Reader did not find any points coordinates in this file.");
+    if (reader.getName() == "readers.e57")
+    {
+      noCoordsError.append(
+        "\n Note: e57 PDAL reader doesn't support point clouds stored in spherical format.");
+    }
+    vtkWarningMacro(<< noCoordsError);
   }
   if (hasRed && hasGreen && hasBlue)
   {
@@ -396,10 +397,11 @@ void vtkPDALReader::ReadPointRecordData(pdal::Stage& reader, vtkPolyData* points
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDALReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
   os << "vtkPDALReader" << std::endl;
   os << "Filename: " << this->FileName << std::endl;
 }
+VTK_ABI_NAMESPACE_END

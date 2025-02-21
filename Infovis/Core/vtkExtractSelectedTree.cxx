@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractSelectedTree.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkExtractSelectedTree.h"
 
@@ -32,6 +20,7 @@
 
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractSelectedTree);
 
 vtkExtractSelectedTree::vtkExtractSelectedTree()
@@ -41,12 +30,12 @@ vtkExtractSelectedTree::vtkExtractSelectedTree()
 
 vtkExtractSelectedTree::~vtkExtractSelectedTree() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractSelectedTree::SetSelectionConnection(vtkAlgorithmOutput* in)
 {
   this->SetInputConnection(1, in);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractSelectedTree::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -63,13 +52,13 @@ int vtkExtractSelectedTree::FillInputPortInformation(int port, vtkInformation* i
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractSelectedTree::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractSelectedTree::BuildTree(
   vtkTree* inputTree, vtkIdTypeArray* selectedVerticesList, vtkMutableDirectedGraph* builder)
 {
@@ -230,3 +219,4 @@ int vtkExtractSelectedTree::RequestData(vtkInformation* vtkNotUsed(request),
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

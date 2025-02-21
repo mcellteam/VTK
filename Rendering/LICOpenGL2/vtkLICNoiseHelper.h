@@ -1,30 +1,18 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLICNoiseHelper
- *
- * A small collection of noise routines for LIC
+ * @brief   A small collection of noise routines for LIC
  */
 
 #ifndef vtkLICNoiseHelper_h
 #define vtkLICNoiseHelper_h
-#ifndef __VTK_WRAP__
 
 #include "vtkRenderingLICOpenGL2Module.h" // for export
 
 #include "vtkMinimalStandardRandomSequence.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 
 /**
@@ -59,7 +47,6 @@ private:
   void operator=(const vtkLICRandomNumberGeneratorInterface&) = delete;
   vtkLICRandomNumberGeneratorInterface(const vtkLICRandomNumberGeneratorInterface&) = delete;
 
-private:
   vtkMinimalStandardRandomSequence* RNG;
 };
 
@@ -72,9 +59,9 @@ desired frequency (f < 1 is impulse noise).
 class vtkLICRandomNoise2D
 {
 public:
-  vtkLICRandomNoise2D() {}
+  vtkLICRandomNoise2D() = default;
 
-  //@{
+  ///@{
   /**
    * Generate a patch of random gray scale values along with an
    * alpha channel (in vtk array format). The data should be
@@ -100,7 +87,7 @@ public:
   };
   float* Generate(int type, int& sideLen, int& grainLize, float minNoiseVal, float maxNoiseVal,
     int nLevels, double impulseProb, float impulseBgNoiseVal, int seed);
-  //@}
+  ///@}
 
   /**
    * Delete the passed in array of values.
@@ -143,11 +130,10 @@ private:
    */
   void GetValidDimensionAndGrainSize(int type, int& dim, int& grainSize);
 
-private:
   vtkLICRandomNumberGeneratorInterface ValueGen;
   vtkLICRandomNumberGeneratorInterface ProbGen;
 };
 
-#endif
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkLICNoiseHelper.h

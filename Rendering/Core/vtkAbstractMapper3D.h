@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractMapper3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractMapper3D
  * @brief   abstract class specifies interface to map 3D data
@@ -34,12 +22,14 @@
 
 #include "vtkAbstractMapper.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkWindow;
 class vtkDataSet;
 class vtkMatrix4x4;
 
-class VTKRENDERINGCORE_EXPORT vtkAbstractMapper3D : public vtkAbstractMapper
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkAbstractMapper3D : public vtkAbstractMapper
 {
 public:
   vtkTypeMacro(vtkAbstractMapper3D, vtkAbstractMapper);
@@ -57,7 +47,7 @@ public:
    */
   virtual void GetBounds(double bounds[6]);
 
-  //@{
+  ///@{
   /**
    * Return the Center of this mapper's data.
    */
@@ -69,7 +59,7 @@ public:
     center[1] = rc[1];
     center[2] = rc[2];
   }
-  //@}
+  ///@}
 
   /**
    * Return the diagonal length of this mappers bounding box.
@@ -96,7 +86,7 @@ public:
 
 protected:
   vtkAbstractMapper3D();
-  ~vtkAbstractMapper3D() override {}
+  ~vtkAbstractMapper3D() override = default;
 
   double Bounds[6];
   double Center[3];
@@ -106,4 +96,5 @@ private:
   void operator=(const vtkAbstractMapper3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

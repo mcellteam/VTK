@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractPicker.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractPicker
  * @brief   define API for picking subclasses
@@ -61,6 +49,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkProp;
 class vtkPropCollection;
@@ -71,27 +60,27 @@ public:
   vtkTypeMacro(vtkAbstractPicker, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the renderer in which pick event occurred.
    */
   vtkGetObjectMacro(Renderer, vtkRenderer);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the selection point in screen (pixel) coordinates. The third
    * value is related to z-buffer depth. (Normally should be =0.)
    */
   vtkGetVectorMacro(SelectionPoint, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return position in global coordinates of pick point.
    */
   vtkGetVectorMacro(PickPosition, double, 3);
-  //@}
+  ///@}
 
   /**
    * Perform pick operation with selection point provided. Normally the
@@ -134,7 +123,7 @@ public:
     return 0;
   }
 
-  //@{
+  ///@{
   /**
    * Use these methods to control whether to limit the picking to this list
    * (rather than renderer's actors). Make sure that the pick list contains
@@ -143,7 +132,7 @@ public:
   vtkSetMacro(PickFromList, vtkTypeBool);
   vtkGetMacro(PickFromList, vtkTypeBool);
   vtkBooleanMacro(PickFromList, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Initialize list of actors in pick list.
@@ -184,4 +173,5 @@ private:
   void operator=(const vtkAbstractPicker&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

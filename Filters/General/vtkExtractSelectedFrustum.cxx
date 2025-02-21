@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkExtractSelectedFrustum.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkExtractSelectedFrustum.h"
 
 #include "vtkCell.h"
@@ -36,13 +25,14 @@
 #include "vtkUnstructuredGrid.h"
 #include "vtkVoxel.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractSelectedFrustum);
 vtkCxxSetObjectMacro(vtkExtractSelectedFrustum, Frustum, vtkPlanes);
 
 // set to 4 to ignore the near and far planes which are almost always passed
 #define MAXPLANE 6
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractSelectedFrustum::vtkExtractSelectedFrustum(vtkPlanes* f)
 {
   this->SetNumberOfInputPorts(2);
@@ -74,14 +64,14 @@ vtkExtractSelectedFrustum::vtkExtractSelectedFrustum(vtkPlanes* f)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractSelectedFrustum::~vtkExtractSelectedFrustum()
 {
   this->Frustum->Delete();
   this->ClipPoints->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If implicit function is modified,
 // then this object is modified as well.
 vtkMTimeType vtkExtractSelectedFrustum::GetMTime()
@@ -98,7 +88,7 @@ vtkMTimeType vtkExtractSelectedFrustum::GetMTime()
   return mTime;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractSelectedFrustum::CreateFrustum(double verts[32])
 {
   // for debugging
@@ -134,7 +124,7 @@ void vtkExtractSelectedFrustum::CreateFrustum(double verts[32])
   norms->Delete();
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractSelectedFrustum::ComputePlane(
   int idx, double v0[3], double v1[3], double v2[3], vtkPoints* points, vtkDoubleArray* norms)
 {
@@ -157,7 +147,7 @@ void vtkExtractSelectedFrustum::ComputePlane(
   norms->SetTuple(idx, n);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // needed because parent class sets output type to input type
 // and we sometimes want to change it to make an UnstructuredGrid regardless of
 // input type
@@ -186,7 +176,7 @@ int vtkExtractSelectedFrustum::RequestDataObject(
   return this->Superclass::RequestDataObject(req, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractSelectedFrustum::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -422,6 +412,10 @@ int vtkExtractSelectedFrustum::RequestData(vtkInformation* vtkNotUsed(request),
       if (!(cellId % updateInterval)) // manage progress reports
       {
         this->UpdateProgress(static_cast<double>(cellId) / numCells);
+        if (this->CheckAbort())
+        {
+          break;
+        }
       }
 
       input->GetCellBounds(cellId, bounds);
@@ -543,6 +537,10 @@ int vtkExtractSelectedFrustum::RequestData(vtkInformation* vtkNotUsed(request),
       if (!(ptId % updateInterval)) // manage progress reports
       {
         this->UpdateProgress(static_cast<double>(ptId) / numPts);
+        if (this->CheckAbort())
+        {
+          break;
+        }
       }
 
       input->GetPoint(ptId, x);
@@ -704,7 +702,7 @@ int vtkExtractSelectedFrustum::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractSelectedFrustum::OverallBoundsTest(double* bounds)
 {
   vtkIdType i;
@@ -738,7 +736,7 @@ int vtkExtractSelectedFrustum::OverallBoundsTest(double* bounds)
   return (rc > 0);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Intersect the cell (with its associated bounds) with the clipping frustum.
 // Return 1 if at least partially inside, 0 otherwise.
 // Also return a distance to the near plane.
@@ -1015,7 +1013,7 @@ int vtkExtractSelectedFrustum::ABoxFrustumIsect(double* bounds, vtkCell* cell)
   return 0;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // handle degenerate cells by testing each point, if any in, then in
 int vtkExtractSelectedFrustum::IsectDegenerateCell(vtkCell* cell)
 {
@@ -1033,7 +1031,7 @@ int vtkExtractSelectedFrustum::IsectDegenerateCell(vtkCell* cell)
   return 0;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // clips the polygon against the frustum
 // if there is no intersection, returns 0
 // if there is an intersection, returns 1
@@ -1061,7 +1059,7 @@ int vtkExtractSelectedFrustum::FrustumClipPolygon(
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // clips a polygon against the numbered plane, resulting vertices are stored
 // in ovlist, noverts
 void vtkExtractSelectedFrustum::PlaneClipPolygon(
@@ -1076,7 +1074,7 @@ void vtkExtractSelectedFrustum::PlaneClipPolygon(
   this->PlaneClipEdge(&ivlist[(nverts - 1) * 3], &ivlist[0 * 3], pid, noverts, ovlist);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // clips a line segment against the numbered plane.
 // intersection point and the second vertex are added to overts if on or inside
 void vtkExtractSelectedFrustum::PlaneClipEdge(
@@ -1106,7 +1104,7 @@ void vtkExtractSelectedFrustum::PlaneClipEdge(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractSelectedFrustum::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1123,3 +1121,4 @@ void vtkExtractSelectedFrustum::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "InsideOut: " << (this->InsideOut ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

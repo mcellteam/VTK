@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLUniforms.h"
 #include "vtkMatrix3x3.h"
 #include "vtkMatrix4x4.h"
@@ -7,12 +9,15 @@
 #include <cstring>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLUniforms);
+VTK_ABI_NAMESPACE_END
 
 // temporary patch: Some Android builds don't have std::to_string
 #include <sstream>
 namespace patch
 {
+VTK_ABI_NAMESPACE_BEGIN
 template <typename T>
 std::string to_string(const T& n)
 {
@@ -20,12 +25,14 @@ std::string to_string(const T& n)
   stm << n;
   return stm.str();
 }
+VTK_ABI_NAMESPACE_END
 }
 
+VTK_ABI_NAMESPACE_BEGIN
 class Uniform
 {
 public:
-  virtual ~Uniform() {}
+  virtual ~Uniform() = default;
   virtual int GetScalarType() = 0;
   virtual vtkIdType GetNumberOfTuples() = 0;
   virtual vtkUniforms::TupleType GetTupleType() = 0;
@@ -41,7 +48,7 @@ template <typename scalarType, vtkUniforms::TupleType tupleType, int nbComponent
 class UniformT : public Uniform
 {
 public:
-  UniformT() {}
+  UniformT() = default;
   vtkIdType GetNumberOfTuples() override
   {
     return static_cast<vtkIdType>(values.size() / nbComponents);
@@ -463,13 +470,9 @@ public:
     bool res = true;
     for (auto& uni : this->Uniforms)
     {
-      bool r = uni.second->SetUniform(uni.first.c_str(), p);
-      if (!r)
-      {
-        vtkErrorMacro(<< "vtkOpenGLUniforms: couldn't set custom uniform variable " << uni.first
-                      << endl);
-      }
-      res &= r;
+      // if the uniform is not used, the GLSL compiler optimize it out
+      // false is returned but it is not necessary an error
+      res &= uni.second->SetUniform(uni.first.c_str(), p);
     }
     return res;
   }
@@ -539,7 +542,7 @@ public:
   }
 
 protected:
-  vtkUniformInternals() {}
+  vtkUniformInternals() = default;
   ~vtkUniformInternals() override { RemoveAllUniforms(); }
 
 private:
@@ -584,9 +587,9 @@ std::vector<T> arrayToVec(const T* in, int count)
   return std::vector<T>(in, in + count);
 }
 
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Generic Setters and Getters (useful for IO)
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkOpenGLUniforms::SetUniform(
   const char* name, vtkUniforms::TupleType tt, int nbComponents, const std::vector<int>& value)
@@ -741,9 +744,9 @@ bool vtkOpenGLUniforms::GetUniform(const char* name, std::vector<float>& value)
   return this->Internals->GetGenericUniformValue(name, value);
 }
 
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Basic setters
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkOpenGLUniforms::SetUniformi(const char* name, int v)
 {
@@ -791,45 +794,45 @@ void vtkOpenGLUniforms::SetUniformMatrix4x4(const char* name, float* v)
   this->Internals->SetUniformValue<std::vector<float>, UniformMat4f>(name, sv);
 }
 
-void vtkOpenGLUniforms::SetUniform1iv(const char* name, const int count, const int* v)
+void vtkOpenGLUniforms::SetUniform1iv(const char* name, int count, const int* v)
 {
   std::vector<int> sv = arrayToVec(v, count);
   this->Internals->SetUniformValue<std::vector<int>, Uniform1iv>(name, sv);
 }
 
-void vtkOpenGLUniforms::SetUniform1fv(const char* name, const int count, const float* v)
+void vtkOpenGLUniforms::SetUniform1fv(const char* name, int count, const float* v)
 {
   std::vector<float> sv = arrayToVec(v, count);
   this->Internals->SetUniformValue<std::vector<float>, Uniform1fv>(name, sv);
 }
 
-void vtkOpenGLUniforms::SetUniform2fv(const char* name, const int count, const float (*v)[2])
+void vtkOpenGLUniforms::SetUniform2fv(const char* name, int count, const float (*v)[2])
 {
   std::vector<float> sv = arrayToVec(reinterpret_cast<const float*>(v), count * 2);
   this->Internals->SetUniformValue<std::vector<float>, Uniform2fv>(name, sv);
 }
 
-void vtkOpenGLUniforms::SetUniform3fv(const char* name, const int count, const float (*v)[3])
+void vtkOpenGLUniforms::SetUniform3fv(const char* name, int count, const float (*v)[3])
 {
   std::vector<float> sv = arrayToVec(reinterpret_cast<const float*>(v), count * 3);
   this->Internals->SetUniformValue<std::vector<float>, Uniform3fv>(name, sv);
 }
 
-void vtkOpenGLUniforms::SetUniform4fv(const char* name, const int count, const float (*v)[4])
+void vtkOpenGLUniforms::SetUniform4fv(const char* name, int count, const float (*v)[4])
 {
   std::vector<float> sv = arrayToVec(reinterpret_cast<const float*>(v), count * 4);
   this->Internals->SetUniformValue<std::vector<float>, Uniform4fv>(name, sv);
 }
 
-void vtkOpenGLUniforms::SetUniformMatrix4x4v(const char* name, const int count, float* v)
+void vtkOpenGLUniforms::SetUniformMatrix4x4v(const char* name, int count, float* v)
 {
   std::vector<float> sv = arrayToVec(v, count * 16);
   this->Internals->SetUniformValue<std::vector<float>, UniformMat4fv>(name, sv);
 }
 
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Convenience setters (data undergoes conversion)
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkOpenGLUniforms::SetUniform3f(const char* name, const double v[3])
 {
@@ -882,39 +885,38 @@ void vtkOpenGLUniforms::SetUniformMatrix(const char* name, vtkMatrix4x4* v)
   this->Internals->SetUniformValue<std::vector<float>, UniformMat4f>(name, sv);
 }
 
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Type specific getters
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkOpenGLUniforms::GetUniformi(const char* name, int& v)
 {
-  return this->Internals->GetUniformValue<int, UniformScalari>(name, reinterpret_cast<int*>(&v));
+  return this->Internals->GetUniformValue<int, UniformScalari>(name, &v);
 }
 
 bool vtkOpenGLUniforms::GetUniformf(const char* name, float& v)
 {
-  return this->Internals->GetUniformValue<float, UniformScalarf>(
-    name, reinterpret_cast<float*>(&v));
+  return this->Internals->GetUniformValue<float, UniformScalarf>(name, &v);
 }
 
 bool vtkOpenGLUniforms::GetUniform2i(const char* name, int v[2])
 {
-  return this->Internals->GetUniformValue<int, UniformVec2i>(name, reinterpret_cast<int*>(v));
+  return this->Internals->GetUniformValue<int, UniformVec2i>(name, v);
 }
 
 bool vtkOpenGLUniforms::GetUniform2f(const char* name, float v[2])
 {
-  return this->Internals->GetUniformValue<float, UniformVec2f>(name, reinterpret_cast<float*>(v));
+  return this->Internals->GetUniformValue<float, UniformVec2f>(name, v);
 }
 
 bool vtkOpenGLUniforms::GetUniform3f(const char* name, float v[3])
 {
-  return this->Internals->GetUniformValue<float, UniformVec3f>(name, reinterpret_cast<float*>(v));
+  return this->Internals->GetUniformValue<float, UniformVec3f>(name, v);
 }
 
 bool vtkOpenGLUniforms::GetUniform4f(const char* name, float v[4])
 {
-  return this->Internals->GetUniformValue<float, UniformVec4f>(name, reinterpret_cast<float*>(v));
+  return this->Internals->GetUniformValue<float, UniformVec4f>(name, v);
 }
 
 bool vtkOpenGLUniforms::GetUniformMatrix3x3(const char* name, float* v)
@@ -957,9 +959,9 @@ bool vtkOpenGLUniforms::GetUniformMatrix4x4v(const char* name, std::vector<float
   return this->Internals->GetUniformValue<float, UniformMat4fv>(name, v);
 }
 
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Convenience getters (with type conversion)
-//---------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkOpenGLUniforms::GetUniform3f(const char* name, double v[3])
 {
@@ -1092,3 +1094,4 @@ void vtkOpenGLUniforms::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
   this->Internals->PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

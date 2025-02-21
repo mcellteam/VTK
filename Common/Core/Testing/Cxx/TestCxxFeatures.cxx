@@ -1,26 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestCxxFeatures.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // .NAME TestCxxFeatures
 // .SECTION Description
 // Provides a reference for the set of C++ features that can be used
 // by VTK.
 
-#include "vtkConfigure.h"
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Check for known compilers.  */
 
@@ -32,7 +18,7 @@
 #define VTK_CXX_SUNPRO
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Check for known compiler limitations.  */
 
@@ -46,17 +32,17 @@
 #define VTK_CLASS_TEMPLATE_SPECIALIZATION template <>
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 #include "vtkSystemIncludes.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test inclusion of typeinfo header.  */
 
 #include <typeinfo>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test nested classes defined outside.  */
 
@@ -88,7 +74,7 @@ NestedTestOuter::~NestedTestOuter()
   delete this->Inner;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test full template specialization of functions.  */
 template <class T>
@@ -121,7 +107,7 @@ int TestFullySpecializedFunction()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test member template of non-template.  */
 
@@ -152,7 +138,7 @@ int TestNonTemplateMemberTemplate()
   return (*px == 123);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test member template of template.  */
 
@@ -184,7 +170,7 @@ int TestTemplateMemberTemplate()
   return (*px == 123);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test full template specialization of classes.  */
 
@@ -236,7 +222,7 @@ int TestFullySpecializedClass()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test if(int x = f()) style scoping.  */
 
@@ -277,7 +263,7 @@ int TestIfScope()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test non-type template parameter.  */
 
@@ -308,7 +294,7 @@ int TestNonTypeTemplate()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test mixed type and non-type template arguments in a non-trivial way.  */
 
@@ -335,7 +321,7 @@ int TestMixedTypeTemplate()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 class SafeBoolIdiomClass
 {
@@ -351,8 +337,8 @@ public:
     : Value(x)
   {
   }
-  operator SafeBool() { return this->Value ? &SafeBoolDummy::Dummy : 0; }
-  SafeBool operator!() { return this->Value ? 0 : &SafeBoolDummy::Dummy; }
+  operator SafeBool() { return this->Value ? &SafeBoolDummy::Dummy : nullptr; }
+  SafeBool operator!() { return this->Value ? nullptr : &SafeBoolDummy::Dummy; }
 
 protected:
   int Value;
@@ -392,7 +378,7 @@ int TestSafeBoolIdiom()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test use of exceptions.  */
 
@@ -471,7 +457,7 @@ static int TestDriverDebugReport(int type, char* message, int* retVal)
 }
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /* Test setlocale  */
 #include <locale.h>
@@ -490,7 +476,7 @@ int TestSetLocale()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 #define DO_TEST(x)                                                                                 \
   if (x())                                                                                         \

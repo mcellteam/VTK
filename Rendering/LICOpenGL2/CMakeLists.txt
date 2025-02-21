@@ -1,14 +1,18 @@
 set(classes
+  vtkBatchedSurfaceLICMapper
   vtkCompositeSurfaceLICMapper
+  vtkCompositeSurfaceLICMapperDelegator
   vtkImageDataLIC2D
-  vtkLICNoiseHelper
   vtkLineIntegralConvolution2D
   vtkStructuredGridLIC2D
   vtkSurfaceLICComposite
-  vtkSurfaceLICHelper
   vtkSurfaceLICInterface
   vtkSurfaceLICMapper
   vtkTextureIO)
+
+set(nowrap_classes
+  vtkLICNoiseHelper
+  vtkSurfaceLICHelper)
 
 set(headers
   vtkPainterCommunicator.h)
@@ -32,8 +36,8 @@ set(shader_cxx_files)
 foreach (shader_file IN LISTS shader_files)
   vtk_encode_string(
     INPUT         "${shader_file}"
-    EXPORT_SYMBOL "VTKRENDERINGLICOPENGL2_EXPORT"
     EXPORT_HEADER "vtkRenderingLICOpenGL2Module.h"
+    EXPORT_SYMBOL "VTKRENDERINGLICOPENGL2_NO_EXPORT"
     HEADER_OUTPUT header
     SOURCE_OUTPUT source)
   list(APPEND shader_cxx_files ${source})
@@ -42,6 +46,7 @@ endforeach ()
 
 vtk_module_add_module(VTK::RenderingLICOpenGL2
   CLASSES ${classes}
+  NOWRAP_CLASSES ${nowrap_classes}
   SOURCES ${shader_cxx_files}
   HEADERS ${headers}
   PRIVATE_HEADERS ${shader_h_files})
@@ -56,3 +61,4 @@ if (VTK_RENDERINGPARALLELLIC_LINEINTEGRALCONVOLUTION2D_TIMER)
     PRIVATE
       vtkLineIntegralConvolution2DTIME)
 endif ()
+vtk_add_test_mangling(VTK::RenderingLICOpenGL2)

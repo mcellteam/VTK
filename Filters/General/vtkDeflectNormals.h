@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDeflectNormals.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDeflectNormals
  * @brief   deflect normals using a 3 component vector field
@@ -28,6 +16,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersGeneralModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkDeflectNormals : public vtkDataSetAlgorithm
 {
 public:
@@ -35,25 +24,25 @@ public:
   vtkTypeMacro(vtkDeflectNormals, vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify value to scale deflection.
    * Default is 1.
    */
   vtkSetMacro(ScaleFactor, double);
   vtkGetMacro(ScaleFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify user defined normal.
    * Default is (0, 0, 1).
    */
   vtkSetVector3Macro(UserNormal, double);
   vtkGetVector3Macro(UserNormal, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify value of the user defined normal.
    * Default is false.
@@ -61,7 +50,7 @@ public:
   vtkSetMacro(UseUserNormal, bool);
   vtkGetMacro(UseUserNormal, bool);
   vtkBooleanMacro(UseUserNormal, bool);
-  //@}
+  ///@}
 
 protected:
   vtkDeflectNormals();
@@ -78,4 +67,5 @@ private:
   void operator=(const vtkDeflectNormals&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

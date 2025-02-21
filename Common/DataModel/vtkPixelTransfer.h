@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPixelTransfer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPixelTransfer
  * pixel extents
@@ -33,10 +21,11 @@
 #include "vtkSetGet.h"                // for macros
 #include <cstring>                    // for memcpy
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONDATAMODEL_EXPORT vtkPixelTransfer
 {
 public:
-  vtkPixelTransfer() {}
+  vtkPixelTransfer() = default;
 
   /**
    * for memory to memory transfers. Convenience api for working
@@ -162,5 +151,6 @@ int vtkPixelTransfer::Blit(const vtkPixelExtent& srcWholeExt, const vtkPixelExte
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkPixelTransfer.h

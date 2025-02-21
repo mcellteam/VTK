@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDijkstraImageContourLineInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDijkstraImageContourLineInterpolator
  * @brief   Contour interpolator for placing points on an image.
@@ -41,6 +29,7 @@
 #include "vtkContourLineInterpolator.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDijkstraImageGeodesicPath;
 class vtkImageData;
 
@@ -48,13 +37,13 @@ class VTKINTERACTIONWIDGETS_EXPORT vtkDijkstraImageContourLineInterpolator
   : public vtkContourLineInterpolator
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkDijkstraImageContourLineInterpolator, vtkContourLineInterpolator);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   static vtkDijkstraImageContourLineInterpolator* New();
 
@@ -65,7 +54,7 @@ public:
    */
   int InterpolateLine(vtkRenderer* ren, vtkContourRepresentation* rep, int idx1, int idx2) override;
 
-  //@{
+  ///@{
   /**
    * Set the image data for the vtkDijkstraImageGeodesicPath.
    * If not set, the interpolator uses the image data input to the image actor.
@@ -73,14 +62,14 @@ public:
    */
   virtual void SetCostImage(vtkImageData*);
   vtkGetObjectMacro(CostImage, vtkImageData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * access to the internal dijkstra path
    */
   vtkGetObjectMacro(DijkstraImageGeodesicPath, vtkDijkstraImageGeodesicPath);
-  //@}
+  ///@}
 
 protected:
   vtkDijkstraImageContourLineInterpolator();
@@ -94,4 +83,5 @@ private:
   void operator=(const vtkDijkstraImageContourLineInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

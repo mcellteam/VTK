@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLProperty.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLProperty.h"
 #include "vtkOpenGLRenderer.h"
 
@@ -26,13 +14,14 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLProperty);
 
 vtkOpenGLProperty::vtkOpenGLProperty() = default;
 
 vtkOpenGLProperty::~vtkOpenGLProperty() = default;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Implement base class method.
 void vtkOpenGLProperty::Render(vtkActor* anActor, vtkRenderer* ren)
 {
@@ -57,7 +46,7 @@ void vtkOpenGLProperty::Render(vtkActor* anActor, vtkRenderer* ren)
   this->Superclass::Render(anActor, ren);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkOpenGLProperty::RenderTextures(vtkActor*, vtkRenderer* ren)
 {
   // render any textures.
@@ -72,7 +61,7 @@ bool vtkOpenGLProperty::RenderTextures(vtkActor*, vtkRenderer* ren)
   return (!textures.empty());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLProperty::PostRender(vtkActor* actor, vtkRenderer* renderer)
 {
   vtkOpenGLClearErrorMacro();
@@ -95,13 +84,13 @@ void vtkOpenGLProperty::PostRender(vtkActor* actor, vtkRenderer* renderer)
   vtkOpenGLCheckErrorMacro("failed after PostRender");
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Implement base class method.
 void vtkOpenGLProperty::BackfaceRender(vtkActor* vtkNotUsed(anActor), vtkRenderer* vtkNotUsed(ren))
 {
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLProperty::ReleaseGraphicsResources(vtkWindow* win)
 {
   // release any textures.
@@ -114,8 +103,9 @@ void vtkOpenGLProperty::ReleaseGraphicsResources(vtkWindow* win)
   this->Superclass::ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLProperty::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

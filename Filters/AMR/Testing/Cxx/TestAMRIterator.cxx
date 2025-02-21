@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestAMRIterator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMRGaussianPulseSource.h"
 #include "vtkOverlappingAMR.h"
 #include "vtkUniformGridAMRDataIterator.h"
@@ -19,7 +7,7 @@
 #include <iostream>
 #include <string>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestAMRIterator(int, char*[])
 {
   unsigned int expected[3][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 } };

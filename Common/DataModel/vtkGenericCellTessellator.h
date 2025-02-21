@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericCellTessellator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericCellTessellator
  * @brief   helper class to perform cell tessellation
@@ -28,9 +16,9 @@
  * edge is subdivided (as well as all connected 2D and 3D cells). The process
  * repeats until the error metric is satisfied.
  *
- * A significant issue addressed by this algorithm is to insure face
+ * A significant issue addressed by this algorithm is to ensure face
  * compatibility across neighboring cells. That is, diagonals due to face
- * triangulation must match to insure that the mesh is compatible. The
+ * triangulation must match to ensure that the mesh is compatible. The
  * algorithm employs a precomputed table to accelerate the tessellation
  * process. The table was generated with the help of vtkOrderedTriangulator;
  * the basic idea is that the choice of diagonal is made by considering the
@@ -43,6 +31,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkDoubleArray;
 class vtkCollection;
@@ -103,14 +92,14 @@ public:
   virtual void Triangulate(vtkGenericAdaptorCell* cell, vtkGenericAttributeCollection* att,
     vtkDoubleArray* points, vtkCellArray* cellArray, vtkPointData* internalPd) = 0;
 
-  //@{
+  ///@{
   /**
    * Specify the list of error metrics used to decide if an edge has to be
    * split or not. It is a collection of vtkGenericSubdivisionErrorMetric-s.
    */
   virtual void SetErrorMetrics(vtkCollection* someErrorMetrics);
   vtkGetObjectMacro(ErrorMetrics, vtkCollection);
-  //@}
+  ///@}
 
   /**
    * Initialize the tessellator with a data set `ds'.
@@ -123,13 +112,13 @@ public:
    */
   void InitErrorMetrics(vtkGenericDataSet* ds);
 
-  //@{
+  ///@{
   /**
    * If true, measure the quality of the fixed subdivision.
    */
   vtkGetMacro(Measurement, int);
   vtkSetMacro(Measurement, int);
-  //@}
+  ///@}
 
   /**
    * Get the maximum error measured after the fixed subdivision.
@@ -211,4 +200,5 @@ private:
   void operator=(const vtkGenericCellTessellator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

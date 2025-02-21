@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVectorNorm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVectorNorm
  * @brief   generate scalars from Euclidean norm of vectors
@@ -42,6 +30,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkVectorNorm : public vtkDataSetAlgorithm
 {
 public:
@@ -59,7 +48,7 @@ public:
   vtkGetMacro(Normalize, vtkTypeBool);
   vtkBooleanMacro(Normalize, vtkTypeBool);
 
-  //@{
+  ///@{
   /**
    * Control how the filter works to generate scalar data from the
    * input vector data. By default, (AttributeModeToDefault) the
@@ -78,11 +67,11 @@ public:
   }
   void SetAttributeModeToUseCellData() { this->SetAttributeMode(VTK_ATTRIBUTE_MODE_USE_CELL_DATA); }
   const char* GetAttributeModeAsString();
-  //@}
+  ///@}
 
 protected:
   vtkVectorNorm();
-  ~vtkVectorNorm() override {}
+  ~vtkVectorNorm() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -94,4 +83,5 @@ private:
   void operator=(const vtkVectorNorm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

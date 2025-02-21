@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderedSurfaceRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkRenderedSurfaceRepresentation.h"
 
@@ -43,8 +27,9 @@
 #include "vtkTransformFilter.h"
 #include "vtkViewTheme.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRenderedSurfaceRepresentation);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderedSurfaceRepresentation::vtkRenderedSurfaceRepresentation()
 {
   this->TransformFilter = vtkTransformFilter::New();
@@ -73,7 +58,7 @@ vtkRenderedSurfaceRepresentation::vtkRenderedSurfaceRepresentation()
   this->ApplyViewTheme(theme);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderedSurfaceRepresentation::~vtkRenderedSurfaceRepresentation()
 {
   this->TransformFilter->Delete();
@@ -84,7 +69,7 @@ vtkRenderedSurfaceRepresentation::~vtkRenderedSurfaceRepresentation()
   this->SetCellColorArrayNameInternal(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRenderedSurfaceRepresentation::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector*)
 {
@@ -93,14 +78,14 @@ int vtkRenderedSurfaceRepresentation::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderedSurfaceRepresentation::PrepareForRendering(vtkRenderView* view)
 {
   this->Superclass::PrepareForRendering(view);
   this->TransformFilter->SetTransform(view->GetTransform());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkRenderedSurfaceRepresentation::AddToView(vtkView* view)
 {
   vtkRenderView* rv = vtkRenderView::SafeDownCast(view);
@@ -113,7 +98,7 @@ bool vtkRenderedSurfaceRepresentation::AddToView(vtkView* view)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkRenderedSurfaceRepresentation::RemoveFromView(vtkView* view)
 {
   vtkRenderView* rv = vtkRenderView::SafeDownCast(view);
@@ -125,7 +110,7 @@ bool vtkRenderedSurfaceRepresentation::RemoveFromView(vtkView* view)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSelection* vtkRenderedSurfaceRepresentation::ConvertSelection(
   vtkView* vtkNotUsed(view), vtkSelection* selection)
 {
@@ -176,7 +161,7 @@ vtkSelection* vtkRenderedSurfaceRepresentation::ConvertSelection(
   return converted;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderedSurfaceRepresentation::SetCellColorArrayName(const char* arrayName)
 {
   this->SetCellColorArrayNameInternal(arrayName);
@@ -184,7 +169,7 @@ void vtkRenderedSurfaceRepresentation::SetCellColorArrayName(const char* arrayNa
     1, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, arrayName);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderedSurfaceRepresentation::ApplyViewTheme(vtkViewTheme* theme)
 {
   this->Superclass::ApplyViewTheme(theme);
@@ -214,7 +199,7 @@ void vtkRenderedSurfaceRepresentation::ApplyViewTheme(vtkViewTheme* theme)
   // this->EdgeTextProperty->SetColor(theme->GetEdgeLabelColor());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderedSurfaceRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -225,3 +210,4 @@ void vtkRenderedSurfaceRepresentation::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Mapper:" << endl;
   this->Mapper->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

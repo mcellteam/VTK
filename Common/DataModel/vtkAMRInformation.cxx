@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAMRInformation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMRInformation.h"
 #include "vtkAMRBox.h"
 #include "vtkBoundingBox.h"
@@ -24,28 +12,22 @@
 #include <cassert>
 #include <set>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAMRInformation);
 
 namespace
 {
 inline bool Inside(double q[3], double gbounds[6])
 {
-  if ((q[0] < gbounds[0]) || (q[0] > gbounds[1]) || (q[1] < gbounds[2]) || (q[1] > gbounds[3]) ||
-    (q[2] < gbounds[4]) || (q[2] > gbounds[5]))
-  {
-    return false;
-  }
-  else
-  {
-    return true;
-  }
+  return gbounds[0] <= q[0] && q[0] <= gbounds[1] && gbounds[2] <= q[1] && q[1] <= gbounds[3] &&
+    gbounds[4] <= q[2] && q[2] <= gbounds[5];
 }
 
 // Utility class used to store bin properties
 // and contents
 class DataSetBinner
 {
-  std::vector<std::vector<unsigned int> > Bins;
+  std::vector<std::vector<unsigned int>> Bins;
   unsigned int NBins[3];
   unsigned int LoCorner[3];
   // Binsize in "extent coordinates"
@@ -122,7 +104,7 @@ public:
 };
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkAMRInformation::vtkAMRInformation()
   : NumBlocks(1, 0)
@@ -359,7 +341,7 @@ void vtkAMRInformation::SetAMRBlockSourceIndex(int index, int sourceId)
     vtkErrorMacro("Invalid index");
     return;
   }
-  SourceIndex->SetValue(index, sourceId);
+  this->SourceIndex->SetValue(index, sourceId);
 }
 
 void vtkAMRInformation::ComputeIndexPair(unsigned int index, unsigned int& level, unsigned int& id)
@@ -505,7 +487,7 @@ unsigned int* vtkAMRInformation::GetParents(
 
   num = static_cast<unsigned int>(this->AllParents[level][index].size());
 
-  return &this->AllParents[level][index][0];
+  return this->AllParents[level][index].data();
 }
 
 unsigned int* vtkAMRInformation::GetChildren(
@@ -520,7 +502,7 @@ unsigned int* vtkAMRInformation::GetChildren(
 
   size = static_cast<unsigned int>(this->AllChildren[level][index].size());
 
-  return &this->AllChildren[level][index][0];
+  return this->AllChildren[level][index].data();
 }
 
 void vtkAMRInformation::PrintParentChildInfo(unsigned int level, unsigned int index)
@@ -630,12 +612,11 @@ const vtkAMRBox& vtkAMRInformation::GetAMRBox(unsigned int level, unsigned int i
 
 void vtkAMRInformation::GetSpacing(unsigned int level, double spacing[3])
 {
-  return this->Spacing->GetTuple(level, spacing);
+  this->Spacing->GetTuple(level, spacing);
 }
 
 void vtkAMRInformation::CalculateParentChildRelationShip(unsigned int level,
-  std::vector<std::vector<unsigned int> >& children,
-  std::vector<std::vector<unsigned int> >& parents)
+  std::vector<std::vector<unsigned int>>& children, std::vector<std::vector<unsigned int>>& parents)
 {
   if (level == 0 || level > this->GetNumberOfLevels())
   {
@@ -820,7 +801,7 @@ bool vtkAMRInformation::GetCoarsenedAMRBox(
   return true;
 }
 
-bool vtkAMRInformation::operator==(const vtkAMRInformation& other)
+bool vtkAMRInformation::operator==(const vtkAMRInformation& other) const
 {
   if (this->GridDescription != other.GridDescription)
   {
@@ -884,7 +865,7 @@ bool vtkAMRInformation::GetOrigin(unsigned int level, unsigned int id, double* o
   return true;
 }
 
-void vtkAMRInformation::UpdateBounds(const int level, const int id)
+void vtkAMRInformation::UpdateBounds(int level, int id)
 {
   double bb[6];
   vtkAMRBox::GetBounds(
@@ -997,3 +978,4 @@ bool vtkAMRInformation::FindGrid(double q[3], int level, unsigned int& gridId)
   }
   return false;
 }
+VTK_ABI_NAMESPACE_END

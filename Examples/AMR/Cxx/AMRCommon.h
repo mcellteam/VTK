@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    AMRCommon.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME AMRCommon.h -- Encapsulates common functionality for AMR data.
 //
 // .SECTION Description
@@ -26,19 +14,19 @@
 
 #include "vtkCell.h"
 #include "vtkCompositeDataWriter.h"
-#include "vtkHierarchicalBoxDataSet.h"
 #include "vtkImageToStructuredGrid.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkOverlappingAMR.h"
 #include "vtkStructuredGridWriter.h"
 #include "vtkUniformGrid.h"
-#include "vtkXMLHierarchicalBoxDataReader.h"
 #include "vtkXMLImageDataWriter.h"
 #include "vtkXMLMultiBlockDataWriter.h"
+#include "vtkXMLUniformGridAMRReader.h"
 #include "vtkXMLUniformGridAMRWriter.h"
 
 namespace AMRCommon
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 //------------------------------------------------------------------------------
 // Description:
@@ -79,12 +67,12 @@ void WriteAMRData(vtkOverlappingAMR* amrData, const std::string& prefix)
 //------------------------------------------------------------------------------
 // Description:
 // Reads AMR data to the given data-structure from the prescribed file.
-vtkHierarchicalBoxDataSet* ReadAMRData(const std::string& file)
+vtkOverlappingAMR* ReadAMRData(const std::string& file)
 {
   // Sanity check
   //  assert( "pre: AMR dataset is NULL!" && (amrData != NULL) );
 
-  vtkXMLHierarchicalBoxDataReader* myAMRReader = vtkXMLHierarchicalBoxDataReader::New();
+  vtkXMLUniformGridAMRReader* myAMRReader = vtkXMLUniformGridAMRReader::New();
   assert("pre: AMR Reader is NULL!" && (myAMRReader != nullptr));
 
   std::ostringstream oss;
@@ -98,8 +86,7 @@ vtkHierarchicalBoxDataSet* ReadAMRData(const std::string& file)
   myAMRReader->SetFileName(oss.str().c_str());
   myAMRReader->Update();
 
-  vtkHierarchicalBoxDataSet* amrData =
-    vtkHierarchicalBoxDataSet::SafeDownCast(myAMRReader->GetOutput());
+  vtkOverlappingAMR* amrData = vtkOverlappingAMR::SafeDownCast(myAMRReader->GetOutput());
   assert("post: AMR data read is NULL!" && (amrData != nullptr));
   return (amrData);
 }
@@ -155,6 +142,7 @@ void ComputeCellCenter(vtkUniformGrid* grid, const int cellIdx, double c[3])
   delete[] weights;
 }
 
+VTK_ABI_NAMESPACE_END
 } // END namespace
 
 #endif /* AMRCOMMON_H_ */

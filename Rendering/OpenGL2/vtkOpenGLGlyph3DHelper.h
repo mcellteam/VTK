@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLGlyph3DHelper
  * @brief   PolyDataMapper using OpenGL to render.
@@ -28,6 +17,7 @@
 #include "vtkOpenGLPolyDataMapper.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 
 class VTKRENDERINGOPENGL2_EXPORT vtkOpenGLGlyph3DHelper : public vtkOpenGLPolyDataMapper
@@ -46,7 +36,7 @@ public:
     std::vector<float>& normalMatrices, std::vector<vtkIdType>& pickIds, vtkMTimeType pointMTime,
     bool culling);
 
-  void SetLODs(std::vector<std::pair<float, float> >& lods);
+  void SetLODs(std::vector<std::pair<float, float>>& lods);
 
   void SetLODColoring(bool val);
 
@@ -72,10 +62,12 @@ protected:
   void GetShaderTemplate(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act) override;
 
-  //@{
+  ///@{
   /**
    * Perform string replacements on the shader templates
    */
+  void ReplaceShaderValues(
+    std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* actor) override;
   void ReplaceShaderPicking(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act) override;
   void ReplaceShaderColor(
@@ -86,10 +78,12 @@ protected:
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act) override;
   void ReplaceShaderPositionVC(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act) override;
-  //@}
+  void ReplaceShaderPointSize(
+    std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act);
+  ///@}
 
   /**
-   * Set the shader parameteres related to the actor/mapper
+   * Set the shader parameters related to the actor/mapper
    */
   void SetMapperShaderParameters(vtkOpenGLHelper& cellBO, vtkRenderer* ren, vtkActor* act) override;
 
@@ -103,7 +97,7 @@ protected:
   vtkTimeStamp InstanceBuffersBuildTime;
   vtkTimeStamp InstanceBuffersLoadTime;
 
-  std::vector<std::pair<float, float> > LODs;
+  std::vector<std::pair<float, float>> LODs;
   vtkNew<vtkOpenGLInstanceCulling> InstanceCulling;
 
 private:
@@ -111,4 +105,5 @@ private:
   void operator=(const vtkOpenGLGlyph3DHelper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

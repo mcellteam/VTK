@@ -1,25 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    QVTKInteractor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*
- * Copyright 2004 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2004 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /*========================================================================
  For general information about using VTK and Qt, see:
@@ -56,14 +37,20 @@
 #include "vtkObjectFactory.h"
 #include "vtkRenderWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 QVTKInteractorInternal::QVTKInteractorInternal(QVTKInteractor* p)
   : Parent(p)
 {
   this->SignalMapper = new QSignalMapper(this);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+  QObject::connect(
+    this->SignalMapper, &QSignalMapper::mappedInt, this, &QVTKInteractorInternal::TimerEvent);
+#else
   QObject::connect(this->SignalMapper, SIGNAL(mapped(int)), this, SLOT(TimerEvent(int)));
+#endif
 }
 
-QVTKInteractorInternal::~QVTKInteractorInternal() {}
+QVTKInteractorInternal::~QVTKInteractorInternal() = default;
 
 void QVTKInteractorInternal::TimerEvent(int id)
 {
@@ -121,13 +108,13 @@ void QVTKInteractor::Initialize()
 }
 
 #if defined(VTK_USE_TDX) && (defined(Q_WS_X11) || defined(Q_OS_LINUX))
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTDxUnixDevice* QVTKInteractor::GetDevice()
 {
   return this->Device;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void QVTKInteractor::SetDevice(vtkTDxDevice* device)
 {
   if (this->Device != device)
@@ -152,7 +139,7 @@ void QVTKInteractor::TerminateApp()
   // qApp->exit();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void QVTKInteractor::StartListening()
 {
 #if defined(VTK_USE_TDX) && defined(Q_OS_WIN)
@@ -175,7 +162,7 @@ void QVTKInteractor::StartListening()
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void QVTKInteractor::StopListening()
 {
 #if defined(VTK_USE_TDX) && defined(Q_OS_WIN)
@@ -261,3 +248,4 @@ int QVTKInteractor::InternalDestroyTimer(int platformTimerId)
   }
   return 0;
 }
+VTK_ABI_NAMESPACE_END

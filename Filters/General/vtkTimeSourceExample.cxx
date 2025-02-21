@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTimeSourceExample.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkTimeSourceExample.h"
 
@@ -31,27 +19,28 @@
 #include "vtkUnstructuredGrid.h"
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTimeSourceExample);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkTimeSourceExample::ValueFunction(double t)
 {
   return sin(2 * vtkMath::Pi() * t);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkTimeSourceExample::XFunction(double t)
 {
   return sin(2 * vtkMath::Pi() * t) * this->XAmplitude;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkTimeSourceExample::YFunction(double t)
 {
   return sin(2 * vtkMath::Pi() * t) * this->YAmplitude;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTimeSourceExample::LookupTimeAndValue(double& time, double& value)
 {
   double t = time;
@@ -98,7 +87,7 @@ void vtkTimeSourceExample::LookupTimeAndValue(double& time, double& value)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTimeSourceExample::NumCellsFunction(double t)
 {
   int numCells = 1;
@@ -112,7 +101,7 @@ int vtkTimeSourceExample::NumCellsFunction(double t)
   return numCells;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTimeSourceExample::vtkTimeSourceExample()
 {
   this->SetNumberOfInputPorts(0);
@@ -139,14 +128,14 @@ vtkTimeSourceExample::vtkTimeSourceExample()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTimeSourceExample::~vtkTimeSourceExample()
 {
   delete[] this->Steps;
   delete[] this->Values;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTimeSourceExample::RequestInformation(
   vtkInformation* reqInfo, vtkInformationVector** inVector, vtkInformationVector* outVector)
 {
@@ -180,7 +169,7 @@ int vtkTimeSourceExample::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTimeSourceExample::RequestData(vtkInformation* vtkNotUsed(reqInfo),
   vtkInformationVector** vtkNotUsed(inVector), vtkInformationVector* outVector)
 {
@@ -252,6 +241,10 @@ int vtkTimeSourceExample::RequestData(vtkInformation* vtkNotUsed(reqInfo),
   {
     for (int j = 0; j < numCells + 1; j++)
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       for (int k = 0; k < 2; k++)
       {
         pd->InsertNextValue(value);
@@ -301,6 +294,10 @@ int vtkTimeSourceExample::RequestData(vtkInformation* vtkNotUsed(reqInfo),
   {
     for (int j = 0; j < numCells; j++)
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       for (int k = 0; k < 1; k++)
       {
         cd->InsertNextValue(value);
@@ -331,7 +328,7 @@ int vtkTimeSourceExample::RequestData(vtkInformation* vtkNotUsed(reqInfo),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTimeSourceExample::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -340,3 +337,4 @@ void vtkTimeSourceExample::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "YAmplitude: " << this->YAmplitude << endl;
   os << indent << "Growing: " << this->Growing << endl;
 }
+VTK_ABI_NAMESPACE_END

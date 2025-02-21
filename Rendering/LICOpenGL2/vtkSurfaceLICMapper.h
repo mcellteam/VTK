@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSurfaceLICMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSurfaceLICMapper
  * @brief   mapper that performs LIC on the surface of
@@ -32,7 +20,7 @@
  *     |                                               |
  * vectors                                         surface LIC
  * </pre>
- * PROj  - prject vectors onto surface
+ * PROj  - project vectors onto surface
  * GAT   - gather data for compositing and guard pixel generation  (parallel only)
  * COMP  - composite gathered data
  * LIC2D - line intengral convolution, see vtkLineIntegralConvolution2D.
@@ -58,11 +46,14 @@
 
 #include "vtkOpenGLPolyDataMapper.h"
 #include "vtkRenderingLICOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"             // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSurfaceLICInterface;
 class vtkPainterCommunicator;
 
-class VTKRENDERINGLICOPENGL2_EXPORT vtkSurfaceLICMapper : public vtkOpenGLPolyDataMapper
+class VTKRENDERINGLICOPENGL2_EXPORT VTK_MARSHALAUTO vtkSurfaceLICMapper
+  : public vtkOpenGLPolyDataMapper
 {
 public:
   static vtkSurfaceLICMapper* New();
@@ -86,12 +77,12 @@ public:
    */
   void ShallowCopy(vtkAbstractMapper*) override;
 
-  //@{
+  ///@{
   /**
    * Get the vtkSurfaceLICInterface used by this mapper
    */
   vtkGetObjectMacro(LICInterface, vtkSurfaceLICInterface);
-  //@}
+  ///@}
 
 protected:
   vtkSurfaceLICMapper();
@@ -111,9 +102,8 @@ protected:
    */
   void BuildBufferObjects(vtkRenderer* ren, vtkActor* act) override;
 
-protected:
   /**
-   * Set the shader parameteres related to the mapper/input data, called by UpdateShader
+   * Set the shader parameters related to the mapper/input data, called by UpdateShader
    */
   void SetMapperShaderParameters(vtkOpenGLHelper& cellBO, vtkRenderer* ren, vtkActor* act) override;
 
@@ -130,4 +120,5 @@ private:
   void operator=(const vtkSurfaceLICMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

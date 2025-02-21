@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestChartXYZ.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAxis.h"
 #include "vtkChartXYZ.h"
@@ -30,7 +18,7 @@
 // Need a timer so that we can animate, and then take a snapshot!
 namespace
 {
-static double angle = 0;
+double angle = 0;
 
 void ProcessEvents(vtkObject* caller, unsigned long, void* clientData, void* callerData)
 {
@@ -104,6 +92,11 @@ int TestChartXYZ(int, char*[])
   vtkNew<vtkPlotPoints3D> plot2;
   plot2->SetInputData(table, "X Axis", "Sine", "Cosine");
   chart2->AddPlot(plot2);
+
+  chart2->GetAxis(0)->SetUnscaledRange(-0.1, 7.6);
+  chart2->GetAxis(1)->SetUnscaledRange(-1.1, 1.1);
+  chart2->GetAxis(2)->SetUnscaledRange(-1.1, 1.1);
+  chart2->RecalculateTransform();
 
   view->GetRenderWindow()->SetMultiSamples(0);
   view->GetInteractor()->Initialize();

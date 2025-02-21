@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    QVTKOpenGLStereoWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef QVTKOpenGLStereoWidget_h
 #define QVTKOpenGLStereoWidget_h
 
@@ -25,6 +13,7 @@
 class QSurfaceFormat;
 class QOpenGLContext;
 
+VTK_ABI_NAMESPACE_BEGIN
 // class QVTKInteractor;
 class QVTKInteractorAdapter;
 class QVTKOpenGLWindow;
@@ -76,7 +65,7 @@ public:
     QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
   ~QVTKOpenGLStereoWidget() override;
 
-  //@{
+  ///@{
   /**
    * @copydoc QVTKOpenGLWindow::setRenderWindow()
    */
@@ -85,7 +74,7 @@ public:
     this->VTKOpenGLWindow->setRenderWindow(win);
   }
   void setRenderWindow(vtkRenderWindow* win) { this->VTKOpenGLWindow->setRenderWindow(win); }
-  //@}
+  ///@}
 
   /**
    * @copydoc QVTKOpenGLWindow::renderWindow()
@@ -106,27 +95,73 @@ public:
   }
 
   /**
+   * @copydoc QVTKOpenGLWindow::setEnableTouchEventProcessing()
+   */
+  void setEnableTouchEventProcessing(bool enable)
+  {
+    this->VTKOpenGLWindow->setEnableTouchEventProcessing(enable);
+  }
+  bool enableTouchEventProcessing() const
+  {
+    return this->VTKOpenGLWindow->enableTouchEventProcessing();
+  }
+
+  /**
    * @copydoc QVTKOpenGLWindow::setEnableHiDPI()
    */
   void setEnableHiDPI(bool enable) { this->VTKOpenGLWindow->setEnableHiDPI(enable); }
   bool enableHiDPI() const { return this->VTKOpenGLWindow->enableHiDPI(); }
 
-  //@{
+  ///@{
   /**
    * Set/Get unscaled DPI value. Defaults to 72, which is also the default value
    * in vtkWindow.
    */
   void setUnscaledDPI(int dpi) { this->VTKOpenGLWindow->setUnscaledDPI(dpi); }
   int unscaledDPI() const { return this->VTKOpenGLWindow->unscaledDPI(); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get a custom device pixel ratio to use to map Qt sizes to VTK (or
+   * OpenGL) sizes. Thus, when the QWidget is resized, it called
+   * `vtkRenderWindow::SetSize` on the internal vtkRenderWindow after
+   * multiplying the QWidget's size by this scale factor.
+   *
+   * By default, this is set to 0. Which means that `devicePixelRatio` obtained
+   * from Qt will be used. Set this to a number greater than 0 to override this
+   * behaviour and use the custom scale factor instead.
+   *
+   * `effectiveDevicePixelRatio` can be used to obtain the device-pixel-ratio
+   * that will be used given the value for customDevicePixelRatio.
+   */
+  void setCustomDevicePixelRatio(double cdpr)
+  {
+    this->VTKOpenGLWindow->setCustomDevicePixelRatio(cdpr);
+  };
+  double customDevicePixelRatio() const { return this->VTKOpenGLWindow->customDevicePixelRatio(); };
+  double effectiveDevicePixelRatio() const
+  {
+    return this->VTKOpenGLWindow->effectiveDevicePixelRatio();
+  };
+  ///@}
+
+  ///@{
   /**
    * @copydoc QVTKOpenGLWindow::setDefaultCursor()
    */
   void setDefaultCursor(const QCursor& cursor) { this->VTKOpenGLWindow->setDefaultCursor(cursor); }
   const QCursor& defaultCursor() const { return this->VTKOpenGLWindow->defaultCursor(); }
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set/get the cursor to use for this widget.
+   * Internally calls QWindow::setCursor / QWindow::cursor on the embedded window.
+   */
+  void setCursorCustom(const QCursor& cursor) { this->VTKOpenGLWindow->setCursor(cursor); };
+  QCursor cursorCustom() const { return this->VTKOpenGLWindow->cursor(); }
+  ///@}
 
   /**
    * Returns true if the internal QOpenGLWindow's is valid, i.e. if OpenGL
@@ -161,41 +196,6 @@ public:
    */
   QSurfaceFormat format() const { return this->VTKOpenGLWindow->format(); }
 
-  //@{
-  /**
-   * @deprecated in VTK 8.3
-   */
-  VTK_LEGACY(void SetRenderWindow(vtkGenericOpenGLRenderWindow* win));
-  VTK_LEGACY(void SetRenderWindow(vtkRenderWindow* win));
-  //@}
-
-  //@{
-  /**
-   * These methods have be deprecated to fix naming style. Since
-   * QVTKOpenGLNativeWidget is QObject subclass, we follow Qt naming conventions
-   * rather than VTK's.
-   */
-  VTK_LEGACY(vtkRenderWindow* GetRenderWindow());
-  VTK_LEGACY(QVTKInteractor* GetInteractor());
-  //@}
-
-  /**
-   * @deprecated in VTK 8.3
-   * QVTKInteractorAdapter is an internal helper. Hence the API was removed.
-   */
-  VTK_LEGACY(QVTKInteractorAdapter* GetInteractorAdapter());
-
-  /**
-   * @deprecated in VTK 8.3. Simply use `QWidget::setCursor` API to change
-   * cursor.
-   */
-  VTK_LEGACY(void setQVTKCursor(const QCursor& cursor));
-
-  /**
-   * @deprecated in VTK 8.3. Use `setDefaultCursor` instead.
-   */
-  VTK_LEGACY(void setDefaultQVTKCursor(const QCursor& cursor));
-
 protected:
   void resizeEvent(QResizeEvent* evt) override;
   void paintEvent(QPaintEvent* evt) override;
@@ -204,4 +204,5 @@ private:
   QPointer<QVTKOpenGLWindow> VTKOpenGLWindow;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

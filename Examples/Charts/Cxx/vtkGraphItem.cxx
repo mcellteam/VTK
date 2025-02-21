@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGraphItem.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGraphItem.h"
 
@@ -35,7 +23,7 @@
 #include <utility>
 #include <vector>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkGraphItem, Graph, vtkGraph);
 vtkStandardNewMacro(vtkGraphItem);
 
@@ -98,11 +86,11 @@ public:
   vtkSmartPointer<vtkMinimalStandardRandomSequence> Random;
   vtkGraphItem* Item;
 
-  std::vector<std::pair<float, float> > Position;
-  std::vector<std::pair<float, float> > Velocity;
+  std::vector<std::pair<float, float>> Position;
+  std::vector<std::pair<float, float>> Velocity;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGraphItem::vtkGraphItem()
 {
   this->Impl = new Implementation();
@@ -113,14 +101,14 @@ vtkGraphItem::vtkGraphItem()
   this->HitVertex = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGraphItem::~vtkGraphItem()
 {
   delete this->Impl;
   this->SetGraph(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGraphItem::Paint(vtkContext2D* painter)
 {
   painter->GetTextProp()->SetVerticalJustificationToCentered();
@@ -158,7 +146,7 @@ bool vtkGraphItem::Paint(vtkContext2D* painter)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGraphItem::Hit(const vtkContextMouseEvent& mouse)
 {
   float pos[2] = { 0.0f, 0.0f };
@@ -175,14 +163,14 @@ bool vtkGraphItem::Hit(const vtkContextMouseEvent& mouse)
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGraphItem::MouseEnterEvent(const vtkContextMouseEvent&)
 {
   this->MouseOver = true;
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGraphItem::MouseMoveEvent(const vtkContextMouseEvent& mouse)
 {
   int deltaX = static_cast<int>(mouse.GetPos()[0] - this->LastPosition[0]);
@@ -221,14 +209,14 @@ bool vtkGraphItem::MouseMoveEvent(const vtkContextMouseEvent& mouse)
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGraphItem::MouseLeaveEvent(const vtkContextMouseEvent&)
 {
   this->MouseOver = false;
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGraphItem::MouseButtonPressEvent(const vtkContextMouseEvent& mouse)
 {
   this->MouseButtonPressed = mouse.GetButton();
@@ -237,14 +225,14 @@ bool vtkGraphItem::MouseButtonPressEvent(const vtkContextMouseEvent& mouse)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGraphItem::MouseButtonReleaseEvent(const vtkContextMouseEvent&)
 {
   this->MouseButtonPressed = -1;
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphItem::UpdatePositions()
 {
   vtkIdType numVerts = this->Graph->GetNumberOfVertices();
@@ -333,7 +321,7 @@ void vtkGraphItem::UpdatePositions()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGraphItem::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

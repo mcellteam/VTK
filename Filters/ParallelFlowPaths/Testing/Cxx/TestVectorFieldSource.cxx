@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "TestVectorFieldSource.h"
 #include <vtkDataArray.h>
 #include <vtkDataObject.h>
@@ -82,7 +84,7 @@ TestVectorFieldSource::TestVectorFieldSource()
 
 // Description:
 // Destructor.
-TestVectorFieldSource::~TestVectorFieldSource() {}
+TestVectorFieldSource::~TestVectorFieldSource() = default;
 int TestVectorFieldSource::RequestInformation(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputInfoVector)
 {

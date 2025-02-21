@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlotLine.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPlotLine
@@ -27,8 +15,10 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkPlotPoints.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
-class VTKCHARTSCORE_EXPORT vtkPlotLine : public vtkPlotPoints
+VTK_ABI_NAMESPACE_BEGIN
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPlotLine : public vtkPlotPoints
 {
 public:
   vtkTypeMacro(vtkPlotLine, vtkPlotPoints);
@@ -52,7 +42,7 @@ public:
    */
   bool PaintLegend(vtkContext2D* painter, const vtkRectf& rect, int legendIndex) override;
 
-  //@{
+  ///@{
   /**
    * Turn on/off flag to control whether the points define a poly line
    * (true) or multiple line segments (false).
@@ -63,7 +53,7 @@ public:
   vtkSetMacro(PolyLine, bool);
   vtkGetMacro(PolyLine, bool);
   vtkBooleanMacro(PolyLine, bool);
-  //@}
+  ///@}
 
 protected:
   vtkPlotLine();
@@ -79,4 +69,5 @@ private:
   void operator=(const vtkPlotLine&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPlotLine_h

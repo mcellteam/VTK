@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSpline.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSpline
  * @brief   spline abstract class for interpolating splines
@@ -57,6 +45,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPiecewiseFunction;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkSpline : public vtkObject
@@ -65,7 +54,7 @@ public:
   vtkTypeMacro(vtkSpline, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the parametric range. If not set, the range is determined
    * implicitly by keeping track of the (min,max) parameter values for
@@ -75,9 +64,9 @@ public:
   void SetParametricRange(double tMin, double tMax);
   void SetParametricRange(double tRange[2]) { this->SetParametricRange(tRange[0], tRange[1]); }
   void GetParametricRange(double tRange[2]) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get ClampValue. If On, results of the interpolation will be
    * clamped to the min/max of the input data.
@@ -85,7 +74,7 @@ public:
   vtkSetMacro(ClampValue, vtkTypeBool);
   vtkGetMacro(ClampValue, vtkTypeBool);
   vtkBooleanMacro(ClampValue, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Compute the coefficients for the spline.
@@ -108,6 +97,16 @@ public:
   void AddPoint(double t, double x);
 
   /**
+   * Add all the points to the list of points in one time,
+   * and then sort them only once. Much faster than using
+   * AddPoint for each point.
+   *
+   * Note that the data is copied and this method does not
+   * take ownership of the parameter array.
+   */
+  void FillFromDataPointer(int nb, double* data);
+
+  /**
    * Remove a point from the data to be fit with the spline.
    */
   void RemovePoint(double t);
@@ -117,7 +116,7 @@ public:
    */
   void RemoveAllPoints();
 
-  //@{
+  ///@{
   /**
    * Control whether the spline is open or closed. A closed spline forms
    * a continuous loop: the first and last points are the same, and
@@ -126,9 +125,9 @@ public:
   vtkSetMacro(Closed, vtkTypeBool);
   vtkGetMacro(Closed, vtkTypeBool);
   vtkBooleanMacro(Closed, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the type of constraint of the left(right) end points. Four
    * constraints are available:
@@ -149,9 +148,9 @@ public:
   vtkGetMacro(LeftConstraint, int);
   vtkSetClampMacro(RightConstraint, int, 0, 3);
   vtkGetMacro(RightConstraint, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The values of the derivative on the left and right sides. The value
    * is used only if the left(right) constraint is type 1-3.
@@ -160,7 +159,7 @@ public:
   vtkGetMacro(LeftValue, double);
   vtkSetMacro(RightValue, double);
   vtkGetMacro(RightValue, double);
-  //@}
+  ///@}
 
   /**
    * Return the MTime also considering the Piecewise function.
@@ -200,4 +199,5 @@ private:
   void operator=(const vtkSpline&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,5 +1,10 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
+
 #ifndef vtkVariantInlineOperators_h
 #define vtkVariantInlineOperators_h
+
+#include "vtkABINamespace.h"
 
 #include <climits>
 
@@ -9,9 +14,14 @@
 // type we're actually dealing with.  With any luck the compiler will
 // inline these so they have very little overhead.
 
+VTK_ABI_NAMESPACE_BEGIN
 inline bool IsSigned64Bit(int VariantType)
 {
+#if VTK_LONG_LONG == VTK_TYPE_INT64
+  return (VariantType == VTK_TYPE_INT64);
+#else
   return ((VariantType == VTK_LONG_LONG) || (VariantType == VTK_TYPE_INT64));
+#endif
 }
 
 inline bool IsSigned(int VariantType)
@@ -105,13 +115,6 @@ inline bool vtkVariant::operator==(const vtkVariant& other) const
     return (this->ToString() == other.ToString());
   }
 
-  // Fourth test: the Unicode STRING type dominates all else.  If either item
-  // is a unicode string then they must both be compared as strings.
-  if ((this->Type == VTK_UNICODE_STRING) || (other.Type == VTK_UNICODE_STRING))
-  {
-    return (this->ToUnicodeString() == other.ToUnicodeString());
-  }
-
   // Fifth: floating point dominates integer types.
   // Demote to the lowest-floating-point precision for the comparison.
   // This effectively makes the lower-precision number an interval
@@ -178,13 +181,6 @@ inline bool vtkVariant::operator<(const vtkVariant& other) const
   if ((this->Type == VTK_STRING) || (other.Type == VTK_STRING))
   {
     return (this->ToString() < other.ToString());
-  }
-
-  // Fourth test: the Unicode STRING type dominates all else.  If either item
-  // is a unicode string then they must both be compared as strings.
-  if ((this->Type == VTK_UNICODE_STRING) || (other.Type == VTK_UNICODE_STRING))
-  {
-    return (this->ToUnicodeString() < other.ToUnicodeString());
   }
 
   // Fourth: floating point dominates integer types.
@@ -259,5 +255,6 @@ inline bool vtkVariant::operator>=(const vtkVariant& other) const
   return (!this->operator<(other));
 }
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkVariantInlineOperators.h

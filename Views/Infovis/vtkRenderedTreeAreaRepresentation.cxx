@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderedTreeAreaRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkRenderedTreeAreaRepresentation.h"
 
@@ -33,7 +17,6 @@
 #include "vtkEdgeCenters.h"
 #include "vtkExtractEdges.h"
 #include "vtkExtractSelectedGraph.h"
-#include "vtkExtractSelectedPolyDataIds.h"
 #include "vtkGraphHierarchicalBundleEdges.h"
 #include "vtkGraphLayout.h"
 #include "vtkGraphMapper.h"
@@ -77,10 +60,11 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderedTreeAreaRepresentation::Internals
 {
 public:
-  std::vector<vtkSmartPointer<vtkHierarchicalGraphPipeline> > Graphs;
+  std::vector<vtkSmartPointer<vtkHierarchicalGraphPipeline>> Graphs;
 };
 
 vtkStandardNewMacro(vtkRenderedTreeAreaRepresentation);
@@ -334,7 +318,7 @@ void vtkRenderedTreeAreaRepresentation::SetEdgeScalarBarVisibility(bool b)
 
 bool vtkRenderedTreeAreaRepresentation::GetEdgeScalarBarVisibility()
 {
-  return this->EdgeScalarBar->GetScalarBarActor()->GetVisibility() ? true : false;
+  return this->EdgeScalarBar->GetScalarBarActor()->GetVisibility() != 0;
 }
 
 void vtkRenderedTreeAreaRepresentation::SetGraphHoverArrayName(const char* name, int idx)
@@ -400,7 +384,7 @@ void vtkRenderedTreeAreaRepresentation::SetAreaToPolyData(vtkPolyDataAlgorithm* 
   }
 }
 
-vtkUnicodeString vtkRenderedTreeAreaRepresentation::GetHoverTextInternal(vtkSelection* sel)
+std::string vtkRenderedTreeAreaRepresentation::GetHoverStringInternal(vtkSelection* sel)
 {
   vtkGraph* input = vtkGraph::SafeDownCast(this->GetInput());
   vtkSmartPointer<vtkIdTypeArray> selectedItems = vtkSmartPointer<vtkIdTypeArray>::New();
@@ -423,15 +407,15 @@ vtkUnicodeString vtkRenderedTreeAreaRepresentation::GetHoverTextInternal(vtkSele
   }
   if (selectedItems->GetNumberOfTuples() == 0 || !hoverArrName)
   {
-    return vtkUnicodeString();
+    return "";
   }
   vtkAbstractArray* arr = data->GetAbstractArray(hoverArrName);
   if (!arr)
   {
-    return vtkUnicodeString();
+    return "";
   }
   vtkIdType item = selectedItems->GetValue(0);
-  return arr->GetVariantValue(item).ToUnicodeString();
+  return arr->GetVariantValue(item).ToString();
 }
 
 void vtkRenderedTreeAreaRepresentation::UpdateHoverHighlight(vtkView* view, int x, int y)
@@ -849,7 +833,7 @@ vtkSelection* vtkRenderedTreeAreaRepresentation::ConvertSelection(vtkView* view,
             }
 
             // Before adding vertex's edges, make sure its in the same domain as selected vertex
-            vtkStdString domain;
+            std::string domain;
             if (domainArr)
             {
               domain = domainArr->GetValue(id);
@@ -1042,3 +1026,4 @@ void vtkRenderedTreeAreaRepresentation::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

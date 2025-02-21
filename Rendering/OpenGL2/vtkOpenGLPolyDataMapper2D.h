@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLPolyDataMapper2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLPolyDataMapper2D
  * @brief   2D PolyData support for OpenGL
@@ -31,10 +19,12 @@
 #include "vtkOpenGLHelper.h" // used for ivars
 #include "vtkPolyDataMapper2D.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 #include <map>                         //for used data arrays & vbos
 #include <string>                      // For API.
 #include <vector>                      //for ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor2D;
 class vtkGenericOpenGLResourceFreeCallback;
 class vtkMatrix4x4;
@@ -47,7 +37,8 @@ class vtkRenderer;
 class vtkTextureObject;
 class vtkTransform;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkOpenGLPolyDataMapper2D : public vtkPolyDataMapper2D
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkOpenGLPolyDataMapper2D
+  : public vtkPolyDataMapper2D
 {
 public:
   vtkTypeMacro(vtkOpenGLPolyDataMapper2D, vtkPolyDataMapper2D);
@@ -89,18 +80,23 @@ protected:
   virtual void UpdateShaders(vtkOpenGLHelper& cellBO, vtkViewport* viewport, vtkActor2D* act);
 
   /**
-   * Set the shader parameteres related to the mapper/input data, called by UpdateShader
+   * Set the value of user-defined uniform variables, called by UpdateShaders
    */
-  virtual void SetMapperShaderParameters(
-    vtkOpenGLHelper& cellBO, vtkViewport* ren, vtkActor2D* act);
+  virtual void SetCustomUniforms(vtkOpenGLHelper& cellBO, vtkActor2D* actor);
 
   /**
-   * Set the shader parameteres related to the Camera
+   * Set the shader parameters related to the mapper/input data, called by UpdateShaders
+   */
+  virtual void SetMapperShaderParameters(
+    vtkOpenGLHelper& cellBO, vtkViewport* viewport, vtkActor2D* act);
+
+  /**
+   * Set the shader parameters related to the Camera
    */
   void SetCameraShaderParameters(vtkOpenGLHelper& cellBO, vtkViewport* viewport, vtkActor2D* act);
 
   /**
-   * Set the shader parameteres related to the property
+   * Set the shader parameters related to the property
    */
   void SetPropertyShaderParameters(vtkOpenGLHelper& cellBO, vtkViewport* viewport, vtkActor2D* act);
 
@@ -149,4 +145,5 @@ private:
   void operator=(const vtkOpenGLPolyDataMapper2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

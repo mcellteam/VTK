@@ -1,41 +1,30 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextureUnitManager.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTextureUnitManager.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLRenderWindow.h"
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTextureUnitManager);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextureUnitManager::vtkTextureUnitManager()
 {
   this->NumberOfTextureUnits = 0;
   this->TextureUnits = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextureUnitManager::~vtkTextureUnitManager()
 {
   this->DeleteTable();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Delete the allocation table and check if it is not called before
 // all the texture units have been released.
@@ -62,7 +51,7 @@ void vtkTextureUnitManager::DeleteTable()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureUnitManager::Initialize()
 {
   // this->DeleteTable();
@@ -83,7 +72,7 @@ void vtkTextureUnitManager::Initialize()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Number of texture units supported by the OpenGL context.
 int vtkTextureUnitManager::GetNumberOfTextureUnits()
@@ -91,7 +80,7 @@ int vtkTextureUnitManager::GetNumberOfTextureUnits()
   return this->NumberOfTextureUnits;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Reserve a texture unit. It returns its number.
 // It returns -1 if the allocation failed (because there is no more
@@ -138,7 +127,7 @@ int vtkTextureUnitManager::Allocate(int unit)
   return unit;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Tell if texture unit `textureUnitId' is already allocated.
 // \pre valid_id_range : textureUnitId>=0 && textureUnitId<this->GetNumberOfTextureUnits()
@@ -146,10 +135,10 @@ bool vtkTextureUnitManager::IsAllocated(int textureUnitId)
 {
   assert("pre: valid_textureUnitId_range" && textureUnitId >= 0 &&
     textureUnitId < this->GetNumberOfTextureUnits());
-  return (this->TextureUnits[textureUnitId] ? true : false);
+  return this->TextureUnits[textureUnitId];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release a texture unit.
 // \pre valid_id: textureUnitId>=0 && textureUnitId<this->GetNumberOfTextureUnits()
@@ -163,8 +152,9 @@ void vtkTextureUnitManager::Free(int textureUnitId)
   this->TextureUnits[textureUnitId] = false;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextureUnitManager::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

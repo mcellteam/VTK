@@ -1,20 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPProbeFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPProbeFilter
- * @brief   probe dataset in parallel
+ * @brief   probe dataset in distributed parallel computation
  *
  * This filter works correctly only if the whole geometry dataset
  * (that specify the point locations used to probe input) is available on all
@@ -27,6 +15,7 @@
 #include "vtkCompositeDataProbeFilter.h"
 #include "vtkFiltersParallelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiProcessController;
 
 class VTKFILTERSPARALLEL_EXPORT vtkPProbeFilter : public vtkCompositeDataProbeFilter
@@ -37,13 +26,13 @@ public:
 
   static vtkPProbeFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set and get the controller.
    */
   virtual void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
 protected:
   vtkPProbeFilter();
@@ -66,4 +55,5 @@ private:
   void operator=(const vtkPProbeFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

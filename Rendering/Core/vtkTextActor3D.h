@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextActor3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTextActor3D
  * @brief   An actor that displays text.
@@ -37,6 +25,7 @@
 #include "vtkRenderingCoreModule.h" // For export macro
 #include <string>                   // for ivar
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageActor;
 class vtkImageData;
 class vtkTextProperty;
@@ -48,21 +37,21 @@ public:
   vtkTypeMacro(vtkTextActor3D, vtkProp3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the text string to be displayed.
    */
   vtkSetStringMacro(Input);
   vtkGetStringMacro(Input);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the text property.
    */
   virtual void SetTextProperty(vtkTextProperty* p);
   vtkGetObjectMacro(TextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
   /**
    * Since a 3D text actor is not pixel-aligned and positioned in 3D space,
@@ -114,7 +103,7 @@ public:
   virtual void ForceTranslucentOff();
   /**@}*/
 
-  //@{
+  ///@{
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
    * DO NOT USE THIS METHOD OUTSIDE OF THE RENDERING PROCESS.
@@ -123,7 +112,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   int RenderOverlay(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Does this prop have some translucent polygonal geometry?
@@ -150,4 +139,5 @@ private:
   void operator=(const vtkTextActor3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

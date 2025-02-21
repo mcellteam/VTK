@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    QVTKOpenGLStereoWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "QVTKOpenGLStereoWidget.h"
 
 #include "QVTKInteractor.h"
@@ -21,20 +9,21 @@
 #include "vtkRenderWindowInteractor.h"
 
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QLayout>
 #include <QOpenGLContext>
 #include <QResizeEvent>
 #include <QSurfaceFormat>
 #include <QtDebug>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 QVTKOpenGLStereoWidget::QVTKOpenGLStereoWidget(QWidget* parent, Qt::WindowFlags f)
   : QVTKOpenGLStereoWidget(vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New(), nullptr, parent, f)
 {
+  this->setAttribute(Qt::WA_Hover);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QVTKOpenGLStereoWidget::QVTKOpenGLStereoWidget(
   QOpenGLContext* shareContext, QWidget* parent, Qt::WindowFlags f)
   : QVTKOpenGLStereoWidget(
@@ -42,14 +31,14 @@ QVTKOpenGLStereoWidget::QVTKOpenGLStereoWidget(
 {
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QVTKOpenGLStereoWidget::QVTKOpenGLStereoWidget(
   vtkGenericOpenGLRenderWindow* w, QWidget* parent, Qt::WindowFlags f)
   : QVTKOpenGLStereoWidget(w, QOpenGLContext::currentContext(), parent, f)
 {
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QVTKOpenGLStereoWidget::QVTKOpenGLStereoWidget(
   vtkGenericOpenGLRenderWindow* w, QOpenGLContext* shareContext, QWidget* parent, Qt::WindowFlags f)
   : QWidget(parent, f)
@@ -75,7 +64,7 @@ QVTKOpenGLStereoWidget::QVTKOpenGLStereoWidget(
   this->setFocusPolicy(Qt::StrongFocus);
 
   // Work around for bug paraview/paraview#18285
-  // https://gitlab.kitware.com/paraview/paraview/issues/18285
+  // https://gitlab.kitware.com/paraview/paraview/-/issues/18285
   // This ensure that kde will not grab the window
   this->setProperty("_kde_no_window_grab", true);
 
@@ -87,23 +76,23 @@ QVTKOpenGLStereoWidget::QVTKOpenGLStereoWidget(
   grabGesture(Qt::SwipeGesture);
 }
 
-//-----------------------------------------------------------------------------
-QVTKOpenGLStereoWidget::~QVTKOpenGLStereoWidget() {}
+//------------------------------------------------------------------------------
+QVTKOpenGLStereoWidget::~QVTKOpenGLStereoWidget() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QImage QVTKOpenGLStereoWidget::grabFramebuffer()
 {
   return this->VTKOpenGLWindow->grabFramebuffer();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void QVTKOpenGLStereoWidget::resizeEvent(QResizeEvent* evt)
 {
   vtkLogScopeF(TRACE, "resizeEvent(%d, %d)", evt->size().width(), evt->size().height());
   this->Superclass::resizeEvent(evt);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void QVTKOpenGLStereoWidget::paintEvent(QPaintEvent* evt)
 {
   vtkLogScopeF(TRACE, "paintEvent");
@@ -115,78 +104,4 @@ void QVTKOpenGLStereoWidget::paintEvent(QPaintEvent* evt)
   // internal widget overcomes that issue.
   this->VTKOpenGLWindow->update();
 }
-
-//-----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-void QVTKOpenGLStereoWidget::SetRenderWindow(vtkRenderWindow* win)
-{
-  VTK_LEGACY_REPLACED_BODY(
-    QVTKOpenGLStereoWidget::SetRenderWindow, "VTK 9.0", QVTKOpenGLStereoWidget::setRenderWindow);
-  vtkGenericOpenGLRenderWindow* gwin = vtkGenericOpenGLRenderWindow::SafeDownCast(win);
-  if (gwin == nullptr && win != nullptr)
-  {
-    qDebug() << "QVTKOpenGLStereoWidget requires a `vtkGenericOpenGLRenderWindow`. `"
-             << win->GetClassName() << "` is not supported.";
-  }
-  this->setRenderWindow(gwin);
-}
-#endif
-
-//-----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-void QVTKOpenGLStereoWidget::SetRenderWindow(vtkGenericOpenGLRenderWindow* win)
-{
-  VTK_LEGACY_REPLACED_BODY(
-    QVTKOpenGLStereoWidget::SetRenderWindow, "VTK 9.0", QVTKOpenGLStereoWidget::setRenderWindow);
-  this->setRenderWindow(win);
-}
-#endif
-
-//-----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-vtkRenderWindow* QVTKOpenGLStereoWidget::GetRenderWindow()
-{
-  VTK_LEGACY_REPLACED_BODY(
-    QVTKOpenGLStereoWidget::GetRenderWindow, "VTK 9.0", QVTKOpenGLStereoWidget::renderWindow);
-  return this->renderWindow();
-}
-#endif
-
-//-----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-QVTKInteractorAdapter* QVTKOpenGLStereoWidget::GetInteractorAdapter()
-{
-  VTK_LEGACY_BODY(QVTKOpenGLStereoWidget::GetInteractorAdapter, "VTK 9.0");
-  return nullptr;
-}
-#endif
-
-//-----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-QVTKInteractor* QVTKOpenGLStereoWidget::GetInteractor()
-{
-  VTK_LEGACY_REPLACED_BODY(
-    QVTKOpenGLStereoWidget::GetInteractor, "VTK 9.0", QVTKOpenGLStereoWidget::interactor);
-  return this->interactor();
-}
-#endif
-
-//-----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-void QVTKOpenGLStereoWidget::setQVTKCursor(const QCursor& cursor)
-{
-  VTK_LEGACY_REPLACED_BODY(
-    QVTKOpenGLStereoWidget::setQVTKCursor, "VTK 9.0", QVTKOpenGLStereoWidget::setCursor);
-  this->setCursor(cursor);
-}
-#endif
-
-//-----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-void QVTKOpenGLStereoWidget::setDefaultQVTKCursor(const QCursor& cursor)
-{
-  VTK_LEGACY_REPLACED_BODY(QVTKOpenGLStereoWidget::setDefaultQVTKCursor, "VTK 9.0",
-    QVTKOpenGLStereoWidget::setDefaultCursor);
-  this->setDefaultCursor(cursor);
-}
-#endif
+VTK_ABI_NAMESPACE_END

@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoxClipDataSet.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBoxClipDataSet.h"
 
 #include "vtkCellArray.h"
@@ -38,9 +23,10 @@
 #include <cmath>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoxClipDataSet);
 vtkCxxSetObjectMacro(vtkBoxClipDataSet, Locator, vtkIncrementalPointLocator);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoxClipDataSet::vtkBoxClipDataSet()
 {
   this->Locator = nullptr;
@@ -114,13 +100,13 @@ vtkBoxClipDataSet::vtkBoxClipDataSet()
     0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::SCALARS);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoxClipDataSet::~vtkBoxClipDataSet()
 {
   this->SetLocator(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Do not say we have two outputs unless we are generating the clipped output.
 int vtkBoxClipDataSet::GetNumberOfOutputs()
 {
@@ -131,7 +117,7 @@ int vtkBoxClipDataSet::GetNumberOfOutputs()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If Clip functions is modified,
 // then this object is modified as well.
 vtkMTimeType vtkBoxClipDataSet::GetMTime()
@@ -148,7 +134,7 @@ vtkMTimeType vtkBoxClipDataSet::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGrid* vtkBoxClipDataSet::GetClippedOutput()
 {
   if (this->GetNumberOfOutputPorts() < 2)
@@ -159,7 +145,7 @@ vtkUnstructuredGrid* vtkBoxClipDataSet::GetClippedOutput()
   return vtkUnstructuredGrid::SafeDownCast(this->GetExecutive()->GetOutputData(1));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Clip by box
 //
@@ -196,21 +182,6 @@ int vtkBoxClipDataSet::RequestData(vtkInformation* vtkNotUsed(request),
   int j;
   int cellType = 0;
   int numOutputs = 1;
-  int inputObjectType = input->GetDataObjectType();
-
-  // if we have volumes
-  if (inputObjectType == VTK_STRUCTURED_POINTS || inputObjectType == VTK_IMAGE_DATA)
-  {
-    int dimension;
-    int* dims = vtkImageData::SafeDownCast(input)->GetDimensions();
-    for (dimension = 3, i = 0; i < 3; i++)
-    {
-      if (dims[i] <= 1)
-      {
-        dimension--;
-      }
-    }
-  }
 
   // Initialize self; create output objects
   //
@@ -294,7 +265,7 @@ int vtkBoxClipDataSet::RequestData(vtkInformation* vtkNotUsed(request),
   vtkGenericCell* cell = vtkGenericCell::New();
   vtkIdType cellId;
 
-  int abort = 0;
+  bool abort = false;
   int num[2];
   int numNew[2];
 
@@ -309,7 +280,7 @@ int vtkBoxClipDataSet::RequestData(vtkInformation* vtkNotUsed(request),
     if (!(cellId % updateTime))
     {
       this->UpdateProgress(static_cast<float>(cellId) / numCells);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
     }
 
     input->GetCell(cellId, cell);
@@ -512,7 +483,7 @@ int vtkBoxClipDataSet::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By default,
 // an instance of vtkMergePoints is used.
 void vtkBoxClipDataSet::CreateDefaultLocator()
@@ -525,7 +496,7 @@ void vtkBoxClipDataSet::CreateDefaultLocator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the box for clipping
 // for each plane, specify the normal and one vertex on the plane.
 //
@@ -627,7 +598,7 @@ void vtkBoxClipDataSet::SetBoxClip(const double* n0, const double* o0, const dou
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the bounding box for clipping
 
 void vtkBoxClipDataSet::SetBoxClip(
@@ -652,14 +623,14 @@ void vtkBoxClipDataSet::SetBoxClip(
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoxClipDataSet::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxClipDataSet::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -680,7 +651,7 @@ void vtkBoxClipDataSet::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Generate Clip Scalars: " << (this->GenerateClipScalars ? "On\n" : "Off\n");
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // InterpolateEdge: Interpolate the data in a vtkDataSetAttributes along a line
 //
 // This method works very much like vtkDataSetAttributes::InterpolateEdge
@@ -706,7 +677,7 @@ void vtkBoxClipDataSet::InterpolateEdge(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // CellGrid: Subdivide cells in consistent tetrahedra.
 // Case : Voxel(11) or Hexahedron(12).
 //
@@ -788,7 +759,7 @@ void vtkBoxClipDataSet::MinEdgeF(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // CellGrid: Subdivide cells in consistent tetrahedra.
 //
 // Case : Voxel or Hexahedron:
@@ -869,7 +840,7 @@ void vtkBoxClipDataSet::WedgeToTetra(
   this->PyramidToTetra(tabpyram, cellIds, newCellArray);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // CellGrid: Subdivide cells in consistent tetrahedra.
 //
 // PyramidToTetra :Subdivide the pyramid in consistent tetrahedra.
@@ -932,7 +903,7 @@ void vtkBoxClipDataSet::PyramidToTetra(
   newCellArray->InsertNextCell(4, tab);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Tetra Grid : Subdivide cells in  consistent tetrahedra.
 //             For each cell, search the smallest global index.
 //
@@ -1013,7 +984,7 @@ void vtkBoxClipDataSet::PyramidToTetra(
 //                       vpyram[1]: {v0,v2,v3,v4}
 //
 //
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxClipDataSet::CellGrid(
   vtkIdType typeobj, vtkIdType npts, const vtkIdType* cellIds, vtkCellArray* newCellArray)
 {
@@ -1528,6 +1499,7 @@ void vtkBoxClipDataSet::CellGrid(
 
     case VTK_PYRAMID: // Create 2 tetrahedra
     case VTK_QUADRATIC_PYRAMID:
+    case VTK_TRIQUADRATIC_PYRAMID:
       if (npts == 5)
       {
         // note: the first element vpyram[][0] is the smallest index of pyramid
@@ -1563,7 +1535,7 @@ void vtkBoxClipDataSet::CellGrid(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The new cell created in intersection between tetrahedron and plane
 // are tetrahedron or wedges or pyramids.
 //
@@ -1695,10 +1667,10 @@ void vtkBoxClipDataSet::CreateTetra(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip each cell of an unstructured grid.
 //
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //(1) How decide when the cell is NOT outside
 //
 //    Explaining with an example in 2D.
@@ -1751,7 +1723,7 @@ void vtkBoxClipDataSet::CreateTetra(
 //
 //    Note: xmin = this->BoundBoxClip[0][0], xmax=  this->BoundBoxClip[0][1],...
 //
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // (2) Intersection between Tetrahedron and Plane:
 //     Description:
 //         vertices of tetrahedron {v0,v1,v2,v3}
@@ -1917,7 +1889,7 @@ void vtkBoxClipDataSet::CreateTetra(
 //                      \ | /e1
 //                        v0
 //         - other cases see tab1[]
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 void vtkBoxClipDataSet::ClipBox(vtkPoints* newPoints, vtkGenericCell* cell,
   vtkIncrementalPointLocator* locator, vtkCellArray* tets, vtkPointData* inPD, vtkPointData* outPD,
@@ -1962,7 +1934,7 @@ void vtkBoxClipDataSet::ClipBox(vtkPoints* newPoints, vtkGenericCell* cell,
   }
 
   // Convert all volume cells to tetrahedra
-  this->CellGrid(cellType, npts, &cellptId[0], arraytetra);
+  this->CellGrid(cellType, npts, cellptId.data(), arraytetra);
   unsigned int totalnewtetra = arraytetra->GetNumberOfCells();
   unsigned int idtetranew;
 
@@ -2405,7 +2377,7 @@ void vtkBoxClipDataSet::ClipBox(vtkPoints* newPoints, vtkGenericCell* cell,
   arraytetra->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // ClipHexahedron: Box is like hexahedron.
 //
 // The difference between ClipBox and ClipHexahedron is the outside test.
@@ -2455,7 +2427,7 @@ void vtkBoxClipDataSet::ClipHexahedron(vtkPoints* newPoints, vtkGenericCell* cel
   }
 
   this->CellGrid(
-    cellType, npts, &cellptId[0], arraytetra); // Convert all volume cells to tetrahedra
+    cellType, npts, cellptId.data(), arraytetra); // Convert all volume cells to tetrahedra
 
   unsigned int totalnewtetra = arraytetra->GetNumberOfCells();
   unsigned int idtetranew;
@@ -2896,7 +2868,7 @@ void vtkBoxClipDataSet::ClipHexahedron(vtkPoints* newPoints, vtkGenericCell* cel
   }
   arraytetra->Delete();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // ClipBoxInOut
 //
 // The difference between ClipBox and ClipBoxInOut is the outputs.
@@ -2949,7 +2921,7 @@ void vtkBoxClipDataSet::ClipBoxInOut(vtkPoints* newPoints, vtkGenericCell* cell,
   }
 
   // Convert all volume cells to tetrahedra
-  this->CellGrid(cellType, npts, &cellptId[0], arraytetra);
+  this->CellGrid(cellType, npts, cellptId.data(), arraytetra);
   unsigned int totalnewtetra = arraytetra->GetNumberOfCells();
 
   for (idtetranew = 0; idtetranew < totalnewtetra; idtetranew++)
@@ -3464,7 +3436,7 @@ void vtkBoxClipDataSet::ClipBoxInOut(vtkPoints* newPoints, vtkGenericCell* cell,
   arraytetra->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // ClipHexahedronInOut
 //
 // The difference between ClipHexahedron and ClipHexahedronInOut is the outputs.
@@ -3516,7 +3488,7 @@ void vtkBoxClipDataSet::ClipHexahedronInOut(vtkPoints* newPoints, vtkGenericCell
   }
 
   this->CellGrid(
-    cellType, npts, &cellptId[0], arraytetra); // Convert all volume cells to tetrahedra
+    cellType, npts, cellptId.data(), arraytetra); // Convert all volume cells to tetrahedra
 
   unsigned int totalnewtetra = arraytetra->GetNumberOfCells();
   for (idtetranew = 0; idtetranew < totalnewtetra; idtetranew++)
@@ -4086,7 +4058,7 @@ void vtkBoxClipDataSet::ClipBox2D(vtkPoints* newPoints, vtkGenericCell* cell,
   }
 
   // Convert all 2d cells to triangle
-  this->CellGrid(cellType, npts, &cellptId[0], arraytriangle);
+  this->CellGrid(cellType, npts, cellptId.data(), arraytriangle);
 
   unsigned int totalnewtriangle = arraytriangle->GetNumberOfCells();
   unsigned int idtrianglenew;
@@ -4437,7 +4409,7 @@ void vtkBoxClipDataSet::ClipBoxInOut2D(vtkPoints* newPoints, vtkGenericCell* cel
   }
 
   // Convert all 2D cells to triangle
-  this->CellGrid(cellType, npts, &cellptId[0], arraytriangle);
+  this->CellGrid(cellType, npts, cellptId.data(), arraytriangle);
   unsigned int totalnewtriangle = arraytriangle->GetNumberOfCells();
   unsigned int idtrianglenew;
 
@@ -4853,7 +4825,7 @@ void vtkBoxClipDataSet::ClipHexahedron2D(vtkPoints* newPoints, vtkGenericCell* c
   }
 
   this->CellGrid(
-    cellType, npts, &cellptId[0], arraytriangle); // Convert all volume cells to triangle
+    cellType, npts, cellptId.data(), arraytriangle); // Convert all volume cells to triangle
 
   unsigned int totalnewtriangle = arraytriangle->GetNumberOfCells();
   for (idtrianglenew = 0; idtrianglenew < totalnewtriangle; idtrianglenew++)
@@ -5208,7 +5180,7 @@ void vtkBoxClipDataSet::ClipHexahedronInOut2D(vtkPoints* newPoints, vtkGenericCe
   }
 
   // Convert all polygon cells to triangles
-  this->CellGrid(cellType, npts, &cellptId[0], arraytriangle);
+  this->CellGrid(cellType, npts, cellptId.data(), arraytriangle);
 
   unsigned int totalnewtriangle = arraytriangle->GetNumberOfCells();
   for (idtrianglenew = 0; idtrianglenew < totalnewtriangle; idtrianglenew++)
@@ -5576,7 +5548,7 @@ void vtkBoxClipDataSet::ClipHexahedronInOut2D(vtkPoints* newPoints, vtkGenericCe
   arraytriangle->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoxClipDataSet::ClipBox1D(vtkPoints* newPoints, vtkGenericCell* cell,
   vtkIncrementalPointLocator* locator, vtkCellArray* lines, vtkPointData* inPD, vtkPointData* outPD,
@@ -5610,7 +5582,7 @@ void vtkBoxClipDataSet::ClipBox1D(vtkPoints* newPoints, vtkGenericCell* cell,
   }
 
   // Convert all 1d cells to single line.
-  this->CellGrid(cellType, npts, &cellptId[0], arrayline);
+  this->CellGrid(cellType, npts, cellptId.data(), arrayline);
 
   unsigned int totalnewline = arrayline->GetNumberOfCells();
   for (unsigned int idlinenew = 0; idlinenew < totalnewline; idlinenew++)
@@ -5778,7 +5750,7 @@ void vtkBoxClipDataSet::ClipBox1D(vtkPoints* newPoints, vtkGenericCell* cell,
   arrayline->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoxClipDataSet::ClipBoxInOut1D(vtkPoints* newPoints, vtkGenericCell* cell,
   vtkIncrementalPointLocator* locator, vtkCellArray** lines, vtkPointData* inPD,
@@ -5812,7 +5784,7 @@ void vtkBoxClipDataSet::ClipBoxInOut1D(vtkPoints* newPoints, vtkGenericCell* cel
   }
 
   // Convert all 1d cells to single line.
-  this->CellGrid(cellType, npts, &cellptId[0], arrayline);
+  this->CellGrid(cellType, npts, cellptId.data(), arrayline);
 
   unsigned int totalnewline = arrayline->GetNumberOfCells();
   for (unsigned int idlinenew = 0; idlinenew < totalnewline; idlinenew++)
@@ -5999,7 +5971,7 @@ void vtkBoxClipDataSet::ClipBoxInOut1D(vtkPoints* newPoints, vtkGenericCell* cel
   arrayline->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoxClipDataSet::ClipHexahedron1D(vtkPoints* newPoints, vtkGenericCell* cell,
   vtkIncrementalPointLocator* locator, vtkCellArray* lines, vtkPointData* inPD, vtkPointData* outPD,
@@ -6032,7 +6004,7 @@ void vtkBoxClipDataSet::ClipHexahedron1D(vtkPoints* newPoints, vtkGenericCell* c
   }
 
   // Convert all 1d cells to single line.
-  this->CellGrid(cellType, npts, &cellptId[0], arrayline);
+  this->CellGrid(cellType, npts, cellptId.data(), arrayline);
 
   unsigned int totalnewline = arrayline->GetNumberOfCells();
   for (unsigned int idlinenew = 0; idlinenew < totalnewline; idlinenew++)
@@ -6191,7 +6163,7 @@ void vtkBoxClipDataSet::ClipHexahedron1D(vtkPoints* newPoints, vtkGenericCell* c
   arrayline->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoxClipDataSet::ClipHexahedronInOut1D(vtkPoints* newPoints, vtkGenericCell* cell,
   vtkIncrementalPointLocator* locator, vtkCellArray** lines, vtkPointData* inPD,
@@ -6224,7 +6196,7 @@ void vtkBoxClipDataSet::ClipHexahedronInOut1D(vtkPoints* newPoints, vtkGenericCe
   }
 
   // Convert all 1d cells to single line.
-  this->CellGrid(cellType, npts, &cellptId[0], arrayline);
+  this->CellGrid(cellType, npts, cellptId.data(), arrayline);
 
   unsigned int totalnewline = arrayline->GetNumberOfCells();
   for (unsigned int idlinenew = 0; idlinenew < totalnewline; idlinenew++)
@@ -6402,7 +6374,7 @@ void vtkBoxClipDataSet::ClipHexahedronInOut1D(vtkPoints* newPoints, vtkGenericCe
   arrayline->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoxClipDataSet::ClipBox0D(vtkGenericCell* cell, vtkIncrementalPointLocator* locator,
   vtkCellArray* verts, vtkPointData* inPD, vtkPointData* outPD, vtkCellData* inCD, vtkIdType cellId,
@@ -6429,7 +6401,7 @@ void vtkBoxClipDataSet::ClipBox0D(vtkGenericCell* cell, vtkIncrementalPointLocat
   }
 
   // Convert all 0d cells to single vert.
-  this->CellGrid(cellType, npts, &cellptId[0], arrayvert);
+  this->CellGrid(cellType, npts, cellptId.data(), arrayvert);
 
   unsigned int totalnewvert = arrayvert->GetNumberOfCells();
   for (unsigned int idlinenew = 0; idlinenew < totalnewvert; idlinenew++)
@@ -6456,7 +6428,7 @@ void vtkBoxClipDataSet::ClipBox0D(vtkGenericCell* cell, vtkIncrementalPointLocat
   arrayvert->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoxClipDataSet::ClipBoxInOut0D(vtkGenericCell* cell, vtkIncrementalPointLocator* locator,
   vtkCellArray** verts, vtkPointData* inPD, vtkPointData** outPD, vtkCellData* inCD,
@@ -6483,7 +6455,7 @@ void vtkBoxClipDataSet::ClipBoxInOut0D(vtkGenericCell* cell, vtkIncrementalPoint
   }
 
   // Convert all 0d cells to single vert.
-  this->CellGrid(cellType, npts, &cellptId[0], arrayvert);
+  this->CellGrid(cellType, npts, cellptId.data(), arrayvert);
 
   unsigned int totalnewvert = arrayvert->GetNumberOfCells();
   for (unsigned int idlinenew = 0; idlinenew < totalnewvert; idlinenew++)
@@ -6519,7 +6491,7 @@ void vtkBoxClipDataSet::ClipBoxInOut0D(vtkGenericCell* cell, vtkIncrementalPoint
   arrayvert->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoxClipDataSet::ClipHexahedron0D(vtkGenericCell* cell, vtkIncrementalPointLocator* locator,
   vtkCellArray* verts, vtkPointData* inPD, vtkPointData* outPD, vtkCellData* inCD, vtkIdType cellId,
@@ -6546,7 +6518,7 @@ void vtkBoxClipDataSet::ClipHexahedron0D(vtkGenericCell* cell, vtkIncrementalPoi
   }
 
   // Convert all 0d cells to single vert.
-  this->CellGrid(cellType, npts, &cellptId[0], arrayvert);
+  this->CellGrid(cellType, npts, cellptId.data(), arrayvert);
 
   unsigned int totalnewvert = arrayvert->GetNumberOfCells();
   for (unsigned int idlinenew = 0; idlinenew < totalnewvert; idlinenew++)
@@ -6584,7 +6556,7 @@ void vtkBoxClipDataSet::ClipHexahedron0D(vtkGenericCell* cell, vtkIncrementalPoi
   arrayvert->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoxClipDataSet::ClipHexahedronInOut0D(vtkGenericCell* cell,
   vtkIncrementalPointLocator* locator, vtkCellArray** verts, vtkPointData* inPD,
@@ -6611,7 +6583,7 @@ void vtkBoxClipDataSet::ClipHexahedronInOut0D(vtkGenericCell* cell,
   }
 
   // Convert all 0d cells to single vert.
-  this->CellGrid(cellType, npts, &cellptId[0], arrayvert);
+  this->CellGrid(cellType, npts, cellptId.data(), arrayvert);
 
   unsigned int totalnewvert = arrayvert->GetNumberOfCells();
   for (unsigned int idlinenew = 0; idlinenew < totalnewvert; idlinenew++)
@@ -6656,3 +6628,4 @@ void vtkBoxClipDataSet::ClipHexahedronInOut0D(vtkGenericCell* cell,
   }
   arrayvert->Delete();
 }
+VTK_ABI_NAMESPACE_END

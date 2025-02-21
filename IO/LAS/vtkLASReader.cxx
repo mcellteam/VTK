@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGDALRasterReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkLASReader.h"
 
@@ -33,9 +21,10 @@
 #include <iostream>
 #include <valarray>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLASReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLASReader::vtkLASReader()
 {
   this->FileName = nullptr;
@@ -44,13 +33,13 @@ vtkLASReader::vtkLASReader()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLASReader::~vtkLASReader()
 {
   delete[] this->FileName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLASReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(request), vtkInformationVector* outputVector)
 {
@@ -87,7 +76,7 @@ int vtkLASReader::RequestData(vtkInformation* vtkNotUsed(request),
   return VTK_OK;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLASReader::ReadPointRecordData(liblas::Reader& reader, vtkPolyData* pointsPolyData)
 {
   vtkNew<vtkPoints> points;
@@ -166,10 +155,11 @@ void vtkLASReader::ReadPointRecordData(liblas::Reader& reader, vtkPolyData* poin
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLASReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
   os << "vtkLASReader" << std::endl;
   os << "Filename: " << this->FileName << std::endl;
 }
+VTK_ABI_NAMESPACE_END

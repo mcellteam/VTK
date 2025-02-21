@@ -1,16 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkLight.h"
@@ -32,8 +21,10 @@ PURPOSE.  See the above copyright notice for more information.
 #include <archive_entry.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <sstream>
 
 // Construct a render window and write it to disk and to buffer. Decompress the
 // buffer and compare its contents to the files on disk.
@@ -49,7 +40,13 @@ int TestBufferedRenderWindowExporter(int argc, char* argv[])
   std::string testDirectory = tempDir;
   delete[] tempDir;
 
-  std::string directoryName = testDirectory + std::string("/") + std::string("ExportVtkJS");
+  std::srand(std::time(nullptr));
+  std::string directoryName;
+  {
+    std::stringstream s;
+    s << testDirectory << "/ExportVTKJS_" << std::rand();
+    directoryName = s.str();
+  }
 
   vtkNew<vtkSphereSource> sphere;
   vtkNew<vtkPolyDataMapper> pmap;
@@ -119,7 +116,7 @@ int TestBufferedRenderWindowExporter(int argc, char* argv[])
       std::FILE* fp;
       char* fbuffer;
 
-      fp = std::fopen(fileName.c_str(), "rb");
+      fp = vtksys::SystemTools::Fopen(fileName, "rb");
       if (fp == nullptr)
       {
         vtkErrorWithObjectMacro(nullptr, "Could not open file on disk");
@@ -181,7 +178,7 @@ int TestBufferedRenderWindowExporter(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  vtksys::SystemTools::RemoveADirectory(directoryName.c_str());
+  vtksys::SystemTools::RemoveADirectory(directoryName);
 
   return EXIT_SUCCESS;
 }

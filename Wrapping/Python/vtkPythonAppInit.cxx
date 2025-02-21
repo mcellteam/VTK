@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPythonAppInit.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /* Minimal main program -- everything is loaded from the library */
 
@@ -23,6 +11,7 @@
 #include <vtk_mpi.h>
 #endif // VTK_COMPILED_USING_MPI
 
+#include "vtkBuild.h"
 #include "vtkOutputWindow.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkVersion.h"
@@ -69,11 +58,20 @@ static void AtExitCallback()
 }
 #endif // VTK_COMPILED_USING_MPI
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+int wmain(int argc, wchar_t* wargv[])
+#else
 int main(int argc, char** argv)
+#endif
 {
+#if defined(_WIN32) && !defined(__MINGW32__)
+  vtkWideArgsConverter converter(argc, wargv);
+  char** argv = converter.GetArgs();
+#endif
+
 #ifdef VTK_COMPILED_USING_MPI
   VTKMPICleanup.Initialize(&argc, &argv);
-  Py_AtExit(::AtExitCallback);
+  vtkPythonInterpreter::AddAtExitCallback(::AtExitCallback);
 #endif // VTK_COMPILED_USING_MPI
 
   /**

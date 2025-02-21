@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSliderRepresentation3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSliderRepresentation3D.h"
 #include "vtkActor.h"
 #include "vtkAssembly.h"
@@ -41,9 +29,10 @@
 #include "vtkVectorText.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSliderRepresentation3D);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSliderRepresentation3D::vtkSliderRepresentation3D()
 {
   this->SliderShape = vtkSliderRepresentation3D::SphereShape;
@@ -188,7 +177,7 @@ vtkSliderRepresentation3D::vtkSliderRepresentation3D()
   this->Transform = vtkTransform::New();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSliderRepresentation3D::~vtkSliderRepresentation3D()
 {
   this->WidgetAssembly->Delete();
@@ -230,7 +219,7 @@ vtkSliderRepresentation3D::~vtkSliderRepresentation3D()
   this->Transform->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::RegisterPickers()
 {
   vtkPickingManager* pm = this->GetPickingManager();
@@ -241,7 +230,7 @@ void vtkSliderRepresentation3D::RegisterPickers()
   pm->AddPicker(this->Picker, this);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::SetTitleText(const char* label)
 {
   this->TitleText->SetText(label);
@@ -251,19 +240,19 @@ void vtkSliderRepresentation3D::SetTitleText(const char* label)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkSliderRepresentation3D::GetTitleText()
 {
   return this->TitleText->GetText();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCoordinate* vtkSliderRepresentation3D::GetPoint1Coordinate()
 {
   return this->Point1Coordinate;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::StartWidgetInteraction(double eventPos[2])
 {
   vtkAssemblyPath* path = this->GetAssemblyPath(eventPos[0], eventPos[1], 0., this->Picker);
@@ -302,7 +291,7 @@ void vtkSliderRepresentation3D::StartWidgetInteraction(double eventPos[2])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::WidgetInteraction(double eventPos[2])
 {
   double t = this->ComputePickPosition(eventPos);
@@ -310,30 +299,29 @@ void vtkSliderRepresentation3D::WidgetInteraction(double eventPos[2])
   this->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCoordinate* vtkSliderRepresentation3D::GetPoint2Coordinate()
 {
   return this->Point2Coordinate;
 }
 
-//----------------------------------------------------------------------
-void vtkSliderRepresentation3D::PlaceWidget(double bds[6])
+//------------------------------------------------------------------------------
+void vtkSliderRepresentation3D::PlaceWidget(double bounds[6])
 {
-  int i;
-  double bounds[6], center[3];
+  double newBounds[6], center[3];
 
   double placeFactor = this->PlaceFactor;
   this->PlaceFactor = 1.0;
-  this->AdjustBounds(bds, bounds, center);
+  this->AdjustBounds(bounds, newBounds, center);
   this->PlaceFactor = placeFactor;
 
-  for (i = 0; i < 6; i++)
+  for (int i = 0; i < 6; i++)
   {
-    this->InitialBounds[i] = bounds[i];
+    this->InitialBounds[i] = newBounds[i];
   }
-  this->InitialLength = sqrt((bounds[1] - bounds[0]) * (bounds[1] - bounds[0]) +
-    (bounds[3] - bounds[2]) * (bounds[3] - bounds[2]) +
-    (bounds[5] - bounds[4]) * (bounds[5] - bounds[4]));
+  this->InitialLength = sqrt((newBounds[1] - newBounds[0]) * (newBounds[1] - newBounds[0]) +
+    (newBounds[3] - newBounds[2]) * (newBounds[3] - newBounds[2]) +
+    (newBounds[5] - newBounds[4]) * (newBounds[5] - newBounds[4]));
 
   // When PlaceWidget is invoked, the widget orientation is preserved, but it
   // is allowed to translate and scale. This means it is centered in the
@@ -362,7 +350,7 @@ void vtkSliderRepresentation3D::PlaceWidget(double bds[6])
   o[0] = center[0] - r[0];
   o[1] = center[1] - r[1];
   o[2] = center[2] - r[2];
-  vtkBox::IntersectBox(bounds, o, r, placedP1, t);
+  vtkBox::IntersectBox(newBounds, o, r, placedP1, t);
   this->Point1Coordinate->SetCoordinateSystemToWorld();
   this->Point1Coordinate->SetValue(placedP1);
 
@@ -372,7 +360,7 @@ void vtkSliderRepresentation3D::PlaceWidget(double bds[6])
   o[0] = center[0] - r[0];
   o[1] = center[1] - r[1];
   o[2] = center[2] - r[2];
-  vtkBox::IntersectBox(bounds, o, r, placedP2, t);
+  vtkBox::IntersectBox(newBounds, o, r, placedP2, t);
   this->Point2Coordinate->SetCoordinateSystemToWorld();
   this->Point2Coordinate->SetValue(placedP2);
 
@@ -380,7 +368,7 @@ void vtkSliderRepresentation3D::PlaceWidget(double bds[6])
   this->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkSliderRepresentation3D::ComputePickPosition(double eventPos[2])
 {
   // Transform current pick ray into canonical (untransformed)
@@ -412,7 +400,7 @@ double vtkSliderRepresentation3D::ComputePickPosition(double eventPos[2])
   return u;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::Highlight(int highlight)
 {
   if (highlight)
@@ -425,7 +413,7 @@ void vtkSliderRepresentation3D::Highlight(int highlight)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Override GetMTime to include point coordinates
 vtkMTimeType vtkSliderRepresentation3D::GetMTime()
@@ -441,9 +429,14 @@ vtkMTimeType vtkSliderRepresentation3D::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::BuildRepresentation()
 {
+  if (!this->Renderer || !this->Visibility)
+  {
+    return;
+  }
+
   if (this->GetMTime() > this->BuildTime ||
     (this->Renderer && this->Renderer->GetVTKWindow() &&
       this->Renderer->GetVTKWindow()->GetMTime() > this->BuildTime))
@@ -618,61 +611,61 @@ void vtkSliderRepresentation3D::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
-void vtkSliderRepresentation3D::GetActors(vtkPropCollection* pc)
+//------------------------------------------------------------------------------
+void vtkSliderRepresentation3D::GetActors(vtkPropCollection* propCollection)
 {
-  pc->AddItem(this->WidgetAssembly);
+  propCollection->AddItem(this->WidgetAssembly);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkSliderRepresentation3D::GetBounds()
 {
   this->BuildRepresentation();
   return this->WidgetAssembly->GetBounds();
 }
 
-//----------------------------------------------------------------------
-void vtkSliderRepresentation3D::ReleaseGraphicsResources(vtkWindow* w)
+//------------------------------------------------------------------------------
+void vtkSliderRepresentation3D::ReleaseGraphicsResources(vtkWindow* window)
 {
-  this->WidgetAssembly->ReleaseGraphicsResources(w);
+  this->WidgetAssembly->ReleaseGraphicsResources(window);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSliderRepresentation3D::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   this->BuildRepresentation();
   return this->WidgetAssembly->RenderOpaqueGeometry(viewport);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSliderRepresentation3D::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
 {
   this->BuildRepresentation();
   return this->WidgetAssembly->RenderTranslucentPolygonalGeometry(viewport);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkSliderRepresentation3D::HasTranslucentPolygonalGeometry()
 {
   this->BuildRepresentation();
   return this->WidgetAssembly->HasTranslucentPolygonalGeometry();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::SetPoint1InWorldCoordinates(double x, double y, double z)
 {
   this->GetPoint1Coordinate()->SetCoordinateSystemToWorld();
   this->GetPoint1Coordinate()->SetValue(x, y, z);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::SetPoint2InWorldCoordinates(double x, double y, double z)
 {
   this->GetPoint2Coordinate()->SetCoordinateSystemToWorld();
   this->GetPoint2Coordinate()->SetValue(x, y, z);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSliderRepresentation3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -751,3 +744,4 @@ void vtkSliderRepresentation3D::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Slider Shape: Cylinder\n";
   }
 }
+VTK_ABI_NAMESPACE_END

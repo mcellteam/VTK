@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRasterReprojectionFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-   This software is distributed WITHOUT ANY WARRANTY; without even
-   the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-   PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRasterReprojectionFilter.h"
 
 // VTK includes
@@ -37,9 +25,10 @@
 // STL includes
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRasterReprojectionFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal
 {
 public:
@@ -54,7 +43,7 @@ public:
   double OutputImageGeoTransform[6];
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal::
   vtkRasterReprojectionFilterInternal()
 {
@@ -64,7 +53,7 @@ vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal::
   std::fill(this->OutputImageGeoTransform, this->OutputImageGeoTransform + 6, 0.0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal::
   ~vtkRasterReprojectionFilterInternal()
 {
@@ -72,7 +61,7 @@ vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal::
   this->GDALReprojection->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRasterReprojectionFilter::vtkRasterReprojectionFilter()
 {
   this->Internal = new vtkRasterReprojectionFilterInternal;
@@ -88,21 +77,15 @@ vtkRasterReprojectionFilter::vtkRasterReprojectionFilter()
   GDALAllRegister();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRasterReprojectionFilter::~vtkRasterReprojectionFilter()
 {
-  if (this->InputProjection)
-  {
-    delete[] this->InputProjection;
-  }
-  if (this->OutputProjection)
-  {
-    delete[] this->OutputProjection;
-  }
+  delete[] this->InputProjection;
+  delete[] this->OutputProjection;
   delete this->Internal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRasterReprojectionFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -137,7 +120,7 @@ void vtkRasterReprojectionFilter::PrintSelf(ostream& os, vtkIndent indent)
      << std::endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -227,7 +210,7 @@ int vtkRasterReprojectionFilter::RequestData(vtkInformation* vtkNotUsed(request)
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -238,7 +221,7 @@ int vtkRasterReprojectionFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -342,7 +325,7 @@ int vtkRasterReprojectionFilter::RequestInformation(vtkInformation* vtkNotUsed(r
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   this->Superclass::FillInputPortInformation(port, info);
@@ -359,7 +342,7 @@ int vtkRasterReprojectionFilter::FillInputPortInformation(int port, vtkInformati
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::FillOutputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -373,3 +356,4 @@ int vtkRasterReprojectionFilter::FillOutputPortInformation(int port, vtkInformat
     return VTK_ERROR;
   }
 }
+VTK_ABI_NAMESPACE_END

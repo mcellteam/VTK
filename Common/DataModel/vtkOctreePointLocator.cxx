@@ -1,35 +1,17 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOctreePointLocator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOctreePointLocator.h"
 
 #include "vtkCellArray.h"
 #include "vtkCommand.h"
 #include "vtkDataSet.h"
-#include "vtkFloatArray.h"
 #include "vtkIdList.h"
 #include "vtkIdTypeArray.h"
-#include "vtkIntArray.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkOctreePointLocatorNode.h"
-#include "vtkPointSet.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 
@@ -39,6 +21,7 @@
 #include <stack>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOctreePointLocator);
 
 // helper class for ordering the points in
@@ -59,7 +42,7 @@ public:
   {
     if (dist2 <= this->LargestDist2 || this->NumPoints < this->NumDesiredPoints)
     {
-      std::map<float, std::list<vtkIdType> >::iterator it = this->dist2ToIds.find(dist2);
+      std::map<float, std::list<vtkIdType>>::iterator it = this->dist2ToIds.find(dist2);
       this->NumPoints++;
       if (it == this->dist2ToIds.end())
       {
@@ -78,7 +61,7 @@ public:
         if ((this->NumPoints - it->second.size()) > this->NumDesiredPoints)
         {
           this->NumPoints -= it->second.size();
-          std::map<float, std::list<vtkIdType> >::iterator it2 = it;
+          std::map<float, std::list<vtkIdType>>::iterator it2 = it;
           --it2;
           this->LargestDist2 = it2->first;
           this->dist2ToIds.erase(it);
@@ -93,7 +76,7 @@ public:
       (this->NumDesiredPoints < this->NumPoints) ? this->NumDesiredPoints : this->NumPoints);
     ids->SetNumberOfIds(numIds);
     vtkIdType counter = 0;
-    std::map<float, std::list<vtkIdType> >::iterator it = this->dist2ToIds.begin();
+    std::map<float, std::list<vtkIdType>>::iterator it = this->dist2ToIds.begin();
     while (counter < numIds && it != this->dist2ToIds.end())
     {
       std::list<vtkIdType>::iterator lit = it->second.begin();
@@ -113,11 +96,11 @@ private:
   size_t NumDesiredPoints, NumPoints;
   float LargestDist2;
   // map from dist^2 to a list of ids
-  std::map<float, std::list<vtkIdType> > dist2ToIds;
+  std::map<float, std::list<vtkIdType>> dist2ToIds;
 };
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOctreePointLocator::vtkOctreePointLocator()
 {
   this->FudgeFactor = 0;
@@ -134,7 +117,7 @@ vtkOctreePointLocator::vtkOctreePointLocator()
   this->NumberOfLeafNodes = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::DeleteAllDescendants(vtkOctreePointLocatorNode* octant)
 {
   if (octant->GetChild(0))
@@ -148,7 +131,7 @@ void vtkOctreePointLocator::DeleteAllDescendants(vtkOctreePointLocatorNode* octa
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOctreePointLocator::~vtkOctreePointLocator()
 {
   this->FreeSearchStructure();
@@ -163,7 +146,7 @@ vtkOctreePointLocator::~vtkOctreePointLocator()
   this->LeafNodeList = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::GetBounds(double* bounds)
 {
   if (this->Top)
@@ -172,7 +155,7 @@ void vtkOctreePointLocator::GetBounds(double* bounds)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkOctreePointLocator::GetBounds()
 {
   double* bounds = vtkAbstractPointLocator::GetBounds();
@@ -183,7 +166,7 @@ double* vtkOctreePointLocator::GetBounds()
   return bounds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::GetRegionBounds(int leafNodeId, double bounds[6])
 {
   if ((leafNodeId < 0) || (leafNodeId >= this->NumberOfLeafNodes))
@@ -197,7 +180,7 @@ void vtkOctreePointLocator::GetRegionBounds(int leafNodeId, double bounds[6])
   node->GetBounds(bounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::GetRegionDataBounds(int leafNodeId, double bounds[6])
 {
   if ((leafNodeId < 0) || (leafNodeId >= this->NumberOfLeafNodes))
@@ -211,7 +194,7 @@ void vtkOctreePointLocator::GetRegionDataBounds(int leafNodeId, double bounds[6]
   node->GetDataBounds(bounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::SetDataBoundsToSpatialBounds(vtkOctreePointLocatorNode* octant)
 {
   octant->SetMinDataBounds(octant->GetMinBounds());
@@ -226,7 +209,7 @@ void vtkOctreePointLocator::SetDataBoundsToSpatialBounds(vtkOctreePointLocatorNo
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOctreePointLocator::DivideTest(int size, int level)
 {
   if (level >= this->MaxLevel)
@@ -241,7 +224,7 @@ int vtkOctreePointLocator::DivideTest(int size, int level)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::DivideRegion(vtkOctreePointLocatorNode* node, int* ordering, int level)
 {
   if (!this->DivideTest(node->GetNumberOfPoints(), level))
@@ -280,7 +263,7 @@ void vtkOctreePointLocator::DivideRegion(vtkOctreePointLocatorNode* node, int* o
     counter += subOctantNumberOfPoints[i];
     if (!points[i].empty())
     {
-      memcpy(ordering + counter, &(points[i][0]), subOctantNumberOfPoints[i + 1] * sizeOfInt);
+      memcpy(ordering + counter, points[i].data(), subOctantNumberOfPoints[i + 1] * sizeOfInt);
     }
   }
   counter = 0;
@@ -292,21 +275,40 @@ void vtkOctreePointLocator::DivideRegion(vtkOctreePointLocatorNode* node, int* o
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::BuildLocator()
 {
-  if (!this->GetDataSet())
+  // don't rebuild if build time is newer than modified and dataset modified time
+  if (this->Top && this->BuildTime > this->MTime && this->BuildTime > this->DataSet->GetMTime())
   {
-    vtkErrorMacro("Must set a valid data set first.");
+    return;
+  }
+  // don't rebuild if UseExistingSearchStructure is ON and a search structure already exists
+  if (this->Top && this->UseExistingSearchStructure)
+  {
+    this->BuildTime.Modified();
+    vtkDebugMacro(<< "BuildLocator exited - UseExistingSearchStructure");
+    return;
+  }
+  this->BuildLocatorInternal();
+}
+
+//------------------------------------------------------------------------------
+void vtkOctreePointLocator::ForceBuildLocator()
+{
+  this->BuildLocatorInternal();
+}
+
+//------------------------------------------------------------------------------
+void vtkOctreePointLocator::BuildLocatorInternal()
+{
+  if (!this->DataSet || this->DataSet->GetNumberOfPoints() == 0)
+  {
+    vtkErrorMacro("No data set");
+    return;
   }
 
   int numPoints = this->GetDataSet()->GetNumberOfPoints();
-
-  if (numPoints < 1)
-  {
-    vtkErrorMacro(<< "No points to build from.");
-    return;
-  }
 
   if (numPoints >= VTK_INT_MAX)
   {
@@ -320,11 +322,6 @@ void vtkOctreePointLocator::BuildLocator()
   }
 
   vtkDebugMacro(<< "Creating octree");
-
-  if ((this->BuildTime > this->MTime) && (this->BuildTime > this->DataSet->GetMTime()))
-  {
-    return;
-  }
   this->FreeSearchStructure();
 
   // Fix bounds - (1) push out a little if flat
@@ -428,7 +425,7 @@ void vtkOctreePointLocator::BuildLocator()
   this->BuildTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::BuildLeafNodeList(vtkOctreePointLocatorNode* node, int& index)
 {
   if (node->GetChild(0))
@@ -445,14 +442,14 @@ void vtkOctreePointLocator::BuildLeafNodeList(vtkOctreePointLocatorNode* node, i
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkOctreePointLocator::FindClosestPoint(const double x[3])
 {
   double dist2(0);
   return this->FindClosestPoint(x[0], x[1], x[2], dist2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkOctreePointLocator::FindClosestPoint(double x, double y, double z, double& dist2)
 {
   this->BuildLocator();
@@ -470,8 +467,8 @@ vtkIdType vtkOctreePointLocator::FindClosestPoint(double x, double y, double z, 
     double pt[3];
     this->Top->GetDistance2ToBoundary(x, y, z, pt, this->Top, 1);
 
-    double* min = this->Top->GetMinBounds();
-    double* max = this->Top->GetMaxBounds();
+    const double* min = this->Top->GetMinBounds();
+    const double* max = this->Top->GetMaxBounds();
 
     // GetDistance2ToBoundary will sometimes return a point *just*
     // *barely* outside the bounds of the region.  Move that point to
@@ -504,7 +501,7 @@ vtkIdType vtkOctreePointLocator::FindClosestPoint(double x, double y, double z, 
 
     regionId = this->GetRegionContainingPoint(pt[0], pt[1], pt[2]);
 
-    closeId = this->_FindClosestPointInRegion(regionId, x, y, z, dist2);
+    closeId = this->FindClosestPointInRegion_(regionId, x, y, z, dist2);
 
     closePointId = static_cast<vtkIdType>(this->LocatorIds[closeId]);
 
@@ -521,7 +518,7 @@ vtkIdType vtkOctreePointLocator::FindClosestPoint(double x, double y, double z, 
   }
   else // Point is inside an octree region
   {
-    closeId = this->_FindClosestPointInRegion(regionId, x, y, z, dist2);
+    closeId = this->FindClosestPointInRegion_(regionId, x, y, z, dist2);
     closePointId = static_cast<vtkIdType>(this->LocatorIds[closeId]);
 
     if (dist2 > 0.0)
@@ -548,20 +545,20 @@ vtkIdType vtkOctreePointLocator::FindClosestPoint(double x, double y, double z, 
   return closePointId;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkOctreePointLocator::FindClosestPointWithinRadius(
   double radius, const double x[3], double& dist2)
 {
   return this->FindClosestPointInSphere(x[0], x[1], x[2], radius, -2, dist2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkOctreePointLocator::FindClosestPointInRegion(int regionId, double* x, double& dist2)
 {
   return this->FindClosestPointInRegion(regionId, x[0], x[1], x[2], dist2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkOctreePointLocator::FindClosestPointInRegion(
   int regionId, double x, double y, double z, double& dist2)
 {
@@ -571,7 +568,7 @@ vtkIdType vtkOctreePointLocator::FindClosestPointInRegion(
     vtkErrorMacro("vtkOctreePointLocator::FindClosestPointInRegion - must build locator first");
     return -1;
   }
-  int localId = this->_FindClosestPointInRegion(regionId, x, y, z, dist2);
+  int localId = this->FindClosestPointInRegion_(regionId, x, y, z, dist2);
 
   vtkIdType originalId = -1;
 
@@ -583,8 +580,8 @@ vtkIdType vtkOctreePointLocator::FindClosestPointInRegion(
   return originalId;
 }
 
-//----------------------------------------------------------------------------
-int vtkOctreePointLocator::_FindClosestPointInRegion(
+//------------------------------------------------------------------------------
+int vtkOctreePointLocator::FindClosestPointInRegion_(
   int leafNodeId, double x, double y, double z, double& dist2)
 {
   int minId = 0;
@@ -624,7 +621,7 @@ int vtkOctreePointLocator::_FindClosestPointInRegion(
   return minId;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOctreePointLocator::FindClosestPointInSphere(
   double x, double y, double z, double radius, int skipRegion, double& dist2)
 {
@@ -657,7 +654,7 @@ int vtkOctreePointLocator::FindClosestPointInSphere(
     else
     {
       double tempDist2 = dist2;
-      int tempId = this->_FindClosestPointInRegion(region->GetID(), x, y, z, tempDist2);
+      int tempId = this->FindClosestPointInRegion_(region->GetID(), x, y, z, tempDist2);
 
       if (tempDist2 < dist2)
       {
@@ -675,7 +672,7 @@ int vtkOctreePointLocator::FindClosestPointInSphere(
   return originalId;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::FindPointsWithinRadius(
   double radius, const double x[3], vtkIdList* result)
 {
@@ -685,7 +682,7 @@ void vtkOctreePointLocator::FindPointsWithinRadius(
   this->FindPointsWithinRadius(this->Top, radius * radius, x, result);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::FindPointsWithinRadius(
   vtkOctreePointLocatorNode* node, double radiusSquared, const double x[3], vtkIdList* result)
 {
@@ -793,7 +790,7 @@ void vtkOctreePointLocator::FindPointsWithinRadius(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::FindClosestNPoints(int N, const double x[3], vtkIdList* result)
 {
   result->Reset();
@@ -951,7 +948,7 @@ void vtkOctreePointLocator::FindClosestNPoints(int N, const double x[3], vtkIdLi
   orderedPoints.GetSortedIds(result);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdTypeArray* vtkOctreePointLocator::GetPointsInRegion(int leafNodeId)
 {
   if ((leafNodeId < 0) || (leafNodeId >= this->NumberOfLeafNodes))
@@ -983,7 +980,7 @@ vtkIdTypeArray* vtkOctreePointLocator::GetPointsInRegion(int leafNodeId)
   return ptIds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::FreeSearchStructure()
 {
   if (this->Top)
@@ -1004,8 +1001,8 @@ void vtkOctreePointLocator::FreeSearchStructure()
   this->LocatorIds = nullptr;
 }
 
-//----------------------------------------------------------------------------
-// build PolyData representation of all spacial regions------------
+//------------------------------------------------------------------------------
+// build PolyData representation of all spatial regions------------
 //
 void vtkOctreePointLocator::GenerateRepresentation(int level, vtkPolyData* pd)
 {
@@ -1017,8 +1014,8 @@ void vtkOctreePointLocator::GenerateRepresentation(int level, vtkPolyData* pd)
 
   std::list<vtkOctreePointLocatorNode*> nodesAtLevel;
   // queue of nodes to be examined and what level each one is at
-  std::queue<std::pair<vtkOctreePointLocatorNode*, int> > testNodes;
-  testNodes.push(std::make_pair(this->Top, 0));
+  std::queue<std::pair<vtkOctreePointLocatorNode*, int>> testNodes;
+  testNodes.emplace(this->Top, 0);
   while (!testNodes.empty())
   {
     vtkOctreePointLocatorNode* node = testNodes.front().first;
@@ -1032,7 +1029,7 @@ void vtkOctreePointLocator::GenerateRepresentation(int level, vtkPolyData* pd)
     {
       for (int i = 0; i < 8; i++)
       {
-        testNodes.push(std::make_pair(node->GetChild(i), nodeLevel + 1));
+        testNodes.emplace(node->GetChild(i), nodeLevel + 1);
       }
     }
   }
@@ -1058,7 +1055,7 @@ void vtkOctreePointLocator::GenerateRepresentation(int level, vtkPolyData* pd)
   pd->Squeeze();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::AddPolys(
   vtkOctreePointLocatorNode* node, vtkPoints* pts, vtkCellArray* polys)
 {
@@ -1066,8 +1063,8 @@ void vtkOctreePointLocator::AddPolys(
   vtkIdType idList[4];
   double x[3];
 
-  double* min = node->GetMinBounds();
-  double* max = node->GetMaxBounds();
+  const double* min = node->GetMinBounds();
+  const double* max = node->GetMaxBounds();
 
   x[0] = min[0];
   x[1] = max[1];
@@ -1146,14 +1143,14 @@ void vtkOctreePointLocator::AddPolys(
   polys->InsertNextCell(4, idList);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOctreePointLocator::FindRegion(vtkOctreePointLocatorNode* node, float x, float y, float z)
 {
   return vtkOctreePointLocator::FindRegion(
     node, static_cast<double>(x), static_cast<double>(y), static_cast<double>(z));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOctreePointLocator::FindRegion(vtkOctreePointLocatorNode* node, double x, double y, double z)
 {
   if (!node->ContainsPoint(x, y, z, 0))
@@ -1178,13 +1175,13 @@ int vtkOctreePointLocator::FindRegion(vtkOctreePointLocatorNode* node, double x,
   return -1; // no region is found
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOctreePointLocator::GetRegionContainingPoint(double x, double y, double z)
 {
   return vtkOctreePointLocator::FindRegion(this->Top, x, y, z);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::FindPointsInArea(double* area, vtkIdTypeArray* ids, bool clearArray)
 {
   if (clearArray)
@@ -1195,7 +1192,7 @@ void vtkOctreePointLocator::FindPointsInArea(double* area, vtkIdTypeArray* ids, 
   this->FindPointsInArea(this->Top, area, ids);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::FindPointsInArea(
   vtkOctreePointLocatorNode* node, double* area, vtkIdTypeArray* ids)
 {
@@ -1248,7 +1245,7 @@ void vtkOctreePointLocator::FindPointsInArea(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::AddAllPointsInRegion(
   vtkOctreePointLocatorNode* node, vtkIdTypeArray* ids)
 {
@@ -1261,7 +1258,7 @@ void vtkOctreePointLocator::AddAllPointsInRegion(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::AddAllPointsInRegion(vtkOctreePointLocatorNode* node, vtkIdList* ids)
 {
   int regionLoc = node->GetMinID();
@@ -1273,7 +1270,7 @@ void vtkOctreePointLocator::AddAllPointsInRegion(vtkOctreePointLocatorNode* node
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1289,3 +1286,4 @@ void vtkOctreePointLocator::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "MaxWidth: " << this->MaxWidth << endl;
   os << indent << "CreateCubicOctants: " << this->CreateCubicOctants << endl;
 }
+VTK_ABI_NAMESPACE_END

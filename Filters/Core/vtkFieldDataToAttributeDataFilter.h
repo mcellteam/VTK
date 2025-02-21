@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFieldDataToAttributeDataFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFieldDataToAttributeDataFilter
  * @brief   map field data to dataset attribute data
@@ -65,6 +53,7 @@
 #define VTK_CELL_DATA 0
 #define VTK_POINT_DATA 1
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkDataSetAttributes;
 class vtkFieldData;
@@ -81,7 +70,7 @@ public:
    */
   static vtkFieldDataToAttributeDataFilter* New();
 
-  //@{
+  ///@{
   /**
    * Specify which field data to use to generate the output attribute
    * data. There are three choices: the field data associated with the
@@ -93,9 +82,9 @@ public:
   void SetInputFieldToDataObjectField() { this->SetInputField(VTK_DATA_OBJECT_FIELD); }
   void SetInputFieldToPointDataField() { this->SetInputField(VTK_POINT_DATA_FIELD); }
   void SetInputFieldToCellDataField() { this->SetInputField(VTK_CELL_DATA_FIELD); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify which attribute data to output: point or cell data attributes.
    */
@@ -103,9 +92,9 @@ public:
   vtkGetMacro(OutputAttributeData, int);
   void SetOutputAttributeDataToCellData() { this->SetOutputAttributeData(VTK_CELL_DATA); }
   void SetOutputAttributeDataToPointData() { this->SetOutputAttributeData(VTK_POINT_DATA); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Define the component(s) of the field to be used for the scalar
    * components.  Note that the parameter comp must lie between (0,4). To
@@ -124,9 +113,9 @@ public:
   int GetScalarComponentMinRange(int comp);
   int GetScalarComponentMaxRange(int comp);
   int GetScalarComponentNormalizeFlag(int comp);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Define the component(s) of the field to be used for the vector
    * components.  Note that the parameter comp must lie between (0,3). To
@@ -145,9 +134,9 @@ public:
   int GetVectorComponentMinRange(int comp);
   int GetVectorComponentMaxRange(int comp);
   int GetVectorComponentNormalizeFlag(int comp);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Define the component(s) of the field to be used for the normal
    * components.  Note that the parameter comp must lie between (0,3). To
@@ -166,9 +155,9 @@ public:
   int GetNormalComponentMinRange(int comp);
   int GetNormalComponentMaxRange(int comp);
   int GetNormalComponentNormalizeFlag(int comp);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Define the components of the field to be used for the tensor
    * components.  Note that the parameter comp must lie between (0,9). To
@@ -187,9 +176,9 @@ public:
   int GetTensorComponentMinRange(int comp);
   int GetTensorComponentMaxRange(int comp);
   int GetTensorComponentNormalizeFlag(int comp);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Define the components of the field to be used for the cell texture coord
    * components.  Note that the parameter comp must lie between (0,9). To
@@ -208,9 +197,9 @@ public:
   int GetTCoordComponentMinRange(int comp);
   int GetTCoordComponentMaxRange(int comp);
   int GetTCoordComponentNormalizeFlag(int comp);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the default Normalize() flag for those methods setting a default
    * Normalize value (e.g., SetScalarComponents).
@@ -218,7 +207,7 @@ public:
   vtkSetMacro(DefaultNormalize, vtkTypeBool);
   vtkGetMacro(DefaultNormalize, vtkTypeBool);
   vtkBooleanMacro(DefaultNormalize, vtkTypeBool);
-  //@}
+  ///@}
 
   // Helper functions, made public to support other classes
 
@@ -324,4 +313,5 @@ private:
   void operator=(const vtkFieldDataToAttributeDataFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

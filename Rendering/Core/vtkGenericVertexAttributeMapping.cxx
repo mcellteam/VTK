@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericVertexAttributeMapping.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericVertexAttributeMapping.h"
 
 #include "vtkObjectFactory.h"
@@ -20,6 +8,7 @@
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGenericVertexAttributeMapping::vtkInternal
 {
 public:
@@ -37,19 +26,19 @@ public:
 };
 
 vtkStandardNewMacro(vtkGenericVertexAttributeMapping);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericVertexAttributeMapping::vtkGenericVertexAttributeMapping()
 {
   this->Internal = new vtkInternal();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericVertexAttributeMapping::~vtkGenericVertexAttributeMapping()
 {
   delete this->Internal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericVertexAttributeMapping::AddMapping(
   const char* attributeName, const char* arrayName, int fieldAssociation, int component)
 {
@@ -73,7 +62,7 @@ void vtkGenericVertexAttributeMapping::AddMapping(
   this->Internal->Mappings.push_back(info);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericVertexAttributeMapping::AddMapping(
   int unit, const char* arrayName, int fieldAssociation, int component)
 {
@@ -82,7 +71,7 @@ void vtkGenericVertexAttributeMapping::AddMapping(
 
   if (this->RemoveMapping(attributeName.str().c_str()))
   {
-    vtkWarningMacro("Replacing existing mapping for attribute " << attributeName.str().c_str());
+    vtkWarningMacro("Replacing existing mapping for attribute " << attributeName.str());
   }
 
   vtkInternal::vtkInfo info;
@@ -94,7 +83,7 @@ void vtkGenericVertexAttributeMapping::AddMapping(
   this->Internal->Mappings.push_back(info);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGenericVertexAttributeMapping::RemoveMapping(const char* attributeName)
 {
   vtkInternal::VectorType::iterator iter;
@@ -109,19 +98,19 @@ bool vtkGenericVertexAttributeMapping::RemoveMapping(const char* attributeName)
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericVertexAttributeMapping::RemoveAllMappings()
 {
   this->Internal->Mappings.clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkGenericVertexAttributeMapping::GetNumberOfMappings()
 {
   return static_cast<unsigned int>(this->Internal->Mappings.size());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGenericVertexAttributeMapping::GetAttributeName(unsigned int index)
 {
   if (index >= this->Internal->Mappings.size())
@@ -132,7 +121,7 @@ const char* vtkGenericVertexAttributeMapping::GetAttributeName(unsigned int inde
   return this->Internal->Mappings[index].AttributeName.c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGenericVertexAttributeMapping::GetArrayName(unsigned int index)
 {
   if (index >= this->Internal->Mappings.size())
@@ -143,7 +132,7 @@ const char* vtkGenericVertexAttributeMapping::GetArrayName(unsigned int index)
   return this->Internal->Mappings[index].ArrayName.c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericVertexAttributeMapping::GetFieldAssociation(unsigned int index)
 {
   if (index >= this->Internal->Mappings.size())
@@ -154,7 +143,7 @@ int vtkGenericVertexAttributeMapping::GetFieldAssociation(unsigned int index)
   return this->Internal->Mappings[index].FieldAssociation;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericVertexAttributeMapping::GetComponent(unsigned int index)
 {
   if (index >= this->Internal->Mappings.size())
@@ -165,7 +154,7 @@ int vtkGenericVertexAttributeMapping::GetComponent(unsigned int index)
   return this->Internal->Mappings[index].Component;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericVertexAttributeMapping::GetTextureUnit(unsigned int index)
 {
   if (index >= this->Internal->Mappings.size())
@@ -176,14 +165,15 @@ int vtkGenericVertexAttributeMapping::GetTextureUnit(unsigned int index)
   return this->Internal->Mappings[index].TextureUnit;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericVertexAttributeMapping::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   vtkInternal::VectorType::iterator iter;
   for (iter = this->Internal->Mappings.begin(); iter != this->Internal->Mappings.end(); ++iter)
   {
-    os << indent << "Mapping: " << iter->AttributeName.c_str() << ", " << iter->ArrayName.c_str()
-       << ", " << iter->FieldAssociation << ", " << iter->Component << endl;
+    os << indent << "Mapping: " << iter->AttributeName << ", " << iter->ArrayName << ", "
+       << iter->FieldAssociation << ", " << iter->Component << endl;
   }
 }
+VTK_ABI_NAMESPACE_END

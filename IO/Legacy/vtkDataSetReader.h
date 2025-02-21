@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSetReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataSetReader
  * @brief   class to read any type of vtk dataset
@@ -37,6 +25,7 @@
 #include "vtkDataReader.h"
 #include "vtkIOLegacyModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkPolyData;
 class vtkRectilinearGrid;
@@ -51,15 +40,15 @@ public:
   vtkTypeMacro(vtkDataSetReader, vtkDataReader);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output of this filter
    */
   vtkDataSet* GetOutput();
   vtkDataSet* GetOutput(int idx);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the output as various concrete types. This method is typically used
    * when you know exactly what type of data is being read.  Otherwise, use
@@ -72,7 +61,7 @@ public:
   vtkStructuredGrid* GetStructuredGridOutput();
   vtkUnstructuredGrid* GetUnstructuredGridOutput();
   vtkRectilinearGrid* GetRectilinearGridOutput();
-  //@}
+  ///@}
 
   /**
    * This method can be used to find out the type of output expected without
@@ -83,12 +72,12 @@ public:
   /**
    * Read metadata from file.
    */
-  int ReadMetaDataSimple(const std::string& fname, vtkInformation* metadata) override;
+  int ReadMetaDataSimple(VTK_FILEPATH const std::string& fname, vtkInformation* metadata) override;
 
   /**
    * Actual reading happens here
    */
-  int ReadMeshSimple(const std::string& fname, vtkDataObject* output) override;
+  int ReadMeshSimple(VTK_FILEPATH const std::string& fname, vtkDataObject* output) override;
 
 protected:
   vtkDataSetReader();
@@ -103,4 +92,5 @@ private:
   void operator=(const vtkDataSetReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

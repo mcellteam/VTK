@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyLineSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPolyLineSource
  * @brief   create a poly line from a list of input points
@@ -26,6 +14,7 @@
 #include "vtkFiltersSourcesModule.h" // For export macro
 #include "vtkPolyPointSource.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 
 class VTKFILTERSSOURCES_EXPORT vtkPolyLineSource : public vtkPolyPointSource
@@ -35,14 +24,14 @@ public:
   vtkTypeMacro(vtkPolyLineSource, vtkPolyPointSource);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set whether to close the poly line by connecting the last and first points.
    */
   vtkSetMacro(Closed, vtkTypeBool);
   vtkGetMacro(Closed, vtkTypeBool);
   vtkBooleanMacro(Closed, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkPolyLineSource();
@@ -57,4 +46,5 @@ private:
   void operator=(const vtkPolyLineSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

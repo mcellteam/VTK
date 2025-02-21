@@ -6,6 +6,12 @@ KIT
   VTK::Parallel
 GROUPS
   MPI
+DESCRIPTION
+  Distributed-memory algorithms that require the message-passing interface (MPI) library.
+SPDX_LICENSE_IDENTIFIER
+  BSD-3-Clause
+SPDX_COPYRIGHT_TEXT
+  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
 DEPENDS
   VTK::CommonCore
   VTK::CommonExecutionModel

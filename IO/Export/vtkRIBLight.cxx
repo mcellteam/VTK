@@ -1,20 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRIBLight.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRIBLight.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRIBLight);
 
 vtkRIBLight::vtkRIBLight()
@@ -34,13 +23,9 @@ vtkRIBLight::~vtkRIBLight()
 
 void vtkRIBLight::Render(vtkRenderer* ren, int index)
 {
-  int ref;
-
   // Copy this light's ivars into the light to be rendered
-  ref = this->Light->GetReferenceCount();
   this->Light->DeepCopy(this);
   // this->Light->SetDeleteMethod(nullptr);
-  this->Light->SetReferenceCount(ref);
 
   // Render the light
   this->Light->Render(ren, index);
@@ -52,3 +37,4 @@ void vtkRIBLight::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Shadows: " << (this->Shadows ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

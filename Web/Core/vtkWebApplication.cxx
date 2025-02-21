@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWebApplication.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWebApplication.h"
 
 #include "vtkBase64Utilities.h"
@@ -41,6 +29,7 @@
 #include <map>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkWebApplication::vtkInternals
 {
 public:
@@ -111,13 +100,13 @@ public:
   typedef std::map<std::string, WebGLObjCacheValue> WebGLObjId2IndexMap;
   std::map<vtkWebGLExporter*, WebGLObjId2IndexMap> WebGLExporterObjIdMap;
   // map for <vtkRenderWindow, vtkWebGLExporter>
-  std::map<vtkRenderWindow*, vtkSmartPointer<vtkWebGLExporter> > ViewWebGLMap;
+  std::map<vtkRenderWindow*, vtkSmartPointer<vtkWebGLExporter>> ViewWebGLMap;
   std::string LastAllWebGLBinaryObjects;
   vtkNew<vtkObjectIdMap> ObjectIdMap;
 };
 
 vtkStandardNewMacro(vtkWebApplication);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWebApplication::vtkWebApplication()
   : ImageEncoding(ENCODING_BASE64)
   , ImageCompression(COMPRESSION_JPEG)
@@ -125,47 +114,47 @@ vtkWebApplication::vtkWebApplication()
 {
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWebApplication::~vtkWebApplication()
 {
   delete this->Internals;
   this->Internals = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWebApplication::SetNumberOfEncoderThreads(vtkTypeUInt32 numThreads)
 {
   this->Internals->Encoder->SetMaxThreads(numThreads);
   this->Internals->Encoder->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeUInt32 vtkWebApplication::GetNumberOfEncoderThreads()
 {
   return this->Internals->Encoder->GetMaxThreads();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkWebApplication::GetHasImagesBeingProcessed(vtkRenderWindow* view)
 {
   const vtkInternals::ImageCacheValueType& value = this->Internals->ImageCache[view];
   return value.HasImagesBeingProcessed;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnsignedCharArray* vtkWebApplication::InteractiveRender(vtkRenderWindow* view, int quality)
 {
   // for now, just do the same as StillRender().
   return this->StillRender(view, quality);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWebApplication::InvalidateCache(vtkRenderWindow* view)
 {
   this->Internals->ImageCache[view].NeedsRender = true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnsignedCharArray* vtkWebApplication::StillRender(vtkRenderWindow* view, int quality)
 {
   if (!view)
@@ -174,15 +163,15 @@ vtkUnsignedCharArray* vtkWebApplication::StillRender(vtkRenderWindow* view, int 
     return nullptr;
   }
 
+  auto viewID = this->Internals->ObjectIdMap->GetGlobalId(view);
   vtkInternals::ImageCacheValueType& value = this->Internals->ImageCache[view];
   value.SetListener(view);
 
-  if (value.NeedsRender == false &&
+  if (!value.NeedsRender &&
     value.Data != nullptr /* FIXME SEB &&
     view->HasDirtyRepresentation() == false */)
   {
-    bool latest = this->Internals->Encoder->GetLatestOutput(
-      this->Internals->ObjectIdMap->GetGlobalId(view), value.Data);
+    bool latest = this->Internals->Encoder->GetLatestOutput(viewID, value.Data);
     value.HasImagesBeingProcessed = !latest;
     return value.Data;
   }
@@ -205,7 +194,7 @@ vtkUnsignedCharArray* vtkWebApplication::StillRender(vtkRenderWindow* view, int 
   w2i->FixBoundaryOn();
   w2i->Update();
 
-  vtkImageData* image = vtkImageData::New();
+  auto image = vtkSmartPointer<vtkImageData>::New();
   image->ShallowCopy(w2i->GetOutput());
 
   // vtkTimerLog::MarkEndEvent("CaptureWindow");
@@ -213,26 +202,23 @@ vtkUnsignedCharArray* vtkWebApplication::StillRender(vtkRenderWindow* view, int 
   // vtkTimerLog::MarkEndEvent("StillRenderToString");
   // vtkTimerLog::DumpLogWithIndents(&cout, 0.0);
 
-  this->Internals->Encoder->PushAndTakeReference(
-    this->Internals->ObjectIdMap->GetGlobalId(view), image, quality, this->ImageEncoding);
-  assert(image == nullptr);
+  this->Internals->Encoder->Push(viewID, image, quality, this->ImageEncoding);
 
   if (value.Data == nullptr)
   {
     // we need to wait till output is processed.
     // cout << "Flushing" << endl;
-    this->Internals->Encoder->Flush(this->Internals->ObjectIdMap->GetGlobalId(view));
+    this->Internals->Encoder->Flush(viewID);
     // cout << "Done Flushing" << endl;
   }
 
-  bool latest = this->Internals->Encoder->GetLatestOutput(
-    this->Internals->ObjectIdMap->GetGlobalId(view), value.Data);
+  bool latest = this->Internals->Encoder->GetLatestOutput(viewID, value.Data);
   value.HasImagesBeingProcessed = !latest;
   value.NeedsRender = false;
   return value.Data;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkWebApplication::StillRenderToString(
   vtkRenderWindow* view, vtkMTimeType time, int quality)
 {
@@ -246,7 +232,7 @@ const char* vtkWebApplication::StillRenderToString(
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnsignedCharArray* vtkWebApplication::StillRenderToBuffer(
   vtkRenderWindow* view, vtkMTimeType time, int quality)
 {
@@ -259,7 +245,7 @@ vtkUnsignedCharArray* vtkWebApplication::StillRenderToBuffer(
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkWebApplication::HandleInteractionEvent(vtkRenderWindow* view, vtkWebInteractionEvent* event)
 {
   vtkRenderWindowInteractor* iren = nullptr;
@@ -291,7 +277,7 @@ bool vtkWebApplication::HandleInteractionEvent(vtkRenderWindow* view, vtkWebInte
     return true;
   }
 
-  int* viewSize = view->GetSize();
+  const int* viewSize = view->GetSize();
   int posX = std::floor(viewSize[0] * event->GetX() + 0.5);
   int posY = std::floor(viewSize[1] * event->GetY() + 0.5);
 
@@ -355,7 +341,7 @@ bool vtkWebApplication::HandleInteractionEvent(vtkRenderWindow* view, vtkWebInte
   return needs_render;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkWebApplication::GetWebGLSceneMetaData(vtkRenderWindow* view)
 {
   if (!view)
@@ -401,7 +387,7 @@ const char* vtkWebApplication::GetWebGLSceneMetaData(vtkRenderWindow* view)
   return webglExporter->GenerateMetadata();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkWebApplication::GetWebGLBinaryData(vtkRenderWindow* view, const char* id, int part)
 {
   if (!view)
@@ -454,7 +440,7 @@ const char* vtkWebApplication::GetWebGLBinaryData(vtkRenderWindow* view, const c
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWebApplication::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -462,16 +448,17 @@ void vtkWebApplication::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ImageCompression: " << this->ImageCompression << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkObjectIdMap* vtkWebApplication::GetObjectIdMap()
 {
   return this->Internals->ObjectIdMap;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkWebApplication::GetObjectId(vtkObject* obj)
 {
   std::ostringstream oss;
   oss << std::hex << static_cast<void*>(obj);
   return oss.str();
 }
+VTK_ABI_NAMESPACE_END

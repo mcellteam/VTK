@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProp.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkProp
  * @brief   abstract superclass for all actors, volumes and annotations
@@ -30,8 +18,10 @@
 
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 #include <vector>                   // for method args
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAssemblyPath;
 class vtkAssemblyPaths;
 class vtkHardwareSelector;
@@ -44,7 +34,7 @@ class vtkInformationIntegerKey;
 class vtkInformationDoubleVectorKey;
 class vtkShaderProperty;
 
-class VTKRENDERINGCORE_EXPORT vtkProp : public vtkObject
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkProp : public vtkObject
 {
 public:
   vtkTypeMacro(vtkProp, vtkObject);
@@ -59,16 +49,16 @@ public:
   virtual void GetActors2D(vtkPropCollection*) {}
   virtual void GetVolumes(vtkPropCollection*) {}
 
-  //@{
+  ///@{
   /**
    * Set/Get visibility of this vtkProp. Initial value is true.
    */
   vtkSetMacro(Visibility, vtkTypeBool);
   vtkGetMacro(Visibility, vtkTypeBool);
   vtkBooleanMacro(Visibility, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the pickable instance variable.  This determines if the vtkProp
    * can be picked (typically using the mouse). Also see dragable.
@@ -77,14 +67,14 @@ public:
   vtkSetMacro(Pickable, vtkTypeBool);
   vtkGetMacro(Pickable, vtkTypeBool);
   vtkBooleanMacro(Pickable, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Method fires PickEvent if the prop is picked.
    */
   virtual void Pick();
 
-  //@{
+  ///@{
   /**
    * Set/Get the value of the dragable instance variable. This determines if
    * an Prop, once picked, can be dragged (translated) through space.
@@ -97,7 +87,7 @@ public:
   vtkSetMacro(Dragable, vtkTypeBool);
   vtkGetMacro(Dragable, vtkTypeBool);
   vtkBooleanMacro(Dragable, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Return the mtime of anything that would cause the rendered image to
@@ -107,7 +97,7 @@ public:
    */
   virtual vtkMTimeType GetRedrawMTime() { return this->GetMTime(); }
 
-  //@{
+  ///@{
   /**
    * In case the Visibility flag is true, tell if the bounds of this prop
    * should be taken into account or ignored during the computation of other
@@ -117,7 +107,7 @@ public:
   vtkSetMacro(UseBounds, bool);
   vtkGetMacro(UseBounds, bool);
   vtkBooleanMacro(UseBounds, bool);
-  //@}
+  ///@}
 
   /**
    * Get the bounds for this Prop as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
@@ -130,7 +120,7 @@ public:
    */
   virtual void ShallowCopy(vtkProp* prop);
 
-  //@{
+  ///@{
   /**
    * vtkProp and its subclasses can be picked by subclasses of
    * vtkAbstractPicker (e.g., vtkPropPicker). The following methods interface
@@ -146,7 +136,7 @@ public:
   virtual void InitPathTraversal();
   virtual vtkAssemblyPath* GetNextPath();
   virtual int GetNumberOfPaths() { return 1; }
-  //@}
+  ///@}
 
   /**
    * These methods are used by subclasses to place a matrix (if any) in the
@@ -156,7 +146,7 @@ public:
   virtual void PokeMatrix(vtkMatrix4x4* vtkNotUsed(matrix)) {}
   virtual vtkMatrix4x4* GetMatrix() { return nullptr; }
 
-  //@{
+  ///@{
   /**
    * Set/Get property keys. Property keys can be digest by some rendering
    * passes.
@@ -164,9 +154,11 @@ public:
    * shadow mapping render pass. Keys are documented in render pass classes.
    * Initial value is NULL.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   vtkGetObjectMacro(PropertyKeys, vtkInformation);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   virtual void SetPropertyKeys(vtkInformation* keys);
-  //@}
+  ///@}
 
   /**
    * Tells if the prop has all the required keys.
@@ -358,7 +350,7 @@ public:
     this->EstimatedRenderTime += t;
   }
 
-  //@{
+  ///@{
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
    * DO NOT USE THIS METHOD OUTSIDE OF THE RENDERING PROCESS
@@ -375,15 +367,15 @@ public:
     this->SavedEstimatedRenderTime = this->EstimatedRenderTime;
     this->EstimatedRenderTime = 0.0;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
    * DO NOT USE THIS METHOD OUTSIDE OF THE RENDERING PROCESS
    */
   vtkGetMacro(AllocatedRenderTime, double);
-  //@}
+  ///@}
 
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
@@ -419,14 +411,14 @@ public:
   {
   }
 
-  //@{
+  ///@{
   /**
    * Get the number of consumers
    */
   vtkGetMacro(NumberOfConsumers, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add or remove or get or check a consumer,
    */
@@ -434,20 +426,20 @@ public:
   void RemoveConsumer(vtkObject* c);
   vtkObject* GetConsumer(int i);
   int IsConsumer(vtkObject* c);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the shader property.
    */
   virtual void SetShaderProperty(vtkShaderProperty* property);
   virtual vtkShaderProperty* GetShaderProperty();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   // Get if we are in the translucent polygonal geometry pass
   virtual bool IsRenderingTranslucentPolygonalGeometry() { return false; }
-  //@}
+  ///@}
 
 protected:
   vtkProp();
@@ -481,4 +473,5 @@ private:
   void operator=(const vtkProp&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

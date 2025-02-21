@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLandmarkTransform.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLandmarkTransform.h"
 
 #include "vtkMath.h"
@@ -19,9 +7,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkPoints.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLandmarkTransform);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLandmarkTransform::vtkLandmarkTransform()
 {
   this->Mode = VTK_LANDMARK_SIMILARITY;
@@ -29,7 +18,7 @@ vtkLandmarkTransform::vtkLandmarkTransform()
   this->TargetLandmarks = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLandmarkTransform::~vtkLandmarkTransform()
 {
   if (this->SourceLandmarks)
@@ -42,7 +31,7 @@ vtkLandmarkTransform::~vtkLandmarkTransform()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLandmarkTransform::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -59,7 +48,7 @@ void vtkLandmarkTransform::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Update the 4x4 matrix. Updates are only done as necessary.
 
 void vtkLandmarkTransform::InternalUpdate()
@@ -210,7 +199,7 @@ void vtkLandmarkTransform::InternalUpdate()
   else
   {
     // compute required scaling factor (if desired)
-    double scale = (double)sqrt(sb / sa);
+    double scale = sqrt(sb / sa);
 
     // -- build the 4x4 matrix N --
 
@@ -385,7 +374,7 @@ void vtkLandmarkTransform::InternalUpdate()
   this->Matrix->Modified();
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkLandmarkTransform::GetMTime()
 {
   vtkMTimeType result = this->vtkLinearTransform::GetMTime();
@@ -409,7 +398,7 @@ vtkMTimeType vtkLandmarkTransform::GetMTime()
   }
   return result;
 }
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLandmarkTransform::SetSourceLandmarks(vtkPoints* source)
 {
   if (this->SourceLandmarks == source)
@@ -428,7 +417,7 @@ void vtkLandmarkTransform::SetSourceLandmarks(vtkPoints* source)
   this->Modified();
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLandmarkTransform::SetTargetLandmarks(vtkPoints* target)
 {
   if (this->TargetLandmarks == target)
@@ -446,7 +435,7 @@ void vtkLandmarkTransform::SetTargetLandmarks(vtkPoints* target)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLandmarkTransform::Inverse()
 {
   vtkPoints* tmp1 = this->SourceLandmarks;
@@ -456,13 +445,13 @@ void vtkLandmarkTransform::Inverse()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractTransform* vtkLandmarkTransform::MakeTransform()
 {
   return vtkLandmarkTransform::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLandmarkTransform::InternalDeepCopy(vtkAbstractTransform* transform)
 {
   vtkLandmarkTransform* t = (vtkLandmarkTransform*)transform;
@@ -473,3 +462,4 @@ void vtkLandmarkTransform::InternalDeepCopy(vtkAbstractTransform* transform)
 
   this->Modified();
 }
+VTK_ABI_NAMESPACE_END

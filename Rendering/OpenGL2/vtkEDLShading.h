@@ -1,17 +1,6 @@
-/*=========================================================================
-
-   Program: VTK
-   Module:  vtkEDLShading.h
-
-  Copyright (c) Sandia Corporation, Kitware Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation, Kitware Inc
+// SPDX-License-Identifier: BSD-3-Clause
 /*----------------------------------------------------------------------
 Acknowledgement:
 This algorithm is the result of joint work by Electricité de France,
@@ -23,10 +12,10 @@ Ph.D. thesis of Christian BOUCHENY.
  *
  *
  * Implement an EDL offscreen shading.
- * Shade the image renderered by its delegate. Two image resolutions are used
+ * Shade the image rendered by its delegate. Two image resolutions are used
  *
  * This pass expects an initialized depth buffer and color buffer.
- * Initialized buffers means they have been cleared with farest z-value and
+ * Initialized buffers means they have been cleared with farthest z-value and
  * background color/gradient/transparent color.
  * An opaque pass may have been performed right after the initialization.
  *
@@ -45,13 +34,14 @@ Ph.D. thesis of Christian BOUCHENY.
 #include "vtkDepthImageProcessingPass.h"
 #include "vtkOpenGLHelper.h"           // used for ivars
 #include "vtkRenderingOpenGL2Module.h" // For export macro
-#include "vtkSmartPointer.h"           // needed for vtkSmartPointer
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLRenderWindow;
 class vtkOpenGLFramebufferObject;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkEDLShading : public vtkDepthImageProcessingPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkEDLShading : public vtkDepthImageProcessingPass
 {
 public:
   static vtkEDLShading* New();
@@ -112,7 +102,7 @@ protected:
    */
   bool EDLCompose(const vtkRenderState* s, vtkOpenGLRenderWindow*);
 
-  //@{
+  ///@{
   /**
    * Framebuffer object and textures for initial projection
    */
@@ -122,7 +112,7 @@ protected:
   // color render target for projection pass
   vtkTextureObject* ProjectionDepthTexture;
   // depth render target for projection pass
-  //@}
+  ///@}
 
   // Framebuffer objects and textures for EDL
   vtkOpenGLFramebufferObject* EDLHighFBO;
@@ -154,4 +144,5 @@ private:
   void operator=(const vtkEDLShading&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

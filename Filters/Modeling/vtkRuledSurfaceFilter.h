@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRuledSurfaceFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRuledSurfaceFilter
  * @brief   generates a surface from a set of lines
@@ -57,6 +45,7 @@
 #include "vtkFiltersModelingModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 class vtkPoints;
 class vtkPolyData;
@@ -76,15 +65,15 @@ public:
    */
   static vtkRuledSurfaceFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the factor that controls tearing of the surface.
    */
   vtkSetClampMacro(DistanceFactor, double, 1.0, VTK_DOUBLE_MAX);
   vtkGetMacro(DistanceFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the striping of the ruled surface. If OnRatio is greater
    * than 1, then every nth strip is turned on, beginning with the Offset
@@ -92,9 +81,9 @@ public:
    */
   vtkSetClampMacro(OnRatio, int, 1, VTK_INT_MAX);
   vtkGetMacro(OnRatio, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the striping of the ruled surface. The offset sets the
    * first stripe that is visible. Offset is generally used with
@@ -102,9 +91,9 @@ public:
    */
   vtkSetClampMacro(Offset, int, 0, VTK_INT_MAX);
   vtkGetMacro(Offset, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether the surface is to be closed. If this boolean is
    * on, then the first and last polyline are used to generate a stripe
@@ -115,9 +104,9 @@ public:
   vtkSetMacro(CloseSurface, vtkTypeBool);
   vtkGetMacro(CloseSurface, vtkTypeBool);
   vtkBooleanMacro(CloseSurface, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the mode by which to create the ruled surface. (Dramatically
    * different results are possible depending on the chosen mode.) The
@@ -130,9 +119,9 @@ public:
   void SetRuledModeToResample() { this->SetRuledMode(VTK_RULED_MODE_RESAMPLE); }
   void SetRuledModeToPointWalk() { this->SetRuledMode(VTK_RULED_MODE_POINT_WALK); }
   const char* GetRuledModeAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the ruled surface generation mode is RESAMPLE, then these parameters
    * are used to determine the resample rate. Resolution[0] defines the
@@ -142,9 +131,9 @@ public:
    */
   vtkSetVector2Macro(Resolution, int);
   vtkGetVectorMacro(Resolution, int, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether the generating lines are to be passed to the output.
    * By default lines are not passed to the output.
@@ -152,9 +141,9 @@ public:
   vtkSetMacro(PassLines, vtkTypeBool);
   vtkGetMacro(PassLines, vtkTypeBool);
   vtkBooleanMacro(PassLines, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether the starting points of the loops need to be determined.
    * If set to 0, then its assumes that the 0th point of each loop should be
@@ -164,7 +153,7 @@ public:
   vtkSetMacro(OrientLoops, vtkTypeBool);
   vtkGetMacro(OrientLoops, vtkTypeBool);
   vtkBooleanMacro(OrientLoops, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkRuledSurfaceFilter();
@@ -191,9 +180,9 @@ private:
   void PointWalk(vtkPolyData* output, vtkPoints* inPts, int npts, const vtkIdType* pts, int npts2,
     const vtkIdType* pts2);
 
-private:
   vtkRuledSurfaceFilter(const vtkRuledSurfaceFilter&) = delete;
   void operator=(const vtkRuledSurfaceFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

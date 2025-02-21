@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContourTriangulator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkContourTriangulator.h"
 
 #include "vtkCellArray.h"
@@ -33,19 +21,20 @@
 #include <utility>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkContourTriangulator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkContourTriangulator::vtkContourTriangulator()
 {
   this->TriangulationError = 0;
   this->TriangulationErrorDisplay = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkContourTriangulator::~vtkContourTriangulator() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContourTriangulator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -56,7 +45,7 @@ void vtkContourTriangulator::PrintSelf(ostream& os, vtkIndent indent)
      << "TriangulationErrorDisplay: " << (this->TriangulationErrorDisplay ? "On\n" : "Off\n");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkContourTriangulator::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -78,26 +67,26 @@ int vtkContourTriangulator::RequestData(vtkInformation* vtkNotUsed(request),
 
   input->BuildCells();
 
-  vtkCellArray* polys = vtkCellArray::New();
+  vtkNew<vtkCellArray> polys;
   output->SetPolys(polys);
   output->SetPoints(input->GetPoints());
   output->GetPointData()->PassData(input->GetPointData());
 
-  polys->Delete();
-
   this->TriangulationError = !vtkContourTriangulator::TriangulateContours(
-    input, input->GetNumberOfVerts(), lines->GetNumberOfCells(), polys, nullptr);
+    input, input->GetNumberOfVerts(), lines->GetNumberOfCells(), polys, nullptr, this);
 
   if (this->TriangulationError && this->TriangulationErrorDisplay)
   {
     vtkErrorMacro("Triangulation failed, output might have holes.");
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Everything below this point is support code for TriangulateContours()
 // and TriangulatePolygon().
 //
@@ -121,12 +110,12 @@ int vtkContourTriangulator::RequestData(vtkInformation* vtkNotUsed(request),
 // that can deal with holes.  Also, it is O(n^2) while available algorithms
 // are O(n log n).  The vtkDelaunay2D filter will go into infinite recursion
 // for some triangulations, hence it cannot be used.
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // A helper class: a bitfield that is always as large as needed.
 // For our purposes this is much more convenient than a bool vector,
 // which would have to be resized and range-checked externally.
@@ -173,7 +162,7 @@ private:
   std::vector<unsigned int> bitstorage;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Simple typedefs for stl-based polygons.
 
 // A poly type that is just a vector of vtkIdType
@@ -191,7 +180,7 @@ typedef std::vector<vtkIdType> vtkCCSPolyEdges;
 // A cell array, but as an STL vector
 typedef std::vector<vtkIdType> vtkCCSCellArray;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // These are the prototypes for helper functions for manipulating
 // polys that are stored in stl vectors.
 
@@ -385,7 +374,7 @@ int vtkCCSTriangulate(const vtkCCSPoly& poly, vtkPoints* points, const vtkCCSPol
   {
     double ppoint[3], point[3], npoint[3];
     size_t i, j, k;
-    std::vector<std::pair<size_t, double> > verts(n);
+    std::vector<std::pair<size_t, double>> verts(n);
 
     for (i = 0; i < n; i++)
     {
@@ -476,11 +465,12 @@ int vtkCCSTriangulate(const vtkCCSPoly& poly, vtkPoints* points, const vtkCCSPol
               side = !side;
               foundNegative = true;
               double s, t;
-              foundEar = (vtkLine::Intersection(ppoint, npoint, x, y, s, t) == 0);
+              foundEar =
+                (vtkLine::Intersection(ppoint, npoint, x, y, s, t) == vtkLine::NoIntersect);
             }
           }
 
-          foundEar &= foundNegative;
+          foundEar = foundEar && foundNegative;
         }
 
         if (!foundEar)
@@ -512,14 +502,14 @@ int vtkCCSTriangulate(const vtkCCSPoly& poly, vtkPoints* points, const vtkCCSPol
           size_t kk = (k != 0 ? k - 1 : n - 1);
           points->GetPoint(poly[verts[kk].first], point);
           double kq = vtkCCSTriangleQuality(point, ppoint, npoint, normal);
-          concave -= ((verts[k].second < 0) & (kq >= 0));
+          concave -= ((verts[k].second < 0) && (kq >= 0));
           verts[k].second = kq;
 
           // re-compute quality of next point
           size_t jj = (j + 1 != n ? j + 1 : 0);
           points->GetPoint(poly[verts[jj].first], point);
           double jq = vtkCCSTriangleQuality(ppoint, npoint, point, normal);
-          concave -= ((verts[j].second < 0) & (jq >= 0));
+          concave -= ((verts[j].second < 0) && (jq >= 0));
           verts[j].second = jq;
         }
       }
@@ -555,6 +545,7 @@ void vtkCCSMakePolysFromLines(vtkPolyData* data, vtkIdType firstLine, vtkIdType 
   vtkCCSBitArray usedLines;
 
   // Require cell links to get lines from pointIds
+  data->EditableOn();
   data->BuildLinks(data->GetPoints()->GetNumberOfPoints());
 
   size_t numNewPolys = 0;
@@ -564,7 +555,7 @@ void vtkCCSMakePolysFromLines(vtkPolyData* data, vtkIdType firstLine, vtkIdType 
   {
     // Create a new poly
     size_t polyId = numNewPolys++;
-    newPolys.push_back(vtkCCSPoly());
+    newPolys.emplace_back();
     vtkCCSPoly& poly = newPolys[polyId];
 
     vtkIdType lineId = 0;
@@ -869,10 +860,10 @@ int vtkCCSSplitAtPinchPoints(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
   std::vector<vtkCCSPolyGroup>& polyGroups, std::vector<vtkCCSPolyEdges>& polyEdges,
   const double normal[3], bool oriented)
 {
-  vtkPoints* tryPoints = vtkPoints::New();
+  vtkNew<vtkPoints> tryPoints;
   tryPoints->SetDataTypeToDouble();
 
-  vtkIncrementalOctreePointLocator* locator = vtkIncrementalOctreePointLocator::New();
+  vtkNew<vtkIncrementalOctreePointLocator> locator;
 
   int splitCount = 0;
 
@@ -922,16 +913,16 @@ int vtkCCSSplitAtPinchPoints(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
             // Make sure that splitting this poly won't create a hole poly
             double p1[3], p2[3], p3[3];
             size_t prevIdx = n + idx1 - 1;
-            size_t midIdx = idx1 + 1;
-            size_t nextIdx = idx2 + 1;
             if (prevIdx >= n)
             {
               prevIdx -= n;
             }
+            size_t midIdx = idx1 + 1;
             if (midIdx >= n)
             {
               midIdx -= n;
             }
+            size_t nextIdx = idx2 + 1;
             if (nextIdx >= n)
             {
               nextIdx -= n;
@@ -1011,9 +1002,6 @@ int vtkCCSSplitAtPinchPoints(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
       }
     }
   }
-
-  tryPoints->Delete();
-  locator->Delete();
 
   return splitCount;
 }
@@ -1142,7 +1130,7 @@ void vtkCCSFindTrueEdges(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
   {
     vtkCCSPoly& oldPoly = polys[polyId];
     size_t n = oldPoly.size();
-    polyEdges.push_back(vtkCCSPolyEdges());
+    polyEdges.emplace_back();
 
     // Only useful if poly has more than three sides
     if (n < 4)
@@ -1249,9 +1237,9 @@ void vtkCCSFindTrueEdges(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
         cellCount = 1;
 
         // Rotate to the next point
-        p0[0] = p2[0];
-        p0[1] = p2[1];
-        p0[2] = p2[2];
+        p0[0] = p1[0];
+        p0[1] = p1[1];
+        p0[2] = p1[2];
         p1[0] = p2[0];
         p1[1] = p2[1];
         p1[2] = p2[2];
@@ -1606,6 +1594,14 @@ void vtkCCSPrepareForPolyInPoly(
   // Find the bounding box and tolerance for the polygon
   tol2 = (vtkCCSPolygonBounds(outerPoly, points, bounds) *
     (VTK_CCS_POLYGON_TOLERANCE * VTK_CCS_POLYGON_TOLERANCE));
+
+  // Expand the bounds
+  double tol = sqrt(tol2);
+  for (int i = 0; i < 3; i++)
+  {
+    bounds[2 * i] -= tol;
+    bounds[2 * i + 1] += tol;
+  }
 }
 
 // ---------------------------------------------------
@@ -1663,7 +1659,7 @@ void vtkCCSMakeHoleyPolys(std::vector<vtkCCSPoly>& newPolys, vtkPoints* points,
     }
 
     // Check if poly is reversed
-    bool sense = 0;
+    bool sense = false;
     if (vtkCCSCheckPolygonSense(newPolys[i], points, normal, sense))
     {
       polyReversed.set(i, !sense);
@@ -1857,11 +1853,11 @@ int vtkCCSCheckCut(const std::vector<vtkCCSPoly>& polys, vtkPoints* points, cons
     const vtkCCSPoly& poly = polys[polyId];
     size_t n = poly.size();
     size_t prevIdx = n - polyIdx - 1;
-    size_t nextIdx = polyIdx + 1;
     if (prevIdx >= n)
     {
       prevIdx -= n;
     }
+    size_t nextIdx = polyIdx + 1;
     if (nextIdx >= n)
     {
       nextIdx -= n;
@@ -2199,7 +2195,7 @@ int vtkCCSFindCuts(const std::vector<vtkCCSPoly>& polys, const vtkCCSPolyGroup& 
           points->GetPoint(innerPoly[j], q2);
 
           double u, v;
-          if (vtkLine::Intersection(p1, p2, q1, q2, u, v) == 2)
+          if (vtkLine::Intersection(p1, p2, q1, q2, u, v) == vtkLine::Intersect)
           {
             continue;
           }
@@ -2329,7 +2325,7 @@ int vtkCCSCutHoleyPolys(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
 
   // Go through all groups and cut out the first inner poly that is
   // found.  Every time an inner poly is cut out, the groupId counter
-  // is reset because a cutting a poly creates a new group.
+  // is reset because cutting a poly creates a new group.
   size_t groupId = 0;
   while (groupId < polyGroups.size())
   {
@@ -2345,7 +2341,7 @@ int vtkCCSCutHoleyPolys(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
       size_t innerPolyId = polyGroup[1];
 
       // Sort the group by size, do largest holes first
-      std::vector<std::pair<size_t, size_t> > innerBySize(polyGroup.size());
+      std::vector<std::pair<size_t, size_t>> innerBySize(polyGroup.size());
 
       for (size_t i = 1; i < polyGroup.size(); i++)
       {
@@ -2382,7 +2378,13 @@ int vtkCCSCutHoleyPolys(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
       {
         // Move successfully cut innerPolyId into its own group
         polyGroup.erase(polyGroup.begin() + inner);
-        polyGroups[innerPolyId].push_back(innerPolyId);
+        // Only add if innerPolyId hasn't been set already.
+        // Having the same poly occur as both polyGroup and
+        // innerPoly would cause an infinite loop.
+        if (polyGroups[innerPolyId].empty())
+        {
+          polyGroups[innerPolyId].push_back(innerPolyId);
+        }
       }
       else
       {
@@ -2390,7 +2392,13 @@ int vtkCCSCutHoleyPolys(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
         for (size_t k = 1; k < polyGroup.size(); k++)
         {
           innerPolyId = polyGroup[k];
-          polyGroups[innerPolyId].push_back(innerPolyId);
+          // Only add if innerPolyId hasn't been set already.
+          // Having the same poly occur as both polyGroup and
+          // innerPoly would cause an infinite loop.
+          if (polyGroups[innerPolyId].empty())
+          {
+            polyGroups[innerPolyId].push_back(innerPolyId);
+          }
         }
         polyGroup.resize(1);
         cutFailure = 1;
@@ -2406,6 +2414,7 @@ int vtkCCSCutHoleyPolys(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
         double tol2;
         vtkCCSPrepareForPolyInPoly(poly1, points, pp, bounds, tol2);
 
+        size_t nextGroupId = groupId;
         size_t ii = 1;
         while (ii < polyGroup.size())
         {
@@ -2420,17 +2429,17 @@ int vtkCCSCutHoleyPolys(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
             polyGroups[innerPolyId].push_back(polyGroup[ii]);
             polyGroup.erase(polyGroup.begin() + ii);
 
-            // Reduce the groupId to ensure that this new group
-            // will get cut
-            if (innerPolyId < groupId)
+            // Reduce the groupId to ensure that this new group will get cut
+            if (innerPolyId < nextGroupId)
             {
-              groupId = innerPolyId;
+              nextGroupId = innerPolyId;
             }
           }
         }
         delete[] pp;
 
-        // Continue without incrementing groupId
+        // Set the groupId for the next iteration
+        groupId = nextGroupId;
         continue;
       }
     }
@@ -2444,8 +2453,8 @@ int vtkCCSCutHoleyPolys(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is a complex subroutine that takes a collection of lines that
 // were formed by cutting a polydata with a plane, and generates
 // a face that has those lines as its edges.  The lines must form one
@@ -2457,10 +2466,10 @@ int vtkCCSCutHoleyPolys(std::vector<vtkCCSPoly>& polys, vtkPoints* points,
 
 // If this is defined, then the outlines of any failed polygons will be
 // added to "data".  It is only meant as a debugging tool.
-//#define VTK_CCS_SHOW_FAILED_POLYS
+// #define VTK_CCS_SHOW_FAILED_POLYS
 
 int vtkContourTriangulator::TriangulateContours(vtkPolyData* data, vtkIdType firstLine,
-  vtkIdType numLines, vtkCellArray* polys, const double normal[3])
+  vtkIdType numLines, vtkCellArray* polys, const double normal[3], vtkPolyDataAlgorithm* self)
 {
   int triangulationFailure = 0;
 
@@ -2564,6 +2573,10 @@ int vtkContourTriangulator::TriangulateContours(vtkPolyData* data, vtkIdType fir
   // Go through all polys and triangulate them
   for (size_t polyId = 0; polyId < polyGroups.size(); polyId++)
   {
+    if (self && self->CheckAbort())
+    {
+      break;
+    }
     // If group is empty, then poly was a hole without a containing poly
     if (polyGroups[polyId].empty())
     {
@@ -2618,3 +2631,4 @@ int vtkContourTriangulator::TriangulatePolygon(
   }
   return success;
 }
+VTK_ABI_NAMESPACE_END

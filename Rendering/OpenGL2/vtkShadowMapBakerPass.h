@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShadowMapBakerPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkShadowMapBakerPass
  * @brief   Implement a builder of shadow map pass.
@@ -22,7 +10,7 @@
  * shadows in hardware).
  *
  * This pass expects an initialized depth buffer and color buffer.
- * Initialized buffers means they have been cleared with farest z-value and
+ * Initialized buffers means they have been cleared with farthest z-value and
  * background color/gradient/transparent color.
  * An opaque pass may have been performed right after the initialization.
  *
@@ -44,8 +32,10 @@
 #include "vtkOpenGLRenderPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
 #include "vtkSmartPointer.h"           // for ivars
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 #include <vector>                      // STL Header
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLRenderWindow;
 class vtkInformationIntegerKey;
 class vtkCamera;
@@ -53,7 +43,7 @@ class vtkLight;
 class vtkOpenGLFramebufferObject;
 class vtkTextureObject;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkShadowMapBakerPass : public vtkOpenGLRenderPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkShadowMapBakerPass : public vtkOpenGLRenderPass
 {
 public:
   static vtkShadowMapBakerPass* New();
@@ -73,7 +63,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Delegate for rendering the camera, lights, and opaque geometry.
    * If it is NULL, nothing will be rendered and a warning will be emitted.
@@ -82,9 +72,9 @@ public:
    */
   vtkGetObjectMacro(OpaqueSequence, vtkRenderPass);
   virtual void SetOpaqueSequence(vtkRenderPass* opaqueSequence);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Delegate for compositing of the shadow maps across processors.
    * If it is NULL, there is no z compositing.
@@ -93,9 +83,9 @@ public:
    */
   vtkGetObjectMacro(CompositeZPass, vtkRenderPass);
   virtual void SetCompositeZPass(vtkRenderPass* compositeZPass);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of pixels in each dimension of the shadow maps
    * (shadow maps are square). Initial value is 256. The greater the better.
@@ -103,7 +93,24 @@ public:
    */
   vtkSetMacro(Resolution, unsigned int);
   vtkGetMacro(Resolution, unsigned int);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the exponential constant for the Exponential Shadow Maps. The
+   * default value differs from the value recommended by the authors of the Exponential
+   * Shadow Map paper, VTK uses 11.f instead of 80.f. Empirically this improves rendering
+   * performance with minimal tradeoff in shadow resolution.
+   *
+   * The author's recommended value of 80.f represents the maximum practical value for
+   * 32-bit floating point precision in the shadow map. Values that are too
+   * small will lead to "light leaking" (where shadows get attenuated away from
+   * the light source). Larger values will cause shadows near the light to
+   * disappear.
+   */
+  vtkSetMacro(ExponentialConstant, float);
+  vtkGetMacro(ExponentialConstant, float);
+  ///@}
 
   /**
    * INTERNAL USE ONLY.
@@ -131,15 +138,15 @@ public:
 
    * Give access to the baked shadow maps.
    */
-  std::vector<vtkSmartPointer<vtkTextureObject> >* GetShadowMaps();
+  std::vector<vtkSmartPointer<vtkTextureObject>>* GetShadowMaps();
 
   /**
    * INTERNAL USE ONLY.
    * Internally used by vtkShadowMapBakerPass and vtkShadowMapPass.
 
-   * Give access the cameras builds from the ligths.
+   * Give access the cameras builds from the lights.
    */
-  std::vector<vtkSmartPointer<vtkCamera> >* GetLightCameras();
+  std::vector<vtkSmartPointer<vtkCamera>>* GetLightCameras();
 
   /**
    * INTERNAL USE ONLY.
@@ -211,6 +218,7 @@ protected:
   vtkRenderPass* CompositeZPass;
 
   unsigned int Resolution;
+  float ExponentialConstant{ 11.0f };
 
   bool HasShadows;
 
@@ -219,8 +227,8 @@ protected:
    */
   vtkOpenGLFramebufferObject* FrameBufferObject;
 
-  std::vector<vtkSmartPointer<vtkTextureObject> >* ShadowMaps;
-  std::vector<vtkSmartPointer<vtkCamera> >* LightCameras;
+  std::vector<vtkSmartPointer<vtkTextureObject>>* ShadowMaps;
+  std::vector<vtkSmartPointer<vtkCamera>>* LightCameras;
 
   vtkTimeStamp LastRenderTime;
   bool NeedUpdate;
@@ -231,4 +239,5 @@ private:
   void operator=(const vtkShadowMapBakerPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

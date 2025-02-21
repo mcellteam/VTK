@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLStickMapper.h"
 
 #include "vtkOpenGLHelper.h"
@@ -34,15 +23,16 @@
 #include "vtkShaderProgram.h"
 #include "vtkUnsignedCharArray.h"
 
-#include "vtkPointGaussianVS.h"
+#include "vtkSimpleSplatVS.h"
 #include "vtkStickMapperGS.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLStickMapper);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLStickMapper::vtkOpenGLStickMapper()
 {
   this->ScaleArray = nullptr;
@@ -50,12 +40,12 @@ vtkOpenGLStickMapper::vtkOpenGLStickMapper()
   this->SelectionIdArray = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLStickMapper::GetShaderTemplate(
   std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* actor)
 {
   this->Superclass::GetShaderTemplate(shaders, ren, actor);
-  shaders[vtkShader::Vertex]->SetSource(vtkPointGaussianVS);
+  shaders[vtkShader::Vertex]->SetSource(vtkSimpleSplatVS);
   shaders[vtkShader::Geometry]->SetSource(vtkStickMapperGS);
 }
 
@@ -212,7 +202,7 @@ void vtkOpenGLStickMapper::ReplaceShaderValues(
   this->Superclass::ReplaceShaderValues(shaders, ren, actor);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLStickMapper::~vtkOpenGLStickMapper()
 {
   this->SetScaleArray(nullptr);
@@ -220,7 +210,7 @@ vtkOpenGLStickMapper::~vtkOpenGLStickMapper()
   this->SetSelectionIdArray(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLStickMapper::SetCameraShaderParameters(
   vtkOpenGLHelper& cellBO, vtkRenderer* ren, vtkActor* actor)
 {
@@ -273,14 +263,14 @@ void vtkOpenGLStickMapper::SetCameraShaderParameters(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLStickMapper::SetMapperShaderParameters(
   vtkOpenGLHelper& cellBO, vtkRenderer* ren, vtkActor* actor)
 {
   this->Superclass::SetMapperShaderParameters(cellBO, ren, actor);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLStickMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -324,7 +314,7 @@ void vtkOpenGLStickMapperCreateVBO(vtkPolyData* poly, vtkIdType numPts, unsigned
     // colors or selection ids
     if (selectionIds)
     {
-      vtkIdType thisId = selectionIds[i] + 1;
+      vtkIdType thisId = selectionIds[i];
       cPtr[0] = thisId % 256;
       cPtr[1] = (thisId >> 8) % 256;
       cPtr[2] = (thisId >> 16) % 256;
@@ -364,18 +354,14 @@ void vtkOpenGLStickMapperCreateVBO(vtkPolyData* poly, vtkIdType numPts, unsigned
 }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkOpenGLStickMapper::GetNeedToRebuildBufferObjects(vtkRenderer* ren, vtkActor* act)
 {
-  if (this->Superclass::GetNeedToRebuildBufferObjects(ren, act) ||
-    this->VBOBuildTime < this->SelectionStateChanged)
-  {
-    return true;
-  }
-  return false;
+  return this->Superclass::GetNeedToRebuildBufferObjects(ren, act) ||
+    this->VBOBuildTime < this->SelectionStateChanged;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLStickMapper::BuildBufferObjects(vtkRenderer* ren, vtkActor* vtkNotUsed(act))
 {
   vtkPolyData* poly = this->CurrentInput;
@@ -415,7 +401,7 @@ void vtkOpenGLStickMapper::BuildBufferObjects(vtkRenderer* ren, vtkActor* vtkNot
   this->VBOBuildTime.Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLStickMapper::RenderPieceDraw(vtkRenderer* ren, vtkActor* actor)
 {
   // draw polygons
@@ -427,3 +413,4 @@ void vtkOpenGLStickMapper::RenderPieceDraw(vtkRenderer* ren, vtkActor* actor)
     glDrawArrays(GL_POINTS, 0, static_cast<GLuint>(numVerts));
   }
 }
+VTK_ABI_NAMESPACE_END

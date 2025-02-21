@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestContext.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkBrush.h"
 #include "vtkContext2D.h"
@@ -24,11 +12,10 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkSmartPointer.h"
 #include "vtkTextProperty.h"
-#include "vtkUnicodeString.h"
 
 #include <QApplication>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class QtContextUnicode : public vtkContextItem
 {
 public:
@@ -38,7 +25,7 @@ public:
   virtual bool Paint(vtkContext2D* painter);
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestQtContextUnicode(int argc, char* argv[])
 {
   QApplication app(argc, argv);
@@ -65,9 +52,8 @@ bool QtContextUnicode::Paint(vtkContext2D* painter)
   painter->GetTextProp()->SetColor(0.0, 0.0, 0.0);
   painter->GetTextProp()->SetFontSize(24);
   painter->DrawString(70, 20, "Angstrom");
-  painter->DrawString(150, 20, vtkUnicodeString::from_utf8("\xe2\x84\xab"));
-  painter->DrawString(
-    100, 80, vtkUnicodeString::from_utf8("a\xce\xb1\xe0\xb8\x81\xf0\x90\x80\x80"));
-  painter->DrawString(100, 50, vtkUnicodeString::from_utf8("\xce\xb1\xce\xb2\xce\xb3"));
+  painter->DrawString(150, 20, "\xe2\x84\xab");
+  painter->DrawString(100, 80, "a\xce\xb1\xe0\xb8\x81\xf0\x90\x80\x80");
+  painter->DrawString(100, 50, "\xce\xb1\xce\xb2\xce\xb3");
   return true;
 }

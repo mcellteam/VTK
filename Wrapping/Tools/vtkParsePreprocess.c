@@ -1,30 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParsePreprocess.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright (c) 2010 David Gobbi.
-
-  Contributed to the VisualizationToolkit by the author in June 2010
-  under the terms of the Visualization Toolkit 2008 copyright.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2010 David Gobbi
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParsePreprocess.h"
+#include "vtkParseSystem.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 /**
   This file handles preprocessor directives via a simple
@@ -34,25 +17,25 @@
 #define PREPROC_DEBUG 0
 
 /** Block size for reading files */
-#define FILE_BUFFER_SIZE 8192
+static const size_t FILE_BUFFER_SIZE = 8192;
 
 /** Size of hash table must be a power of two */
-#define PREPROC_HASH_TABLE_SIZE 1024u
+static const unsigned int PREPROC_HASH_TABLE_SIZE = 1 << 10;
 
 /** Hashes for preprocessor keywords */
-#define HASH_IFDEF 0x0fa4b283u
-#define HASH_IFNDEF 0x04407ab1u
-#define HASH_IF 0x00597834u
-#define HASH_ELIF 0x7c964b25u
-#define HASH_ELSE 0x7c964c6eu
-#define HASH_ENDIF 0x0f60b40bu
-#define HASH_DEFINED 0x088998d4u
-#define HASH_DEFINE 0xf8804a70u
-#define HASH_UNDEF 0x10823b97u
-#define HASH_INCLUDE 0x9e36af89u
-#define HASH_ERROR 0x0f6321efu
-#define HASH_LINE 0x7c9a15adu
-#define HASH_PRAGMA 0x1566a9fdu
+static const unsigned int HASH_IFDEF = 0x0fa4b283u;
+static const unsigned int HASH_IFNDEF = 0x04407ab1u;
+static const unsigned int HASH_IF = 0x00597834u;
+static const unsigned int HASH_ELIF = 0x7c964b25u;
+static const unsigned int HASH_ELSE = 0x7c964c6eu;
+static const unsigned int HASH_ENDIF = 0x0f60b40bu;
+static const unsigned int HASH_DEFINED = 0x088998d4u;
+static const unsigned int HASH_DEFINE = 0xf8804a70u;
+static const unsigned int HASH_UNDEF = 0x10823b97u;
+static const unsigned int HASH_INCLUDE = 0x9e36af89u;
+// static const unsigned int HASH_ERROR = 0x0f6321efu;
+// static const unsigned int HASH_LINE = 0x7c9a15adu;
+// static const unsigned int HASH_PRAGMA = 0x1566a9fdu;
 
 /** Extend dynamic arrays in a progression of powers of two.
  * Whenever "n" reaches a power of two, then the array size is
@@ -171,7 +154,7 @@ static void preproc_free_macro(MacroInfo* info)
 }
 
 /** Find a preprocessor macro, return 0 if not found. */
-static MacroInfo* preproc_find_macro(PreprocessInfo* info, StringTokenizer* token)
+static MacroInfo* preproc_find_macro(PreprocessInfo* info, const StringTokenizer* token)
 {
   unsigned int m = PREPROC_HASH_TABLE_SIZE - 1;
   unsigned int i = (token->hash & m);
@@ -199,7 +182,8 @@ static MacroInfo* preproc_find_macro(PreprocessInfo* info, StringTokenizer* toke
 
 /** Return the address of the macro within the hash table.
  * If "insert" is nonzero, add a new location if macro not found. */
-static MacroInfo** preproc_macro_location(PreprocessInfo* info, StringTokenizer* token, int insert)
+static MacroInfo** preproc_macro_location(
+  PreprocessInfo* info, const StringTokenizer* token, int insert)
 {
   MacroInfo*** htable = info->MacroHashTable;
   unsigned int m = PREPROC_HASH_TABLE_SIZE - 1;
@@ -287,7 +271,7 @@ static MacroInfo** preproc_macro_location(PreprocessInfo* info, StringTokenizer*
 }
 
 /** Remove a preprocessor macro.  Returns 0 if macro not found. */
-static int preproc_remove_macro(PreprocessInfo* info, StringTokenizer* token)
+static int preproc_remove_macro(PreprocessInfo* info, const StringTokenizer* token)
 {
   MacroInfo** hptr;
 
@@ -390,7 +374,7 @@ static int preproc_evaluate_char(const char* cp, preproc_int_t* val, int* is_uns
     {
       code = vtkParse_DecodeUtf8(&cp, NULL);
     }
-    else if (*cp != '\'' && *cp != '\n' && *cp != '\0')
+    else
     {
       cp++;
       if (*cp == 'a')
@@ -1394,7 +1378,7 @@ int preproc_evaluate_conditional(PreprocessInfo* info, StringTokenizer* tokens)
  */
 static int preproc_evaluate_if(PreprocessInfo* info, StringTokenizer* tokens)
 {
-  MacroInfo* macro;
+  const MacroInfo* macro;
   int v1, v2;
   int result = VTK_PARSE_OK;
 
@@ -1655,11 +1639,10 @@ const char* preproc_find_include_file(
 {
   int i, n, ii, nn;
   size_t j, m;
-  struct stat fs;
   const char* directory;
   char* output;
   size_t outputsize = 16;
-  int count;
+  int pass, passes;
   int extra = 0;
 
   /* allow filename to be terminated by quote or bracket */
@@ -1667,6 +1650,16 @@ const char* preproc_find_include_file(
   while (filename[m] != '\"' && filename[m] != '>' && filename[m] != '\n' && filename[m] != '\0')
   {
     m++;
+  }
+
+  /* check if the header file is listed as "missing" */
+  n = info->NumberOfMissingFiles;
+  for (i = 0; i < n; i++)
+  {
+    if (strncmp(filename, info->MissingFiles[i], m) == 0 && info->MissingFiles[i][m] == '\0')
+    {
+      return NULL;
+    }
   }
 
   /* search file system for the file */
@@ -1698,7 +1691,7 @@ const char* preproc_find_include_file(
     if (m + 1 > outputsize)
     {
       char* oldoutput = output;
-      outputsize += m + 1;
+      outputsize = m + 1;
       output = (char*)realloc(output, outputsize);
       if (!output)
       {
@@ -1706,8 +1699,8 @@ const char* preproc_find_include_file(
         return NULL;
       }
     }
-    strncpy(output, filename, m);
-    output[m] = '\0';
+    strncpy(output, filename, outputsize);
+    output[outputsize - 1] = '\0';
 
     nn = info->NumberOfIncludeFiles;
     for (ii = 0; ii < nn; ii++)
@@ -1727,9 +1720,11 @@ const char* preproc_find_include_file(
 
     info->IncludeFiles = (const char**)preproc_array_check(
       (char**)info->IncludeFiles, sizeof(char*), info->NumberOfIncludeFiles);
-    info->IncludeFiles[info->NumberOfIncludeFiles++] = output;
+    info->IncludeFiles[info->NumberOfIncludeFiles++] =
+      vtkParse_CacheString(info->Strings, output, strlen(output));
+    free(output);
 
-    return output;
+    return info->IncludeFiles[info->NumberOfIncludeFiles - 1];
   }
 
   /* Make sure the current filename is already added */
@@ -1738,8 +1733,12 @@ const char* preproc_find_include_file(
     preproc_add_include_file(info, info->FileName);
   }
 
-  /* Check twice. First check the cache, then stat the files. */
-  for (count = 0; count < (2 - cache_only); count++)
+  /* Check the cache of files that have already been included,
+     then check the cache of all files known to exist on the system,
+     then go to the filesystem as a last resort (for if case-insensitivity
+     or text normalization issues cause a false negative with the cache). */
+  passes = (cache_only ? 1 : 3);
+  for (pass = 1; pass <= passes; pass++)
   {
     n = info->NumberOfIncludeDirectories;
     for (i = 0; i < (n + extra); i++)
@@ -1819,7 +1818,8 @@ const char* preproc_find_include_file(
         output[j + m] = '\0';
       }
 
-      if (count == 0)
+      /* in pass 1, check if this file has already been included */
+      if (pass == 1)
       {
         nn = info->NumberOfIncludeFiles;
         for (ii = 0; ii < nn; ii++)
@@ -1831,11 +1831,8 @@ const char* preproc_find_include_file(
           }
         }
       }
-#if defined(_WIN32) && !defined(__CYGWIN__)
-      else if (stat(output, &fs) == 0 && (fs.st_mode & _S_IFMT) != _S_IFDIR)
-#else
-      else if (stat(output, &fs) == 0 && !S_ISDIR(fs.st_mode))
-#endif
+      /* in pass 2, check with the cache, and in pass 3, without the cache */
+      else if (vtkParse_FileExists((pass == 2 ? info->System : NULL), output) == VTK_PARSE_ISFILE)
       {
         nn = info->NumberOfIncludeFiles;
         info->IncludeFiles =
@@ -1846,6 +1843,16 @@ const char* preproc_find_include_file(
         return info->IncludeFiles[nn];
       }
     }
+  }
+
+  if (!cache_only)
+  {
+    /* header file could not be found, mark it so we don't try again */
+    n = info->NumberOfMissingFiles;
+    info->MissingFiles =
+      (const char**)preproc_array_check((char**)info->MissingFiles, sizeof(char*), n);
+    info->MissingFiles[info->NumberOfMissingFiles++] =
+      vtkParse_CacheString(info->Strings, filename, m);
   }
 
   free(output);
@@ -2019,7 +2026,7 @@ int vtkParsePreprocess_IncludeFile(
 #if PREPROC_DEBUG
   fprintf(stderr, "including file %s\n", path);
 #endif
-  fp = fopen(path, "r");
+  fp = vtkParse_FileOpen(path, "r");
 
   if (fp == NULL)
   {
@@ -2320,7 +2327,7 @@ static int preproc_evaluate_include(PreprocessInfo* info, StringTokenizer* token
 
     if (tokens->tok == TOK_ID)
     {
-      MacroInfo* macro = preproc_find_macro(info, tokens);
+      const MacroInfo* macro = preproc_find_macro(info, tokens);
       if (macro && !macro->IsExcluded && macro->Definition)
       {
         cp = macro->Definition;
@@ -2472,8 +2479,34 @@ int vtkParsePreprocess_EvaluateExpression(
  */
 void vtkParsePreprocess_AddStandardMacros(PreprocessInfo* info, preproc_platform_t platform)
 {
+  /* define common extension operators as macros that return "false" */
+  const char** operatorMacro;
+  static const char* operatorMacros[] = {
+#if defined(__GNUC__) || defined(__clang__)
+    "#define __has_attribute(x) 0",
+    "#define __has_builtin(x) 0",
+#endif
+#if defined(__clang__)
+    "#define __has_feature(x) 0",
+    "#define __has_extension(x) 0",
+    "#define __has_warning(x) 0",
+#endif
+    NULL
+  };
+
+  /* these macros aren't created by #define's in the current source file */
   int save_external = info->IsExternal;
   info->IsExternal = 1;
+
+  /* these operators aren't true macros, but it's expedient to define them as such
+   * rather than add dedicated code to the preprocessor for handling them */
+  for (operatorMacro = operatorMacros; *operatorMacro != NULL; ++operatorMacro)
+  {
+    StringTokenizer directive;
+    vtkParse_InitTokenizer(&directive, *operatorMacro, WS_PREPROC);
+    vtkParse_NextToken(&directive); /* skip the '#' */
+    preproc_evaluate_define(info, &directive);
+  }
 
   /*------------------------------
    * a special macro to indicate that this is the wrapper
@@ -4067,7 +4100,7 @@ const char* vtkParsePreprocess_ExpandMacro(
             break;
           }
         }
-        else if (*cp != '\0')
+        else
         {
           cp++;
         }
@@ -4380,14 +4413,16 @@ const char* vtkParsePreprocess_ExpandMacro(
     }
     return macro->Definition;
   }
-
-  if (rp == stack_rp)
+  else
   {
-    rp = (char*)malloc(strlen(stack_rp) + 1);
-    strcpy(rp, stack_rp);
+    char* tmp = (char*)malloc(strlen(rp) + 1);
+    strcpy(tmp, rp);
+    if (rp != stack_rp)
+    {
+      free(rp);
+    }
+    return tmp;
   }
-
-  return rp;
 }
 
 /**
@@ -4606,20 +4641,24 @@ const char* vtkParsePreprocess_ProcessString(PreprocessInfo* info, const char* t
       }
       return tp;
     }
-    if (rp == stack_rp)
+    else
     {
-      rp = (char*)malloc(strlen(stack_rp) + 1);
-      strcpy(rp, stack_rp);
+      char* tmp = (char*)malloc(strlen(rp) + 1);
+      strcpy(tmp, rp);
+      if (rp != stack_rp)
+      {
+        free(rp);
+      }
+      return tmp;
     }
   }
-
-  return rp;
 }
 
 /**
  * Free a string returned by ExpandMacro
  */
-void vtkParsePreprocess_FreeMacroExpansion(PreprocessInfo* info, MacroInfo* macro, const char* text)
+void vtkParsePreprocess_FreeMacroExpansion(
+  const PreprocessInfo* info, const MacroInfo* macro, const char* text)
 {
   /* only free expansion if it is different from definition */
   if (info && text != macro->Definition)
@@ -4631,7 +4670,7 @@ void vtkParsePreprocess_FreeMacroExpansion(PreprocessInfo* info, MacroInfo* macr
 /**
  * Free a string returned by ProcessString
  */
-void vtkParsePreprocess_FreeProcessedString(PreprocessInfo* info, const char* text)
+void vtkParsePreprocess_FreeProcessedString(const PreprocessInfo* info, const char* text)
 {
   if (info)
   {
@@ -4722,6 +4761,9 @@ void vtkParsePreprocess_Init(PreprocessInfo* info, const char* filename)
   info->ConditionalDepth = 0;
   info->ConditionalDone = 0;
   info->MacroCounter = 0;
+  info->NumberOfMissingFiles = 0;
+  info->MissingFiles = NULL;
+  info->System = NULL;
 
   if (filename)
   {
@@ -4761,6 +4803,7 @@ void vtkParsePreprocess_Free(PreprocessInfo* info)
 
   free((char**)info->IncludeDirectories);
   free((char**)info->IncludeFiles);
+  free((char**)info->MissingFiles);
 
   free(info);
 }

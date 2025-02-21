@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTreeWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTreeWriter.h"
 
 #include "vtkByteSwap.h"
@@ -26,6 +14,7 @@
 #include <io.h> /* unlink */
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTreeWriter);
 
 void vtkTreeWriter::WriteEdges(ostream& Stream, vtkTree* Tree)
@@ -66,15 +55,15 @@ void vtkTreeWriter::WriteData()
 
   *fp << "DATASET TREE\n";
 
-  bool error_occurred = 0;
+  bool error_occurred = false;
 
   if (!this->WriteFieldData(fp, input->GetFieldData()))
   {
-    error_occurred = 1;
+    error_occurred = true;
   }
   if (!error_occurred && !this->WritePoints(fp, input->GetPoints()))
   {
-    error_occurred = 1;
+    error_occurred = true;
   }
   if (!error_occurred)
   {
@@ -84,11 +73,11 @@ void vtkTreeWriter::WriteData()
   }
   if (!error_occurred && !this->WriteEdgeData(fp, input))
   {
-    error_occurred = 1;
+    error_occurred = true;
   }
   if (!error_occurred && !this->WriteVertexData(fp, input))
   {
-    error_occurred = 1;
+    error_occurred = true;
   }
 
   if (error_occurred)
@@ -129,3 +118,4 @@ void vtkTreeWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

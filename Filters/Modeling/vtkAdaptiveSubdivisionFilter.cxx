@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAdaptiveSubdivisionFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAdaptiveSubdivisionFilter.h"
 
 #include "vtkCellArray.h"
@@ -25,10 +13,11 @@
 #include "vtkSmartPointer.h"
 #include "vtkTriangle.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAdaptiveSubdivisionFilter);
 vtkCxxSetObjectMacro(vtkAdaptiveSubdivisionFilter, Locator, vtkIncrementalPointLocator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object
 vtkAdaptiveSubdivisionFilter::vtkAdaptiveSubdivisionFilter()
 {
@@ -40,14 +29,14 @@ vtkAdaptiveSubdivisionFilter::vtkAdaptiveSubdivisionFilter()
   this->OutputPointsPrecision = DEFAULT_PRECISION;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with number of subdivisions set to 1.
 vtkAdaptiveSubdivisionFilter::~vtkAdaptiveSubdivisionFilter()
 {
   this->SetLocator(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAdaptiveSubdivisionFilter::CreateDefaultLocator()
 {
   if (this->Locator == nullptr)
@@ -58,7 +47,7 @@ void vtkAdaptiveSubdivisionFilter::CreateDefaultLocator()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function.
 vtkMTimeType vtkAdaptiveSubdivisionFilter::GetMTime()
 {
@@ -136,7 +125,7 @@ vtkIdType* SelectTessellation(unsigned char subCase, vtkIdType* ptIds, vtkPoints
 
 } // anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This uses a very simple, serial implementation that makes repeated passes
 // over the triangles using a swap buffer approach.
 int vtkAdaptiveSubdivisionFilter::RequestData(vtkInformation* vtkNotUsed(request),
@@ -213,7 +202,7 @@ int vtkAdaptiveSubdivisionFilter::RequestData(vtkInformation* vtkNotUsed(request
   // without neighbor "links" (i.e.,cell links) and new points are merged
   // into the locator. Since the algorithm treats edges on triangles in an
   // identical way, the end result is that triangle neighbors remain
-  // compatible (due to conincident point merging).
+  // compatible (due to coincident point merging).
   auto cellIter = vtk::TakeSmartPointer(inTris->NewIterator());
   vtkCellArray *swapTris, *newTris = vtkCellArray::New();
   newTris->AllocateEstimate(2 * numTris, 3);
@@ -231,14 +220,20 @@ int vtkAdaptiveSubdivisionFilter::RequestData(vtkInformation* vtkNotUsed(request
   vtkIdType passNum;
   vtkIdType totalTriangles = 0;
   bool changesMade;
+  bool abort = false;
 
   for (passNum = 0, changesMade = true; passNum < this->MaximumNumberOfPasses &&
-       totalTriangles < this->MaximumNumberOfTriangles && changesMade;
+       totalTriangles < this->MaximumNumberOfTriangles && changesMade && !abort;
        ++passNum)
   {
     changesMade = false;
     for (cellIter->GoToFirstCell(); !cellIter->IsDoneWithTraversal(); cellIter->GoToNextCell())
     {
+      if (this->CheckAbort())
+      {
+        abort = true;
+        break;
+      }
       triId = cellIter->GetCurrentCellId();
       {
         vtkIdType unused;
@@ -374,7 +369,7 @@ int vtkAdaptiveSubdivisionFilter::RequestData(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAdaptiveSubdivisionFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -395,3 +390,4 @@ void vtkAdaptiveSubdivisionFilter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Precision of the output points: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

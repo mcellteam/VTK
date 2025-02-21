@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProjectedTerrainPath.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkProjectedTerrainPath
  * @brief   project a polyline onto a terrain
@@ -71,6 +59,7 @@
 #include "vtkFiltersHybridModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPriorityQueue;
 class vtkImageData;
 class vtkEdgeList;
@@ -79,20 +68,20 @@ class vtkPoints;
 class VTKFILTERSHYBRID_EXPORT vtkProjectedTerrainPath : public vtkPolyDataAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for printing and determining type information.
    */
   vtkTypeMacro(vtkProjectedTerrainPath, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Instantiate the class.
    */
   static vtkProjectedTerrainPath* New();
 
-  //@{
+  ///@{
   /**
    * Specify the second input (the terrain) onto which the polyline(s) should be projected.
    * Note: This assigns a data object as the input terrain.
@@ -101,7 +90,7 @@ public:
    */
   void SetSourceData(vtkImageData* source);
   vtkImageData* GetSource();
-  //@}
+  ///@}
 
   /**
    * Specify the second input (the terrain) onto which the polyline(s) should be projected.
@@ -116,7 +105,7 @@ public:
     HUG_PROJECTION
   };
 
-  //@{
+  ///@{
   /**
    * Determine how to control the projection process. Simple projection
    * just projects the original polyline points. Non-occluded projection
@@ -130,9 +119,9 @@ public:
   void SetProjectionModeToSimple() { this->SetProjectionMode(SIMPLE_PROJECTION); }
   void SetProjectionModeToNonOccluded() { this->SetProjectionMode(NONOCCLUDED_PROJECTION); }
   void SetProjectionModeToHug() { this->SetProjectionMode(HUG_PROJECTION); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This is the height above (or below) the terrain that the projected
    * path should be. Positive values indicate distances above the terrain;
@@ -140,9 +129,9 @@ public:
    */
   vtkSetMacro(HeightOffset, double);
   vtkGetMacro(HeightOffset, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This is the allowable variation in the altitude of the path
    * with respect to the variation in the terrain. It only comes
@@ -150,9 +139,9 @@ public:
    */
   vtkSetClampMacro(HeightTolerance, double, 0.0, VTK_FLOAT_MAX);
   vtkGetMacro(HeightTolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This instance variable can be used to limit the total number of line
    * segments created during subdivision. Note that the number of input line
@@ -160,7 +149,7 @@ public:
    */
   vtkSetClampMacro(MaximumNumberOfLines, vtkIdType, 1, VTK_ID_MAX);
   vtkGetMacro(MaximumNumberOfLines, vtkIdType);
-  //@}
+  ///@}
 
 protected:
   vtkProjectedTerrainPath();
@@ -205,4 +194,5 @@ private:
   void operator=(const vtkProjectedTerrainPath&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

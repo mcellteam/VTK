@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPiecewiseFunction.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPiecewiseFunction
@@ -39,10 +27,12 @@
 
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkDataObject.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALMANUAL
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPiecewiseFunctionInternals;
 
-class VTKCOMMONDATAMODEL_EXPORT vtkPiecewiseFunction : public vtkDataObject
+class VTKCOMMONDATAMODEL_EXPORT VTK_MARSHALMANUAL vtkPiecewiseFunction : public vtkDataObject
 {
 public:
   static vtkPiecewiseFunction* New();
@@ -51,6 +41,13 @@ public:
 
   void DeepCopy(vtkDataObject* f) override;
   void ShallowCopy(vtkDataObject* f) override;
+
+  enum SearchMethod
+  {
+    BINARY_SEARCH = 0,
+    INTERPOLATION_SEARCH = 1,
+    MAX_ENUM = 2
+  };
 
   /**
    * Return what type of dataset this is.
@@ -62,7 +59,7 @@ public:
    */
   int GetSize();
 
-  //@{
+  ///@{
   /**
    * Add points to the function. If a duplicate point is added
    * then the previous point is removed unless
@@ -71,7 +68,7 @@ public:
    */
   int AddPoint(double x, double y);
   int AddPoint(double x, double y, double midpoint, double sharpness);
-  //@}
+  ///@}
 
   /**
    * Remove a point from the function at a given id
@@ -109,7 +106,7 @@ public:
    */
   double GetValue(double x);
 
-  //@{
+  ///@{
   /**
    * For the node specified by index, set/get the
    * location (X), value (Y), midpoint, and sharpness
@@ -118,9 +115,9 @@ public:
    */
   int GetNodeValue(int index, double val[4]);
   int SetNodeValue(int index, double val[4]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns a pointer to the data stored in the table.
    * Fills from a pointer to data stored in a similar table. These are
@@ -130,14 +127,14 @@ public:
    */
   double* GetDataPointer();
   void FillFromDataPointer(int, double*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the min and max node locations of the function.
    */
   vtkGetVector2Macro(Range, double);
-  //@}
+  ///@}
 
   /**
    * Remove all points out of the new range, and make sure there is a point
@@ -146,18 +143,20 @@ public:
    */
   int AdjustRange(double range[2]);
 
-  //@{
+  ///@{
   /**
    * Fills in an array of function values evaluated at regular intervals.
    * Parameter "stride" is used to step through the output "table". If
    * logIncrements is true, the intervals between entries will be constant in
-   * logarithmic space.
+   * logarithmic space. epsilon is used to move midpoint away from extreme ends
+   * of range, it should be changed if the values are the same magnitude of
+   * the default epsilon.
    */
-  void GetTable(
-    double x1, double x2, int size, float* table, int stride = 1, int logIncrements = 0);
-  void GetTable(
-    double x1, double x2, int size, double* table, int stride = 1, int logIncrements = 0);
-  //@}
+  void GetTable(double x1, double x2, int size, float* table, int stride = 1, int logIncrements = 0,
+    double epsilon = 1e-5);
+  void GetTable(double x1, double x2, int size, double* table, int stride = 1,
+    int logIncrements = 0, double epsilon = 1e-5);
+  ///@}
 
   /**
    * Constructs a piecewise function from a table.  Function range is
@@ -167,7 +166,7 @@ public:
    */
   void BuildFunctionFromTable(double x1, double x2, int size, double* table, int stride = 1);
 
-  //@{
+  ///@{
   /**
    * When zero range clamping is Off, GetValue() returns 0.0 when a
    * value is requested outside of the points specified.
@@ -179,7 +178,7 @@ public:
   vtkSetMacro(Clamping, vtkTypeBool);
   vtkGetMacro(Clamping, vtkTypeBool);
   vtkBooleanMacro(Clamping, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Interpolate between the control points in base-10 logrithmic space.
@@ -214,15 +213,15 @@ public:
    */
   void Initialize() override;
 
-  //@{
+  ///@{
   /**
    * Retrieve an instance of this class from an information object.
    */
   static vtkPiecewiseFunction* GetData(vtkInformation* info);
   static vtkPiecewiseFunction* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Toggle whether to allow duplicate scalar values in the piecewise
    * function (off by default).
@@ -230,7 +229,7 @@ public:
   vtkSetMacro(AllowDuplicateScalars, vtkTypeBool);
   vtkGetMacro(AllowDuplicateScalars, vtkTypeBool);
   vtkBooleanMacro(AllowDuplicateScalars, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Estimates the minimum size of a table such that it would correctly sample this function.
@@ -238,16 +237,38 @@ public:
    */
   int EstimateMinNumberOfSamples(double const& x1, double const& x2);
 
+  /**
+   * Analyses the point distribution and automatically
+   * updates the search method to optimize the time processing
+   * This method assumes that the vector of nodes has been sorted
+   */
+  void UpdateSearchMethod(double epsilon = 1e-12, double thresh = 1e-4);
+
+  //@{
+  /**
+   * Methods to set / get the search method used.
+   * By default the search method used is the one automatically updated
+   * each time the data is modified.
+   * This behavior can be overridden by using SetUseCustomSearchMethod() and SetCustomSearchMethod()
+   */
+  int GetAutomaticSearchMethod();
+  void SetUseCustomSearchMethod(bool use);
+  void SetCustomSearchMethod(int type);
+  int GetCustomSearchMethod();
+  //@}
+
 protected:
   vtkPiecewiseFunction();
   ~vtkPiecewiseFunction() override;
 
   /**
-   * Internal method to sort the vector and update the
+   * Internal methods to sort the vector and update the
    * Range whenever a node is added, edited or removed.
    * It always calls Modified().
+   *
+   * By default it updates search method with UpdateSearchMethod()
    */
-  void SortAndUpdateRange();
+  void SortAndUpdateRange(bool updateSearchMethod = true);
 
   /**
    * Returns true if the range has been updated and Modified() has been called
@@ -283,4 +304,5 @@ private:
   void operator=(const vtkPiecewiseFunction&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

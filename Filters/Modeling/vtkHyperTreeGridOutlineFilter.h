@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridOutlineFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridOutlineFilter
  * @brief   create wireframe outline for arbitrary data set
@@ -34,6 +22,7 @@
 #include "vtkFiltersModelingModule.h" // For export macro
 #include "vtkHyperTreeGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOutlineSource;
 
 class VTKFILTERSMODELING_EXPORT vtkHyperTreeGridOutlineFilter : public vtkHyperTreeGridAlgorithm
@@ -43,14 +32,14 @@ public:
   vtkTypeMacro(vtkHyperTreeGridOutlineFilter, vtkHyperTreeGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Generate solid faces for the box. This is off by default.
    */
   vtkSetMacro(GenerateFaces, vtkTypeBool);
   vtkBooleanMacro(GenerateFaces, vtkTypeBool);
   vtkGetMacro(GenerateFaces, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkHyperTreeGridOutlineFilter();
@@ -62,7 +51,6 @@ protected:
   int FillInputPortInformation(int port, vtkInformation* info) override;
   int FillOutputPortInformation(int port, vtkInformation* info) override;
 
-  // JBL Pour moi, c'est un defaut de design de vtkHyperTreeGridAlgorithm
   int ProcessTrees(vtkHyperTreeGrid* input, vtkDataObject* outputDO) override;
 
 private:
@@ -70,5 +58,5 @@ private:
   void operator=(const vtkHyperTreeGridOutlineFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-// VTK-HeaderTest-Exclude: vtkHyperTreeGridOutlineFilter.h

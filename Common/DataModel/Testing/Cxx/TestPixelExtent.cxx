@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPixelExtent.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPixelExtent.h"
 #include "vtkPixelExtentIO.h"
 
@@ -103,14 +91,14 @@ int TestPixelExtent(int argc, char* argv[])
   vtkPixelExtent::Subtract(B, A, tmp4);
 
   deque<vtkPixelExtent> tmp5;
-  tmp5.push_back(vtkPixelExtent(4, 8, 9, 12));
-  tmp5.push_back(vtkPixelExtent(9, 12, 9, 12));
-  tmp5.push_back(vtkPixelExtent(9, 12, 4, 8));
-  tmp5.push_back(vtkPixelExtent(0, 3, 4, 8));
-  tmp5.push_back(vtkPixelExtent(0, 3, 9, 12));
-  tmp5.push_back(vtkPixelExtent(4, 8, 0, 3));
-  tmp5.push_back(vtkPixelExtent(9, 12, 0, 3));
-  tmp5.push_back(vtkPixelExtent(0, 3, 0, 3));
+  tmp5.emplace_back(4, 8, 9, 12);
+  tmp5.emplace_back(9, 12, 9, 12);
+  tmp5.emplace_back(9, 12, 4, 8);
+  tmp5.emplace_back(0, 3, 4, 8);
+  tmp5.emplace_back(0, 3, 9, 12);
+  tmp5.emplace_back(4, 8, 0, 3);
+  tmp5.emplace_back(9, 12, 0, 3);
+  tmp5.emplace_back(0, 3, 0, 3);
 
   size_t n = tmp4.size();
   for (size_t i = 0; i < n; ++i)

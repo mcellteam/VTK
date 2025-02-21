@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestCellTypeSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtkCell.h>
 #include <vtkCellData.h>
@@ -230,6 +218,13 @@ int TestCellTypeSource(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
         4.387482193696061, 16.) == EXIT_FAILURE)
   {
     cerr << "Error with VTK_QUADRATIC_PYRAMID\n";
+    return EXIT_FAILURE;
+  }
+  if (CheckCells(VTK_TRIQUADRATIC_PYRAMID, dims, vtkAlgorithm::DOUBLE_PRECISION,
+        3327 + 9 * dims[0] * dims[1] * dims[2], dims[0] * dims[1] * dims[2] * 6, size,
+        4.387482193696061, 16.) == EXIT_FAILURE)
+  {
+    cerr << "Error with VTK_TRIQUADRATIC_PYRAMID\n";
     return EXIT_FAILURE;
   }
 

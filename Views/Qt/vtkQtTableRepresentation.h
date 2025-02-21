@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQtTableRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkQtTableRepresentation
@@ -55,6 +40,7 @@
 #include "vtkDataRepresentation.h"
 #include "vtkViewsQtModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 class vtkLookupTable;
 class vtkQtTableModelAdapter;
@@ -67,41 +53,41 @@ public:
   vtkTypeMacro(vtkQtTableRepresentation, vtkDataRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/get the lookup table that will be used to determine colors
    * for each series.  The table's range should be [0, 1).
    */
   void SetColorTable(vtkLookupTable* t);
   vtkGetObjectMacro(ColorTable, vtkLookupTable);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the name of the column that contains series names.  This
    * must be called BEFORE the representation is added to a view.
    */
   void SetKeyColumn(const char* col);
   char* GetKeyColumn();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the name of the first data column.  This must be called
    * BEFORE the representation is added to a view.
    */
   vtkSetStringMacro(FirstDataColumn);
   vtkGetStringMacro(FirstDataColumn);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the name of the last data column.  This must be called
    * BEFORE the representation is added to a view.
    */
   vtkSetStringMacro(LastDataColumn);
   vtkGetStringMacro(LastDataColumn);
-  //@}
+  ///@}
 
 protected:
   vtkQtTableRepresentation();
@@ -143,4 +129,5 @@ private:
   void operator=(const vtkQtTableRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

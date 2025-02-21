@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTRUCHASReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTRUCHASReader.h"
 
 #include "vtkCellArray.h"
@@ -33,7 +21,8 @@
 #include <set>
 #include <sstream>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTRUCHASReader::Internal
 {
 public:
@@ -104,15 +93,15 @@ public:
   }
 
   //----------------------------------------------------------------------------
-  hid_t OpenFile(char* _FileName)
+  hid_t OpenFile(char* _filename)
   {
-    if (this->FileName.compare(_FileName) != 0)
+    if (this->FileName != _filename)
     {
       this->CloseFile();
-      if (_FileName != nullptr)
+      if (_filename != nullptr)
       {
-        this->FileName = std::string(_FileName);
-        this->FileIndx = H5Fopen(_FileName, H5F_ACC_RDONLY, H5P_DEFAULT);
+        this->FileName = std::string(_filename);
+        this->FileIndx = H5Fopen(_filename, H5F_ACC_RDONLY, H5P_DEFAULT);
         this->PointData = vtkPointData::New();
       }
     }
@@ -550,7 +539,7 @@ public:
   bool MoveVTKBlocks(vtkTRUCHASReader* self, hid_t now_gid)
   {
 
-    if (this->part_to_blocks.size() == 0)
+    if (this->part_to_blocks.empty())
     {
       return true;
     }
@@ -713,7 +702,7 @@ public:
   std::map<std::string, bool> array_isFloat;
   vtkPointData* PointData;
 
-  std::map<int, std::vector<int> > part_to_blocks; // part id to list of blocks
+  std::map<int, std::vector<int>> part_to_blocks; // part id to list of blocks
 
 private:
   hid_t FileIndx;
@@ -734,12 +723,11 @@ private:
   hid_t ArrayNameFileIndx;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkTRUCHASReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTRUCHASReader::vtkTRUCHASReader()
-  : vtkMultiBlockDataSetAlgorithm()
 {
   this->Internals = new vtkTRUCHASReader::Internal;
   this->FileName = nullptr;
@@ -751,7 +739,7 @@ vtkTRUCHASReader::vtkTRUCHASReader()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTRUCHASReader::~vtkTRUCHASReader()
 {
   delete this->Internals;
@@ -762,7 +750,7 @@ vtkTRUCHASReader::~vtkTRUCHASReader()
   this->CellArrayChoices->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::RequestInformation(
   vtkInformation* reqInfo, vtkInformationVector** inVector, vtkInformationVector* outVector)
 {
@@ -804,7 +792,7 @@ int vtkTRUCHASReader::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -960,6 +948,22 @@ int vtkTRUCHASReader::RequestData(
       continue;
     }
 
+    // get the visualization field name
+    char field_name[MAX_NAME + 1];
+    if (H5Aexists_by_name(now_gid, array_name, "FIELDNAME", H5P_DEFAULT))
+    {
+      memset(field_name, 0, strlen(field_name));
+      hid_t attr = H5Aopen(did, "FIELDNAME", H5P_DEFAULT);
+      hid_t atype = H5Aget_type(attr);
+      hid_t atype_mem = H5Tget_native_type(atype, H5T_DIR_ASCEND);
+      H5Aread(attr, atype_mem, field_name);
+      H5Aclose(attr);
+    }
+    else
+    {
+      strncpy(field_name, array_name, sizeof(field_name));
+    }
+
     bool isFloat = this->Internals->array_isFloat[array_name];
     double** vals_out = nullptr;
     int** ivals_out = nullptr;
@@ -1033,8 +1037,26 @@ int vtkTRUCHASReader::RequestData(
           {
             vArray = vtkIntArray::New();
           }
-          vArray->SetName(array_name);
+          vArray->SetName(field_name);
           vArray->SetNumberOfComponents(dims[1]);
+          if (strncmp(array_name, "VOF", 3) == 0)
+          {
+            // For the VOF field, name the components by the given FIELDNAMEX attribute.
+            for (size_t i = 0; i < dims[1]; i++)
+            {
+              std::string attr_name = "FIELDNAME" + std::to_string(i + 1);
+              if (!H5Aexists_by_name(now_gid, array_name, attr_name.c_str(), H5P_DEFAULT))
+                continue;
+              hid_t attr = H5Aopen(did, attr_name.c_str(), H5P_DEFAULT);
+              hid_t atype = H5Aget_type(attr);
+              hid_t atype_mem = H5Tget_native_type(atype, H5T_DIR_ASCEND);
+              char component_name[MAX_NAME + 1];
+              memset(component_name, 0, MAX_NAME);
+              H5Aread(attr, atype_mem, component_name);
+              H5Aclose(attr);
+              vArray->SetComponentName(i, component_name);
+            }
+          }
           vArray->SetNumberOfTuples(grid[b]->GetNumberOfCells());
           arrayGroup->AddArray(vArray);
           vArray->Delete();
@@ -1063,7 +1085,7 @@ int vtkTRUCHASReader::RequestData(
               {
                 mArray = vtkIntArray::New();
               }
-              mArray->SetName(array_name);
+              mArray->SetName(field_name);
               mArray->SetNumberOfComponents(dims[1]);
               mArray->SetNumberOfTuples(totalNumPoints);
               this->Internals->PointData->AddArray(mArray);
@@ -1160,11 +1182,11 @@ int vtkTRUCHASReader::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::CanReadFile(const char* filename)
 {
   size_t len = strlen(filename);
-  if (len < 3 || strcmp(filename + len - 3, ".h5"))
+  if (len < 3 || strcmp(filename + len - 3, ".h5") != 0)
   {
     return 0;
   }
@@ -1225,20 +1247,20 @@ int vtkTRUCHASReader::CanReadFile(const char* filename)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTRUCHASReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "File Name: " << (this->FileName ? this->FileName : "(none)") << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::GetNumberOfBlockArrays()
 {
   return this->BlockChoices->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTRUCHASReader::SetBlockArrayStatus(const char* gridname, int status)
 {
   if (status != 0)
@@ -1252,25 +1274,25 @@ void vtkTRUCHASReader::SetBlockArrayStatus(const char* gridname, int status)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::GetBlockArrayStatus(const char* arrayname)
 {
   return this->BlockChoices->ArrayIsEnabled(arrayname);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkTRUCHASReader::GetBlockArrayName(int index)
 {
   return this->BlockChoices->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::GetNumberOfPointArrays()
 {
   return this->PointArrayChoices->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTRUCHASReader::SetPointArrayStatus(const char* gridname, int status)
 {
   if (status != 0)
@@ -1284,25 +1306,25 @@ void vtkTRUCHASReader::SetPointArrayStatus(const char* gridname, int status)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::GetPointArrayStatus(const char* arrayname)
 {
   return this->PointArrayChoices->ArrayIsEnabled(arrayname);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkTRUCHASReader::GetPointArrayName(int index)
 {
   return this->PointArrayChoices->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::GetNumberOfCellArrays()
 {
   return this->CellArrayChoices->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTRUCHASReader::SetCellArrayStatus(const char* gridname, int status)
 {
   if (status != 0)
@@ -1316,14 +1338,15 @@ void vtkTRUCHASReader::SetCellArrayStatus(const char* gridname, int status)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTRUCHASReader::GetCellArrayStatus(const char* arrayname)
 {
   return this->CellArrayChoices->ArrayIsEnabled(arrayname);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkTRUCHASReader::GetCellArrayName(int index)
 {
   return this->CellArrayChoices->GetArrayName(index);
 }
+VTK_ABI_NAMESPACE_END

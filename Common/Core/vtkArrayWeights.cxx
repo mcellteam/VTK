@@ -1,27 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArrayWeights.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkArrayWeights.h"
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkArrayWeightsStorage
 {
 public:
@@ -72,13 +56,13 @@ vtkArrayWeights::vtkArrayWeights(const vtkArrayWeights& other)
   this->Storage = new vtkArrayWeightsStorage(*other.Storage);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkArrayWeights::~vtkArrayWeights()
 {
   delete this->Storage;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkArrayWeights::GetCount() const
 {
   return static_cast<vtkIdType>(this->Storage->Storage.size());
@@ -101,6 +85,12 @@ const double& vtkArrayWeights::operator[](vtkIdType i) const
 
 vtkArrayWeights& vtkArrayWeights::operator=(const vtkArrayWeights& other)
 {
+  if (this == &other)
+  {
+    return *this;
+  }
+
   *this->Storage = *other.Storage;
   return *this;
 }
+VTK_ABI_NAMESPACE_END

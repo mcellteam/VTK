@@ -1,32 +1,21 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractDataSets.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractDataSets.h"
 
 #include "vtkCellData.h"
-#include "vtkHierarchicalBoxDataSet.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkMultiPieceDataSet.h"
 #include "vtkObjectFactory.h"
 #include "vtkUniformGrid.h"
+#include "vtkUniformGridAMR.h"
 #include "vtkUnsignedCharArray.h"
 
 #include <cassert>
 #include <set>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkExtractDataSets::vtkInternals
 {
 public:
@@ -50,19 +39,19 @@ public:
 };
 
 vtkStandardNewMacro(vtkExtractDataSets);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractDataSets::vtkExtractDataSets()
 {
   this->Internals = new vtkInternals();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractDataSets::~vtkExtractDataSets()
 {
   delete this->Internals;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractDataSets::AddDataSet(unsigned int level, unsigned int idx)
 {
   vtkInternals::Node node;
@@ -72,7 +61,7 @@ void vtkExtractDataSets::AddDataSet(unsigned int level, unsigned int idx)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractDataSets::ClearDataSetList()
 {
   this->Internals->Datasets.clear();
@@ -126,6 +115,10 @@ int vtkExtractDataSets::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInternals::DatasetsType::iterator iter = this->Internals->Datasets.begin();
   for (; iter != this->Internals->Datasets.end(); ++iter)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkUniformGrid* inUG = input->GetDataSet(iter->Level, iter->Index);
     if (inUG)
     {
@@ -147,8 +140,9 @@ int vtkExtractDataSets::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractDataSets::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

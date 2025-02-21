@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoundedPlanePointPlacer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBoundedPlanePointPlacer.h"
 #include "vtkCamera.h"
 #include "vtkInteractorObserver.h"
@@ -26,12 +14,13 @@
 #include <algorithm>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoundedPlanePointPlacer);
 
 vtkCxxSetObjectMacro(vtkBoundedPlanePointPlacer, ObliquePlane, vtkPlane);
 vtkCxxSetObjectMacro(vtkBoundedPlanePointPlacer, BoundingPlanes, vtkPlaneCollection);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Place holder structure to find the two planes that would best cut
 // a line with a plane. We do this freaky stuff because we cannot use
 // absolute tolerances. Sometimes a point may be intersected by two planes
@@ -57,7 +46,7 @@ struct vtkBoundedPlanePointPlacerNode
   }
 };
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoundedPlanePointPlacer::vtkBoundedPlanePointPlacer()
 {
   this->ProjectionPosition = 0;
@@ -66,7 +55,7 @@ vtkBoundedPlanePointPlacer::vtkBoundedPlanePointPlacer()
   this->BoundingPlanes = nullptr;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoundedPlanePointPlacer::~vtkBoundedPlanePointPlacer()
 {
   this->RemoveAllBoundingPlanes();
@@ -83,7 +72,7 @@ vtkBoundedPlanePointPlacer::~vtkBoundedPlanePointPlacer()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPlanePointPlacer::SetProjectionPosition(double position)
 {
   if (this->ProjectionPosition != position)
@@ -93,7 +82,7 @@ void vtkBoundedPlanePointPlacer::SetProjectionPosition(double position)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPlanePointPlacer::AddBoundingPlane(vtkPlane* plane)
 {
   if (this->BoundingPlanes == nullptr)
@@ -106,7 +95,7 @@ void vtkBoundedPlanePointPlacer::AddBoundingPlane(vtkPlane* plane)
   this->BoundingPlanes->AddItem(plane);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPlanePointPlacer::RemoveBoundingPlane(vtkPlane* plane)
 {
   if (this->BoundingPlanes)
@@ -115,7 +104,7 @@ void vtkBoundedPlanePointPlacer::RemoveBoundingPlane(vtkPlane* plane)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPlanePointPlacer::RemoveAllBoundingPlanes()
 {
   if (this->BoundingPlanes)
@@ -125,7 +114,7 @@ void vtkBoundedPlanePointPlacer::RemoveAllBoundingPlanes()
     this->BoundingPlanes = nullptr;
   }
 }
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkBoundedPlanePointPlacer::SetBoundingPlanes(vtkPlanes* planes)
 {
@@ -147,14 +136,14 @@ void vtkBoundedPlanePointPlacer::SetBoundingPlanes(vtkPlanes* planes)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundedPlanePointPlacer::ComputeWorldPosition(vtkRenderer* ren, double displayPos[2],
   double vtkNotUsed(refWorldPos)[3], double worldPos[3], double worldOrient[9])
 {
   return this->ComputeWorldPosition(ren, displayPos, worldPos, worldOrient);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundedPlanePointPlacer::ComputeWorldPosition(
   vtkRenderer* ren, double displayPos[2], double worldPos[3], double worldOrient[9])
 {
@@ -217,14 +206,14 @@ int vtkBoundedPlanePointPlacer::ComputeWorldPosition(
   return 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundedPlanePointPlacer::ValidateWorldPosition(
   double worldPos[3], double* vtkNotUsed(worldOrient))
 {
   return this->ValidateWorldPosition(worldPos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundedPlanePointPlacer::ValidateWorldPosition(double worldPos[3])
 {
   // Now check against the bounding planes
@@ -245,7 +234,7 @@ int vtkBoundedPlanePointPlacer::ValidateWorldPosition(double worldPos[3])
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundedPlanePointPlacer::UpdateWorldPosition(
   vtkRenderer* ren, double worldPos[3], double worldOrient[9])
 {
@@ -266,7 +255,7 @@ int vtkBoundedPlanePointPlacer::UpdateWorldPosition(
 
   return this->ComputeWorldPosition(ren, displayPoint, worldPos, worldOrient);
 }
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPlanePointPlacer::GetCurrentOrientation(double worldOrient[9])
 {
   double* x = worldOrient;
@@ -293,7 +282,7 @@ void vtkBoundedPlanePointPlacer::GetCurrentOrientation(double worldOrient[9])
   vtkMath::Cross(y, z, x);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPlanePointPlacer::GetProjectionNormal(double normal[3])
 {
   switch (this->ProjectionNormal)
@@ -319,7 +308,7 @@ void vtkBoundedPlanePointPlacer::GetProjectionNormal(double normal[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPlanePointPlacer::GetProjectionOrigin(double origin[3])
 {
   switch (this->ProjectionNormal)
@@ -345,7 +334,7 @@ void vtkBoundedPlanePointPlacer::GetProjectionOrigin(double origin[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Calculate the distance of a point from the Object. Negative
 // values imply that the point is outside. Positive values imply that it is
 // inside. The closest point to the object is returned in closestPt.
@@ -370,7 +359,7 @@ double vtkBoundedPlanePointPlacer ::GetDistanceFromObject(
   return minD;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPlanePointPlacer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -414,3 +403,4 @@ void vtkBoundedPlanePointPlacer::PrintSelf(ostream& os, vtkIndent indent)
     os << " (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

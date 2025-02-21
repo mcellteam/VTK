@@ -1,22 +1,24 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkExodusIIReaderPrivate_h
 #define vtkExodusIIReaderPrivate_h
-#ifndef __VTK_WRAP__
-#ifndef VTK_WRAPPING_CXX
 
 // Do not include this file directly. It is only for use
 // from inside the ExodusII reader and its descendants.
 
-#include "vtkExodusIICache.h"
-#include "vtkExodusIIReader.h"
-#include "vtkStdString.h"
-#include "vtkToolkits.h" // make sure VTK_USE_PARALLEL is properly set
-#include "vtksys/RegularExpression.hxx"
+#include "vtkExodusIICache.h"  // for vtkExodusIICacheKey
+#include "vtkExodusIIReader.h" // for vtkExodusIIReader
+#include "vtkObject.h"
+#include "vtkStdString.h"               // for vtkStdString
+#include "vtksys/RegularExpression.hxx" // for vtksys::RegularExpression
 
-#include <map>
-#include <vector>
+#include <map>    // for std::map
+#include <vector> // for std::vector
 
 #include "vtkIOExodusModule.h" // For export macro
-#include "vtk_exodusII.h"
+#include "vtk_exodusII.h"      // for exodus APIs
+VTK_ABI_NAMESPACE_BEGIN
+class vtkDataArray;
 class vtkExodusIIReaderParser;
 class vtkIdTypeArray;
 class vtkMultiBlockDataSet;
@@ -31,7 +33,7 @@ class VTKIOEXODUS_EXPORT vtkExodusIIReaderPrivate : public vtkObject
 {
 public:
   static vtkExodusIIReaderPrivate* New();
-  void PrintData(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkExodusIIReaderPrivate, vtkObject);
   // virtual void Modified();
 
@@ -128,6 +130,7 @@ public:
    * member function.
    */
   const char* GetObjectName(int otype, int i);
+  using Superclass::GetObjectName;
 
   /** For a given object type, return the user-assigned ID of the i-th object.
    * You must have called RequestInformation before invoking this
@@ -356,7 +359,7 @@ public:
     vtkStdString TypeName;
     // number of boundaries per entry
     // The index is the dimensionality of the entry. 0=node, 1=edge, 2=face
-    int BdsPerEntry[3];
+    int64_t BdsPerEntry[3];
     vtkIdType AttributesPerEntry;
     std::vector<vtkStdString> AttributeNames;
     std::vector<int> AttributeStatus;
@@ -734,17 +737,17 @@ protected:
   /** Maps a block type (EX_ELEM_BLOCK, EX_FACE_BLOCK, ...) to a list of blocks
    * of that type.
    */
-  std::map<int, std::vector<BlockInfoType> > BlockInfo;
+  std::map<int, std::vector<BlockInfoType>> BlockInfo;
   /** Maps a set type (EX_ELEM_SET, ..., EX_NODE_SET) to a list of sets of
    *  that type.
    */
-  std::map<int, std::vector<SetInfoType> > SetInfo;
+  std::map<int, std::vector<SetInfoType>> SetInfo;
   /** Maps a map type (EX_ELEM_MAP, ..., EX_NODE_MAP) to a list of maps of that
    * type. In old-style files, the only entries will be a single node and a
    * single element map which have no specified ID number or name. In that
    * case, an ID of 0 and a name of "Default" will be given to both.
    */
-  std::map<int, std::vector<MapInfoType> > MapInfo;
+  std::map<int, std::vector<MapInfoType>> MapInfo;
 
   std::vector<PartInfoType> PartInfo;
   std::vector<MaterialInfoType> MaterialInfo;
@@ -754,22 +757,22 @@ protected:
    * type by their IDs. This is used by the user interface to access blocks,
    * sets, and maps in ascending order. It is not used internally.
    */
-  std::map<int, std::vector<int> > SortedObjectIndices;
+  std::map<int, std::vector<int>> SortedObjectIndices;
   /// Maps an object type (EX_ELEM_BLOCK, EX_NODE_SET, ...) to a list of arrays
   //  defined on that type.
-  std::map<int, std::vector<ArrayInfoType> > ArrayInfo;
+  std::map<int, std::vector<ArrayInfoType>> ArrayInfo;
 
   /** Maps an object type (EX_ELEM_BLOCK, EX_NODE_SET, ...) to a list of arrays
    * defined on that type. Used to store initial status of arrays before
    * RequestInformation can be called.
    */
-  std::map<int, std::vector<ArrayInfoType> > InitialArrayInfo;
+  std::map<int, std::vector<ArrayInfoType>> InitialArrayInfo;
 
   /** Maps an object type (EX_ELEM_BLOCK, EX_NODE_SET, ...) to a list of objects
    * defined on that type. Used to store initial status of objects before
    * RequestInformation can be called.
    */
-  std::map<int, std::vector<ObjectInfoType> > InitialObjectInfo;
+  std::map<int, std::vector<ObjectInfoType>> InitialObjectInfo;
 
   /// These aren't the variables you're looking for.
   int AppWordSize;
@@ -849,7 +852,7 @@ protected:
    * applied since multiple blocks (with different squeeze-points) can refer
    * to the same face.
    */
-  std::map<int, std::vector<std::vector<vtkIdType> > > PolyhedralFaceConnArrays;
+  std::map<int, std::vector<std::vector<vtkIdType>>> PolyhedralFaceConnArrays;
 
   vtkExodusIIReader::ObjectType FastPathObjectType;
   vtkIdType FastPathObjectId;
@@ -862,7 +865,5 @@ private:
   void operator=(const vtkExodusIIReaderPrivate&) = delete;
 };
 
-#endif
-#endif
+VTK_ABI_NAMESPACE_END
 #endif // vtkExodusIIReaderPrivate_h
-// VTK-HeaderTest-Exclude: vtkExodusIIReaderPrivate.h

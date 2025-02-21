@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageToPoints.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageToPoints.h"
 
 #include <vtkImageData.h>
@@ -27,9 +15,10 @@
 #include <vtkSmartPointer.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageToPoints);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor sets default values
 vtkImageToPoints::vtkImageToPoints()
 {
@@ -39,10 +28,10 @@ vtkImageToPoints::vtkImageToPoints()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageToPoints::~vtkImageToPoints() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageToPoints::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -50,25 +39,25 @@ void vtkImageToPoints::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "OutputPointsPrecision: " << this->OutputPointsPrecision << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageToPoints::SetStencilConnection(vtkAlgorithmOutput* stencil)
 {
   this->SetInputConnection(1, stencil);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAlgorithmOutput* vtkImageToPoints::GetStencilConnection()
 {
   return this->GetInputConnection(1, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageToPoints::SetStencilData(vtkImageStencilData* stencil)
 {
   this->SetInputData(1, stencil);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToPoints::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -84,7 +73,7 @@ int vtkImageToPoints::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToPoints::FillOutputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -95,14 +84,14 @@ int vtkImageToPoints::FillOutputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToPoints::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToPoints::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -125,7 +114,7 @@ int vtkImageToPoints::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkImageToPointsCount(
   vtkImageData* inData, vtkImageStencilData* stencil, const int extent[6])
 {
@@ -145,7 +134,7 @@ vtkIdType vtkImageToPointsCount(
   return count;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The execute method is templated over the point type (float or double)
 template <class T>
 void vtkImageToPointsExecute(vtkImageToPoints* self, vtkImageData* inData, const int extent[6],
@@ -181,7 +170,7 @@ void vtkImageToPointsExecute(vtkImageToPoints* self, vtkImageData* inData, const
 
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToPoints::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -235,3 +224,4 @@ int vtkImageToPoints::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

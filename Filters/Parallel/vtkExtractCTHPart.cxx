@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractCTHPart.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractCTHPart.h"
 
 #include "vtkAppendFilter.h"
@@ -30,7 +18,6 @@
 #include "vtkDataSetSurfaceFilter.h"
 #include "vtkDoubleArray.h"
 #include "vtkExecutive.h"
-#include "vtkExtractCTHPart.h"
 #include "vtkGarbageCollector.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
@@ -46,7 +33,6 @@
 #include "vtkRectilinearGrid.h"
 #include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"
-#include "vtkToolkits.h"
 #include "vtkUniformGrid.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkUnstructuredGrid.h"
@@ -57,6 +43,7 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtractCTHPart);
 vtkCxxSetObjectMacro(vtkExtractCTHPart, ClipPlane, vtkPlane);
 vtkCxxSetObjectMacro(vtkExtractCTHPart, Controller, vtkMultiProcessController);
@@ -65,7 +52,7 @@ const double CTH_AMR_SURFACE_VALUE = 0.499;
 const double CTH_AMR_SURFACE_VALUE_FLOAT = 1;
 const double CTH_AMR_SURFACE_VALUE_UNSIGNED_CHAR = 255;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //=============================================================================
 class vtkExtractCTHPartInternal
 {
@@ -78,11 +65,11 @@ public:
   int TotalNumberOfDatasets;
 };
 
-class vtkExtractCTHPart::VectorOfFragments : public std::vector<vtkSmartPointer<vtkPolyData> >
+class vtkExtractCTHPart::VectorOfFragments : public std::vector<vtkSmartPointer<vtkPolyData>>
 {
 };
 
-class vtkExtractCTHPart::VectorOfSolids : public std::vector<vtkSmartPointer<vtkUnstructuredGrid> >
+class vtkExtractCTHPart::VectorOfSolids : public std::vector<vtkSmartPointer<vtkUnstructuredGrid>>
 {
 };
 
@@ -124,9 +111,9 @@ public:
 };
 
 //=============================================================================
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractCTHPart::vtkExtractCTHPart()
 {
   this->Internals = new vtkExtractCTHPartInternal();
@@ -144,7 +131,7 @@ vtkExtractCTHPart::vtkExtractCTHPart()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractCTHPart::~vtkExtractCTHPart()
 {
   this->SetController(nullptr);
@@ -154,7 +141,7 @@ vtkExtractCTHPart::~vtkExtractCTHPart()
   this->Internals = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If clip plane is modified,
 // then this object is modified as well.
 vtkMTimeType vtkExtractCTHPart::GetMTime()
@@ -169,21 +156,21 @@ vtkMTimeType vtkExtractCTHPart::GetMTime()
   return mTime;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCTHPart::RemoveVolumeArrayNames()
 {
   this->Internals->VolumeArrayNames.clear();
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCTHPart::AddVolumeArrayName(const char* arrayName)
 {
   if (arrayName != nullptr && arrayName[0] != 0 &&
     std::find(this->Internals->VolumeArrayNames.begin(), this->Internals->VolumeArrayNames.end(),
       std::string(arrayName)) == this->Internals->VolumeArrayNames.end())
   {
-    this->Internals->VolumeArrayNames.push_back(arrayName);
+    this->Internals->VolumeArrayNames.emplace_back(arrayName);
 
     // ensure that the volume arrays are in determinate order. I should just
     // change the code to use a std::set.
@@ -192,13 +179,13 @@ void vtkExtractCTHPart::AddVolumeArrayName(const char* arrayName)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractCTHPart::GetNumberOfVolumeArrayNames()
 {
   return static_cast<int>(this->Internals->VolumeArrayNames.size());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkExtractCTHPart::GetVolumeArrayName(int idx)
 {
   if (idx < 0 || idx > static_cast<int>(this->Internals->VolumeArrayNames.size()))
@@ -209,7 +196,7 @@ const char* vtkExtractCTHPart::GetVolumeArrayName(int idx)
   return this->Internals->VolumeArrayNames[idx].c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractCTHPart::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -223,7 +210,7 @@ int vtkExtractCTHPart::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractCTHPart::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -309,7 +296,7 @@ int vtkExtractCTHPart::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkExtractCTHPart::ComputeGlobalBounds(vtkCompositeDataSet* input)
 {
   assert("pre: input_exists" && input != nullptr);
@@ -360,7 +347,7 @@ bool vtkExtractCTHPart::ComputeGlobalBounds(vtkCompositeDataSet* input)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // return nullptr on error.
 vtkSmartPointer<vtkDataSet> vtkExtractCTHPart::ExtractContour(
   vtkCompositeDataSet* input, const char* arrayName)
@@ -439,7 +426,7 @@ vtkSmartPointer<vtkDataSet> vtkExtractCTHPart::ExtractContour(
   return output;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // return nullptr on error.
 vtkSmartPointer<vtkDataSet> vtkExtractCTHPart::ExtractSolid(
   vtkCompositeDataSet* input, const char* arrayName)
@@ -534,7 +521,7 @@ void vtkExtractCTHPart::DetermineSurfaceValue(int dataType)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 bool vtkExtractCTHPart::ExtractClippedContourOnBlock(
   vtkExtractCTHPart::VectorOfFragments& fragments, T* dataset, const char* arrayName)
@@ -602,20 +589,21 @@ bool vtkExtractCTHPart::ExtractClippedContourOnBlock(
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 bool vtkExtractCTHPart::ExtractContourOnBlock(
   vtkExtractCTHPart::VectorOfFragments& fragments, T* dataset, const char* arrayName)
 {
   assert(arrayName != nullptr && arrayName[0] != 0 && dataset != nullptr);
 
-  vtkDataArray* volumeFractionArray = dataset->GetPointData()->GetArray(arrayName);
-  assert(volumeFractionArray != nullptr);
-  assert(dataset->GetPointData()->GetArray(arrayName) != nullptr);
+  vtkPointData* pd = dataset->GetPointData();
 
   // Contour only if necessary.
   double range[2];
-  volumeFractionArray->GetRange(range);
+  if (!pd->GetRange(arrayName, range))
+  {
+    return false;
+  }
   if (range[1] < this->VolumeFractionSurfaceValueInternal)
   {
     // this block doesn't have the material of interest.
@@ -659,7 +647,7 @@ bool vtkExtractCTHPart::ExtractContourOnBlock(
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Append quads for faces of the block that actually on the bounds
 // of the hierarchical dataset. Deals with ghost cells.
@@ -878,7 +866,8 @@ bool vtkExtractCTHPart::ExtractClippedVolumeOnBlock(
 {
   assert(arrayName != nullptr && arrayName[0] != 0 && dataset != nullptr);
 
-  vtkDataArray* volumeFractionArray = dataset->GetCellData()->GetArray(arrayName);
+  vtkCellData* cd = dataset->GetCellData();
+  vtkDataArray* volumeFractionArray = cd->GetArray(arrayName);
   if (!volumeFractionArray)
   {
     // skip this block.
@@ -900,7 +889,10 @@ bool vtkExtractCTHPart::ExtractClippedVolumeOnBlock(
 
   // clip volume only if necessary.
   double range[2];
-  volumeFractionArray->GetRange(range);
+  if (!cd->GetRange(arrayName, range))
+  {
+    return false;
+  }
   if (range[0] > this->VolumeFractionSurfaceValueInternal ||
     range[1] < this->VolumeFractionSurfaceValueInternal)
   {
@@ -934,7 +926,7 @@ bool vtkExtractCTHPart::ExtractClippedVolumeOnBlock(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Is block face on axis0 (either min or max depending on the maxFlag)
 // composed of only ghost cells?
@@ -992,7 +984,7 @@ int vtkExtractCTHPart::IsGhostFace(
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Merely the same implementation than in vtkDataSetSurfaceFilter, without
 // dealing with the whole extents.
@@ -1031,7 +1023,7 @@ void vtkExtractCTHPart::ExecuteFaceQuads(vtkDataSet* input, vtkPolyData* output,
   pInc[0] = 1;
   pInc[1] = (originalExtents[1] - originalExtents[0] + 1);
   pInc[2] = (originalExtents[3] - originalExtents[2] + 1) * pInc[1];
-  // quad increments (cell incraments, but cInc could be confused with c axis).
+  // quad increments (cell increments, but cInc could be confused with c axis).
   qInc[0] = 1;
   qInc[1] = originalExtents[1] - originalExtents[0];
   // The conditions are for when we have one or more degenerate axes (2d or 1d cells).
@@ -1143,7 +1135,7 @@ void vtkExtractCTHPart::ExecuteFaceQuads(vtkDataSet* input, vtkPolyData* output,
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCTHPart::ExecuteCellDataToPointData(
   vtkDataArray* cellVolumeFraction, vtkDoubleArray* pointVolumeFraction, const int* dims)
 {
@@ -1304,7 +1296,7 @@ void vtkExtractCTHPart::ExecuteCellDataToPointData(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCTHPart::TriggerProgressEvent(double val)
 {
   double progress = this->ProgressShift + val * this->ProgressScale;
@@ -1312,7 +1304,7 @@ void vtkExtractCTHPart::TriggerProgressEvent(double val)
   this->UpdateProgress(progress);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractCTHPart::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1323,7 +1315,7 @@ void vtkExtractCTHPart::PrintSelf(ostream& os, vtkIndent indent)
   for (it = this->Internals->VolumeArrayNames.begin();
        it != this->Internals->VolumeArrayNames.end(); ++it)
   {
-    os << i2 << it->c_str() << endl;
+    os << i2 << *it << endl;
   }
   os << indent << "VolumeFractionSurfaceValue: " << this->VolumeFractionSurfaceValue << endl;
   os << indent << "Capping: " << this->Capping << endl;
@@ -1350,3 +1342,4 @@ void vtkExtractCTHPart::PrintSelf(ostream& os, vtkIndent indent)
     os << "No Controller." << endl;
   }
 }
+VTK_ABI_NAMESPACE_END

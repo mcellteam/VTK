@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSegYReaderInternal.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSegYReaderInternal.h"
 
@@ -33,6 +21,7 @@
 #include <map>
 #include <set>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 const int FIRST_TRACE_START_POS = 3600; // this->Traces start after 3200 + 400 file header
@@ -40,9 +29,9 @@ double decodeMultiplier(short multiplier)
 {
   return (multiplier < 0) ? (-1.0 / multiplier) : (multiplier > 0 ? multiplier : 1.0);
 }
-};
+}
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSegYReaderInternal::vtkSegYReaderInternal()
   : SampleInterval(0)
   , FormatCode(0)
@@ -53,7 +42,7 @@ vtkSegYReaderInternal::vtkSegYReaderInternal()
   this->TraceReader = new vtkSegYTraceReader();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSegYReaderInternal::~vtkSegYReaderInternal()
 {
   delete this->BinaryHeaderBytesPos;
@@ -64,19 +53,19 @@ vtkSegYReaderInternal::~vtkSegYReaderInternal()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYReaderInternal::SetXYCoordBytePositions(int x, int y)
 {
   this->TraceReader->SetXYCoordBytePositions(x, y);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYReaderInternal::SetVerticalCRS(int v)
 {
   this->VerticalCRS = v > 0 ? 1 : 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYReaderInternal::LoadTraces(int* extent)
 {
   std::streamoff traceStartPos = FIRST_TRACE_START_POS;
@@ -85,7 +74,7 @@ void vtkSegYReaderInternal::LoadTraces(int* extent)
   // allocate traces vector
   int dims[3] = { extent[1] - extent[0] + 1, extent[3] - extent[2] + 1, extent[5] - extent[4] + 1 };
 
-  bool is3d = (extent[3] - extent[2] > 1) ? true : false;
+  bool is3d = extent[3] - extent[2] > 1;
   this->Traces.resize(dims[0] * dims[1], nullptr);
   size_t traceCount = 0;
   while (traceStartPos + 240 < fileSize)
@@ -102,7 +91,7 @@ void vtkSegYReaderInternal::LoadTraces(int* extent)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSegYReaderInternal::ReadHeader()
 {
   this->SampleInterval = vtkSegYIOUtils::Instance()->readShortInteger(
@@ -114,7 +103,7 @@ bool vtkSegYReaderInternal::ReadHeader()
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSegYReaderInternal::Is3DComputeParameters(
   int* extent, double origin[3], double spacing[3][3], int* spacingSign, bool force2D)
 {
@@ -148,9 +137,9 @@ bool vtkSegYReaderInternal::Is3DComputeParameters(
 
   // compute the dimensions of the dataset, to be safe we
   // look at all the traces and compute the set of inline
-  // and crossline indicies
+  // and crossline indices
   std::set<int> crossLines;
-  std::map<int, std::array<double, 3> > crossCoordinates;
+  std::map<int, std::array<double, 3>> crossCoordinates;
   std::set<int> inLines;
   int basisPointCount = 0;
   double basisCoords[3][3];
@@ -243,7 +232,7 @@ bool vtkSegYReaderInternal::Is3DComputeParameters(
     return false;
   }
 
-  // compute the mapping of indicies into coords if we have three
+  // compute the mapping of indices into coords if we have three
   if (basisPointCount == 3)
   {
     // compute an orthogonal basis
@@ -294,7 +283,7 @@ bool vtkSegYReaderInternal::Is3DComputeParameters(
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYReaderInternal::ExportData(
   vtkImageData* imageData, int* extent, double origin[3], double spacing[3][3], int* spacingSign)
 {
@@ -302,7 +291,7 @@ void vtkSegYReaderInternal::ExportData(
   imageData->SetOrigin(origin);
   imageData->SetSpacing(
     vtkMath::Norm(spacing[0]), vtkMath::Norm(spacing[1]), vtkMath::Norm(spacing[2]));
-  int* dims = imageData->GetDimensions();
+  const int* dims = imageData->GetDimensions();
 
   vtkNew<vtkFloatArray> scalars;
   scalars->SetNumberOfComponents(1);
@@ -327,7 +316,7 @@ void vtkSegYReaderInternal::ExportData(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSegYReaderInternal::ExportData(
   vtkStructuredGrid* grid, int* extent, double origin[3], double spacing[3][3])
 {
@@ -336,7 +325,8 @@ void vtkSegYReaderInternal::ExportData(
     return;
   }
   grid->SetExtent(extent);
-  int* dims = grid->GetDimensions();
+  int dims[3];
+  grid->GetDimensions(dims);
   vtkNew<vtkPoints> points;
 
   vtkNew<vtkFloatArray> scalars;
@@ -377,3 +367,4 @@ void vtkSegYReaderInternal::ExportData(
   grid->SetPoints(points);
   grid->GetPointData()->SetScalars(scalars);
 }
+VTK_ABI_NAMESPACE_END

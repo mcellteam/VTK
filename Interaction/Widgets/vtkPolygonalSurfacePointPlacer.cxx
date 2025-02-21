@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolygonalSurfacePointPlacer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPolygonalSurfacePointPlacer.h"
 
 #include "vtkAssemblyNode.h"
@@ -32,6 +20,7 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolygonalSurfacePointPlacerInternals
 {
 
@@ -191,7 +180,7 @@ public:
 
 vtkStandardNewMacro(vtkPolygonalSurfacePointPlacer);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolygonalSurfacePointPlacer::vtkPolygonalSurfacePointPlacer()
 {
   this->Polys = vtkPolyDataCollection::New();
@@ -204,7 +193,7 @@ vtkPolygonalSurfacePointPlacer::vtkPolygonalSurfacePointPlacer()
   this->SnapToClosestPoint = 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolygonalSurfacePointPlacer::~vtkPolygonalSurfacePointPlacer()
 {
   this->CellPicker->Delete();
@@ -212,35 +201,35 @@ vtkPolygonalSurfacePointPlacer::~vtkPolygonalSurfacePointPlacer()
   delete this->Internals;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolygonalSurfacePointPlacer::AddProp(vtkProp* prop)
 {
   this->SurfaceProps->AddItem(prop);
   this->CellPicker->AddPickList(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolygonalSurfacePointPlacer::RemoveViewProp(vtkProp* prop)
 {
   this->Superclass::RemoveViewProp(prop);
   this->CellPicker->DeletePickList(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolygonalSurfacePointPlacer::RemoveAllProps()
 {
   this->Superclass::RemoveAllProps();
   this->CellPicker->InitializePickList();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolygonalSurfacePointPlacer::ComputeWorldPosition(vtkRenderer* ren, double displayPos[2],
   double* vtkNotUsed(refWorldPos), double worldPos[3], double worldOrient[9])
 {
   return this->ComputeWorldPosition(ren, displayPos, worldPos, worldOrient);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolygonalSurfacePointPlacer::ComputeWorldPosition(
   vtkRenderer* ren, double displayPos[2], double worldPos[3], double vtkNotUsed(worldOrient)[9])
 {
@@ -303,20 +292,20 @@ int vtkPolygonalSurfacePointPlacer::ComputeWorldPosition(
   return 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolygonalSurfacePointPlacer::ValidateWorldPosition(
   double worldPos[3], double* vtkNotUsed(worldOrient))
 {
   return this->ValidateWorldPosition(worldPos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolygonalSurfacePointPlacer::ValidateWorldPosition(double vtkNotUsed(worldPos)[3])
 {
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolygonalSurfacePointPlacer::ValidateDisplayPosition(
   vtkRenderer*, double vtkNotUsed(displayPos)[2])
 {
@@ -332,14 +321,14 @@ int vtkPolygonalSurfacePointPlacer::ValidateDisplayPosition(
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolygonalSurfacePointPlacer::Node* vtkPolygonalSurfacePointPlacer ::GetNodeAtWorldPosition(
   double worldPos[3])
 {
   return this->Internals->GetNodeAtWorldPosition(worldPos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolygonalSurfacePointPlacer::UpdateNodeWorldPosition(
   double worldPos[3], vtkIdType nodePointId)
 {
@@ -357,7 +346,7 @@ int vtkPolygonalSurfacePointPlacer::UpdateNodeWorldPosition(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolygonalSurfacePointPlacer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -383,3 +372,4 @@ void vtkPolygonalSurfacePointPlacer::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Distance Offset: " << this->DistanceOffset << "\n";
   os << indent << "SnapToClosestPoint: " << this->SnapToClosestPoint << endl;
 }
+VTK_ABI_NAMESPACE_END

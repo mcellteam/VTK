@@ -1,38 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPickingManager.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*==============================================================================
-
-  Library: MSVTK
-
-  Copyright (c) Kitware Inc.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0.txt
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-==============================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware Inc.
+// SPDX-License-Identifier: BSD-3-Clause AND Apache-2.0
 // .NAME Test of PickingManager.
 // .SECTION Description
 // Tests PickingManager internal data structure.
@@ -59,7 +27,7 @@ public:
   void PrintErrorMessage(int line, const char* errorStr);
 
 protected:
-  std::pair<vtkSmartPointer<vtkPicker>, vtkSmartPointer<vtkObject> > AddPickerObject(
+  std::pair<vtkSmartPointer<vtkPicker>, vtkSmartPointer<vtkObject>> AddPickerObject(
     int pickerType, int objectType);
 
   bool AddPicker(int pickerType, int objectType, int numberOfPickers, int numberOfObjectsLinked);
@@ -343,7 +311,7 @@ bool PickingManagerTest::TestObjectOwnership()
 }
 
 //------------------------------------------------------------------------------
-std::pair<vtkSmartPointer<vtkPicker>, vtkSmartPointer<vtkObject> >
+std::pair<vtkSmartPointer<vtkPicker>, vtkSmartPointer<vtkObject>>
 PickingManagerTest::AddPickerObject(int pickerType, int objectType)
 {
   vtkSmartPointer<vtkPicker> picker =
@@ -353,7 +321,7 @@ PickingManagerTest::AddPickerObject(int pickerType, int objectType)
 
   this->PickingManager->AddPicker(picker, object);
 
-  return std::pair<vtkSmartPointer<vtkPicker>, vtkSmartPointer<vtkObject> >(picker, object);
+  return std::pair<vtkSmartPointer<vtkPicker>, vtkSmartPointer<vtkObject>>(picker, object);
 }
 
 //------------------------------------------------------------------------------
@@ -428,7 +396,7 @@ bool PickingManagerTest::RemoveObject(
 {
   this->PickingManager = vtkSmartPointer<vtkPickingManager>::New();
 
-  std::pair<vtkSmartPointer<vtkPicker>, vtkSmartPointer<vtkObject> > pickerObject =
+  std::pair<vtkSmartPointer<vtkPicker>, vtkSmartPointer<vtkObject>> pickerObject =
     this->AddPickerObject(pickerType, objectType);
 
   this->PickingManager->RemoveObject(pickerObject.second);

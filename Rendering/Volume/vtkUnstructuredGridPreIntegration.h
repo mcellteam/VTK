@@ -1,26 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridPreIntegration.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*
- * Copyright 2004 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2004 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkUnstructuredGridPreIntegration
@@ -47,6 +27,7 @@
 #include "vtkRenderingVolumeModule.h" // For export macro
 #include "vtkUnstructuredGridVolumeRayIntegrator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkVolumeProperty;
 
 class VTKRENDERINGVOLUME_EXPORT vtkUnstructuredGridPreIntegration
@@ -62,16 +43,16 @@ public:
   void Integrate(vtkDoubleArray* intersectionLengths, vtkDataArray* nearIntersections,
     vtkDataArray* farIntersections, float color[4]) override;
 
-  //@{
+  ///@{
   /**
    * The class used to fill the pre integration table.  By default, a
    * vtkUnstructuredGridPartialPreIntegration is built.
    */
   vtkGetObjectMacro(Integrator, vtkUnstructuredGridVolumeRayIntegrator);
   virtual void SetIntegrator(vtkUnstructuredGridVolumeRayIntegrator*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the size of the integration table built.
    */
@@ -79,18 +60,18 @@ public:
   vtkGetMacro(IntegrationTableScalarResolution, int);
   vtkSetMacro(IntegrationTableLengthResolution, int);
   vtkGetMacro(IntegrationTableLengthResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get how an integration table is indexed.
    */
   virtual double GetIntegrationTableScalarShift(int component = 0);
   virtual double GetIntegrationTableScalarScale(int component = 0);
   virtual double GetIntegrationTableLengthScale();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/set whether to use incremental pre-integration (by default it's
    * on).  Incremental pre-integration is much faster but can introduce
@@ -100,7 +81,7 @@ public:
   vtkGetMacro(IncrementalPreIntegration, vtkTypeBool);
   vtkSetMacro(IncrementalPreIntegration, vtkTypeBool);
   vtkBooleanMacro(IncrementalPreIntegration, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Get the partial pre-integration table for the given scalar component.
@@ -195,4 +176,5 @@ inline float* vtkUnstructuredGridPreIntegration::GetTableEntry(
   return this->GetIndexedTableEntry(sfi, sbi, li, component);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkUnstructuredGridPreIntegration_h

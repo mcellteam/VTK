@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkClipConvexPolyData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkClipConvexPolyData.h"
 
 #include "vtkCellArray.h"
@@ -28,18 +16,19 @@
 #include <set>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkClipConvexPolyData);
 
 vtkCxxSetObjectMacro(vtkClipConvexPolyData, Planes, vtkPlaneCollection);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkCCPDVertex
 {
 public:
   double Point[3];
 };
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkCCPDPolygon
 {
 public:
@@ -47,14 +36,14 @@ public:
   std::vector<vtkCCPDVertex*> NewVertices;
 };
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkClipConvexPolyDataInternals
 {
 public:
   std::vector<vtkCCPDPolygon*> Polygons;
 };
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor
 vtkClipConvexPolyData::vtkClipConvexPolyData()
 {
@@ -62,7 +51,7 @@ vtkClipConvexPolyData::vtkClipConvexPolyData()
   this->Internal = new vtkClipConvexPolyDataInternals;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Destructor
 vtkClipConvexPolyData::~vtkClipConvexPolyData()
 {
@@ -71,7 +60,7 @@ vtkClipConvexPolyData::~vtkClipConvexPolyData()
   delete this->Internal;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Redefines this method, as this filter depends on time of its components
 // (planes)
@@ -89,7 +78,7 @@ vtkMTimeType vtkClipConvexPolyData::GetMTime()
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClipConvexPolyData::ClearInternals()
 {
   unsigned int j;
@@ -112,7 +101,7 @@ void vtkClipConvexPolyData::ClearInternals()
   this->Internal->Polygons.clear();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClipConvexPolyData::ClearNewVertices()
 {
   for (unsigned int i = 0; i < this->Internal->Polygons.size(); i++)
@@ -125,7 +114,7 @@ void vtkClipConvexPolyData::ClearNewVertices()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClipConvexPolyData::RemoveEmptyPolygons()
 {
   bool done = false;
@@ -151,7 +140,7 @@ void vtkClipConvexPolyData::RemoveEmptyPolygons()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 int vtkClipConvexPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -204,6 +193,10 @@ int vtkClipConvexPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   polys->InitTraversal();
   while (polys->GetNextCell(npts, pts))
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkCCPDPolygon* polygon = new vtkCCPDPolygon;
     for (i = 0; i < static_cast<size_t>(npts); i++)
     {
@@ -220,6 +213,10 @@ int vtkClipConvexPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   // For each plane in the collection, clip the polygons with the plane.
   while ((plane = this->Planes->GetNextItem()))
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     if (!this->HasDegeneracies(plane))
     {
       this->ClipWithPlane(plane, tolerance);
@@ -234,6 +231,10 @@ int vtkClipConvexPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   std::vector<vtkIdType> polyPts(32);
   for (i = 0; i < this->Internal->Polygons.size(); i++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     size_t numPoints = this->Internal->Polygons[i]->Vertices.size();
     if (numPoints > polyPts.size())
     {
@@ -259,7 +260,7 @@ int vtkClipConvexPolyData::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClipConvexPolyData::ClipWithPlane(vtkPlane* plane, double tolerance)
 {
   double origin[3];
@@ -561,7 +562,7 @@ void vtkClipConvexPolyData::ClipWithPlane(vtkPlane* plane, double tolerance)
   this->ClearNewVertices();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkClipConvexPolyData::HasDegeneracies(vtkPlane* plane)
 {
   double origin[3];
@@ -609,10 +610,11 @@ bool vtkClipConvexPolyData::HasDegeneracies(vtkPlane* plane)
   return false;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkClipConvexPolyData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Planes: " << this->Planes << endl;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestCategoricalMaterials.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test verifies that we can assign materials to individual cells.
 //
 // The command line arguments are:
@@ -47,7 +35,7 @@ int TestCategoricalMaterials(int argc, char* argv[])
     vtkSmartPointer<vtkRenderWindowInteractor>::New();
   iren->SetRenderWindow(renWin);
   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-  vtkOSPRayRendererNode::SetBackgroundMode(2, renderer);
+  vtkOSPRayRendererNode::SetBackgroundMode(vtkOSPRayRendererNode::Environment, renderer);
   renderer->SetEnvironmentalBG(0.0, 0.0, 0.0);
   renderer->SetEnvironmentalBG2(0.8, 0.8, 1.0);
   renderer->GradientEnvironmentalBGOn();
@@ -111,15 +99,15 @@ int TestCategoricalMaterials(int argc, char* argv[])
   vtkSmartPointer<vtkOSPRayMaterialLibrary> ml = vtkSmartPointer<vtkOSPRayMaterialLibrary>::New();
   vtkOSPRayRendererNode::SetMaterialLibrary(ml, renderer);
   // add materials to it
-  ml->AddMaterial("Four", "Metal");
-  ml->AddMaterial("One", "ThinGlass");
+  ml->AddMaterial("Four", "metal");
+  ml->AddMaterial("One", "thinGlass");
   // some of material names use the same low level material implementation
-  ml->AddMaterial("Two", "ThinGlass");
+  ml->AddMaterial("Two", "thinGlass");
   // but each one  can be tuned
   double green[3] = { 0.0, 0.9, 0.0 };
   ml->AddShaderVariable("Two", "attenuationColor", 3, green);
   ml->AddShaderVariable("Two", "eta", { 1. });
-  ml->AddMaterial("Three", "ThinGlass");
+  ml->AddMaterial("Three", "thinGlass");
   double blue[3] = { 0.0, 0.0, 0.9 };
   ml->AddShaderVariable("Three", "attenuationColor", 3, blue);
   ml->AddShaderVariable("Three", "eta", { 1.65 });

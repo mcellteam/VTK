@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTexturedButtonRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTexturedButtonRepresentation.h"
 #include "vtkActor.h"
 #include "vtkAssemblyPath.h"
@@ -34,6 +22,7 @@
 #include "vtkTexture.h"
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTexturedButtonRepresentation);
 
 vtkCxxSetObjectMacro(vtkTexturedButtonRepresentation, Property, vtkProperty);
@@ -41,12 +30,12 @@ vtkCxxSetObjectMacro(vtkTexturedButtonRepresentation, HoveringProperty, vtkPrope
 vtkCxxSetObjectMacro(vtkTexturedButtonRepresentation, SelectingProperty, vtkProperty);
 
 // Map of textures
-class vtkTextureArray : public std::map<int, vtkSmartPointer<vtkImageData> >
+class vtkTextureArray : public std::map<int, vtkSmartPointer<vtkImageData>>
 {
 };
-typedef std::map<int, vtkSmartPointer<vtkImageData> >::iterator vtkTextureArrayIterator;
+typedef std::map<int, vtkSmartPointer<vtkImageData>>::iterator vtkTextureArrayIterator;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTexturedButtonRepresentation::vtkTexturedButtonRepresentation()
 {
   this->Mapper = vtkPolyDataMapper::New();
@@ -74,7 +63,7 @@ vtkTexturedButtonRepresentation::vtkTexturedButtonRepresentation()
   this->Picker->PickFromListOn();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTexturedButtonRepresentation::~vtkTexturedButtonRepresentation()
 {
   this->Actor->Delete();
@@ -105,25 +94,25 @@ vtkTexturedButtonRepresentation::~vtkTexturedButtonRepresentation()
   this->Picker->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::SetButtonGeometry(vtkPolyData* pd)
 {
   this->Mapper->SetInputData(pd);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::SetButtonGeometryConnection(vtkAlgorithmOutput* algOutput)
 {
   this->Mapper->SetInputConnection(algOutput);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkTexturedButtonRepresentation::GetButtonGeometry()
 {
   return this->Mapper->GetInput();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::SetButtonTexture(int i, vtkImageData* image)
 {
   if (i < 0)
@@ -138,7 +127,7 @@ void vtkTexturedButtonRepresentation::SetButtonTexture(int i, vtkImageData* imag
   (*this->TextureArray)[i] = image;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkTexturedButtonRepresentation::GetButtonTexture(int i)
 {
   if (i < 0)
@@ -161,7 +150,7 @@ vtkImageData* vtkTexturedButtonRepresentation::GetButtonTexture(int i)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::RegisterPickers()
 {
   vtkPickingManager* pm = this->GetPickingManager();
@@ -172,7 +161,7 @@ void vtkTexturedButtonRepresentation::RegisterPickers()
   pm->AddPicker(this->Picker, this);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::PlaceWidget(double scale, double xyz[3], double normal[3])
 {
   // Translate the center
@@ -182,8 +171,8 @@ void vtkTexturedButtonRepresentation::PlaceWidget(double scale, double xyz[3], d
   center[1] = (bds[2] + bds[3]) / 2.0;
   center[2] = (bds[4] + bds[5]) / 2.0;
 
-  this->Actor->AddPosition(center[0] - xyz[0], center[1] - xyz[1], center[2] - xyz[2]);
-  this->Follower->AddPosition(center[0] - xyz[0], center[1] - xyz[1], center[2] - xyz[2]);
+  this->Actor->AddPosition(xyz[0] - center[0], xyz[1] - center[1], xyz[2] - center[2]);
+  this->Follower->AddPosition(xyz[0] - center[0], xyz[1] - center[1], xyz[2] - center[2]);
 
   // Scale the button
   this->Actor->SetScale(scale, scale, scale);
@@ -204,7 +193,7 @@ void vtkTexturedButtonRepresentation::PlaceWidget(double scale, double xyz[3], d
     vtkMath::DegreesFromRadians(angle), rotAxis[0], rotAxis[1], rotAxis[2]);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::PlaceWidget(double bds[6])
 {
   double bounds[6], center[3], aBds[6], aCenter[3];
@@ -248,7 +237,7 @@ void vtkTexturedButtonRepresentation::PlaceWidget(double bds[6])
   this->Follower->SetScale(sMin, sMin, sMin);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTexturedButtonRepresentation ::ComputeInteractionState(int X, int Y, int vtkNotUsed(modify))
 {
   this->VisibilityOn(); // actor must be on to be picked
@@ -267,7 +256,7 @@ int vtkTexturedButtonRepresentation ::ComputeInteractionState(int X, int Y, int 
   return this->InteractionState;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::Highlight(int highlight)
 {
   this->Superclass::Highlight(highlight);
@@ -300,7 +289,7 @@ void vtkTexturedButtonRepresentation::Highlight(int highlight)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::CreateDefaultProperties()
 {
   this->Property = vtkProperty::New();
@@ -314,7 +303,7 @@ void vtkTexturedButtonRepresentation::CreateDefaultProperties()
   this->SelectingProperty->SetAmbientColor(0.2, 0.2, 0.2);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::BuildRepresentation()
 {
   // The net effect is to resize the handle
@@ -349,7 +338,7 @@ void vtkTexturedButtonRepresentation::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::ShallowCopy(vtkProp* prop)
 {
   vtkTexturedButtonRepresentation* rep = vtkTexturedButtonRepresentation::SafeDownCast(prop);
@@ -371,14 +360,14 @@ void vtkTexturedButtonRepresentation::ShallowCopy(vtkProp* prop)
   this->Superclass::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::ReleaseGraphicsResources(vtkWindow* win)
 {
   this->Actor->ReleaseGraphicsResources(win);
   this->Follower->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTexturedButtonRepresentation::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   this->BuildRepresentation();
@@ -393,7 +382,7 @@ int vtkTexturedButtonRepresentation::RenderOpaqueGeometry(vtkViewport* viewport)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTexturedButtonRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* viewport)
 {
   this->BuildRepresentation();
@@ -407,7 +396,7 @@ int vtkTexturedButtonRepresentation::RenderTranslucentPolygonalGeometry(vtkViewp
     return this->Actor->RenderTranslucentPolygonalGeometry(viewport);
   }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkTexturedButtonRepresentation::HasTranslucentPolygonalGeometry()
 {
   this->BuildRepresentation();
@@ -422,26 +411,30 @@ vtkTypeBool vtkTexturedButtonRepresentation::HasTranslucentPolygonalGeometry()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkTexturedButtonRepresentation::GetBounds()
 {
   return this->Actor->GetBounds();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::GetActors(vtkPropCollection* pc)
 {
-  if (this->FollowCamera)
+  if (pc != nullptr && this->GetVisibility())
   {
-    this->Follower->GetActors(pc);
+    if (this->FollowCamera)
+    {
+      this->Follower->GetActors(pc);
+    }
+    else
+    {
+      this->Actor->GetActors(pc);
+    }
   }
-  else
-  {
-    this->Actor->GetActors(pc);
-  }
+  this->Superclass::GetActors(pc);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTexturedButtonRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -478,3 +471,4 @@ void vtkTexturedButtonRepresentation::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Selecting Property: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

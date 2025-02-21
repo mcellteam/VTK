@@ -1,21 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImporter.h"
+
+#include "vtkAbstractArray.h"
+#include "vtkActorCollection.h"
 #include "vtkCellData.h"
-#include "vtkDataArray.h"
+#include "vtkCollection.h"
 #include "vtkDataSet.h"
+#include "vtkLightCollection.h"
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 #include "vtkRenderWindow.h"
@@ -23,14 +15,13 @@
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkImporter, RenderWindow, vtkRenderWindow);
 
-vtkImporter::vtkImporter()
-{
-  this->Renderer = nullptr;
-  this->RenderWindow = nullptr;
-}
+//------------------------------------------------------------------------------
+vtkImporter::vtkImporter() = default;
 
+//------------------------------------------------------------------------------
 vtkImporter::~vtkImporter()
 {
   this->SetRenderWindow(nullptr);
@@ -42,18 +33,21 @@ vtkImporter::~vtkImporter()
   }
 }
 
+//------------------------------------------------------------------------------
 void vtkImporter::ReadData()
 {
   // this->Import actors, cameras, lights and properties
+  // Do not check for UpdateStatus but try to import all that is possible
   this->ImportActors(this->Renderer);
   this->ImportCameras(this->Renderer);
   this->ImportLights(this->Renderer);
   this->ImportProperties(this->Renderer);
 }
 
-void vtkImporter::Read()
+//------------------------------------------------------------------------------
+bool vtkImporter::Update()
 {
-  vtkRenderer* renderer;
+  this->UpdateStatus = vtkImporter::UpdateStatusEnum::SUCCESS;
 
   // if there is no render window, create one
   if (this->RenderWindow == nullptr)
@@ -63,7 +57,7 @@ void vtkImporter::Read()
   }
 
   // Get the first renderer in the render window
-  renderer = this->RenderWindow->GetRenderers()->GetFirstRenderer();
+  vtkRenderer* renderer = this->RenderWindow->GetRenderers()->GetFirstRenderer();
   if (renderer == nullptr)
   {
     vtkDebugMacro(<< "Creating a Renderer\n");
@@ -86,8 +80,15 @@ void vtkImporter::Read()
     this->ReadData();
     this->ImportEnd();
   }
+  else
+  {
+    this->UpdateStatus = vtkImporter::UpdateStatusEnum::FAILURE;
+  }
+
+  return this->UpdateStatus == vtkImporter::UpdateStatusEnum::SUCCESS;
 }
 
+//------------------------------------------------------------------------------
 void vtkImporter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -113,8 +114,8 @@ void vtkImporter::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
-std::string vtkImporter::GetArrayDescription(vtkDataArray* array, vtkIndent indent)
+//------------------------------------------------------------------------------
+std::string vtkImporter::GetArrayDescription(vtkAbstractArray* array, vtkIndent indent)
 {
   std::stringstream ss;
   ss << indent;
@@ -124,18 +125,35 @@ std::string vtkImporter::GetArrayDescription(vtkDataArray* array, vtkIndent inde
   }
   ss << array->GetDataTypeAsString() << " : ";
 
-  int nComp = array->GetNumberOfComponents();
-  double range[2];
-  for (int j = 0; j < nComp; j++)
+  vtkIdType nbTuples = array->GetNumberOfTuples();
+
+  if (nbTuples == 1)
   {
-    array->GetRange(range, j);
-    ss << "[" << range[0] << ", " << range[1] << "] ";
+    ss << array->GetVariantValue(0).ToString();
+  }
+  else
+  {
+    int nComp = array->GetNumberOfComponents();
+    double range[2];
+    for (int j = 0; j < nComp; j++)
+    {
+      vtkDataArray* dataArray = vtkDataArray::SafeDownCast(array);
+      if (dataArray)
+      {
+        dataArray->GetRange(range, j);
+        ss << "[" << range[0] << ", " << range[1] << "] ";
+      }
+      else
+      {
+        ss << "[range unavailable] ";
+      }
+    }
   }
   ss << "\n";
   return ss.str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkImporter::GetDataSetDescription(vtkDataSet* ds, vtkIndent indent)
 {
   std::stringstream ss;
@@ -155,41 +173,61 @@ std::string vtkImporter::GetDataSetDescription(vtkDataSet* ds, vtkIndent indent)
 
   vtkPointData* pointData = ds->GetPointData();
   vtkCellData* cellData = ds->GetCellData();
+  vtkFieldData* fieldData = ds->GetFieldData();
   int nbPointData = pointData->GetNumberOfArrays();
   int nbCellData = cellData->GetNumberOfArrays();
+  int nbFieldData = fieldData->GetNumberOfArrays();
 
   ss << indent << nbPointData << " point data array(s):\n";
   for (vtkIdType i = 0; i < nbPointData; i++)
   {
-    vtkDataArray* array = pointData->GetArray(i);
+    vtkAbstractArray* array = pointData->GetAbstractArray(i);
     ss << vtkImporter::GetArrayDescription(array, indent.GetNextIndent());
   }
 
   ss << indent << nbCellData << " cell data array(s):\n";
   for (vtkIdType i = 0; i < nbCellData; i++)
   {
-    vtkDataArray* array = cellData->GetArray(i);
+    vtkAbstractArray* array = cellData->GetAbstractArray(i);
     ss << vtkImporter::GetArrayDescription(array, indent.GetNextIndent());
   }
+
+  ss << indent << nbFieldData << " field data array(s):\n";
+  for (vtkIdType i = 0; i < nbFieldData; i++)
+  {
+    vtkAbstractArray* array = fieldData->GetAbstractArray(i);
+    if (array)
+    {
+      ss << vtkImporter::GetArrayDescription(array, indent.GetNextIndent());
+    }
+  }
+
   return ss.str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkImporter::GetNumberOfAnimations()
 {
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkImporter::GetTemporalInformation(vtkIdType vtkNotUsed(animationIdx),
-  int& vtkNotUsed(nbTimeSteps), double vtkNotUsed(timeRange)[2],
+  double vtkNotUsed(frameRate), int& vtkNotUsed(nbTimeSteps), double vtkNotUsed(timeRange)[2],
   vtkDoubleArray* vtkNotUsed(timeSteps))
 {
   return false;
 }
 
-//----------------------------------------------------------------------------
-void vtkImporter::UpdateTimeStep(double vtkNotUsed(timeStep))
+//------------------------------------------------------------------------------
+void vtkImporter::UpdateTimeStep(double timeValue)
 {
-  this->Update();
+  this->UpdateAtTimeValue(timeValue);
 }
+
+//------------------------------------------------------------------------------
+bool vtkImporter::UpdateAtTimeValue(double vtkNotUsed(timeValue))
+{
+  return this->Update();
+}
+VTK_ABI_NAMESPACE_END

@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractPointLocator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAbstractPointLocator.h"
 
 #include "vtkDataSet.h"
 #include "vtkIdList.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkAbstractPointLocator::vtkAbstractPointLocator()
 {
   for (int i = 0; i < 6; i++)
@@ -27,10 +16,10 @@ vtkAbstractPointLocator::vtkAbstractPointLocator()
   this->NumberOfBuckets = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractPointLocator::~vtkAbstractPointLocator() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a position x-y-z, return the id of the point closest to it.
 vtkIdType vtkAbstractPointLocator::FindClosestPoint(double x, double y, double z)
 {
@@ -42,7 +31,7 @@ vtkIdType vtkAbstractPointLocator::FindClosestPoint(double x, double y, double z
   return this->FindClosestPoint(xyz);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractPointLocator::FindClosestNPoints(
   int N, double x, double y, double z, vtkIdList* result)
 {
@@ -53,7 +42,7 @@ void vtkAbstractPointLocator::FindClosestNPoints(
   this->FindClosestNPoints(N, p, result);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractPointLocator::FindPointsWithinRadius(
   double R, double x, double y, double z, vtkIdList* result)
 {
@@ -64,7 +53,7 @@ void vtkAbstractPointLocator::FindPointsWithinRadius(
   this->FindPointsWithinRadius(R, p, result);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractPointLocator::GetBounds(double* bnds)
 {
   for (int i = 0; i < 6; i++)
@@ -73,7 +62,7 @@ void vtkAbstractPointLocator::GetBounds(double* bnds)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAbstractPointLocator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -85,3 +74,4 @@ void vtkAbstractPointLocator::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Number of Buckets: " << this->NumberOfBuckets << "\n";
 }
+VTK_ABI_NAMESPACE_END

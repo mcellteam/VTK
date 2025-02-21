@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMySQLDatabase.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkMySQLDatabase
  * @brief   maintain a connection to a MySQL database
@@ -39,6 +23,7 @@
 #include "vtkIOMySQLModule.h" // For export macro
 #include "vtkSQLDatabase.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSQLQuery;
 class vtkMySQLQuery;
 class vtkStringArray;
@@ -59,7 +44,7 @@ public:
    * filename before calling this function.  Returns true if the
    * database was opened successfully; false otherwise.
    */
-  bool Open(const char* password = 0) override;
+  bool Open(const char* password = nullptr) override;
 
   /**
    * Close the connection to the database.
@@ -101,45 +86,45 @@ public:
    */
   const char* GetLastErrorText() override;
 
-  //@{
+  ///@{
   /**
    * String representing database type (e.g. "mysql").
    */
   const char* GetDatabaseType() override { return this->DatabaseType; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The database server host name.
    */
   vtkSetStringMacro(HostName);
   vtkGetStringMacro(HostName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The user name for connecting to the database server.
    */
   vtkSetStringMacro(User);
   vtkGetStringMacro(User);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The user's password for connecting to the database server.
    */
   vtkSetStringMacro(Password);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The name of the database to connect to.
    */
   vtkSetStringMacro(DatabaseName);
   vtkGetStringMacro(DatabaseName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Should automatic reconnection be enabled?
    * This defaults to true.
@@ -148,15 +133,15 @@ public:
   vtkSetMacro(Reconnect, int);
   vtkGetMacro(Reconnect, int);
   vtkBooleanMacro(Reconnect, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The port used for connecting to the database.
    */
   vtkSetClampMacro(ServerPort, int, 0, VTK_INT_MAX);
   vtkGetMacro(ServerPort, int);
-  //@}
+  ///@}
 
   /**
    * Get the URL of the database.
@@ -243,4 +228,5 @@ private:
   void operator=(const vtkMySQLDatabase&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkMySQLDatabase_h

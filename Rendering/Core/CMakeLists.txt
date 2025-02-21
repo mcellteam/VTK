@@ -18,15 +18,19 @@ set(classes
   vtkAvatar
   vtkBackgroundColorMonitor
   vtkBillboardTextActor3D
-  vtkCIEDE2000
   vtkCamera
   vtkCameraActor
   vtkCameraInterpolator
   vtkCellCenterDepthSort
+  vtkCellGraphicsPrimitiveMap
+  vtkCellGridMapper
+  vtkCellGridRenderRequest
   vtkColorTransferFunction
+  vtkCompositeCellGridMapper
   vtkCompositeDataDisplayAttributes
   vtkCompositeDataDisplayAttributesLegacy
   vtkCompositePolyDataMapper
+  vtkCompositePolyDataMapperDelegator
   vtkCoordinate
   vtkCuller
   vtkCullerCollection
@@ -45,6 +49,7 @@ set(classes
   vtkGraphMapper
   vtkGraphToGlyphs
   vtkGraphicsFactory
+  vtkHardwarePicker
   vtkHardwareSelector
   vtkHardwareWindow
   vtkHierarchicalPolyDataMapper
@@ -90,6 +95,7 @@ set(classes
   vtkRendererCollection
   vtkRendererDelegate
   vtkRendererSource
+  vtkResizingWindowToImageFilter
   vtkSelectVisiblePoints
   vtkShaderProperty
   vtkSkybox
@@ -158,6 +164,9 @@ set(classes
   vtkAbstractRenderDevice
   vtkRenderWidget)
 
+set(nowrap_classes
+  vtkCIEDE2000)
+
 # needed as we do not have vtkRenderingOpenGLConfigure.h here
 set_source_files_properties(
   vtkRenderWindow.cxx  # dummy out painterdevice adapter
@@ -167,16 +176,35 @@ set_source_files_properties(
 
 set(headers
   vtkGPUInfoListArray.h
-  vtkNoise200x200.h
+  vtkLabeledDatatypeDefinitions.h
   vtkPythagoreanQuadruples.h
   vtkRayCastStructures.h
   vtkRenderingCoreEnums.h
+  vtkStateStorage.h
   "${CMAKE_CURRENT_BINARY_DIR}/vtkTDxConfigure.h"
   vtkTDxMotionEventInfo.h)
 
+set(nowrap_headers
+  vtkNoise200x200.h)
+
+
+# Hand written (de)serialization routines
+set(serialization_helper_sources)
+if (VTK_WRAP_SERIALIZATION)
+  list(APPEND serialization_helper_sources
+    vtkAbstractMapperSerDesHelper.cxx
+    vtkColorTransferFunctionSerDesHelper.cxx
+    vtkCompositeDataDisplayAttributesSerDesHelper.cxx
+    vtkDataSetMapperSerDesHelper.cxx
+    vtkTextureSerDesHelper.cxx)
+endif ()
+
 vtk_module_add_module(VTK::RenderingCore
   CLASSES ${classes}
+  NOWRAP_CLASSES ${nowrap_classes}
   HEADERS ${headers}
+  SOURCES ${serialization_helper_sources}
+  NOWRAP_HEADERS ${nowrap_headers}
   )
 
 if (VTK_DEFAULT_RENDER_WINDOW_OFFSCREEN)
@@ -184,3 +212,4 @@ if (VTK_DEFAULT_RENDER_WINDOW_OFFSCREEN)
     PRIVATE
       VTK_DEFAULT_RENDER_WINDOW_OFFSCREEN)
 endif()
+vtk_add_test_mangling(VTK::RenderingCore)

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSVGContextDevice2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkSVGContextDevice2D
  * @brief vtkContextDevice2D implementation for use with vtkSVGExporter.
@@ -45,6 +33,7 @@
 
 #include <array> // For std::array!
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkColor3ub;
 class vtkColor4ub;
 class vtkPath;
@@ -127,6 +116,9 @@ public:
   void Begin(vtkViewport*) override;
   void End() override;
 
+  using vtkContextDevice2D::DrawMarkers;
+  using vtkContextDevice2D::DrawPoints;
+  using vtkContextDevice2D::DrawPointSprites;
   void DrawPoly(float* points, int n, unsigned char* colors = nullptr, int nc_comps = 0) override;
   void DrawLines(float* f, int n, unsigned char* colors = nullptr, int nc_comps = 0) override;
   void DrawPoints(float* points, int n, unsigned char* colors = nullptr, int nc_comps = 0) override;
@@ -145,8 +137,6 @@ public:
     float x, float y, float rX, float rY, float startAngle, float stopAngle) override;
   void DrawString(float* point, const vtkStdString& string) override;
   void ComputeStringBounds(const vtkStdString& string, float bounds[4]) override;
-  void DrawString(float* point, const vtkUnicodeString& string) override;
-  void ComputeStringBounds(const vtkUnicodeString& string, float bounds[4]) override;
   void ComputeJustifiedStringBounds(const char* string, float bounds[4]) override;
   void DrawMathTextString(float* point, const vtkStdString& str) override;
   void DrawImage(float p[2], float scale, vtkImageData* image) override;
@@ -267,4 +257,5 @@ private:
   void operator=(const vtkSVGContextDevice2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkSVGContextDevice2D_h

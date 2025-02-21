@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRenderPass
  * @brief   Perform part of the rendering of a vtkRenderer.
@@ -47,13 +35,15 @@
 
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFrameBufferObjectBase;
 class vtkRenderState;
 class vtkWindow;
 class vtkRenderer;
 
-class VTKRENDERINGCORE_EXPORT vtkRenderPass : public vtkObject
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkRenderPass : public vtkObject
 {
 public:
   vtkTypeMacro(vtkRenderPass, vtkObject);
@@ -66,12 +56,12 @@ public:
    */
   virtual void Render(const vtkRenderState* s) = 0;
 
-  //@{
+  ///@{
   /**
    * Number of props rendered at the last Render call.
    */
   vtkGetMacro(NumberOfRenderedProps, int);
-  //@}
+  ///@}
 
   /**
    * Release graphics resources and ask components to release their own
@@ -137,4 +127,5 @@ private:
   void operator=(const vtkRenderPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

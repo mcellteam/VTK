@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVolumePicker.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVolumePicker
  * @brief   ray-cast picker enhanced for volumes
@@ -36,6 +24,7 @@
 #include "vtkCellPicker.h"
 #include "vtkRenderingVolumeModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGVOLUME_EXPORT vtkVolumePicker : public vtkCellPicker
 {
 public:
@@ -43,7 +32,7 @@ public:
   vtkTypeMacro(vtkVolumePicker, vtkCellPicker);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set whether to pick the cropping planes of props that have them.
    * If this is set, then the pick will be done on the cropping planes
@@ -54,9 +43,9 @@ public:
   vtkSetMacro(PickCroppingPlanes, vtkTypeBool);
   vtkBooleanMacro(PickCroppingPlanes, vtkTypeBool);
   vtkGetMacro(PickCroppingPlanes, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the index of the cropping plane that the pick ray passed
    * through on its way to the prop. This will be set regardless
@@ -65,7 +54,7 @@ public:
    * not cropped, the value will bet set to -1.
    */
   vtkGetMacro(CroppingPlaneId, int);
-  //@}
+  ///@}
 
 protected:
   vtkVolumePicker();
@@ -88,4 +77,5 @@ private:
   void operator=(const vtkVolumePicker&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

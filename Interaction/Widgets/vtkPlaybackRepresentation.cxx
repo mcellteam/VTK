@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlaybackRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPlaybackRepresentation.h"
 #include "vtkActor2D.h"
 #include "vtkCallbackCommand.h"
@@ -29,6 +17,7 @@
 #include "vtkTransform.h"
 #include "vtkTransformPolyDataFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPlaybackRepresentation);
 
 vtkPlaybackRepresentation::vtkPlaybackRepresentation()
@@ -39,7 +28,7 @@ vtkPlaybackRepresentation::vtkPlaybackRepresentation()
   this->Position2Coordinate->SetValue(0.04 * size[0], 0.04 * size[1]);
   this->ProportionalResize = 1;
   this->Moving = 1;
-  this->SetShowBorder(vtkBorderRepresentation::BORDER_ON);
+  this->SetShowBorderToOn();
 
   // Create the geometry in canonical coordinates
   this->Points = vtkPoints::New();
@@ -171,7 +160,7 @@ vtkPlaybackRepresentation::vtkPlaybackRepresentation()
   this->Actor->SetProperty(this->Property);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlaybackRepresentation::~vtkPlaybackRepresentation()
 {
   this->Points->Delete();
@@ -182,28 +171,28 @@ vtkPlaybackRepresentation::~vtkPlaybackRepresentation()
   this->Actor->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlaybackRepresentation::BuildRepresentation()
 {
   // Note that the transform is updated by the superclass
   this->Superclass::BuildRepresentation();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlaybackRepresentation::GetActors2D(vtkPropCollection* pc)
 {
   pc->AddItem(this->Actor);
   this->Superclass::GetActors2D(pc);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlaybackRepresentation::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->Actor->ReleaseGraphicsResources(w);
   this->Superclass::ReleaseGraphicsResources(w);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPlaybackRepresentation::RenderOverlay(vtkViewport* w)
 {
   int count = this->Superclass::RenderOverlay(w);
@@ -211,7 +200,7 @@ int vtkPlaybackRepresentation::RenderOverlay(vtkViewport* w)
   return count;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPlaybackRepresentation::RenderOpaqueGeometry(vtkViewport* w)
 {
   int count = this->Superclass::RenderOpaqueGeometry(w);
@@ -219,7 +208,7 @@ int vtkPlaybackRepresentation::RenderOpaqueGeometry(vtkViewport* w)
   return count;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPlaybackRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w)
 {
   int count = this->Superclass::RenderTranslucentPolygonalGeometry(w);
@@ -227,7 +216,7 @@ int vtkPlaybackRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w
   return count;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkPlaybackRepresentation::HasTranslucentPolygonalGeometry()
@@ -237,7 +226,7 @@ vtkTypeBool vtkPlaybackRepresentation::HasTranslucentPolygonalGeometry()
   return result;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlaybackRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -252,3 +241,4 @@ void vtkPlaybackRepresentation::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Property: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

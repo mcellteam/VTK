@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridEvaluateCoarse.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridEvaluateCoarse
  * @brief   The value of the parent cell is determined from an operation
@@ -79,6 +67,7 @@
 
 #include <vector> // For scratch storage.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBitArray;
 
 class vtkHyperTreeGrid;
@@ -103,22 +92,20 @@ public:
 
   static vtkHyperTreeGridEvaluateCoarse* New();
   vtkTypeMacro(vtkHyperTreeGridEvaluateCoarse, vtkHyperTreeGridAlgorithm);
-  void PrintSelf(ostream&, vtkIndent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
-   * Set/Get operator
+   * Set/Get reduction operator
    */
   vtkSetMacro(Operator, unsigned int);
   vtkGetMacro(Operator, unsigned int);
-  //@}
+  ///@}
 
-  //@{
   /**
-   * Set/Get operator
+   * Set/Get default value, replacing missing values in average functions
    */
   vtkSetMacro(Default, double);
-  //@}
 
 protected:
   vtkHyperTreeGridEvaluateCoarse();
@@ -129,12 +116,10 @@ protected:
    */
   int ProcessTrees(vtkHyperTreeGrid*, vtkDataObject*) override;
 
-  //@{
   /**
    * Define default input and output port types
    */
   int FillOutputPortInformation(int, vtkInformation*) override;
-  //@}
 
   /**
    * Recursively descend into tree down to leaves
@@ -145,12 +130,28 @@ private:
   vtkHyperTreeGridEvaluateCoarse(const vtkHyperTreeGridEvaluateCoarse&) = delete;
   void operator=(const vtkHyperTreeGridEvaluateCoarse&) = delete;
 
-  //@{
   /**
-   * Define operator
+   * Deep-copy node data
+   */
+  virtual void ProcessNodeNoChange(vtkHyperTreeGridNonOrientedCursor*);
+
+  /**
+   * Process recursively 'ichild' child and fill 'childrenValues' array.
+   * The cell pointed by 'outCursor' needs to have at least 'ichild' children.
+   */
+  void ProcessChild(vtkHyperTreeGridNonOrientedCursor* outCursor, int ichild,
+    std::vector<std::vector<double>>& childrenValues);
+
+  /**
+   * Dispatch list of children values to the right evaluation function,
+   * as chosen with Operator.
    */
   virtual double EvalCoarse(const std::vector<double>&);
 
+  ///@{
+  /**
+   * Functions evaluating the coarse cell value from the list of children's values
+   */
   virtual double Min(const std::vector<double>&);
   virtual double Max(const std::vector<double>&);
   virtual double Sum(const std::vector<double>&);
@@ -158,20 +159,14 @@ private:
   virtual double UnmaskedAverage(const std::vector<double>&);
   virtual double ElderChild(const std::vector<double>&);
   virtual double SplattingAverage(const std::vector<double>&);
-  //@}
+  ///@}
 
-  int NbChilds;
-  unsigned int Operator;
-
-  double Default;
-
-  unsigned int BranchFactor;
-  unsigned int Dimension;
-  unsigned int SplattingFactor;
-
-  unsigned int NumberOfChildren;
-
-  vtkBitArray* Mask;
+  unsigned int Operator = OPERATOR_DON_T_CHANGE;
+  double Default = 0.0;
+  unsigned int SplattingFactor = 1;
+  unsigned int NumberOfChildren = 0;
+  vtkBitArray* Mask = nullptr;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkHyperTreeGridEvaluateCoarse_h

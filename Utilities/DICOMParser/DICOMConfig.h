@@ -1,21 +1,9 @@
-/*=========================================================================
-
-  Program:   DICOMParser
-  Module:    DICOMConfig.h
-  Language:  C++
-
-  Copyright (c) 2003 Matt Turek
-  All rights reserved.
-  See Copyright.txt for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) 2003 Matt Turek
+// SPDX-License-Identifier: BSD-4-Clause
 #ifndef __DICOM_CONFIG_H_
 #define __DICOM_CONFIG_H_
+
+#include "vtkABINamespace.h"
 
 //
 // CMake Hook
@@ -31,21 +19,6 @@
 //
 // END toolkit (ITK, VTK, etc) specific
 //
-#define dicom_stl std
-
-#ifdef DICOM_ANSI_STDLIB
-#define dicom_stream std
-
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#else
-#define dicom_stream
-
-#include <fstream.h>
-#include <iomanip.h>
-#include <iostream.h>
-#endif
 
 #ifdef DICOM_DLL
 #ifdef DICOMParser_EXPORTS

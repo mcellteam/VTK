@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPythonUtil.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPythonUtil
@@ -22,8 +10,8 @@
 
 #include "PyVTKNamespace.h"
 #include "PyVTKObject.h"
-#include "PyVTKReference.h"
 #include "PyVTKSpecialObject.h"
+#include "vtkABINamespace.h"
 #include "vtkPython.h"
 #include "vtkPythonCompatibility.h"
 
@@ -32,7 +20,14 @@
 #pragma warning(disable : 4125)
 #endif
 
+extern "C" void vtkPythonUtilDelete();
+
+VTK_ABI_NAMESPACE_BEGIN
+class vtkStdString;
+class vtkUnicodeString;
+class vtkVariant;
 class vtkPythonClassMap;
+class vtkPythonClassNameMap;
 class vtkPythonCommand;
 class vtkPythonCommandList;
 class vtkPythonGhostMap;
@@ -41,15 +36,22 @@ class vtkPythonSpecialTypeMap;
 class vtkPythonNamespaceMap;
 class vtkPythonEnumMap;
 class vtkPythonModuleList;
-class vtkStdString;
-class vtkUnicodeString;
 class vtkVariant;
-
-extern "C" void vtkPythonUtilDelete();
 
 class VTKWRAPPINGPYTHONCORE_EXPORT vtkPythonUtil
 {
 public:
+  /**
+   * Initialize the Python wrappers.  This can be called multiple times,
+   * only the first call will have any effect.
+   */
+  static void Initialize();
+
+  /**
+   * Check whether the Python wrappers have been initialized.
+   */
+  static bool IsInitialized();
+
   /**
    * If the name is templated or mangled, converts it into
    * a python-printable name.
@@ -57,9 +59,28 @@ public:
   static const char* PythonicClassName(const char* classname);
 
   /**
-   * Given a qualified python name "module.name", remove "module.".
+   * Given the pythonic name of a class, get the vtkObjectBase ClassName.
+   * These will only differ for templated vtkObjectBase subclasses.
+   */
+  static const char* VTKClassName(const char* pyname);
+
+  ///@{
+  /**
+   * Given a qualified python name, type object, or object, "module.name",
+   * remove "module." from the type name.
    */
   static const char* StripModule(const char* tpname);
+  static const char* StripModuleFromType(PyTypeObject* pytype);
+  static const char* StripModuleFromObject(PyObject* ob);
+  ///@}
+
+  ///@{
+  /**
+   * Get the type name for a given type or object.
+   */
+  static const char* GetTypeName(PyTypeObject* pytype);
+  static const char* GetTypeNameForObject(PyObject* ob);
+  ///@}
 
   /**
    * Add a PyVTKClass to the type lookup table, this allows us to later
@@ -179,6 +200,15 @@ public:
   static PyTypeObject* FindEnum(const char* name);
 
   /**
+   * Find the PyTypeObject for a wrapped VTK class, excluding overrides.
+   * When the extension modules for the wrappers are loading, this ensures
+   * that the extension types are properly linked to their base classes,
+   * regardless of what pure python overrides have been applied to those
+   * classes.
+   */
+  static PyTypeObject* FindBaseTypeObject(const char* name);
+
+  /**
    * Find the PyTypeObject for a wrapped VTK class.
    */
   static PyTypeObject* FindClassTypeObject(const char* name);
@@ -226,7 +256,7 @@ public:
    */
   static Py_hash_t VariantHash(const vtkVariant* variant);
 
-  //@{
+  ///@{
   /**
    * Register a vtkPythonCommand. Registering vtkPythonCommand instances ensures
    * that when the interpreter is destroyed (and Py_AtExit() gets called), the
@@ -235,7 +265,12 @@ public:
    */
   static void RegisterPythonCommand(vtkPythonCommand*);
   static void UnRegisterPythonCommand(vtkPythonCommand*);
-  //@}
+  ///@}
+
+  /**
+   * Function to check if the attribute has a getset descriptor
+   */
+  static PyGetSetDef* FindGetSetDescriptor(PyTypeObject* pytype, PyObject* key);
 
 private:
   vtkPythonUtil();
@@ -246,6 +281,7 @@ private:
   vtkPythonObjectMap* ObjectMap;
   vtkPythonGhostMap* GhostMap;
   vtkPythonClassMap* ClassMap;
+  vtkPythonClassNameMap* ClassNameMap;
   vtkPythonSpecialTypeMap* SpecialTypeMap;
   vtkPythonNamespaceMap* NamespaceMap;
   vtkPythonEnumMap* EnumMap;
@@ -259,6 +295,8 @@ private:
 // For use by SetXXMethod() , SetXXMethodArgDelete()
 extern VTKWRAPPINGPYTHONCORE_EXPORT void vtkPythonVoidFunc(void*);
 extern VTKWRAPPINGPYTHONCORE_EXPORT void vtkPythonVoidFuncArgDelete(void*);
+
+VTK_ABI_NAMESPACE_END
 
 #endif
 // VTK-HeaderTest-Exclude: vtkPythonUtil.h

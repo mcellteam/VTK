@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkOpenGLIndexBufferObject_h
 #define vtkOpenGLIndexBufferObject_h
 
@@ -24,6 +13,7 @@
  * GPU.
  */
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGOPENGL2_EXPORT vtkOpenGLIndexBufferObject : public vtkOpenGLBufferObject
 {
 public:
@@ -36,12 +26,14 @@ public:
 
   // Description:
   // used to create an IBO for triangle primitives
-  size_t CreateTriangleIndexBuffer(vtkCellArray* cells, vtkPoints* points);
+  size_t CreateTriangleIndexBuffer(vtkCellArray* cells, vtkPoints* points,
+    std::vector<unsigned char>* edgeArray, vtkDataArray* edgeFlags);
 
   // Description:
   // used to create an IBO for triangle primitives
   static void AppendTriangleIndexBuffer(std::vector<unsigned int>& indexArray, vtkCellArray* cells,
-    vtkPoints* points, vtkIdType vertexOffset);
+    vtkPoints* points, vtkIdType vertexOffset, std::vector<unsigned char>* edgeArray,
+    vtkDataArray* edgeFlags);
 
   // Description:
   // create a IBO for wireframe polys/tris
@@ -102,4 +94,5 @@ private:
   void operator=(const vtkOpenGLIndexBufferObject&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

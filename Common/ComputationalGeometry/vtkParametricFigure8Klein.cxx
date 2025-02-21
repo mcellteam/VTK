@@ -1,24 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParametricFigure8Klein.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkParametricFigure8Klein.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkParametricFigure8Klein);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParametricFigure8Klein::vtkParametricFigure8Klein()
 {
   // Preset triangulation parameters
@@ -36,10 +25,10 @@ vtkParametricFigure8Klein::vtkParametricFigure8Klein()
   this->Radius = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkParametricFigure8Klein::~vtkParametricFigure8Klein() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParametricFigure8Klein::Evaluate(double uvw[3], double Pt[3], double Duvw[9])
 {
   double u = uvw[0];
@@ -71,16 +60,17 @@ void vtkParametricFigure8Klein::Evaluate(double uvw[3], double Pt[3], double Duv
   Dv[2] = su2 * cv / 2 + cu2 * c2v;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkParametricFigure8Klein::EvaluateScalar(double*, double*, double*)
 {
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParametricFigure8Klein::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Radius: " << this->Radius << "\n";
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // PURPOSE: FiberSurface test cases output generator (new vtkFiberSurface filter)
 
@@ -62,6 +50,7 @@ int TestFiberSurface(int argc, char* argv[])
   /**********************************************/
 
   /********************* Desired output arrays *********************/
+  // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
   std::string dataToCompare[15] = { "0.779,0.000,0.000,0.659,0.000,0.341,1.000,0.000,0.624,1.000,0."
                                     "797,0.000,0.659,0.659,1.000,1.000,1.000,0.203,1.000,0.376,1."
                                     "000,0.779,1.000,1.000",
@@ -187,7 +176,7 @@ int TestFiberSurface(int argc, char* argv[])
       /**********************************************/
       /*********** comparing the results ************/
 
-      if (strcmp(outputString.c_str(), dataToCompare[cmpIndex].c_str()) != 0)
+      if (outputString != dataToCompare[cmpIndex])
       {
         pass = false;
         { // writing to file

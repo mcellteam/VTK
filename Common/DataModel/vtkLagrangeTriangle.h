@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangeTriangle.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLagrangeTriangle
  * @brief   A 2D cell that represents an arbitrary order Lagrange triangle
@@ -36,6 +24,7 @@
 
 #include <vector> // For caching
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 class vtkLagrangeCurve;
 class vtkTriangle;
@@ -52,7 +41,7 @@ public:
   void InterpolateFunctions(const double pcoords[3], double* weights) override;
   void InterpolateDerivs(const double pcoords[3], double* derivs) override;
 
-  virtual vtkHigherOrderCurve* getEdgeCell() override;
+  vtkHigherOrderCurve* GetEdgeCell() override;
 
 protected:
   vtkLagrangeTriangle();
@@ -67,4 +56,5 @@ private:
   void operator=(const vtkLagrangeTriangle&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

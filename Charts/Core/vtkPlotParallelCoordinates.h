@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlotParallelCoordinates.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPlotParallelCoordinates
@@ -29,14 +17,15 @@
 #include "vtkPlot.h"
 #include "vtkScalarsToColors.h" // For VTK_COLOR_MODE_DEFAULT and _MAP_SCALARS
 #include "vtkStdString.h"       // For vtkStdString ivars
+#include "vtkWrappingHints.h"   // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkChartParallelCoordinates;
-class vtkTable;
-class vtkStdString;
 class vtkScalarsToColors;
+class vtkTable;
 class vtkUnsignedCharArray;
 
-class VTKCHARTSCORE_EXPORT vtkPlotParallelCoordinates : public vtkPlot
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPlotParallelCoordinates : public vtkPlot
 {
 public:
   vtkTypeMacro(vtkPlotParallelCoordinates, vtkPlot);
@@ -46,13 +35,6 @@ public:
    * Creates a parallel coordinates chart
    */
   static vtkPlotParallelCoordinates* New();
-
-  /**
-   * Perform any updates to the item that may be necessary before rendering.
-   * The scene should take care of calling this on all items before their
-   * Paint function is invoked.
-   */
-  void Update() override;
 
   /**
    * Paint event for the XY plot, called whenever the chart needs to be drawn
@@ -73,16 +55,23 @@ public:
   void GetBounds(double bounds[4]) override;
 
   /**
-   * Set the selection criteria on the given axis in normalized space (0.0 - 1.0).
+   * Set the selection criteria on the given axis in normalized space (0.0 - 1.0) for a specific
+   * range.
    */
-  bool SetSelectionRange(int Axis, float low, float high);
+  bool SetSelectionRange(int axis, float low, float high);
+
+  /**
+   * Set the selection criteria on the given axis in normalized space [0.0 ; 1.0]
+   * axisSelection should be a list like {minRange1, maxRange1, minRange2, maxRange2, ...}
+   */
+  bool SetSelectionRange(int axis, std::vector<float> axisSelection);
 
   /**
    * Reset the selection criteria for the chart.
    */
   bool ResetSelectionRange();
 
-  //@{
+  ///@{
   /**
    * This is a convenience function to set the input table.
    */
@@ -91,15 +80,15 @@ public:
   {
     this->SetInputData(table);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a lookup table for the mapper to use.
    */
   void SetLookupTable(vtkScalarsToColors* lut);
   vtkScalarsToColors* GetLookupTable();
-  //@}
+  ///@}
 
   /**
    * Create default lookup table. Generally used to create one when none
@@ -107,16 +96,16 @@ public:
    */
   virtual void CreateDefaultLookupTable();
 
-  //@{
+  ///@{
   /**
    * Turn on/off flag to control whether scalar data is used to color objects.
    */
   vtkSetMacro(ScalarVisibility, vtkTypeBool);
   vtkGetMacro(ScalarVisibility, vtkTypeBool);
   vtkBooleanMacro(ScalarVisibility, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When ScalarMode is set to UsePointFieldData or UseCellFieldData,
    * you can specify which array to use for coloring using these methods.
@@ -124,36 +113,52 @@ public:
    */
   void SelectColorArray(vtkIdType arrayNum);
   void SelectColorArray(const vtkStdString& arrayName);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the color mode for the plot.
+   *
+   * The options are:
+   * VTK_COLOR_MODE_DEFAULT
+   * VTK_COLOR_MODE_MAP_SCALARS
+   * VTK_COLOR_MODE_DIRECT_SCALARS
+   *
+   * Default is VTK_COLOR_MODE_MAP_SCALARS.
+   */
+  vtkSetMacro(ColorMode, int);
+  void SetColorModeToDefault() { this->SetColorMode(VTK_COLOR_MODE_DEFAULT); }
+  void SetColorModeToMapScalars() { this->SetColorMode(VTK_COLOR_MODE_MAP_SCALARS); }
+  void SetColorModeToDirectScalars() { this->SetColorMode(VTK_COLOR_MODE_DIRECT_SCALARS); }
+  vtkGetMacro(ColorMode, int);
+  ///@}
 
   /**
    * Get the array name to color by.
    */
   vtkStdString GetColorArrayName();
 
+  /**
+   * Update the internal cache. Returns true if cache was successfully updated. Default does
+   * nothing.
+   * This method is called by Update() when either the plot's data has changed or
+   * CacheRequiresUpdate() returns true. It is not necessary to call this method explicitly.
+   */
+  bool UpdateCache() override;
+
 protected:
   vtkPlotParallelCoordinates();
   ~vtkPlotParallelCoordinates() override;
 
-  /**
-   * Update the table cache.
-   */
-  bool UpdateTableCache(vtkTable* table);
-
-  //@{
+  ///@{
   /**
    * Store a well packed set of XY coordinates for this data series.
    */
   class Private;
   Private* Storage;
-  //@}
+  ///@}
 
-  /**
-   * The point cache is marked dirty until it has been initialized.
-   */
-  vtkTimeStamp BuildTime;
-
-  //@{
+  ///@{
   /**
    * Lookup Table for coloring points by scalar value
    */
@@ -161,11 +166,13 @@ protected:
   vtkUnsignedCharArray* Colors;
   vtkTypeBool ScalarVisibility;
   vtkStdString ColorArrayName;
-  //@}
+  int ColorMode;
+  ///@}
 
 private:
   vtkPlotParallelCoordinates(const vtkPlotParallelCoordinates&) = delete;
   void operator=(const vtkPlotParallelCoordinates&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPlotParallelCoordinates_h

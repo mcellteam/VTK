@@ -1,23 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtentTranslator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtentTranslator.h"
 #include "vtkInformationIntegerKey.h"
 #include "vtkInformationIntegerRequestKey.h"
 #include "vtkLargeInteger.h"
 #include "vtkObjectFactory.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExtentTranslator);
 
 vtkInformationKeyMacro(vtkExtentTranslator, DATA_SPLIT_MODE, Integer);
@@ -35,7 +24,7 @@ public:
 vtkInformationKeySubclassMacro(
   vtkExtentTranslator, UPDATE_SPLIT_MODE, SplitModeRequest, IntegerRequest);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtentTranslator::vtkExtentTranslator()
 {
   this->Piece = 0;
@@ -55,13 +44,13 @@ vtkExtentTranslator::vtkExtentTranslator()
   this->SplitPath = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtentTranslator::~vtkExtentTranslator()
 {
   this->SetSplitPath(0, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtentTranslator::SetSplitPath(int len, int* sp)
 {
   delete[] this->SplitPath;
@@ -74,14 +63,14 @@ void vtkExtentTranslator::SetSplitPath(int len, int* sp)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtentTranslator::PieceToExtent()
 {
   return this->PieceToExtentThreadSafe(this->Piece, this->NumberOfPieces, this->GhostLevel,
     this->WholeExtent, this->Extent, this->SplitMode, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtentTranslator::PieceToExtentByPoints()
 {
   return this->PieceToExtentThreadSafe(this->Piece, this->NumberOfPieces, this->GhostLevel,
@@ -147,7 +136,7 @@ int vtkExtentTranslator::PieceToExtentThreadSafe(int piece, int numPieces, int g
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtentTranslator::SplitExtent(int piece, int numPieces, int* ext, int splitMode)
 {
   int numPiecesInFirstHalf;
@@ -248,7 +237,7 @@ int vtkExtentTranslator::SplitExtent(int piece, int numPieces, int* ext, int spl
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtentTranslator::SplitExtentByPoints(int piece, int numPieces, int* ext, int splitMode)
 {
   int numPiecesInFirstHalf;
@@ -336,7 +325,7 @@ int vtkExtentTranslator::SplitExtentByPoints(int piece, int numPieces, int* ext,
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtentTranslator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -376,3 +365,4 @@ void vtkExtentTranslator::PrintSelf(ostream& os, vtkIndent indent)
     os << "Unknown\n";
   }
 }
+VTK_ABI_NAMESPACE_END

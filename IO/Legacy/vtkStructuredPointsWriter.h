@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStructuredPointsWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkStructuredPointsWriter
  * @brief   write vtk structured points data file
@@ -28,6 +16,7 @@
 #include "vtkDataWriter.h"
 #include "vtkIOLegacyModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 
 class VTKIOLEGACY_EXPORT vtkStructuredPointsWriter : public vtkDataWriter
@@ -37,15 +26,15 @@ public:
   vtkTypeMacro(vtkStructuredPointsWriter, vtkDataWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkImageData* GetInput();
   vtkImageData* GetInput(int port);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When WriteExtent is on, vtkStructuredPointsWriter writes
    * data extent in the output file. Otherwise, it writes dimensions.
@@ -56,14 +45,14 @@ public:
   vtkSetMacro(WriteExtent, bool);
   vtkGetMacro(WriteExtent, bool);
   vtkBooleanMacro(WriteExtent, bool);
-  //@}
+  ///@}
 
 protected:
   vtkStructuredPointsWriter()
     : WriteExtent(false)
   {
   }
-  ~vtkStructuredPointsWriter() override {}
+  ~vtkStructuredPointsWriter() override = default;
 
   void WriteData() override;
 
@@ -76,4 +65,5 @@ private:
   void operator=(const vtkStructuredPointsWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

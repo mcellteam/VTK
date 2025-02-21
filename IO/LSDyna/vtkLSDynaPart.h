@@ -1,26 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLSDynaPart.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkLSDynaPart_h
 #define vtkLSDynaPart_h
-#ifndef __VTK_WRAP__
 
 #include "LSDynaMetaData.h"    //needed for lsdyna types
 #include "vtkIOLSDynaModule.h" // For export macro
 #include "vtkObject.h"
 #include "vtkStdString.h" //needed for string
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUnstructuredGrid;
 class vtkPoints;
 
@@ -62,7 +51,7 @@ public:
   void BuildToplogy();
 
   // Description:
-  // Returns if the toplogy for this part has been constructed
+  // Returns if the topology for this part has been constructed
   bool IsTopologyBuilt() const { return TopologyBuilt; }
 
   // Description:
@@ -184,5 +173,5 @@ private:
   void operator=(const vtkLSDynaPart&) = delete;
 };
 
-#endif
-#endif // VTKLSDYNAPART
+VTK_ABI_NAMESPACE_END
+#endif // vtkLSDynaPart_h

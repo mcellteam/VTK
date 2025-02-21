@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationStringKey.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInformationStringKey
  * @brief   Key for string values in vtkInformation.
@@ -30,6 +18,7 @@
 
 #include <string> // for std::string compat
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCORE_EXPORT vtkInformationStringKey : public vtkInformationKey
 {
 public:
@@ -44,12 +33,12 @@ public:
    * name and a location. This method is provided for wrappers. Use the
    * constructor directly from C++ instead.
    */
-  static vtkInformationStringKey* MakeKey(const char* name, const char* location)
+  static VTK_NEWINSTANCE vtkInformationStringKey* MakeKey(const char* name, const char* location)
   {
     return new vtkInformationStringKey(name, location);
   }
 
-  //@{
+  ///@{
   /**
    * Get/Set the value associated with this key in the given
    * information object.
@@ -57,7 +46,7 @@ public:
   void Set(vtkInformation* info, const char*);
   void Set(vtkInformation* info, const std::string& str);
   const char* Get(vtkInformation* info);
-  //@}
+  ///@}
 
   /**
    * Copy the entry associated with this key from one information
@@ -76,4 +65,5 @@ private:
   void operator=(const vtkInformationStringKey&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

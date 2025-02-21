@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenFOAMReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenFOAMReader
  * @brief   reads a dataset in OpenFOAM format
@@ -22,24 +10,26 @@
  * cells. Each folder can contain any number of data files.
  *
  * @par Thanks:
- * Thanks to Terry Jordan of SAIC at the National Energy
- * Technology Laboratory who developed this class.
- * Please address all comments to Terry Jordan (terry.jordan@sa.netl.doe.gov).
- * GUI Based selection of mesh regions and fields available in the case,
- * minor bug fixes, strict memory allocation checks,
- * minor performance enhancements by Philippose Rajan (sarith@rocketmail.com).
+ * Thanks to Terry Jordan (terry.jordan@sa.netl.doe.gov) of SAIC
+ * at the National Energy Technology Laboratory who originally
+ * developed this class.
  *
+ * Takuya Oshima of Niigata University, Japan (oshima@eng.niigata-u.ac.jp)
+ * provided the major bulk of improvements (rewrite) that made the reader
+ * truly functional and included the following features:
  * Token-based FoamFile format lexer/parser,
  * performance/stability/compatibility enhancements, gzipped file
  * support, lagrangian field support, variable timestep support,
  * builtin cell-to-point filter, pointField support, polyhedron
- * decomposition support, OF 1.5 extended format support, multiregion
- * support, old mesh format support, parallelization support for
- * decomposed cases in conjunction with vtkPOpenFOAMReader, et. al. by
- * Takuya Oshima of Niigata University, Japan (oshima@eng.niigata-u.ac.jp).
+ * decomposition support, multiregion support, parallelization support for
+ * decomposed cases in conjunction with vtkPOpenFOAMReader etc.
  *
- * Misc cleanup, bugfixes, improvements
- * Mark Olesen (OpenCFD Ltd.)
+ * Philippose Rajan (sarith@rocketmail.com) added
+ * GUI-based selection of mesh regions and fields available in the case,
+ * minor bug fixes, strict memory allocation checks,
+ *
+ * Mark Olesen (OpenCFD Ltd.) www.openfoam.com
+ * has provided various bugfixes, improvements, cleanup
  */
 
 #ifndef vtkOpenFOAMReader_h
@@ -48,6 +38,7 @@
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCollection;
 class vtkCharArray;
 class vtkDataArraySelection;
@@ -60,27 +51,30 @@ class vtkOpenFOAMReaderPrivate;
 class VTKIOGEOMETRY_EXPORT vtkOpenFOAMReader : public vtkMultiBlockDataSetAlgorithm
 {
 public:
+  // Access for implementation class
+  friend class vtkOpenFOAMReaderPrivate;
+
   static vtkOpenFOAMReader* New();
   vtkTypeMacro(vtkOpenFOAMReader, vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream&, vtkIndent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Determine if the file can be read with this reader.
    */
-  int CanReadFile(const char*);
+  int CanReadFile(VTK_FILEPATH const char*);
 
-  //@{
+  ///@{
   /**
    * Set/Get the filename.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
   /**
    * Get the number of cell arrays available in the input.
    */
-  int GetNumberOfCellArrays(void)
+  int GetNumberOfCellArrays()
   {
     return this->GetNumberOfSelectionArrays(this->CellDataArraySelection);
   }
@@ -116,7 +110,7 @@ public:
   /**
    * Get the number of point arrays available in the input.
    */
-  int GetNumberOfPointArrays(void)
+  int GetNumberOfPointArrays()
   {
     return this->GetNumberOfSelectionArrays(this->PointDataArraySelection);
   }
@@ -152,7 +146,7 @@ public:
   /**
    * Get the number of Lagrangian arrays available in the input.
    */
-  int GetNumberOfLagrangianArrays(void)
+  int GetNumberOfLagrangianArrays()
   {
     return this->GetNumberOfSelectionArrays(this->LagrangianDataArraySelection);
   }
@@ -194,7 +188,7 @@ public:
   /**
    * Get the number of Patches (including Internal Mesh) available in the input.
    */
-  int GetNumberOfPatchArrays(void)
+  int GetNumberOfPatchArrays()
   {
     return this->GetNumberOfSelectionArrays(this->PatchDataArraySelection);
   }
@@ -227,35 +221,39 @@ public:
   void DisableAllPatchArrays() { this->DisableAllSelectionArrays(this->PatchDataArraySelection); }
   void EnableAllPatchArrays() { this->EnableAllSelectionArrays(this->PatchDataArraySelection); }
 
-  //@{
+  ///@{
   /**
    * Set/Get whether to create cell-to-point translated data for cell-type data
    */
   vtkSetMacro(CreateCellToPoint, vtkTypeBool);
   vtkGetMacro(CreateCellToPoint, vtkTypeBool);
   vtkBooleanMacro(CreateCellToPoint, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get whether to weigh cell to point averaging by size of cells (only meaningful when
+   * CreateCellToPoint is true)
+   *
+   * @sa
+   * CreateCellToPoint
+   */
+  vtkSetMacro(SizeAverageCellToPoint, vtkTypeBool);
+  vtkGetMacro(SizeAverageCellToPoint, vtkTypeBool);
+  vtkBooleanMacro(SizeAverageCellToPoint, vtkTypeBool);
+  ///@}
+
+  ///@{
   /**
    * Set/Get whether mesh is to be cached.
    */
   vtkSetMacro(CacheMesh, vtkTypeBool);
   vtkGetMacro(CacheMesh, vtkTypeBool);
   vtkBooleanMacro(CacheMesh, vtkTypeBool);
-  //@}
-
-  //@{
-  /**
-   * Set/Get whether polyhedra are to be decomposed.
-   */
-  vtkSetMacro(DecomposePolyhedra, vtkTypeBool);
-  vtkGetMacro(DecomposePolyhedra, vtkTypeBool);
-  vtkBooleanMacro(DecomposePolyhedra, vtkTypeBool);
-  //@}
+  ///@}
 
   // Option for reading old binary lagrangian/positions format
-  //@{
+  ///@{
   /**
    * Set/Get whether the lagrangian/positions have additional data or not.
    * For historical reasons, PositionsIsIn13Format is used to denote that
@@ -265,9 +263,9 @@ public:
   vtkSetMacro(PositionsIsIn13Format, vtkTypeBool);
   vtkGetMacro(PositionsIsIn13Format, vtkTypeBool);
   vtkBooleanMacro(PositionsIsIn13Format, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Ignore 0/ time directory, which is normally missing Lagrangian fields
    * and may have many dictionary functionality that we cannot easily handle.
@@ -275,45 +273,45 @@ public:
   vtkSetMacro(SkipZeroTime, bool);
   vtkGetMacro(SkipZeroTime, bool);
   vtkBooleanMacro(SkipZeroTime, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Determine if time directories are to be listed according to controlDict
    */
   vtkSetMacro(ListTimeStepsByControlDict, vtkTypeBool);
   vtkGetMacro(ListTimeStepsByControlDict, vtkTypeBool);
   vtkBooleanMacro(ListTimeStepsByControlDict, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add dimensions to array names
    */
   vtkSetMacro(AddDimensionsToArrayNames, vtkTypeBool);
   vtkGetMacro(AddDimensionsToArrayNames, vtkTypeBool);
   vtkBooleanMacro(AddDimensionsToArrayNames, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get whether zones will be read.
    */
   vtkSetMacro(ReadZones, vtkTypeBool);
   vtkGetMacro(ReadZones, vtkTypeBool);
   vtkBooleanMacro(ReadZones, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If true, labels are expected to be 64-bit, rather than 32.
    */
   virtual void SetUse64BitLabels(bool val);
   vtkGetMacro(Use64BitLabels, bool);
   vtkBooleanMacro(Use64BitLabels, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If true, data of the internal mesh are copied to the cell zones.
    * Default is false.
@@ -321,9 +319,9 @@ public:
   vtkGetMacro(CopyDataToCellZones, bool);
   vtkSetMacro(CopyDataToCellZones, bool);
   vtkBooleanMacro(CopyDataToCellZones, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If true, floats are expected to be 64-bit, rather than 32. Note that
    * vtkFloatArrays may still be used in the output if this is true. This flag
@@ -332,7 +330,7 @@ public:
   virtual void SetUse64BitFloats(bool val);
   vtkGetMacro(Use64BitFloats, bool);
   vtkBooleanMacro(Use64BitFloats, bool);
-  //@}
+  ///@}
 
   void SetRefresh()
   {
@@ -341,12 +339,16 @@ public:
   }
 
   void SetParent(vtkOpenFOAMReader* parent) { this->Parent = parent; }
-  int MakeInformationVector(vtkInformationVector*, const vtkStdString&);
-  bool SetTimeValue(const double);
-  vtkDoubleArray* GetTimeValues();
-  int MakeMetaDataAtTimeStep(const bool);
 
-  friend class vtkOpenFOAMReaderPrivate;
+  int MakeInformationVector(vtkInformationVector*, const vtkStdString& procDirName,
+    vtkStringArray* timeNames = nullptr, vtkDoubleArray* timeValues = nullptr);
+
+  double GetTimeValue() const;
+  bool SetTimeValue(double);
+  vtkStringArray* GetTimeNames();
+  vtkDoubleArray* GetTimeValues();
+
+  int MakeMetaDataAtTimeStep(bool);
 
 protected:
   // refresh flag
@@ -354,6 +356,9 @@ protected:
 
   // for creating cell-to-point translated data
   vtkTypeBool CreateCellToPoint;
+
+  // for running size average for cell to point calculation
+  vtkTypeBool SizeAverageCellToPoint = false;
 
   // for caching mesh
   vtkTypeBool CacheMesh;
@@ -448,6 +453,10 @@ private:
   void EnableAllSelectionArrays(vtkDataArraySelection*);
 
   void AddSelectionNames(vtkDataArraySelection*, vtkStringArray*);
+
+  // Print some time information (names, current time-step)
+  void PrintTimes(std::ostream& os, vtkIndent indent = vtkIndent(), bool full = false) const;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridPlaneCutter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridPlaneCutter
  * @brief   cut an hyper tree grid volume with
@@ -43,6 +31,7 @@
 #include "vtkFiltersHyperTreeModule.h" // For export macro
 #include "vtkHyperTreeGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkCutter;
 class vtkIdList;
@@ -55,26 +44,26 @@ class VTKFILTERSHYPERTREE_EXPORT vtkHyperTreeGridPlaneCutter : public vtkHyperTr
 public:
   static vtkHyperTreeGridPlaneCutter* New();
   vtkTypeMacro(vtkHyperTreeGridPlaneCutter, vtkHyperTreeGridAlgorithm);
-  void PrintSelf(ostream&, vtkIndent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the plane with its [a,b,c,d] Cartesian coefficients:
    * a*x + b*y + c*z = d
    */
   void SetPlane(double a, double b, double c, double d);
   vtkGetVector4Macro(Plane, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns 0 if plane's normal is aligned with X axis, 1 if it is aligned with Y axis, 2 if it
    * is aligned with Z axis. Returns -1 if not aligned with any principal axis.
    */
   vtkGetMacro(AxisAlignment, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns true if plane's normal is aligned with the corresponding axis, false elsewise.
    */
@@ -83,14 +72,14 @@ public:
   bool IsPlaneOrthogonalToZAxis() { return this->AxisAlignment == 2; }
   //}@
 
-  //@{
+  ///@{
   /**
    * Set/Get whether output mesh should be computed on dual grid
    */
   vtkSetMacro(Dual, int);
   vtkGetMacro(Dual, int);
   vtkBooleanMacro(Dual, int);
-  //@}
+  ///@}
 
 protected:
   vtkHyperTreeGridPlaneCutter();
@@ -191,7 +180,7 @@ protected:
   vtkBitArray* InMask;
 
   /**
-   * Flag computed at plane creation to know wether it is aligned with x, y or z axis
+   * Flag computed at plane creation to know whether it is aligned with x, y or z axis
    */
   int AxisAlignment;
 
@@ -200,4 +189,5 @@ private:
   void operator=(const vtkHyperTreeGridPlaneCutter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkHyperTreeGridPlaneCutter_h */

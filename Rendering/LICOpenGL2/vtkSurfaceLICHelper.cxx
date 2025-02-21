@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSurfaceLICHelper.h"
 
 #include "vtkBoundingBox.h"
@@ -33,7 +22,7 @@
 #include "vtkRenderer.h"
 #include "vtkSurfaceLICComposite.h"
 #include "vtkTextureObject.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include <vector>
 
@@ -42,6 +31,7 @@
 // Description
 // find min/max of unmasked fragments across all regions
 // download each search each region individually
+VTK_ABI_NAMESPACE_BEGIN
 void vtkSurfaceLICHelper::StreamingFindMinMax(
   vtkOpenGLFramebufferObject* fbo, std::deque<vtkPixelExtent>& blockExts, float& min, float& max)
 {
@@ -107,18 +97,9 @@ vtkSurfaceLICHelper::~vtkSurfaceLICHelper()
 {
   this->ReleaseGraphicsResources(nullptr);
 
-  if (this->ColorPass)
-  {
-    delete this->ColorPass;
-  }
-  if (this->ColorEnhancePass)
-  {
-    delete this->ColorEnhancePass;
-  }
-  if (this->CopyPass)
-  {
-    delete this->CopyPass;
-  }
+  delete this->ColorPass;
+  delete this->ColorEnhancePass;
+  delete this->CopyPass;
   this->ColorPass = nullptr;
   this->ColorEnhancePass = nullptr;
   this->CopyPass = nullptr;
@@ -562,3 +543,4 @@ void vtkSurfaceLICHelper::GetPixelBounds(float* rgba, int ni, std::deque<vtkPixe
     }
   }
 }
+VTK_ABI_NAMESPACE_END

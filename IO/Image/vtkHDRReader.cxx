@@ -1,35 +1,26 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHDRReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkHDRReader.h"
 
 #include "vtkImageData.h"
 #include "vtkImageFlip.h"
 #include "vtkImagePermute.h"
 #include "vtkLookupTable.h"
+#include "vtkMathUtilities.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
+#include "vtksys/FStream.hxx"
 #include "vtksys/SystemTools.hxx"
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkHDRReader);
 
 #define HDR_DATA_SIZE 3
 
-// Matrix to convert from XYZ into linear RGB
+// The standard XYZ to linear RGB transformation matrix (for D65 illuminant)
 const float matrixXYZ2RGB[3][3] = { { 3.2404542f, -1.5371385f, -0.4985314f },
   { -0.9692660f, 1.8760108f, 0.0415560f }, { 0.0556434f, -0.2040259f, 1.0572252f } };
 
@@ -41,10 +32,10 @@ vtkHDRReader::vtkHDRReader()
   this->SetDataByteOrderToLittleEndian();
 }
 
-//----------------------------------------------------------------------------
-vtkHDRReader::~vtkHDRReader() {}
+//------------------------------------------------------------------------------
+vtkHDRReader::~vtkHDRReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -58,7 +49,7 @@ void vtkHDRReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SwappedAxis: " << this->SwappedAxis << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::ExecuteInformation()
 {
   // if the user has not set the extent, but has set the VOI
@@ -106,11 +97,11 @@ void vtkHDRReader::ExecuteInformation()
   this->vtkImageReader::ExecuteInformation();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHDRReader::CanReadFile(const char* fname)
 {
   // get the magic number by reading in a file
-  std::ifstream ifs(fname, std::ifstream::in);
+  vtksys::ifstream ifs(fname, vtksys::ifstream::in);
 
   if (ifs.fail())
   {
@@ -129,7 +120,7 @@ int vtkHDRReader::CanReadFile(const char* fname)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads a data from a file.  The datas extent/axes
 // are assumed to be the same as the file extent/order.
 void vtkHDRReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
@@ -155,7 +146,7 @@ void vtkHDRReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformat
   this->HDRReaderUpdate(data, outPtr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::HDRReaderUpdate(vtkImageData* data, float* outPtr)
 {
   vtkIdType outIncr[3];
@@ -213,11 +204,11 @@ void vtkHDRReader::ConvertAllDataFromRGBToXYZ(float* outPtr, int size)
 {
   for (int i = 0; i < size; i += HDR_DATA_SIZE)
   {
-    this->XYZ2RGB(matrixXYZ2RGB, outPtr[i], outPtr[i + 1], outPtr[i + 2]);
+    vtkHDRReader::XYZ2RGB(matrixXYZ2RGB, this->Gamma, outPtr[i], outPtr[i + 1], outPtr[i + 2]);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads in one data of data.
 // templated to handle different data types.
 bool vtkHDRReader::HDRReaderUpdateSlice(float* outPtr, int* outExt)
@@ -349,7 +340,7 @@ bool vtkHDRReader::HDRReaderUpdateSlice(float* outPtr, int* outExt)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHDRReader::HasError(std::istream* is)
 {
   if (!*is)
@@ -371,7 +362,7 @@ int vtkHDRReader::GetHeight() const
   return this->DataExtent[3] - this->DataExtent[2] + 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHDRReader::ReadHeaderData()
 {
   // Precondition:CanReadFile return true
@@ -509,7 +500,7 @@ bool vtkHDRReader::ReadHeaderData()
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::FillOutPtrRLE(
   int* outExt, float*& outPtr, std::vector<unsigned char>& lineBuffer)
 {
@@ -529,7 +520,7 @@ void vtkHDRReader::FillOutPtrRLE(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::FillOutPtrNoRLE(
   int* outExt, float*& outPtr, std::vector<unsigned char>& lineBuffer)
 {
@@ -542,7 +533,7 @@ void vtkHDRReader::FillOutPtrNoRLE(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHDRReader::ReadAllFileNoRLE(std::istream* is, float* outPtr, int decrPtr, int* outExt)
 {
   std::vector<unsigned char> lineBuffer(this->GetWidth() * 4);
@@ -570,7 +561,7 @@ bool vtkHDRReader::ReadAllFileNoRLE(std::istream* is, float* outPtr, int decrPtr
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHDRReader::ReadLineRLE(std::istream* is, unsigned char* lineBufferPtr)
 {
   // A line in RLE is sorted by channels, ie. it begins by all the red, then green, blue, and
@@ -631,12 +622,12 @@ bool vtkHDRReader::ReadLineRLE(std::istream* is, unsigned char* lineBufferPtr)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::RGBE2Float(unsigned char* rgbe, float& r, float& g, float& b)
 {
   if (rgbe[3]) /*nonzero pixel*/
   {
-    float f = std::ldexp(1.0, rgbe[3] - static_cast<int>(128 + 8)) / this->Exposure;
+    float f = std::ldexp(1.0, rgbe[3] - (128 + 8)) / this->Exposure;
     r = rgbe[0] * f;
     g = rgbe[1] * f;
     b = rgbe[2] * f;
@@ -647,12 +638,43 @@ void vtkHDRReader::RGBE2Float(unsigned char* rgbe, float& r, float& g, float& b)
   }
 }
 
-//----------------------------------------------------------------------------
-void vtkHDRReader::XYZ2RGB(const float convertMatrix[3][3], float& r, float& g, float& b)
+//------------------------------------------------------------------------------
+void vtkHDRReader::XYZ2RGB(
+  const float convertMatrix[3][3], double gamma, float& r, float& g, float& b)
 {
   // Copy initial xyz values
   float x = r, y = g, z = b;
-  r = convertMatrix[0][0] * x + convertMatrix[0][1] * y + convertMatrix[0][2] * z;
-  g = convertMatrix[1][0] * x + convertMatrix[1][1] * y + convertMatrix[1][2] * z;
-  b = convertMatrix[2][0] * x + convertMatrix[2][1] * y + convertMatrix[2][2] * z;
+
+  // Convert XYZ to linear RGB
+  float linearR = convertMatrix[0][0] * x + convertMatrix[0][1] * y + convertMatrix[0][2] * z;
+  float linearG = convertMatrix[1][0] * x + convertMatrix[1][1] * y + convertMatrix[1][2] * z;
+  float linearB = convertMatrix[2][0] * x + convertMatrix[2][1] * y + convertMatrix[2][2] * z;
+
+  // Use sRGB transfer function if gamma is approximately 1.0 (default)
+  // Otherwise use the custom gamma from the file
+  auto gammaTransfer = [gamma](float linear) -> float
+  {
+    if (vtkMathUtilities::NearlyEqual(gamma, 1.0))
+    {
+      // Standard sRGB transfer function (IEC 61966-2-1:1999)
+      return linear <= 0.0031308f ? 12.92f * linear
+                                  : 1.055f * std::pow(linear, 1.0f / 2.4f) - 0.055f;
+    }
+    else
+    {
+      // Custom gamma correction from file
+      return std::pow(linear, 1.0f / static_cast<float>(gamma));
+    }
+  };
+
+  // Apply gamma correction and store results
+  r = gammaTransfer(linearR);
+  g = gammaTransfer(linearG);
+  b = gammaTransfer(linearB);
+
+  // Clamp values to [0,1] range
+  r = std::max(0.0f, std::min(1.0f, r));
+  g = std::max(0.0f, std::min(1.0f, g));
+  b = std::max(0.0f, std::min(1.0f, b));
 }
+VTK_ABI_NAMESPACE_END

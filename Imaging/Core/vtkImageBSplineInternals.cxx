@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageBSplineInternals.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // This code has been modified from the original C code from Thevenaz.
 // The functions have been converted into static C++ class methods,
@@ -43,13 +31,14 @@
 #include <cstddef>
 
 /*--------------------------------------------------------------------------*/
+VTK_ABI_NAMESPACE_BEGIN
 void vtkImageBSplineInternals::ConvertToInterpolationCoefficients(
-  double c[],      /* input samples --> output coefficients */
-  long DataLength, /* number of samples or coefficients */
-  long Border,     /* border mode */
-  double z[],      /* poles */
-  long NbPoles,    /* number of poles */
-  double Tolerance /* admissible relative error */
+  double c[],                /* input samples --> output coefficients */
+  long DataLength,           /* number of samples or coefficients */
+  vtkImageBorderMode Border, /* border mode */
+  double z[4],               /* poles */
+  long NbPoles,              /* number of poles */
+  double Tolerance           /* admissible relative error */
 )
 
 { /* begin ConvertToInterpolationCoefficients */
@@ -95,11 +84,10 @@ void vtkImageBSplineInternals::ConvertToInterpolationCoefficients(
 /*--------------------------------------------------------------------------*/
 double vtkImageBSplineInternals::InitialCausalCoefficient(double c[], /* coefficients */
   long DataLength,                                                    /* number of coefficients */
-  long Border,                                                        /* border mode */
+  vtkImageBorderMode Border,                                          /* border mode */
   double z,                                                           /* actual pole */
   double Tolerance /* admissible relative error */
 )
-
 { /* begin InitialCausalCoefficient */
 
   double Sum, zn, z2n, iz;
@@ -220,12 +208,11 @@ double vtkImageBSplineInternals::InitialCausalCoefficient(double c[], /* coeffic
 
 /*--------------------------------------------------------------------------*/
 double vtkImageBSplineInternals::InitialAntiCausalCoefficient(double c[], /* coefficients */
-  long DataLength, /* number of samples or coefficients */
-  long Border,     /* border mode */
-  double z,        /* actual pole */
-  double Tolerance /* admissible relative error */
+  long DataLength,           /* number of samples or coefficients */
+  vtkImageBorderMode Border, /* border mode */
+  double z,                  /* actual pole */
+  double Tolerance           /* admissible relative error */
 )
-
 { /* begin InitialAntiCausalCoefficient */
   double Sum;
   double zn;
@@ -613,9 +600,8 @@ int vtkImageBSplineInterpolatedValue(const T* Bcoeff, /* input B-spline array of
   double y,                                           /* y coordinate where to interpolate */
   double z,                                           /* y coordinate where to interpolate */
   long SplineDegree,                                  /* degree of the spline model */
-  long Border                                         /* what to do at the border */
+  vtkImageBorderMode Border                           /* what to do at the border */
 )
-
 { /* begin InterpolatedValue */
 
   const T *p1, *p2, *p3;
@@ -838,15 +824,18 @@ int vtkImageBSplineInternals::GetInterpolationWeights(double weights[10], double
 
 /*--------------------------------------------------------------------------*/
 int vtkImageBSplineInternals::InterpolatedValue(const double* coeffs, double* value, long width,
-  long height, long slices, long depth, double x, double y, double z, long degree, long border)
+  long height, long slices, long depth, double x, double y, double z, long degree,
+  vtkImageBorderMode border)
 {
   return vtkImageBSplineInterpolatedValue(
     coeffs, value, width, height, slices, depth, x, y, z, degree, border);
 }
 
 int vtkImageBSplineInternals::InterpolatedValue(const float* coeffs, float* value, long width,
-  long height, long slices, long depth, double x, double y, double z, long degree, long border)
+  long height, long slices, long depth, double x, double y, double z, long degree,
+  vtkImageBorderMode border)
 {
   return vtkImageBSplineInterpolatedValue(
     coeffs, value, width, height, slices, depth, x, y, z, degree, border);
 }
+VTK_ABI_NAMESPACE_END

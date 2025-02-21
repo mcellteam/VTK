@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLTextActor3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLTextActor3D.h"
 
@@ -28,6 +16,7 @@
 #include <sstream>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLTextActor3D);
 
 //------------------------------------------------------------------------------
@@ -92,7 +81,8 @@ int vtkOpenGLTextActor3D::RenderGL2PS(vtkViewport* vp, vtkOpenGLGL2PSHelper* gl2
   }
 
   // Get actor info
-  vtkMatrix4x4* actorMatrix = this->GetMatrix();
+  vtkNew<vtkMatrix4x4> actorMatrix;
+  this->GetModelToWorldMatrix(actorMatrix);
   double actorBounds[6];
   this->GetBounds(actorBounds);
   double textPos[3] = { (actorBounds[1] + actorBounds[0]) * 0.5,
@@ -149,3 +139,4 @@ int vtkOpenGLTextActor3D::RenderGL2PS(vtkViewport* vp, vtkOpenGLGL2PSHelper* gl2
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

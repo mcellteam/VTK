@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestCategoricalPointDataToCellData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtkActor.h>
 #include <vtkCamera.h>
@@ -30,7 +18,7 @@
 
 namespace
 {
-static const double EPSILON = 1.e-6;
+const double EPSILON = 1.e-6;
 
 // Create a triangle with vertices p0, p1, p2, add the points to the point
 // locator, and add the triangle to the cell array.

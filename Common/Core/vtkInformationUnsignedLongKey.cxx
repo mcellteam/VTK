@@ -1,38 +1,27 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationUnsignedLongKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationUnsignedLongKey.h"
 
 #include "vtkInformation.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationUnsignedLongKey::vtkInformationUnsignedLongKey(const char* name, const char* location)
   : vtkInformationKey(name, location)
 {
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationUnsignedLongKey::~vtkInformationUnsignedLongKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationUnsignedLongKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkInformationUnsignedLongValue : public vtkObjectBase
 {
 public:
@@ -40,7 +29,7 @@ public:
   unsigned long Value;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationUnsignedLongKey::Set(vtkInformation* info, unsigned long value)
 {
   if (vtkInformationUnsignedLongValue* oldv =
@@ -67,7 +56,7 @@ void vtkInformationUnsignedLongKey::Set(vtkInformation* info, unsigned long valu
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned long vtkInformationUnsignedLongKey::Get(vtkInformation* info)
 {
   vtkInformationUnsignedLongValue* v =
@@ -75,7 +64,7 @@ unsigned long vtkInformationUnsignedLongKey::Get(vtkInformation* info)
   return v ? v->Value : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationUnsignedLongKey::ShallowCopy(vtkInformation* from, vtkInformation* to)
 {
   if (this->Has(from))
@@ -88,7 +77,7 @@ void vtkInformationUnsignedLongKey::ShallowCopy(vtkInformation* from, vtkInforma
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationUnsignedLongKey::Print(ostream& os, vtkInformation* info)
 {
   // Print the value.
@@ -98,7 +87,7 @@ void vtkInformationUnsignedLongKey::Print(ostream& os, vtkInformation* info)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned long* vtkInformationUnsignedLongKey::GetWatchAddress(vtkInformation* info)
 {
   if (vtkInformationUnsignedLongValue* v =
@@ -108,3 +97,4 @@ unsigned long* vtkInformationUnsignedLongKey::GetWatchAddress(vtkInformation* in
   }
   return nullptr;
 }
+VTK_ABI_NAMESPACE_END

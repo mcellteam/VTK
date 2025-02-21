@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkConvexHull2D.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkConvexHull2D.h"
 
@@ -31,9 +19,10 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkConvexHull2D);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkConvexHull2D::vtkConvexHull2D()
 {
   this->SetNumberOfOutputPorts(2);
@@ -53,13 +42,13 @@ vtkConvexHull2D::vtkConvexHull2D()
   this->HullSource = vtkSmartPointer<vtkPolygon>::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkConvexHull2D::~vtkConvexHull2D()
 {
   this->SetRenderer(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkConvexHull2D::CalculateBoundingRectangle(
   vtkPoints* inPoints, vtkPoints* outPoints, double minimumHullSize)
 {
@@ -89,7 +78,7 @@ void vtkConvexHull2D::CalculateBoundingRectangle(
   outPoints->SetPoint(3, bounds[0], bounds[3], 0.0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkConvexHull2D::CalculateConvexHull(
   vtkPoints* inPoints, vtkPoints* outPoints, double minimumHullSize)
 {
@@ -145,7 +134,7 @@ void vtkConvexHull2D::CalculateConvexHull(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkConvexHull2D::ResizeHullToMinimumInDisplay(vtkPolyData* hullPolyData)
 {
   if (this->Renderer && this->Renderer->IsActiveCameraCreated())
@@ -196,20 +185,20 @@ void vtkConvexHull2D::ResizeHullToMinimumInDisplay(vtkPolyData* hullPolyData)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkConvexHull2D::SetRenderer(vtkRenderer* renderer)
 {
   this->Renderer = renderer;
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderer* vtkConvexHull2D::GetRenderer()
 {
   return this->Renderer;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkConvexHull2D::GetMTime()
 {
   if (this->Renderer)
@@ -222,7 +211,7 @@ vtkMTimeType vtkConvexHull2D::GetMTime()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkConvexHull2D::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -315,7 +304,7 @@ int vtkConvexHull2D::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkConvexHull2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -347,3 +336,4 @@ void vtkConvexHull2D::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)" << endl;
   }
 }
+VTK_ABI_NAMESPACE_END

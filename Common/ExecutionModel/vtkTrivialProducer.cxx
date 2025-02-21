@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTrivialProducer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTrivialProducer.h"
 
 #include "vtkDataObject.h"
@@ -22,6 +10,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTrivialProducer);
 
 // This compile-time switch determines whether the update extent is
@@ -35,7 +24,7 @@ vtkStandardNewMacro(vtkTrivialProducer);
 // turns on this switch!
 #define VTK_TRIVIAL_PRODUCER_CHECK_UPDATE_EXTENT 0
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTrivialProducer::vtkTrivialProducer()
 {
   this->SetNumberOfInputPorts(0);
@@ -45,19 +34,19 @@ vtkTrivialProducer::vtkTrivialProducer()
   this->WholeExtent[1] = this->WholeExtent[3] = this->WholeExtent[5] = -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTrivialProducer::~vtkTrivialProducer()
 {
   this->SetOutput(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTrivialProducer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTrivialProducer::SetOutput(vtkDataObject* newOutput)
 {
   vtkDataObject* oldOutput = this->Output;
@@ -77,7 +66,7 @@ void vtkTrivialProducer::SetOutput(vtkDataObject* newOutput)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkTrivialProducer::GetMTime()
 {
   vtkMTimeType mtime = this->Superclass::GetMTime();
@@ -92,26 +81,26 @@ vtkMTimeType vtkTrivialProducer::GetMTime()
   return mtime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutive* vtkTrivialProducer::CreateDefaultExecutive()
 {
   return vtkStreamingDemandDrivenPipeline::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTrivialProducer::FillInputPortInformation(int, vtkInformation*)
 {
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTrivialProducer::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataObject");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTrivialProducer::FillOutputDataInformation(vtkDataObject* output, vtkInformation* outInfo)
 {
   vtkInformation* dataInfo = output->GetInformation();
@@ -126,7 +115,7 @@ void vtkTrivialProducer::FillOutputDataInformation(vtkDataObject* output, vtkInf
   output->CopyInformationToPipeline(outInfo);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkTrivialProducer::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -256,9 +245,10 @@ vtkTypeBool vtkTrivialProducer::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTrivialProducer::ReportReferences(vtkGarbageCollector* collector)
 {
   this->Superclass::ReportReferences(collector);
   vtkGarbageCollectorReport(collector, this->Output, "Output");
 }
+VTK_ABI_NAMESPACE_END

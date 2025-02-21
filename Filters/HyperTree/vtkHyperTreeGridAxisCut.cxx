@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridAxisCut.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkHyperTreeGridAxisCut.h"
 
 #include "vtkBitArray.h"
@@ -23,6 +11,7 @@
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkMathUtilities.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkUniformHyperTreeGrid.h"
@@ -30,17 +19,18 @@
 #include "vtkHyperTreeGridNonOrientedCursor.h"
 #include "vtkHyperTreeGridNonOrientedGeometryCursor.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkHyperTreeGridAxisCut);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHyperTreeGridAxisCut::vtkHyperTreeGridAxisCut()
 {
-  // Defaut normal axis is Z
+  // Default normal axis is Z
   this->PlaneNormalAxis = 0;
 
-  // Defaut place intercept is 0
+  // Default place intercept is 0
   this->PlanePosition = 0.;
-  // JB La position reellement utilisee dans la coupe
+
   this->PlanePositionRealUse = 0.;
 
   // Default mask is empty
@@ -49,11 +39,11 @@ vtkHyperTreeGridAxisCut::vtkHyperTreeGridAxisCut()
   // Output indices begin at 0
   this->CurrentId = 0;
 
-  // JB Pour sortir un maillage de meme type que celui en entree
+  // Output should be the same type as the input
   this->AppropriateOutput = true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHyperTreeGridAxisCut::~vtkHyperTreeGridAxisCut()
 {
   if (this->OutMask)
@@ -63,7 +53,7 @@ vtkHyperTreeGridAxisCut::~vtkHyperTreeGridAxisCut()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridAxisCut::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -74,14 +64,14 @@ void vtkHyperTreeGridAxisCut::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "CurrentId: " << this->CurrentId << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridAxisCut::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkHyperTreeGrid");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridAxisCut::ProcessTrees(vtkHyperTreeGrid* input, vtkDataObject* outputDO)
 {
   // Downcast output data object to hyper tree grid
@@ -105,12 +95,6 @@ int vtkHyperTreeGridAxisCut::ProcessTrees(vtkHyperTreeGrid* input, vtkDataObject
   int axis = this->PlaneNormalAxis;
 
   this->PlanePositionRealUse = this->PlanePosition;
-  /* CORRECTIF pour les coupes sur axes
-  Au minimum ici il faut modifier cette valeur afin
-  de la deplacer un peu si necessaire
-  si UHTG c'est rapide et facile
-  sinon il faut trouver un HT concerne...
-  */
 
   double inter = this->PlanePositionRealUse;
 
@@ -172,6 +156,10 @@ int vtkHyperTreeGridAxisCut::ProcessTrees(vtkHyperTreeGrid* input, vtkDataObject
   vtkNew<vtkHyperTreeGridNonOrientedCursor> outCursor;
   while (it.GetNextTree(inIndex))
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     // Initialize new geometric cursor at root of current input tree
     input->InitializeNonOrientedGeometryCursor(inCursor, inIndex);
 
@@ -180,7 +168,8 @@ int vtkHyperTreeGridAxisCut::ProcessTrees(vtkHyperTreeGrid* input, vtkDataObject
     const double* _size = inCursor->GetSize();
 
     // Check whether root cell is intersected by plane
-    if (origin[axis] < inter && (origin[axis] + _size[axis] >= inter))
+    if ((origin[axis] < inter && (origin[axis] + _size[axis] > inter)) ||
+      vtkMathUtilities::FuzzyCompare(origin[axis] + _size[axis], inter))
     {
       // Root is intersected by plane, descend into current child
       input->GetLevelZeroCoordinatesFromIndex(inIndex, i, j, k);
@@ -222,7 +211,7 @@ int vtkHyperTreeGridAxisCut::ProcessTrees(vtkHyperTreeGrid* input, vtkDataObject
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridAxisCut::RecursivelyProcessTree(
   vtkHyperTreeGridNonOrientedGeometryCursor* inCursor, vtkHyperTreeGridNonOrientedCursor* outCursor)
 {
@@ -258,6 +247,10 @@ void vtkHyperTreeGridAxisCut::RecursivelyProcessTree(
     int numChildren = inCursor->GetNumberOfChildren();
     for (int inChild = 0; inChild < numChildren; ++inChild)
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       inCursor->ToChild(inChild);
 
       // Retrieve normal axis and intercept of plane
@@ -269,7 +262,8 @@ void vtkHyperTreeGridAxisCut::RecursivelyProcessTree(
       const double* size = inCursor->GetSize();
 
       // Check whether child is intersected by plane
-      if (origin[axis] < inter && (origin[axis] + size[axis] >= inter))
+      if ((origin[axis] < inter && (origin[axis] + size[axis] > inter)) ||
+        vtkMathUtilities::FuzzyCompare(origin[axis] + size[axis], inter))
       {
         // Child is intersected by plane, descend into current child
         outCursor->ToChild(outChild);
@@ -288,3 +282,4 @@ void vtkHyperTreeGridAxisCut::RecursivelyProcessTree(
     } // inChild
   }   // if ( ! cursor->IsLeaf() )
 }
+VTK_ABI_NAMESPACE_END

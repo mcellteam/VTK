@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAbstractMapper
  * @brief   abstract class specifies interface to map data
@@ -30,6 +18,7 @@
 
 #include "vtkAlgorithm.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALMANUAL
 
 #define VTK_SCALAR_MODE_DEFAULT 0
 #define VTK_SCALAR_MODE_USE_POINT_DATA 1
@@ -41,15 +30,17 @@
 #define VTK_GET_ARRAY_BY_ID 0
 #define VTK_GET_ARRAY_BY_NAME 1
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractArray;
 class vtkDataSet;
 class vtkPlane;
 class vtkPlaneCollection;
 class vtkPlanes;
 class vtkTimerLog;
+class vtkUnsignedCharArray;
 class vtkWindow;
 
-class VTKRENDERINGCORE_EXPORT vtkAbstractMapper : public vtkAlgorithm
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALMANUAL vtkAbstractMapper : public vtkAlgorithm
 {
 public:
   vtkTypeMacro(vtkAbstractMapper, vtkAlgorithm);
@@ -67,14 +58,14 @@ public:
    */
   virtual void ReleaseGraphicsResources(vtkWindow*) {}
 
-  //@{
+  ///@{
   /**
    * Get the time required to draw the geometry last time it was rendered
    */
   vtkGetMacro(TimeToDraw, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify clipping planes to be applied when the data is mapped
    * (at most 6 clipping planes can be specified).
@@ -82,16 +73,16 @@ public:
   void AddClippingPlane(vtkPlane* plane);
   void RemoveClippingPlane(vtkPlane* plane);
   void RemoveAllClippingPlanes();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the vtkPlaneCollection which specifies the
    * clipping planes.
    */
   virtual void SetClippingPlanes(vtkPlaneCollection*);
   vtkGetObjectMacro(ClippingPlanes, vtkPlaneCollection);
-  //@}
+  ///@}
 
   /**
    * An alternative way to set clipping planes: use up to six planes found
@@ -128,6 +119,21 @@ public:
     int arrayAccessMode, int arrayId, const char* arrayName, int& cellFlag);
 
   /**
+   * Returns the ghost array associated with the corresponding scalar mode, if present.
+   * If no ghost array is available, this method returns `nullptr`. `ghostsToSkip` is an output,
+   * and is set to the bit mask associated with the ghost array in the `vtkFieldData` in which
+   * the ghost array lives. This bit mask can be ignored if `nullptr` is returned.
+   *
+   * @sa
+   * vtkFieldData
+   * vtkDataSetAttributes
+   * vtkCellData
+   * vtkPointData
+   */
+  static vtkUnsignedCharArray* GetGhostArray(
+    vtkDataSet* input, int scalarMode, unsigned char& ghostsToSkip);
+
+  /**
    * Get the number of clipping planes.
    */
   int GetNumberOfClippingPlanes();
@@ -146,4 +152,5 @@ private:
   void operator=(const vtkAbstractMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

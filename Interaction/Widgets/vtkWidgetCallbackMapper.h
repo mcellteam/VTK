@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWidgetCallbackMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWidgetCallbackMapper
  * @brief   map widget events into callbacks
@@ -32,6 +20,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkWidgetEvent;
 class vtkAbstractWidget;
 class vtkWidgetEventTranslator;
@@ -46,31 +35,31 @@ public:
    */
   static vtkWidgetCallbackMapper* New();
 
-  //@{
+  ///@{
   /**
    * Standard macros.
    */
   vtkTypeMacro(vtkWidgetCallbackMapper, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the vtkWidgetEventTranslator to coordinate with.
    */
   void SetEventTranslator(vtkWidgetEventTranslator* t);
   vtkGetObjectMacro(EventTranslator, vtkWidgetEventTranslator);
-  //@}
+  ///@}
 
   /**
    * Convenient typedef for working with callbacks.
    */
   typedef void (*CallbackType)(vtkAbstractWidget*);
 
-  //@{
+  ///@{
   /**
    * This class works with the class vtkWidgetEventTranslator to set up the
-   * initial coorespondence between VTK events, widget events, and callbacks.
+   * initial correspondence between VTK events, widget events, and callbacks.
    * Different flavors of the SetCallbackMethod() are available depending on
    * what sort of modifiers are to be associated with a particular event.
    * Typically the widgets should use this method to set up their event
@@ -86,7 +75,7 @@ public:
     vtkAbstractWidget* w, CallbackType f);
   // void SetCallbackMethod(vtkWidgetEvent *vtkEvent, unsigned long widgetEvent,
   //                       vtkAbstractWidget *w, CallbackType f);
-  //@}
+  ///@}
 
   /**
    * This method invokes the callback given a widget event. A non-zero value
@@ -116,4 +105,5 @@ private:
   void operator=(const vtkWidgetCallbackMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkWidgetCallbackMapper_h */

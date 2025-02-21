@@ -1,22 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkX3DExporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkX3DExporter
  * @brief   create an x3d file
  *
- * vtkX3DExporter is a render window exporter which writes out the renderered
+ * vtkX3DExporter is a render window exporter which writes out the rendered
  * scene into an X3D file. X3D is an XML-based format for representation
  * 3D scenes (similar to VRML). Check out http://www.web3d.org/x3d/ for more
  * details.
@@ -30,6 +18,7 @@
 #include "vtkExporter.h"
 #include "vtkIOExportModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkActor2D;
 class vtkDataArray;
@@ -47,50 +36,50 @@ public:
   vtkTypeMacro(vtkX3DExporter, vtkExporter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the output file name.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the Speed of navigation. Default is 4.
    */
   vtkSetMacro(Speed, double);
   vtkGetMacro(Speed, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on binary mode
    */
   vtkSetClampMacro(Binary, vtkTypeBool, 0, 1);
   vtkBooleanMacro(Binary, vtkTypeBool);
   vtkGetMacro(Binary, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * In binary mode use fastest instead of best compression
    */
   vtkSetClampMacro(Fastest, vtkTypeBool, 0, 1);
   vtkBooleanMacro(Fastest, vtkTypeBool);
   vtkGetMacro(Fastest, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable writing to an OutputString instead of the default, a file.
    */
   vtkSetMacro(WriteToOutputString, vtkTypeBool);
   vtkGetMacro(WriteToOutputString, vtkTypeBool);
   vtkBooleanMacro(WriteToOutputString, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When WriteToOutputString in on, then a string is allocated, written to,
    * and can be retrieved with these methods.  The string is deleted during
@@ -102,7 +91,7 @@ public:
   {
     return reinterpret_cast<unsigned char*>(this->OutputString);
   }
-  //@}
+  ///@}
 
   /**
    * This convenience method returns the string, sets the IVAR to nullptr,
@@ -138,7 +127,7 @@ protected:
   // Default implementation does nothing.
   virtual void WriteAdditionalNodes(vtkX3DExporterWriter* vtkNotUsed(writer)) {}
 
-  int HasHeadLight(vtkRenderer* ren);
+  vtkTypeBool HasHeadLight(vtkRenderer* ren);
 
   char* FileName;
   double Speed;
@@ -150,4 +139,5 @@ private:
   void operator=(const vtkX3DExporter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageReader
  * @brief   Superclass of transformable binary file readers.
@@ -30,6 +18,7 @@
 #include "vtkIOImageModule.h" // For export macro
 #include "vtkImageReader2.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTransform;
 
 #define VTK_FILE_BYTE_ORDER_BIG_ENDIAN 0
@@ -42,16 +31,16 @@ public:
   vtkTypeMacro(vtkImageReader, vtkImageReader2);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/get the data VOI. You can limit the reader to only
    * read a subset of the data.
    */
   vtkSetVector6Macro(DataVOI, int);
   vtkGetVector6Macro(DataVOI, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Data mask.  The data mask is a simply integer whose bits are
    * treated as a mask to the bits read from disk.  That is, the data mask is
@@ -61,9 +50,9 @@ public:
    */
   vtkGetMacro(DataMask, vtkTypeUInt64);
   vtkSetMacro(DataMask, vtkTypeUInt64);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get transformation matrix to transform the data from slice space
    * into world space. This matrix must be a permutation matrix. To qualify,
@@ -71,7 +60,7 @@ public:
    */
   virtual void SetTransform(vtkTransform*);
   vtkGetObjectMacro(Transform, vtkTransform);
-  //@}
+  ///@}
 
   // Warning !!!
   // following should only be used by methods or template helpers, not users
@@ -80,13 +69,13 @@ public:
 
   int OpenAndSeekFile(int extent[6], int slice);
 
-  //@{
+  ///@{
   /**
    * Set/get the scalar array name for this data set.
    */
   vtkSetStringMacro(ScalarArrayName);
   vtkGetStringMacro(ScalarArrayName);
-  //@}
+  ///@}
 
   /**
    * vtkImageReader itself can read raw binary files. That being the case,
@@ -94,7 +83,7 @@ public:
    * Subclasses that read specific file format should override and implement
    * appropriate checks for file format.
    */
-  int CanReadFile(const char*) override
+  int CanReadFile(VTK_FILEPATH const char*) override
   {
     return 1; // I think I can read the file but I cannot prove it
   }
@@ -126,4 +115,5 @@ private:
   void operator=(const vtkImageReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

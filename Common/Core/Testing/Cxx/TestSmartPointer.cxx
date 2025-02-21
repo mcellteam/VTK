@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestSmartPointer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME Test of vtkSmartPointer.
 // .SECTION Description
 // Tests instantiations of the vtkSmartPointer class template.
@@ -21,6 +9,7 @@
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 
+#include <unordered_set>
 #include <vector>
 
 int TestSmartPointer(int, char*[])
@@ -86,16 +75,28 @@ int TestSmartPointer(int, char*[])
   (void)da4;
   ia->Delete();
 
-  std::vector<vtkSmartPointer<vtkIntArray> > intarrays;
+  std::vector<vtkSmartPointer<vtkIntArray>> intarrays;
   { // local scope for vtkNew object
     vtkNew<vtkIntArray> vtknew;
     vtkSmartPointer<vtkIntArray> aa(vtknew);
-    intarrays.push_back(vtknew);
+    intarrays.emplace_back(vtknew);
   }
   if (intarrays[0]->GetReferenceCount() != 1)
   {
     cerr << "Didn't properly add vtkNew object to stl vector of smart pointers\n";
     rval = 1;
+  }
+
+  // Test hash maps
+  std::unordered_set<vtkSmartPointer<vtkIntArray>> hashMap;
+  int N = 10;
+  while (--N)
+  {
+    hashMap.emplace(vtkSmartPointer<vtkIntArray>::New());
+  }
+  for (auto& p : hashMap)
+  {
+    p->SetNumberOfValues(10);
   }
 
   // Test move constructors
@@ -118,6 +119,7 @@ int TestSmartPointer(int, char*[])
     }
 
     vtkSmartPointer<vtkIntArray> intArrayMoved(std::move(intArrayCopy));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     if (intArrayCopy || !intArrayMoved || intArrayMoved->GetReferenceCount() != 2)
     {
       std::cerr << "Move constructing vtkSmartPointer yielded unexpected "
@@ -134,6 +136,7 @@ int TestSmartPointer(int, char*[])
     }
 
     vtkSmartPointer<vtkDataArray> dataArrayMoved(std::move(intArrayMoved));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     if (!dataArrayMoved || intArrayMoved || dataArrayMoved->GetReferenceCount() != 3)
     {
       std::cerr << "Cast move-constructing vtkSmartPointer failed.\n";

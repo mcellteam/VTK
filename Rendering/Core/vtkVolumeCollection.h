@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVolumeCollection.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVolumeCollection
  * @brief   an ordered list of volumes
@@ -29,10 +17,12 @@
 
 #include "vtkPropCollection.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
 #include "vtkVolume.h" // Needed for static cast
 
-class VTKRENDERINGCORE_EXPORT vtkVolumeCollection : public vtkPropCollection
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkVolumeCollection : public vtkPropCollection
 {
 public:
   static vtkVolumeCollection* New();
@@ -67,17 +57,17 @@ public:
   }
 
 protected:
-  vtkVolumeCollection() {}
-  ~vtkVolumeCollection() override {}
+  vtkVolumeCollection() = default;
+  ~vtkVolumeCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
   void AddItem(vtkObject* o) { this->vtkCollection::AddItem(o); }
   void AddItem(vtkProp* o) { this->vtkPropCollection::AddItem(o); }
 
-private:
   vtkVolumeCollection(const vtkVolumeCollection&) = delete;
   void operator=(const vtkVolumeCollection&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkScalarBarWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkScalarBarWidget.h"
 
 #include "vtkCallbackCommand.h"
@@ -25,9 +13,10 @@
 #include "vtkWidgetCallbackMapper.h"
 #include "vtkWidgetEvent.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkScalarBarWidget);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkScalarBarWidget::vtkScalarBarWidget()
 {
   this->Selectable = 0;
@@ -38,16 +27,16 @@ vtkScalarBarWidget::vtkScalarBarWidget()
     vtkCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkScalarBarWidget::MoveAction);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkScalarBarWidget::~vtkScalarBarWidget() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarWidget::SetRepresentation(vtkScalarBarRepresentation* rep)
 {
   this->SetWidgetRepresentation(rep);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarWidget::SetScalarBarActor(vtkScalarBarActor* actor)
 {
   vtkScalarBarRepresentation* rep = this->GetScalarBarRepresentation();
@@ -64,7 +53,7 @@ void vtkScalarBarWidget::SetScalarBarActor(vtkScalarBarActor* actor)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkScalarBarActor* vtkScalarBarWidget::GetScalarBarActor()
 {
   vtkScalarBarRepresentation* rep = this->GetScalarBarRepresentation();
@@ -77,7 +66,7 @@ vtkScalarBarActor* vtkScalarBarWidget::GetScalarBarActor()
   return rep->GetScalarBarActor();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -88,7 +77,7 @@ void vtkScalarBarWidget::CreateDefaultRepresentation()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarWidget::SetCursor(int cState)
 {
   if (!this->Repositionable && !this->Selectable && cState == vtkBorderRepresentation::Inside)
@@ -102,7 +91,7 @@ void vtkScalarBarWidget::SetCursor(int cState)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkScalarBarWidget::MoveAction(vtkAbstractWidget* w)
 {
   // The superclass handle most stuff.
@@ -119,10 +108,17 @@ void vtkScalarBarWidget::MoveAction(vtkAbstractWidget* w)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkTypeBool vtkScalarBarWidget::GetProcessEvents()
+{
+  return this->vtkAbstractWidget::GetProcessEvents(); // NOLINT(bugprone-parent-virtual-call)
+}
+
+//------------------------------------------------------------------------------
 void vtkScalarBarWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Repositionable: " << this->Repositionable << endl;
 }
+VTK_ABI_NAMESPACE_END

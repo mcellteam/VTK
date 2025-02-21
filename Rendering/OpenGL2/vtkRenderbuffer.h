@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderbuffer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRenderbuffer
  * @brief   Storage for FBO's
@@ -26,6 +14,7 @@
 #include "vtkRenderingOpenGL2Module.h" // for export macro
 #include "vtkWeakPointer.h"            // for render context
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderWindow;
 class vtkWindow;
 
@@ -42,24 +31,24 @@ public:
    */
   static bool IsSupported(vtkRenderWindow* renWin);
 
-  //@{
+  ///@{
   /**
    * Get the name of the buffer for use opengl code.
    */
   vtkGetMacro(Handle, unsigned int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Setting the context has the side affect of initializing OpenGL
    * required extensions and allocates an OpenGL name(handle) that is
    * released when the object is destroyed. NOTE: the reference count
-   * to the passed in object is not incremented. Contex must be set
+   * to the passed in object is not incremented. Context must be set
    * prior to other use.
    */
   void SetContext(vtkRenderWindow* win);
   vtkRenderWindow* GetContext();
-  //@}
+  ///@}
 
   /**
    * Sets up an RGBAF renderbufffer for use as a color attachment. Use mode
@@ -85,7 +74,7 @@ public:
   // resizes an existing renderbuffer
   void Resize(unsigned int width, unsigned int height);
 
-  //@{
+  ///@{
   /**
    * Get the buffer dimensions.
    * These are the properties of the OpenGL renderbuffer this instance represents.
@@ -93,7 +82,7 @@ public:
   vtkGetMacro(Width, unsigned int);
   vtkGetMacro(Height, unsigned int);
   vtkGetMacro(Samples, unsigned int);
-  //@}
+  ///@}
 
 protected:
   vtkRenderbuffer();
@@ -114,9 +103,9 @@ private:
   unsigned int Handle;
   vtkWeakPointer<vtkRenderWindow> Context;
 
-private:
   vtkRenderbuffer(const vtkRenderbuffer&) = delete;
   void operator=(const vtkRenderbuffer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

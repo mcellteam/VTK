@@ -1,30 +1,23 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLine.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2001, softSurfer (www.softsurfer.com)
+// SPDX-License-Identifier: BSD-3-Clause AND MIT
 #include "vtkLine.h"
 
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
+#include "vtkDataArrayRange.h"
+#include "vtkDoubleArray.h"
 #include "vtkIncrementalPointLocator.h"
 #include "vtkMath.h"
+#include "vtkMathUtilities.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLine);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the line with two points.
 vtkLine::vtkLine()
 {
@@ -37,40 +30,38 @@ vtkLine::vtkLine()
   }
 }
 
-//----------------------------------------------------------------------------
-static const int VTK_NO_INTERSECTION = 0;
-static const int VTK_YES_INTERSECTION = 2;
-static const int VTK_ON_LINE = 3;
-
+//------------------------------------------------------------------------------
 int vtkLine::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& dist2, double weights[])
 {
-  double a1[3], a2[3];
+  const double *a1, *a2;
 
   subId = 0;
   pcoords[0] = pcoords[1] = pcoords[2] = 0.0;
 
-  this->Points->GetPoint(0, a1);
-  this->Points->GetPoint(1, a2);
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
+  a1 = pts;
+  a2 = pts + 3;
 
   // DistanceToLine sets pcoords[0] to a value t
-  dist2 = this->DistanceToLine(x, a1, a2, pcoords[0], closestPoint);
+  dist2 = vtkLine::DistanceToLine(x, a1, a2, pcoords[0], closestPoint);
 
   // pcoords[0] == t, need weights to be 1-t and t
   weights[0] = 1.0 - pcoords[0];
   weights[1] = pcoords[0];
 
-  if (pcoords[0] < 0.0 || pcoords[0] > 1.0)
-  {
-    return 0;
-  }
-  else
-  {
-    return 1;
-  }
+  return (pcoords[0] >= 0.0 && pcoords[0] <= 1.0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLine::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
@@ -88,14 +79,14 @@ void vtkLine::EvaluateLocation(
   weights[1] = pcoords[0];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Performs intersection of the projection of two finite 3D lines onto a 2D
 // plane. An intersection is found if the projection of the two lines onto
 // the plane perpendicular to the cross product of the two lines intersect.
 // The parameters (u,v) are the parametric coordinates of the lines at the
 // position of closest approach.
 int vtkLine::Intersection(const double a1[3], const double a2[3], const double b1[3],
-  const double b2[3], double& u, double& v)
+  const double b2[3], double& u, double& v, double tolerance, int tolType)
 {
   double a21[3], b21[3], b1a1[3];
   double c[2];
@@ -105,15 +96,9 @@ int vtkLine::Intersection(const double a1[3], const double a2[3], const double b
   u = v = 0.0;
 
   //   Determine line vectors.
-  a21[0] = a2[0] - a1[0];
-  b21[0] = b2[0] - b1[0];
-  b1a1[0] = b1[0] - a1[0];
-  a21[1] = a2[1] - a1[1];
-  b21[1] = b2[1] - b1[1];
-  b1a1[1] = b1[1] - a1[1];
-  a21[2] = a2[2] - a1[2];
-  b21[2] = b2[2] - b1[2];
-  b1a1[2] = b1[2] - a1[2];
+  vtkMath::Subtract(a2, a1, a21);
+  vtkMath::Subtract(b2, b1, b21);
+  vtkMath::Subtract(b1, a1, b1a1);
 
   //   Compute the system (least squares) matrix.
   A[0] = row1;
@@ -127,7 +112,7 @@ int vtkLine::Intersection(const double a1[3], const double a2[3], const double b
   c[0] = vtkMath::Dot(a21, b1a1);
   c[1] = -vtkMath::Dot(b21, b1a1);
 
-  //  Solve the system of equations
+  //  Solve the system of equations. Check for colinearity.
   if (vtkMath::SolveLinearSystem(A, c, 2) == 0)
   {
     // The lines are colinear. Therefore, one of the four endpoints is the
@@ -149,60 +134,95 @@ int vtkLine::Intersection(const double a1[3], const double a2[3], const double b
         *(uv2[i]) = static_cast<double>(i % 2); // the corresponding extremum
       }
     }
-    return VTK_ON_LINE;
-  }
-  else
-  {
-    u = c[0];
-    v = c[1];
-  }
+    return OnLine;
+  } // if colinear
 
-  //  Check parametric coordinates for intersection.
+  // The lines are not colinear, check for intersection.
+  // However if they are nearly parallel then the solution
+  // found by vtkMath::SolveLinearSystem may be very inaccurate.
+  // We hence need to check the solution against a tolerance criterion.
+  u = c[0];
+  v = c[1];
+  // calculate intersection point using u
+  double ptu[] = { a21[0], a21[1], a21[2] };
+  vtkMath::MultiplyScalar(ptu, u);
+  vtkMath::Add(ptu, a1, ptu);
+  // calculate intersection point using v
+  double ptv[] = { b21[0], b21[1], b21[2] };
+  vtkMath::MultiplyScalar(ptv, v);
+  vtkMath::Add(ptv, b1, ptv);
+  // difference between the two intersection points should ideally be zero
+  double diff[3];
+  vtkMath::Subtract(ptu, ptv, diff);
+  double diff2 = vtkMath::SquaredNorm(diff);
+
+  double tol2 = 0.0;
+  if (std::isfinite(tolerance))
+  {
+    // compare either absolute or relative diff; hence either
+    // tolerance*tolerance or diff > tolerance * max(nrm(ptu),nrm(ptv))
+    // but without taking square roots.
+    tol2 = ((tolType == Absolute || tolType == AbsoluteFuzzy)
+        ? tolerance * tolerance
+        : tolerance * tolerance * std::max(vtkMath::SquaredNorm(ptv), vtkMath::SquaredNorm(ptu)));
+    if (diff2 > tol2)
+    {
+      return NoIntersect;
+    }
+  } // valid tolerance
+
+  // Check parametric coordinates for intersection within the two finite line
+  // segments specified. Special treatment is required to make sure that
+  // intersections near the line end points are not within tolerance.  Most
+  // intersections will occur within the 0<=u,v<=1 range, handle them as
+  // quickly as possible.
   if ((0.0 <= u) && (u <= 1.0) && (0.0 <= v) && (v <= 1.0))
   {
-    return VTK_YES_INTERSECTION;
+    return Intersect;
   }
-  else
+  // Otherwise the intersection may be within tolerance at one or both of the
+  // line end points. Note that we already know from previous calculations
+  // that the two points of intersection are within tol of each other; here
+  // we are checking whether they are on the line within the range
+  // (-tol <= u,v <= 1+tol).
+  else if (tolType >= RelativeFuzzy && tol2 > 0.0)
   {
-    return VTK_NO_INTERSECTION;
-  }
-}
-
-//----------------------------------------------------------------------------
-int vtkLine::Intersection3D(
-  double a1[3], double a2[3], double b1[3], double b2[3], double& u, double& v)
-{
-  // Description:
-  // Performs intersection of two finite 3D lines. An intersection is found if
-  // the projection of the two lines onto the plane perpendicular to the cross
-  // product of the two lines intersect, and if the distance between the
-  // closest points of approach are within a relative tolerance. The parameters
-  // (u,v) are the parametric coordinates of the lines at the position of
-  // closest approach.
-  int projectedIntersection = vtkLine::Intersection(a1, a2, b1, b2, u, v);
-
-  if (projectedIntersection == VTK_YES_INTERSECTION)
-  {
-    double a_i, b_i;
-    double lenA = 0.;
-    double lenB = 0.;
-    double dist = 0.;
-    for (unsigned i = 0; i < 3; i++)
+    double uTol = sqrt(tol2 / vtkMath::SquaredNorm(a21));
+    double vTol = sqrt(tol2 / vtkMath::SquaredNorm(b21));
+    if ((-uTol <= u) && (u <= (1.0 + uTol)) && (-vTol <= v) && (v <= (1.0 + vTol)))
     {
-      a_i = a1[i] + (a2[i] - a1[i]) * u;
-      b_i = b1[i] + (b2[i] - b1[i]) * v;
-      lenA += (a2[i] - a1[i]) * (a2[i] - a1[i]);
-      lenB += (b2[i] - b1[i]) * (b2[i] - b1[i]);
-      dist += (a_i - b_i) * (a_i - b_i);
+      return Intersect;
     }
-    if (dist > 1.e-6 * (lenA > lenB ? lenA : lenB))
-      return VTK_NO_INTERSECTION;
   }
 
-  return projectedIntersection;
+  return NoIntersect;
 }
 
-//----------------------------------------------------------------------------
+int vtkLine::Inflate(double dist)
+{
+  auto pointRange = vtk::DataArrayTupleRange<3>(this->Points->GetData());
+  using TupleRef = decltype(pointRange)::TupleReferenceType;
+  using Scalar = typename TupleRef::value_type;
+  TupleRef p0 = pointRange[0], p1 = pointRange[1];
+  if (vtkMathUtilities::NearlyEqual<Scalar>(p0[0], p1[0]) &&
+    vtkMathUtilities::NearlyEqual<Scalar>(p0[1], p1[1]) &&
+    vtkMathUtilities::NearlyEqual<Scalar>(p0[2], p1[2]))
+  {
+    // line is degenerate
+    return 0;
+  }
+  double v[3] = { p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2] };
+  vtkMath::Normalize(v);
+  p0[0] -= v[0] * dist;
+  p0[1] -= v[1] * dist;
+  p0[2] -= v[2] * dist;
+  p1[0] += v[0] * dist;
+  p1[1] += v[1] * dist;
+  p1[2] += v[2] * dist;
+  return 1;
+}
+
+//------------------------------------------------------------------------------
 int vtkLine::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], vtkIdList* pts)
 {
   pts->SetNumberOfIds(1);
@@ -210,39 +230,26 @@ int vtkLine::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], vtkIdL
   if (pcoords[0] >= 0.5)
   {
     pts->SetId(0, this->PointIds->GetId(1));
-    if (pcoords[0] > 1.0)
-    {
-      return 0;
-    }
-    else
-    {
-      return 1;
-    }
+    return (pcoords[0] <= 1.0);
   }
   else
   {
     pts->SetId(0, this->PointIds->GetId(0));
-    if (pcoords[0] < 0.0)
-    {
-      return 0;
-    }
-    else
-    {
-      return 1;
-    }
+    return (pcoords[0] >= 0.0);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // marching lines case table
 //
 typedef int VERT_LIST;
 
-typedef struct
+struct VERT_CASES_t
 {
   VERT_LIST verts[2];
-} VERT_CASES;
+};
+using VERT_CASES = struct VERT_CASES_t;
 
 static VERT_CASES vertCases[4] = {
   { { -1, -1 } },
@@ -251,7 +258,7 @@ static VERT_CASES vertCases[4] = {
   { { -1, -1 } },
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLine::Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
   vtkCellArray* verts, vtkCellArray* vtkNotUsed(lines), vtkCellArray* vtkNotUsed(polys),
   vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId, vtkCellData* outCd)
@@ -305,21 +312,13 @@ void vtkLine::Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPoi
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkLine::DistanceBetweenLines(double l0[3], double l1[3], // line 1
   double m0[3], double m1[3],                                    // line 2
   double closestPt1[3], double closestPt2[3],                    // closest points
   double& t1, double& t2) // parametric coords of the closest points
 {
   // Part of this function was adapted from "GeometryAlgorithms.com"
-  //
-  // Copyright 2001, softSurfer (www.softsurfer.com)
-  // This code may be freely used and modified for any purpose
-  // providing that this copyright notice is included with it.
-  // SoftSurfer makes no warranty for this code, and cannot be held
-  // liable for any real or imagined damage resulting from its use.
-  // Users of this code must verify correctness for their application.
-
   const double u[3] = { l1[0] - l0[0], l1[1] - l0[1], l1[2] - l0[2] };
   const double v[3] = { m1[0] - m0[0], m1[1] - m0[1], m1[2] - m0[2] };
   const double w[3] = { l0[0] - m0[0], l0[1] - m0[1], l0[2] - m0[2] };
@@ -354,7 +353,7 @@ double vtkLine::DistanceBetweenLines(double l0[3], double l1[3], // line 1
   return vtkMath::Distance2BetweenPoints(closestPt1, closestPt2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkLine::DistanceBetweenLineSegments(double l0[3], double l1[3], // line segment 1
   double m0[3], double m1[3],                                           // line segment 2
   double closestPt1[3], double closestPt2[3],                           // closest points
@@ -362,14 +361,6 @@ double vtkLine::DistanceBetweenLineSegments(double l0[3], double l1[3], // line 
                                                                         // of the closest points
 {
   // Part of this function was adapted from "GeometryAlgorithms.com"
-  //
-  // Copyright 2001, softSurfer (www.softsurfer.com)
-  // This code may be freely used and modified for any purpose
-  // providing that this copyright notice is included with it.
-  // SoftSurfer makes no warranty for this code, and cannot be held
-  // liable for any real or imagined damage resulting from its use.
-  // Users of this code must verify correctness for their application.
-
   const double u[3] = { l1[0] - l0[0], l1[1] - l0[1], l1[2] - l0[2] };
   const double v[3] = { m1[0] - m0[0], m1[1] - m0[1], m1[2] - m0[2] };
   const double w[3] = { l0[0] - m0[0], l0[1] - m0[1], l0[2] - m0[2] };
@@ -494,7 +485,7 @@ double vtkLine::DistanceBetweenLineSegments(double l0[3], double l1[3], // line 
   return vtkMath::Distance2BetweenPoints(closestPt1, closestPt2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute distance to finite line. Returns parametric coordinate t
 // and point location on line.
 double vtkLine::DistanceToLine(
@@ -568,7 +559,7 @@ double vtkLine::DistanceToLine(
   return vtkMath::Distance2BetweenPoints(closest, x);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Determine the distance of the current vertex to the edge defined by
 // the vertices provided.  Returns distance squared. Note: line is assumed
@@ -602,14 +593,13 @@ double vtkLine::DistanceToLine(const double x[3], const double p1[3], const doub
   return (vtkMath::Dot(np1, np1) - proj * proj);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Line-line intersection. Intersection has to occur within [0,1] parametric
 // coordinates and with specified tolerance.
 int vtkLine::IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t,
   double x[3], double pcoords[3], int& subId)
 {
   double a1[3], a2[3];
-  double projXYZ[3];
   int i;
 
   subId = 0;
@@ -618,22 +608,19 @@ int vtkLine::IntersectWithLine(const double p1[3], const double p2[3], double to
   this->Points->GetPoint(0, a1);
   this->Points->GetPoint(1, a2);
 
-  if (this->Intersection(p1, p2, a1, a2, t, pcoords[0]) == VTK_YES_INTERSECTION)
+  // check line-line intersection; use inf tolerance which will force
+  // vtkLine::Intersection() to only check parametric intersection
+  // we then perform the tolerance check here using the absolute tolerance tol
+  if (this->Intersection(p1, p2, a1, a2, t, pcoords[0], vtkMath::Inf()) == Intersect)
   {
+    double projXYZ[3];
     // make sure we are within tolerance
     for (i = 0; i < 3; i++)
     {
       x[i] = a1[i] + pcoords[0] * (a2[i] - a1[i]);
       projXYZ[i] = p1[i] + t * (p2[i] - p1[i]);
     }
-    if (vtkMath::Distance2BetweenPoints(x, projXYZ) <= tol * tol)
-    {
-      return 1;
-    }
-    else
-    {
-      return 0;
-    }
+    return (vtkMath::Distance2BetweenPoints(x, projXYZ) <= tol * tol);
   }
 
   else // check to see if it lies within tolerance
@@ -642,71 +629,37 @@ int vtkLine::IntersectWithLine(const double p1[3], const double p2[3], double to
     if (t < 0.0)
     {
       t = 0.0;
-      if (vtkLine::DistanceToLine(p1, a1, a2, pcoords[0], x) <= tol * tol)
-      {
-        return 1;
-      }
-      else
-      {
-        return 0;
-      }
+      return (vtkLine::DistanceToLine(p1, a1, a2, pcoords[0], x) <= tol * tol);
     }
     if (t > 1.0)
     {
       t = 1.0;
-      if (vtkLine::DistanceToLine(p2, a1, a2, pcoords[0], x) <= tol * tol)
-      {
-        return 1;
-      }
-      else
-      {
-        return 0;
-      }
+      return (vtkLine::DistanceToLine(p2, a1, a2, pcoords[0], x) <= tol * tol);
     }
     if (pcoords[0] < 0.0)
     {
       pcoords[0] = 0.0;
-      if (vtkLine::DistanceToLine(a1, p1, p2, t, x) <= tol * tol)
-      {
-        return 1;
-      }
-      else
-      {
-        return 0;
-      }
+      return (vtkLine::DistanceToLine(a1, p1, p2, t, x) <= tol * tol);
     }
     if (pcoords[0] > 1.0)
     {
       pcoords[0] = 1.0;
-      if (vtkLine::DistanceToLine(a2, p1, p2, t, x) <= tol * tol)
-      {
-        return 1;
-      }
-      else
-      {
-        return 0;
-      }
+      return (vtkLine::DistanceToLine(a2, p1, p2, t, x) <= tol * tol);
     }
   }
   return 0;
 }
 
-//----------------------------------------------------------------------------
-int vtkLine::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkLine::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
-
-  ptIds->InsertId(0, this->PointIds->GetId(0));
-  pts->InsertPoint(0, this->Points->GetPoint(0));
-
-  ptIds->InsertId(1, this->PointIds->GetId(1));
-  pts->InsertPoint(1, this->Points->GetPoint(1));
-
+  ptIds->SetNumberOfIds(2);
+  ptIds->SetId(0, 0);
+  ptIds->SetId(1, 1);
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLine::Derivatives(int vtkNotUsed(subId), const double vtkNotUsed(pcoords)[3],
   const double* values, int dim, double* derivs)
 {
@@ -736,17 +689,18 @@ void vtkLine::Derivatives(int vtkNotUsed(subId), const double vtkNotUsed(pcoords
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // support line clipping
 namespace
 { // required so we don't violate ODR
 typedef int LINE_LIST;
-typedef struct
+struct LINE_CASES_t
 {
   LINE_LIST lines[2];
-} LINE_CASES;
+};
+using LINE_CASES = struct LINE_CASES_t;
 
-static LINE_CASES lineCases[] = {
+LINE_CASES lineCases[] = {
   { { -1, -1 } },   // 0
   { { 100, 1 } },   // 1
   { { 0, 101 } },   // 2
@@ -805,7 +759,10 @@ void vtkLine::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPointL
         this->Points->GetPoint(vertexId, x);
         if (locator->InsertUniquePoint(x, pts[i]))
         {
-          outPd->CopyData(inPd, this->PointIds->GetId(vertexId), pts[i]);
+          if (outPd)
+          {
+            outPd->CopyData(inPd, this->PointIds->GetId(vertexId), pts[i]);
+          }
         }
       }
 
@@ -823,9 +780,11 @@ void vtkLine::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPointL
 
         if (locator->InsertUniquePoint(x, pts[i]))
         {
-          vtkIdType p1 = this->PointIds->GetId(0);
-          vtkIdType p2 = this->PointIds->GetId(1);
-          outPd->InterpolateEdge(inPd, pts[i], p1, p2, t);
+          if (outPd)
+          {
+            outPd->InterpolateEdge(
+              inPd, pts[i], this->PointIds->GetId(0), this->PointIds->GetId(1), t);
+          }
         }
       }
     }
@@ -833,12 +792,15 @@ void vtkLine::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPointL
     if (pts[0] != pts[1])
     {
       newCellId = lines->InsertNextCell(2, pts);
-      outCd->CopyData(inCd, cellId, newCellId);
+      if (outCd)
+      {
+        outCd->CopyData(inCd, cellId, newCellId);
+      }
     }
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Compute interpolation functions
 //
@@ -848,22 +810,23 @@ void vtkLine::InterpolationFunctions(const double pcoords[3], double weights[2])
   weights[1] = pcoords[0];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLine::InterpolationDerivs(const double vtkNotUsed(pcoords)[3], double derivs[2])
 {
   derivs[0] = -1.0;
   derivs[1] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkLineCellPCoords[6] = { 0.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
 double* vtkLine::GetParametricCoords()
 {
   return vtkLineCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLine::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -2,6 +2,7 @@ vtk_add_test_cxx(vtkRenderingAnnotationCxxTests tests
   TestAxisActor.cxx
   TestAxisActor2D.cxx
   TestAxisActor3D.cxx
+  TestAxisActorMode2D.cxx
   TestAxisActorText3D.cxx
   TestBarChartActor.cxx
   TestCaptionActor2D.cxx
@@ -30,8 +31,14 @@ vtk_add_test_cxx(vtkRenderingAnnotationCxxTests tests
   TestLegendBoxActor.cxx
   TestLegendBoxActor2.cxx
   TestLegendScaleActor.cxx
+  TestLegendScaleActorCustomLabels.cxx
+  TestLegendScaleActorDefault.cxx
   TestPieChartActor.cxx
   TestPolarAxes.cxx
+  TestPolarAxes2D.cxx
+  TestPolarAxes2DDefault.cxx
+  TestPolarAxesNoData.cxx
+  TestRadialGrid2D.cxx,LOOSE_VALID
   TestScalarBar.cxx
   TestScalarBarAboveBelow.cxx
   TestSpiderPlotActor.cxx
@@ -39,4 +46,6 @@ vtk_add_test_cxx(vtkRenderingAnnotationCxxTests tests
   )
 
 vtk_test_cxx_executable(vtkRenderingAnnotationCxxTests tests
-  RENDERING_FACTORY)
+  DISABLE_FLOATING_POINT_EXCEPTIONS
+  RENDERING_FACTORY
+  )

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSLCReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkSLCReader
@@ -28,6 +16,7 @@
 #include "vtkIOImageModule.h" // For export macro
 #include "vtkImageReader2.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOIMAGE_EXPORT vtkSLCReader : public vtkImageReader2
 {
 public:
@@ -35,17 +24,17 @@ public:
   vtkTypeMacro(vtkSLCReader, vtkImageReader2);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Was there an error on the last read performed?
    */
   vtkGetMacro(Error, int);
-  //@}
+  ///@}
 
   /**
    * Is the given file an SLC file?
    */
-  int CanReadFile(const char* fname) override;
+  int CanReadFile(VTK_FILEPATH const char* fname) override;
   /**
    * .slc
    */
@@ -75,4 +64,5 @@ private:
   void operator=(const vtkSLCReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

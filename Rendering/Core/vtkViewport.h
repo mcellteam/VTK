@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkViewport.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkViewport
  * @brief   abstract specification for Viewports
@@ -34,14 +22,21 @@
 
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+#include "vtkSelection.h"    // Needed for selection
+#include "vtkSmartPointer.h" // Needed for assigning default nullptr value
+
+#include <array> // To store matrices
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor2DCollection;
 class vtkAssemblyPath;
 class vtkProp;
 class vtkPropCollection;
 class vtkWindow;
 
-class VTKRENDERINGCORE_EXPORT vtkViewport : public vtkObject
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkViewport : public vtkObject
 {
 public:
   vtkTypeMacro(vtkViewport, vtkObject);
@@ -49,9 +44,10 @@ public:
 
   /**
    * Add a prop to the list of props. Does nothing if the prop is
-   * already present. Prop is the superclass of all actors, volumes,
+   * nullptr or already present. Prop is the superclass of all actors, volumes,
    * 2D actors, composite props etc.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   void AddViewProp(vtkProp*);
 
   /**
@@ -60,61 +56,66 @@ public:
   vtkPropCollection* GetViewProps() { return this->Props; }
 
   /**
-   * Query if a prop is in the list of props.
+   * Query if a prop is in the list of props. Returns false for nullptr.
    */
-  int HasViewProp(vtkProp*);
+  vtkTypeBool HasViewProp(vtkProp*);
 
   /**
    * Remove a prop from the list of props. Does nothing if the prop
-   * is not already present.
+   * is nullptr or not already present.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   void RemoveViewProp(vtkProp*);
 
   /**
    * Remove all props from the list of props.
    */
-  void RemoveAllViewProps(void);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
+  void RemoveAllViewProps();
 
-  //@{
+  ///@{
   /**
    * Add/Remove different types of props to the renderer.
    * These methods are all synonyms to AddViewProp and RemoveViewProp.
    * They are here for convenience and backwards compatibility.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   void AddActor2D(vtkProp* p);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   void RemoveActor2D(vtkProp* p);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   vtkActor2DCollection* GetActors2D();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the background color of the rendering screen using an rgb color
    * specification.
    */
   vtkSetVector3Macro(Background, double);
   vtkGetVector3Macro(Background, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the second background color of the rendering screen
    * for gradient backgrounds using an rgb color specification.
    */
   vtkSetVector3Macro(Background2, double);
   vtkGetVector3Macro(Background2, double);
-  //@}
+  ///@}
   //
 
-  //@{
+  ///@{
   /**
    * Set/Get the alpha value used to fill the background with.
    * By default, this is set to 0.0.
    */
   vtkSetClampMacro(BackgroundAlpha, double, 0.0, 1.0);
   vtkGetMacro(BackgroundAlpha, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get whether this viewport should have a gradient background
    * using the Background (bottom) and Background2 (top) colors.
@@ -123,9 +124,46 @@ public:
   vtkSetMacro(GradientBackground, bool);
   vtkGetMacro(GradientBackground, bool);
   vtkBooleanMacro(GradientBackground, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get whether this viewport should use dithering to reduce
+   * color banding when using gradient backgrounds.
+   * By default, this feature is enabled.
+   */
+  vtkSetMacro(DitherGradient, bool);
+  vtkGetMacro(DitherGradient, bool);
+  vtkBooleanMacro(DitherGradient, bool);
+  ///@}
+
+  enum class GradientModes : int
+  {
+    // Background color is used at the bottom, Background2 color is used at the top.
+    VTK_GRADIENT_VERTICAL,
+    // Background color on the left, Background2 color on the right.
+    VTK_GRADIENT_HORIZONTAL,
+    // Background color in the center, Background2 color on and beyond the ellipse edge.
+    // Ellipse touches all sides of the viewport. The ellipse is a circle for viewports with equal
+    // width and height.
+    VTK_GRADIENT_RADIAL_VIEWPORT_FARTHEST_SIDE,
+    // Background color in the center, Background2 color on and beyond the ellipse edge.
+    // Ellipse touches all corners of the viewport. The ellipse is a circle for viewports with equal
+    // width and height.
+    VTK_GRADIENT_RADIAL_VIEWPORT_FARTHEST_CORNER,
+  };
+
+  ///@{
+  /**
+   * Specify the direction of the gradient background.
+   * All modes smoothly interpolate the color from `Background` to `Background2`
+   * @sa vtkViewport::GradientModes
+   */
+  vtkSetEnumMacro(GradientMode, GradientModes);
+  vtkGetEnumMacro(GradientMode, GradientModes);
+  ///@}
+
+  ///@{
   /**
    * Set the aspect ratio of the rendered image. This is computed
    * automatically and should not be set by the user.
@@ -133,9 +171,9 @@ public:
   vtkSetVector2Macro(Aspect, double);
   vtkGetVectorMacro(Aspect, double, 2);
   virtual void ComputeAspect();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the aspect ratio of a pixel in the rendered image.
    * This factor permits the image to rendered anisotropically
@@ -143,9 +181,9 @@ public:
    */
   vtkSetVector2Macro(PixelAspect, double);
   vtkGetVectorMacro(PixelAspect, double, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the viewport for the Viewport to draw in the rendering window.
    * Coordinates are expressed as (xmin,ymin,xmax,ymax), where each
@@ -153,9 +191,9 @@ public:
    */
   vtkSetVector4Macro(Viewport, double);
   vtkGetVectorMacro(Viewport, double, 4);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get a point location in display (or screen) coordinates.
    * The lower left corner of the window is the origin and y increases
@@ -163,9 +201,9 @@ public:
    */
   vtkSetVector3Macro(DisplayPoint, double);
   vtkGetVectorMacro(DisplayPoint, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a point location in view coordinates. The origin is in the
    * middle of the viewport and it extends from -1 to 1 in all three
@@ -173,16 +211,16 @@ public:
    */
   vtkSetVector3Macro(ViewPoint, double);
   vtkGetVectorMacro(ViewPoint, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a point location in world coordinates. This method takes
    * homogeneous coordinates.
    */
   vtkSetVector4Macro(WorldPoint, double);
   vtkGetVectorMacro(WorldPoint, double, 4);
-  //@}
+  ///@}
 
   /**
    * Return the center of this viewport in display coordinates.
@@ -192,7 +230,7 @@ public:
   /**
    * Is a given display point in this Viewport's viewport.
    */
-  virtual int IsInViewport(int x, int y);
+  virtual vtkTypeBool IsInViewport(int x, int y);
 
   /**
    * Return the vtkWindow that owns this vtkViewport.
@@ -237,7 +275,16 @@ public:
     this->ViewToDisplay();
   }
 
-  //@{
+  /**
+   * Convert world point coordinates to display (or screen) coordinates.
+   */
+  void WorldToDisplay(double& x, double& y, double& z)
+  {
+    this->WorldToView(x, y, z);
+    this->ViewToDisplay(x, y, z);
+  }
+
+  ///@{
   /**
    * These methods map from one coordinate system to another.
    * They are primarily used by the vtkCoordinate object and
@@ -261,9 +308,10 @@ public:
   virtual void WorldToPose(double&, double&, double&) {}
   virtual void ViewToWorld(double&, double&, double&) {}
   virtual void WorldToView(double&, double&, double&) {}
-  //@}
+  virtual void ViewToDisplay(double& x, double& y, double& z);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the size and origin of the viewport in display coordinates. Note:
    * if the window has not yet been realized, GetSize() and GetOrigin()
@@ -273,10 +321,10 @@ public:
   virtual int* GetOrigin() VTK_SIZEHINT(2);
   void GetTiledSize(int* width, int* height);
   virtual void GetTiledSizeAndOrigin(int* width, int* height, int* lowerLeftX, int* lowerLeftY);
-  //@}
+  ///@}
 
   // The following methods describe the public pick interface for picking
-  // Props in a viewport.
+  // Props in a viewport without/with setting fieldAssociation and selection.
 
   /**
    * Return the Prop that has the highest z value at the given x, y position
@@ -311,7 +359,51 @@ public:
   vtkAssemblyPath* PickPropFrom(double selectionX1, double selectionY1, double selectionX2,
     double selectionY2, vtkPropCollection*);
 
-  //@{
+  /**
+   * Return the Prop that has the highest z value at the given x, y position
+   * in the viewport.  Basically, the top most prop that renders the pixel at
+   * selectionX, selectionY will be returned.  If no Props are there, NULL is
+   * returned.  This method selects from the Viewports Prop list. Additionally,
+   * you can set the field association of the hardware selector used internally,
+   * and get its selection result by passing a non-null vtkSmartPointer<vtkSelection>.
+   */
+  virtual vtkAssemblyPath* PickProp(double selectionX, double selectionY, int fieldAssociation,
+    vtkSmartPointer<vtkSelection> selection) = 0;
+
+  /**
+   * Return the Prop that has the highest z value at the given x1, y1
+   * and x2,y2 positions in the viewport.  Basically, the top most prop that
+   * renders the pixel at selectionX1, selectionY1, selectionX2, selectionY2
+   * will be returned.  If no Props are there, NULL is returned.  This method
+   * selects from the Viewports Prop list. Additionally, you can set the field
+   * association of the hardware selector used internally, and get its selection
+   * result by passing a non-null vtkSmartPointer<vtkSelection>.
+   */
+  virtual vtkAssemblyPath* PickProp(double selectionX1, double selectionY1, double selectionX2,
+    double selectionY2, int fieldAssociation, vtkSmartPointer<vtkSelection> selection) = 0;
+
+  /**
+   * Same as PickProp with two arguments, but selects from the given
+   * collection of Props instead of the Renderers props.  Make sure
+   * the Props in the collection are in this renderer. Additionally, you can set
+   * the field association of the hardware selector used internally, and get its
+   * selection result by passing a non-null vtkSmartPointer<vtkSelection>.
+   */
+  vtkAssemblyPath* PickPropFrom(double selectionX, double selectionY, vtkPropCollection*,
+    int fieldAssociation, vtkSmartPointer<vtkSelection> selection);
+
+  /**
+   * Same as PickProp with four arguments, but selects from the given
+   * collection of Props instead of the Renderers props.  Make sure
+   * the Props in the collection are in this renderer. Additionally, you can set
+   * the field association of the hardware selector used internally, and get its
+   * selection result by passing a non-null vtkSmartPointer<vtkSelection>.
+   */
+  vtkAssemblyPath* PickPropFrom(double selectionX1, double selectionY1, double selectionX2,
+    double selectionY2, vtkPropCollection*, int fieldAssociation,
+    vtkSmartPointer<vtkSelection> selection);
+
+  ///@{
   /**
    * Methods used to return the pick (x,y) in local display coordinates (i.e.,
    * it's that same as selectionX and selectionY).
@@ -324,32 +416,33 @@ public:
   double GetPickY1() const { return this->PickY1; }
   double GetPickX2() const { return this->PickX2; }
   double GetPickY2() const { return this->PickY2; }
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   vtkGetObjectMacro(PickResultProps, vtkPropCollection);
-  //@}
+  ///@}
 
   /**
    * Return the Z value for the last picked Prop.
    */
   virtual double GetPickedZ() { return this->PickedZ; }
 
-  //@{
+  ///@{
   /**
    * Set/Get the constant environmental color using an rgb color specification.
    * Note this is currently ignored outside of RayTracing.
    */
   vtkSetVector3Macro(EnvironmentalBG, double);
   vtkGetVector3Macro(EnvironmentalBG, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the second environmental gradient color using an rgb color specification.
    * Note this is currently ignored outside of RayTracing.
    */
   vtkSetVector3Macro(EnvironmentalBG2, double);
   vtkGetVector3Macro(EnvironmentalBG2, double);
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * Set/Get whether this viewport should enable the gradient environment
    * using the EnvironmentalBG (bottom) and EnvironmentalBG2 (top) colors.
@@ -359,7 +452,7 @@ public:
   vtkSetMacro(GradientEnvironmentalBG, bool);
   vtkGetMacro(GradientEnvironmentalBG, bool);
   vtkBooleanMacro(GradientEnvironmentalBG, bool);
-  //@}
+  ///@}
 
 protected:
   // Create a vtkViewport with a black background, a white ambient light,
@@ -391,6 +484,8 @@ protected:
   double PixelAspect[2];
   double Center[2];
   bool GradientBackground;
+  bool DitherGradient;
+  GradientModes GradientMode = GradientModes::VTK_GRADIENT_VERTICAL;
 
   double EnvironmentalBG[3];
   double EnvironmentalBG2[3];
@@ -403,8 +498,13 @@ protected:
   double WorldPoint[4];
 
 private:
+  std::array<int, 2> LastComputeAspectSize;
+  std::array<double, 4> LastComputeAspectVPort;
+  std::array<double, 2> LastComputeAspectPixelAspect;
+
   vtkViewport(const vtkViewport&) = delete;
   void operator=(const vtkViewport&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

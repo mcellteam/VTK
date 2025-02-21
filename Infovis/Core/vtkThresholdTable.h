@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkThresholdTable.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkThresholdTable
  * @brief   Thresholds table rows.
@@ -34,6 +18,7 @@
 #include "vtkTableAlgorithm.h"
 #include "vtkVariant.h" // For vtkVariant arguments
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKINFOVISCORE_EXPORT vtkThresholdTable : public vtkTableAlgorithm
 {
 public:
@@ -49,7 +34,7 @@ public:
     ACCEPT_OUTSIDE = 3
   };
 
-  //@{
+  ///@{
   /**
    * The mode of the threshold filter.  Options are:
    * ACCEPT_LESS_THAN (0) accepts rows with values < MaxValue;
@@ -59,9 +44,9 @@ public:
    */
   vtkSetClampMacro(Mode, int, 0, 3);
   vtkGetMacro(Mode, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The minimum value for the threshold.
    * This may be any data type stored in a vtkVariant.
@@ -72,9 +57,9 @@ public:
     this->Modified();
   }
   virtual vtkVariant GetMinValue() { return this->MinValue; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The maximum value for the threshold.
    * This may be any data type stored in a vtkVariant.
@@ -85,7 +70,7 @@ public:
     this->Modified();
   }
   virtual vtkVariant GetMaxValue() { return this->MaxValue; }
-  //@}
+  ///@}
 
   /**
    * Criterion is rows whose scalars are between lower and upper thresholds
@@ -112,6 +97,11 @@ public:
     this->ThresholdBetween(vtkVariant(lower), vtkVariant(upper));
   }
 
+  /**
+   * Return true if value, converted to double, matches the criteria of the current Mode.
+   */
+  bool IsValueAcceptable(vtkVariant value);
+
 protected:
   vtkThresholdTable();
   ~vtkThresholdTable() override;
@@ -127,4 +117,5 @@ private:
   void operator=(const vtkThresholdTable&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

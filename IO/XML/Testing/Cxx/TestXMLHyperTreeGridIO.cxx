@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /*
 This test does a read write cycle of a known good hypertree grid file,
 comparing the shape of read and written trees, to exercise the reader
@@ -72,7 +74,7 @@ int TestXMLHyperTreeGridIO(int argc, char* argv[])
   read1 += "TRANSPOSED " + std::to_string(read_in->GetTransposedRootIndexing()) + "\n";
   read1 += "#CHILDREN " + std::to_string(read_in->GetNumberOfChildren()) + "\n";
   read1 += "#LEVELS " + std::to_string(read_in->GetNumberOfLevels()) + "\n";
-  read1 += "#VERTS " + std::to_string(read_in->GetNumberOfVertices()) + "\n";
+  read1 += "#VERTS " + std::to_string(read_in->GetNumberOfCells()) + "\n";
   read1 += "#LEAVES " + std::to_string(read_in->GetNumberOfLeaves()) + "\n";
   cout << read1 << endl;
 
@@ -119,7 +121,7 @@ int TestXMLHyperTreeGridIO(int argc, char* argv[])
   read2 += "TRANSPOSED " + std::to_string(wrote_out->GetTransposedRootIndexing()) + "\n";
   read2 += "#CHILDREN " + std::to_string(wrote_out->GetNumberOfChildren()) + "\n";
   read2 += "#LEVELS " + std::to_string(wrote_out->GetNumberOfLevels()) + "\n";
-  read2 += "#VERTS " + std::to_string(wrote_out->GetNumberOfVertices()) + "\n";
+  read2 += "#VERTS " + std::to_string(wrote_out->GetNumberOfCells()) + "\n";
   read2 += "#LEAVES " + std::to_string(wrote_out->GetNumberOfLeaves()) + "\n";
   cout << read2 << endl;
 
@@ -154,7 +156,7 @@ int TestXMLHyperTreeGridIO(int argc, char* argv[])
   read3 += "TRANSPOSED " + std::to_string(wrote_out->GetTransposedRootIndexing()) + "\n";
   read3 += "#CHILDREN " + std::to_string(wrote_out->GetNumberOfChildren()) + "\n";
   read3 += "#LEVELS " + std::to_string(wrote_out->GetNumberOfLevels()) + "\n";
-  read3 += "#VERTS " + std::to_string(wrote_out->GetNumberOfVertices()) + "\n";
+  read3 += "#VERTS " + std::to_string(wrote_out->GetNumberOfCells()) + "\n";
   read3 += "#LEAVES " + std::to_string(wrote_out->GetNumberOfLeaves()) + "\n";
   cout << read3 << endl;
 

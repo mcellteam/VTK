@@ -1,24 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQWidgetRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkQWidgetRepresentation
  * @brief   a class defining the representation for a vtkQWidgetWidget
  *
  * This class renders a QWidget as a simple vtkPlaneSource with a vtkTexture
  * that contains a vtkQWidgetTexture which imports the OpenGL texture handle
- * from Qt into the vtk scene. Qt and VTK may need to be useing the same
+ * from Qt into the vtk scene. Qt and VTK may need to be using the same
  * graphics context.
  */
 
@@ -29,6 +17,8 @@
 #include "vtkWidgetRepresentation.h"
 
 class QWidget;
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkCellPicker;
 class vtkOpenGLTexture;
@@ -45,13 +35,13 @@ public:
    */
   static vtkQWidgetRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for the class.
    */
   vtkTypeMacro(vtkQWidgetRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Satisfies superclass API.  This returns a pointer to the underlying
@@ -63,9 +53,9 @@ public:
    * Satisfies the superclass API.  This will change the state of the widget
    * to match changes that have been made to the underlying PolyDataSource
    */
-  void UpdatePlacement(void);
+  void UpdatePlacement();
 
-  //@{
+  ///@{
   /**
    * Methods to interface with the vtkImplicitPlaneWidget2.
    */
@@ -73,9 +63,9 @@ public:
   void BuildRepresentation() override;
   int ComputeComplexInteractionState(vtkRenderWindowInteractor* iren, vtkAbstractWidget* widget,
     unsigned long event, void* calldata, int modify = 0) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods supporting the rendering process.
    */
@@ -85,16 +75,16 @@ public:
   int RenderOpaqueGeometry(vtkViewport*) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
   // Manage the state of the widget
-  enum _InteractionState
+  enum InteractionStateType
   {
     Outside = 0,
     Inside
   };
 
-  //@{
+  ///@{
   /**
    * The interaction state may be set from a widget (e.g.,
    * vtkQWidgetWidget) or other object. This controls how the
@@ -105,7 +95,7 @@ public:
    * based on events, the widget may modify this further.
    */
   vtkSetClampMacro(InteractionState, int, Outside, Inside);
-  //@}
+  ///@}
 
   /**
    * Set the QWidget this representation will render
@@ -127,13 +117,13 @@ public:
    * Get the widget coordinates as computed in the last call to
    * ComputeComplexInteractionState.
    */
-  vtkGetVector2Macro(WidgetCoordinates, int);
+  vtkGetVector2Macro(WidgetCoordinates, float);
 
 protected:
   vtkQWidgetRepresentation();
   ~vtkQWidgetRepresentation() override;
 
-  int WidgetCoordinates[2];
+  float WidgetCoordinates[2];
 
   vtkPlaneSource* PlaneSource;
   vtkPolyDataMapper* PlaneMapper;
@@ -151,4 +141,5 @@ private:
   void operator=(const vtkQWidgetRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

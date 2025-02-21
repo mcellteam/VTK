@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArrayToTable.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkArrayToTable.h"
 #include "vtkArrayData.h"
@@ -36,7 +19,6 @@
 #include "vtkSparseArray.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
-#include "vtkUnicodeStringArray.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkUnsignedIntArray.h"
 #include "vtkUnsignedLongArray.h"
@@ -47,6 +29,7 @@
 #include <stdexcept>
 
 /// Convert a 1D array to a table with one column ...
+VTK_ABI_NAMESPACE_BEGIN
 template <typename ValueT, typename ColumnT>
 static bool ConvertVector(vtkArray* Array, vtkTable* Output)
 {
@@ -61,7 +44,7 @@ static bool ConvertVector(vtkArray* Array, vtkTable* Output)
 
   ColumnT* const column = ColumnT::New();
   column->SetNumberOfTuples(extents.GetSize());
-  column->SetName(array->GetName());
+  column->SetName(array->GetName().c_str());
   for (vtkIdType i = extents.GetBegin(); i != extents.GetEnd(); ++i)
   {
     column->SetValue(i - extents.GetBegin(), array->GetValue(i));
@@ -123,11 +106,11 @@ static bool ConvertMatrix(vtkArray* Array, vtkTable* Output)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkArrayToTable);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkArrayToTable::vtkArrayToTable()
 {
@@ -135,11 +118,11 @@ vtkArrayToTable::vtkArrayToTable()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkArrayToTable::~vtkArrayToTable() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkArrayToTable::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -158,7 +141,7 @@ int vtkArrayToTable::FillInputPortInformation(int port, vtkInformation* info)
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkArrayToTable::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -206,8 +189,6 @@ int vtkArrayToTable::RequestData(
       return 1;
     if (ConvertVector<vtkStdString, vtkStringArray>(input_array, output_table))
       return 1;
-    if (ConvertVector<vtkUnicodeString, vtkUnicodeStringArray>(input_array, output_table))
-      return 1;
 
     if (ConvertMatrix<double, vtkDoubleArray>(input_array, output_table))
       return 1;
@@ -239,8 +220,6 @@ int vtkArrayToTable::RequestData(
       return 1;
     if (ConvertMatrix<vtkStdString, vtkStringArray>(input_array, output_table))
       return 1;
-    if (ConvertMatrix<vtkUnicodeString, vtkUnicodeStringArray>(input_array, output_table))
-      return 1;
 
     throw std::runtime_error("Unhandled input array type.");
   }
@@ -255,3 +234,4 @@ int vtkArrayToTable::RequestData(
 
   return 0;
 }
+VTK_ABI_NAMESPACE_END

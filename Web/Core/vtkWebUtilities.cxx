@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWebUtilities.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWebUtilities.h"
 #include "vtkPython.h" // Need to be first and used for Py_xxx macros
 
@@ -26,14 +14,15 @@
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkWebUtilities);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWebUtilities::vtkWebUtilities() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWebUtilities::~vtkWebUtilities() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkWebUtilities::WriteAttributesToJavaScript(int field_type, vtkDataSet* dataset)
 {
   if (dataset == nullptr ||
@@ -65,7 +54,7 @@ std::string vtkWebUtilities::WriteAttributesToJavaScript(int field_type, vtkData
   return stream.str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkWebUtilities::WriteAttributeHeadersToJavaScript(int field_type, vtkDataSet* dataset)
 {
   if (dataset == nullptr ||
@@ -104,22 +93,26 @@ std::string vtkWebUtilities::WriteAttributeHeadersToJavaScript(int field_type, v
   return stream.str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWebUtilities::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWebUtilities::ProcessRMIs()
 {
   vtkWebUtilities::ProcessRMIs(1, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWebUtilities::ProcessRMIs(int reportError, int dont_loop)
 {
-  Py_BEGIN_ALLOW_THREADS vtkMultiProcessController::GetGlobalController()->ProcessRMIs(
-    reportError, dont_loop);
+  Py_BEGIN_ALLOW_THREADS
+
+  vtkMultiProcessController::GetGlobalController()
+    ->ProcessRMIs(reportError, dont_loop);
+
   Py_END_ALLOW_THREADS
 }
+VTK_ABI_NAMESPACE_END

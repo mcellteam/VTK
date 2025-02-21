@@ -1,26 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEdgeTable.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkEdgeTable.h"
 #include "vtkIdList.h"
 #include "vtkObjectFactory.h"
 #include "vtkPoints.h"
 #include "vtkVoidArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkEdgeTable);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object based on maximum point id.
 vtkEdgeTable::vtkEdgeTable()
 {
@@ -37,7 +26,7 @@ vtkEdgeTable::vtkEdgeTable()
   this->NumberOfEdges = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Free memory and return to instantiated state.
 void vtkEdgeTable::Initialize()
 {
@@ -92,7 +81,7 @@ void vtkEdgeTable::Initialize()
   this->NumberOfEdges = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Free memory and return to instantiated state.
 void vtkEdgeTable::Reset()
 {
@@ -140,13 +129,13 @@ void vtkEdgeTable::Reset()
   this->NumberOfEdges = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEdgeTable::~vtkEdgeTable()
 {
   this->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEdgeTable::InitEdgeInsertion(vtkIdType numPoints, int storeAttributes)
 {
   vtkIdType i;
@@ -199,7 +188,7 @@ int vtkEdgeTable::InitEdgeInsertion(vtkIdType numPoints, int storeAttributes)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return non-negative if edge (p1,p2) is an edge; otherwise -1.
 vtkIdType vtkEdgeTable::IsEdge(vtkIdType p1, vtkIdType p2)
 {
@@ -241,7 +230,7 @@ vtkIdType vtkEdgeTable::IsEdge(vtkIdType p1, vtkIdType p2)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return non-negative if edge (p1,p2) is an edge; otherwise -1.
 void vtkEdgeTable::IsEdge(vtkIdType p1, vtkIdType p2, void*& ptr)
 {
@@ -283,7 +272,7 @@ void vtkEdgeTable::IsEdge(vtkIdType p1, vtkIdType p2, void*& ptr)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Insert the edge (p1,p2) into the table. It is the user's responsibility to
 // check if the edge has already been inserted.
 vtkIdType vtkEdgeTable::InsertEdge(vtkIdType p1, vtkIdType p2)
@@ -336,7 +325,7 @@ vtkIdType vtkEdgeTable::InsertEdge(vtkIdType p1, vtkIdType p2)
   return (this->NumberOfEdges - 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTable::InsertEdge(vtkIdType p1, vtkIdType p2, vtkIdType attributeId)
 {
   vtkIdType index, search;
@@ -381,7 +370,7 @@ void vtkEdgeTable::InsertEdge(vtkIdType p1, vtkIdType p2, vtkIdType attributeId)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTable::InsertEdge(vtkIdType p1, vtkIdType p2, void* ptr)
 {
   vtkIdType index, search;
@@ -426,7 +415,7 @@ void vtkEdgeTable::InsertEdge(vtkIdType p1, vtkIdType p2, void* ptr)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize traversal of edges in table.
 void vtkEdgeTable::InitTraversal()
 {
@@ -461,7 +450,7 @@ vtkIdType vtkEdgeTable::GetNextEdge(vtkIdType& p1, vtkIdType& p2)
   return (-1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Traverse list of edges in table. Return the edge as (p1,p2), where p1 and
 // p2 are point id's. The value of p1 is guaranteed to be <= p2. The
 // return value is either 1 for success or 0 if the list is exhausted.
@@ -507,7 +496,8 @@ vtkIdList** vtkEdgeTable::Resize(vtkIdType size)
 
   size = (size < this->TableSize ? size : this->TableSize);
   newTableArray = new vtkIdList*[newSize];
-  memcpy(newTableArray, this->Table, size * sizeof(vtkIdList*));
+  // NOLINTNEXTLINE(bugprone-sizeof-expression)
+  memcpy(newTableArray, this->Table, size * sizeof(*newTableArray));
   for (i = size; i < newSize; i++)
   {
     newTableArray[i] = nullptr;
@@ -519,7 +509,8 @@ vtkIdList** vtkEdgeTable::Resize(vtkIdType size)
   if (this->StoreAttributes == 1)
   {
     newAttributeArray = new vtkIdList*[newSize];
-    memcpy(newAttributeArray, this->Attributes, size * sizeof(vtkIdList*));
+    // NOLINTNEXTLINE(bugprone-sizeof-expression)
+    memcpy(newAttributeArray, this->Attributes, size * sizeof(*newAttributeArray));
     for (i = size; i < newSize; i++)
     {
       newAttributeArray[i] = nullptr;
@@ -530,7 +521,8 @@ vtkIdList** vtkEdgeTable::Resize(vtkIdType size)
   else if (this->StoreAttributes == 2)
   {
     newPointerAttributeArray = new vtkVoidArray*[newSize];
-    memcpy(newPointerAttributeArray, this->Attributes, size * sizeof(vtkVoidArray*));
+    // NOLINTNEXTLINE(bugprone-sizeof-expression)
+    memcpy(newPointerAttributeArray, this->Attributes, size * sizeof(*newPointerAttributeArray));
     for (i = size; i < newSize; i++)
     {
       newPointerAttributeArray[i] = nullptr;
@@ -542,7 +534,7 @@ vtkIdList** vtkEdgeTable::Resize(vtkIdType size)
   return this->Table;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEdgeTable::InitPointInsertion(vtkPoints* newPts, vtkIdType estSize)
 {
   // Initialize
@@ -568,7 +560,7 @@ int vtkEdgeTable::InitPointInsertion(vtkPoints* newPts, vtkIdType estSize)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkEdgeTable::InsertUniquePoint(vtkIdType p1, vtkIdType p2, double x[3], vtkIdType& ptId)
 {
   vtkIdType loc = this->IsEdge(p1, p2);
@@ -586,10 +578,11 @@ int vtkEdgeTable::InsertUniquePoint(vtkIdType p1, vtkIdType p2, double x[3], vtk
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTable::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "NumberOfEdges: " << this->GetNumberOfEdges() << "\n";
 }
+VTK_ABI_NAMESPACE_END

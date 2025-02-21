@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSSAAPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSSAAPass.h"
 #include "vtkObjectFactory.h"
@@ -32,11 +20,12 @@
 #include "vtkSSAAPassFS.h"
 #include "vtkTextureObjectVS.h" // a pass through shader
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSSAAPass);
 
 vtkCxxSetObjectMacro(vtkSSAAPass, DelegatePass, vtkRenderPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSSAAPass::vtkSSAAPass()
 {
   this->FrameBufferObject = nullptr;
@@ -46,7 +35,7 @@ vtkSSAAPass::vtkSSAAPass()
   this->DelegatePass = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSSAAPass::~vtkSSAAPass()
 {
   if (this->DelegatePass != nullptr)
@@ -72,7 +61,7 @@ vtkSSAAPass::~vtkSSAAPass()
   delete this->SSAAProgram;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSSAAPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -88,7 +77,7 @@ void vtkSSAAPass::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -259,7 +248,7 @@ void vtkSSAAPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -291,3 +280,4 @@ void vtkSSAAPass::ReleaseGraphicsResources(vtkWindow* w)
     this->DelegatePass->ReleaseGraphicsResources(w);
   }
 }
+VTK_ABI_NAMESPACE_END

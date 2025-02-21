@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTextWidget
  * @brief   widget for placing text on overlay plane
@@ -31,11 +19,12 @@
 #ifndef vtkTextWidget_h
 #define vtkTextWidget_h
 
-class vtkTextRepresentation;
-class vtkTextActor;
-
 #include "vtkBorderWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+
+VTK_ABI_NAMESPACE_BEGIN
+class vtkTextRepresentation;
+class vtkTextActor;
 
 class VTKINTERACTIONWIDGETS_EXPORT vtkTextWidget : public vtkBorderWidget
 {
@@ -45,25 +34,22 @@ public:
    */
   static vtkTextWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK methods.
    */
   vtkTypeMacro(vtkTextWidget, vtkBorderWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
    * widget in the scene. Note that the representation is a subclass of vtkProp
    * so it can be added to the renderer independent of the widget.
    */
-  void SetRepresentation(vtkTextRepresentation* r)
-  {
-    this->Superclass::SetWidgetRepresentation(reinterpret_cast<vtkWidgetRepresentation*>(r));
-  }
+  void SetRepresentation(vtkTextRepresentation* r);
 
-  //@{
+  ///@{
   /**
    * Specify a vtkTextActor to manage. This is a convenient, alternative
    * method to specify the representation for the widget (i.e., used instead
@@ -72,7 +58,7 @@ public:
    */
   void SetTextActor(vtkTextActor* textActor);
   vtkTextActor* GetTextActor();
-  //@}
+  ///@}
 
   /**
    * Create the default widget representation if one is not set.
@@ -88,4 +74,5 @@ private:
   void operator=(const vtkTextWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

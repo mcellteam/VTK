@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestRemoveActorNonCurrentContext.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Test for releasing graphics resources from a non-current
 // render window with vtkPolyDataMapper
@@ -28,7 +17,7 @@
 #include "vtkTestUtilities.h"
 #include "vtkTesting.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class TestRemoveActorNonCurrentContextCallback : public vtkCommand
 {
 public:
@@ -52,7 +41,7 @@ public:
 
     char* pressedKey = interactor->GetKeySym();
 
-    if (strcmp(pressedKey, "9") == 0)
+    if (pressedKey && strcmp(pressedKey, "9") == 0)
     {
       renderer2->RemoveAllViewProps();
       renderWindow1->Render();
@@ -66,7 +55,7 @@ public:
   vtkRenderWindow* renderWindow2;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestRemoveActorNonCurrentContext(int argc, char* argv[])
 {
   vtkNew<vtkSphereSource> sphere;

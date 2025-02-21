@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 
 /*****************************************************************************
@@ -51,34 +24,32 @@
 #include "exodusII.h"     // for ex_err, EX_MSG, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
 
-/*! \endcond */
-
 /*! \undoc */
 int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
 {
   int          ii, i, j, iss, ioff;
   ex_entity_id side_set_id;
-  int          num_side_sets, num_elem_blks, ndim;
-  int64_t      tot_num_elem = 0, tot_num_ss_elem = 0, num_df = 0, side, elem;
-  void_int *   elem_blk_ids       = NULL;
-  void_int *   side_set_ids       = NULL;
-  void_int *   ss_elem_ndx        = NULL;
-  void_int *   side_set_elem_list = NULL;
-  void_int *   side_set_side_list = NULL;
+  int64_t      tot_num_ss_elem = 0, num_df = 0;
+  void_int    *elem_blk_ids       = NULL;
+  void_int    *side_set_ids       = NULL;
+  void_int    *ss_elem_ndx        = NULL;
+  void_int    *side_set_elem_list = NULL;
+  void_int    *side_set_side_list = NULL;
   size_t       elem_ctr;
-  int          int_size, ids_size;
   int          status;
 
-  struct ex__elem_blk_parm *elem_blk_parms = NULL;
+  struct exi_elem_blk_parm *elem_blk_parms = NULL;
 
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* first check if any side sets are specified */
   /* inquire how many side sets have been stored */
-  num_side_sets = ex_inquire_int(exoid, EX_INQ_SIDE_SETS);
+  int num_side_sets = (int)ex_inquire_int(exoid, EX_INQ_SIDE_SETS);
   if (num_side_sets < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of side sets in file id %d",
              exoid);
@@ -88,11 +59,11 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
 
   if (num_side_sets == 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no side sets defined in file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_WARN);
+    ex_err_fn(exoid, __func__, errmsg, EX_NOENTITY);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
-  num_elem_blks = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
+  int num_elem_blks = (int)ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
   if (num_elem_blks < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of element blocks in file id %d",
              exoid);
@@ -100,7 +71,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  tot_num_elem = ex_inquire_int(exoid, EX_INQ_ELEM);
+  int64_t tot_num_elem = ex_inquire_int(exoid, EX_INQ_ELEM);
   if (tot_num_elem < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get total number of elements in file id %d",
              exoid);
@@ -110,20 +81,18 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
 
   /* get the dimensionality of the coordinates;  this is necessary to
      distinguish between 2d TRIs and 3d TRIs */
-  ndim = ex_inquire_int(exoid, EX_INQ_DIM);
+  int ndim = (int)ex_inquire_int(exoid, EX_INQ_DIM);
   if (ndim < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get dimensionality in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  int_size = sizeof(int);
-  if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
-    int_size = sizeof(int64_t);
-  }
+  bool ints_64  = ex_int64_status(exoid) & EX_BULK_INT64_API;
+  int  int_size = ints_64 ? sizeof(int64_t) : sizeof(int);
 
   /* Allocate space for the element block ids */
-  ids_size = sizeof(int);
+  int ids_size = sizeof(int);
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
     ids_size = sizeof(int64_t);
   }
@@ -142,7 +111,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
   }
 
   /* Allocate space for the element block params */
-  if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct ex__elem_blk_parm)))) {
+  if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct exi_elem_blk_parm)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate space for element block params "
              "for file id %d",
@@ -161,7 +130,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
       id = ((int *)elem_blk_ids)[i];
     }
 
-    if (ex__get_block_param(exoid, id, ndim, &elem_blk_parms[i]) != EX_NOERR) {
+    if (exi_get_block_param(exoid, id, ndim, &elem_blk_parms[i]) != EX_NOERR) {
       goto error_ret;
     }
 
@@ -264,7 +233,7 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
       for (i = 0; i < tot_num_ss_elem; i++) {
         elems[i] = i; /* init index array to current position */
       }
-      ex__iqsort64(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
+      exi_iqsort64(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
     }
     else {
       /* Sort side set element list into index array  - non-destructive */
@@ -272,14 +241,16 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
       for (i = 0; i < tot_num_ss_elem; i++) {
         elems[i] = i; /* init index array to current position */
       }
-      ex__iqsort(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
+      exi_iqsort(side_set_elem_list, ss_elem_ndx, tot_num_ss_elem);
     }
 
     j = 0; /* The current element block... */
     for (ii = 0; ii < tot_num_ss_elem; ii++) {
 
       int64_t elem_ndx;
-      if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
+      int64_t elem;
+      int64_t side;
+      if (ints_64) {
         elem_ndx = ((int64_t *)ss_elem_ndx)[ii];
         elem     = ((int64_t *)side_set_elem_list)[elem_ndx];
         side     = ((int64_t *)side_set_side_list)[elem_ndx] - 1;

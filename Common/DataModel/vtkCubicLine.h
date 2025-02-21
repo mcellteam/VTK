@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCubicLine.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) EDF - www.edf.fr
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCubicLine
  * @brief   cell represents a cubic , isoparametric 1D line
@@ -24,10 +13,9 @@
  * mid-edge nodes. Please note that the parametric coordinates lie between -1 and 1
  * in accordance with most standard documentations.
  * @par Thanks:
- * <verbatim>
+ * \verbatim
  * This file has been developed by Oxalya - www.oxalya.com
- * Copyright (c) EDF - www.edf.fr
- * </verbatim>
+ * \endverbatim
  */
 
 #ifndef vtkCubicLine_h
@@ -36,6 +24,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkNonLinearCell.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLine;
 class vtkDoubleArray;
 
@@ -46,7 +35,7 @@ public:
   vtkTypeMacro(vtkCubicLine, vtkNonLinearCell);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * See the vtkCell API for descriptions of these methods.
    */
@@ -63,11 +52,11 @@ public:
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
   double* GetParametricCoords() override;
-  //@}
+  ///@}
 
   /**
    * Return the distance of the parametric coordinate provided to the
@@ -97,7 +86,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[4]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[4]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -110,7 +99,7 @@ public:
   {
     vtkCubicLine::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
+  ///@}
 
 protected:
   vtkCubicLine();
@@ -132,4 +121,5 @@ inline int vtkCubicLine::GetParametricCenter(double pcoords[3])
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

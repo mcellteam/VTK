@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGL2PSMathTextScaling.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkBrush.h"
 #include "vtkContext2D.h"
@@ -30,17 +18,17 @@
 #include "vtkTestingInteractor.h"
 #include "vtkTextProperty.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class GL2PSMathTextScalingTest : public vtkContextItem
 {
 public:
   static GL2PSMathTextScalingTest* New();
   vtkTypeMacro(GL2PSMathTextScalingTest, vtkContextItem);
   // Paint event for the chart, called whenever the chart needs to be drawn
-  virtual bool Paint(vtkContext2D* painter) override;
+  bool Paint(vtkContext2D* painter) override;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestGL2PSMathTextScaling(int, char*[])
 {
   // Set up a 2D context view, context test object and add it to the scene

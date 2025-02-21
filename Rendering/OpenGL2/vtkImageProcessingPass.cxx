@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageProcessingPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkImageProcessingPass.h"
 #include "vtkObjectFactory.h"
@@ -21,26 +9,32 @@
 #include "vtkRenderState.h"
 #include "vtkRenderer.h"
 #include "vtkTextureObject.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 #include <cassert>
 
 // to be able to dump intermediate passes into png files for debugging.
 // only for vtkImageProcessingPass developers.
-//#define VTK_IMAGE_PROCESSING_PASS_DEBUG
+// #define VTK_IMAGE_PROCESSING_PASS_DEBUG
+
+#ifdef VTK_IMAGE_PROCESSING_PASS_DEBUG
+#include "vtkImageImport.h"
+#include "vtkPNGWriter.h"
+#include "vtkPixelBufferObject.h"
+#endif
 
 #include "vtkCamera.h"
 #include "vtkMath.h"
-#include "vtkPixelBufferObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkImageProcessingPass, DelegatePass, vtkRenderPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageProcessingPass::vtkImageProcessingPass()
 {
   this->DelegatePass = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageProcessingPass::~vtkImageProcessingPass()
 {
   if (this->DelegatePass != nullptr)
@@ -49,7 +43,7 @@ vtkImageProcessingPass::~vtkImageProcessingPass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageProcessingPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -64,7 +58,7 @@ void vtkImageProcessingPass::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)" << endl;
   }
 }
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Render delegate with a image of different dimensions than the
 // original one.
@@ -116,17 +110,17 @@ void vtkImageProcessingPass::RenderDelegate(const vtkRenderState* s, int width, 
   }
   else
   {
-    double large;
-    double small;
+    double largeDim;
+    double smallDim;
     if (newCamera->GetUseHorizontalViewAngle())
     {
-      large = newWidth;
-      small = width;
+      largeDim = newWidth;
+      smallDim = width;
     }
     else
     {
-      large = newHeight;
-      small = height;
+      largeDim = newHeight;
+      smallDim = height;
     }
     double angle = vtkMath::RadiansFromDegrees(newCamera->GetViewAngle());
 
@@ -135,7 +129,7 @@ void vtkImageProcessingPass::RenderDelegate(const vtkRenderState* s, int width, 
          << endl;
 #endif
 
-    angle = 2.0 * atan(tan(angle / 2.0) * large / static_cast<double>(small));
+    angle = 2.0 * atan(tan(angle / 2.0) * largeDim / smallDim);
 
 #ifdef VTK_IMAGE_PROCESSING_PASS_DEBUG
     cout << "new angle =" << angle << " rad=" << vtkMath::DegreesFromRadians(angle) << " deg"
@@ -163,6 +157,13 @@ void vtkImageProcessingPass::RenderDelegate(const vtkRenderState* s, int width, 
 
   fbo->AddDepthAttachment();
   fbo->StartNonOrtho(newWidth, newHeight);
+  if (r->Transparent())
+  {
+    // Clear is not called on transparent renderers. But since this is a offscreen render target we
+    // want it cleared
+    ostate->vtkglClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    ostate->vtkglClear(GL_COLOR_BUFFER_BIT);
+  }
   ostate->vtkglViewport(0, 0, newWidth, newHeight);
   ostate->vtkglScissor(0, 0, newWidth, newHeight);
 
@@ -214,7 +215,7 @@ void vtkImageProcessingPass::RenderDelegate(const vtkRenderState* s, int width, 
   savedCamera->UnRegister(this);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -227,3 +228,4 @@ void vtkImageProcessingPass::ReleaseGraphicsResources(vtkWindow* w)
     this->DelegatePass->ReleaseGraphicsResources(w);
   }
 }
+VTK_ABI_NAMESPACE_END

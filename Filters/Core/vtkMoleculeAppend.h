@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMoleculeAppend.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class vtkMoleculeAppend
@@ -33,13 +21,15 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkMoleculeAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSCORE_EXPORT vtkMoleculeAppend : public vtkMoleculeAlgorithm
 {
 public:
   static vtkMoleculeAppend* New();
   vtkTypeMacro(vtkMoleculeAppend, vtkMoleculeAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get one input to this filter. This method is only for support of
    * old-style pipeline connections.  When writing new code you should
@@ -47,9 +37,9 @@ public:
    */
   vtkDataObject* GetInput(int idx);
   vtkDataObject* GetInput() { return this->GetInput(0); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify if coincident atoms (atom with exactly the same position)
    * should be merged into one.
@@ -79,4 +69,5 @@ private:
   void operator=(const vtkMoleculeAppend&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

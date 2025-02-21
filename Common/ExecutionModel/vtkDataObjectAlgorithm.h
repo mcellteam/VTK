@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataObjectAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataObjectAlgorithm
  * @brief   Superclass for algorithms that produce only data object as output
@@ -37,6 +25,7 @@
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkDataObject.h"                 // makes things a bit easier
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkDataObject;
 
@@ -47,14 +36,14 @@ public:
   vtkTypeMacro(vtkDataObjectAlgorithm, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm.
    */
   vtkDataObject* GetOutput();
   vtkDataObject* GetOutput(int);
   virtual void SetOutput(vtkDataObject* d);
-  //@}
+  ///@}
 
   /**
    * see vtkAlgorithm for details
@@ -67,7 +56,7 @@ public:
   vtkDataObject* GetInput();
   vtkDataObject* GetInput(int port);
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection() to
@@ -75,9 +64,9 @@ public:
    */
   void SetInputData(vtkDataObject*);
   void SetInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use AddInputConnection() to
@@ -85,7 +74,7 @@ public:
    */
   void AddInputData(vtkDataObject*);
   void AddInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
 protected:
   vtkDataObjectAlgorithm();
@@ -113,6 +102,11 @@ protected:
     return 1;
   }
 
+  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*)
+  {
+    return 1;
+  }
+
   virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*)
   {
     return 1;
@@ -122,9 +116,21 @@ protected:
   int FillOutputPortInformation(int port, vtkInformation* info) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
+  /**
+   * A helper method that can be used by subclasses in
+   * `RequestDataObject` to create an output data object of the given type if
+   * not already present.
+   *
+   * Note, this uses `vtkDataObjectTypes::TypeIdIsA` to test types. For exact
+   * match, set `exact` to true.
+   */
+  static bool SetOutputDataObject(
+    int dataType, vtkInformation* outputInformation, bool exact = false);
+
 private:
   vtkDataObjectAlgorithm(const vtkDataObjectAlgorithm&) = delete;
   void operator=(const vtkDataObjectAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageTracerWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageTracerWidget.h"
 
 #include "vtkAbstractPicker.h"
@@ -38,6 +26,7 @@
 #include "vtkTransform.h"
 #include "vtkTransformPolyDataFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageTracerWidget);
 
 vtkCxxSetObjectMacro(vtkImageTracerWidget, HandleProperty, vtkProperty);
@@ -100,7 +89,7 @@ vtkImageTracerWidget::vtkImageTracerWidget()
   this->LineData = vtkPolyData::New();
 
   lineMapper->SetInputData(this->LineData);
-  lineMapper->SetResolveCoincidentTopologyToPolygonOffset();
+  vtkPolyDataMapper::SetResolveCoincidentTopologyToPolygonOffset();
   lineMapper->ScalarVisibilityOff();
   this->LineActor->SetMapper(lineMapper);
   this->LineActor->PickableOff();
@@ -191,7 +180,7 @@ vtkImageTracerWidget::~vtkImageTracerWidget()
   this->HandleGenerator->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageTracerWidget::SetViewProp(vtkProp* prop)
 {
   if (this->ViewProp != prop)
@@ -545,14 +534,13 @@ void vtkImageTracerWidget::SetProjectionPosition(double position)
 {
   this->ProjectionPosition = position;
 
-  int i;
-  for (i = 0; i < this->NumberOfHandles; ++i)
+  for (int i = 0; i < this->NumberOfHandles; ++i)
   {
     this->AdjustHandlePosition(i, this->HandleGeometry[i]->GetCenter());
   }
 
   double pt[3];
-  for (i = 0; i < this->NumberOfHandles; ++i)
+  for (int i = 0; i < this->LinePoints->GetNumberOfPoints(); ++i)
   {
     this->LinePoints->GetPoint(i, pt);
     pt[this->ProjectionNormal] = this->ProjectionPosition;
@@ -1563,3 +1551,4 @@ void vtkImageTracerWidget::SizeHandles()
 {
   // TODO...
 }
+VTK_ABI_NAMESPACE_END

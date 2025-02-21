@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageToPolyDataFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageToPolyDataFilter
  * @brief   generate linear primitives (vtkPolyData) from an image
@@ -74,6 +62,7 @@
 #define VTK_COLOR_MODE_LUT 0
 #define VTK_COLOR_MODE_LINEAR_256 1
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkEdgeTable;
 class vtkIdTypeArray;
@@ -94,7 +83,7 @@ public:
    */
   static vtkImageToPolyDataFilter* New();
 
-  //@{
+  ///@{
   /**
    * Specify how to create the output. Pixelize means converting the image
    * to quad polygons with a constant color per quad. Polygonalize means
@@ -108,9 +97,9 @@ public:
   void SetOutputStyleToPixelize() { this->SetOutputStyle(VTK_STYLE_PIXELIZE); }
   void SetOutputStyleToPolygonalize() { this->SetOutputStyle(VTK_STYLE_POLYGONALIZE); }
   void SetOutputStyleToRunLength() { this->SetOutputStyle(VTK_STYLE_RUN_LENGTH); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify how to quantize color.
    */
@@ -118,18 +107,18 @@ public:
   vtkGetMacro(ColorMode, int);
   void SetColorModeToLUT() { this->SetColorMode(VTK_COLOR_MODE_LUT); }
   void SetColorModeToLinear256() { this->SetColorMode(VTK_COLOR_MODE_LINEAR_256); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the vtkLookupTable to use. The lookup table is used when the
    * color mode is set to LUT and a single component scalar is input.
    */
   virtual void SetLookupTable(vtkScalarsToColors*);
   vtkGetObjectMacro(LookupTable, vtkScalarsToColors);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the output style is set to polygonalize, then you can control
    * whether to smooth boundaries.
@@ -137,18 +126,18 @@ public:
   vtkSetMacro(Smoothing, vtkTypeBool);
   vtkGetMacro(Smoothing, vtkTypeBool);
   vtkBooleanMacro(Smoothing, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the number of smoothing iterations to smooth polygons. (Only
    * in effect if output style is Polygonalize and smoothing is on.)
    */
   vtkSetClampMacro(NumberOfSmoothingIterations, int, 0, VTK_INT_MAX);
   vtkGetMacro(NumberOfSmoothingIterations, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off whether the final polygons should be decimated.
    * whether to smooth boundaries.
@@ -156,9 +145,9 @@ public:
   vtkSetMacro(Decimation, vtkTypeBool);
   vtkGetMacro(Decimation, vtkTypeBool);
   vtkBooleanMacro(Decimation, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the error to use for decimation (if decimation is on).
    * The error is an absolute number--the image spacing and
@@ -167,9 +156,9 @@ public:
    */
   vtkSetClampMacro(DecimationError, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(DecimationError, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the error value between two colors where the colors are
    * considered the same. Only use this if the color mode uses the
@@ -177,9 +166,9 @@ public:
    */
   vtkSetClampMacro(Error, int, 0, VTK_INT_MAX);
   vtkGetMacro(Error, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the size (n by n pixels) of the largest region to
    * polygonalize. When the OutputStyle is set to VTK_STYLE_POLYGONALIZE,
@@ -189,7 +178,7 @@ public:
    */
   vtkSetClampMacro(SubImageSize, int, 10, VTK_INT_MAX);
   vtkGetMacro(SubImageSize, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageToPolyDataFilter();
@@ -239,15 +228,15 @@ private:
     vtkUnsignedCharArray* polyColors, vtkUnsignedCharArray* pointDescr);
 
   int GetNeighbors(
-    unsigned char* ptr, int& i, int& j, int dims[3], unsigned char* neighbors[4], int mode);
+    unsigned char* ptr, int& i, int& j, int dims[2], unsigned char* neighbors[4], int mode);
 
   void GetIJ(int id, int& i, int& j, int dims[2]);
   unsigned char* GetColor(unsigned char* rgb);
   int IsSameColor(unsigned char* p1, unsigned char* p2);
 
-private:
   vtkImageToPolyDataFilter(const vtkImageToPolyDataFilter&) = delete;
   void operator=(const vtkImageToPolyDataFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

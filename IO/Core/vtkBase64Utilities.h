@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBase64Utilities.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBase64Utilities
  * @brief   base64 encode and decode utilities.
@@ -25,11 +13,13 @@
 #include "vtkIOCoreModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOCORE_EXPORT vtkBase64Utilities : public vtkObject
 {
 public:
   static vtkBase64Utilities* New();
   vtkTypeMacro(vtkBase64Utilities, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Encode 3 bytes into 4 bytes
@@ -79,19 +69,19 @@ public:
    * always less than the input buffer size, so a good first order
    * approximation is to allocate the same size. Base64 encoding is about
    * 4/3 overhead, so a tighter bound is possible.
-   * Return the number of bytes atually placed into the output buffer.
+   * Return the number of bytes actually placed into the output buffer.
    */
   static size_t DecodeSafely(
     const unsigned char* input, size_t inputLen, unsigned char* output, size_t outputLen);
 
 protected:
-  vtkBase64Utilities() {}
-  ~vtkBase64Utilities() override {}
+  vtkBase64Utilities() = default;
+  ~vtkBase64Utilities() override = default;
 
 private:
   vtkBase64Utilities(const vtkBase64Utilities&) = delete;
   void operator=(const vtkBase64Utilities&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-// VTK-HeaderTest-Exclude: vtkBase64Utilities.h

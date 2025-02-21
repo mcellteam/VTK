@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkActorCollection.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkActorCollection
  * @brief   an ordered list of actors
@@ -30,10 +18,12 @@
 #include "vtkActor.h" // For inline methods
 #include "vtkPropCollection.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkProperty;
 
-class VTKRENDERINGCORE_EXPORT vtkActorCollection : public vtkPropCollection
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkActorCollection : public vtkPropCollection
 {
 public:
   static vtkActorCollection* New();
@@ -55,7 +45,7 @@ public:
    */
   vtkActor* GetLastActor();
 
-  //@{
+  ///@{
   /**
    * Access routines that are provided for compatibility with previous
    * version of VTK.  Please use the GetNextActor(), GetLastActor() variants
@@ -63,7 +53,7 @@ public:
    */
   vtkActor* GetNextItem();
   vtkActor* GetLastItem();
-  //@}
+  ///@}
 
   /**
    * Apply properties to all actors in this collection.
@@ -80,15 +70,14 @@ public:
   }
 
 protected:
-  vtkActorCollection() {}
-  ~vtkActorCollection() override {}
+  vtkActorCollection() = default;
+  ~vtkActorCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
   void AddItem(vtkObject* o) { this->vtkCollection::AddItem(o); }
   void AddItem(vtkProp* o) { this->vtkPropCollection::AddItem(o); }
 
-private:
   vtkActorCollection(const vtkActorCollection&) = delete;
   void operator=(const vtkActorCollection&) = delete;
 };
@@ -125,4 +114,5 @@ inline vtkActor* vtkActorCollection::GetLastItem()
   return this->GetLastActor();
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

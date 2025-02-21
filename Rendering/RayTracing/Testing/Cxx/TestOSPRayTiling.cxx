@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestOSPRayRenderMesh.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test verifies that we can render at resolutions larger than the window
 // by rendering and stitching multiple tiles.
 
@@ -50,7 +38,7 @@ int TestOSPRayTiling(int argc, char* argv[])
   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
   renWin->AddRenderer(renderer);
   vtkOSPRayRendererNode::SetSamplesPerPixel(16, renderer);
-  vtkOSPRayRendererNode::SetBackgroundMode(2, renderer);
+  vtkOSPRayRendererNode::SetBackgroundMode(vtkOSPRayRendererNode::Environment, renderer);
 
   vtkSmartPointer<vtkLight> l = vtkSmartPointer<vtkLight>::New();
   l->SetLightTypeToHeadlight();

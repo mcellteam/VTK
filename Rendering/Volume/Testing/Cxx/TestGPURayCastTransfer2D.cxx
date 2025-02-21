@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastTransfer2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * Test 2D transfer function support in GPUVolumeRayCastMapper.  The transfer
  * function is created manually using known value/gradient histogram information
@@ -118,6 +106,7 @@ int TestGPURayCastTransfer2D(int argc, char* argv[])
   Transfer2DPtr tf2d = Create2DTransfer();
 
   volumeProperty->SetTransferFunction2D(tf2d);
+  volumeProperty->SetTransferFunctionMode(vtkVolumeProperty::TF_2D);
 
   // Setup rendering context
   vtkNew<vtkRenderWindow> renWin;

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPTextureMapToSphere.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPTextureMapToSphere.h"
 
 #include "vtkCommunicator.h"
@@ -22,13 +10,21 @@
 #include "vtkObjectFactory.h"
 #include "vtkTextureMapToSphere.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPTextureMapToSphere);
+vtkCxxSetObjectMacro(vtkPTextureMapToSphere, Controller, vtkMultiProcessController);
 
 // Create object with Center (0,0,0) and the PreventSeam ivar is set to true. The
 // sphere center is automatically computed.
 vtkPTextureMapToSphere::vtkPTextureMapToSphere()
 {
-  this->Controller = vtkMultiProcessController::GetGlobalController();
+  this->Controller = nullptr;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
+}
+
+vtkPTextureMapToSphere::~vtkPTextureMapToSphere()
+{
+  this->SetController(nullptr);
 }
 
 void vtkPTextureMapToSphere::ComputeCenter(vtkDataSet* dataSet)
@@ -67,5 +63,14 @@ void vtkPTextureMapToSphere::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
-  os << indent << "Controller: " << *this->Controller << std::endl;
+  if (this->Controller)
+  {
+    os << indent << "Controller:\n";
+    this->Controller->PrintSelf(os, indent.GetNextIndent());
+  }
+  else
+  {
+    os << indent << "Controller: (none)" << endl;
+  }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImagePermute.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImagePermute
  * @brief    Permutes axes of input.
@@ -29,6 +17,7 @@
 #include "vtkImageReslice.h"
 #include "vtkImagingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImagePermute : public vtkImageReslice
 {
 public:
@@ -37,18 +26,18 @@ public:
 
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The filtered axes are the input axes that get relabeled to X,Y,Z.
    */
   void SetFilteredAxes(int x, int y, int z);
   void SetFilteredAxes(const int xyz[3]) { this->SetFilteredAxes(xyz[0], xyz[1], xyz[2]); }
   vtkGetVector3Macro(FilteredAxes, int);
-  //@}
+  ///@}
 
 protected:
   vtkImagePermute();
-  ~vtkImagePermute() override {}
+  ~vtkImagePermute() override = default;
 
   int FilteredAxes[3];
 
@@ -57,4 +46,5 @@ private:
   void operator=(const vtkImagePermute&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

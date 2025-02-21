@@ -1,23 +1,14 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtk3DS.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtk3DS_h
 #define vtk3DS_h
 
+#include "vtkABINamespace.h"
+
 #include <ctype.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLight;
 class vtkCamera;
 class vtkProperty;
@@ -39,33 +30,37 @@ typedef unsigned char byte;
 typedef unsigned short word;
 typedef unsigned int dword;
 
-typedef struct
+struct vtk3DSList_t
 {
   VTK_LIST_FIELDS
-} vtk3DSList;
+};
+using vtk3DSList = struct vtk3DSList_t;
 
-typedef struct
+struct vtk3DSFace_t
 {
   int a, b, c;
-} vtk3DSFace;
+};
+using vtk3DSFace = struct vtk3DSFace_t;
 
-typedef struct
+struct vtk3DSColour_t
 {
   float red, green, blue;
-} vtk3DSColour;
+};
+using vtk3DSColour = struct vtk3DSColour_t;
 
 /* Omni light command */
-typedef struct
+struct vtk3DSOmniLight_t
 {
   VTK_LIST_FIELDS
 
   vtk3DSVector pos; /* Light position */
   vtk3DSColour col; /* Light colour */
   vtkLight* aLight;
-} vtk3DSOmniLight;
+};
+using vtk3DSOmniLight = struct vtk3DSOmniLight_t;
 
 /* Spotlight command */
-typedef struct
+struct vtk3DSSpotLight_t
 {
   VTK_LIST_FIELDS
 
@@ -76,10 +71,11 @@ typedef struct
   float falloff;       /* Falloff angle (degrees) */
   int shadow_flag;     /* Shadow flag (not used) */
   vtkLight* aLight;
-} vtk3DSSpotLight;
+};
+using vtk3DSSpotLight = struct vtk3DSSpotLight_t;
 
 /* Camera command */
-typedef struct
+struct vtk3DSCamera_t
 {
   VTK_LIST_FIELDS
 
@@ -88,27 +84,30 @@ typedef struct
   float bank;          /* Banking angle (degrees) */
   float lens;          /* Camera lens size (mm) */
   vtkCamera* aCamera;
-} vtk3DSCamera;
+};
+using vtk3DSCamera = struct vtk3DSCamera_t;
 
 /* Material list */
-typedef struct
+struct vtk3DSMaterial_t
 {
   VTK_LIST_FIELDS
 
   int external; /* Externally defined material? */
-} vtk3DSMaterial;
+};
+using vtk3DSMaterial = struct vtk3DSMaterial_t;
 
 /* Object summary */
-typedef struct
+struct vtk3DSSummary_t
 {
   VTK_LIST_FIELDS
 
   vtk3DSVector center;  /* Min value of object extents */
   vtk3DSVector lengths; /* Max value of object extents */
-} vtk3DSSummary;
+};
+using vtk3DSSummary = struct vtk3DSSummary_t;
 
 /* Material property */
-typedef struct
+struct vtk3DSMatProp_t
 {
   VTK_LIST_FIELDS
 
@@ -124,7 +123,8 @@ typedef struct
   char bump_map[40];
   float bump_strength;
   vtkProperty* aProperty;
-} vtk3DSMatProp;
+};
+using vtk3DSMatProp = struct vtk3DSMatProp_t;
 
 class vtkActor;
 class vtkPolyDataMapper;
@@ -135,7 +135,7 @@ class vtkCellArray;
 class vtkPolyData;
 
 /* A mesh object */
-typedef struct
+struct vtk3DSMesh_t
 {
   VTK_LIST_FIELDS
 
@@ -155,23 +155,26 @@ typedef struct
   vtkPoints* aPoints;
   vtkCellArray* aCellArray;
   vtkPolyData* aPolyData;
+};
+using vtk3DSMesh = struct vtk3DSMesh_t;
 
-} vtk3DSMesh;
-
-typedef struct
+struct vtk3DSChunk_t
 {
   dword start;
   dword end;
   dword length;
   word tag;
-} vtk3DSChunk;
+};
+using vtk3DSChunk = struct vtk3DSChunk_t;
 
-typedef struct
+struct vtk3DSColour_t_24
 {
   byte red;
   byte green;
   byte blue;
-} vtk3DSColour_24;
+};
+using vtk3DSColour_24 = struct vtk3DSColour_t_24;
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtk3DS.h

@@ -1,25 +1,22 @@
-/*
- * Copyright 2008 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 // .SECTION Thanks
 // Thanks to Janine Bennett, Philippe Pebay, and David Thompson from Sandia National Laboratories
 // for implementing this test.
 
+#include "vtkDataSetAttributes.h"
 #include "vtkDoubleArray.h"
 #include "vtkIdTypeArray.h"
 #include "vtkKMeansStatistics.h"
 #include "vtkMath.h"
 #include "vtkMultiBlockDataSet.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
 #include "vtkTimerLog.h"
+#include "vtkUnsignedCharArray.h"
 
+#include <limits>
 #include <sstream>
 
 //=============================================================================
@@ -29,6 +26,7 @@ int TestKMeansStatistics(int, char*[])
 
   const int nDim = 4;
   int nVals = 50;
+  int numberOfGhosts = 3;
 
   // Seed random number generator
   vtkMath::RandomSeed(static_cast<int>(vtkTimerLog::GetUniversalTime()));
@@ -37,6 +35,15 @@ int TestKMeansStatistics(int, char*[])
   // 1]
   vtkTable* inputData = vtkTable::New();
   vtkDoubleArray* doubleArray;
+
+  vtkNew<vtkUnsignedCharArray> ghosts;
+  ghosts->SetNumberOfValues(nVals);
+  ghosts->SetName(vtkDataSetAttributes::GhostArrayName());
+  ghosts->Fill(0);
+  ghosts->SetValue(nVals / 2, 1);
+  ghosts->SetValue(nVals / 3, 1);
+  ghosts->SetValue(nVals / 4, 1);
+  inputData->AddColumn(ghosts);
 
   int numComponents = 1;
   for (int c = 0; c < nDim; ++c)
@@ -55,6 +62,10 @@ int TestKMeansStatistics(int, char*[])
       x = vtkMath::Random();
       doubleArray->SetValue(r, x);
     }
+
+    doubleArray->SetValue(nVals / 2, std::numeric_limits<double>::quiet_NaN());
+    doubleArray->SetValue(nVals / 3, std::numeric_limits<double>::quiet_NaN());
+    doubleArray->SetValue(nVals / 4, std::numeric_limits<double>::quiet_NaN());
 
     inputData->AddColumn(doubleArray);
     doubleArray->Delete();
@@ -140,10 +151,10 @@ int TestKMeansStatistics(int, char*[])
 
       cout << "## Computed clusters (cardinality: " << testIntValue << " / run):\n";
 
-      if (testIntValue != nVals)
+      if (testIntValue != nVals - numberOfGhosts)
       {
-        vtkGenericWarningMacro(
-          "Sum of cluster cardinalities is incorrect: " << testIntValue << " != " << nVals << ".");
+        vtkGenericWarningMacro("Sum of cluster cardinalities is incorrect: "
+          << testIntValue << " != " << nVals - numberOfGhosts << ".");
         testStatus = 1;
       }
     }
@@ -199,10 +210,10 @@ int TestKMeansStatistics(int, char*[])
 
       cout << "## Computed clusters (cardinality: " << testIntValue << " / run):\n";
 
-      if (testIntValue != nVals)
+      if (testIntValue != nVals - numberOfGhosts)
       {
-        vtkGenericWarningMacro(
-          "Sum of cluster cardinalities is incorrect: " << testIntValue << " != " << nVals << ".");
+        vtkGenericWarningMacro("Sum of cluster cardinalities is incorrect: "
+          << testIntValue << " != " << nVals - numberOfGhosts << ".");
         testStatus = 1;
       }
     }

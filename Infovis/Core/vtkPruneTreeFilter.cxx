@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPruneTreeFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkPruneTreeFilter.h"
 
@@ -34,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPruneTreeFilter);
 
 vtkPruneTreeFilter::vtkPruneTreeFilter()
@@ -82,10 +67,10 @@ int vtkPruneTreeFilter::RequestData(
   builder->GetFieldData()->DeepCopy(inputTree->GetFieldData());
 
   // Build a copy of the tree, skipping the parent vertex to remove.
-  std::vector<std::pair<vtkIdType, vtkIdType> > vertStack;
+  std::vector<std::pair<vtkIdType, vtkIdType>> vertStack;
   if (inputTree->GetRoot() != this->ParentVertex)
   {
-    vertStack.push_back(std::make_pair(inputTree->GetRoot(), builder->AddVertex()));
+    vertStack.emplace_back(inputTree->GetRoot(), builder->AddVertex());
   }
   while (!vertStack.empty())
   {
@@ -105,7 +90,7 @@ int vtkPruneTreeFilter::RequestData(
           vtkIdType child = builder->AddVertex();
           vtkEdgeType e = builder->AddEdge(v, child);
           builderEdgeData->CopyData(inputEdgeData, tree_e.Id, e.Id);
-          vertStack.push_back(std::make_pair(tree_child, child));
+          vertStack.emplace_back(tree_child, child);
         }
       }
       else
@@ -115,7 +100,7 @@ int vtkPruneTreeFilter::RequestData(
         builderEdgeData->CopyData(inputEdgeData, tree_e.Id, e.Id);
         if (tree_child != this->ParentVertex)
         {
-          vertStack.push_back(std::make_pair(tree_child, child));
+          vertStack.emplace_back(tree_child, child);
         }
         else
         {
@@ -134,3 +119,4 @@ int vtkPruneTreeFilter::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

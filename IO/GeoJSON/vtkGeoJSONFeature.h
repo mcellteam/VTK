@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeoJSONFeature.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGeoJSONFeature
  * @brief   Represents GeoJSON feature geometry & properties
@@ -28,6 +16,7 @@
 #include "vtkIOGeoJSONModule.h" // For export macro
 #include "vtk_jsoncpp.h"        // For json parser
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 
 // Currently implemented geoJSON compatible Geometries
@@ -43,10 +32,15 @@ class VTKIOGEOJSON_EXPORT vtkGeoJSONFeature : public vtkDataObject
 {
 public:
   static vtkGeoJSONFeature* New();
-  virtual void PrintSelf(ostream& os, vtkIndent indent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkGeoJSONFeature, vtkDataObject);
 
-  //@{
+  /**
+   * Returns `VTK_GEO_JSON_FEATURE`.
+   */
+  int GetDataObjectType() override { return VTK_GEO_JSON_FEATURE; }
+
+  ///@{
   /**
    * Set/get option to generate the border outlining each polygon,
    * so that resulting cells are vtkPolyLine instead of vtkPolygon.
@@ -55,7 +49,7 @@ public:
   vtkSetMacro(OutlinePolygons, bool);
   vtkGetMacro(OutlinePolygons, bool);
   vtkBooleanMacro(OutlinePolygons, bool);
-  //@}
+  ///@}
 
   /**
    * Extract the geometry corresponding to the geoJSON feature stored at root
@@ -89,25 +83,25 @@ protected:
    */
   void ExtractGeoJSONFeatureGeometry(const Json::Value& root, vtkPolyData* outputData);
 
-  //@{
+  ///@{
   /**
    * In extractXXXX() Extract geoJSON geometries XXXX into outputData
    */
   vtkPolyData* ExtractPoint(const Json::Value& coordinates, vtkPolyData* outputData);
   vtkPolyData* ExtractLineString(const Json::Value& coordinates, vtkPolyData* outputData);
   vtkPolyData* ExtractPolygon(const Json::Value& coordinates, vtkPolyData* outputData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * extractMultiXXXX extracts an array of geometries XXXX into the outputData
    */
   vtkPolyData* ExtractMultiPoint(const Json::Value& coordinates, vtkPolyData* outputData);
   vtkPolyData* ExtractMultiLineString(const Json::Value& coordinates, vtkPolyData* outputData);
   vtkPolyData* ExtractMultiPolygon(const Json::Value& coordinates, vtkPolyData* outputData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Check if the root contains corresponding appropriate geometry in the
    * Jsoncpp root
@@ -118,7 +112,7 @@ protected:
   bool IsMultiLineString(const Json::Value& root); // To Do.
   bool IsPolygon(const Json::Value& root);         // To Do.
   bool IsMultiPolygon(const Json::Value& root);    // To Do.
-  //@}
+  ///@}
 
   /**
    * Point[] from its JSON equivalent
@@ -132,4 +126,5 @@ private:
   void operator=(const vtkGeoJSONFeature&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkGeoJSONFeature_h

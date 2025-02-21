@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestTemporalFractal.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkRegressionTestImage.h"
 #include "vtkRenderWindow.h"
@@ -30,7 +18,7 @@
 #include "vtkTemporalShiftScale.h"
 #include "vtkThreshold.h"
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestTemporalFractal(int argc, char* argv[])
 {
   // we have to use a composite pipeline
@@ -57,7 +45,8 @@ int TestTemporalFractal(int argc, char* argv[])
 
   vtkSmartPointer<vtkThreshold> contour = vtkSmartPointer<vtkThreshold>::New();
   contour->SetInputConnection(interp->GetOutputPort());
-  contour->ThresholdByUpper(0.5);
+  contour->SetThresholdFunction(vtkThreshold::THRESHOLD_UPPER);
+  contour->SetUpperThreshold(0.5);
 
   vtkSmartPointer<vtkCompositeDataGeometryFilter> geom =
     vtkSmartPointer<vtkCompositeDataGeometryFilter>::New();

@@ -1,17 +1,5 @@
-/*==================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestHyperTreeGridTernary2DMaterialBits.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-===================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .SECTION Thanks
 // This test was written by Philippe Pebay and Joachim Pouderoux, Kitware 2013
 // This test was revised by Philippe Pebay, 2016
@@ -89,7 +77,6 @@ void GenerateDescriptorAndMaterial(
   int depth, int sx, int sy, int sz, int branch, vtkBitArray* d, vtkBitArray* m)
 {
   vtkIdType l = sx * sy * sz;
-  vtkIdType s = 1;
   for (int j = 0; j < depth - 1; j++)
   {
     for (int i = 0; i < l; i++)
@@ -100,7 +87,6 @@ void GenerateDescriptorAndMaterial(
         m->InsertNextValue(1);
       }
     }
-    s *= branch * branch;
     l *= branch * branch;
   }
 
@@ -153,7 +139,7 @@ int TestHyperTreeGridTernary2DFullMaterialBits(int argc, char* argv[])
   timer->StopTimer();
   vtkHyperTreeGrid* ht = htGrid->GetHyperTreeGridOutput();
   cout << " Done in " << timer->GetElapsedTime() << "s" << endl;
-  cout << "#pts " << ht->GetNumberOfVertices() << endl;
+  cout << "#cells " << ht->GetNumberOfCells() << endl;
   timer->StartTimer();
   timer->StopTimer();
 
@@ -163,9 +149,9 @@ int TestHyperTreeGridTernary2DFullMaterialBits(int argc, char* argv[])
   vtkNew<vtkIdTypeArray> idArray;
   idArray->SetName("Ids");
   idArray->SetNumberOfComponents(1);
-  vtkIdType nbPoints = ht->GetNumberOfVertices();
-  idArray->SetNumberOfValues(nbPoints);
-  for (vtkIdType i = 0; i < nbPoints; ++i)
+  vtkIdType nbCells = ht->GetNumberOfCells();
+  idArray->SetNumberOfValues(nbCells);
+  for (vtkIdType i = 0; i < nbCells; ++i)
   {
     idArray->SetValue(i, i);
   }
@@ -269,7 +255,7 @@ int TestHyperTreeGridTernary2DFullMaterialBits(int argc, char* argv[])
   // Render and test
   renWin->Render();
 
-  int retVal = vtkRegressionTestImageThreshold(renWin, 70);
+  int retVal = vtkRegressionTestImageThreshold(renWin, 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Start();

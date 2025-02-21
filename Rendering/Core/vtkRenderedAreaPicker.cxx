@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderedAreaPicker.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkRenderedAreaPicker.h"
 #include "vtkAbstractMapper3D.h"
@@ -19,6 +7,7 @@
 #include "vtkActor.h"
 #include "vtkAssemblyPath.h"
 #include "vtkCommand.h"
+#include "vtkDataSet.h"
 #include "vtkImageMapper3D.h"
 #include "vtkLODProp3D.h"
 #include "vtkMapper.h"
@@ -33,15 +22,16 @@
 #include "vtkRenderer.h"
 #include "vtkVolume.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRenderedAreaPicker);
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderedAreaPicker::vtkRenderedAreaPicker() = default;
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderedAreaPicker::~vtkRenderedAreaPicker() = default;
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Does what this class is meant to do.
 int vtkRenderedAreaPicker::AreaPick(
   double x0, double y0, double x1, double y1, vtkRenderer* renderer)
@@ -94,20 +84,24 @@ int vtkRenderedAreaPicker::AreaPick(
         if ((map1 = vtkMapper::SafeDownCast(mapper)) != nullptr)
         {
           this->DataSet = map1->GetInput();
+          this->DataObject = map1->GetInputDataObject(0, 0);
           this->Mapper = map1;
         }
         else if ((vmap = vtkAbstractVolumeMapper::SafeDownCast(mapper)) != nullptr)
         {
           this->DataSet = vmap->GetDataSetInput();
+          this->DataObject = this->DataSet;
           this->Mapper = vmap;
         }
         else if ((imap = vtkImageMapper3D::SafeDownCast(mapper)) != nullptr)
         {
           this->DataSet = imap->GetDataSetInput();
+          this->DataObject = this->DataSet;
           this->Mapper = imap;
         }
         else
         {
+          this->DataObject = nullptr;
           this->DataSet = nullptr;
         }
       } // mapper
@@ -126,7 +120,7 @@ int vtkRenderedAreaPicker::AreaPick(
       {
         propCandidate = path->GetLastNode()->GetViewProp();
         pickable = this->TypeDecipher(propCandidate, &mapper);
-        if (pickable && !this->Prop3Ds->IsItemPresent(prop))
+        if (pickable && this->Prop3Ds->IndexOfFirstOccurence(prop) < 0)
         {
           this->Prop3Ds->AddItem(static_cast<vtkProp3D*>(prop));
         }
@@ -143,8 +137,9 @@ int vtkRenderedAreaPicker::AreaPick(
   return picked;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderedAreaPicker::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenVROverlay
  * @brief   OpenVR overlay
@@ -29,6 +18,7 @@
 #include <openvr.h>                   // for ivars
 #include <vector>                     // ivars
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkJPEGReader;
 class vtkOpenVROverlaySpot;
 class vtkOpenVRRenderWindow;
@@ -64,14 +54,14 @@ public:
    */
   vtkTextureObject* GetOverlayTexture() { return this->OverlayTexture.Get(); }
 
-  //@{
+  ///@{
   /**
    * methods to support events on the overlay
    */
   virtual void MouseMoved(int x, int y);
   virtual void MouseButtonPress(int x, int y);
   virtual void MouseButtonRelease(int x, int y);
-  //@}
+  ///@}
 
   vtkOpenVROverlaySpot* GetLastSpot() { return this->LastSpot; }
 
@@ -82,21 +72,24 @@ public:
    */
   virtual void UpdateSpot(vtkOpenVROverlaySpot* spot);
 
-  //@{
+  ///@{
   /**
    * Set/Get a prefix for saving camera poses
    */
   void SetSessionName(const std::string& name) { this->SessionName = name; }
   std::string GetSessionName() { return this->SessionName; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a file for the dashboard image
    */
-  void SetDashboardImageFileName(const std::string& name) { this->DashboardImageFileName = name; }
-  std::string GetDashboardImageFileName() { return this->DashboardImageFileName; }
-  //@}
+  void SetDashboardImageFileName(VTK_FILEPATH const std::string& name)
+  {
+    this->DashboardImageFileName = name;
+  }
+  VTK_FILEPATH std::string GetDashboardImageFileName() { return this->DashboardImageFileName; }
+  ///@}
 
   vtkOpenVRCameraPose* GetSavedCameraPose(int i);
   virtual void SetSavedCameraPose(int i, vtkOpenVRCameraPose*);
@@ -154,4 +147,5 @@ private:
   void operator=(const vtkOpenVROverlay&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

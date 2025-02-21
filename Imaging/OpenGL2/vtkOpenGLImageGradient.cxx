@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLImageGradient.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLImageGradient.h"
 
 #include "vtkOpenGLImageAlgorithmHelper.h"
@@ -28,9 +16,10 @@
 
 #include <algorithm> // for std::nth_element
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLImageGradient);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkOpenGLImageGradient filter.
 vtkOpenGLImageGradient::vtkOpenGLImageGradient()
 {
@@ -40,13 +29,13 @@ vtkOpenGLImageGradient::vtkOpenGLImageGradient()
   this->Helper = vtkOpenGLImageAlgorithmHelper::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLImageGradient::~vtkOpenGLImageGradient()
 {
   if (this->Helper)
   {
     this->Helper->Delete();
-    this->Helper = 0;
+    this->Helper = nullptr;
   }
 }
 
@@ -55,7 +44,7 @@ void vtkOpenGLImageGradient::SetRenderWindow(vtkRenderWindow* renWin)
   this->Helper->SetRenderWindow(renWin);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLImageGradient::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -70,7 +59,7 @@ class vtkOpenGLGradientCB : public vtkOpenGLImageAlgorithmCallback
 {
 public:
   // initialize the spacing
-  virtual void InitializeShaderUniforms(vtkShaderProgram* program)
+  void InitializeShaderUniforms(vtkShaderProgram* program) override
   {
     float sp[3];
     sp[0] = this->Spacing[0];
@@ -80,18 +69,18 @@ public:
   }
 
   // no uniforms change on a per slice basis so empty
-  virtual void UpdateShaderUniforms(vtkShaderProgram* /* program */, int /* zExtent */) {}
+  void UpdateShaderUniforms(vtkShaderProgram* /* program */, int /* zExtent */) override {}
 
   double* Spacing;
-  vtkOpenGLGradientCB() {}
-  virtual ~vtkOpenGLGradientCB() {}
+  vtkOpenGLGradientCB() = default;
+  ~vtkOpenGLGradientCB() override = default;
 
 private:
   vtkOpenGLGradientCB(const vtkOpenGLGradientCB&) = delete;
   void operator=(const vtkOpenGLGradientCB&) = delete;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains the first switch statement that calls the correct
 // templated function for the input and output region types.
 void vtkOpenGLImageGradient::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
@@ -157,7 +146,7 @@ void vtkOpenGLImageGradient::ThreadedRequestData(vtkInformation* vtkNotUsed(requ
                   "}\n";
   }
 
-  // call the helper to execte this code
+  // call the helper to execute this code
   this->Helper->Execute(&cb, inData[0][0], inArray, outData[0], outExt,
 
     "//VTK::System::Dec\n"
@@ -173,3 +162,4 @@ void vtkOpenGLImageGradient::ThreadedRequestData(vtkInformation* vtkNotUsed(requ
 
     "");
 }
+VTK_ABI_NAMESPACE_END

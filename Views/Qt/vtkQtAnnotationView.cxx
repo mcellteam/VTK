@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQtAnnotationView.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkQtAnnotationView.h"
 
@@ -48,9 +32,10 @@
 #include "vtkTable.h"
 #include "vtkVariantArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkQtAnnotationView);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtAnnotationView::vtkQtAnnotationView()
 {
   this->View = new QTableView();
@@ -76,20 +61,20 @@ vtkQtAnnotationView::vtkQtAnnotationView()
     SLOT(slotQtSelectionChanged(const QItemSelection&, const QItemSelection&)));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtAnnotationView::~vtkQtAnnotationView()
 {
   delete this->View;
   delete this->Adapter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QWidget* vtkQtAnnotationView::GetWidget()
 {
   return this->View;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtAnnotationView::slotQtSelectionChanged(
   const QItemSelection& vtkNotUsed(s1), const QItemSelection& vtkNotUsed(s2))
 {
@@ -126,7 +111,7 @@ void vtkQtAnnotationView::slotQtSelectionChanged(
     this->GetRepresentation()->GetAnnotationLink()->GetAnnotationLayers()->GetMTime();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtAnnotationView::Update()
 {
   vtkDataRepresentation* rep = this->GetRepresentation();
@@ -153,8 +138,9 @@ void vtkQtAnnotationView::Update()
   this->View->resizeColumnToContents(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtAnnotationView::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

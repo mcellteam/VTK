@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFocalPlaneContourRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkFocalPlaneContourRepresentation.h"
 #include "vtkBox.h"
 #include "vtkCamera.h"
@@ -32,16 +20,17 @@
 #include <set>
 #include <vector>
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkFocalPlaneContourRepresentation::vtkFocalPlaneContourRepresentation()
 {
   this->PointPlacer = vtkFocalPlanePointPlacer::New();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFocalPlaneContourRepresentation::~vtkFocalPlaneContourRepresentation() = default;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the world position from the display position for this given
 // point using the renderer.
 int vtkFocalPlaneContourRepresentation::GetIntermediatePointWorldPosition(
@@ -75,7 +64,7 @@ int vtkFocalPlaneContourRepresentation::GetIntermediatePointWorldPosition(
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the world position from the display position for this given
 // point using the renderer.
 int vtkFocalPlaneContourRepresentation::GetIntermediatePointDisplayPosition(
@@ -98,7 +87,7 @@ int vtkFocalPlaneContourRepresentation::GetIntermediatePointDisplayPosition(
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFocalPlaneContourRepresentation::GetNthNodeDisplayPosition(int n, double displayPos[2])
 {
   if (n < 0 || static_cast<unsigned int>(n) >= this->Internal->Nodes.size())
@@ -113,7 +102,7 @@ int vtkFocalPlaneContourRepresentation::GetNthNodeDisplayPosition(int n, double 
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFocalPlaneContourRepresentation::GetNthNodeWorldPosition(int n, double worldPos[3])
 {
   if (n < 0 || static_cast<unsigned int>(n) >= this->Internal->Nodes.size())
@@ -137,7 +126,7 @@ int vtkFocalPlaneContourRepresentation::GetNthNodeWorldPosition(int n, double wo
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFocalPlaneContourRepresentation ::UpdateContourWorldPositionsBasedOnDisplayPositions()
 {
   double p[4], fp[4], z, dispPos[2];
@@ -173,7 +162,7 @@ void vtkFocalPlaneContourRepresentation ::UpdateContourWorldPositionsBasedOnDisp
   }
 }
 
-//---------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFocalPlaneContourRepresentation::UpdateContour()
 {
   this->PointPlacer->UpdateInternalState();
@@ -214,14 +203,15 @@ int vtkFocalPlaneContourRepresentation::UpdateContour()
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFocalPlaneContourRepresentation::UpdateLines(int index)
 {
   this->Superclass::UpdateLines(index);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFocalPlaneContourRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

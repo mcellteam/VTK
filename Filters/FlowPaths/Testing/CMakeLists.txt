@@ -1,8 +1,13 @@
 vtk_module_test_data(
   Data/clt.vtm
-  Data/clt/,REGEX:.*)
+  Data/clt/,REGEX:.*
+  Data/ParticleTracers/pathline.vtp
+  Data/ParticleTracers/streakline.vtp
+  Data/ParticleTracers/tracer.vtp)
 
-add_subdirectory(Cxx)
+if (NOT vtk_testing_cxx_disabled)
+  add_subdirectory(Cxx)
+endif ()
 
 if (VTK_WRAP_PYTHON)
   vtk_module_test_data(

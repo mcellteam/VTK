@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkRectilinearGridToTetrahedra.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkRectilinearGridToTetrahedra.h"
 
 #include "vtkCellArray.h"
@@ -28,6 +17,7 @@
 #include "vtkUnstructuredGrid.h"
 #include "vtkVoxel.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRectilinearGridToTetrahedra);
 
 // ways to convert to a voxel to tetrahedra.
@@ -40,7 +30,7 @@ vtkStandardNewMacro(vtkRectilinearGridToTetrahedra);
 #define VTK_TETRAHEDRALIZE_12_CONFORM_FLIP 2
 #define VTK_TETRAHEDRALIZE_12 10
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkRectilinearGridToTetrahedra::vtkRectilinearGridToTetrahedra()
 {
@@ -48,11 +38,10 @@ vtkRectilinearGridToTetrahedra::vtkRectilinearGridToTetrahedra()
   this->RememberVoxelId = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-void vtkRectilinearGridToTetrahedra::SetInput(const double ExtentX, const double ExtentY,
-  const double ExtentZ, const double SpacingX, const double SpacingY, const double SpacingZ,
-  const double tol)
+void vtkRectilinearGridToTetrahedra::SetInput(double ExtentX, double ExtentY, double ExtentZ,
+  double SpacingX, double SpacingY, double SpacingZ, double tol)
 {
   double Extent[3];
   double Spacing[3];
@@ -65,11 +54,11 @@ void vtkRectilinearGridToTetrahedra::SetInput(const double ExtentX, const double
   this->SetInput(Extent, Spacing, tol);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Create an input for the filter
 void vtkRectilinearGridToTetrahedra::SetInput(
-  const double Extent[3], const double Spacing[3], const double tol)
+  const double Extent[3], const double Spacing[3], double tol)
 {
   //
   // Determine the number of points in each direction, and the positions
@@ -91,7 +80,8 @@ void vtkRectilinearGridToTetrahedra::SetInput(
     else
       NumPointsInDir[i] = (int)ceil(Extent[i] / Spacing[i]) + 1;
     Coord[i] = vtkFloatArray::New();
-    Coord[i]->SetNumberOfValues(NumPointsInDir[i] + 1);
+    // coords should have the same size as dimensions
+    Coord[i]->SetNumberOfValues(NumPointsInDir[i]);
 
     // The last data point inserted is exactly the Extent
     // Thus avoiding a bit of numerical error.
@@ -121,7 +111,7 @@ void vtkRectilinearGridToTetrahedra::SetInput(
   RectGrid->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Determine how to Divide each voxel in the vtkRectilinearGrid
 void vtkRectilinearGridToTetrahedra::DetermineGridDivisionTypes(
@@ -188,12 +178,12 @@ void vtkRectilinearGridToTetrahedra::DetermineGridDivisionTypes(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Take the grid and make it into a tetrahedral mesh.
 void vtkRectilinearGridToTetrahedra::GridToTetMesh(vtkRectilinearGrid* RectGrid,
   vtkSignedCharArray* VoxelSubdivisionType, const int& tetraPerCell, const int& rememberVoxelId,
-  vtkUnstructuredGrid* TetMesh)
+  vtkUnstructuredGrid* TetMesh, vtkRectilinearGridToTetrahedra* self)
 {
   int i, j;
   int numPts = RectGrid->GetNumberOfPoints();
@@ -245,6 +235,10 @@ void vtkRectilinearGridToTetrahedra::GridToTetMesh(vtkRectilinearGrid* RectGrid,
   int NumTetFromVoxel;
   for (i = 0; i < numRec; i++)
   {
+    if (self->CheckAbort())
+    {
+      break;
+    }
     RectGrid->GetCellPoints(i, VoxelCorners);
     NumTetFromVoxel = TetrahedralizeVoxel(
       VoxelCorners, (int)VoxelSubdivisionType->GetValue(i), NodePoints, TetList);
@@ -301,9 +295,9 @@ void vtkRectilinearGridToTetrahedra::GridToTetMesh(vtkRectilinearGrid* RectGrid,
   TetMesh->Squeeze();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper Function for Tetrahedralize Voxel
-inline void vtkRectilinearGridToTetrahedra::TetrahedralizeAddCenterPoint(
+void vtkRectilinearGridToTetrahedra::TetrahedralizeAddCenterPoint(
   vtkIdList* VoxelCorners, vtkPoints* NodeList)
 {
   // Need to add a center point
@@ -318,7 +312,7 @@ inline void vtkRectilinearGridToTetrahedra::TetrahedralizeAddCenterPoint(
   VoxelCorners->InsertId(8, NodeList->InsertNextPoint(center));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Split A Cube into Tetrahedrons
 // According to the DivisionType
@@ -518,7 +512,7 @@ int vtkRectilinearGridToTetrahedra::TetrahedralizeVoxel(
   return numTet;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkRectilinearGridToTetrahedra::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -564,7 +558,8 @@ int vtkRectilinearGridToTetrahedra::RequestData(vtkInformation* vtkNotUsed(reque
   DetermineGridDivisionTypes(RectGrid, VoxelSubdivisionType, this->TetraPerCell);
 
   // Subdivide each cell to a tetrahedron, forming the TetMesh
-  GridToTetMesh(RectGrid, VoxelSubdivisionType, this->TetraPerCell, this->RememberVoxelId, output);
+  GridToTetMesh(
+    RectGrid, VoxelSubdivisionType, this->TetraPerCell, this->RememberVoxelId, output, this);
 
   vtkDebugMacro(<< "Number of output points: " << output->GetNumberOfPoints());
   vtkDebugMacro(<< "Number of output tetrahedra: " << output->GetNumberOfCells());
@@ -572,10 +567,12 @@ int vtkRectilinearGridToTetrahedra::RequestData(vtkInformation* vtkNotUsed(reque
   // Clean Up
   VoxelSubdivisionType->Delete();
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRectilinearGridToTetrahedra ::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -586,7 +583,7 @@ int vtkRectilinearGridToTetrahedra ::FillInputPortInformation(int port, vtkInfor
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkRectilinearGridToTetrahedra::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -595,3 +592,4 @@ void vtkRectilinearGridToTetrahedra::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Mesh Type: " << this->TetraPerCell << "\n";
   os << indent << "RememberVoxel Id: " << this->RememberVoxelId << "\n";
 }
+VTK_ABI_NAMESPACE_END

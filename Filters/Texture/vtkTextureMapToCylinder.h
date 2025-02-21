@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextureMapToCylinder.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTextureMapToCylinder
  * @brief   generate texture coordinates by mapping points to cylinder
@@ -49,6 +37,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersTextureModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSTEXTURE_EXPORT vtkTextureMapToCylinder : public vtkDataSetAlgorithm
 {
 public:
@@ -62,23 +51,23 @@ public:
    */
   static vtkTextureMapToCylinder* New();
 
-  //@{
+  ///@{
   /**
    * Specify the first point defining the cylinder axis,
    */
   vtkSetVector3Macro(Point1, double);
   vtkGetVectorMacro(Point1, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the second point defining the cylinder axis,
    */
   vtkSetVector3Macro(Point2, double);
   vtkGetVectorMacro(Point2, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off automatic cylinder generation. This means it automatically
    * finds the cylinder center and axis.
@@ -86,9 +75,9 @@ public:
   vtkSetMacro(AutomaticCylinderGeneration, vtkTypeBool);
   vtkGetMacro(AutomaticCylinderGeneration, vtkTypeBool);
   vtkBooleanMacro(AutomaticCylinderGeneration, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control how the texture coordinates are generated. If PreventSeam is
    * set, the s-coordinate ranges from 0->1 and 1->0 corresponding to the
@@ -98,11 +87,11 @@ public:
   vtkSetMacro(PreventSeam, vtkTypeBool);
   vtkGetMacro(PreventSeam, vtkTypeBool);
   vtkBooleanMacro(PreventSeam, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkTextureMapToCylinder();
-  ~vtkTextureMapToCylinder() override {}
+  ~vtkTextureMapToCylinder() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -116,4 +105,5 @@ private:
   void operator=(const vtkTextureMapToCylinder&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

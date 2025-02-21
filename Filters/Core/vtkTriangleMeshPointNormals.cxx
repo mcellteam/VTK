@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTriangleMeshPointNormals.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTriangleMeshPointNormals.h"
 
 #include "vtkArrayDispatch.h"
@@ -27,6 +15,7 @@
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTriangleMeshPointNormals);
 
 namespace
@@ -35,9 +24,8 @@ namespace
 struct ComputeNormalsDirection
 {
   template <typename ArrayT>
-  void operator()(ArrayT *pointArray,
-                  vtkPolyData *mesh,
-                  vtkFloatArray *normalsArray)
+  void operator()(ArrayT* pointArray, vtkPolyData* mesh, vtkFloatArray* normalsArray,
+    vtkTriangleMeshPointNormals* self)
   {
     const auto points = vtk::DataArrayTupleRange<3>(pointArray);
     auto normals = vtk::DataArrayTupleRange<3>(normalsArray);
@@ -45,12 +33,17 @@ struct ComputeNormalsDirection
     float a[3], b[3], tn[3];
 
     auto cellIter = vtk::TakeSmartPointer(mesh->GetPolys()->NewIterator());
-    for (cellIter->GoToFirstCell();
-         !cellIter->IsDoneWithTraversal();
-         cellIter->GoToNextCell())
+    int checkAbortInterval = std::min(mesh->GetNumberOfCells() / 10 + 1, (vtkIdType)1000);
+    int progressCounter = 0;
+    for (cellIter->GoToFirstCell(); !cellIter->IsDoneWithTraversal(); cellIter->GoToNextCell())
     {
+      if (progressCounter % checkAbortInterval == 0 && self->CheckAbort())
+      {
+        break;
+      }
+      progressCounter++;
       vtkIdType cellSize;
-      const vtkIdType *cell;
+      const vtkIdType* cell;
       cellIter->GetCurrentCell(cellSize, cell);
 
       // First value in cellArray indicates number of points in cell.
@@ -92,17 +85,15 @@ struct ComputeNormalsDirection
       // If degenerate cell
       else if (cellSize < 3)
       {
-        vtkGenericWarningMacro(
-              "Some cells are degenerate (less than 3 points). "
-              "Use vtkCleanPolyData beforehand to correct this.");
+        vtkGenericWarningMacro("Some cells are degenerate (less than 3 points). "
+                               "Use vtkCleanPolyData beforehand to correct this.");
         return;
       }
       // If cell not triangle
       else
       {
-        vtkGenericWarningMacro(
-              "Some cells have too many points (more than 3 points). "
-              "Use vtkTriangulate to correct this.");
+        vtkGenericWarningMacro("Some cells have too many points (more than 3 points). "
+                               "Use vtkTriangulate to correct this.");
         return;
       }
     }
@@ -172,10 +163,10 @@ int vtkTriangleMeshPointNormals::RequestData(vtkInformation* vtkNotUsed(request)
   using Dispatcher = vtkArrayDispatch::DispatchByValueType<Reals>;
   ComputeNormalsDirection worker;
 
-  vtkDataArray *points = output->GetPoints()->GetData();
-  if (!Dispatcher::Execute(points, worker, output, normals))
+  vtkDataArray* points = output->GetPoints()->GetData();
+  if (!Dispatcher::Execute(points, worker, output, normals, this))
   { // fallback for integral point arrays
-    worker(points, output, normals);
+    worker(points, output, normals, this);
   }
 
   this->UpdateProgress(0.5);
@@ -183,9 +174,14 @@ int vtkTriangleMeshPointNormals::RequestData(vtkInformation* vtkNotUsed(request)
   // Normalize point normals
   float l;
   unsigned int i3;
-  float *n = normals->GetPointer(0);
+  float* n = normals->GetPointer(0);
+  vtkIdType checkAbortInterval = std::min(numPts / 10 + 1, (vtkIdType)1000);
   for (vtkIdType i = 0; i < numPts; ++i)
   {
+    if (i % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     i3 = i * 3;
     if ((l = sqrt(n[i3] * n[i3] + n[i3 + 1] * n[i3 + 1] + n[i3 + 2] * n[i3 + 2])) != 0.0)
     {
@@ -206,3 +202,4 @@ void vtkTriangleMeshPointNormals::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,30 +1,23 @@
-/*
- * Copyright 2005 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2005 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkMath.h"
 #include "vtkMathConfigure.h"
 
+#include <array>
+#include <cmath>
 #include <limits>
-
-#ifndef ABS
-#define ABS(x) ((x) < 0 ? -(x) : (x))
-#endif
 
 template <class A>
 bool fuzzyCompare1DWeak(A a, A b)
 {
-  return ABS(a - b) < .0001;
+  return std::abs(a - b) < .0001;
 }
 
 template <class A>
 bool fuzzyCompare1D(A a, A b)
 {
-  return ABS(a - b) < std::numeric_limits<A>::epsilon();
+  return std::abs(a - b) < std::numeric_limits<A>::epsilon();
 }
 
 template <class A>
@@ -37,6 +30,19 @@ template <class A>
 bool fuzzyCompare3D(A a[3], A b[3])
 {
   return fuzzyCompare1D(a[0], b[0]) && fuzzyCompare1D(a[1], b[1]) && fuzzyCompare1D(a[2], b[2]);
+}
+
+template <class A>
+bool fuzzyCompareNDWeak(const A& a, const A& b, int size)
+{
+  for (int i = 0; i < size; i++)
+  {
+    if (!fuzzyCompare1DWeak(a[i], b[i]))
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 //=============================================================================
@@ -58,12 +64,12 @@ public:
   bool operator==(const Triple& triple) const { return *this == triple.data; }
   bool operator==(const double* triple) const
   {
-    return ((this->data[0] - triple[0] <= 0.01 * ABS(data[0]) + 0.02) &&
-      (this->data[0] - triple[0] >= -0.01 * ABS(data[0]) - 0.02) &&
-      (this->data[1] - triple[1] <= 0.01 * ABS(data[1]) + 0.02) &&
-      (this->data[1] - triple[1] >= -0.01 * ABS(data[1]) - 0.02) &&
-      (this->data[2] - triple[2] <= 0.01 * ABS(data[2]) + 0.02) &&
-      (this->data[2] - triple[2] >= -0.01 * ABS(data[2]) - 0.02));
+    return ((this->data[0] - triple[0] <= 0.01 * std::abs(data[0]) + 0.02) &&
+      (this->data[0] - triple[0] >= -0.01 * std::abs(data[0]) - 0.02) &&
+      (this->data[1] - triple[1] <= 0.01 * std::abs(data[1]) + 0.02) &&
+      (this->data[1] - triple[1] >= -0.01 * std::abs(data[1]) - 0.02) &&
+      (this->data[2] - triple[2] <= 0.01 * std::abs(data[2]) + 0.02) &&
+      (this->data[2] - triple[2] >= -0.01 * std::abs(data[2]) - 0.02));
   }
   bool operator!=(const Triple& triple) const { return *this != triple.data; }
   bool operator!=(const double* triple) const { return !(*this == triple); }
@@ -623,6 +629,106 @@ int TestMath(int, char*[])
     return 1;
   }
 
+  // Test 1D convolution
+  constexpr std::array<double, 4> sample1{ 1, 4.5, 2, 6.2 };
+  constexpr std::array<double, 3> kernel1{ 4, 0, 3.5 };
+  constexpr std::array<double, 7> sample2{ 1, 3, 4.3, 8.7, 6.5, 4.8, 0 };
+  constexpr std::array<double, 7> kernel2{ 2, 0, 1.5, 8.4, 6.2, 2.8, 6.9 };
+
+  constexpr std::array<double, 13> expectedFull1{ 4.0, 18.0, 11.5, 40.55, 7.0, 21.7, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0 };
+  constexpr std::array<double, 13> expectedSame1{ 18.0, 11.5, 40.55, 7.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0 };
+  constexpr std::array<double, 13> expectedValid1{ 11.5, 40.55, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0 };
+  constexpr std::array<double, 13> expectedFull2{ 2.0, 6.0, 10.1, 30.3, 50.85, 80.17, 124.79,
+    148.48, 134.65, 107.99, 58.29, 33.12, 0.0 };
+  constexpr std::array<double, 13> expectedSame2{ 30.3, 50.85, 80.17, 124.79, 148.48, 134.65,
+    107.99, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+  constexpr std::array<double, 13> expectedValid2{ 124.79, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0 };
+
+  std::array<double, 13> output;
+  output.fill(0.0);
+  vtkMath::Convolve1D(sample1.begin(), sample1.end(), kernel1.begin(), kernel1.end(),
+    output.begin(), output.end(), vtkMath::ConvolutionMode::FULL);
+  if (!fuzzyCompareNDWeak(output, expectedFull1, 13))
+  {
+    vtkGenericWarningMacro(<< "First \"full\" 1D convolution test failed.");
+    return 1;
+  }
+
+  output.fill(0.0);
+  vtkMath::Convolve1D(sample1.begin(), sample1.end(), kernel1.begin(), kernel1.end(),
+    output.begin(), output.end(), vtkMath::ConvolutionMode::SAME);
+  if (!fuzzyCompareNDWeak(output, expectedSame1, 13))
+  {
+    vtkGenericWarningMacro(<< "First \"same\" 1D convolution test failed.");
+    return 1;
+  }
+
+  output.fill(0.0);
+  vtkMath::Convolve1D(sample1.begin(), sample1.end(), kernel1.begin(), kernel1.end(),
+    output.begin(), output.end(), vtkMath::ConvolutionMode::VALID);
+  if (!fuzzyCompareNDWeak(output, expectedValid1, 13))
+  {
+    vtkGenericWarningMacro(<< "First \"valid\" 1D convolution test failed.");
+    return 1;
+  }
+
+  output.fill(0.0);
+  vtkMath::Convolve1D(sample2.begin(), sample2.end(), kernel2.begin(), kernel2.end(),
+    output.begin(), output.end(), vtkMath::ConvolutionMode::FULL);
+  if (!fuzzyCompareNDWeak(output, expectedFull2, 13))
+  {
+    vtkGenericWarningMacro(<< "Second \"full\" 1D convolution test failed.");
+    return 1;
+  }
+
+  output.fill(0.0);
+  vtkMath::Convolve1D(sample2.begin(), sample2.end(), kernel2.begin(), kernel2.end(),
+    output.begin(), output.end(), vtkMath::ConvolutionMode::SAME);
+  if (!fuzzyCompareNDWeak(output, expectedSame2, 13))
+  {
+    vtkGenericWarningMacro(<< "Second \"same\" 1D convolution test failed.");
+    return 1;
+  }
+
+  output.fill(0.0);
+  vtkMath::Convolve1D(sample2.begin(), sample2.end(), kernel2.begin(), kernel2.end(),
+    output.begin(), output.end(), vtkMath::ConvolutionMode::VALID);
+  if (!fuzzyCompareNDWeak(output, expectedValid2, 13))
+  {
+    vtkGenericWarningMacro(<< "Second \"valid\" 1D convolution test failed.");
+    return 1;
+  }
+
+  // Test GetPointAlongLine
+  double p1[3] = { 1.0, 1.0, 1.0 };
+  double p2[3] = { 2.0, 2.0, 2.0 };
+  double result[3] = { 0.0 };
+
+  auto roundTo3 = [](double value) { return (double)(round(value * 1000)) / 1000; };
+
+  double expectedForward[3] = { 3.0, 3.0, 3.0 };
+  vtkMath::GetPointAlongLine(result, p1, p2, sqrt(3.0));
+  if (roundTo3(result[0]) != expectedForward[0] && roundTo3(result[1]) != expectedForward[1] &&
+    roundTo3(result[2]) != expectedForward[2])
+  {
+    vtkGenericWarningMacro(<< "GetPointAlongLine test failed in forward direction.");
+    return 1;
+  }
+
+  // Without roundTo3, result is -1.0000000000000004 in each dimension.
+  double expectedBackward[3] = { -1.0, -1.0, -1.0 };
+  vtkMath::GetPointAlongLine(result, p1, p2, -3 * sqrt(3.0));
+  if (roundTo3(result[0]) != expectedBackward[0] && roundTo3(result[1]) != expectedBackward[1] &&
+    roundTo3(result[2]) != expectedBackward[2])
+  {
+    vtkGenericWarningMacro(<< "GetPointAlongLine test failed in backward direction.");
+    return 1;
+  }
+
   return 0;
 }
 
@@ -638,12 +744,15 @@ static int TestColorConvert(
   Triple result1;
 
 #define COMPARE(testname, target, dest)                                                            \
-  if ((target) != (dest))                                                                          \
+  do                                                                                               \
   {                                                                                                \
-    vtkGenericWarningMacro(<< "Incorrect " #testname " conversion.  Got " << (dest)                \
-                           << " expected " << (target));                                           \
-    return 0;                                                                                      \
-  }
+    if ((target) != (dest))                                                                        \
+    {                                                                                              \
+      vtkGenericWarningMacro(<< "Incorrect " #testname " conversion.  Got " << (dest)              \
+                             << " expected " << (target));                                         \
+      return 0;                                                                                    \
+    }                                                                                              \
+  } while (false)
 
   // Test conversion between RGB and HSV.
   vtkMath::RGBToHSV(rgb(), result1());

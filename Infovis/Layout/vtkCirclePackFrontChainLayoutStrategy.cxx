@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCirclePackFrontChainLayoutStrategy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkCirclePackFrontChainLayoutStrategy.h"
 #include "vtkAdjacentVertexIterator.h"
@@ -34,14 +18,15 @@
 #include <list>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCirclePackFrontChainLayoutStrategy);
 
 class vtkCirclePackFrontChainLayoutStrategyImplementation
 {
 
 public:
-  vtkCirclePackFrontChainLayoutStrategyImplementation();
-  ~vtkCirclePackFrontChainLayoutStrategyImplementation();
+  vtkCirclePackFrontChainLayoutStrategyImplementation() = default;
+  ~vtkCirclePackFrontChainLayoutStrategyImplementation() = default;
 
   void createCirclePacking(
     vtkTree* tree, vtkDataArray* sizeArray, vtkDataArray* circlesArray, int height, int width);
@@ -87,12 +72,6 @@ public:
 
 private:
 };
-
-vtkCirclePackFrontChainLayoutStrategyImplementation::
-  vtkCirclePackFrontChainLayoutStrategyImplementation() = default;
-
-vtkCirclePackFrontChainLayoutStrategyImplementation::
-  ~vtkCirclePackFrontChainLayoutStrategyImplementation() = default;
 
 void vtkCirclePackFrontChainLayoutStrategyImplementation::incrListIteratorWrapAround(
   std::list<vtkIdType>::iterator& i, std::list<vtkIdType>& frontChain)
@@ -441,14 +420,7 @@ void vtkCirclePackFrontChainLayoutStrategyImplementation::findIntersectingCircle
   if (CjfromCn != frontChain.end())
   {
     Cj = CjfromCn;
-    if (this->validCjAfterCn(Ci, Cm, lCn, circlesArray, frontChain, CnSearchPathLength))
-    {
-      CjAfterCn = true;
-    }
-    else
-    {
-      CjAfterCn = false;
-    }
+    CjAfterCn = this->validCjAfterCn(Ci, Cm, lCn, circlesArray, frontChain, CnSearchPathLength);
     return;
   }
 
@@ -473,14 +445,7 @@ void vtkCirclePackFrontChainLayoutStrategyImplementation::findIntersectingCircle
   if (CjfromCm != frontChain.end())
   {
     Cj = CjfromCm;
-    if (this->validCjBeforeCm(Ci, lCm, Cn, circlesArray, frontChain, CmSearchPathLength))
-    {
-      CjAfterCn = false;
-    }
-    else
-    {
-      CjAfterCn = true;
-    }
+    CjAfterCn = !this->validCjBeforeCm(Ci, lCm, Cn, circlesArray, frontChain, CmSearchPathLength);
     return;
   }
 
@@ -598,14 +563,7 @@ bool vtkCirclePackFrontChainLayoutStrategyImplementation::circlesIntersect(
 
   double distanceSq = pow(c1[0] - c2[0], 2) + pow(c1[1] - c2[1], 2);
 
-  if (distanceSq > pow(c1[2] + c2[2], 2))
-  {
-    return false;
-  }
-  else
-  {
-    return true;
-  }
+  return distanceSq <= pow(c1[2] + c2[2], 2);
 }
 
 // Delete all circles out of fronChain from circleToStartAt to circleToEndAt, not including
@@ -656,3 +614,4 @@ void vtkCirclePackFrontChainLayoutStrategy::PrintSelf(ostream& os, vtkIndent ind
   os << indent << "Width: " << this->Width << endl;
   os << indent << "Height: " << this->Height << endl;
 }
+VTK_ABI_NAMESPACE_END

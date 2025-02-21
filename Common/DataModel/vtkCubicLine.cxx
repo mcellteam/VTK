@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCubicLine.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCubicLine.h"
 
 #include "vtkCell.h"
@@ -26,9 +14,13 @@
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 
+#include <algorithm> //std::copy
+#include <array>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCubicLine);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the line with four points.
 vtkCubicLine::vtkCubicLine()
 {
@@ -43,7 +35,7 @@ vtkCubicLine::vtkCubicLine()
   }
   this->Line = vtkLine::New();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Delete the Line
 vtkCubicLine::~vtkCubicLine()
 {
@@ -51,7 +43,7 @@ vtkCubicLine::~vtkCubicLine()
   this->Scalars->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCubicLine::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& minDist2, double weights[])
 {
@@ -62,28 +54,37 @@ int vtkCubicLine::EvaluatePosition(const double x[3], double closestPoint[3], in
 
   pcoords[1] = pcoords[2] = 0.0;
 
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
   returnStatus = -1;
   weights[0] = 0.0;
   for (minDist2 = VTK_DOUBLE_MAX, i = 0; i < 3; i++)
   {
     if (i == 0)
     {
-      this->Line->Points->SetPoint(0, this->Points->GetPoint(0));
-      this->Line->Points->SetPoint(1, this->Points->GetPoint(2));
+      this->Line->Points->SetPoint(0, pts);
+      this->Line->Points->SetPoint(1, pts + 3 * 2);
     }
     else if (i == 1)
     {
-      this->Line->Points->SetPoint(0, this->Points->GetPoint(2));
-      this->Line->Points->SetPoint(1, this->Points->GetPoint(3));
+      this->Line->Points->SetPoint(0, pts + 3 * 2);
+      this->Line->Points->SetPoint(1, pts + 3 * 3);
     }
     else
     {
-      this->Line->Points->SetPoint(0, this->Points->GetPoint(3));
-      this->Line->Points->SetPoint(1, this->Points->GetPoint(1));
+      this->Line->Points->SetPoint(0, pts + 3 * 3);
+      this->Line->Points->SetPoint(1, pts + 3 * 1);
     }
 
     status = this->Line->EvaluatePosition(x, closest, ignoreId, pc, dist2, lineWeights);
-    if (status != -1 && dist2 < minDist2)
+    if (status != -1 && ((dist2 < minDist2) || ((dist2 == minDist2) && (returnStatus == 0))))
     {
       returnStatus = status;
       minDist2 = dist2;
@@ -115,25 +116,34 @@ int vtkCubicLine::EvaluatePosition(const double x[3], double closestPoint[3], in
     else
     {
       // Compute weights only
-      this->InterpolationFunctions(pcoords, weights);
+      vtkCubicLine::InterpolationFunctions(pcoords, weights);
     }
   }
 
   return returnStatus;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCubicLine::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
-  int i;
-  double a0[3], a1[3], a2[3], a3[3];
-  this->Points->GetPoint(0, a0);
-  this->Points->GetPoint(1, a1);
-  this->Points->GetPoint(2, a2); // first midside node
-  this->Points->GetPoint(3, a3); // second midside node
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
 
-  this->InterpolationFunctions(pcoords, weights);
+  int i;
+  const double *a0, *a1, *a2, *a3;
+  a0 = pts;
+  a1 = pts + 3 * 1;
+  a2 = pts + 3 * 2; // first midside node
+  a3 = pts + 3 * 3; // second midside node
+
+  vtkCubicLine::InterpolationFunctions(pcoords, weights);
 
   for (i = 0; i < 3; i++)
   {
@@ -141,7 +151,7 @@ void vtkCubicLine::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCubicLine::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], vtkIdList* pts)
 {
   pts->SetNumberOfIds(1);
@@ -173,7 +183,7 @@ int vtkCubicLine::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], v
 }
 
 // LinearLines for the Contour and the Clip Algorithm
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int LinearLines[3][2] = { { 0, 2 }, { 2, 3 }, { 3, 1 } };
 
 void vtkCubicLine::Contour(double value, vtkDataArray* cellScalars,
@@ -194,7 +204,7 @@ void vtkCubicLine::Contour(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Line-line intersection. Intersection has to occur within [0,1] parametric
 // coordinates and with specified tolerance.
 int vtkCubicLine::IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t,
@@ -245,36 +255,16 @@ int vtkCubicLine::IntersectWithLine(const double p1[3], const double p2[3], doub
   return 0;
 }
 
-//----------------------------------------------------------------------------
-int vtkCubicLine::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkCubicLine::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
-
-  // The first line
-  ptIds->InsertId(0, this->PointIds->GetId(0));
-  pts->InsertPoint(0, this->Points->GetPoint(0));
-
-  ptIds->InsertId(1, this->PointIds->GetId(2));
-  pts->InsertPoint(1, this->Points->GetPoint(2));
-
-  // The second line
-  ptIds->InsertId(2, this->PointIds->GetId(2));
-  pts->InsertPoint(2, this->Points->GetPoint(2));
-
-  ptIds->InsertId(3, this->PointIds->GetId(3));
-  pts->InsertPoint(3, this->Points->GetPoint(3));
-
-  // The third line
-  ptIds->InsertId(4, this->PointIds->GetId(3));
-  pts->InsertPoint(4, this->Points->GetPoint(3));
-
-  ptIds->InsertId(5, this->PointIds->GetId(1));
-  pts->InsertPoint(5, this->Points->GetPoint(1));
+  constexpr std::array<vtkIdType, 6> localPtIds{ 0, 2, 2, 3, 3, 1 };
+  ptIds->SetNumberOfIds(6);
+  std::copy(localPtIds.begin(), localPtIds.end(), ptIds->begin());
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCubicLine::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
@@ -319,7 +309,7 @@ void vtkCubicLine::Derivatives(
 
   v3 = vtkMath::Dot(vec30, v10);
 
-  this->InterpolationDerivs(pcoords, funcDerivs);
+  vtkCubicLine::InterpolationDerivs(pcoords, funcDerivs);
 
   J = v0 * funcDerivs[0] + v1 * funcDerivs[1] + v2 * funcDerivs[2] + v3 * funcDerivs[3];
 
@@ -362,7 +352,7 @@ void vtkCubicLine::Derivatives(
   }
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip this line using scalar value provided. Like contouring, except
 // that it cuts the line to produce other lines.
 void vtkCubicLine::Clip(double value, vtkDataArray* cellScalars,
@@ -382,7 +372,7 @@ void vtkCubicLine::Clip(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Compute interpolation functions
 //
@@ -399,7 +389,7 @@ void vtkCubicLine::InterpolationFunctions(
   weights[3] = (-27.0 / 16.0) * (t - 1.0) * (t + 1.0) * (t + (1.0 / 3.0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCubicLine::InterpolationDerivs(
   const double pcoords[3], double derivs[4]) // N2 and N3 are the middle points
 {
@@ -411,7 +401,7 @@ void vtkCubicLine::InterpolationDerivs(
   derivs[3] = (1.0 / 16.0) * (27.0 - 18.0 * t - 81.0 * t * t);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkCubicLineCellPCoords[12] = { -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -(1.0 / 3.0), 0.0, 0.0,
   (1.0 / 3.0), 0.0, 0.0 };
 double* vtkCubicLine::GetParametricCoords()
@@ -419,7 +409,7 @@ double* vtkCubicLine::GetParametricCoords()
   return vtkCubicLineCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkCubicLine::GetParametricDistance(const double pcoords[3])
 {
 
@@ -439,9 +429,10 @@ double vtkCubicLine::GetParametricDistance(const double pcoords[3])
   return pc; // the parametric coordinate lies between -1.0 and 1.0.
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCubicLine::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Line: " << this->Line << endl;
 }
+VTK_ABI_NAMESPACE_END

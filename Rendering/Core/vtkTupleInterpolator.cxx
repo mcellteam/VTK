@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTupleInterpolator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTupleInterpolator.h"
 #include "vtkKochanekSpline.h"
 #include "vtkMath.h"
@@ -19,9 +7,10 @@
 #include "vtkPiecewiseFunction.h"
 #include "vtkSpline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTupleInterpolator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTupleInterpolator::vtkTupleInterpolator()
 {
   // Set up the interpolation
@@ -33,7 +22,7 @@ vtkTupleInterpolator::vtkTupleInterpolator()
   this->Linear = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTupleInterpolator::~vtkTupleInterpolator()
 {
   this->Initialize();
@@ -43,7 +32,7 @@ vtkTupleInterpolator::~vtkTupleInterpolator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::SetNumberOfComponents(int numComp)
 {
   numComp = (numComp < 1 ? 1 : numComp);
@@ -56,7 +45,7 @@ void vtkTupleInterpolator::SetNumberOfComponents(int numComp)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTupleInterpolator::GetNumberOfTuples()
 {
   if (this->Spline)
@@ -73,7 +62,7 @@ int vtkTupleInterpolator::GetNumberOfTuples()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkTupleInterpolator::GetMinimumT()
 {
   if (this->Spline)
@@ -92,7 +81,7 @@ double vtkTupleInterpolator::GetMinimumT()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkTupleInterpolator::GetMaximumT()
 {
   if (this->Spline)
@@ -111,7 +100,7 @@ double vtkTupleInterpolator::GetMaximumT()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::Initialize()
 {
   int i;
@@ -139,7 +128,64 @@ void vtkTupleInterpolator::Initialize()
   this->NumberOfComponents = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkTupleInterpolator::FillFromData(int nb, double* time, double** data, bool isSOADataArray)
+{
+  if (nb <= 0 || !time || !data)
+  {
+    return;
+  }
+
+  // ptr will contains the data relative to the
+  // current tuple dimension (current components)
+  // and the corresponding time data. That is why
+  // it is initialized with 2 * nb values
+  // The time/tuple data are interlaced
+  // to be consistent with the method
+  // FillFromDataPointer from the class
+  // vtkPieceWiseFunction
+  std::vector<double> ptr(2 * nb, 0);
+
+  for (int j = 0; j < nb; ++j)
+  {
+    // Interlacing of time / tuple data
+    // we fill the time data only once since
+    // all the dimension share the same time entry
+    ptr[2 * j] = time[j];
+  }
+
+  for (int i = 0; i < this->NumberOfComponents; i++)
+  {
+    for (int j = 0; j < nb; j++)
+    {
+      // Interlacing of time / tuple data
+      if (isSOADataArray)
+      {
+        ptr[2 * j + 1] = data[i][j];
+      }
+      else
+      {
+        ptr[2 * j + 1] = data[j][i];
+      }
+    }
+
+    if (this->InterpolationType == INTERPOLATION_TYPE_LINEAR && this->Linear[i])
+    {
+      this->Linear[i]->FillFromDataPointer(nb, ptr.data());
+    }
+    else if (this->InterpolationType == INTERPOLATION_TYPE_SPLINE && this->Spline[i])
+    {
+      this->Spline[i]->FillFromDataPointer(nb, ptr.data());
+    }
+    else
+    {
+      vtkWarningMacro(<< "Interpolation initialization failed for " << this->NumberOfComponents
+                      << " components.");
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::InitializeInterpolation()
 {
   // Prepare for new data
@@ -174,7 +220,7 @@ void vtkTupleInterpolator::InitializeInterpolation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::SetInterpolationType(int type)
 {
   type = (type < INTERPOLATION_TYPE_LINEAR
@@ -189,7 +235,7 @@ void vtkTupleInterpolator::SetInterpolationType(int type)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::SetInterpolatingSpline(vtkSpline* spline)
 {
   if (this->InterpolatingSpline == spline)
@@ -209,7 +255,7 @@ void vtkTupleInterpolator::SetInterpolatingSpline(vtkSpline* spline)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::AddTuple(double t, double tuple[])
 {
   int i;
@@ -232,7 +278,7 @@ void vtkTupleInterpolator::AddTuple(double t, double tuple[])
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::RemoveTuple(double t)
 {
   int i;
@@ -255,7 +301,7 @@ void vtkTupleInterpolator::RemoveTuple(double t)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::InterpolateTuple(double t, double tuple[])
 {
   if (this->NumberOfComponents <= 0)
@@ -283,7 +329,7 @@ void vtkTupleInterpolator::InterpolateTuple(double t, double tuple[])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTupleInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -305,3 +351,4 @@ void vtkTupleInterpolator::PrintSelf(ostream& os, vtkIndent indent)
     os << "(null)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

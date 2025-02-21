@@ -1,23 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkUTF16TextCodec.cxx
-
-Copyright (c)
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2010 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2010 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkUTF16TextCodec.h"
 
 #include "vtkObjectFactory.h"
@@ -25,6 +8,7 @@ PURPOSE.  See the above copyright notice for more information.
 
 #include <stdexcept>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkUTF16TextCodec);
 
 namespace
@@ -76,45 +60,10 @@ vtkTypeUInt32 utf16_to_unicode_next(const bool big_endian, istream& InputStream)
   return returnCode;
 }
 
-void utf16_to_unicode(
-  const bool big_endian, istream& InputStream, vtkTextCodec::OutputIterator& output)
-{
-  try
-  {
-    while (!InputStream.eof())
-    {
-      const vtkTypeUInt32 code_unit = utf16_to_unicode_next(big_endian, InputStream);
-      *output++ = code_unit;
-    }
-  }
-  catch (...)
-  {
-    if (!InputStream.eof())
-      throw;
-  }
-}
-
-// iterator to use in testing validity - throws all input away.
-class testIterator : public vtkTextCodec::OutputIterator
-{
-public:
-  testIterator& operator++(int) override { return *this; }
-  testIterator& operator*() override { return *this; }
-  testIterator& operator=(const vtkUnicodeString::value_type) override { return *this; }
-
-  testIterator() = default;
-  ~testIterator() override = default;
-
-private:
-  testIterator(const testIterator&) = delete;
-  testIterator& operator=(const testIterator&) = delete;
-};
-
 } // end anonymous namespace
 
 vtkUTF16TextCodec::vtkUTF16TextCodec()
-  : vtkTextCodec()
-  , _endianExplicitlySet(false)
+  : _endianExplicitlySet(false)
   , _bigEndian(true)
 {
 }
@@ -128,7 +77,7 @@ const char* vtkUTF16TextCodec::Name()
 
 bool vtkUTF16TextCodec::CanHandle(const char* NameString)
 {
-  if (0 == strcmp(NameString, "UTF-16"))
+  if (vtkTextCodec::CanHandle(NameString))
   {
     _endianExplicitlySet = false;
     return true;
@@ -197,35 +146,6 @@ void vtkUTF16TextCodec::FindEndianness(istream& InputStream)
   }
 }
 
-bool vtkUTF16TextCodec::IsValid(istream& InputStream)
-{
-  bool returnBool = true;
-  // get the position of the stream so we can restore it when we are
-  // done
-  istream::pos_type StreamPos = InputStream.tellg();
-
-  try
-  {
-    if (!_endianExplicitlySet)
-    {
-      FindEndianness(InputStream);
-    }
-
-    testIterator junk;
-    utf16_to_unicode(_bigEndian, InputStream, junk);
-  }
-  catch (...)
-  {
-    returnBool = false;
-  }
-
-  // reset the stream
-  InputStream.clear();
-  InputStream.seekg(StreamPos);
-
-  return returnBool;
-}
-
 void vtkUTF16TextCodec::ToUnicode(istream& InputStream, vtkTextCodec::OutputIterator& output)
 {
   if (!_endianExplicitlySet)
@@ -233,12 +153,12 @@ void vtkUTF16TextCodec::ToUnicode(istream& InputStream, vtkTextCodec::OutputIter
     FindEndianness(InputStream);
   }
 
-  utf16_to_unicode(_bigEndian, InputStream, output);
+  vtkTextCodec::ToUnicode(InputStream, output);
 }
 
-vtkUnicodeString::value_type vtkUTF16TextCodec::NextUnicode(istream& InputStream)
+vtkTypeUInt32 vtkUTF16TextCodec::NextUTF32CodePoint(istream& inputStream)
 {
-  return utf16_to_unicode_next(_bigEndian, InputStream);
+  return utf16_to_unicode_next(_bigEndian, inputStream);
 }
 
 void vtkUTF16TextCodec::PrintSelf(ostream& os, vtkIndent indent)
@@ -247,3 +167,4 @@ void vtkUTF16TextCodec::PrintSelf(ostream& os, vtkIndent indent)
   indent = indent.GetNextIndent();
   this->Superclass::PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

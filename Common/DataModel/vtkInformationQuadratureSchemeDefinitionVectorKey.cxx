@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInformationQuadratureSchemeDefinitionVectorKey.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInformationQuadratureSchemeDefinitionVectorKey.h"
 #include "vtkCellType.h"
 #include "vtkInformation.h"
@@ -21,6 +9,7 @@
 #include <vector>
 
 //============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInformationQuadratureSchemeDefinitionVectorValue : public vtkObjectBase
 {
 public:
@@ -32,15 +21,15 @@ public:
     this->Vector.resize(VTK_NUMBER_OF_CELL_TYPES);
   }
   // Accessor.
-  std::vector<vtkSmartPointer<vtkQuadratureSchemeDefinition> >& GetVector() { return this->Vector; }
+  std::vector<vtkSmartPointer<vtkQuadratureSchemeDefinition>>& GetVector() { return this->Vector; }
 
 private:
-  std::vector<vtkSmartPointer<vtkQuadratureSchemeDefinition> > Vector;
+  std::vector<vtkSmartPointer<vtkQuadratureSchemeDefinition>> Vector;
 };
 
 //============================================================================
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationQuadratureSchemeDefinitionVectorKey::
   vtkInformationQuadratureSchemeDefinitionVectorKey(const char* name, const char* location)
   : vtkInformationKey(name, location)
@@ -48,11 +37,11 @@ vtkInformationQuadratureSchemeDefinitionVectorKey::
   vtkCommonInformationKeyManager::Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationQuadratureSchemeDefinitionVectorKey::
   ~vtkInformationQuadratureSchemeDefinitionVectorKey() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformationQuadratureSchemeDefinitionVectorValue*
 vtkInformationQuadratureSchemeDefinitionVectorKey::GetQuadratureSchemeDefinitionVector(
   vtkInformation* info)
@@ -74,7 +63,7 @@ vtkInformationQuadratureSchemeDefinitionVectorKey::GetQuadratureSchemeDefinition
   return base;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::Append(
   vtkInformation* info, vtkQuadratureSchemeDefinition* aValue)
 {
@@ -82,10 +71,10 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::Append(
   vtkInformationQuadratureSchemeDefinitionVectorValue* base =
     this->GetQuadratureSchemeDefinitionVector(info);
   //
-  base->GetVector().push_back(aValue);
+  base->GetVector().emplace_back(aValue);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::Set(
   vtkInformation* info, vtkQuadratureSchemeDefinition* aValue, int i)
 {
@@ -102,7 +91,7 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::Set(
   base->GetVector()[i] = aValue;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::SetRange(
   vtkInformation* info, vtkQuadratureSchemeDefinition** sourceVec, int from, int to, int n)
 {
@@ -136,7 +125,7 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::SetRange(
 //     (base!=nullptr && !base->GetVector().empty())?(&base->GetVector()[0]):0;
 // }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::GetRange(
   vtkInformation* info, vtkQuadratureSchemeDefinition** dest, int from, int to, int n)
 {
@@ -172,7 +161,7 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::GetRange(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadratureSchemeDefinition* vtkInformationQuadratureSchemeDefinitionVectorKey::Get(
   vtkInformation* info, int idx)
 {
@@ -189,7 +178,7 @@ vtkQuadratureSchemeDefinition* vtkInformationQuadratureSchemeDefinitionVectorKey
   return base->GetVector()[idx];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationQuadratureSchemeDefinitionVectorKey::Size(vtkInformation* info)
 {
   vtkInformationQuadratureSchemeDefinitionVectorValue* base =
@@ -198,7 +187,7 @@ int vtkInformationQuadratureSchemeDefinitionVectorKey::Size(vtkInformation* info
   return (base == nullptr ? 0 : static_cast<int>(base->GetVector().size()));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::Resize(vtkInformation* info, int size)
 {
   vtkInformationQuadratureSchemeDefinitionVectorValue* base =
@@ -206,7 +195,7 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::Resize(vtkInformation* i
   base->GetVector().resize(size);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::Clear(vtkInformation* info)
 {
   vtkInformationQuadratureSchemeDefinitionVectorValue* base =
@@ -214,7 +203,7 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::Clear(vtkInformation* in
   base->GetVector().clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::ShallowCopy(
   vtkInformation* source, vtkInformation* dest)
 {
@@ -238,7 +227,7 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::ShallowCopy(
   destBase->GetVector() = sourceBase->GetVector();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::DeepCopy(
   vtkInformation* source, vtkInformation* dest)
 {
@@ -272,7 +261,7 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::DeepCopy(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationQuadratureSchemeDefinitionVectorKey::SaveState(
   vtkInformation* info, vtkXMLDataElement* root)
 {
@@ -318,7 +307,7 @@ int vtkInformationQuadratureSchemeDefinitionVectorKey::SaveState(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInformationQuadratureSchemeDefinitionVectorKey::RestoreState(
   vtkInformation* info, vtkXMLDataElement* root)
 {
@@ -359,13 +348,13 @@ int vtkInformationQuadratureSchemeDefinitionVectorKey::RestoreState(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInformationQuadratureSchemeDefinitionVectorKey::Print(ostream& os, vtkInformation* info)
 {
   vtkIndent indent;
@@ -392,3 +381,4 @@ void vtkInformationQuadratureSchemeDefinitionVectorKey::Print(ostream& os, vtkIn
     }
   }
 }
+VTK_ABI_NAMESPACE_END

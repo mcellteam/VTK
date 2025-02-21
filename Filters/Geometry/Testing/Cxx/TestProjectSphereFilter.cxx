@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    DistributedData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Test of vtkProjectSphereFilter. It checks the output in here
 // and doesn't compare to an image.
@@ -79,6 +67,7 @@ int TestProjectSphereFilter(int vtkNotUsed(argc), char*[])
   calculator->SetAttributeTypeToPointData();
   calculator->AddCoordinateScalarVariable("coordsX", 0);
   calculator->AddCoordinateScalarVariable("coordsY", 1);
+  calculator->ReplaceInvalidValuesOn();
 
   vtkNew<vtkProjectSphereFilter> projectSphere;
   projectSphere->SetCenter(0, 0, 0);
@@ -104,17 +93,17 @@ int TestProjectSphereFilter(int vtkNotUsed(argc), char*[])
     numberOfErrors++;
   }
 
-  if (CheckFieldData("Point", grid->GetPointData()->GetArray("result"), 0, .99, 1.01) == false)
+  if (!CheckFieldData("Point", grid->GetPointData()->GetArray("result"), 0, .99, 1.01))
   {
     numberOfErrors++;
   }
 
-  if (CheckFieldData("Point", grid->GetPointData()->GetArray("Normals"), 2, .99, 1.01) == false)
+  if (!CheckFieldData("Point", grid->GetPointData()->GetArray("Normals"), 2, .99, 1.01))
   {
     numberOfErrors++;
   }
 
-  if (CheckFieldData("Cell", grid->GetCellData()->GetArray("Normals"), 2, .99, 1.01) == false)
+  if (!CheckFieldData("Cell", grid->GetCellData()->GetArray("Normals"), 2, .99, 1.01))
   {
     numberOfErrors++;
   }

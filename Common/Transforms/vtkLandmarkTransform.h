@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLandmarkTransform.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLandmarkTransform
  * @brief   a linear transform specified by two corresponding point sets
@@ -39,6 +27,7 @@
 #define VTK_LANDMARK_SIMILARITY 7
 #define VTK_LANDMARK_AFFINE 12
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONTRANSFORMS_EXPORT vtkLandmarkTransform : public vtkLinearTransform
 {
 public:
@@ -47,7 +36,7 @@ public:
   vtkTypeMacro(vtkLandmarkTransform, vtkLinearTransform);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the source and target landmark sets. The two sets must have
    * the same number of points.  If you add or change points in these objects,
@@ -57,9 +46,9 @@ public:
   void SetTargetLandmarks(vtkPoints* target);
   vtkGetObjectMacro(SourceLandmarks, vtkPoints);
   vtkGetObjectMacro(TargetLandmarks, vtkPoints);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of degrees of freedom to constrain the solution to.
    * Rigidbody (VTK_LANDMARK_RIGIDBODY): rotation and translation only.
@@ -73,15 +62,15 @@ public:
   void SetModeToRigidBody() { this->SetMode(VTK_LANDMARK_RIGIDBODY); }
   void SetModeToSimilarity() { this->SetMode(VTK_LANDMARK_SIMILARITY); }
   void SetModeToAffine() { this->SetMode(VTK_LANDMARK_AFFINE); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the current transformation mode.
    */
   vtkGetMacro(Mode, int);
   const char* GetModeAsString();
-  //@}
+  ///@}
 
   /**
    * Invert the transformation.  This is done by switching the
@@ -136,4 +125,5 @@ inline const char* vtkLandmarkTransform::GetModeAsString()
   }
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

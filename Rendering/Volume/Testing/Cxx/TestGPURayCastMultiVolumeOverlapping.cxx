@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastMultiVolumeOverlapping.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * Tests rendering 3 overlapping volumes as inputs in vtkGPUVolumeRCMapper
  * vtkMultiVolume.
@@ -59,7 +47,8 @@ public:
       case vtkCommand::KeyPressEvent:
       {
         auto interactor = vtkRenderWindowInteractor::SafeDownCast(caller);
-        const std::string key = interactor->GetKeySym();
+        const char* ckey = interactor->GetKeySym();
+        const std::string key = ckey != nullptr ? ckey : "";
 
         double times[3] = { 0, 0, 0 };
         double timesAngle[3] = { 0, 0, 0 };
@@ -133,7 +122,7 @@ public:
     }
 
     this->RenderWindow->Render();
-  };
+  }
 
   void SetVolume(vtkProp3D* vol) { this->Volume = vol; }
 
@@ -219,8 +208,7 @@ int TestGPURayCastMultiVolumeOverlapping(int argc, char* argv[])
   vol->GetProperty()->SetColor(ctf);
   vol->GetProperty()->SetGradientOpacity(gf);
   vol->GetProperty()->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
-  // Note: Shading is currently not supported with multi-volume active
-  //->ShadeOn();
+  vol->GetProperty()->ShadeOn();
 
   // Volume 1 (vase)
   // -----------------------------
@@ -244,6 +232,9 @@ int TestGPURayCastMultiVolumeOverlapping(int argc, char* argv[])
   vol1->GetProperty()->SetGradientOpacity(gf1);
   vol1->GetProperty()->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
 
+  // this is actually not used, the shader looks at the property of the first volume
+  // vol1->GetProperty()->ShadeOn();
+
   vol1->RotateX(-55.);
   vol1->SetPosition(80., 50., 130.);
 
@@ -265,8 +256,11 @@ int TestGPURayCastMultiVolumeOverlapping(int argc, char* argv[])
   vtkNew<vtkVolume> vol2;
   vol2->GetProperty()->SetScalarOpacity(pf2);
   vol2->GetProperty()->SetColor(ctf2);
-  // vol2->GetProperty()->SetGradientOpacity(gf2);
+  vol2->GetProperty()->SetGradientOpacity(gf2);
   vol2->GetProperty()->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
+
+  // this is actually not used, the shader looks at the property of the first volume
+  // vol2->GetProperty()->ShadeOn();
 
   vol2->SetScale(0.8, 0.8, 0.8);
   vol2->SetPosition(210., 200., -90.);

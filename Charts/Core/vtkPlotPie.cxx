@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlotPie.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPlotPie.h"
 
@@ -29,6 +17,7 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -76,10 +65,10 @@ public:
   float Radius;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkPlotPie);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlotPie::vtkPlotPie()
 {
   this->ColorSeries = vtkSmartPointer<vtkColorSeries>::New();
@@ -88,7 +77,7 @@ vtkPlotPie::vtkPlotPie()
   this->Dimensions[0] = this->Dimensions[1] = this->Dimensions[2] = this->Dimensions[3] = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlotPie::~vtkPlotPie()
 {
   delete this->Private;
@@ -100,43 +89,29 @@ vtkPlotPie::~vtkPlotPie()
   this->Private = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPlotPie::Paint(vtkContext2D* painter)
 {
-  if (!this->Visible)
-  {
-    return false;
-  }
-
-  // First check if we have an input
-  vtkTable* table = this->Data->GetInput();
-  if (!table)
-  {
-    vtkDebugMacro(<< "Paint event called with no input table set.");
-    return false;
-  }
-  else if (this->Data->GetMTime() > this->BuildTime || table->GetMTime() > this->BuildTime ||
-    this->MTime > this->BuildTime)
-  {
-    vtkDebugMacro(<< "Paint event called with outdated table cache. Updating.");
-    this->UpdateTableCache(table);
-  }
-
   float* data = static_cast<float*>(this->Points->GetVoidPointer(0));
+  vtkNew<vtkBrush> brush;
+  painter->ApplyBrush(brush);
 
   for (int i = 0; i < this->Points->GetNumberOfPoints(); ++i)
   {
     painter->GetBrush()->SetColor(this->ColorSeries->GetColorRepeating(i).GetData());
 
-    painter->DrawEllipseWedge(this->Private->CenterX, this->Private->CenterY, this->Private->Radius,
-      this->Private->Radius, 0.0, 0.0, data[2 * i], data[2 * i + 1]);
+    if (data[2 * i + 1] != data[2 * i])
+    {
+      painter->DrawEllipseWedge(this->Private->CenterX, this->Private->CenterY,
+        this->Private->Radius, this->Private->Radius, 0.0, 0.0, data[2 * i], data[2 * i + 1]);
+    }
   }
 
   this->PaintChildren(painter);
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkPlotPie::PaintLegend(vtkContext2D* painter, const vtkRectf& rect, int legendIndex)
 {
@@ -149,7 +124,7 @@ bool vtkPlotPie::PaintLegend(vtkContext2D* painter, const vtkRectf& rect, int le
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkPlotPie::SetDimensions(int arg1, int arg2, int arg3, int arg4)
 {
@@ -174,7 +149,7 @@ void vtkPlotPie::SetDimensions(const int arg[4])
   this->SetDimensions(arg[0], arg[1], arg[2], arg[3]);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotPie::SetColorSeries(vtkColorSeries* colorSeries)
 {
   if (this->ColorSeries == colorSeries)
@@ -185,39 +160,16 @@ void vtkPlotPie::SetColorSeries(vtkColorSeries* colorSeries)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkColorSeries* vtkPlotPie::GetColorSeries()
 {
   return this->ColorSeries;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPlotPie::GetNearestPoint(const vtkVector2f& point,
-#ifndef VTK_LEGACY_REMOVE
-  const vtkVector2f& tolerance,
-#else
-  const vtkVector2f& vtkNotUsed(tolerance),
-#endif // VTK_LEGACY_REMOVE
-  vtkVector2f* value, vtkIdType* vtkNotUsed(segmentId))
+  const vtkVector2f& vtkNotUsed(tolerance), vtkVector2f* value, vtkIdType* vtkNotUsed(segmentId))
 {
-#ifndef VTK_LEGACY_REMOVE
-  if (!this->LegacyRecursionFlag)
-  {
-    this->LegacyRecursionFlag = true;
-    vtkIdType retLegacy = this->GetNearestPoint(point, tolerance, value);
-    this->LegacyRecursionFlag = false;
-    if (retLegacy != -1)
-    {
-      VTK_LEGACY_REPLACED_BODY(vtkPlotPie::GetNearestPoint(const vtkVector2f& point,
-                                 const vtkVector2f& tolerance, vtkVector2f* value),
-        "VTK 9.0",
-        vtkPlotPie::GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
-          vtkVector2f* value, vtkIdType* segmentId));
-      return retLegacy;
-    }
-  }
-#endif // VTK_LEGACY_REMOVE
-
   float x = point.GetX() - this->Private->CenterX;
   float y = point.GetY() - this->Private->CenterY;
 
@@ -246,15 +198,22 @@ vtkIdType vtkPlotPie::GetNearestPoint(const vtkVector2f& point,
   return -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotPie::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
-bool vtkPlotPie::UpdateTableCache(vtkTable* table)
+//------------------------------------------------------------------------------
+bool vtkPlotPie::UpdateCache()
 {
+  if (!this->Superclass::UpdateCache())
+  {
+    return false;
+  }
+
+  vtkTable* table = this->Data->GetInput();
+
   // Get the x and y arrays (index 0 and 1 respectively)
   vtkDataArray* data = this->Data->GetInputArrayToProcess(0, table);
 
@@ -278,3 +237,4 @@ bool vtkPlotPie::UpdateTableCache(vtkTable* table)
   this->BuildTime.Modified();
   return true;
 }
+VTK_ABI_NAMESPACE_END

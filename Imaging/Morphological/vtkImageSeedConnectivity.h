@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSeedConnectivity.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageSeedConnectivity
  * @brief   SeedConnectivity with user defined seeds.
@@ -34,6 +22,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingMorphologicalModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageConnector;
 class vtkImageConnectorSeed;
 
@@ -44,7 +33,7 @@ public:
   vtkTypeMacro(vtkImageSeedConnectivity, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Methods for manipulating the seed pixels.
    */
@@ -52,46 +41,46 @@ public:
   void AddSeed(int num, int* index);
   void AddSeed(int i0, int i1, int i2);
   void AddSeed(int i0, int i1);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get what value is considered as connecting pixels.
    */
   vtkSetMacro(InputConnectValue, unsigned char);
   vtkGetMacro(InputConnectValue, unsigned char);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the value to set connected pixels to.
    */
   vtkSetMacro(OutputConnectedValue, unsigned char);
   vtkGetMacro(OutputConnectedValue, unsigned char);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the value to set unconnected pixels to.
    */
   vtkSetMacro(OutputUnconnectedValue, unsigned char);
   vtkGetMacro(OutputUnconnectedValue, unsigned char);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the vtkImageCOnnector used by this filter.
    */
   vtkGetObjectMacro(Connector, vtkImageConnector);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of axes to use in connectivity.
    */
   vtkSetMacro(Dimensionality, int);
   vtkGetMacro(Dimensionality, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageSeedConnectivity();
@@ -112,4 +101,5 @@ private:
   void operator=(const vtkImageSeedConnectivity&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

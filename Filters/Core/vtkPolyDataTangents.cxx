@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataTangents.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPolyDataTangents.h"
 
 #include "vtkCellArray.h"
@@ -25,33 +13,49 @@
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 #include "vtkPolygon.h"
-#include "vtkPriorityQueue.h"
-#include "vtkTriangleStrip.h"
 
 #include "vtkSMPTools.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 struct TangentComputation
 {
   TangentComputation(vtkIdType offset, vtkPoints* points, vtkCellArray* triangles,
-    vtkDataArray* tcoords, vtkDataArray* tangents)
+    vtkDataArray* tcoords, vtkDataArray* tangents, vtkCellData* inCD, vtkCellData* outCD,
+    vtkPolyDataTangents* filter)
   {
+    this->Offset = offset;
     this->Points = points;
     this->Triangles = triangles;
     this->TCoords = tcoords;
     this->Tangents = tangents;
-    this->Offset = offset;
+    this->InCD = inCD;
+    this->OutCD = outCD;
+    this->Filter = filter;
   }
 
   void operator()(vtkIdType beginId, vtkIdType endId)
   {
+    bool isFirst = vtkSMPTools::GetSingleThread();
+    vtkIdType checkAbortInterval = std::min((endId - beginId) / 10 + 1, (vtkIdType)1000);
     for (vtkIdType cellId = beginId; cellId < endId; cellId++)
     {
+      if (cellId % checkAbortInterval == 0)
+      {
+        if (isFirst)
+        {
+          this->Filter->CheckAbort();
+        }
+        if (this->Filter->GetAbortOutput())
+        {
+          break;
+        }
+      }
       double tangent[3];
 
       if (cellId >= this->Offset)
       {
         vtkIdType npts;
-        const vtkIdType* pts;
+        vtkIdType pts[3];
         this->Triangles->GetCellAtId(cellId, npts, pts);
 
         // compute edges
@@ -95,6 +99,7 @@ struct TangentComputation
       }
 
       this->Tangents->SetTuple(cellId, tangent);
+      this->OutCD->CopyData(this->InCD, cellId, cellId);
     }
   }
 
@@ -103,7 +108,9 @@ private:
   vtkCellArray* Triangles;
   vtkDataArray* TCoords;
   vtkDataArray* Tangents;
+  vtkCellData *InCD, *OutCD;
   vtkIdType Offset;
+  vtkPolyDataTangents* Filter;
 };
 
 vtkStandardNewMacro(vtkPolyDataTangents);
@@ -123,33 +130,54 @@ int vtkPolyDataTangents::RequestData(vtkInformation* vtkNotUsed(request),
 
   vtkPoints* inPts = input->GetPoints();
   vtkCellArray* inPolys = input->GetPolys();
-  vtkPointData* pd = input->GetPointData();
+  vtkPointData* inPD = input->GetPointData();
   vtkPointData* outPD = output->GetPointData();
+  vtkCellData* inCD = input->GetCellData();
+  vtkCellData* outCD = output->GetCellData();
 
-  vtkDataArray* tcoords = pd->GetTCoords();
+  vtkDataArray* tcoords = inPD->GetTCoords();
 
   vtkIdType numPolys = input->GetNumberOfPolys();
 
-  if (3 * numPolys != inPolys->GetNumberOfConnectivityIds() || input->GetNumberOfStrips() > 0)
+  vtkIdType largestCellSize = input->GetPolys()->GetMaxCellSize();
+  if (largestCellSize != 3 || 3 * numPolys != inPolys->GetNumberOfConnectivityIds())
   {
     vtkErrorMacro("This filter only supports triangles, triangulate first.");
     return 0;
   }
 
+  if (input->GetNumberOfStrips() > 0)
+  {
+    vtkErrorMacro("This filter does not support strips, use the triangulate filter first.");
+    return 0;
+  }
+
+  if (input->GetNumberOfLines() > 0)
+  {
+    vtkErrorMacro("This filter only supports triangles, remove lines first.");
+    return 0;
+  }
+
   vtkIdType numVerts = input->GetNumberOfVerts();
-  vtkIdType numLines = input->GetNumberOfLines();
 
   //  Initial pass to compute polygon tangents without effects of neighbors
+  vtkIdType outNumCell = numVerts + numPolys;
   vtkNew<vtkFloatArray> cellTangents;
   cellTangents->SetNumberOfComponents(3);
   cellTangents->SetName("Tangents");
-  cellTangents->SetNumberOfTuples(numVerts + numLines + numPolys);
+  cellTangents->SetNumberOfTuples(outNumCell);
 
-  TangentComputation functor(numVerts + numLines, inPts, inPolys, tcoords, cellTangents);
+  outCD->CopyAllocate(inCD, outNumCell);
+  // Threads will fight over array MaxId unless we set it beforehand
+  for (int i = 0; i < outCD->GetNumberOfArrays(); ++i)
+  {
+    outCD->GetArray(i)->SetNumberOfTuples(outNumCell);
+  }
 
-  vtkSMPTools::For(0, numVerts + numLines + numPolys, functor);
+  TangentComputation functor(numVerts, inPts, inPolys, tcoords, cellTangents, inCD, outCD, this);
+  vtkSMPTools::For(0, numVerts + numPolys, functor);
 
-  outPD->PassData(pd);
+  outPD->PassData(inPD);
 
   this->UpdateProgress(0.8);
 
@@ -198,7 +226,6 @@ int vtkPolyDataTangents::RequestData(vtkInformation* vtkNotUsed(request),
 
   // copy the original vertices and lines to the output
   output->SetVerts(input->GetVerts());
-  output->SetLines(input->GetLines());
 
   return 1;
 }
@@ -210,3 +237,4 @@ void vtkPolyDataTangents::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Compute Point Tangents: " << (this->ComputePointTangents ? "On\n" : "Off\n");
   os << indent << "Compute Cell Tangents: " << (this->ComputeCellTangents ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

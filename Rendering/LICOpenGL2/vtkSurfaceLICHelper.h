@@ -1,25 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSurfaceLICHelper
- *
- * A small collection of noise routines for LIC
+ * @brief   A small collection of noise routines for LIC
  */
 
 #ifndef vtkSurfaceLICHelper_h
 #define vtkSurfaceLICHelper_h
-#ifndef __VTK_WRAP__
 
 #include "vtkOpenGLHelper.h"
 #include "vtkPixelExtent.h"
@@ -27,10 +14,11 @@
 #include "vtkSmartPointer.h"
 #include "vtkTextureObject.h"
 #include "vtkWeakPointer.h"
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include <deque> // for methods
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLFramebufferObject;
 class vtkOpenGLRenderWindow;
 class vtkPainterCommunicator;
@@ -90,7 +78,7 @@ public:
    */
   void UpdateAll();
 
-  //@{
+  ///@{
   /**
    * Convert viewport to texture coordinates
    */
@@ -99,7 +87,7 @@ public:
     tcoords[0] = tcoords[2] = 0.0f;
     tcoords[1] = tcoords[3] = 1.0f;
   }
-  //@}
+  ///@}
 
   /**
    * Convert a viewport to a bounding box and it's texture coordinates for a
@@ -117,7 +105,7 @@ public:
   void ViewportQuadTextureCoords(
     const vtkPixelExtent& viewExt, const vtkPixelExtent& viewportExt, GLfloat* tcoords);
 
-  //@{
+  ///@{
   /**
    * Convert the entire view to a bounding box and it's texture coordinates for
    * a screen size texture.
@@ -127,9 +115,9 @@ public:
     quadpts[0] = quadpts[2] = 0.0f;
     quadpts[1] = quadpts[3] = 1.0f;
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Convert the entire view to a bounding box and it's texture coordinates for
    * a screen size texture.
@@ -139,7 +127,7 @@ public:
     tcoords[0] = tcoords[2] = 0.0f;
     tcoords[1] = tcoords[3] = 1.0f;
   }
-  //@}
+  ///@}
 
   /**
    * Render a quad (to trigger a shader to run)
@@ -150,7 +138,7 @@ public:
   /**
    * Compute the index into the 4x4 OpenGL ordered matrix.
    */
-  inline int idx(int row, int col) { return 4 * col + row; }
+  int idx(int row, int col) { return 4 * col + row; }
 
   /**
    * given a axes aligned bounding box in
@@ -231,6 +219,6 @@ public:
 protected:
 };
 
-#endif
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkSurfaceLICHelper.h

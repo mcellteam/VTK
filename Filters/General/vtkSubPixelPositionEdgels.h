@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSubPixelPositionEdgels.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSubPixelPositionEdgels
  * @brief   adjust edgel locations based on gradients.
@@ -40,6 +28,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkStructuredPoints;
 class vtkDataArray;
 
@@ -50,15 +39,15 @@ public:
   vtkTypeMacro(vtkSubPixelPositionEdgels, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the gradient data for doing the position adjustments.
    */
   void SetGradMapsData(vtkStructuredPoints* gm);
   vtkStructuredPoints* GetGradMaps();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods can make the positioning look for a target scalar value
    * instead of looking for a maximum.
@@ -68,7 +57,7 @@ public:
   vtkBooleanMacro(TargetFlag, vtkTypeBool);
   vtkSetMacro(TargetValue, double);
   vtkGetMacro(TargetValue, double);
-  //@}
+  ///@}
 
 protected:
   vtkSubPixelPositionEdgels();
@@ -91,4 +80,5 @@ private:
   void operator=(const vtkSubPixelPositionEdgels&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

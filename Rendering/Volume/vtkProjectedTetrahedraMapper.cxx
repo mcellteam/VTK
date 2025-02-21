@@ -1,26 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProjectedTetrahedraMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*
- * Copyright 2003 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkProjectedTetrahedraMapper.h"
 
@@ -46,14 +26,15 @@
 #include <algorithm>
 #include <cmath>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkProjectedTetrahedraMapper, VisibilitySort, vtkVisibilitySort);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return nullptr if no override is supplied.
 vtkAbstractObjectFactoryNewMacro(vtkProjectedTetrahedraMapper);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkProjectedTetrahedraMapper::vtkProjectedTetrahedraMapper()
 {
@@ -71,7 +52,7 @@ void vtkProjectedTetrahedraMapper::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "VisibilitySort: " << this->VisibilitySort << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkProjectedTetrahedraMapper::ReportReferences(vtkGarbageCollector* collector)
 {
@@ -80,7 +61,8 @@ void vtkProjectedTetrahedraMapper::ReportReferences(vtkGarbageCollector* collect
   vtkGarbageCollectorReport(collector, this->VisibilitySort, "VisibilitySort");
 }
 
-//-----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_END
+//------------------------------------------------------------------------------
 namespace
 {
 struct TransformPointsWorker
@@ -157,7 +139,8 @@ struct TransformPointsWorker
 };
 } // end anon namespace
 
-//-----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 void vtkProjectedTetrahedraMapper::TransformPoints(vtkPoints* inPoints,
   const float projection_mat[16], const float modelview_mat[16], vtkFloatArray* outPoints)
 {
@@ -171,10 +154,12 @@ void vtkProjectedTetrahedraMapper::TransformPoints(vtkPoints* inPoints,
   vtkArrayDispatch::Dispatch::Execute(inPoints->GetData(), worker);
 }
 
-//-----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_END
+//------------------------------------------------------------------------------
 
 namespace vtkProjectedTetrahedraMapperNamespace
 {
+VTK_ABI_NAMESPACE_BEGIN
 template <typename ColorArrayT, typename ScalarArrayT>
 void MapScalarsToColorsImpl(
   ColorArrayT* colors, vtkVolumeProperty* property, ScalarArrayT* scalars);
@@ -202,8 +187,10 @@ struct Worker
     MapScalarsToColorsImpl(colors, this->Property, scalars);
   }
 };
+VTK_ABI_NAMESPACE_END
 }
 
+VTK_ABI_NAMESPACE_BEGIN
 void vtkProjectedTetrahedraMapper::MapScalarsToColors(
   vtkDataArray* colors, vtkVolumeProperty* property, vtkDataArray* scalars)
 {
@@ -259,10 +246,12 @@ void vtkProjectedTetrahedraMapper::MapScalarsToColors(
     tmpColors->Delete();
   }
 }
+VTK_ABI_NAMESPACE_END
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace vtkProjectedTetrahedraMapperNamespace
 {
+VTK_ABI_NAMESPACE_BEGIN
 template <typename ColorArrayT, typename ScalarArrayT>
 void MapScalarsToColorsImpl(ColorArrayT* colors, vtkVolumeProperty* property, ScalarArrayT* scalars)
 {
@@ -321,9 +310,31 @@ void MapIndependentComponents(
     vtkColorTransferFunction* rgb = property->GetRGBTransferFunction();
     vtkPiecewiseFunction* alpha = property->GetScalarOpacity();
 
+    int vectorMode = rgb->GetVectorMode();
+    int vectorComponent = rgb->GetVectorComponent();
+
     for (i = 0; i < num_scalars; i++)
     {
-      ScalarType s = scalars->GetTypedComponent(i, 0);
+      ScalarType s = 0.0;
+      if (scalars->GetNumberOfComponents() == 1)
+      {
+        s = scalars->GetValue(i);
+      }
+      else if (vectorMode == vtkScalarsToColors::COMPONENT)
+      {
+        s = scalars->GetTypedComponent(i, vectorComponent);
+      }
+      else
+      {
+        ScalarType sum = 0.0;
+        for (int comp = 0; comp < scalars->GetNumberOfComponents(); ++comp)
+        {
+          ScalarType t = scalars->GetTypedComponent(i, comp);
+          sum += t * t;
+        }
+        s = sqrt(sum);
+      }
+
       double trgb[3];
       rgb->GetColor(s, trgb);
       c[0] = static_cast<ColorType>(trgb[0]);
@@ -367,4 +378,5 @@ void Map4DependentComponents(ColorArrayT* colors, ScalarArrayT* scalars)
   }
 }
 
+VTK_ABI_NAMESPACE_END
 }

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFontConfigFreeTypeTools.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkFontConfigFreeTypeTools.h"
 
@@ -24,13 +12,13 @@
 
 #include <fontconfig/fontconfig.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkFontConfigFreeTypeTools);
 
 namespace
 {
 // The FreeType face requester callback:
-FT_CALLBACK_DEF(FT_Error)
-vtkFontConfigFreeTypeToolsFaceRequester(
+FT_Error vtkFontConfigFreeTypeToolsFaceRequester(
   FTC_FaceID face_id, FT_Library lib, FT_Pointer request_data, FT_Face* face)
 {
   // Get a pointer to the current vtkFontConfigFreeTypeTools object
@@ -42,12 +30,12 @@ vtkFontConfigFreeTypeToolsFaceRequester(
 
   bool faceIsSet = self->GetForceCompiledFonts() || tprop->GetFontFamily() == VTK_FONT_FILE
     ? false
-    : self->LookupFaceFontConfig(tprop, lib, face);
+    : vtkFontConfigFreeTypeTools::LookupFaceFontConfig(tprop, lib, face);
 
   // Fall back to compiled fonts if lookup fails/compiled fonts are forced:
   if (!faceIsSet)
   {
-    faceIsSet = self->Superclass::LookupFace(tprop, lib, face);
+    faceIsSet = vtkFontConfigFreeTypeTools::Superclass::LookupFace(tprop, lib, face);
   }
 
   if (!faceIsSet)
@@ -66,7 +54,7 @@ vtkFontConfigFreeTypeToolsFaceRequester(
     matrix.xy = (FT_Fixed)(-sin(angle) * 0x10000L);
     matrix.yx = (FT_Fixed)(sin(angle) * 0x10000L);
     matrix.yy = (FT_Fixed)(cos(angle) * 0x10000L);
-    FT_Set_Transform(*face, &matrix, NULL);
+    FT_Set_Transform(*face, &matrix, nullptr);
   }
 
   return static_cast<FT_Error>(0);
@@ -78,9 +66,9 @@ void vtkFontConfigFreeTypeTools::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 
-vtkFontConfigFreeTypeTools::vtkFontConfigFreeTypeTools() {}
+vtkFontConfigFreeTypeTools::vtkFontConfigFreeTypeTools() = default;
 
-vtkFontConfigFreeTypeTools::~vtkFontConfigFreeTypeTools() {}
+vtkFontConfigFreeTypeTools::~vtkFontConfigFreeTypeTools() = default;
 
 FT_Error vtkFontConfigFreeTypeTools::CreateFTCManager()
 {
@@ -185,10 +173,6 @@ bool vtkFontConfigFreeTypeTools::LookupFaceFontConfig(
   FcFontSetDestroy(fontMatches);
   fontMatches = nullptr;
 
-  if (error)
-  {
-    return false;
-  }
-
-  return true;
+  return !error;
 }
+VTK_ABI_NAMESPACE_END

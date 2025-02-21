@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitSelectionLoop.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImplicitSelectionLoop.h"
 
 #include "vtkDoubleArray.h"
@@ -22,10 +10,11 @@
 #include "vtkPoints.h"
 #include "vtkPolygon.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImplicitSelectionLoop);
 vtkCxxSetObjectMacro(vtkImplicitSelectionLoop, Loop, vtkPoints);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object with no initial loop.
 vtkImplicitSelectionLoop::vtkImplicitSelectionLoop()
 {
@@ -37,7 +26,7 @@ vtkImplicitSelectionLoop::vtkImplicitSelectionLoop()
   this->Polygon = vtkPolygon::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImplicitSelectionLoop::~vtkImplicitSelectionLoop()
 {
   if (this->Loop)
@@ -48,7 +37,7 @@ vtkImplicitSelectionLoop::~vtkImplicitSelectionLoop()
   this->Polygon = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #define VTK_DELTA 0.0001
 // Generate plane equations only once to avoid a lot of extra work
 void vtkImplicitSelectionLoop::Initialize()
@@ -98,7 +87,7 @@ void vtkImplicitSelectionLoop::Initialize()
   this->InitializationTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate plane equations. Return smallest absolute value.
 double vtkImplicitSelectionLoop::EvaluateFunction(double x[3])
 {
@@ -121,7 +110,7 @@ double vtkImplicitSelectionLoop::EvaluateFunction(double x[3])
   // in polygon only if absolutely necessary.
   if (xProj[0] >= this->Bounds[0] && xProj[0] <= this->Bounds[1] && xProj[1] >= this->Bounds[2] &&
     xProj[1] <= this->Bounds[3] && xProj[2] >= this->Bounds[4] && xProj[2] <= this->Bounds[5] &&
-    this->Polygon->PointInPolygon(xProj, numPts,
+    vtkPolygon::PointInPolygon(xProj, numPts,
       vtkArrayDownCast<vtkDoubleArray>(this->Polygon->Points->GetData())->GetPointer(0),
       this->Bounds, this->Normal) == 1)
   {
@@ -141,11 +130,11 @@ double vtkImplicitSelectionLoop::EvaluateFunction(double x[3])
     }
   }
 
-  minDist2 = static_cast<double>(sqrt(minDist2));
+  minDist2 = sqrt(minDist2);
   return (inside ? -minDist2 : minDist2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate gradient of the implicit function. Use a numerical scheme: evaluate
 // the function at four points (O,O+dx,O+dy,O+dz) and approximate the gradient.
 // It's damn slow.
@@ -173,7 +162,7 @@ void vtkImplicitSelectionLoop::EvaluateGradient(double x[3], double n[3])
   n[2] = (gz - g0) / this->DeltaZ;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImplicitSelectionLoop::GetMTime()
 {
   vtkMTimeType mTime = this->vtkImplicitFunction::GetMTime();
@@ -188,7 +177,7 @@ vtkMTimeType vtkImplicitSelectionLoop::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitSelectionLoop::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -208,3 +197,4 @@ void vtkImplicitSelectionLoop::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Normal: (" << this->Normal[0] << ", " << this->Normal[1] << ", "
      << this->Normal[2] << ")\n";
 }
+VTK_ABI_NAMESPACE_END

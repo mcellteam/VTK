@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkColorTransferControlPointsItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkColorTransferControlPointsItem
@@ -30,10 +18,13 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkControlPointsItem.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkColorTransferFunction;
 
-class VTKCHARTSCORE_EXPORT vtkColorTransferControlPointsItem : public vtkControlPointsItem
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkColorTransferControlPointsItem
+  : public vtkControlPointsItem
 {
 public:
   vtkTypeMacro(vtkColorTransferControlPointsItem, vtkControlPointsItem);
@@ -48,12 +39,13 @@ public:
    * Set the piecewise function to draw its points
    */
   void SetColorTransferFunction(vtkColorTransferFunction* function);
-  //@{
+
+  ///@{
   /**
    * Get the piecewise function
    */
   vtkGetObjectMacro(ColorTransferFunction, vtkColorTransferFunction);
-  //@}
+  ///@}
 
   /**
    * Return the number of points in the color transfer function.
@@ -90,7 +82,7 @@ public:
    */
   vtkIdType RemovePoint(double* pos) override;
 
-  //@{
+  ///@{
   /**
    * If ColorFill is true, the control point brush color is set with the
    * matching color in the color transfer function.
@@ -98,10 +90,10 @@ public:
    */
   vtkSetMacro(ColorFill, bool);
   vtkGetMacro(ColorFill, bool);
-  //@}
+  ///@}
 
 protected:
-  vtkColorTransferControlPointsItem();
+  vtkColorTransferControlPointsItem() = default;
   ~vtkColorTransferControlPointsItem() override;
 
   void emitEvent(unsigned long event, void* params) override;
@@ -117,13 +109,13 @@ protected:
    */
   void ComputeBounds(double* bounds) override;
 
-  vtkColorTransferFunction* ColorTransferFunction;
-
-  bool ColorFill;
+  vtkColorTransferFunction* ColorTransferFunction = nullptr;
+  bool ColorFill = false;
 
 private:
   vtkColorTransferControlPointsItem(const vtkColorTransferControlPointsItem&) = delete;
   void operator=(const vtkColorTransferControlPointsItem&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

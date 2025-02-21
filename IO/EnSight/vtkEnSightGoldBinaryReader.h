@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEnSightGoldBinaryReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkEnSightGoldBinaryReader
  * @brief   class to read binary EnSight Gold files
@@ -43,6 +31,7 @@
 #include "vtkEnSightReader.h"
 #include "vtkIOEnSightModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiBlockDataSet;
 
 class VTKIOENSIGHT_EXPORT vtkEnSightGoldBinaryReader : public vtkEnSightReader
@@ -92,6 +81,13 @@ protected:
     vtkMultiBlockDataSet* output, int measured = 0) override;
 
   /**
+   * Read asymmetric tensors per node for this dataset.  If an error occurred, 0 is
+   * returned; otherwise 1.
+   */
+  int ReadAsymmetricTensorsPerNode(const char* fileName, const char* description, int timeStep,
+    vtkMultiBlockDataSet* output) override;
+
+  /**
    * Read tensors per node for this dataset.  If an error occurred, 0 is
    * returned; otherwise 1.
    */
@@ -100,7 +96,7 @@ protected:
 
   /**
    * Read scalars per element for this dataset.  If an error occurred, 0 is
-   * returned; otherwise 1.  If there will be more than one componenet in the
+   * returned; otherwise 1.  If there will be more than one component in the
    * data array, it is assumed that 0 is the first component added.
    */
   int ReadScalarsPerElement(const char* fileName, const char* description, int timeStep,
@@ -111,6 +107,13 @@ protected:
    * returned; otherwise 1.
    */
   int ReadVectorsPerElement(const char* fileName, const char* description, int timeStep,
+    vtkMultiBlockDataSet* output) override;
+
+  /**
+   * Read asymmetric tensors per element for this dataset.  If an error occurred, 0 is
+   * returned; otherwise 1.
+   */
+  int ReadAsymmetricTensorsPerElement(const char* fileName, const char* description, int timeStep,
     vtkMultiBlockDataSet* output) override;
 
   /**
@@ -133,14 +136,14 @@ protected:
    * vtkStructuredGrid output.  Return 0 if EOF reached.
    */
   int CreateStructuredGridOutput(
-    int partId, char line[256], const char* name, vtkMultiBlockDataSet* output) override;
+    int partId, char line[80], const char* name, vtkMultiBlockDataSet* output) override;
 
   /**
    * Read a structured part from the geometry file and create a
    * vtkRectilinearGrid output.  Return 0 if EOF reached.
    */
   int CreateRectilinearGridOutput(
-    int partId, char line[256], const char* name, vtkMultiBlockDataSet* output);
+    int partId, char line[80], const char* name, vtkMultiBlockDataSet* output);
 
   /**
    * Read a structured part from the geometry file and create a
@@ -155,20 +158,27 @@ protected:
    */
   int ReadLine(char result[80]);
 
-  //@{
+  ///@{
   /**
    * Internal function to read in a single integer.
    * Returns zero if there was an error.
    */
-  int ReadInt(int* result);
+  template <typename T>
+  int ReadInt(T* result);
   int ReadPartId(int* result);
-  //@}
+  ///@}
+
+  /**
+   * Internal function to read a single float.
+   * Returns zero if there was an error.
+   */
+  int ReadFloat(float* result);
 
   /**
    * Internal function to read in an integer array.
    * Returns zero if there was an error.
    */
-  int ReadIntArray(int* result, int numInts);
+  int ReadIntArray(int* result, vtkIdType numInts);
 
   /**
    * Internal function to read in a single long.
@@ -180,7 +190,7 @@ protected:
    * Internal function to read in a float array.
    * Returns zero if there was an error.
    */
-  int ReadFloatArray(float* result, int numFloats);
+  int ReadFloatArray(float* result, vtkIdType numFloats);
 
   /**
    * Counts the number of timesteps in the geometry file
@@ -190,7 +200,7 @@ protected:
    */
   int CountTimeSteps();
 
-  //@{
+  ///@{
   /**
    * Read to the next time step in the geometry file.
    */
@@ -199,7 +209,7 @@ protected:
   int SkipUnstructuredGrid(char line[256]);
   int SkipRectilinearGrid(char line[256]);
   int SkipImageData(char line[256]);
-  //@}
+  ///@}
 
   /**
    * Seeks the IFile to the nearest time step that is <= the target time step
@@ -219,6 +229,7 @@ protected:
   int NodeIdsListed;
   int ElementIdsListed;
   int Fortran;
+  int FortranSkipBytes; // Number of bytes to skip when seeking within a fortran-written file
 
   istream* GoldIFile;
   // The size of the file could be used to choose byte order.
@@ -231,6 +242,32 @@ private:
   int SizeOfInt;
   vtkEnSightGoldBinaryReader(const vtkEnSightGoldBinaryReader&) = delete;
   void operator=(const vtkEnSightGoldBinaryReader&) = delete;
+
+  /**
+   * Opens a variable file name. This will compute the full path and then open
+   * it. `variableType` is simply used to report helpful error messages.
+   */
+  bool OpenVariableFile(const char* fname, const char* variableType);
+
+  /**
+   * Jump forward to a particular timestep in the variable file, if
+   * applicable.
+   */
+  bool SkipToTimeStep(const char* fileName, int timeStep, vtkMultiBlockDataSet* compositeOutput,
+    int attributeType, int numComponents, bool measured);
+
+  /**
+   * Reads measured data from a variable file.
+   */
+  bool ReadMeasureVariableArray(
+    const char* description, vtkMultiBlockDataSet* compositeOutput, int numComponents);
+
+  bool ReadVariableArray(const char* description, vtkMultiBlockDataSet* compositeOutput,
+    int attributeType, int numComponents, int component = -1);
+
+  class vtkUtilities;
+  friend class vtkUtilities;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,23 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericEdgeTable.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericEdgeTable.h"
 #include "vtkObjectFactory.h"
 
 #include <cassert>
+#include <cmath>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericEdgeTable);
 
 static int PRIME_NUMBERS[] = { 1, 3, 7, 13, 31, 61, 127, 251, 509, 1021, 2039, 4093 };
@@ -51,7 +41,7 @@ public:
   vtkIdType Modulo;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTablePoints::Resize(vtkIdType newSize)
 {
   vtkIdType size = static_cast<vtkIdType>(PointVector.size());
@@ -70,7 +60,7 @@ void vtkEdgeTablePoints::Resize(vtkIdType newSize)
   assert(0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTablePoints::LoadFactor()
 {
   vtkIdType numEntries = 0;
@@ -89,7 +79,7 @@ void vtkEdgeTablePoints::LoadFactor()
   cout << size << "," << numEntries << "," << numBins << "," << Modulo << "\n";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTablePoints::DumpPoints()
 {
   vtkIdType size = static_cast<vtkIdType>(PointVector.size());
@@ -105,7 +95,7 @@ void vtkEdgeTablePoints::DumpPoints()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkEdgeTableEdge
 {
 public:
@@ -120,7 +110,7 @@ public:
   vtkIdType Modulo;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTableEdge::Resize(vtkIdType newSize)
 {
   vtkIdType size = static_cast<vtkIdType>(Vector.size());
@@ -137,7 +127,7 @@ void vtkEdgeTableEdge::Resize(vtkIdType newSize)
   assert(0);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTableEdge::LoadFactor()
 {
   vtkIdType numEntry = 0;
@@ -156,7 +146,7 @@ void vtkEdgeTableEdge::LoadFactor()
   cerr << size << "," << numEntry << "," << numBins << "," << Modulo << "\n";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEdgeTableEdge::DumpEdges()
 {
   vtkIdType size = static_cast<vtkIdType>(Vector.size());
@@ -172,7 +162,7 @@ void vtkEdgeTableEdge::DumpEdges()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static inline void OrderEdge(vtkIdType& e1, vtkIdType& e2)
 {
   vtkIdType temp1 = e1;
@@ -181,7 +171,7 @@ static inline void OrderEdge(vtkIdType& e1, vtkIdType& e2)
   e2 = temp1 > temp2 ? temp1 : temp2;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object based on maximum point id.
 vtkGenericEdgeTable::vtkGenericEdgeTable()
 {
@@ -191,12 +181,12 @@ vtkGenericEdgeTable::vtkGenericEdgeTable()
   // Default to only one component
   this->NumberOfComponents = 1;
 
-  // The whole problem is here to find the proper size for a descent hash table
-  // Since we do not allow check our size as we go the hash table
+  // The whole problem here is to find the proper size for a descent hash table
+  // Since we do not allow size check as we go through the hash table
   // Should be big enough from the beginning otherwise we'll lose the
   // constant time access
   // But on the other hand we do not want it to be too big for mem consumption
-  // A compromise of 4093 was found fo be working in a lot of case
+  // A compromise of 4093 was found to be working in a lot of cases
 #if 1
   this->EdgeTable->Vector.resize(4093);
   this->EdgeTable->Modulo = 4093;
@@ -212,14 +202,14 @@ vtkGenericEdgeTable::vtkGenericEdgeTable()
   this->LastPointId = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericEdgeTable::~vtkGenericEdgeTable()
 {
   delete this->EdgeTable;
   delete this->HashPoints;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // We assume the edge is not being split:
 void vtkGenericEdgeTable::InsertEdge(vtkIdType e1, vtkIdType e2, vtkIdType cellId, int ref)
 {
@@ -227,7 +217,7 @@ void vtkGenericEdgeTable::InsertEdge(vtkIdType e1, vtkIdType e2, vtkIdType cellI
   this->InsertEdge(e1, e2, cellId, ref, 0, ptId);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // the edge is being split and we want the new ptId
 void vtkGenericEdgeTable::InsertEdge(
   vtkIdType e1, vtkIdType e2, vtkIdType cellId, int ref, vtkIdType& ptId)
@@ -235,7 +225,7 @@ void vtkGenericEdgeTable::InsertEdge(
   this->InsertEdge(e1, e2, cellId, ref, 1, ptId);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::InsertEdge(
   vtkIdType e1, vtkIdType e2, vtkIdType cellId, int ref, int toSplit, vtkIdType& ptId)
 {
@@ -279,7 +269,7 @@ void vtkGenericEdgeTable::InsertEdge(
   vect.push_back(newEntry);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Try to remove an edge, in fact decrement the ref count
 int vtkGenericEdgeTable::RemoveEdge(vtkIdType e1, vtkIdType e2)
 {
@@ -337,7 +327,7 @@ int vtkGenericEdgeTable::RemoveEdge(vtkIdType e1, vtkIdType e2)
   return ref;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEdgeTable::CheckEdge(vtkIdType e1, vtkIdType e2, vtkIdType& ptId)
 {
   // reorder so that e1 < e2;
@@ -370,7 +360,7 @@ int vtkGenericEdgeTable::CheckEdge(vtkIdType e1, vtkIdType e2, vtkIdType& ptId)
   return -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEdgeTable::IncrementEdgeReferenceCount(vtkIdType e1, vtkIdType e2, vtkIdType cellId)
 {
   int index;
@@ -412,7 +402,7 @@ int vtkGenericEdgeTable::IncrementEdgeReferenceCount(vtkIdType e1, vtkIdType e2,
   return -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEdgeTable::CheckEdgeReferenceCount(vtkIdType e1, vtkIdType e2)
 {
   int index;
@@ -442,19 +432,19 @@ int vtkGenericEdgeTable::CheckEdgeReferenceCount(vtkIdType e1, vtkIdType e2)
   return -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkGenericEdgeTable::HashFunction(vtkIdType e1, vtkIdType e2)
 {
   return (e1 + e2) % this->EdgeTable->Modulo;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::Initialize(vtkIdType start)
 {
   if (this->LastPointId)
@@ -467,7 +457,7 @@ void vtkGenericEdgeTable::Initialize(vtkIdType start)
   this->LastPointId = start;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the total number of components for the point-centered attributes.
 // \post positive_result: result>0
@@ -476,7 +466,7 @@ int vtkGenericEdgeTable::GetNumberOfComponents()
   return this->NumberOfComponents;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set the total number of components for the point-centered attributes.
 void vtkGenericEdgeTable::SetNumberOfComponents(int count)
@@ -485,12 +475,12 @@ void vtkGenericEdgeTable::SetNumberOfComponents(int count)
   this->NumberOfComponents = count;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkGenericEdgeTable::HashFunction(vtkIdType ptId)
 {
   return ptId % this->HashPoints->Modulo;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Check if point ptId exist in the hash table
 int vtkGenericEdgeTable::CheckPoint(vtkIdType ptId)
 {
@@ -527,7 +517,7 @@ int vtkGenericEdgeTable::CheckPoint(vtkIdType ptId)
   return -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Find point coordinate and scalar associated of point ptId
 //
 int vtkGenericEdgeTable::CheckPoint(vtkIdType ptId, double point[3], double* scalar)
@@ -566,7 +556,7 @@ int vtkGenericEdgeTable::CheckPoint(vtkIdType ptId, double point[3], double* sca
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::InsertPoint(vtkIdType ptId, double point[3])
 {
   vtkIdType pos = this->HashFunction(ptId);
@@ -592,7 +582,7 @@ void vtkGenericEdgeTable::InsertPoint(vtkIdType ptId, double point[3])
   vect.push_back(newEntry);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::RemovePoint(vtkIdType ptId)
 {
   int found = 0;
@@ -635,19 +625,11 @@ void vtkGenericEdgeTable::RemovePoint(vtkIdType ptId)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::InsertPointAndScalar(vtkIdType ptId, double pt[3], double* s)
 {
   // sizeof(s)=this->NumberOfComponents
   vtkIdType pos = this->HashFunction(ptId);
-
-  // Need to check size first
-  // this->HashPoints->Resize( pos );
-  if (!(static_cast<unsigned>(pos) < this->HashPoints->PointVector.size()))
-  {
-    int kk = 2;
-    kk++;
-  }
 
   // Be careful with reference the equal is not overloaded
   vtkEdgeTablePoints::VectorPointTableType& vect = this->HashPoints->PointVector[pos];
@@ -693,14 +675,14 @@ void vtkGenericEdgeTable::InsertPointAndScalar(vtkIdType ptId, double pt[3], dou
   vect.push_back(newEntry);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::DumpTable()
 {
   this->EdgeTable->DumpEdges();
   this->HashPoints->DumpPoints();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::IncrementPointReferenceCount(vtkIdType ptId)
 {
   unsigned int index;
@@ -733,7 +715,7 @@ void vtkGenericEdgeTable::IncrementPointReferenceCount(vtkIdType ptId)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEdgeTable::LoadFactor()
 {
   vtkDebugMacro(<< "------ Begin LoadFactor ------- ");
@@ -741,3 +723,4 @@ void vtkGenericEdgeTable::LoadFactor()
   this->EdgeTable->LoadFactor();
   this->HashPoints->LoadFactor();
 }
+VTK_ABI_NAMESPACE_END

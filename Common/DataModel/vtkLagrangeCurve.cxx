@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangeCurve.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLagrangeCurve.h"
 
 #include "vtkCellData.h"
@@ -25,13 +13,10 @@
 #include "vtkPoints.h"
 #include "vtkTriangle.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLagrangeCurve);
-vtkLagrangeCurve::vtkLagrangeCurve()
-  : vtkHigherOrderCurve()
-{
-}
+vtkLagrangeCurve::vtkLagrangeCurve() = default;
 
 vtkLagrangeCurve::~vtkLagrangeCurve() = default;
 
@@ -88,3 +73,4 @@ void vtkLagrangeCurve::InterpolateDerivs(const double pcoords[3], double* derivs
 {
   vtkLagrangeInterpolation::Tensor1ShapeDerivatives(this->GetOrder(), pcoords, derivs);
 }
+VTK_ABI_NAMESPACE_END

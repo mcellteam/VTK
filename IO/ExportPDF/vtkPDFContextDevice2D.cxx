@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPDFContextDevice2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkPDFContextDevice2D.h"
 
@@ -40,9 +28,8 @@
 #include "vtkTextProperty.h"
 #include "vtkTextRenderer.h"
 #include "vtkTransform.h"
-#include "vtkUnicodeString.h"
 #include "vtkUnsignedCharArray.h"
-#include "vtkVectorOperators.h"
+#include "vtkVector.h"
 
 #include <vtk_libharu.h>
 
@@ -56,11 +43,11 @@
 #include <utility>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
-static void GetPointBounds(
-  float* points, int numPoints, HPDF_REAL bbox[4], const float radius = 0.f)
+void GetPointBounds(float* points, int numPoints, HPDF_REAL bbox[4], const float radius = 0.f)
 {
   bbox[0] = static_cast<HPDF_REAL>(points[0]);
   bbox[1] = static_cast<HPDF_REAL>(points[0]);
@@ -81,7 +68,7 @@ static void GetPointBounds(
   bbox[3] += radius;
 }
 
-static void PolygonToShading(
+void PolygonToShading(
   float* points, int numPoints, unsigned char* colors, int nc_comps, HPDF_Shading shading)
 {
   assert(numPoints >= 3);
@@ -105,7 +92,7 @@ static void PolygonToShading(
   }
 }
 
-static void LineSegmentToShading(const float p1[2], const unsigned char rgb1[3], const float p2[2],
+void LineSegmentToShading(const float p1[2], const unsigned char rgb1[3], const float p2[2],
   const unsigned char rgb2[3], float radius, HPDF_Shading shading)
 {
   float pDy = p2[1] - p1[1];
@@ -129,8 +116,8 @@ static void LineSegmentToShading(const float p1[2], const unsigned char rgb1[3],
   PolygonToShading(quad, 4, color, 3, shading);
 }
 
-static void PolyLineToShading(const float* points, int numPoints, const unsigned char* color,
-  int nc_comps, float radius, HPDF_Shading shading)
+void PolyLineToShading(const float* points, int numPoints, const unsigned char* color, int nc_comps,
+  float radius, HPDF_Shading shading)
 {
   for (int i = 0; i < numPoints - 1; ++i)
   {
@@ -1306,18 +1293,6 @@ void vtkPDFContextDevice2D::ComputeStringBounds(const vtkStdString& string, floa
 }
 
 //------------------------------------------------------------------------------
-void vtkPDFContextDevice2D::DrawString(float* point, const vtkUnicodeString& string)
-{
-  this->DrawString(point, std::string(string.utf8_str()));
-}
-
-//------------------------------------------------------------------------------
-void vtkPDFContextDevice2D::ComputeStringBounds(const vtkUnicodeString& string, float bounds[4])
-{
-  this->ComputeStringBounds(string.utf8_str(), bounds);
-}
-
-//------------------------------------------------------------------------------
 void vtkPDFContextDevice2D::ComputeJustifiedStringBounds(const char* string, float bounds[4])
 {
   this->ComputeStringBounds(string, bounds);
@@ -1631,21 +1606,21 @@ void vtkPDFContextDevice2D::ApplyLineWidth(float width)
 void vtkPDFContextDevice2D::ApplyLineType(int type)
 {
   // These match the OpenGL2 implementation:
-  static const HPDF_UINT16 noPen[] = { 0, 10 };
+  static const HPDF_REAL noPen[] = { 0.f, 10.f };
   static const HPDF_UINT noPenLen = 2;
 
-  static const HPDF_UINT16 dash[] = { 8 };
+  static const HPDF_REAL dash[] = { 8.f };
   static const HPDF_UINT dashLen = 1;
 
-  static const HPDF_UINT16 dot[] = { 1, 7 };
-  static const HPDF_UINT16 denseDot[] = { 1, 3 };
+  static const HPDF_REAL dot[] = { 1.f, 7.f };
+  static const HPDF_REAL denseDot[] = { 1.f, 3.f };
   static const HPDF_UINT dotLen = 2;
 
-  static const HPDF_UINT16 dashDot[] = { 4, 6, 2, 4 };
+  static const HPDF_REAL dashDot[] = { 4.f, 6.f, 2.f, 4.f };
   static const HPDF_UINT dashDotLen = 4;
 
   // This is dash-dot-dash, but eh. It matches the OpenGL2 0x1C47 pattern.
-  static const HPDF_UINT16 dashDotDot[] = { 3, 3, 1, 3, 3, 3 };
+  static const HPDF_REAL dashDotDot[] = { 3.f, 3.f, 1.f, 3.f, 3.f, 3.f };
   static const HPDF_UINT dashDotDotLen = 6;
 
   switch (type)
@@ -1791,8 +1766,8 @@ void vtkPDFContextDevice2D::BeginClipPathForTexture()
 {
   assert(!this->IsInTexturedFill);
   this->IsInTexturedFill = true;
-  this->TextureBounds[0] = this->TextureBounds[2] = VTK_INT_MAX;
-  this->TextureBounds[1] = this->TextureBounds[3] = VTK_INT_MIN;
+  this->TextureBounds[0] = this->TextureBounds[2] = VTK_FLOAT_MAX;
+  this->TextureBounds[1] = this->TextureBounds[3] = VTK_FLOAT_MIN;
   this->PushGraphicsState(); // so we can pop the clip path
   this->ApplyFillAlpha(255); // Match the OpenGL implementation
 }
@@ -1819,8 +1794,8 @@ void vtkPDFContextDevice2D::FillTexture()
 
   this->IsInTexturedFill = false;
 
-  if (this->TextureBounds[0] == VTK_INT_MAX || this->TextureBounds[1] == VTK_INT_MIN ||
-    this->TextureBounds[2] == VTK_INT_MAX || this->TextureBounds[3] == VTK_INT_MIN)
+  if (this->TextureBounds[0] == VTK_FLOAT_MAX || this->TextureBounds[1] == VTK_FLOAT_MIN ||
+    this->TextureBounds[2] == VTK_FLOAT_MAX || this->TextureBounds[3] == VTK_FLOAT_MIN)
   { // No geometry to texture:
     this->PopGraphicsState();
     return;
@@ -2398,3 +2373,4 @@ void vtkPDFContextDevice2D::HPDFTransformToMatrix3(
   mat3[7] = 0.;
   mat3[8] = 1.;
 }
+VTK_ABI_NAMESPACE_END

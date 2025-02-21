@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ExampleDataArrayRangeAPI.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // This file provides some examples of how to use the vtkDataArrayRange
 // objects: TupleRanges and ValueRanges.
@@ -340,7 +328,7 @@ void TestTupleRangeAPI(ArrayT* someArray)
   // Math
   assert((compEnd - compIter) == std::distance(compIter, compEnd)); // distance
 
-  // Suppress unsed variable warnings:
+  // Suppress unused variable warnings:
   (void)cend;
   (void)constCompEnd;
   (void)tuple;
@@ -553,7 +541,7 @@ void TestValueRangeAPI(ArrayT* someArray)
   // Math
   assert((end - iter) == std::distance(iter, end)); // distance
 
-  // Suppress unsed variable warnings:
+  // Suppress unused variable warnings:
   (void)cend;
   (void)constValueRef;
   (void)value;
@@ -572,7 +560,7 @@ int ExampleDataArrayRangeAPI(int, char*[])
     std::iota(range.begin(), range.end(), 0.f);
   }
 
-  vtkNew<vtkSOADataArrayTemplate<float> > soaArray;
+  vtkNew<vtkSOADataArrayTemplate<float>> soaArray;
   soaArray->DeepCopy(aosArray);
 
   // Some vtkDataArray pointers to show that these ranges work with the generic

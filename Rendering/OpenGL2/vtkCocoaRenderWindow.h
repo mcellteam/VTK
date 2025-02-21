@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkCocoaRenderWindow.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCocoaRenderWindow
  * @brief   Cocoa OpenGL rendering window
@@ -44,9 +32,11 @@ PURPOSE.  See the above copyright notice for more information.
 
 #include "vtkOpenGLRenderWindow.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 #include <stack>                       // for ivar
 
-class VTKRENDERINGOPENGL2_EXPORT vtkCocoaRenderWindow : public vtkOpenGLRenderWindow
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkCocoaRenderWindow : public vtkOpenGLRenderWindow
 {
 public:
   static vtkCocoaRenderWindow* New();
@@ -97,34 +87,44 @@ public:
    */
   virtual void PrefFullScreen();
 
-  //@{
+  ///@{
   /**
-   * Set the size of the window in pixels.
+   * Set the size (width and height) of the rendering window in
+   * screen coordinates (in pixels). This resizes the operating
+   * system's view/window and redraws it.
+   *
+   * If the size has changed, this method will fire
+   * vtkCommand::WindowResizeEvent.
    */
-  void SetSize(int a[2]) override;
-  void SetSize(int, int) override;
-  //@}
+  void SetSize(int width, int height) override;
+  void SetSize(int a[2]) override { this->SetSize(a[0], a[1]); }
+  ///@}
 
   /**
-   * Get the current size of the window in pixels.
+   * Get the size (width and height) of the rendering window in
+   * screen coordinates (in pixels).
    */
   int* GetSize() VTK_SIZEHINT(2) override;
 
-  //@{
+  ///@{
   /**
-   * Set the position of the window.
+   * Set the position (x and y) of the rendering window in
+   * screen coordinates (in pixels). This resizes the operating
+   * system's view/window and redraws it.
    */
-  void SetPosition(int a[2]) override;
-  void SetPosition(int, int) override;
-  //@}
+  void SetPosition(int x, int y) override;
+  void SetPosition(int a[2]) override { this->SetPosition(a[0], a[1]); }
+  ///@}
 
   /**
    * Get the current size of the screen in pixels.
+   * An HDTV for example would be 1920 x 1080 pixels.
    */
   int* GetScreenSize() VTK_SIZEHINT(2) override;
 
   /**
-   * Get the position in screen coordinates of the window.
+   * Get the position (x and y) of the rendering window in
+   * screen coordinates (in pixels).
    */
   int* GetPosition() VTK_SIZEHINT(2) override;
 
@@ -143,11 +143,19 @@ public:
     vtkDebugMacro("Method not implemented.");
     return nullptr;
   }
-  void SetDisplayId(void*) override
+
+  /**
+   * Set the index of the NSScreen on which the window should be created.
+   * This is useful for creating the render window on secondary displays.
+   * By default, the DisplayId is 0, meaning the window will appear on
+   * the main screen. This function must be called before the window is
+   * created.
+   */
+  void SetDisplayId(void* displayId) override
   {
-    // no-op
-    vtkDebugMacro("Method not implemented.");
+    this->DisplayIndex = displayId ? *(reinterpret_cast<int*>(displayId)) : 0;
   }
+
   void* GetGenericDisplayId() override
   {
     vtkDebugMacro("Method not implemented.");
@@ -198,17 +206,14 @@ public:
   void MakeCurrent() override;
 
   /**
+   * Release the current context.
+   */
+  void ReleaseCurrent() override;
+
+  /**
    * Tells if this window is the current OpenGL context for the calling thread.
    */
   bool IsCurrent() override;
-
-  /**
-   * Test if the window has a valid drawable. This is
-   * currently only an issue on Mac OS X Cocoa where rendering
-   * to an invalid drawable results in all OpenGL calls to fail
-   * with "invalid framebuffer operation".
-   */
-  bool IsDrawable() override;
 
   /**
    * Update this window's OpenGL context, e.g. when the window is resized.
@@ -223,7 +228,7 @@ public:
   /**
    * Is this render window using hardware acceleration? 0-false, 1-true
    */
-  int IsDirect() override;
+  vtkTypeBool IsDirect() override;
 
   /**
    * If called, allow MakeCurrent() to skip cache-check when called.
@@ -236,22 +241,22 @@ public:
    * Check to see if an event is pending for this window.
    * This is a useful check to abort a long render.
    */
-  int GetEventPending() override;
+  vtkTypeBool GetEventPending() override;
 
-  //@{
+  ///@{
   /**
    * Initialize OpenGL for this window.
    */
   virtual void SetupPalette(void* hDC);
   virtual void SetupPixelFormat(void* hDC, void* dwFlags, int debug, int bpp = 16, int zbpp = 16);
-  //@}
+  ///@}
 
   /**
    * Clean up device contexts, rendering contexts, etc.
    */
   void Finalize() override;
 
-  //@{
+  ///@{
   /**
    * Hide or Show the mouse cursor, it is nice to be able to hide the
    * default cursor if you want VTK to display a 3D cursor instead.
@@ -261,7 +266,7 @@ public:
   void HideCursor() override;
   void ShowCursor() override;
   void SetCursorPosition(int x, int y) override;
-  //@}
+  ///@}
 
   /**
    * Change the shape of the cursor.
@@ -272,22 +277,24 @@ public:
    * Get the ViewCreated flag. It is 1 if this object created an instance
    * of NSView, 0 otherwise.
    */
-  virtual int GetViewCreated();
+  virtual vtkTypeBool GetViewCreated();
 
   /**
    * Get the WindowCreated flag. It is 1 if this object created an instance
    * of NSWindow, 0 otherwise.
    */
-  virtual int GetWindowCreated();
+  virtual vtkTypeBool GetWindowCreated();
 
-  //@{
+  ///@{
   /**
    * Accessors for the OpenGL context (Really an NSOpenGLContext*).
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   void SetContextId(void*);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   void* GetContextId();
   void* GetGenericContext() override { return this->GetContextId(); }
-  //@}
+  ///@}
 
   /**
    * Sets the NSWindow* associated with this vtkRenderWindow.
@@ -299,16 +306,18 @@ public:
    * and SetWindowId(), respectively, early on (before WindowInitialize()
    * is executed). In the case of Java, you should call only SetWindowId().
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   virtual void SetRootWindow(void*);
 
   /**
    * Returns the NSWindow* associated with this vtkRenderWindow.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   virtual void* GetRootWindow();
 
   /**
    * Sets the NSView* associated with this vtkRenderWindow.
-   * This class' default behaviour, that is, if you never call this
+   * This class' default behaviour, that is, if you never call
    * SetWindowId()/SetRootWindow() is to create an NSWindow and a
    * vtkCocoaGLView (NSView subclass) which are used together to draw all
    * vtk stuff into. If you already have an NSWindow and NSView and you
@@ -316,11 +325,13 @@ public:
    * and SetWindowId(), respectively, early on (before WindowInitialize()
    * is executed). In the case of Java, you should call only SetWindowId().
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   void SetWindowId(void*) override;
 
   /**
    * Returns the NSView* associated with this vtkRenderWindow.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   virtual void* GetWindowId();
   void* GetGenericWindowId() override { return this->GetWindowId(); }
 
@@ -330,6 +341,7 @@ public:
    * NSView that the vtkRenderWindow will create within this parent.
    * If you set the WindowId, then this ParentId will be ignored.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   void SetParentId(void* nsview) override;
 
   /**
@@ -337,6 +349,7 @@ public:
    * return "NULL" if the parent was not set with SetParentId() or
    * SetParentInfo().
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   virtual void* GetParentId();
   void* GetGenericParentId() override { return this->GetParentId(); }
 
@@ -353,15 +366,26 @@ public:
   void SetWantsBestResolution(bool wantsBest);
   bool GetWantsBestResolution();
 
-  //@{
+  /**
+   * Set to false if you want to prevent the NSOpenGLContext from being associated
+   * with the NSView. You might want this is you are rendering vtk content into a
+   * CAOpenGLLayer instead of an NSView.
+   * Defaults to true.
+   */
+  void SetConnectContextToNSView(bool connect);
+  bool GetConnectContextToNSView();
+
+  ///@{
   /**
    * Accessors for the pixel format object (Really an NSOpenGLPixelFormat*).
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   void SetPixelFormat(void* pixelFormat);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_NOT_SUPPORTED)
   void* GetPixelFormat();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Ability to push and pop this window's context
    * as the current context. The idea being to
@@ -371,7 +395,9 @@ public:
    */
   void PushContext() override;
   void PopContext() override;
-  //@}
+  ///@}
+
+  void Render() override;
 
 protected:
   vtkCocoaRenderWindow();
@@ -383,16 +409,16 @@ protected:
 
   void CreateAWindow() override;
   void DestroyWindow() override;
-  int OnScreenInitialized;
+  vtkTypeBool OnScreenInitialized;
 
-  //@{
+  ///@{
   /**
    * Accessors for the cocoa manager (Really an NSMutableDictionary*).
    * It manages all Cocoa objects in this C++ class.
    */
   void SetCocoaManager(void* manager);
   void* GetCocoaManager();
-  //@}
+  ///@}
 
   void SetCocoaServer(void* server); // Really a vtkCocoaServer*
   void* GetCocoaServer();
@@ -410,13 +436,17 @@ private:
   // of what would otherwise be Objective-C instance variables.
   void* CocoaManager; // Really an NSMutableDictionary*
 
-  int WindowCreated;
-  int ViewCreated;
-  int CursorHidden;
+  vtkTypeBool WindowCreated;
+  vtkTypeBool ViewCreated;
+  vtkTypeBool CursorHidden;
 
-  int ForceMakeCurrent;
+  vtkTypeBool ForceMakeCurrent;
 
   bool WantsBestResolution;
+  bool ConnectContextToNSView;
+
+  int DisplayIndex = 0;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

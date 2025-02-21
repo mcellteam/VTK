@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTemporalDelimitedTextReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTemporalDelimitedTextReader
  * @brief   reads a delimited ascii or unicode text files and and output a
@@ -46,6 +34,7 @@
 #include <map>    // To store the TimeMap
 #include <vector> // To store the TimeMap
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOINFOVIS_EXPORT vtkTemporalDelimitedTextReader : public vtkDelimitedTextReader
 {
 public:
@@ -53,7 +42,7 @@ public:
   vtkTypeMacro(vtkTemporalDelimitedTextReader, vtkDelimitedTextReader);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the name of the column to use as time indicator.
    * Ignored if TimeColumnId is not equal to -1.
@@ -62,10 +51,10 @@ public:
    * Default to empty string.
    */
   vtkGetMacro(TimeColumnName, std::string);
-  void SetTimeColumnName(const std::string name);
-  //@}
+  void SetTimeColumnName(std::string name);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the column to use as time indicator.
    * It the TimeColumnId is equal to -1, the TimeColumnName will be used
@@ -75,10 +64,10 @@ public:
    * Default to -1.
    */
   vtkGetMacro(TimeColumnId, int);
-  void SetTimeColumnId(const int idx);
-  //@}
+  void SetTimeColumnId(int idx);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the RemoveTimeStepColumn flag
    * If this boolean is true, the output will not contain the Time step column.
@@ -86,10 +75,10 @@ public:
    */
   vtkGetMacro(RemoveTimeStepColumn, bool);
   void SetRemoveTimeStepColumn(bool rts);
-  //@}
+  ///@}
 
   /** Internal fields of this reader use a specific MTime (InternalMTime).
-   * This mechamism ensure the actual data is only re-read when necessary.
+   * This mechanism ensures the actual data is only re-read when necessary.
    * Here, we ensure the GetMTime of this reader stay consistent by returning
    * the latest between the MTime of this reader and the internal one.
    *
@@ -127,11 +116,11 @@ protected:
   void InternalModified();
 
   // Time column fields
-  std::string TimeColumnName = "";
-  std::string InternalColumnName = "";
+  std::string TimeColumnName;
+  std::string InternalColumnName;
   vtkIdType TimeColumnId = -1;
   bool RemoveTimeStepColumn = true;
-  std::map<double, std::vector<vtkIdType> > TimeMap;
+  std::map<double, std::vector<vtkIdType>> TimeMap;
 
   // Input file content and update
   vtkNew<vtkTable> ReadTable;
@@ -143,4 +132,5 @@ private:
   void operator=(const vtkTemporalDelimitedTextReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

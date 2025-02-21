@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageToAMR.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageToAMR.h"
 
 #include "vtkAMRBox.h"
@@ -32,6 +20,7 @@
 #include "vtkAMRInformation.h"
 #include <algorithm>
 #include <vector>
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 // Split one box to eight
@@ -100,7 +89,7 @@ int ComputeTreeHeight(int maxNumNodes, int degree)
 // than turn a full tree. This shape is designed so that numLevels and maxNumBlocks
 // constraint can be satisfied
 void Split(const vtkAMRBox& rootBox, int numLevels, int refinementRatio, int maxNumBlocks,
-  std::vector<std::vector<vtkAMRBox> >& out)
+  std::vector<std::vector<vtkAMRBox>>& out)
 {
   out.clear();
   out.resize(1);
@@ -114,7 +103,7 @@ void Split(const vtkAMRBox& rootBox, int numLevels, int refinementRatio, int max
   int level = 1;
   for (; level < numLevels - numTreeLevels; level++)
   {
-    out.push_back(std::vector<vtkAMRBox>());
+    out.emplace_back();
     const std::vector<vtkAMRBox>& parentBoxes = out[level - 1];
     std::vector<vtkAMRBox>& childBoxes = out[level];
     vtkAMRBox child = parentBoxes.back();
@@ -124,7 +113,7 @@ void Split(const vtkAMRBox& rootBox, int numLevels, int refinementRatio, int max
 
   for (; level < numLevels; level++)
   {
-    out.push_back(std::vector<vtkAMRBox>());
+    out.emplace_back();
     const std::vector<vtkAMRBox>& parentBoxes = out[level - 1];
     std::vector<vtkAMRBox>& childBoxes = out[level];
     for (size_t i = 0; i < parentBoxes.size(); i++)
@@ -133,7 +122,7 @@ void Split(const vtkAMRBox& rootBox, int numLevels, int refinementRatio, int max
       SplitXYZ(parent, refinementRatio, childBoxes);
     }
   }
-};
+}
 
 // create a grid by sampling from input using the indices in box
 vtkUniformGrid* ConstructGrid(
@@ -209,10 +198,10 @@ vtkUniformGrid* ConstructGrid(
   return grid;
 }
 
-};
+}
 
 vtkStandardNewMacro(vtkImageToAMR);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageToAMR::vtkImageToAMR()
 {
   this->NumberOfLevels = 2;
@@ -220,17 +209,17 @@ vtkImageToAMR::vtkImageToAMR()
   this->MaximumNumberOfBlocks = 100;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageToAMR::~vtkImageToAMR() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToAMR::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkImageData");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageToAMR::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -291,7 +280,7 @@ int vtkImageToAMR::RequestData(vtkInformation* vtkNotUsed(request),
 
   vtkAMRBox rootBox(inputOrigin, dims0, spacing0, inputOrigin, gridDescription);
 
-  std::vector<std::vector<vtkAMRBox> > amrBoxes;
+  std::vector<std::vector<vtkAMRBox>> amrBoxes;
   Split(
     rootBox, this->NumberOfLevels, this->RefinementRatio, this->MaximumNumberOfBlocks, amrBoxes);
 
@@ -302,14 +291,20 @@ int vtkImageToAMR::RequestData(vtkInformation* vtkNotUsed(request),
   }
 
   unsigned int numLevels = static_cast<unsigned int>(blocksPerLevel.size());
+  bool abort = false;
 
-  amr->Initialize(static_cast<int>(numLevels), &blocksPerLevel[0]);
+  amr->Initialize(static_cast<int>(numLevels), blocksPerLevel.data());
   amr->SetOrigin(inputOrigin);
   amr->SetGridDescription(gridDescription);
 
   double spacingi[3] = { spacing0[0], spacing0[1], spacing0[2] };
-  for (unsigned int i = 0; i < numLevels; i++)
+  unsigned int checkAbortInterval = std::min(numLevels / 10 + 1, (unsigned int)1000);
+  for (unsigned int i = 0; i < numLevels && !abort; i++)
   {
+    if (i % checkAbortInterval == 0)
+    {
+      abort = this->CheckAbort();
+    }
     amr->SetSpacing(i, spacingi);
     for (int d = 0; d < 3; d++)
     {
@@ -317,8 +312,12 @@ int vtkImageToAMR::RequestData(vtkInformation* vtkNotUsed(request),
     }
   }
 
-  for (unsigned int level = 0; level < numLevels; level++)
+  for (unsigned int level = 0; level < numLevels && !abort; level++)
   {
+    if (level % checkAbortInterval == 0)
+    {
+      abort = this->CheckAbort();
+    }
     const std::vector<vtkAMRBox>& boxes = amrBoxes[level];
     for (size_t i = 0; i < boxes.size(); i++)
     {
@@ -326,13 +325,17 @@ int vtkImageToAMR::RequestData(vtkInformation* vtkNotUsed(request),
     }
   }
 
-  for (unsigned int level = 0; level < numLevels; level++)
+  for (unsigned int level = 0; level < numLevels && !abort; level++)
   {
+    if (level % checkAbortInterval == 0)
+    {
+      abort = this->CheckAbort();
+    }
     double spacing[3];
     amr->GetSpacing(level, spacing);
     int coarsenRatio = (int)pow(static_cast<double>(this->RefinementRatio),
       static_cast<int>(numLevels - 1 - level)); // against the finest level
-    for (size_t i = 0; i < amr->GetNumberOfDataSets(level); i++)
+    for (size_t i = 0; i < amr->GetNumberOfDataSets(level) && !abort; i++)
     {
       const vtkAMRBox& box = amr->GetAMRBox(level, static_cast<unsigned int>(i));
       double origin[3];
@@ -343,14 +346,19 @@ int vtkImageToAMR::RequestData(vtkInformation* vtkNotUsed(request),
     }
   }
 
-  vtkAMRUtilities::BlankCells(amr);
+  // Skipping BlankCells in case amr is empty
+  if (!this->CheckAbort())
+  {
+    vtkAMRUtilities::BlankCells(amr);
+  }
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageToAMR::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "NumberOfLevels: " << this->NumberOfLevels << endl;
   os << indent << "RefinementRatio: " << this->RefinementRatio << endl;
 }
+VTK_ABI_NAMESPACE_END

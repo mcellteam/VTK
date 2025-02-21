@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPNGReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGDALVectorReader.h"
 
 // VTK includes
@@ -35,11 +23,12 @@
 // C++ includes
 #include <vector> // Requires STL vector
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGDALVectorReader);
 
 int vtkGDALVectorReader::OGRRegistered = 0;
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkGDALVectorReader::Internal
 {
 public:
@@ -59,7 +48,7 @@ public:
     }
     else
     {
-      this->LastError = 0;
+      this->LastError = nullptr;
     }
     this->LayerIdx = 0;
     this->AppendFeatures = appendFeatures;
@@ -126,9 +115,9 @@ public:
   bool ReadLayer(OGRLayer* layer, vtkMultiBlockDataSet* mbds)
   {
     OGRFeature* feat;
-    vtkPolyData* pd = 0;
+    vtkPolyData* pd = nullptr;
     vtkIdType nTotPoly = 0;
-    vtkCellArray *lines = 0, *verts = 0;
+    vtkCellArray *lines = nullptr, *verts = nullptr;
 
     OGRFeatureDefn* fdef = layer->GetLayerDefn();
     int numFields = fdef->GetFieldCount();
@@ -229,7 +218,7 @@ public:
       pd->FastDelete();
     }
 
-    return nTotPoly ? true : false;
+    return nTotPoly != 0;
   }
 
   vtkIdType insertGeometryRecursive(
@@ -262,7 +251,7 @@ public:
       case wkbPoint25D:
         gpt = (OGRPoint*)geom;
         ptIds.push_back(pts->InsertNextPoint(gpt->getX(), gpt->getY(), gpt->getZ()));
-        verts->InsertNextCell(1, &(ptIds[0]));
+        verts->InsertNextCell(1, ptIds.data());
         ++nCells;
         break;
 
@@ -277,7 +266,7 @@ public:
           ptIds.push_back(pts->InsertNextPoint(gls->getX(p), gls->getY(p), gls->getZ(p)));
         }
         // insert ring line segments
-        lines->InsertNextCell((int)ptIds.size(), &(ptIds[0]));
+        lines->InsertNextCell((int)ptIds.size(), ptIds.data());
         ++nCells;
         break;
 
@@ -388,11 +377,11 @@ public:
   int AddFeatureIds;
 };
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALVectorReader::vtkGDALVectorReader()
 {
-  this->FileName = 0;
-  this->Implementation = 0;
+  this->FileName = nullptr;
+  this->Implementation = nullptr;
   this->ActiveLayer = -1;
 
   this->SetNumberOfInputPorts(0);
@@ -407,14 +396,14 @@ vtkGDALVectorReader::vtkGDALVectorReader()
   this->AddFeatureIds = 0;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALVectorReader::~vtkGDALVectorReader()
 {
-  this->SetFileName(0);
+  this->SetFileName(nullptr);
   delete this->Implementation;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALVectorReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -424,7 +413,7 @@ void vtkGDALVectorReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "AddFeatureIds: " << (this->AddFeatureIds ? "ON" : "OFF") << "\n";
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALVectorReader::GetNumberOfLayers()
 {
   if (this->InitializeInternal() == VTK_ERROR)
@@ -435,7 +424,7 @@ int vtkGDALVectorReader::GetNumberOfLayers()
   return this->Implementation->Source->GetLayerCount();
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALVectorReader::GetLayerType(int layerIndex)
 {
   if (this->InitializeInternal() == VTK_ERROR)
@@ -484,7 +473,7 @@ int vtkGDALVectorReader::GetLayerType(int layerIndex)
   }
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALVectorReader::GetFeatureCount(int layerIndex)
 {
   if (this->InitializeInternal() == VTK_ERROR)
@@ -502,7 +491,7 @@ int vtkGDALVectorReader::GetFeatureCount(int layerIndex)
   return layer->GetFeatureCount();
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALVectorReader::GetActiveLayerType()
 {
   return this->ActiveLayer < 0 || this->ActiveLayer >= this->GetNumberOfLayers()
@@ -510,7 +499,7 @@ int vtkGDALVectorReader::GetActiveLayerType()
     : this->GetLayerType(this->ActiveLayer);
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALVectorReader::GetActiveLayerFeatureCount()
 {
   return this->ActiveLayer < 0 || this->ActiveLayer >= this->GetNumberOfLayers()
@@ -518,7 +507,7 @@ int vtkGDALVectorReader::GetActiveLayerFeatureCount()
     : this->GetFeatureCount(this->ActiveLayer);
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGDALVectorReader::GetLayerProjection(int layerIndex)
 {
   if (layerIndex < 0)
@@ -537,7 +526,7 @@ const char* vtkGDALVectorReader::GetLayerProjection(int layerIndex)
   }
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGDALVectorReader::GetLayerProjectionAsProj4(int layerIndex)
 {
   if (layerIndex < 0)
@@ -577,13 +566,13 @@ const char* vtkGDALVectorReader::GetLayerProjectionAsProj4(int layerIndex)
   return returnStr;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::map<int, std::string> vtkGDALVectorReader::GetLayersProjection()
 {
   return this->LayersProjection;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALVectorReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -594,7 +583,7 @@ int vtkGDALVectorReader::RequestInformation(
   return 1;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALVectorReader::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -607,7 +596,7 @@ int vtkGDALVectorReader::RequestData(
     return 0;
   }
 
-  vtkMultiBlockDataSet* mbds = 0;
+  vtkMultiBlockDataSet* mbds = nullptr;
   vtkInformation* oi = outputVector->GetInformationObject(0);
   if (!oi)
   {
@@ -623,7 +612,7 @@ int vtkGDALVectorReader::RequestData(
   // Deleting this->Implementation is required in order to force re-reading each
   // time RequestData() is executed.
   delete this->Implementation;
-  this->Implementation = 0;
+  this->Implementation = nullptr;
 
   if (this->InitializeInternal() == VTK_ERROR)
   {
@@ -658,7 +647,7 @@ int vtkGDALVectorReader::RequestData(
   return 1;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALVectorReader::InitializeInternal()
 {
   if (!this->FileName)
@@ -677,7 +666,7 @@ int vtkGDALVectorReader::InitializeInternal()
       {
         vtkErrorMacro(<< this->Implementation->LastError);
         delete this->Implementation;
-        this->Implementation = 0;
+        this->Implementation = nullptr;
       }
       return VTK_ERROR;
     }
@@ -685,3 +674,4 @@ int vtkGDALVectorReader::InitializeInternal()
 
   return VTK_OK;
 }
+VTK_ABI_NAMESPACE_END

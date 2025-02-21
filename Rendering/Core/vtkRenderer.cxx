@@ -1,21 +1,7 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRenderer.h"
 
-#include "vtkAreaPicker.h"
-#include "vtkAssemblyNode.h"
 #include "vtkAssemblyPath.h"
 #include "vtkCamera.h"
 #include "vtkCommand.h"
@@ -30,22 +16,21 @@
 #include "vtkMath.h"
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
-#include "vtkOutputWindow.h"
-#include "vtkPicker.h"
-#include "vtkProp3DCollection.h"
 #include "vtkPropCollection.h"
+#include "vtkRect.h"
 #include "vtkRenderPass.h"
 #include "vtkRenderTimerLog.h"
 #include "vtkRenderWindow.h"
+#include "vtkRendererCollection.h"
 #include "vtkRendererDelegate.h"
-#include "vtkSelection.h"
 #include "vtkSelectionNode.h"
 #include "vtkTexture.h"
 #include "vtkTimerLog.h"
-#include "vtkVolume.h"
+#include "vtkVector.h"
 
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkRenderer, Information, vtkInformation);
 vtkCxxSetObjectMacro(vtkRenderer, Delegate, vtkRendererDelegate);
 vtkCxxSetObjectMacro(vtkRenderer, BackgroundTexture, vtkTexture);
@@ -53,7 +38,7 @@ vtkCxxSetObjectMacro(vtkRenderer, RightBackgroundTexture, vtkTexture);
 vtkCxxSetObjectMacro(vtkRenderer, Pass, vtkRenderPass);
 vtkCxxSetObjectMacro(vtkRenderer, FXAAOptions, vtkFXAAOptions);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkObjectFactoryNewMacro(vtkRenderer);
 
 // Create a vtkRenderer with a black background, a white ambient light,
@@ -154,6 +139,15 @@ vtkRenderer::vtkRenderer()
   this->EnvironmentRight[0] = 1.0;
   this->EnvironmentRight[1] = 0.0;
   this->EnvironmentRight[2] = 0.0;
+
+  vtkMatrix4x4::Identity(this->CompositeProjectionTransformationMatrix.data());
+  this->LastCompositeProjectionTransformationMatrixTiledAspectRatio = VTK_DOUBLE_MIN;
+  this->LastCompositeProjectionTransformationMatrixCameraModified = 0;
+  vtkMatrix4x4::Identity(this->ProjectionTransformationMatrix.data());
+  this->LastProjectionTransformationMatrixTiledAspectRatio = VTK_DOUBLE_MIN;
+  this->LastProjectionTransformationMatrixCameraModified = 0;
+  vtkMatrix4x4::Identity(this->ViewTransformMatrix.data());
+  this->LastViewTransformCameraModified = 0;
 }
 
 vtkRenderer::~vtkRenderer()
@@ -372,6 +366,9 @@ void vtkRenderer::Render()
 
   timer->MarkEndEvent(); // culling
 
+  // update camera ideal shift scale calcs
+  this->ActiveCamera->UpdateIdealShiftScale(this->GetTiledAspectRatio());
+
   // do the render library specific stuff
   timer->MarkStartEvent("DeviceRender");
   this->DeviceRender();
@@ -419,7 +416,7 @@ void vtkRenderer::Render()
   {
     // Measure the actual RenderTime
     t2 = vtkTimerLog::GetUniversalTime();
-    this->LastRenderTimeInSeconds = static_cast<double>(t2 - t1);
+    this->LastRenderTimeInSeconds = t2 - t1;
 
     if (this->LastRenderTimeInSeconds == 0.0)
     {
@@ -430,13 +427,13 @@ void vtkRenderer::Render()
   this->InvokeEvent(vtkCommand::EndEvent, nullptr);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::DeviceRenderOpaqueGeometry(vtkFrameBufferObjectBase* vtkNotUsed(fbo))
 {
   this->UpdateOpaquePolygonalGeometry();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Render translucent polygonal geometry. Default implementation just call
 // UpdateTranslucentPolygonalGeometry().
@@ -453,7 +450,7 @@ void vtkRenderer::DeviceRenderTranslucentPolygonalGeometry(
   this->UpdateTranslucentPolygonalGeometry();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkRenderer::GetAllocatedRenderTime()
 {
   return this->AllocatedRenderTime;
@@ -571,7 +568,7 @@ void vtkRenderer::AllocateTime()
   this->ComputeAspect();
 
   // It is very likely that the culler framework will call our
-  // GetActiveCamera (say, to get the view frustrum planes for example).
+  // GetActiveCamera (say, to get the view frustum planes for example).
   // This does not reset the camera anymore. If no camera has been
   // created though, we want it not only to be created but also reset
   // so that it behaves nicely for people who never bother with the camera
@@ -706,7 +703,7 @@ int vtkRenderer::UpdateGeometry(vtkFrameBufferObjectBase* vtkNotUsed(fbo))
   return this->NumberOfPropsRendered;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Ask all props to update and draw any translucent polygonal
 // geometry. This includes both vtkActors and vtkVolumes
@@ -727,7 +724,7 @@ int vtkRenderer::UpdateTranslucentPolygonalGeometry()
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRenderer::UpdateOpaquePolygonalGeometry()
 {
   int result = 0;
@@ -739,13 +736,13 @@ int vtkRenderer::UpdateOpaquePolygonalGeometry()
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWindow* vtkRenderer::GetVTKWindow()
 {
   return this->RenderWindow;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::SetLayer(int layer)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting Layer to " << layer);
@@ -780,7 +777,7 @@ void vtkRenderer::SetActiveCamera(vtkCamera* cam)
   this->InvokeEvent(vtkCommand::ActiveCameraEvent, cam);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCamera* vtkRenderer::MakeCamera()
 {
   vtkCamera* cam = vtkCamera::New();
@@ -788,7 +785,7 @@ vtkCamera* vtkRenderer::MakeCamera()
   return cam;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCamera* vtkRenderer::GetActiveCamera()
 {
   if (this->ActiveCamera == nullptr)
@@ -808,7 +805,7 @@ vtkCamera* vtkRenderer::GetActiveCamera()
   return this->ActiveCamera;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCamera* vtkRenderer::GetActiveCameraAndResetIfCreated()
 {
   if (this->ActiveCamera == nullptr)
@@ -819,26 +816,26 @@ vtkCamera* vtkRenderer::GetActiveCameraAndResetIfCreated()
   return this->ActiveCamera;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::AddActor(vtkProp* p)
 {
   this->AddViewProp(p);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::AddVolume(vtkProp* p)
 {
   this->AddViewProp(p);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::RemoveActor(vtkProp* p)
 {
   this->Actors->RemoveItem(p);
   this->RemoveViewProp(p);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::RemoveVolume(vtkProp* p)
 {
   this->Volumes->RemoveItem(p);
@@ -907,7 +904,7 @@ void vtkRenderer::RemoveCuller(vtkCuller* culler)
   this->Cullers->RemoveItem(culler);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::SetLightCollection(vtkLightCollection* lights)
 {
   assert("pre lights_exist" && lights != nullptr);
@@ -920,7 +917,7 @@ void vtkRenderer::SetLightCollection(vtkLightCollection* lights)
   assert("post: lights_set" && lights == this->GetLights());
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLight* vtkRenderer::MakeLight()
 {
   return vtkLight::New();
@@ -1218,14 +1215,14 @@ void vtkRenderer::ResetCameraClippingRange(const double bounds[6])
   {
     this->ActiveCamera->GetViewPlaneNormal(vn);
     this->ActiveCamera->GetPosition(position);
-    this->ExpandBounds(expandedBounds, this->ActiveCamera->GetModelTransformMatrix());
   }
   else
   {
     this->ActiveCamera->GetEyePosition(position);
     this->ActiveCamera->GetEyePlaneNormal(vn);
-    this->ExpandBounds(expandedBounds, this->ActiveCamera->GetModelViewTransformMatrix());
   }
+
+  this->ExpandBounds(expandedBounds, this->ActiveCamera->GetModelTransformMatrix());
 
   a = -vn[0];
   b = -vn[1];
@@ -1256,6 +1253,12 @@ void vtkRenderer::ResetCameraClippingRange(const double bounds[6])
   if (this->ActiveCamera->GetParallelProjection())
   {
     minGap = 0.1 * this->ActiveCamera->GetParallelScale();
+  }
+  else if (this->ActiveCamera->GetUseOffAxisProjection())
+  {
+    double offAxisAdustment = this->ActiveCamera->GetOffAxisClippingAdjustment();
+    range[0] -= offAxisAdustment;
+    range[1] += offAxisAdustment;
   }
   else
   {
@@ -1325,6 +1328,141 @@ void vtkRenderer::ResetCameraClippingRange(
   this->ResetCameraClippingRange(bounds);
 }
 
+// Automatically set up the camera based on the visible actors.
+// Use a screen space bounding box to zoom closer to the data.
+void vtkRenderer::ResetCameraScreenSpace(const double offsetRatio)
+{
+  double allBounds[6];
+
+  this->ComputeVisiblePropBounds(allBounds);
+
+  if (!vtkMath::AreBoundsInitialized(allBounds))
+  {
+    vtkDebugMacro(<< "Cannot reset camera!");
+  }
+  else
+  {
+    this->ResetCameraScreenSpace(allBounds, offsetRatio);
+  }
+
+  // Here to let parallel/distributed compositing intercept
+  // and do the right thing.
+  this->InvokeEvent(vtkCommand::ResetCameraEvent, this);
+}
+
+// Alternative version of ResetCameraScreenSpace(bounds[6]);
+void vtkRenderer::ResetCameraScreenSpace(double xmin, double xmax, double ymin, double ymax,
+  double zmin, double zmax, const double offsetRatio)
+{
+  double bounds[6];
+
+  bounds[0] = xmin;
+  bounds[1] = xmax;
+  bounds[2] = ymin;
+  bounds[3] = ymax;
+  bounds[4] = zmin;
+  bounds[5] = zmax;
+
+  this->ResetCameraScreenSpace(bounds, offsetRatio);
+}
+
+// Use a screen space bounding box to zoom closer to the data.
+void vtkRenderer::ResetCameraScreenSpace(const double bounds[6], const double offsetRatio)
+{
+  // Make sure all bounds are visible to project into screen space
+  this->ResetCamera(bounds);
+
+  double expandedBounds[6] = { bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5] };
+  this->ExpandBounds(expandedBounds, this->ActiveCamera->GetModelTransformMatrix());
+
+  // 1) Compute the screen space bounding box
+  double xmin = VTK_DOUBLE_MAX;
+  double ymin = VTK_DOUBLE_MAX;
+  double xmax = VTK_DOUBLE_MIN;
+  double ymax = VTK_DOUBLE_MIN;
+  double currentPointDisplay[3];
+  for (int i = 0; i < 2; ++i)
+  {
+    for (int j = 0; j < 2; ++j)
+    {
+      for (int k = 0; k < 2; ++k)
+      {
+        double currentPoint[4] = { expandedBounds[i], expandedBounds[j + 2], expandedBounds[k + 4],
+          1.0 };
+
+        this->SetWorldPoint(currentPoint);
+        this->WorldToDisplay();
+        this->GetDisplayPoint(currentPointDisplay);
+
+        xmin = std::min(currentPointDisplay[0], xmin);
+        xmax = std::max(currentPointDisplay[0], xmax);
+        ymin = std::min(currentPointDisplay[1], ymin);
+        ymax = std::max(currentPointDisplay[1], ymax);
+      }
+    }
+  }
+
+  // Project the focal point in screen space
+  double fp[4];
+  this->ActiveCamera->GetFocalPoint(fp);
+  fp[3] = 1.0;
+  double fpDisplay[3];
+  this->SetWorldPoint(fp);
+  this->WorldToDisplay();
+  this->GetDisplayPoint(fpDisplay);
+
+  // The focal point must be at the center of the box
+  // So construct a box with fpDisplay at the center
+  int xCenterFocalPoint = static_cast<int>(fpDisplay[0]);
+  int yCenterFocalPoint = static_cast<int>(fpDisplay[1]);
+
+  int xCenterBox = static_cast<int>((xmin + xmax) / 2);
+  int yCenterBox = static_cast<int>((ymin + ymax) / 2);
+
+  int xDiff = 2 * (xCenterFocalPoint - xCenterBox);
+  int yDiff = 2 * (yCenterFocalPoint - yCenterBox);
+
+  int xMaxOffset = std::max(xDiff, 0);
+  int xMinOffset = std::min(xDiff, 0);
+  int yMaxOffset = std::max(yDiff, 0);
+  int yMinOffset = std::min(yDiff, 0);
+
+  xmin += xMinOffset;
+  xmax += xMaxOffset;
+  ymin += yMinOffset;
+  ymax += yMaxOffset;
+  // Now the focal point is at the center of the box
+
+  const vtkRecti box(xmin, ymin, xmax - xmin, ymax - ymin);
+  this->ZoomToBoxUsingViewAngle(box, offsetRatio);
+}
+
+// Display to world using vtkVector3d
+vtkVector3d vtkRenderer::DisplayToWorld(const vtkVector3d& display)
+{
+  this->SetDisplayPoint(display[0], display[1], display[2]);
+  this->DisplayToView();
+  this->ViewToWorld();
+
+  vtkVector<double, 4> world4;
+  this->GetWorldPoint(world4.GetData());
+  double invw = 1.0 * world4[3];
+  world4 = world4 * invw;
+  return vtkVector3d(world4.GetData());
+}
+
+void vtkRenderer::ZoomToBoxUsingViewAngle(const vtkRecti& box, double offsetRatio)
+{
+  const int* size = this->GetSize();
+  double zf1 = size[0] / static_cast<double>(box.GetWidth());
+  double zf2 = size[1] / static_cast<double>(box.GetHeight());
+  double zoomFactor = std::min(zf1, zf2);
+
+  // OffsetRatio will let a free space between the zoomed data
+  // And the edges of the window
+  this->GetActiveCamera()->Zoom(zoomFactor * offsetRatio);
+}
+
 // Specify the rendering window in which to draw. This is automatically set
 // when the renderer is created by MakeRenderer.  The user probably
 // shouldn't ever need to call this method.
@@ -1342,20 +1480,62 @@ void vtkRenderer::SetRenderWindow(vtkRenderWindow* renwin)
 // Given a pixel location, return the Z value
 double vtkRenderer::GetZ(int x, int y)
 {
-  float* zPtr;
-  double z;
+  int* size = this->GetSize();
+  if (x < 0 || y < 0 || x > size[0] || y > size[1])
+  {
+    return 1.0; // outside of renderer
+  }
 
-  zPtr = this->RenderWindow->GetZbufferData(x, y, x, y);
-  if (zPtr)
+  if (!this->SafeGetZ)
   {
-    z = *zPtr;
-    delete[] zPtr;
+    // Assume depth buffer is valid and up to date
+    return this->RenderWindow->GetZbufferDataAtPoint(x, y);
   }
-  else
+
+  // Skip volumes because we are only interested in Z-buffer values that are not updated by volumes
+  vtkNew<vtkPropCollection> propsList;
+  this->PickFromProps = propsList;
+
+  vtkCollectionSimpleIterator pit;
+  this->Props->InitTraversal(pit);
+  for (vtkProp* prop = this->Props->GetNextProp(pit); prop; prop = this->Props->GetNextProp(pit))
   {
-    z = 1.0;
+    prop->GetActors(PickFromProps);
+    prop->GetActors2D(PickFromProps);
   }
-  return z;
+
+  // Use a hardware selector because calling
+  // this->RenderWindow->GetZbufferData when having multiple renderers always
+  // results in a z-buffer value from the last rendered renderer
+  vtkNew<vtkHardwareSelector> hsel;
+  hsel->SetActorPassOnly(true);
+  hsel->SetCaptureZValues(true);
+  hsel->SetRenderer(this);
+  hsel->SetArea(static_cast<unsigned int>(x), static_cast<unsigned int>(y),
+    static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+  vtkSmartPointer<vtkSelection> sel;
+  sel.TakeReference(hsel->Select());
+
+  // Reset pick list
+  this->PickFromProps = nullptr;
+
+  // find the closest z-buffer value
+  if (sel && sel->GetNode(0))
+  {
+    double closestDepth = 1.0;
+    unsigned int numPicked = sel->GetNumberOfNodes();
+    for (unsigned int pIdx = 0; pIdx < numPicked; pIdx++)
+    {
+      vtkSelectionNode* selnode = sel->GetNode(pIdx);
+      double adepth = selnode->GetProperties()->Get(vtkSelectionNode::ZBUFFER_VALUE());
+      if (adepth < closestDepth)
+        closestDepth = adepth;
+    }
+
+    return closestDepth;
+  }
+
+  return 1.0; // nothing selected
 }
 
 // Convert view point coordinates to world coordinates.
@@ -1421,7 +1601,6 @@ void vtkRenderer::WorldToView()
 // Convert world point coordinates to view coordinates.
 void vtkRenderer::WorldToView(double& x, double& y, double& z)
 {
-  double mat[16];
   double view[4];
 
   // get the perspective transformation from the active camera
@@ -1431,8 +1610,7 @@ void vtkRenderer::WorldToView(double& x, double& y, double& z)
     x = y = z = 0.0;
     return;
   }
-  vtkMatrix4x4::DeepCopy(mat,
-    this->ActiveCamera->GetCompositeProjectionTransformMatrix(this->GetTiledAspectRatio(), 0, 1));
+  const auto& mat = this->GetCompositeProjectionTransformationMatrix();
 
   view[0] = x * mat[0] + y * mat[1] + z * mat[2] + mat[3];
   view[1] = x * mat[4] + y * mat[5] + z * mat[6] + mat[7];
@@ -1449,7 +1627,6 @@ void vtkRenderer::WorldToView(double& x, double& y, double& z)
 
 void vtkRenderer::WorldToPose(double& x, double& y, double& z)
 {
-  double mat[16];
   double view[4];
 
   // get the perspective transformation from the active camera
@@ -1459,7 +1636,7 @@ void vtkRenderer::WorldToPose(double& x, double& y, double& z)
     x = y = z = 0.0;
     return;
   }
-  vtkMatrix4x4::DeepCopy(mat, this->ActiveCamera->GetViewTransformMatrix());
+  const auto& mat = this->GetViewTransformMatrix();
 
   view[0] = x * mat[0] + y * mat[1] + z * mat[2] + mat[3];
   view[1] = x * mat[4] + y * mat[5] + z * mat[6] + mat[7];
@@ -1476,7 +1653,6 @@ void vtkRenderer::WorldToPose(double& x, double& y, double& z)
 
 void vtkRenderer::PoseToView(double& x, double& y, double& z)
 {
-  double mat[16];
   double view[4];
 
   // get the perspective transformation from the active camera
@@ -1486,8 +1662,7 @@ void vtkRenderer::PoseToView(double& x, double& y, double& z)
     x = y = z = 0.0;
     return;
   }
-  vtkMatrix4x4::DeepCopy(
-    mat, this->ActiveCamera->GetProjectionTransformMatrix(this->GetTiledAspectRatio(), 0, 1));
+  const auto& mat = this->GetProjectionTransformationMatrix();
 
   view[0] = x * mat[0] + y * mat[1] + z * mat[2] + mat[3];
   view[1] = x * mat[4] + y * mat[5] + z * mat[6] + mat[7];
@@ -1515,10 +1690,10 @@ void vtkRenderer::PoseToWorld(double& x, double& y, double& z)
   }
 
   // get the perspective transformation from the active camera
-  vtkMatrix4x4* matrix = this->ActiveCamera->GetViewTransformMatrix();
+  const auto& matrix = this->GetViewTransformMatrix();
 
   // use the inverse matrix
-  vtkMatrix4x4::Invert(*matrix->Element, mat);
+  vtkMatrix4x4::Invert(matrix.data(), mat);
 
   // Transform point to world coordinates
   result[0] = x;
@@ -1550,13 +1725,8 @@ void vtkRenderer::ViewToPose(double& x, double& y, double& z)
     return;
   }
 
-  // get the perspective transformation from the active camera
-  vtkMatrix4x4* matrix =
-    this->ActiveCamera->GetProjectionTransformMatrix(this->GetTiledAspectRatio(), 0, 1);
-
-  // use the inverse matrix
-  vtkMatrix4x4::Invert(*matrix->Element, mat);
-
+  const auto& matrix = this->GetProjectionTransformationMatrix();
+  vtkMatrix4x4::Invert(matrix.data(), mat);
   // Transform point to world coordinates
   result[0] = x;
   result[1] = y;
@@ -1728,6 +1898,13 @@ vtkMTimeType vtkRenderer::GetMTime()
 vtkAssemblyPath* vtkRenderer::PickProp(
   double selectionX1, double selectionY1, double selectionX2, double selectionY2)
 {
+  return this->PickProp(selectionX1, selectionY1, selectionX2, selectionY2,
+    vtkDataObject::FIELD_ASSOCIATION_CELLS, nullptr);
+}
+
+vtkAssemblyPath* vtkRenderer::PickProp(double selectionX1, double selectionY1, double selectionX2,
+  double selectionY2, int fieldAssociation, vtkSmartPointer<vtkSelection> sel)
+{
   // Get the pick id of the object that was picked
   if (this->PickedProp != nullptr)
   {
@@ -1774,12 +1951,24 @@ vtkAssemblyPath* vtkRenderer::PickProp(
 
   // use a hardware selector since we have it
   vtkNew<vtkHardwareSelector> hsel;
-  hsel->SetActorPassOnly(true);
+  hsel->SetFieldAssociation(fieldAssociation);
+  // if the user has instantiated a selection, perform all the passes
+  // otherwise, perform the actor pass only for faster results
+  hsel->SetActorPassOnly(sel == nullptr);
   hsel->SetCaptureZValues(true);
   hsel->SetRenderer(this);
   hsel->SetArea(this->PickX1, this->PickY1, this->PickX2, this->PickY2);
-  vtkSmartPointer<vtkSelection> sel;
-  sel.TakeReference(hsel->Select());
+  vtkSelection* hSelResult = hsel->Select();
+  // if the user has instantiated a selection, then return the hardware selection result
+  if (sel != nullptr)
+  {
+    sel->ShallowCopy(hSelResult);
+    hSelResult->Delete();
+  }
+  else // else just take the reference of it and use it locally
+  {
+    sel.TakeReference(hSelResult);
+  }
 
   if (sel && sel->GetNode(0))
   {
@@ -1787,6 +1976,7 @@ vtkAssemblyPath* vtkRenderer::PickProp(
     // store the list of picked props
     vtkProp* closestProp = nullptr;
     double closestDepth = 2.0;
+    unsigned int closestIdx = 0;
     this->PickResultProps = vtkPropCollection::New();
     unsigned int numPicked = sel->GetNumberOfNodes();
     for (unsigned int pIdx = 0; pIdx < numPicked; pIdx++)
@@ -1802,12 +1992,23 @@ vtkAssemblyPath* vtkRenderer::PickProp(
         {
           closestProp = aProp;
           closestDepth = adepth;
+          closestIdx = pIdx;
         }
       }
     }
     if (closestProp == nullptr)
     {
       return nullptr;
+    }
+    if (closestIdx != 0)
+    {
+      // reorder the selection so that the closest / picked prop is the first selection node
+      std::string nodeNameZero = sel->GetNodeNameAtIndex(0);
+      std::string nodeNameClosest = sel->GetNodeNameAtIndex(closestIdx);
+
+      vtkSmartPointer<vtkSelectionNode> temp = sel->GetNode(nodeNameZero);
+      sel->SetNode(nodeNameZero, sel->GetNode(nodeNameClosest));
+      sel->SetNode(nodeNameClosest, temp);
     }
     closestProp->InitPathTraversal();
     this->PickedProp = closestProp->GetNextPath();
@@ -1819,13 +2020,13 @@ vtkAssemblyPath* vtkRenderer::PickProp(
   return this->PickedProp; // returns an assembly path
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::SetEnvironmentTexture(vtkTexture* texture, bool vtkNotUsed(isSRGB))
 {
   vtkSetObjectBodyMacro(EnvironmentTexture, vtkTexture, texture);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderer::ExpandBounds(double bounds[6], vtkMatrix4x4* matrix)
 {
   if (!bounds)
@@ -1883,7 +2084,7 @@ void vtkRenderer::ExpandBounds(double bounds[6], vtkMatrix4x4* matrix)
   bounds[5] = max[2];
 }
 
-int vtkRenderer::Transparent()
+vtkTypeBool vtkRenderer::Transparent()
 {
   return this->PreserveColorBuffer;
 }
@@ -1915,7 +2116,8 @@ double vtkRenderer::GetTiledAspectRatio()
 
 int vtkRenderer::CaptureGL2PSSpecialProp(vtkProp* prop)
 {
-  if (this->GL2PSSpecialPropCollection && !this->GL2PSSpecialPropCollection->IsItemPresent(prop))
+  if (this->GL2PSSpecialPropCollection &&
+    this->GL2PSSpecialPropCollection->IndexOfFirstOccurence(prop) < 0)
   {
     this->GL2PSSpecialPropCollection->AddItem(prop);
     return 1;
@@ -1925,3 +2127,48 @@ int vtkRenderer::CaptureGL2PSSpecialProp(vtkProp* prop)
 }
 
 vtkCxxSetObjectMacro(vtkRenderer, GL2PSSpecialPropCollection, vtkPropCollection);
+
+const std::array<double, 16>& vtkRenderer::GetViewTransformMatrix()
+{
+  if (this->LastViewTransformCameraModified != this->ActiveCamera->GetMTime())
+  {
+    vtkMatrix4x4::DeepCopy(
+      this->ViewTransformMatrix.data(), this->ActiveCamera->GetViewTransformMatrix());
+
+    this->LastViewTransformCameraModified = this->ActiveCamera->GetMTime();
+  }
+  return this->ViewTransformMatrix;
+}
+
+const std::array<double, 16>& vtkRenderer::GetCompositeProjectionTransformationMatrix()
+{
+  const double tiledAspectRatio = this->GetTiledAspectRatio();
+  if (tiledAspectRatio != this->LastCompositeProjectionTransformationMatrixTiledAspectRatio ||
+    this->LastCompositeProjectionTransformationMatrixCameraModified !=
+      this->ActiveCamera->GetMTime())
+  {
+    vtkMatrix4x4::DeepCopy(this->CompositeProjectionTransformationMatrix.data(),
+      this->ActiveCamera->GetCompositeProjectionTransformMatrix(tiledAspectRatio, 0, 1));
+
+    this->LastCompositeProjectionTransformationMatrixTiledAspectRatio = tiledAspectRatio;
+    this->LastCompositeProjectionTransformationMatrixCameraModified =
+      this->ActiveCamera->GetMTime();
+  }
+  return this->CompositeProjectionTransformationMatrix;
+}
+
+const std::array<double, 16>& vtkRenderer::GetProjectionTransformationMatrix()
+{
+  const double tiledAspectRatio = this->GetTiledAspectRatio();
+  if (tiledAspectRatio != this->LastProjectionTransformationMatrixTiledAspectRatio ||
+    this->LastProjectionTransformationMatrixCameraModified != this->ActiveCamera->GetMTime())
+  {
+    vtkMatrix4x4::DeepCopy(this->ProjectionTransformationMatrix.data(),
+      this->ActiveCamera->GetProjectionTransformMatrix(tiledAspectRatio, 0, 1));
+
+    this->LastProjectionTransformationMatrixTiledAspectRatio = tiledAspectRatio;
+    this->LastProjectionTransformationMatrixCameraModified = this->ActiveCamera->GetMTime();
+  }
+  return this->ProjectionTransformationMatrix;
+}
+VTK_ABI_NAMESPACE_END

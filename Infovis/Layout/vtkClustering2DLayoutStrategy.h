@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkClustering2DLayoutStrategy.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkClustering2DLayoutStrategy
  * @brief   a simple fast 2D graph layout
@@ -38,6 +22,7 @@
 
 #include "vtkSmartPointer.h" // Required for smart pointer internal ivars.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFastSplatter;
 class vtkImageData;
 class vtkIntArray;
@@ -51,7 +36,7 @@ public:
   vtkTypeMacro(vtkClustering2DLayoutStrategy, vtkGraphLayoutStrategy);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Seed the random number generator used to jitter point positions.
    * This has a significant effect on their final positions when
@@ -59,9 +44,9 @@ public:
    */
   vtkSetClampMacro(RandomSeed, int, 0, VTK_INT_MAX);
   vtkGetMacro(RandomSeed, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the maximum number of iterations to be used.
    * The higher this number, the more iterations through the algorithm
@@ -72,9 +57,9 @@ public:
    */
   vtkSetClampMacro(MaxNumberOfIterations, int, 0, VTK_INT_MAX);
   vtkGetMacro(MaxNumberOfIterations, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of iterations per layout.
    * The only use for this ivar is for the application
@@ -84,9 +69,9 @@ public:
    */
   vtkSetClampMacro(IterationsPerLayout, int, 0, VTK_INT_MAX);
   vtkGetMacro(IterationsPerLayout, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the initial temperature.  The temperature default is '5'
    * for no particular reason
@@ -95,9 +80,9 @@ public:
    */
   vtkSetClampMacro(InitialTemperature, float, 0.0, VTK_FLOAT_MAX);
   vtkGetMacro(InitialTemperature, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Cool-down rate.
    * The higher this number is, the longer it will take to "cool-down",
@@ -108,16 +93,16 @@ public:
    */
   vtkSetClampMacro(CoolDownRate, double, 0.01, VTK_DOUBLE_MAX);
   vtkGetMacro(CoolDownRate, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Manually set the resting distance. Otherwise the
    * distance is computed automatically.
    */
   vtkSetMacro(RestDistance, float);
   vtkGetMacro(RestDistance, float);
-  //@}
+  ///@}
 
   /**
    * This strategy sets up some data structures
@@ -151,7 +136,7 @@ protected:
 private:
   // An edge consists of two vertices joined together.
   // This struct acts as a "pointer" to those two vertices.
-  typedef struct
+  struct vtkLayoutEdge_t
   {
     vtkIdType from;
     vtkIdType to;
@@ -159,7 +144,8 @@ private:
     int dead_edge; // I'm making this an int so that the edge array is
                    // word boundary aligned... but I'm not sure what
                    // really happens in these days of magical compilers
-  } vtkLayoutEdge;
+  };
+  using vtkLayoutEdge = struct vtkLayoutEdge_t;
 
   // This class 'has a' vtkFastSplatter for the density grid
   vtkSmartPointer<vtkFastSplatter> DensityGrid;
@@ -187,4 +173,5 @@ private:
   void operator=(const vtkClustering2DLayoutStrategy&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

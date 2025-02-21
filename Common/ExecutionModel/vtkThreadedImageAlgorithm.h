@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkThreadedImageAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkThreadedImageAlgorithm
  * @brief   Generic filter that has one input.
@@ -30,7 +18,9 @@
 
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkImageAlgorithm.h"
+#include "vtkThreads.h" // for VTK_MAX_THREADS
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 class vtkMultiThreader;
 
@@ -54,32 +44,32 @@ public:
   virtual void ThreadedExecute(
     vtkImageData* inData, vtkImageData* outData, int extent[6], int threadId);
 
-  //@{
+  ///@{
   /**
    * Enable/Disable SMP for threading.
    */
   vtkGetMacro(EnableSMP, bool);
   vtkSetMacro(EnableSMP, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Global Disable SMP for all derived Imaging filters.
    */
   static void SetGlobalDefaultEnableSMP(bool enable);
   static bool GetGlobalDefaultEnableSMP();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The minimum piece size when volume is split for execution.
    * By default, the minimum size is (16,1,1).
    */
   vtkSetVector3Macro(MinimumPieceSize, int);
   vtkGetVector3Macro(MinimumPieceSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The desired bytes per piece when volume is split for execution.
    * When SMP is enabled, this is used to subdivide the volume into pieces.
@@ -88,9 +78,9 @@ public:
    */
   vtkSetMacro(DesiredBytesPerPiece, vtkIdType);
   vtkGetMacro(DesiredBytesPerPiece, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the method used to divide the volume into pieces.
    * Slab mode splits the volume along the Z direction first,
@@ -103,16 +93,16 @@ public:
   void SetSplitModeToBeam() { this->SetSplitMode(BEAM); }
   void SetSplitModeToBlock() { this->SetSplitMode(BLOCK); }
   vtkGetMacro(SplitMode, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of threads to create when rendering.
    * This is ignored if EnableSMP is On.
    */
   vtkSetClampMacro(NumberOfThreads, int, 1, VTK_MAX_THREADS);
   vtkGetMacro(NumberOfThreads, int);
-  //@}
+  ///@}
 
   /**
    * Putting this here until I merge graphics and imaging streaming.
@@ -176,4 +166,5 @@ private:
   friend class vtkThreadedImageAlgorithmFunctor;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

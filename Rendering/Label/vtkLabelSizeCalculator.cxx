@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLabelSizeCalculator.h"
 
 #include "vtkCellData.h"
@@ -21,10 +23,11 @@
 
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLabelSizeCalculator::Internals
 {
 public:
-  std::map<int, vtkSmartPointer<vtkTextProperty> > FontProperties;
+  std::map<int, vtkSmartPointer<vtkTextProperty>> FontProperties;
 };
 
 vtkStandardNewMacro(vtkLabelSizeCalculator);
@@ -55,7 +58,7 @@ void vtkLabelSizeCalculator::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
   os << indent << "LabelSizeArrayName: " << this->LabelSizeArrayName << "\n";
   os << indent << "FontProperties: ";
-  std::map<int, vtkSmartPointer<vtkTextProperty> >::iterator it, itEnd;
+  std::map<int, vtkSmartPointer<vtkTextProperty>>::iterator it, itEnd;
   it = this->Implementation->FontProperties.begin();
   itEnd = this->Implementation->FontProperties.end();
   for (; it != itEnd; ++it)
@@ -235,7 +238,7 @@ vtkIntArray* vtkLabelSizeCalculator::LabelSizesForArray(
     if (this->GetDebug())
     {
       cout << "LSC: " << bds[0] << " " << bds[1] << " " << bds[2] << " " << bds[3] << " \""
-           << labels->GetVariantValue(i).ToString().c_str() << "\"\n";
+           << labels->GetVariantValue(i).ToString() << "\"\n";
     }
 
     bds += 4;
@@ -243,3 +246,4 @@ vtkIntArray* vtkLabelSizeCalculator::LabelSizesForArray(
 
   return lsz;
 }
+VTK_ABI_NAMESPACE_END

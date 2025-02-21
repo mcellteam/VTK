@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayLightNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOSPRayLightNode.h"
 
 #include "vtkCamera.h"
@@ -29,22 +17,23 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationKeyMacro(vtkOSPRayLightNode, IS_AMBIENT, Integer);
 vtkInformationKeyMacro(vtkOSPRayLightNode, RADIUS, Double);
 
 //============================================================================
 double vtkOSPRayLightNode::LightScale = 1.0;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOSPRayLightNode);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayLightNode::vtkOSPRayLightNode()
 {
   this->OLight = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayLightNode::~vtkOSPRayLightNode()
 {
   vtkOSPRayRendererNode* orn = vtkOSPRayRendererNode::GetRendererNode(this);
@@ -56,19 +45,19 @@ vtkOSPRayLightNode::~vtkOSPRayLightNode()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayLightNode::SetLightScale(double s)
 {
   vtkOSPRayLightNode::LightScale = s;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkOSPRayLightNode::GetLightScale()
 {
   return vtkOSPRayLightNode::LightScale;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayLightNode::SetIsAmbient(int value, vtkLight* light)
 {
   if (!light)
@@ -79,10 +68,10 @@ void vtkOSPRayLightNode::SetIsAmbient(int value, vtkLight* light)
   info->Set(vtkOSPRayLightNode::IS_AMBIENT(), value);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOSPRayLightNode::GetIsAmbient(vtkLight* light)
 {
-  if (!light)
+  if (!light || !light->GetSwitch())
   {
     return 0;
   }
@@ -94,7 +83,7 @@ int vtkOSPRayLightNode::GetIsAmbient(vtkLight* light)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayLightNode::SetRadius(double value, vtkLight* light)
 {
   if (!light)
@@ -105,7 +94,7 @@ void vtkOSPRayLightNode::SetRadius(double value, vtkLight* light)
   info->Set(vtkOSPRayLightNode::RADIUS(), value);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkOSPRayLightNode::GetRadius(vtkLight* light)
 {
   if (!light)
@@ -120,13 +109,13 @@ double vtkOSPRayLightNode::GetRadius(vtkLight* light)
   return 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayLightNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayLightNode::Render(bool prepass)
 {
   if (prepass)
@@ -158,6 +147,7 @@ void vtkOSPRayLightNode::Render(bool prepass)
 
     vtkLight* light = vtkLight::SafeDownCast(this->GetRenderable());
 
+    double attenuationCompensation = 1.0;
     float color[3] = { 0.0, 0.0, 0.0 };
     if (light->GetSwitch())
     {
@@ -167,14 +157,14 @@ void vtkOSPRayLightNode::Render(bool prepass)
     }
     if (vtkOSPRayLightNode::GetIsAmbient(light))
     {
-      ospLight = ospNewLight3("ambient");
+      ospLight = ospNewLight("ambient");
       color[0] = static_cast<float>(light->GetDiffuseColor()[0]);
       color[1] = static_cast<float>(light->GetDiffuseColor()[1]);
       color[2] = static_cast<float>(light->GetDiffuseColor()[2]);
-      ospSet3f(ospLight, "color", color[0], color[1], color[2]);
+      ospSetVec3f(ospLight, "color", color[0], color[1], color[2]);
       float fI = static_cast<float>(
         0.13f * vtkOSPRayLightNode::LightScale * light->GetIntensity() * vtkMath::Pi());
-      ospSet1f(ospLight, "intensity", fI);
+      ospSetFloat(ospLight, "intensity", fI);
       ospCommit(ospLight);
       orn->AddLight(ospLight);
     }
@@ -199,11 +189,11 @@ void vtkOSPRayLightNode::Render(bool prepass)
       float coneAngle = static_cast<float>(light->GetConeAngle());
       if (coneAngle <= 0.0 || coneAngle >= 90.0)
       {
-        ospLight = ospNewLight3("PointLight");
+        ospLight = ospNewLight("sphere");
       }
       else
       {
-        ospLight = ospNewLight3("SpotLight");
+        ospLight = ospNewLight("spot");
         double focalPoint[4];
         light->GetFocalPoint(focalPoint);
         focalPoint[3] = 1.0;
@@ -222,22 +212,29 @@ void vtkOSPRayLightNode::Render(bool prepass)
 
         double direction[3];
         vtkMath::Subtract(focalPoint, position, direction);
+        double attenuation[3];
+        light->GetAttenuationValues(attenuation);
+        double dist = vtkMath::Norm(direction);
+        double distSq = dist * dist;
+        // OSPRay spot/point light has a quadratic attenuation i.e. the light intensity decreases
+        // proportional to the squared distance from the source. To support the different
+        // attenuation modes supported by vtkLight, we compensate here.
+        attenuationCompensation = attenuation[0] * distSq + attenuation[1] * dist + attenuation[2];
         vtkMath::Normalize(direction);
 
-        ospSet3f(ospLight, "direction", direction[0], direction[1], direction[2]);
+        ospSetVec3f(ospLight, "direction", direction[0], direction[1], direction[2]);
         // OpenGL interprets this as a half-angle. Mult by 2 for consistency.
-        ospSet1f(ospLight, "openingAngle", 2 * coneAngle);
+        ospSetFloat(ospLight, "openingAngle", 2 * coneAngle);
         // TODO: penumbraAngle
       }
-      ospSet3f(ospLight, "color", color[0], color[1], color[2]);
-      float fI =
-        static_cast<float>(vtkOSPRayLightNode::LightScale * light->GetIntensity() * vtkMath::Pi());
-      ospSet1i(ospLight, "isVisible", 0);
-      ospSet1f(ospLight, "intensity", fI);
+      ospSetVec3f(ospLight, "color", color[0], color[1], color[2]);
+      float fI = static_cast<float>(vtkOSPRayLightNode::LightScale * light->GetIntensity() *
+        vtkMath::Pi() * attenuationCompensation);
+      ospSetFloat(ospLight, "intensity", fI);
 
-      ospSet3f(ospLight, "position", position[0], position[1], position[2]);
+      ospSetVec3f(ospLight, "position", position[0], position[1], position[2]);
       float r = static_cast<float>(vtkOSPRayLightNode::GetRadius(light));
-      ospSet1f(ospLight, "radius", r);
+      ospSetFloat(ospLight, "radius", r);
       ospCommit(ospLight);
       orn->AddLight(ospLight);
     }
@@ -265,17 +262,18 @@ void vtkOSPRayLightNode::Render(bool prepass)
         invCamTransfo->MultiplyPoint(direction, direction);
       }
 
-      ospLight = ospNewLight3("DirectionalLight");
-      ospSet3f(ospLight, "color", color[0], color[1], color[2]);
+      ospLight = ospNewLight("distant");
+      ospSetVec3f(ospLight, "color", color[0], color[1], color[2]);
       float fI =
         static_cast<float>(vtkOSPRayLightNode::LightScale * light->GetIntensity() * vtkMath::Pi());
-      ospSet1f(ospLight, "intensity", fI);
-      ospSet3f(ospLight, "direction", direction[0], direction[1], direction[2]);
+      ospSetFloat(ospLight, "intensity", fI);
+      ospSetVec3f(ospLight, "direction", direction[0], direction[1], direction[2]);
       float r = static_cast<float>(vtkOSPRayLightNode::GetRadius(light));
-      ospSet1f(ospLight, "angularDiameter", r);
+      ospSetFloat(ospLight, "angularDiameter", r);
       ospCommit(ospLight);
       orn->AddLight(ospLight);
     }
     this->OLight = ospLight;
   }
 }
+VTK_ABI_NAMESPACE_END

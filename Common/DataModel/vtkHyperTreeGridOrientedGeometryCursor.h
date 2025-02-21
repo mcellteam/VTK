@@ -1,22 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridOrientedGeometryCursor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright Nonice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridOrientedGeometryCursor
  * @brief   Objects for traversal a HyperTreeGrid.
  *
- * JB A REVOIR
  * NonOriented ne peut pas remonter plus haut qu'a sa creation.
  * Objects that can perform depth traversal of a hyper tree grid,
  * take into account more parameters (related to the grid structure) than
@@ -25,12 +12,12 @@
  * Cursors are created by the HyperTreeGrid implementation.
  *
  * @sa
- * vtkHyperTreeCursor vtkHyperTree vtkHyperTreeGrid
+ * vtkHyperTree vtkHyperTreeGrid
  *
  * @par Thanks:
  * This class was written by Guenole Harel and Jacques-Bernard Lekien, 2014.
  * This class was re-written by Philippe Pebay, 2016.
- * JB This class was re-written for more optimisation by Jacques-Bernard Lekien,
+ * This class was re-written for more optimisation by Jacques-Bernard Lekien,
  * Guenole Harel and Jerome Dubois, 2018.
  * This work was supported by Commissariat a l'Energie Atomique
  * CEA, DAM, DIF, F-91297 Arpajon, France.
@@ -47,6 +34,7 @@
 #include <memory> // For std::shared_ptr
 #include <vector> // For std::vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHyperTree;
 class vtkHyperTreeGrid;
 class vtkHyperTreeGridScales;
@@ -71,36 +59,30 @@ public:
    */
   void Initialize(vtkHyperTreeGrid* grid, vtkIdType treeIndex, bool create = false);
 
+  ///@{
   /**
    * Initialize cursor at root of given tree index in grid.
    */
   void Initialize(vtkHyperTreeGrid* grid, vtkHyperTree* tree, unsigned int level,
     vtkHyperTreeGridGeometryEntry& entry);
-
-  /**
-   * JB
-   */
   void Initialize(vtkHyperTreeGrid* grid, vtkHyperTree* tree, unsigned int level, vtkIdType index,
     double* origin);
-
-  /**
-   * JB
-   */
   void Initialize(vtkHyperTreeGridOrientedGeometryCursor* cursor);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return if a Tree pointing exist
    */
   bool HasTree() const { return vtk::hypertreegrid::HasTree(*this); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the hyper tree to which the cursor is pointing.
    */
   vtkHyperTree* GetTree() const { return this->Tree; }
-  //@}
+  ///@}
 
   /**
    * Return the index of the current vertex in the tree.
@@ -125,25 +107,12 @@ public:
    */
   unsigned char GetNumberOfChildren();
 
-  /**
-   * JB
-   */
   void SetGlobalIndexStart(vtkIdType index);
-
-  /**
-   * JB
-   */
   void SetGlobalIndexFromLocal(vtkIdType index);
 
-  /**
-   * JB
-   */
   double* GetOrigin();
   double* GetSize();
 
-  /**
-   * JB
-   */
   void GetBounds(double bounds[6]);
   void GetPoint(double point[3]);
 
@@ -163,9 +132,6 @@ public:
    */
   bool IsLeaf();
 
-  /**
-   * JB Fait chier normalement on devrait passer par GetEntry
-   */
   void SubdivideLeaf();
 
   /**
@@ -189,35 +155,27 @@ public:
 
 protected:
   /**
-   * Constructor
-   * JB Just pour vtkHyperTreeGridNonOrientedVonNeumannSuperCursor et Moore
+   * Used by vtkHyperTreeGridNonOrientedVonNeumannSuperCursor & Moore
    */
   vtkHyperTreeGridOrientedGeometryCursor();
 
   /**
-   * Destructor
-   * JB Just pour vtkHyperTreeGridNonOrientedVonNeumannSuperCursor et Moore
+   * Used by vtkHyperTreeGridNonOrientedVonNeumannSuperCursor & Moore
    */
   ~vtkHyperTreeGridOrientedGeometryCursor() override;
 
   /**
-   * JB Reference sur l'hyper tree grid parcouru actuellement.
+   * Reference to the HTG currently processed.
    */
   vtkHyperTreeGrid* Grid;
 
-  /**
-   * JB
-   */
   vtkHyperTree* Tree;
 
   /**
-   * JB Storage of pre-computed per-level cell scales
+   * Storage of pre-computed per-level cell scales
    */
   std::shared_ptr<vtkHyperTreeGridScales> Scales;
 
-  /**
-   * JB
-   */
   unsigned int Level;
 
   // Hyper tree grid to which the cursor is attached
@@ -227,4 +185,5 @@ private:
   vtkHyperTreeGridOrientedGeometryCursor(const vtkHyperTreeGridOrientedGeometryCursor&) = delete;
   void operator=(const vtkHyperTreeGridOrientedGeometryCursor&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

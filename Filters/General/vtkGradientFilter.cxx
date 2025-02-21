@@ -1,30 +1,17 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGradientFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGradientFilter.h"
 
+#include "vtkArrayDispatch.h"
 #include "vtkCell.h"
 #include "vtkCellData.h"
 #include "vtkCellDataToPointData.h"
 #include "vtkDataArray.h"
+#include "vtkDataArrayRange.h"
 #include "vtkDataSet.h"
+#include "vtkDataSetAttributes.h"
+#include "vtkGenericCell.h"
 #include "vtkIdList.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
@@ -33,19 +20,24 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
-#include "vtkPolyData.h"
 #include "vtkRectilinearGrid.h"
+#include "vtkSMPThreadLocal.h"
+#include "vtkSMPTools.h"
 #include "vtkSmartPointer.h"
+#include "vtkStaticCellLinks.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredGrid.h"
+#include "vtkUnsignedCharArray.h"
 #include "vtkUnstructuredGrid.h"
 
 #include <limits>
 #include <vector>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-vtkStandardNewMacro(vtkGradientFilter);
+VTK_ABI_NAMESPACE_BEGIN
+vtkObjectFactoryNewMacro(vtkGradientFilter);
+VTK_ABI_NAMESPACE_END
 
 namespace
 {
@@ -55,25 +47,25 @@ namespace
   vtkTemplateMacroCase(VTK_DOUBLE, double, call);                                                  \
   vtkTemplateMacroCase(VTK_FLOAT, float, call)
 
-// helper function to replace the gradient of a vector
-// with the vorticity/curl of that vector
-//-----------------------------------------------------------------------------
-template <class data_type>
-void ComputeVorticityFromGradient(data_type* gradients, data_type* vorticity)
+// Helper function to compute the vorticity, divergence, and q criterion from
+// the gradient.
+//------------------------------------------------------------------------------
+template <typename V>
+void ComputeVorticityFromGradient(double* gradients, V vorticity)
 {
   vorticity[0] = gradients[7] - gradients[5];
   vorticity[1] = gradients[2] - gradients[6];
   vorticity[2] = gradients[3] - gradients[1];
 }
 
-template <class data_type>
-void ComputeDivergenceFromGradient(data_type* gradients, data_type* divergence)
+template <typename D>
+void ComputeDivergenceFromGradient(double* gradients, D divergence)
 {
   divergence[0] = gradients[0] + gradients[4] + gradients[8];
 }
 
-template <class data_type>
-void ComputeQCriterionFromGradient(data_type* gradients, data_type* qCriterion)
+template <typename Q>
+void ComputeQCriterionFromGradient(double* gradients, Q qCriterion)
 {
   // see http://public.kitware.com/pipermail/paraview/2015-May/034233.html for
   // paper citation and formula on Q-criterion.
@@ -83,24 +75,16 @@ void ComputeQCriterionFromGradient(data_type* gradients, data_type* qCriterion)
     (gradients[1] * gradients[3] + gradients[2] * gradients[6] + gradients[5] * gradients[7]);
 }
 
-// Functions for unstructured grids and polydatas
-template <class data_type>
-void ComputePointGradientsUG(vtkDataSet* structure, vtkDataArray* array, data_type* gradients,
-  int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, data_type* divergence,
-  int highestCellDimension, int contributingCellOption);
-
+// Helper function to determine parametric coordinate of a point
 int GetCellParametricData(
   vtkIdType pointId, double pointCoord[3], vtkCell* cell, int& subId, double parametricCoord[3]);
 
-template <class data_type>
-void ComputeCellGradientsUG(vtkDataSet* structure, vtkDataArray* array, data_type* gradients,
-  int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, data_type* divergence);
-
 // Functions for image data and structured grids
-template <class Grid, class data_type>
-void ComputeGradientsSG(Grid output, vtkDataArray* array, data_type* gradients,
-  int numberOfInputComponents, int fieldAssociation, data_type* vorticity, data_type* qCriterion,
-  data_type* divergence);
+template <class GridT, class DataT>
+void ComputeGradientsSG(GridT* output, int* dims, DataT* array, DataT* gradients,
+  int numberOfInputComponents, int fieldAssociation, DataT* vorticity, DataT* qCriterion,
+  DataT* divergence, vtkUnsignedCharArray* ghosts, unsigned char hiddenGhost,
+  vtkGradientFilter* filter);
 
 bool vtkGradientFilterHasArray(vtkFieldData* fieldData, vtkDataArray* array)
 {
@@ -118,7 +102,7 @@ bool vtkGradientFilterHasArray(vtkFieldData* fieldData, vtkDataArray* array)
 // generic way to get the coordinate for either a cell (using
 // the parametric center) or a point
 void GetGridEntityCoordinate(
-  vtkDataSet* grid, int fieldAssociation, vtkIdType index, double coords[3])
+  vtkDataSet* grid, int fieldAssociation, vtkIdType index, double coords[3], vtkGenericCell* cell)
 {
   if (fieldAssociation == vtkDataObject::FIELD_ASSOCIATION_POINTS)
   {
@@ -126,16 +110,16 @@ void GetGridEntityCoordinate(
   }
   else
   {
-    vtkCell* cell = grid->GetCell(index);
+    grid->GetCell(index, cell);
     double pcoords[3];
     int subId = cell->GetParametricCenter(pcoords);
     std::vector<double> weights(cell->GetNumberOfPoints() + 1);
-    cell->EvaluateLocation(subId, pcoords, coords, &weights[0]);
+    cell->EvaluateLocation(subId, pcoords, coords, weights.data());
   }
 }
 
-template <class data_type>
-void Fill(vtkDataArray* array, data_type vtkNotUsed(data), int replacementValueOption)
+template <class DataT>
+void Fill(vtkDataArray* array, DataT vtkNotUsed(data), int replacementValueOption)
 {
   switch (replacementValueOption)
   {
@@ -146,25 +130,27 @@ void Fill(vtkDataArray* array, data_type vtkNotUsed(data), int replacementValueO
       array->Fill(vtkMath::Nan());
       return;
     case vtkGradientFilter::DataTypeMin:
-      array->Fill(std::numeric_limits<data_type>::min());
+      array->Fill(std::numeric_limits<DataT>::min());
       return;
     case vtkGradientFilter::DataTypeMax:
-      array->Fill(std::numeric_limits<data_type>::max());
+      array->Fill(std::numeric_limits<DataT>::max());
       return;
   }
 }
-template <class data_type>
-int GetOutputDataType(data_type vtkNotUsed(data))
+template <class DataT>
+int GetOutputDataType(DataT vtkNotUsed(data))
 {
-  if (sizeof(data_type) >= 8)
+  if (sizeof(DataT) >= 8)
   {
     return VTK_DOUBLE;
   }
   return VTK_FLOAT;
 }
+
 } // end anonymous namespace
 
-//-----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 vtkGradientFilter::vtkGradientFilter()
 {
   this->ResultArrayName = nullptr;
@@ -182,7 +168,7 @@ vtkGradientFilter::vtkGradientFilter()
     vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS, vtkDataSetAttributes::SCALARS);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGradientFilter::~vtkGradientFilter()
 {
   this->SetResultArrayName(nullptr);
@@ -191,7 +177,7 @@ vtkGradientFilter::~vtkGradientFilter()
   this->SetQCriterionArrayName(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGradientFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -214,7 +200,7 @@ void vtkGradientFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ReplacementValueOption:" << this->ReplacementValueOption << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGradientFilter::SetInputScalars(int fieldAssociation, const char* name)
 {
   if ((fieldAssociation != vtkDataObject::FIELD_ASSOCIATION_POINTS) &&
@@ -228,7 +214,7 @@ void vtkGradientFilter::SetInputScalars(int fieldAssociation, const char* name)
   this->SetInputArrayToProcess(0, 0, 0, fieldAssociation, name);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGradientFilter::SetInputScalars(int fieldAssociation, int fieldAttributeType)
 {
   if ((fieldAssociation != vtkDataObject::FIELD_ASSOCIATION_POINTS) &&
@@ -242,7 +228,7 @@ void vtkGradientFilter::SetInputScalars(int fieldAssociation, int fieldAttribute
   this->SetInputArrayToProcess(0, 0, 0, fieldAssociation, fieldAttributeType);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGradientFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -272,7 +258,7 @@ int vtkGradientFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGradientFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -351,8 +337,36 @@ int vtkGradientFilter::RequestData(vtkInformation* vtkNotUsed(request),
   if (output->IsA("vtkImageData") || output->IsA("vtkStructuredGrid") ||
     output->IsA("vtkRectilinearGrid"))
   {
-    this->ComputeRegularGridGradient(
-      array, fieldAssociation, computeVorticity, computeQCriterion, computeDivergence, output);
+    vtkUnsignedCharArray* ghosts = nullptr;
+    unsigned char hiddenGhost = 0;
+    int dims[3];
+    if (auto im = vtkImageData::SafeDownCast(output))
+    {
+      im->GetDimensions(dims);
+    }
+    else if (auto rect = vtkRectilinearGrid::SafeDownCast(output))
+    {
+      rect->GetDimensions(dims);
+    }
+    else if (auto sg = vtkStructuredGrid::SafeDownCast(output))
+    {
+      sg->GetDimensions(dims);
+    }
+    if (fieldAssociation == vtkDataObject::FIELD_ASSOCIATION_POINTS)
+    {
+      ghosts = input->GetPointData()->GetGhostArray();
+      hiddenGhost = vtkDataSetAttributes::HIDDENPOINT;
+    }
+    if (fieldAssociation == vtkDataObject::FIELD_ASSOCIATION_CELLS)
+    {
+      ghosts = input->GetCellData()->GetGhostArray();
+      hiddenGhost = vtkDataSetAttributes::HIDDENCELL;
+      dims[0] -= (dims[0] != 1);
+      dims[1] -= (dims[1] != 1);
+      dims[2] -= (dims[2] != 1);
+    }
+    this->ComputeRegularGridGradient(array, dims, fieldAssociation, computeVorticity,
+      computeQCriterion, computeDivergence, output, ghosts, hiddenGhost);
   }
   else
   {
@@ -363,13 +377,363 @@ int vtkGradientFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+// Threaded fast path for unstructured grids.
+namespace // begin anonymous namespace
+{
+template <typename TData>
+struct GradientsBase
+{
+  TData* Array;
+  int NumComp;
+  TData* Gradients;
+  TData* Vorticity;
+  TData* QCriterion;
+  TData* Divergence;
+  vtkGradientFilter* Filter;
+
+  GradientsBase(
+    TData* a, int numComp, TData* g, TData* v, TData* q, TData* d, vtkGradientFilter* filter)
+    : Array(a)
+    , NumComp(numComp)
+    , Gradients(g)
+    , Vorticity(v)
+    , QCriterion(q)
+    , Divergence(d)
+    , Filter(filter)
+  {
+  }
+};
+
+template <typename TData>
+struct PointGradients : public GradientsBase<TData>
+{
+  vtkDataSet* Input;
+  vtkStaticCellLinks* Links;
+  const int MaxSpatialDimension;
+  int CellOption;
+  vtkSMPThreadLocal<vtkSmartPointer<vtkGenericCell>> TLCell;
+  vtkSMPThreadLocal<std::vector<double>> TLValues;
+  vtkSMPThreadLocal<std::vector<double>> TLGradient;
+  vtkSMPThreadLocal<int> TLMaxSpatialDimension;
+
+  PointGradients(vtkDataSet* input, vtkStaticCellLinks* links, TData* a, int numComp, TData* g,
+    TData* v, TData* q, TData* d, int cellOption, vtkGradientFilter* filter)
+    : GradientsBase<TData>(a, numComp, g, v, q, d, filter)
+    , Input(input)
+    , Links(links)
+    , MaxSpatialDimension(
+        cellOption == vtkGradientFilter::DataSetMax ? input->GetMaxSpatialDimension() : 0)
+  {
+  }
+
+  void Initialize()
+  {
+    this->TLCell.Local().TakeReference(vtkGenericCell::New());
+    this->TLValues.Local().resize(8);
+    this->TLGradient.Local().resize(this->NumComp * 3);
+  }
+
+  void operator()(vtkIdType ptId, vtkIdType endPtId)
+  {
+    auto& cell = this->TLCell.Local();
+    auto& values = this->TLValues.Local();
+    auto& g = this->TLGradient.Local();
+    auto& maxSpatialDimension = this->TLMaxSpatialDimension.Local();
+    const auto array = vtk::DataArrayTupleRange(this->Array);
+    vtkDataSet* input = this->Input;
+    vtkStaticCellLinks* links = this->Links;
+    int numberOfOutputComponents = 3 * this->NumComp;
+
+    // if we are doing patches for contributing cell dimensions we want to keep track of
+    // the maximum expected dimension so we can exit out of the check loop quicker
+    const int maxCellDimension = input->IsA("vtkPolyData") ? 2 : 3;
+
+    bool isFirst = vtkSMPTools::GetSingleThread();
+
+    for (; ptId < endPtId; ptId++)
+    {
+      if (isFirst)
+      {
+        this->Filter->CheckAbort();
+      }
+
+      if (this->Filter->GetAbortOutput())
+      {
+        break;
+      }
+      double pointcoords[3];
+      input->GetPoint(ptId, pointcoords);
+      // Get all cells touching this point.
+      vtkIdType numCellNeighbors = links->GetNcells(ptId);
+      vtkIdType* cellsOnPoint = links->GetCells(ptId);
+
+      std::fill_n(g.begin(), numberOfOutputComponents, 0.0);
+
+      if (this->CellOption == vtkGradientFilter::Patch)
+      {
+        maxSpatialDimension = 0;
+        for (vtkIdType neighbor = 0; neighbor < numCellNeighbors; neighbor++)
+        {
+          const auto cellType =
+            static_cast<unsigned char>(input->GetCellType(cellsOnPoint[neighbor]));
+          int cellDimension = vtkCellTypes::GetDimension(cellType);
+          if (cellDimension > maxSpatialDimension)
+          {
+            maxSpatialDimension = cellDimension;
+            if (maxSpatialDimension == maxCellDimension)
+            {
+              break;
+            }
+          }
+        }
+      }
+      else
+      {
+        maxSpatialDimension = this->MaxSpatialDimension;
+      }
+      vtkIdType numValidCellNeighbors = 0;
+
+      // Iterate on all cells and find all points connected to current point
+      // by an edge.
+      for (vtkIdType neighbor = 0; neighbor < numCellNeighbors; neighbor++)
+      {
+        input->GetCell(cellsOnPoint[neighbor], cell);
+        if (cell->GetCellDimension() >= maxSpatialDimension)
+        {
+          int subId;
+          double parametricCoord[3], derivative[3];
+          int nPts = cell->GetNumberOfPoints();
+          values.resize(nPts);
+
+          if (GetCellParametricData(ptId, pointcoords, cell, subId, parametricCoord))
+          {
+            numValidCellNeighbors++;
+            for (int comp = 0; comp < this->NumComp; comp++)
+            {
+              // Get values of array at cell points.
+              for (int i = 0; i < nPts; i++)
+              {
+                auto a = array[cell->GetPointId(i)];
+                values[i] = a[comp];
+              }
+
+              // Get derivative of cell at point.
+              cell->Derivatives(subId, parametricCoord, &values[0], 1, derivative);
+
+              g[comp * 3] += derivative[0];
+              g[comp * 3 + 1] += derivative[1];
+              g[comp * 3 + 2] += derivative[2];
+            } // iterating over Components
+          }   // if(GetCellParametricData())
+        }     // if(cell->GetCellDimension () >= highestCellDimension
+      }       // iterating over neighbors
+
+      if (numValidCellNeighbors > 0)
+      {
+        for (int i = 0; i < numberOfOutputComponents; i++)
+        {
+          g[i] /= numValidCellNeighbors;
+        }
+
+        if (this->Vorticity)
+        {
+          auto vorticity = vtk::DataArrayTupleRange(this->Vorticity);
+          ComputeVorticityFromGradient(&g[0], vorticity[ptId]);
+        }
+        if (this->QCriterion)
+        {
+          auto qCriterion = vtk::DataArrayTupleRange(this->QCriterion);
+          ComputeQCriterionFromGradient(&g[0], qCriterion[ptId]);
+        }
+        if (this->Divergence)
+        {
+          auto divergence = vtk::DataArrayTupleRange(this->Divergence);
+          ComputeDivergenceFromGradient(&g[0], divergence[ptId]);
+        }
+        if (this->Gradients)
+        {
+          auto gradients = vtk::DataArrayTupleRange(this->Gradients);
+          auto gTuple = gradients[ptId];
+          for (int i = 0; i < numberOfOutputComponents; i++)
+          {
+            gTuple[i] = g[i];
+          }
+        }
+      }
+    } // iterating over points in grid
+  }
+
+  void Reduce() {}
+};
+
+// Analyze points to develop smoothing stencil
+struct PointGradientsWorker
+{
+  template <typename DataT>
+  void operator()(DataT* array, vtkDataSet* input, vtkStaticCellLinks* links,
+    vtkDataArray* gradients, vtkDataArray* vorticity, vtkDataArray* qCriterion,
+    vtkDataArray* divergence, int cellOption, vtkGradientFilter* filter)
+  {
+    vtkIdType numPts = input->GetNumberOfPoints();
+    int numComp = array->GetNumberOfComponents();
+
+    PointGradients<DataT> pg(input, links, array, numComp, (DataT*)gradients, (DataT*)vorticity,
+      (DataT*)qCriterion, (DataT*)divergence, cellOption, filter);
+
+    vtkSMPTools::For(0, numPts, pg);
+  }
+};
+
+template <typename TData>
+struct CellGradients : public GradientsBase<TData>
+{
+  vtkDataSet* Input;
+  vtkSMPThreadLocal<vtkSmartPointer<vtkGenericCell>> Cell;
+  vtkSMPThreadLocal<std::vector<double>> Values;
+  vtkSMPThreadLocal<std::vector<double>> Gradient;
+
+  CellGradients(vtkDataSet* input, TData* a, int numComp, TData* g, TData* v, TData* q, TData* d,
+    vtkGradientFilter* filter)
+    : GradientsBase<TData>(a, numComp, g, v, q, d, filter)
+    , Input(input)
+  {
+  }
+
+  void Initialize()
+  {
+    this->Cell.Local().TakeReference(vtkGenericCell::New());
+    this->Values.Local().resize(8);
+    this->Gradient.Local().resize(this->NumComp * 3);
+  }
+
+  void operator()(vtkIdType cellId, vtkIdType endCellId)
+  {
+    auto& cell = this->Cell.Local();
+    auto& values = this->Values.Local();
+    auto& cellGrad = this->Gradient.Local();
+    const auto array = vtk::DataArrayTupleRange(this->Array);
+    vtkDataSet* input = this->Input;
+    int subId = 0;
+    double cellCenter[3], derivative[3];
+    bool isFirst = vtkSMPTools::GetSingleThread();
+
+    for (; cellId < endCellId; ++cellId)
+    {
+      if (isFirst)
+      {
+        this->Filter->CheckAbort();
+      }
+      if (this->Filter->GetAbortOutput())
+      {
+        break;
+      }
+      input->GetCell(cellId, cell);
+      subId = cell->GetParametricCenter(cellCenter);
+      vtkIdType nPts = cell->GetNumberOfPoints();
+      values.resize(nPts);
+
+      for (int comp = 0; comp < this->NumComp; comp++)
+      {
+        for (vtkIdType i = 0; i < nPts; i++)
+        {
+          auto a = array[cell->GetPointId(i)];
+          values[i] = a[comp];
+        }
+
+        cell->Derivatives(subId, cellCenter, &values[0], 1, derivative);
+        cellGrad[comp * 3] = derivative[0];
+        cellGrad[comp * 3 + 1] = derivative[1];
+        cellGrad[comp * 3 + 2] = derivative[2];
+      }
+
+      if (this->Gradients)
+      {
+        auto gradients = vtk::DataArrayTupleRange(this->Gradients);
+        auto g = gradients[cellId];
+        for (int i = 0; i < 3 * this->NumComp; i++)
+        {
+          g[i] = cellGrad[i];
+        }
+      }
+      if (this->Vorticity)
+      {
+        auto vorticity = vtk::DataArrayTupleRange(this->Vorticity);
+        ComputeVorticityFromGradient(&cellGrad[0], vorticity[cellId]);
+      }
+      if (this->QCriterion)
+      {
+        auto qCriterion = vtk::DataArrayTupleRange(this->QCriterion);
+        ComputeQCriterionFromGradient(&cellGrad[0], qCriterion[cellId]);
+      }
+      if (this->Divergence)
+      {
+        auto divergence = vtk::DataArrayTupleRange(this->Divergence);
+        ComputeDivergenceFromGradient(&cellGrad[0], divergence[cellId]);
+      }
+
+    } // for all cells
+  }   // operator()
+
+  void Reduce() {}
+};
+
+struct CellGradientsWorker
+{
+  template <typename DataT>
+  void operator()(DataT* array, vtkDataSet* input, vtkDataArray* gradients, vtkDataArray* vorticity,
+    vtkDataArray* qCriterion, vtkDataArray* divergence, vtkGradientFilter* filter)
+  {
+    vtkIdType numCells = input->GetNumberOfCells();
+    int numComp = array->GetNumberOfComponents();
+
+    CellGradients<DataT> cg(input, array, numComp, (DataT*)gradients, (DataT*)vorticity,
+      (DataT*)qCriterion, (DataT*)divergence, filter);
+
+    vtkSMPTools::For(0, numCells, cg);
+  }
+};
+
+// For now, serial computation of structured gradients. This dispatch method
+// avoids the GetVoidPointer() method.
+struct StructuredGradientsWorker
+{
+  template <class DataT>
+  void operator()(DataT* array, vtkDataSet* output, int* dims, vtkDataArray* gradients,
+    vtkDataArray* vorticity, vtkDataArray* qCriterion, vtkDataArray* divergence,
+    int fieldAssociation, vtkUnsignedCharArray* ghosts, unsigned char hiddenGhost,
+    vtkGradientFilter* filter)
+  {
+    int numComp = array->GetNumberOfComponents();
+
+    if (vtkStructuredGrid* sGrid = vtkStructuredGrid::SafeDownCast(output))
+    {
+      ComputeGradientsSG(sGrid, dims, array, (DataT*)gradients, numComp, fieldAssociation,
+        (DataT*)vorticity, (DataT*)qCriterion, (DataT*)divergence, ghosts, hiddenGhost, filter);
+    }
+    else if (vtkImageData* image = vtkImageData::SafeDownCast(output))
+    {
+      ComputeGradientsSG(image, dims, array, (DataT*)gradients, numComp, fieldAssociation,
+        (DataT*)vorticity, (DataT*)qCriterion, (DataT*)divergence, ghosts, hiddenGhost, filter);
+    }
+    else if (vtkRectilinearGrid* rgrid = vtkRectilinearGrid::SafeDownCast(output))
+    {
+      ComputeGradientsSG(rgrid, dims, array, (DataT*)gradients, numComp, fieldAssociation,
+        (DataT*)vorticity, (DataT*)qCriterion, (DataT*)divergence, ghosts, hiddenGhost, filter);
+    }
+  }
+};
+
+} // end anonymous namespace
+
+//------------------------------------------------------------------------------
 int vtkGradientFilter::ComputeUnstructuredGridGradient(vtkDataArray* array, int fieldAssociation,
   vtkDataSet* input, bool computeVorticity, bool computeQCriterion, bool computeDivergence,
   vtkDataSet* output)
 {
   int arrayType = this->GetOutputArrayType(array);
   int numberOfInputComponents = array->GetNumberOfComponents();
+  using vtkArrayDispatch::Reals;
+
   vtkSmartPointer<vtkDataArray> gradients = nullptr;
   if (this->ComputeGradient)
   {
@@ -449,38 +813,25 @@ int vtkGradientFilter::ComputeUnstructuredGridGradient(vtkDataArray* array, int 
     }
   }
 
-  int highestCellDimension = 0;
-  if (this->ContributingCellOption == vtkGradientFilter::DataSetMax)
-  {
-    int maxDimension = input->IsA("vtkPolyData") == 1 ? 2 : 3;
-    for (vtkIdType i = 0; i < input->GetNumberOfCells(); i++)
-    {
-      int dim = input->GetCell(i)->GetCellDimension();
-      if (dim > highestCellDimension)
-      {
-        highestCellDimension = dim;
-        if (highestCellDimension == maxDimension)
-        {
-          break;
-        }
-      }
-    }
-  }
-
   if (fieldAssociation == vtkDataObject::FIELD_ASSOCIATION_POINTS)
   {
     if (!this->FasterApproximation)
     {
-      switch (arrayType)
-      { // ok to use template macro here since we made the output arrays ourselves
-        vtkFloatingPointTemplateMacro(ComputePointGradientsUG(input, array,
-          (gradients == nullptr ? nullptr : static_cast<VTK_TT*>(gradients->GetVoidPointer(0))),
-          numberOfInputComponents,
-          (vorticity == nullptr ? nullptr : static_cast<VTK_TT*>(vorticity->GetVoidPointer(0))),
-          (qCriterion == nullptr ? nullptr : static_cast<VTK_TT*>(qCriterion->GetVoidPointer(0))),
-          (divergence == nullptr ? nullptr : static_cast<VTK_TT*>(divergence->GetVoidPointer(0))),
-          highestCellDimension, this->ContributingCellOption));
+      // Make sure that the topological links have been built, since that is not
+      // thread safe.
+      vtkNew<vtkStaticCellLinks> cellLinks;
+      cellLinks->SetDataSet(input);
+      cellLinks->BuildLinks();
+
+      using PointGradientsDispatch = vtkArrayDispatch::DispatchByValueType<vtkArrayDispatch::Reals>;
+      PointGradientsWorker pgWorker;
+      if (!PointGradientsDispatch::Execute(array, pgWorker, input, cellLinks, gradients, vorticity,
+            qCriterion, divergence, this->ContributingCellOption, this))
+      {
+        pgWorker(array, input, cellLinks, gradients, vorticity, qCriterion, divergence,
+          this->ContributingCellOption, this);
       }
+
       if (gradients)
       {
         output->GetPointData()->AddArray(gradients);
@@ -534,20 +885,16 @@ int vtkGradientFilter::ComputeUnstructuredGridGradient(vtkDataArray* array, int 
         cellQCriterion->SetNumberOfTuples(input->GetNumberOfCells());
       }
 
-      switch (arrayType)
-      { // ok to use template macro here since we made the output arrays ourselves
-        vtkFloatingPointTemplateMacro(ComputeCellGradientsUG(input, array,
-          (cellGradients == nullptr ? nullptr
-                                    : static_cast<VTK_TT*>(cellGradients->GetVoidPointer(0))),
-          numberOfInputComponents,
-          (vorticity == nullptr ? nullptr : static_cast<VTK_TT*>(cellVorticity->GetVoidPointer(0))),
-          (qCriterion == nullptr ? nullptr
-                                 : static_cast<VTK_TT*>(cellQCriterion->GetVoidPointer(0))),
-          (divergence == nullptr ? nullptr
-                                 : static_cast<VTK_TT*>(cellDivergence->GetVoidPointer(0)))));
+      // Compute the gradients and any derived information
+      using CellGradientsDispatch = vtkArrayDispatch::DispatchByValueType<vtkArrayDispatch::Reals>;
+      CellGradientsWorker cgWorker;
+      if (!CellGradientsDispatch::Execute(array, cgWorker, output, cellGradients, cellVorticity,
+            cellQCriterion, cellDivergence, this))
+      {
+        cgWorker(array, input, cellGradients, cellVorticity, cellQCriterion, cellDivergence, this);
       }
 
-      // We need to convert cell Array to points Array.
+      // We need to convert cell array to points array.
       vtkSmartPointer<vtkDataSet> dummy;
       dummy.TakeReference(input->NewInstance());
       dummy->CopyStructure(input);
@@ -572,6 +919,7 @@ int vtkGradientFilter::ComputeUnstructuredGridGradient(vtkDataArray* array, int 
       cd2pd->SetInputData(dummy);
       cd2pd->PassCellDataOff();
       cd2pd->SetContributingCellOption(this->ContributingCellOption);
+      cd2pd->SetContainerAlgorithm(this);
       cd2pd->Update();
 
       // Set the gradients array in the output and cleanup.
@@ -609,18 +957,18 @@ int vtkGradientFilter::ComputeUnstructuredGridGradient(vtkDataArray* array, int 
     cd2pd->SetInputData(dummy);
     cd2pd->PassCellDataOff();
     cd2pd->SetContributingCellOption(this->ContributingCellOption);
+    cd2pd->SetContainerAlgorithm(this);
     cd2pd->Update();
     vtkDataArray* pointScalars = cd2pd->GetOutput()->GetPointData()->GetScalars();
     pointScalars->Register(this);
 
-    switch (arrayType)
-    { // ok to use template macro here since we made the output arrays ourselves
-      vtkFloatingPointTemplateMacro(ComputeCellGradientsUG(input, pointScalars,
-        (gradients == nullptr ? nullptr : static_cast<VTK_TT*>(gradients->GetVoidPointer(0))),
-        numberOfInputComponents,
-        (vorticity == nullptr ? nullptr : static_cast<VTK_TT*>(vorticity->GetVoidPointer(0))),
-        (qCriterion == nullptr ? nullptr : static_cast<VTK_TT*>(qCriterion->GetVoidPointer(0))),
-        (divergence == nullptr ? nullptr : static_cast<VTK_TT*>(divergence->GetVoidPointer(0)))));
+    // Compute the cell gradients
+    using CellGradientsDispatch = vtkArrayDispatch::DispatchByValueType<vtkArrayDispatch::Reals>;
+    CellGradientsWorker cgWorker;
+    if (!CellGradientsDispatch::Execute(
+          pointScalars, cgWorker, input, gradients, vorticity, qCriterion, divergence, this))
+    {
+      cgWorker(pointScalars, input, gradients, vorticity, qCriterion, divergence, this);
     }
 
     if (gradients)
@@ -645,9 +993,10 @@ int vtkGradientFilter::ComputeUnstructuredGridGradient(vtkDataArray* array, int 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
-int vtkGradientFilter::ComputeRegularGridGradient(vtkDataArray* array, int fieldAssociation,
-  bool computeVorticity, bool computeQCriterion, bool computeDivergence, vtkDataSet* output)
+//------------------------------------------------------------------------------
+int vtkGradientFilter::ComputeRegularGridGradient(vtkDataArray* array, int* dims,
+  int fieldAssociation, bool computeVorticity, bool computeQCriterion, bool computeDivergence,
+  vtkDataSet* output, vtkUnsignedCharArray* ghosts, unsigned char hiddenGhost)
 {
   int arrayType = this->GetOutputArrayType(array);
   int numberOfInputComponents = array->GetNumberOfComponents();
@@ -710,42 +1059,17 @@ int vtkGradientFilter::ComputeRegularGridGradient(vtkDataArray* array, int field
     }
   }
 
-  if (vtkStructuredGrid* structuredGrid = vtkStructuredGrid::SafeDownCast(output))
+  // Dispatch by gradient array type
+  using StructuredGradientsDispatch =
+    vtkArrayDispatch::DispatchByValueType<vtkArrayDispatch::Reals>;
+  StructuredGradientsWorker sgWorker;
+  if (!StructuredGradientsDispatch::Execute(array, sgWorker, output, dims, gradients, vorticity,
+        qCriterion, divergence, fieldAssociation, ghosts, hiddenGhost, this))
   {
-    switch (arrayType)
-    { // ok to use template macro here since we made the output arrays ourselves
-      vtkFloatingPointTemplateMacro(ComputeGradientsSG(structuredGrid, array,
-        (gradients == nullptr ? nullptr : static_cast<VTK_TT*>(gradients->GetVoidPointer(0))),
-        numberOfInputComponents, fieldAssociation,
-        (vorticity == nullptr ? nullptr : static_cast<VTK_TT*>(vorticity->GetVoidPointer(0))),
-        (qCriterion == nullptr ? nullptr : static_cast<VTK_TT*>(qCriterion->GetVoidPointer(0))),
-        (divergence == nullptr ? nullptr : static_cast<VTK_TT*>(divergence->GetVoidPointer(0)))));
-    }
+    sgWorker(array, output, dims, gradients, vorticity, qCriterion, divergence, fieldAssociation,
+      ghosts, hiddenGhost, this);
   }
-  else if (vtkImageData* imageData = vtkImageData::SafeDownCast(output))
-  {
-    switch (arrayType)
-    { // ok to use template macro here since we made the output arrays ourselves
-      vtkFloatingPointTemplateMacro(ComputeGradientsSG(imageData, array,
-        (gradients == nullptr ? nullptr : static_cast<VTK_TT*>(gradients->GetVoidPointer(0))),
-        numberOfInputComponents, fieldAssociation,
-        (vorticity == nullptr ? nullptr : static_cast<VTK_TT*>(vorticity->GetVoidPointer(0))),
-        (qCriterion == nullptr ? nullptr : static_cast<VTK_TT*>(qCriterion->GetVoidPointer(0))),
-        (divergence == nullptr ? nullptr : static_cast<VTK_TT*>(divergence->GetVoidPointer(0)))));
-    }
-  }
-  else if (vtkRectilinearGrid* rectilinearGrid = vtkRectilinearGrid::SafeDownCast(output))
-  {
-    switch (arrayType)
-    { // ok to use template macro here since we made the output arrays ourselves
-      vtkFloatingPointTemplateMacro(ComputeGradientsSG(rectilinearGrid, array,
-        (gradients == nullptr ? nullptr : static_cast<VTK_TT*>(gradients->GetVoidPointer(0))),
-        numberOfInputComponents, fieldAssociation,
-        (vorticity == nullptr ? nullptr : static_cast<VTK_TT*>(vorticity->GetVoidPointer(0))),
-        (qCriterion == nullptr ? nullptr : static_cast<VTK_TT*>(qCriterion->GetVoidPointer(0))),
-        (divergence == nullptr ? nullptr : static_cast<VTK_TT*>(divergence->GetVoidPointer(0)))));
-    }
-  }
+
   if (fieldAssociation == vtkDataObject::FIELD_ASSOCIATION_POINTS)
   {
     if (gradients)
@@ -792,7 +1116,7 @@ int vtkGradientFilter::ComputeRegularGridGradient(vtkDataArray* array, int field
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGradientFilter::GetOutputArrayType(vtkDataArray* array)
 {
   int retType = VTK_DOUBLE;
@@ -803,124 +1127,12 @@ int vtkGradientFilter::GetOutputArrayType(vtkDataArray* array)
   return retType;
 }
 
-namespace
+VTK_ABI_NAMESPACE_END
+
+namespace // anonymous
 {
-//-----------------------------------------------------------------------------
-template <class data_type>
-void ComputePointGradientsUG(vtkDataSet* structure, vtkDataArray* array, data_type* gradients,
-  int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, data_type* divergence,
-  int highestCellDimension, int contributingCellOption)
-{
-  vtkNew<vtkIdList> currentPoint;
-  currentPoint->SetNumberOfIds(1);
-  vtkNew<vtkIdList> cellsOnPoint;
 
-  vtkIdType numpts = structure->GetNumberOfPoints();
-
-  int numberOfOutputComponents = 3 * numberOfInputComponents;
-  std::vector<data_type> g(numberOfOutputComponents);
-
-  // if we are doing patches for contributing cell dimensions we want to keep track of
-  // the maximum expected dimension so we can exit out of the check loop quicker
-  const int maxCellDimension = structure->IsA("vtkPolyData") ? 2 : 3;
-
-  for (vtkIdType point = 0; point < numpts; point++)
-  {
-    currentPoint->SetId(0, point);
-    double pointcoords[3];
-    structure->GetPoint(point, pointcoords);
-    // Get all cells touching this point.
-    structure->GetCellNeighbors(-1, currentPoint, cellsOnPoint);
-    vtkIdType numCellNeighbors = cellsOnPoint->GetNumberOfIds();
-
-    for (int i = 0; i < numberOfOutputComponents; i++)
-    {
-      g[i] = 0;
-    }
-
-    if (contributingCellOption == vtkGradientFilter::Patch)
-    {
-      highestCellDimension = 0;
-      for (vtkIdType neighbor = 0; neighbor < numCellNeighbors; neighbor++)
-      {
-        int cellDimension = structure->GetCell(cellsOnPoint->GetId(neighbor))->GetCellDimension();
-        if (cellDimension > highestCellDimension)
-        {
-          highestCellDimension = cellDimension;
-          if (highestCellDimension == maxCellDimension)
-          {
-            break;
-          }
-        }
-      }
-    }
-    vtkIdType numValidCellNeighbors = 0;
-
-    // Iterate on all cells and find all points connected to current point
-    // by an edge.
-    for (vtkIdType neighbor = 0; neighbor < numCellNeighbors; neighbor++)
-    {
-      vtkCell* cell = structure->GetCell(cellsOnPoint->GetId(neighbor));
-      if (cell->GetCellDimension() >= highestCellDimension)
-      {
-        int subId;
-        double parametricCoord[3];
-        if (GetCellParametricData(point, pointcoords, cell, subId, parametricCoord))
-        {
-          numValidCellNeighbors++;
-          for (int inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            int numberOfCellPoints = cell->GetNumberOfPoints();
-            std::vector<double> values(numberOfCellPoints);
-            // Get values of Array at cell points.
-            for (int i = 0; i < numberOfCellPoints; i++)
-            {
-              values[i] = array->GetComponent(cell->GetPointId(i), inputComponent);
-            }
-
-            double derivative[3];
-            // Get derivative of cell at point.
-            cell->Derivatives(subId, parametricCoord, &values[0], 1, derivative);
-
-            g[inputComponent * 3] += static_cast<data_type>(derivative[0]);
-            g[inputComponent * 3 + 1] += static_cast<data_type>(derivative[1]);
-            g[inputComponent * 3 + 2] += static_cast<data_type>(derivative[2]);
-          } // iterating over Components
-        }   // if(GetCellParametricData())
-      }     // if(cell->GetCellDimension () >= highestCellDimension
-    }       // iterating over neighbors
-
-    if (numValidCellNeighbors > 0)
-    {
-      for (int i = 0; i < 3 * numberOfInputComponents; i++)
-      {
-        g[i] /= numValidCellNeighbors;
-      }
-
-      if (vorticity)
-      {
-        ComputeVorticityFromGradient(&g[0], vorticity + 3 * point);
-      }
-      if (qCriterion)
-      {
-        ComputeQCriterionFromGradient(&g[0], qCriterion + point);
-      }
-      if (divergence)
-      {
-        ComputeDivergenceFromGradient(&g[0], divergence + point);
-      }
-      if (gradients)
-      {
-        for (int i = 0; i < numberOfOutputComponents; i++)
-        {
-          gradients[point * numberOfOutputComponents + i] = g[i];
-        }
-      }
-    }
-  } // iterating over points in grid
-}
-
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int GetCellParametricData(
   vtkIdType pointId, double pointCoord[3], vtkCell* cell, int& subId, double parametricCoord[3])
 {
@@ -946,362 +1158,382 @@ int GetCellParametricData(
   std::vector<double> values(numpoints);
   // Get parametric position of point.
   cell->EvaluatePosition(
-    pointCoord, nullptr, subId, parametricCoord, dummy, &values[0] /*Really another dummy.*/);
+    pointCoord, nullptr, subId, parametricCoord, dummy, values.data() /*Really another dummy.*/);
 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
-template <class data_type>
-void ComputeCellGradientsUG(vtkDataSet* structure, vtkDataArray* array, data_type* gradients,
-  int numberOfInputComponents, data_type* vorticity, data_type* qCriterion, data_type* divergence)
+//------------------------------------------------------------------------------
+void HandleDegenerateDimension(double* xp, double* xm, int numComp, std::vector<double>& plusvalues,
+  std::vector<double>& minusvalues, double& factor, int dim)
 {
-  vtkIdType numcells = structure->GetNumberOfCells();
-  std::vector<double> values(8);
-  std::vector<data_type> cellGradients(3 * numberOfInputComponents);
-  for (vtkIdType cellid = 0; cellid < numcells; cellid++)
+  factor = 1.0;
+  for (int ii = 0; ii < 3; ii++)
   {
-    vtkCell* cell = structure->GetCell(cellid);
-    int subId;
-    double cellCenter[3];
-    subId = cell->GetParametricCenter(cellCenter);
-
-    int numpoints = cell->GetNumberOfPoints();
-    if (static_cast<size_t>(numpoints) > values.size())
-    {
-      values.resize(numpoints);
-    }
-    double derivative[3];
-    for (int inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-    {
-      for (int i = 0; i < numpoints; i++)
-      {
-        values[i] = array->GetComponent(cell->GetPointId(i), inputComponent);
-      }
-
-      cell->Derivatives(subId, cellCenter, &values[0], 1, derivative);
-      cellGradients[inputComponent * 3] = static_cast<data_type>(derivative[0]);
-      cellGradients[inputComponent * 3 + 1] = static_cast<data_type>(derivative[1]);
-      cellGradients[inputComponent * 3 + 2] = static_cast<data_type>(derivative[2]);
-    }
-    if (gradients)
-    {
-      for (int i = 0; i < 3 * numberOfInputComponents; i++)
-      {
-        gradients[cellid * 3 * numberOfInputComponents + i] = cellGradients[i];
-      }
-    }
-    if (vorticity)
-    {
-      ComputeVorticityFromGradient(&cellGradients[0], vorticity + 3 * cellid);
-    }
-    if (qCriterion)
-    {
-      ComputeQCriterionFromGradient(&cellGradients[0], qCriterion + cellid);
-    }
-    if (divergence)
-    {
-      ComputeDivergenceFromGradient(&cellGradients[0], divergence + cellid);
-    }
+    xp[ii] = xm[ii] = 0.0;
+  }
+  xp[dim] = 1.0;
+  for (int inputComponent = 0; inputComponent < numComp; inputComponent++)
+  {
+    plusvalues[inputComponent] = minusvalues[inputComponent] = 0;
   }
 }
 
-//-----------------------------------------------------------------------------
-template <class Grid, class data_type>
-void ComputeGradientsSG(Grid output, vtkDataArray* array, data_type* gradients,
-  int numberOfInputComponents, int fieldAssociation, data_type* vorticity, data_type* qCriterion,
-  data_type* divergence)
+//------------------------------------------------------------------------------
+// Threaded computation (on a slice-by-slice basis) of structured gradients.
+template <class GridT, class DataT>
+struct ComputeStructuredSlice : public GradientsBase<DataT>
 {
-  int idx, idx2, inputComponent;
-  double xp[3], xm[3], factor;
-  xp[0] = xp[1] = xp[2] = xm[0] = xm[1] = xm[2] = factor = 0;
-  double xxi, yxi, zxi, xeta, yeta, zeta, xzeta, yzeta, zzeta;
-  yxi = zxi = xeta = yeta = zeta = xzeta = yzeta = zzeta = 0;
-  double aj, xix, xiy, xiz, etax, etay, etaz, zetax, zetay, zetaz;
-  xix = xiy = xiz = etax = etay = etaz = zetax = zetay = zetaz = 0;
-  // for finite differencing -- the values on the "plus" side and
-  // "minus" side of the point to be computed at
-  std::vector<double> plusvalues(numberOfInputComponents);
-  std::vector<double> minusvalues(numberOfInputComponents);
+  GridT* Grid;
+  int* Dims;
+  int FieldAssociation;
+  vtkUnsignedCharArray* Ghosts;
+  unsigned char HiddenGhost;
+  vtkSMPThreadLocal<vtkSmartPointer<vtkGenericCell>> Cell; // prevent repeated instantiation
 
-  std::vector<double> dValuesdXi(numberOfInputComponents);
-  std::vector<double> dValuesdEta(numberOfInputComponents);
-  std::vector<double> dValuesdZeta(numberOfInputComponents);
-  std::vector<data_type> localGradients(numberOfInputComponents * 3);
-
-  int dims[3];
-  output->GetDimensions(dims);
-  if (fieldAssociation == vtkDataObject::FIELD_ASSOCIATION_CELLS)
+  ComputeStructuredSlice(GridT* output, int* dims, DataT* array, DataT* g, int numComp,
+    int fieldAssociation, DataT* v, DataT* q, DataT* d, vtkUnsignedCharArray* ghosts,
+    unsigned char hiddenGhost, vtkGradientFilter* filter)
+    : GradientsBase<DataT>(array, numComp, g, v, q, d, filter)
+    , Grid(output)
+    , Dims(dims)
+    , FieldAssociation(fieldAssociation)
+    , Ghosts(ghosts)
+    , HiddenGhost(hiddenGhost)
   {
-    // reduce the dimensions by 1 for cells
-    for (int i = 0; i < 3; i++)
-    {
-      dims[i]--;
-    }
   }
-  int ijsize = dims[0] * dims[1];
 
-  for (int k = 0; k < dims[2]; k++)
+  void Initialize() { this->Cell.Local().TakeReference(vtkGenericCell::New()); }
+
+  void operator()(vtkIdType k, vtkIdType kEnd)
   {
-    for (int j = 0; j < dims[1]; j++)
+    GridT* output = this->Grid;
+    int* dims = this->Dims;
+    int ijsize = dims[0] * dims[1];
+    int numComp = this->NumComp;
+    int fieldAssociation = this->FieldAssociation;
+    const auto array = vtk::DataArrayTupleRange(this->Array);
+    auto& cell = this->Cell.Local();
+
+    int idx, idx2, inputComponent;
+    double xp[3], xm[3], factor;
+    xp[0] = xp[1] = xp[2] = xm[0] = xm[1] = xm[2] = factor = 0;
+    double xxi, yxi, zxi, xeta, yeta, zeta, xzeta, yzeta, zzeta;
+    yxi = zxi = xeta = yeta = zeta = xzeta = yzeta = zzeta = 0;
+    double aj, xix, xiy, xiz, etax, etay, etaz, zetax, zetay, zetaz;
+    xix = xiy = xiz = etax = etay = etaz = zetax = zetay = zetaz = 0;
+
+    // for finite differencing -- the values on the "plus" side and
+    // "minus" side of the point to be computed at
+    std::vector<double> plusvalues(numComp);
+    std::vector<double> minusvalues(numComp);
+
+    std::vector<double> dValuesdXi(numComp);
+    std::vector<double> dValuesdEta(numComp);
+    std::vector<double> dValuesdZeta(numComp);
+    std::vector<double> localGradients(numComp * 3);
+
+    bool isFirst = vtkSMPTools::GetSingleThread();
+
+    // thread over slices
+    for (; k < kEnd && !this->Filter->GetAbortOutput(); k++)
     {
-      for (int i = 0; i < dims[0]; i++)
+      for (int j = 0; j < dims[1] && !this->Filter->GetAbortOutput(); j++)
       {
-        //  Xi derivatives.
-        if (dims[0] == 1) // 2D in this direction
+        for (int i = 0; i < dims[0]; i++)
         {
-          factor = 1.0;
-          for (int ii = 0; ii < 3; ii++)
+          if (isFirst)
           {
-            xp[ii] = xm[ii] = 0.0;
+            this->Filter->CheckAbort();
           }
-          xp[0] = 1.0;
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
+          if (this->Filter->GetAbortOutput())
           {
-            plusvalues[inputComponent] = minusvalues[inputComponent] = 0;
+            break;
           }
-        }
-        else if (i == 0)
-        {
-          factor = 1.0;
-          idx = (i + 1) + j * dims[0] + k * ijsize;
-          idx2 = i + j * dims[0] + k * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
+          if (this->Ghosts &&
+            (this->Ghosts->GetValue(i + j * dims[0] + k * ijsize) & this->HiddenGhost))
           {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
+            continue;
           }
-        }
-        else if (i == (dims[0] - 1))
-        {
-          factor = 1.0;
+          //  Xi derivatives.
+          if (dims[0] == 1) // 2D in this direction
+          {
+            HandleDegenerateDimension(xp, xm, numComp, plusvalues, minusvalues, factor, 0);
+          }
+          else
+          {
+            if (i == 0)
+            {
+              factor = 1.0;
+              idx = (i + 1) + j * dims[0] + k * ijsize;
+              idx2 = i + j * dims[0] + k * ijsize;
+            }
+            else if (i == (dims[0] - 1))
+            {
+              factor = 1.0;
+              idx = i + j * dims[0] + k * ijsize;
+              idx2 = i - 1 + j * dims[0] + k * ijsize;
+            }
+            else
+            {
+              factor = 0.5;
+              idx = (i + 1) + j * dims[0] + k * ijsize;
+              idx2 = (i - 1) + j * dims[0] + k * ijsize;
+            }
+            if (this->Ghosts)
+            {
+              if (this->Ghosts->GetValue(idx2) & this->HiddenGhost)
+              {
+                ++idx2;
+                factor += 0.5;
+              }
+              if (this->Ghosts->GetValue(idx) & this->HiddenGhost)
+              {
+                --idx;
+                factor += 0.5;
+              }
+            }
+            if (idx == idx2)
+            {
+              HandleDegenerateDimension(xp, xm, numComp, plusvalues, minusvalues, factor, 0);
+            }
+            else
+            {
+              GetGridEntityCoordinate(output, fieldAssociation, idx, xp, cell);
+              GetGridEntityCoordinate(output, fieldAssociation, idx2, xm, cell);
+              auto a1 = array[idx];
+              auto a2 = array[idx2];
+              for (inputComponent = 0; inputComponent < numComp; inputComponent++)
+              {
+                plusvalues[inputComponent] = a1[inputComponent];
+                minusvalues[inputComponent] = a2[inputComponent];
+              }
+            }
+          }
+
+          xxi = factor * (xp[0] - xm[0]);
+          yxi = factor * (xp[1] - xm[1]);
+          zxi = factor * (xp[2] - xm[2]);
+          for (inputComponent = 0; inputComponent < numComp; inputComponent++)
+          {
+            dValuesdXi[inputComponent] =
+              factor * (plusvalues[inputComponent] - minusvalues[inputComponent]);
+          }
+
+          //  Eta derivatives.
+          if (dims[1] == 1) // 2D in this direction
+          {
+            HandleDegenerateDimension(xp, xm, numComp, plusvalues, minusvalues, factor, 1);
+          }
+          else
+          {
+            if (j == 0)
+            {
+              factor = 1.0;
+              idx = i + (j + 1) * dims[0] + k * ijsize;
+              idx2 = i + j * dims[0] + k * ijsize;
+            }
+            else if (j == (dims[1] - 1))
+            {
+              factor = 1.0;
+              idx = i + j * dims[0] + k * ijsize;
+              idx2 = i + (j - 1) * dims[0] + k * ijsize;
+            }
+            else
+            {
+              factor = 0.5;
+              idx = i + (j + 1) * dims[0] + k * ijsize;
+              idx2 = i + (j - 1) * dims[0] + k * ijsize;
+            }
+            if (this->Ghosts)
+            {
+              if (this->Ghosts->GetValue(idx2) & this->HiddenGhost)
+              {
+                idx2 += dims[0];
+                factor += 0.5;
+              }
+              if (this->Ghosts->GetValue(idx) & this->HiddenGhost)
+              {
+                idx -= dims[0];
+                factor += 0.5;
+              }
+            }
+            if (idx == idx2)
+            {
+              HandleDegenerateDimension(xp, xm, numComp, plusvalues, minusvalues, factor, 1);
+            }
+            else
+            {
+              GetGridEntityCoordinate(output, fieldAssociation, idx, xp, cell);
+              GetGridEntityCoordinate(output, fieldAssociation, idx2, xm, cell);
+              auto a1 = array[idx];
+              auto a2 = array[idx2];
+              for (inputComponent = 0; inputComponent < numComp; inputComponent++)
+              {
+                plusvalues[inputComponent] = a1[inputComponent];
+                minusvalues[inputComponent] = a2[inputComponent];
+              }
+            }
+          }
+
+          xeta = factor * (xp[0] - xm[0]);
+          yeta = factor * (xp[1] - xm[1]);
+          zeta = factor * (xp[2] - xm[2]);
+          for (inputComponent = 0; inputComponent < numComp; inputComponent++)
+          {
+            dValuesdEta[inputComponent] =
+              factor * (plusvalues[inputComponent] - minusvalues[inputComponent]);
+          }
+
+          //  Zeta derivatives.
+          if (dims[2] == 1) // 2D in this direction
+          {
+            HandleDegenerateDimension(xp, xm, numComp, plusvalues, minusvalues, factor, 2);
+          }
+          else
+          {
+            if (k == 0)
+            {
+              factor = 1.0;
+              idx = i + j * dims[0] + (k + 1) * ijsize;
+              idx2 = i + j * dims[0] + k * ijsize;
+            }
+            else if (k == (dims[2] - 1))
+            {
+              factor = 1.0;
+              idx = i + j * dims[0] + k * ijsize;
+              idx2 = i + j * dims[0] + (k - 1) * ijsize;
+            }
+            else
+            {
+              factor = 0.5;
+              idx = i + j * dims[0] + (k + 1) * ijsize;
+              idx2 = i + j * dims[0] + (k - 1) * ijsize;
+            }
+            if (this->Ghosts)
+            {
+              if (this->Ghosts->GetValue(idx2) & this->HiddenGhost)
+              {
+                idx2 += ijsize;
+                factor += 0.5;
+              }
+              if (this->Ghosts->GetValue(idx) & this->HiddenGhost)
+              {
+                idx -= ijsize;
+                factor += 0.5;
+              }
+            }
+            if (idx == idx2)
+            {
+              HandleDegenerateDimension(xp, xm, numComp, plusvalues, minusvalues, factor, 2);
+            }
+            else
+            {
+              GetGridEntityCoordinate(output, fieldAssociation, idx, xp, cell);
+              GetGridEntityCoordinate(output, fieldAssociation, idx2, xm, cell);
+              auto a1 = array[idx];
+              auto a2 = array[idx2];
+              for (inputComponent = 0; inputComponent < numComp; inputComponent++)
+              {
+                plusvalues[inputComponent] = a1[inputComponent];
+                minusvalues[inputComponent] = a2[inputComponent];
+              }
+            }
+          }
+
+          xzeta = factor * (xp[0] - xm[0]);
+          yzeta = factor * (xp[1] - xm[1]);
+          zzeta = factor * (xp[2] - xm[2]);
+          for (inputComponent = 0; inputComponent < numComp; inputComponent++)
+          {
+            dValuesdZeta[inputComponent] =
+              factor * (plusvalues[inputComponent] - minusvalues[inputComponent]);
+          }
+
+          // Now calculate the Jacobian.  Grids occasionally have
+          // singularities, or points where the Jacobian is infinite (the
+          // inverse is zero).  For these cases, we'll set the Jacobian to
+          // zero, which will result in a zero derivative.
+          //
+          aj = xxi * yeta * zzeta + yxi * zeta * xzeta + zxi * xeta * yzeta - zxi * yeta * xzeta -
+            yxi * xeta * zzeta - xxi * zeta * yzeta;
+          if (aj != 0.0)
+          {
+            aj = 1. / aj;
+          }
+
+          //  Xi metrics.
+          xix = aj * (yeta * zzeta - zeta * yzeta);
+          xiy = -aj * (xeta * zzeta - zeta * xzeta);
+          xiz = aj * (xeta * yzeta - yeta * xzeta);
+
+          //  Eta metrics.
+          etax = -aj * (yxi * zzeta - zxi * yzeta);
+          etay = aj * (xxi * zzeta - zxi * xzeta);
+          etaz = -aj * (xxi * yzeta - yxi * xzeta);
+
+          //  Zeta metrics.
+          zetax = aj * (yxi * zeta - zxi * yeta);
+          zetay = -aj * (xxi * zeta - zxi * xeta);
+          zetaz = aj * (xxi * yeta - yxi * xeta);
+
+          // Finally compute the actual derivatives
           idx = i + j * dims[0] + k * ijsize;
-          idx2 = i - 1 + j * dims[0] + k * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
+          for (inputComponent = 0; inputComponent < numComp; inputComponent++)
           {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
-          }
-        }
-        else
-        {
-          factor = 0.5;
-          idx = (i + 1) + j * dims[0] + k * ijsize;
-          idx2 = (i - 1) + j * dims[0] + k * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
-          }
-        }
-
-        xxi = factor * (xp[0] - xm[0]);
-        yxi = factor * (xp[1] - xm[1]);
-        zxi = factor * (xp[2] - xm[2]);
-        for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-        {
-          dValuesdXi[inputComponent] =
-            factor * (plusvalues[inputComponent] - minusvalues[inputComponent]);
-        }
-
-        //  Eta derivatives.
-        if (dims[1] == 1) // 2D in this direction
-        {
-          factor = 1.0;
-          for (int ii = 0; ii < 3; ii++)
-          {
-            xp[ii] = xm[ii] = 0.0;
-          }
-          xp[1] = 1.0;
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = minusvalues[inputComponent] = 0;
-          }
-        }
-        else if (j == 0)
-        {
-          factor = 1.0;
-          idx = i + (j + 1) * dims[0] + k * ijsize;
-          idx2 = i + j * dims[0] + k * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
-          }
-        }
-        else if (j == (dims[1] - 1))
-        {
-          factor = 1.0;
-          idx = i + j * dims[0] + k * ijsize;
-          idx2 = i + (j - 1) * dims[0] + k * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
-          }
-        }
-        else
-        {
-          factor = 0.5;
-          idx = i + (j + 1) * dims[0] + k * ijsize;
-          idx2 = i + (j - 1) * dims[0] + k * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
-          }
-        }
-
-        xeta = factor * (xp[0] - xm[0]);
-        yeta = factor * (xp[1] - xm[1]);
-        zeta = factor * (xp[2] - xm[2]);
-        for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-        {
-          dValuesdEta[inputComponent] =
-            factor * (plusvalues[inputComponent] - minusvalues[inputComponent]);
-        }
-
-        //  Zeta derivatives.
-        if (dims[2] == 1) // 2D in this direction
-        {
-          factor = 1.0;
-          for (int ii = 0; ii < 3; ii++)
-          {
-            xp[ii] = xm[ii] = 0.0;
-          }
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = minusvalues[inputComponent] = 0;
-          }
-          xp[2] = 1.0;
-        }
-        else if (k == 0)
-        {
-          factor = 1.0;
-          idx = i + j * dims[0] + (k + 1) * ijsize;
-          idx2 = i + j * dims[0] + k * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
-          }
-        }
-        else if (k == (dims[2] - 1))
-        {
-          factor = 1.0;
-          idx = i + j * dims[0] + k * ijsize;
-          idx2 = i + j * dims[0] + (k - 1) * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
-          }
-        }
-        else
-        {
-          factor = 0.5;
-          idx = i + j * dims[0] + (k + 1) * ijsize;
-          idx2 = i + j * dims[0] + (k - 1) * ijsize;
-          GetGridEntityCoordinate(output, fieldAssociation, idx, xp);
-          GetGridEntityCoordinate(output, fieldAssociation, idx2, xm);
-          for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-          {
-            plusvalues[inputComponent] = array->GetComponent(idx, inputComponent);
-            minusvalues[inputComponent] = array->GetComponent(idx2, inputComponent);
-          }
-        }
-
-        xzeta = factor * (xp[0] - xm[0]);
-        yzeta = factor * (xp[1] - xm[1]);
-        zzeta = factor * (xp[2] - xm[2]);
-        for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-        {
-          dValuesdZeta[inputComponent] =
-            factor * (plusvalues[inputComponent] - minusvalues[inputComponent]);
-        }
-
-        // Now calculate the Jacobian.  Grids occasionally have
-        // singularities, or points where the Jacobian is infinite (the
-        // inverse is zero).  For these cases, we'll set the Jacobian to
-        // zero, which will result in a zero derivative.
-        //
-        aj = xxi * yeta * zzeta + yxi * zeta * xzeta + zxi * xeta * yzeta - zxi * yeta * xzeta -
-          yxi * xeta * zzeta - xxi * zeta * yzeta;
-        if (aj != 0.0)
-        {
-          aj = 1. / aj;
-        }
-
-        //  Xi metrics.
-        xix = aj * (yeta * zzeta - zeta * yzeta);
-        xiy = -aj * (xeta * zzeta - zeta * xzeta);
-        xiz = aj * (xeta * yzeta - yeta * xzeta);
-
-        //  Eta metrics.
-        etax = -aj * (yxi * zzeta - zxi * yzeta);
-        etay = aj * (xxi * zzeta - zxi * xzeta);
-        etaz = -aj * (xxi * yzeta - yxi * xzeta);
-
-        //  Zeta metrics.
-        zetax = aj * (yxi * zeta - zxi * yeta);
-        zetay = -aj * (xxi * zeta - zxi * xeta);
-        zetaz = aj * (xxi * yeta - yxi * xeta);
-
-        // Finally compute the actual derivatives
-        idx = i + j * dims[0] + k * ijsize;
-        for (inputComponent = 0; inputComponent < numberOfInputComponents; inputComponent++)
-        {
-          localGradients[inputComponent * 3] =
-            static_cast<data_type>(xix * dValuesdXi[inputComponent] +
+            localGradients[inputComponent * 3] = (xix * dValuesdXi[inputComponent] +
               etax * dValuesdEta[inputComponent] + zetax * dValuesdZeta[inputComponent]);
 
-          localGradients[inputComponent * 3 + 1] =
-            static_cast<data_type>(xiy * dValuesdXi[inputComponent] +
+            localGradients[inputComponent * 3 + 1] = (xiy * dValuesdXi[inputComponent] +
               etay * dValuesdEta[inputComponent] + zetay * dValuesdZeta[inputComponent]);
 
-          localGradients[inputComponent * 3 + 2] =
-            static_cast<data_type>(xiz * dValuesdXi[inputComponent] +
+            localGradients[inputComponent * 3 + 2] = (xiz * dValuesdXi[inputComponent] +
               etaz * dValuesdEta[inputComponent] + zetaz * dValuesdZeta[inputComponent]);
-        }
-
-        if (gradients)
-        {
-          for (int ii = 0; ii < 3 * numberOfInputComponents; ii++)
-          {
-            gradients[idx * numberOfInputComponents * 3 + ii] = localGradients[ii];
           }
-        }
-        if (vorticity)
-        {
-          ComputeVorticityFromGradient(&localGradients[0], vorticity + 3 * idx);
-        }
-        if (qCriterion)
-        {
-          ComputeQCriterionFromGradient(&localGradients[0], qCriterion + idx);
-        }
-        if (divergence)
-        {
-          ComputeDivergenceFromGradient(&localGradients[0], divergence + idx);
-        }
-      }
-    }
-  }
+
+          if (this->Gradients)
+          {
+            auto grad = vtk::DataArrayTupleRange(this->Gradients);
+            auto g = grad[idx];
+            for (int ii = 0; ii < 3 * numComp; ii++)
+            {
+              g[ii] = localGradients[ii];
+            }
+          }
+          if (this->Vorticity)
+          {
+            auto vort = vtk::DataArrayTupleRange(this->Vorticity);
+            ComputeVorticityFromGradient(localGradients.data(), vort[idx]);
+          }
+          if (this->QCriterion)
+          {
+            auto qCrit = vtk::DataArrayTupleRange(this->QCriterion);
+            ComputeQCriterionFromGradient(localGradients.data(), qCrit[idx]);
+          }
+          if (this->Divergence)
+          {
+            auto div = vtk::DataArrayTupleRange(this->Divergence);
+            ComputeDivergenceFromGradient(localGradients.data(), div[idx]);
+          }
+        } // i
+      }   // j
+    }     // k-slice
+  }       // operator()
+
+  void Reduce() {}
+};
+
+//------------------------------------------------------------------------------
+// Process structured dataset types. Thread slice-by-slice.
+template <class GridT, class DataT>
+void ComputeGradientsSG(GridT* output, int* dims, DataT* array, DataT* gradients, int numComp,
+  int fieldAssociation, DataT* vorticity, DataT* qCriterion, DataT* divergence,
+  vtkUnsignedCharArray* ghosts, unsigned char hiddenGhost, vtkGradientFilter* filter)
+{
+  ComputeStructuredSlice<GridT, DataT> structuredSliceWorker(output, dims, array, gradients,
+    numComp, fieldAssociation, vorticity, qCriterion, divergence, ghosts, hiddenGhost, filter);
+
+  vtkSMPTools::For(0, dims[2], structuredSliceWorker);
 }
 
 } // end anonymous namespace

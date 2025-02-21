@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkReebGraphSimplificationFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkReebGraphSimplificationFilter.h"
 
 #include "vtkInformation.h"
@@ -19,9 +7,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkReebGraph.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkReebGraphSimplificationFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReebGraphSimplificationFilter::vtkReebGraphSimplificationFilter()
 {
   this->SetNumberOfInputPorts(1);
@@ -29,10 +18,10 @@ vtkReebGraphSimplificationFilter::vtkReebGraphSimplificationFilter()
   this->SimplificationMetric = nullptr;
 }
 
-//----------------------------------------------------------------------------
-vtkReebGraphSimplificationFilter::~vtkReebGraphSimplificationFilter() {}
+//------------------------------------------------------------------------------
+vtkReebGraphSimplificationFilter::~vtkReebGraphSimplificationFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReebGraphSimplificationFilter::SetSimplificationMetric(
   vtkReebGraphSimplificationMetric* simplificationMetric)
 {
@@ -43,7 +32,7 @@ void vtkReebGraphSimplificationFilter::SetSimplificationMetric(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphSimplificationFilter::FillInputPortInformation(int portNumber, vtkInformation* info)
 {
   if (!portNumber)
@@ -54,27 +43,27 @@ int vtkReebGraphSimplificationFilter::FillInputPortInformation(int portNumber, v
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphSimplificationFilter::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDirectedGraph::DATA_TYPE_NAME(), "vtkReebGraph");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReebGraphSimplificationFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Simplification Threshold: " << this->SimplificationThreshold << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReebGraph* vtkReebGraphSimplificationFilter::GetOutput()
 {
   return vtkReebGraph::SafeDownCast(this->GetOutputDataObject(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReebGraphSimplificationFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -91,3 +80,4 @@ int vtkReebGraphSimplificationFilter::RequestData(vtkInformation* vtkNotUsed(req
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

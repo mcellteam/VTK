@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyDataWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkHoudiniPolyDataWriter.h"
 
 #include <algorithm>
@@ -42,6 +30,7 @@
 #include "vtkUnsignedShortArray.h"
 #include "vtksys/FStream.hxx"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkHoudiniPolyDataWriter);
 
 namespace
@@ -71,13 +60,22 @@ struct AttributeTrait;
   {                                                                                                \
     typedef attType Type;                                                                          \
     typedef vtkArray vtkArrayType;                                                                 \
-    std::string Name() const { return std::string(attName); }                                      \
-    attType Default() const { return static_cast<attType>(attDefault); }                           \
+    std::string Name() const                                                                       \
+    {                                                                                              \
+      return std::string(attName);                                                                 \
+    }                                                                                              \
+    attType Default() const                                                                        \
+    {                                                                                              \
+      return static_cast<attType>(attDefault);                                                     \
+    }                                                                                              \
     static void Get(vtkIdType index, attType* in, vtkArray* array)                                 \
     {                                                                                              \
       array->GetTypedTuple(index, in);                                                             \
     }                                                                                              \
-    static void Stream(std::ostream& out, attType t) { out << t; }                                 \
+    static void Stream(std::ostream& out, attType t)                                               \
+    {                                                                                              \
+      out << t;                                                                                    \
+    }                                                                                              \
   }
 
 DefineAttributeTrait(VTK_DOUBLE, double, "float", vtkDoubleArray, 0.0);
@@ -284,19 +282,19 @@ void AddAttribute(Attributes& atts, vtkAbstractArray* array)
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHoudiniPolyDataWriter::vtkHoudiniPolyDataWriter()
 {
   this->FileName = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHoudiniPolyDataWriter::~vtkHoudiniPolyDataWriter()
 {
   this->SetFileName(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHoudiniPolyDataWriter::WriteData()
 {
   // Grab the input data
@@ -567,16 +565,17 @@ void vtkHoudiniPolyDataWriter::WriteData()
   file.close();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHoudiniPolyDataWriter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHoudiniPolyDataWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "FileName: " << (this->FileName ? this->FileName : "(none)") << "\n";
 }
+VTK_ABI_NAMESPACE_END

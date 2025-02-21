@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlotPoints.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPlotStacked
@@ -27,7 +15,9 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkPlot.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkChartXY;
 class vtkContext2D;
 class vtkTable;
@@ -38,7 +28,7 @@ class vtkColorSeries;
 
 class vtkPlotStackedPrivate;
 
-class VTKCHARTSCORE_EXPORT vtkPlotStacked : public vtkPlot
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPlotStacked : public vtkPlot
 {
 public:
   vtkTypeMacro(vtkPlotStacked, vtkPlot);
@@ -49,21 +39,26 @@ public:
    */
   static vtkPlotStacked* New();
 
-  //@{
   /**
-   * Set the plot color
+   * Set the plot color with integer values (comprised between 0 and 255)
    */
   void SetColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a) override;
-  void SetColor(double r, double g, double b) override;
-  void GetColor(double rgb[3]) override;
-  //@}
+  void SetColor(unsigned char r, unsigned char g, unsigned char b) override;
 
+  ///@{
   /**
-   * Perform any updates to the item that may be necessary before rendering.
-   * The scene should take care of calling this on all items before their
-   * Paint function is invoked.
+   * Set the plot color with floating values (comprised between 0.0 and 1.0)
    */
-  void Update() override;
+  void SetColorF(double r, double g, double b, double a) override;
+  void SetColorF(double r, double g, double b) override;
+  ///@}
+
+  ///@{
+  /**
+   * Get the plot color as floating rgb values (comprised between 0.0 and 1.0)
+   */
+  void GetColorF(double rgb[3]) override;
+  ///@}
 
   /**
    * Paint event for the Stacked plot, called whenever the chart needs to be drawn
@@ -115,39 +110,39 @@ public:
    * -1.
    */
   vtkIdType GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
-    vtkVector2f* location,
-#ifndef VTK_LEGACY_REMOVE
-    vtkIdType* segmentId) override;
-#else
-    vtkIdType* segmentId = nullptr) override;
-#endif // VTK_LEGACY_REMOVE
-
-#ifndef VTK_LEGACY_REMOVE
+    vtkVector2f* location, vtkIdType* segmentId) override;
   using vtkPlot::GetNearestPoint;
-#endif // VTK_LEGACY_REMOVE
 
   /**
    * Select all points in the specified rectangle.
    */
   bool SelectPoints(const vtkVector2f& min, const vtkVector2f& max) override;
 
+  /**
+   * Update the internal cache. Returns true if cache was successfully updated. Default does
+   * nothing.
+   * This method is called by Update() when either the plot's data has changed or
+   * CacheRequiresUpdate() returns true. It is not necessary to call this method explicitly.
+   */
+  bool UpdateCache() override;
+
 protected:
   vtkPlotStacked();
   ~vtkPlotStacked() override;
 
   /**
-   * Update the table cache.
+   * Test if the internal cache requires an update.
    */
-  bool UpdateTableCache(vtkTable* table);
+  bool CacheRequiresUpdate() override;
 
   // Descript:
   // For stacked plots the Extent data must be greater than (or equal to) the
-  // base data. Insure that this is true
+  // base data. Ensure that this is true
   void FixExtent();
 
   /**
    * Handle calculating the log of the x or y series if necessary. Should be
-   * called by UpdateTableCache once the data has been updated in Points.
+   * called by UpdateCache once the data has been updated in Points.
    */
   void CalculateLogSeries();
 
@@ -163,11 +158,6 @@ protected:
    */
   vtkIdTypeArray* ExtentBadPoints;
 
-  /**
-   * The point cache is marked dirty until it has been initialized.
-   */
-  vtkTimeStamp BuildTime;
-
   bool LogX, LogY;
 
   /**
@@ -182,4 +172,5 @@ private:
   vtkPlotStackedPrivate* Private;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPlotStacked_h

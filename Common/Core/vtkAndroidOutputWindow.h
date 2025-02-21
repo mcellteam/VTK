@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAndroidOutputWindow.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAndroidOutputWindow
  * @brief   Win32 Specific output window class
@@ -31,6 +19,7 @@
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkOutputWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCORE_EXPORT vtkAndroidOutputWindow : public vtkOutputWindow
 {
 public:
@@ -43,17 +32,17 @@ public:
    */
   static vtkAndroidOutputWindow* New();
 
-  //@{
+  ///@{
   /**
    * New lines are converted to carriage return new lines.
    */
   void DisplayText(const char*) override;
-  virtual void DisplayErrorText(const char*);
-  virtual void DisplayWarningText(const char*);
-  virtual void DisplayGenericWarningText(const char*);
-  //@}
+  void DisplayErrorText(const char*) override;
+  void DisplayWarningText(const char*) override;
+  void DisplayGenericWarningText(const char*) override;
+  ///@}
 
-  virtual void DisplayDebugText(const char*);
+  void DisplayDebugText(const char*) override;
 
 protected:
   vtkAndroidOutputWindow();
@@ -64,4 +53,5 @@ private:
   void operator=(const vtkAndroidOutputWindow&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

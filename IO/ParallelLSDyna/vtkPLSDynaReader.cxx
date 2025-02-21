@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPLSDynaReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 // NOTE TO DEVELOPERS: ========================================================
 //
@@ -37,6 +22,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPLSDynaReader);
 
 struct vtkPLSDynaReader::vtkPLSDynaReaderInternal
@@ -58,7 +44,7 @@ struct vtkPLSDynaReader::vtkPLSDynaReaderInternal
   }
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPLSDynaReader::vtkPLSDynaReader()
 {
   this->Controller = nullptr;
@@ -68,7 +54,7 @@ vtkPLSDynaReader::vtkPLSDynaReader()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPLSDynaReader::~vtkPLSDynaReader()
 {
   this->SetController(nullptr);
@@ -82,7 +68,7 @@ void vtkPLSDynaReader::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLSDynaReader::SetController(vtkMultiProcessController* c)
 {
   if ((c == nullptr) || (c->GetNumberOfProcesses() == 0))
@@ -91,38 +77,22 @@ void vtkPLSDynaReader::SetController(vtkMultiProcessController* c)
     this->Internal->ProcessRank = 0;
   }
 
-  if (this->Controller == c)
+  vtkSetObjectBodyMacro(Controller, vtkMultiProcessController, c);
+
+  if (c)
   {
-    return;
+    this->Internal->NumProcesses = c->GetNumberOfProcesses();
+    this->Internal->ProcessRank = c->GetLocalProcessId();
   }
-
-  this->Modified();
-
-  if (this->Controller)
-  {
-    this->Controller->UnRegister(this);
-    this->Controller = nullptr;
-  }
-
-  if (c == nullptr)
-  {
-    return;
-  }
-
-  this->Controller = c;
-
-  c->Register(this);
-  this->Internal->NumProcesses = c->GetNumberOfProcesses();
-  this->Internal->ProcessRank = c->GetLocalProcessId();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPLSDynaReader::CanReadFile(const char* fname)
 {
   return this->Superclass::CanReadFile(fname);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPLSDynaReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** iinfo, vtkInformationVector* outputVector)
 {
@@ -139,7 +109,7 @@ int vtkPLSDynaReader::RequestInformation(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPLSDynaReader::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -154,7 +124,7 @@ int vtkPLSDynaReader::RequestData(
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPLSDynaReader::ReadTopology()
 {
   bool readTopology = false;
@@ -208,7 +178,7 @@ int vtkPLSDynaReader::ReadTopology()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // determine which parts will be read by this processor
 void vtkPLSDynaReader::GetPartRanges(vtkIdType* mins, vtkIdType* maxs)
 {
@@ -243,3 +213,4 @@ void vtkPLSDynaReader::GetPartRanges(vtkIdType* mins, vtkIdType* maxs)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

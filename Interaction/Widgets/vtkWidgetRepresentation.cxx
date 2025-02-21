@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWidgetRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkWidgetRepresentation.h"
 
 #include "vtkAbstractPropPicker.h"
@@ -24,7 +12,8 @@
 #include "vtkRenderer.h"
 #include "vtkTransform.h"
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkWidgetRepresentation::vtkWidgetRepresentation()
 {
   this->Renderer = nullptr;
@@ -49,13 +38,31 @@ vtkWidgetRepresentation::vtkWidgetRepresentation()
   this->PickingManaged = true;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWidgetRepresentation::~vtkWidgetRepresentation()
 {
   this->UnRegisterPickers();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkVector3d vtkWidgetRepresentation::GetWorldPoint(vtkAbstractPicker* picker, double screenPos[2])
+{
+  vtkVector3d pos;
+  picker->GetPickPosition(pos.GetData());
+
+  vtkVector4d focalPoint;
+  vtkInteractorObserver::ComputeWorldToDisplay(
+    this->Renderer, pos[0], pos[1], pos[2], focalPoint.GetData());
+  double z = focalPoint[2];
+
+  // Note: vtkVector4d::GetXYZ() methods would make this cleaner
+  vtkVector4d prevPickPoint4d;
+  vtkInteractorObserver::ComputeDisplayToWorld(
+    this->Renderer, screenPos[0], screenPos[1], z, prevPickPoint4d.GetData());
+  return vtkVector3d{ prevPickPoint4d.GetX(), prevPickPoint4d.GetY(), prevPickPoint4d.GetZ() };
+}
+
+//------------------------------------------------------------------------------
 void vtkWidgetRepresentation::SetRenderer(vtkRenderer* ren)
 {
   if (ren == this->Renderer)
@@ -73,16 +80,16 @@ void vtkWidgetRepresentation::SetRenderer(vtkRenderer* ren)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderer* vtkWidgetRepresentation::GetRenderer()
 {
   return this->Renderer;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWidgetRepresentation::RegisterPickers() {}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWidgetRepresentation::UnRegisterPickers()
 {
   vtkPickingManager* pm = this->GetPickingManager();
@@ -94,7 +101,7 @@ void vtkWidgetRepresentation::UnRegisterPickers()
   pm->RemoveObject(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWidgetRepresentation::SetPickingManaged(bool managed)
 {
   if (this->PickingManaged == managed)
@@ -109,7 +116,7 @@ void vtkWidgetRepresentation::SetPickingManaged(bool managed)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPickingManager* vtkWidgetRepresentation::GetPickingManager()
 {
   if (!this->Renderer || !this->Renderer->GetRenderWindow() ||
@@ -144,7 +151,26 @@ vtkAssemblyPath* vtkWidgetRepresentation::GetAssemblyPath3DPoint(
   return picker->GetPath();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Typically implemented by derived classes. Provided here as a convenience.
+void vtkWidgetRepresentation::PlaceWidget(double bds[6])
+{
+  double bounds[6], origin[3];
+  this->AdjustBounds(bds, bounds, origin);
+
+  this->InitialLength = sqrt((bounds[1] - bounds[0]) * (bounds[1] - bounds[0]) +
+    (bounds[3] - bounds[2]) * (bounds[3] - bounds[2]) +
+    (bounds[5] - bounds[4]) * (bounds[5] - bounds[4]));
+
+  for (auto i = 0; i < 6; i++)
+  {
+    this->InitialBounds[i] = bounds[i];
+  }
+
+  this->Placed = 1;
+}
+
+//------------------------------------------------------------------------------
 void vtkWidgetRepresentation::AdjustBounds(double bounds[6], double newBounds[6], double center[3])
 {
   center[0] = (bounds[0] + bounds[1]) / 2.0;
@@ -159,7 +185,7 @@ void vtkWidgetRepresentation::AdjustBounds(double bounds[6], double newBounds[6]
   newBounds[5] = center[2] + this->PlaceFactor * (bounds[5] - center[2]);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWidgetRepresentation::ShallowCopy(vtkProp* prop)
 {
   vtkWidgetRepresentation* rep = vtkWidgetRepresentation::SafeDownCast(prop);
@@ -171,7 +197,7 @@ void vtkWidgetRepresentation::ShallowCopy(vtkProp* prop)
   this->Superclass::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWidgetRepresentation::ComputeInteractionState(int, int, int)
 {
   return 0;
@@ -183,7 +209,7 @@ int vtkWidgetRepresentation::ComputeComplexInteractionState(
   return 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkWidgetRepresentation::SizeHandlesInPixels(double factor, double pos[3])
 {
   //
@@ -220,7 +246,7 @@ double vtkWidgetRepresentation::SizeHandlesInPixels(double factor, double pos[3]
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkWidgetRepresentation::SizeHandlesRelativeToViewport(double factor, double pos[3])
 {
   int i;
@@ -235,7 +261,7 @@ double vtkWidgetRepresentation::SizeHandlesRelativeToViewport(double factor, dou
     double radius, z;
     double windowLowerLeft[4], windowUpperRight[4];
     double* viewport = renderer->GetViewport();
-    int* winSize = renderer->GetRenderWindow()->GetSize();
+    const int* winSize = renderer->GetRenderWindow()->GetSize();
     double focalPoint[4];
 
     vtkInteractorObserver::ComputeWorldToDisplay(
@@ -335,10 +361,10 @@ void vtkWidgetRepresentation::UpdatePropPose(vtkProp3D* prop3D, const double* po
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkWidgetRepresentation::NearbyEvent(int X, int Y, double bounds[6])
 {
-  double focus[3], z, pickPoint[4], dFocus[4], length, dist;
+  double focus[3], dFocus[4];
 
   focus[0] = (bounds[0] + bounds[1]) / 2.0;
   focus[1] = (bounds[2] + bounds[3]) / 2.0;
@@ -346,19 +372,18 @@ bool vtkWidgetRepresentation::NearbyEvent(int X, int Y, double bounds[6])
 
   vtkInteractorObserver::ComputeWorldToDisplay(
     this->Renderer, focus[0], focus[1], focus[2], dFocus);
-  z = dFocus[2];
-  vtkInteractorObserver::ComputeDisplayToWorld(this->Renderer, X, Y, z, pickPoint);
-  length = sqrt((bounds[1] - bounds[0]) * (bounds[1] - bounds[0]) +
-    (bounds[3] - bounds[2]) * (bounds[3] - bounds[2]) +
-    (bounds[5] - bounds[4]) * (bounds[5] - bounds[4]));
-  dist = sqrt((pickPoint[0] - focus[0]) * (pickPoint[0] - focus[0]) +
-    (pickPoint[1] - focus[1]) * (pickPoint[1] - focus[1]) +
-    (pickPoint[2] - focus[2]) * (pickPoint[2] - focus[2]));
 
-  return ((dist > 0.75 * length) ? false : true);
+  // Compare, in screen space, the position of the cursor relative to the center of the bounds
+  int threshold = 10;
+  if (std::abs(dFocus[0] - X) < threshold && std::abs(dFocus[1] - Y) < threshold)
+  {
+    return true;
+  }
+
+  return false;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWidgetRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -370,3 +395,4 @@ void vtkWidgetRepresentation::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Need to Render: " << (this->NeedToRender ? "On\n" : "Off\n");
   os << indent << "Place Factor: " << this->PlaceFactor << "\n";
 }
+VTK_ABI_NAMESPACE_END

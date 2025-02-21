@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEdgeSubdivisionCriterion.h
-  Language:  C++
-
-  Copyright 2003 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the
-  U.S. Government. Redistribution and use in source and binary forms, with
-  or without modification, are permitted provided that this Notice and any
-  statement of authorship are reproduced on all copies.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #ifndef vtkEdgeSubdivisionCriterion_h
 #define vtkEdgeSubdivisionCriterion_h
 /**
@@ -36,6 +25,7 @@
 #include "vtkFiltersCoreModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSetAttributes;
 class vtkMatrix4x4;
 class vtkStreamingTessellator;
@@ -153,10 +143,8 @@ protected:
    * are tested (not geometry) because you can save yourself
    * field evaluations if you check the geometry yourself
    * and it fails the test.
-   * @param p0 is the first endpoint of the edge
    * @param p1 is the linearly interpolated midpoint of the edge
    * @param p1_actual is the actual midpoint of the edge
-   * @param p2 is the second endpoint of the edge
    * @param field_start is the offset into the above arrays
    * indicating where the scalar field values start (when
    * isosurfacing, the embedding dimension may be smaller
@@ -195,4 +183,5 @@ inline int vtkEdgeSubdivisionCriterion::GetNumberOfFields() const
   return this->NumberOfFields;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkEdgeSubdivisionCriterion_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMoleculeToBondStickFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMoleculeToBondStickFilter.h"
 
 #include "vtkCellArray.h"
@@ -27,15 +15,16 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMoleculeToBondStickFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMoleculeToBondStickFilter::vtkMoleculeToBondStickFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMoleculeToBondStickFilter::~vtkMoleculeToBondStickFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMoleculeToBondStickFilter::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -86,8 +75,7 @@ int vtkMoleculeToBondStickFilter::RequestData(
   // Unit z vector
   static const double unitZ[3] = { 0.0, 0.0, 1.0 };
 
-  // Build a sphere for each atom and append it's data to the output
-  // arrays.
+  // Build a cylinder for each bond and append its data to the output arrays.
   for (vtkIdType bondInd = 0; bondInd < numBonds; ++bondInd)
   {
     // Extract bond info
@@ -124,7 +112,6 @@ int vtkMoleculeToBondStickFilter::RequestData(
       case 2:
         radius = 0.1;
         vtkMath::Cross(bondVec, unitZ, delta);
-        // vtkMath::Normalize(delta);
         vtkMath::MultiplyScalar(delta, radius + radius);
         initialDisp[0] = delta[0] * -0.5;
         initialDisp[1] = delta[1] * -0.5;
@@ -133,7 +120,6 @@ int vtkMoleculeToBondStickFilter::RequestData(
       case 3:
         radius = 0.1;
         vtkMath::Cross(bondVec, unitZ, delta);
-        // vtkMath::Normalize(delta);
         vtkMath::MultiplyScalar(delta, radius + radius);
         initialDisp[0] = -delta[0];
         initialDisp[1] = -delta[1];
@@ -155,12 +141,14 @@ int vtkMoleculeToBondStickFilter::RequestData(
       vtkPolyData* cylinder = cylSource->GetOutput();
       vtkPoints* cylPoints = cylinder->GetPoints();
       vtkCellArray* cylPolys = cylinder->GetPolys();
-      xform->TransformPoints(cylPoints, points);
 
       // Get offset for the new point IDs that will be added to points
       vtkIdType pointOffset = points->GetNumberOfPoints();
       // Total number of new points
       vtkIdType numPoints = cylPoints->GetNumberOfPoints();
+
+      // Create points by transforming those of the cylinder
+      xform->TransformPoints(cylPoints, points);
 
       // Use bond order for point scalar data.
       for (vtkIdType i = 0; i < numPoints; ++i)
@@ -206,8 +194,9 @@ int vtkMoleculeToBondStickFilter::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMoleculeToBondStickFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

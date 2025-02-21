@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoxRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBoxRepresentation
  * @brief   a class defining the representation for the vtkBoxWidget2
@@ -38,7 +26,9 @@
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkWidgetRepresentation.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkPolyDataMapper;
 class vtkLineSource;
@@ -56,7 +46,8 @@ class vtkBox;
 class vtkDoubleArray;
 class vtkMatrix4x4;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkBoxRepresentation : public vtkWidgetRepresentation
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkBoxRepresentation
+  : public vtkWidgetRepresentation
 {
 public:
   /**
@@ -64,13 +55,13 @@ public:
    */
   static vtkBoxRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for the class.
    */
   vtkTypeMacro(vtkBoxRepresentation, vtkWidgetRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Get the planes describing the implicit function defined by the box
@@ -86,7 +77,7 @@ public:
   // this can be used as a cropping planes in vtkMapper
   vtkPlane* GetUnderlyingPlane(int i) { return this->Planes[i]; }
 
-  //@{
+  ///@{
   /**
    * Set/Get the InsideOut flag. This data member is used in conjunction
    * with the GetPlanes() method. When off, the normals point out of the
@@ -96,7 +87,7 @@ public:
   vtkSetMacro(InsideOut, vtkTypeBool);
   vtkGetMacro(InsideOut, vtkTypeBool);
   vtkBooleanMacro(InsideOut, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Retrieve a linear transform characterizing the transformation of the
@@ -105,6 +96,7 @@ public:
    * transform can be used to control the position of vtkProp3D's, as well as
    * other transformation operations (e.g., vtkTransformPolyData).
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   virtual void GetTransform(vtkTransform* t);
 
   /**
@@ -113,6 +105,7 @@ public:
    * where PlaceWidget() was initially called (i.e., the original bounding
    * box).
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_INTERNAL)
   virtual void SetTransform(vtkTransform* t);
 
   /**
@@ -127,7 +120,7 @@ public:
    */
   void GetPolyData(vtkPolyData* pd);
 
-  //@{
+  ///@{
   /**
    * Get the handle properties (the little balls are the handles). The
    * properties of the handles, when selected or normal, can be
@@ -135,9 +128,9 @@ public:
    */
   vtkGetObjectMacro(HandleProperty, vtkProperty);
   vtkGetObjectMacro(SelectedHandleProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the face properties (the faces of the box). The
    * properties of the face when selected and normal can be
@@ -145,9 +138,9 @@ public:
    */
   vtkGetObjectMacro(FaceProperty, vtkProperty);
   vtkGetObjectMacro(SelectedFaceProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the outline properties (the outline of the box). The
    * properties of the outline when selected and normal can be
@@ -155,9 +148,32 @@ public:
    */
   vtkGetObjectMacro(OutlineProperty, vtkProperty);
   vtkGetObjectMacro(SelectedOutlineProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set the foreground color (the outline of the box).
+   */
+  void SetForegroundColor(double _arg1, double _arg2, double _arg3);
+  void SetForegroundColor(const double _arg[3])
+  {
+    this->SetForegroundColor(_arg[0], _arg[1], _arg[2]);
+  }
+  ///@}
+
+  ///@{
+  /**
+   * Set the interaction color. Applies to the handle and outline
+   * when interaction is happening.
+   */
+  void SetInteractionColor(double _arg1, double _arg2, double _arg3);
+  void SetInteractionColor(const double _arg[3])
+  {
+    this->SetInteractionColor(_arg[0], _arg[1], _arg[2]);
+  }
+  ///@}
+
+  ///@{
   /**
    * Control the representation of the outline. This flag enables
    * face wires. By default face wires are off.
@@ -166,9 +182,9 @@ public:
   vtkGetMacro(OutlineFaceWires, int);
   void OutlineFaceWiresOn() { this->SetOutlineFaceWires(1); }
   void OutlineFaceWiresOff() { this->SetOutlineFaceWires(0); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the representation of the outline. This flag enables
    * the cursor lines running between the handles. By default cursor
@@ -178,18 +194,18 @@ public:
   vtkGetMacro(OutlineCursorWires, int);
   void OutlineCursorWiresOn() { this->SetOutlineCursorWires(1); }
   void OutlineCursorWiresOff() { this->SetOutlineCursorWires(0); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Switches handles (the spheres) on or off by manipulating the underlying
    * actor visibility.
    */
   virtual void HandlesOn();
   virtual void HandlesOff();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These are methods that satisfy vtkWidgetRepresentation's API.
    */
@@ -207,9 +223,9 @@ public:
     unsigned long event, void* calldata, int modify = 0) override;
   void EndComplexInteraction(vtkRenderWindowInteractor* iren, vtkAbstractWidget* widget,
     unsigned long event, void* calldata) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods supporting, and required by, the rendering process.
    */
@@ -217,7 +233,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport*) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
   // Used to manage the state of the widget
   enum
@@ -245,48 +261,48 @@ public:
    */
   void SetInteractionState(int state);
 
-  //@{
+  ///@{
   /**
    * In two plane mode only the X planes are shown
    * this is useful for defining thick slabs
    */
   vtkGetMacro(TwoPlaneMode, bool);
   void SetTwoPlaneMode(bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * For complex events should we snap orientations to
    * be aligned with the x y z axes
    */
   vtkGetMacro(SnapToAxes, bool);
   vtkSetMacro(SnapToAxes, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * For complex events should we snap orientations to
    * be aligned with the x y z axes
    */
   void StepForward();
   void StepBackward();
-  //@}
+  ///@}
 
   /*
    * Register internal Pickers within PickingManager
    */
   void RegisterPickers() override;
 
-  //@{
+  ///@{
   /**
    * Gets/Sets the constraint axis for translations. Returns Axis::NONE
    * if none.
    **/
   vtkGetMacro(TranslationAxis, int);
   vtkSetClampMacro(TranslationAxis, int, -1, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Toggles constraint translation axis on/off.
    */
@@ -294,14 +310,31 @@ public:
   void SetYTranslationAxisOn() { this->TranslationAxis = Axis::YAxis; }
   void SetZTranslationAxisOn() { this->TranslationAxis = Axis::ZAxis; }
   void SetTranslationAxisOff() { this->TranslationAxis = Axis::NONE; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Returns true if ContrainedAxis
+   * Returns true if ConstrainedAxis
    **/
   bool IsTranslationConstrained() { return this->TranslationAxis != Axis::NONE; }
-  //@}
+  ///@}
+
+  /**
+   * These methods are necessary to make this representation behave as
+   * a vtkProp (i.e., support rendering).
+   * GetActors adds all the internal props used by this representation to the supplied collection.
+   */
+  void GetActors(vtkPropCollection*) override;
+
+  ///@{
+  /**
+   * Get/Set the x,y,z coordinates for the corner points of the 3D box.
+   * This method is an alternative to PlaceWidget(bds) when you already
+   * know the exact coordinates for the corners of the box widget.
+   */
+  std::vector<double> GetCorners();
+  void SetCorners(std::vector<double> points);
+  ///@}
 
 protected:
   vtkBoxRepresentation();
@@ -410,4 +443,5 @@ private:
   void operator=(const vtkBoxRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

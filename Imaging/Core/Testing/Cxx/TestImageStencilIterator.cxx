@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestImageStencilIterator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Test the vtkImageStencilIterator under various conditions
 
@@ -21,7 +9,7 @@
 #include "vtkNew.h"
 #include "vtkTesting.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Provides a pseudo-random value at each position
 static unsigned char VoxelValue(int i, int j, int k)
 {
@@ -44,7 +32,7 @@ static unsigned char VoxelValue(int i, int j, int k)
   return static_cast<unsigned char>(randseq[m] >> (8 * n));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Generate a test image
 static void GenerateImage(vtkImageData* image, int extent[6])
 {
@@ -66,7 +54,7 @@ static void GenerateImage(vtkImageData* image, int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Generate a test stencil
 static void GenerateStencil(vtkImageStencilData* stencil, int extent[6])
 {
@@ -90,7 +78,7 @@ static void GenerateStencil(vtkImageStencilData* stencil, int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // check that stencil and image match over the given extents
 static bool CheckStencilExtents(int imageExt[6], int stencilExt[6], int extent[6])
 {
@@ -141,7 +129,7 @@ static bool CheckStencilExtents(int imageExt[6], int stencilExt[6], int extent[6
   return match;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestImageStencilIterator(int argc, char* argv[])
 {
   vtkNew<vtkTesting> testing;

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOSPRayVolumeNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOSPRayVolumeNode.h"
 
 #include "vtkAbstractVolumeMapper.h"
@@ -33,25 +21,31 @@
 #include "RTWrapper/RTWrapper.h"
 
 //============================================================================
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOSPRayVolumeNode);
 
-//----------------------------------------------------------------------------
-vtkOSPRayVolumeNode::vtkOSPRayVolumeNode() {}
+//------------------------------------------------------------------------------
+vtkOSPRayVolumeNode::vtkOSPRayVolumeNode() = default;
 
-//----------------------------------------------------------------------------
-vtkOSPRayVolumeNode::~vtkOSPRayVolumeNode() {}
+//------------------------------------------------------------------------------
+vtkOSPRayVolumeNode::~vtkOSPRayVolumeNode() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayVolumeNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkOSPRayVolumeNode::GetMTime()
 {
   vtkMTimeType mtime = this->Superclass::GetMTime();
   vtkVolume* vol = (vtkVolume*)this->GetRenderable();
+  if (!vol)
+  {
+    return mtime;
+  }
+
   if (vol->GetMTime() > mtime)
   {
     mtime = vol->GetMTime();
@@ -80,3 +74,4 @@ vtkMTimeType vtkOSPRayVolumeNode::GetMTime()
   }
   return mtime;
 }
+VTK_ABI_NAMESPACE_END

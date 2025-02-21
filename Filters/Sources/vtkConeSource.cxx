@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkConeSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkConeSource.h"
 
 #include "vtkCellArray.h"
@@ -27,9 +15,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkConeSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with default resolution 6, height 1.0, radius 0.5, and capping
 // on.
 vtkConeSource::vtkConeSource(int res)
@@ -53,7 +42,7 @@ vtkConeSource::vtkConeSource(int res)
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkConeSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -309,7 +298,7 @@ int vtkConeSource::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkConeSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -318,19 +307,19 @@ int vtkConeSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkConeSource::SetAngle(double angle)
 {
   this->SetRadius(this->Height * tan(vtkMath::RadiansFromDegrees(angle)));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkConeSource::GetAngle()
 {
   return vtkMath::DegreesFromRadians(atan2(this->Radius, this->Height));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkConeSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -345,3 +334,4 @@ void vtkConeSource::PrintSelf(ostream& os, vtkIndent indent)
      << this->Direction[2] << ")\n";
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

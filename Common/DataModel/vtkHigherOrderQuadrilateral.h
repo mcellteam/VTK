@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHigherOrderQuadrilateral.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME vtkHigherOrderQuadrilateral
 // .SECTION Description
 // .SECTION See Also
@@ -19,12 +7,15 @@
 #ifndef vtkHigherOrderQuadrilateral_h
 #define vtkHigherOrderQuadrilateral_h
 
+#include <functional> //For std::function
+
 #include "vtkCellType.h"              // For GetCellType.
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkNew.h"                   // For member variable.
 #include "vtkNonLinearCell.h"
 #include "vtkSmartPointer.h" // For member variable.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellData;
 class vtkDoubleArray;
 class vtkIdList;
@@ -48,7 +39,9 @@ public:
   int GetNumberOfFaces() override { return 0; }
   vtkCell* GetEdge(int edgeId) override = 0;
   vtkCell* GetFace(int vtkNotUsed(faceId)) override { return nullptr; }
-  void GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* result, int edgeId);
+  void SetEdgeIdsAndPoints(int edgeId,
+    const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+    const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points);
 
   void Initialize() override;
 
@@ -64,7 +57,7 @@ public:
     vtkIdType cellId, vtkCellData* outCd, int insideOut) override;
   int IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t, double x[3],
     double pcoords[3], int& subId) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptId) override;
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
   void SetParametricCoords();
@@ -73,12 +66,18 @@ public:
 
   double GetParametricDistance(const double pcoords[3]) override;
 
-  virtual void SetOrderFromCellData(
-    vtkCellData* cell_data, const vtkIdType numPts, const vtkIdType cell_id);
-  virtual void SetUniformOrderFromNumPoints(const vtkIdType numPts);
-  virtual void SetOrder(const int s, const int t);
+  virtual void SetOrderFromCellData(vtkCellData* cell_data, vtkIdType numPts, vtkIdType cell_id);
+  static void SetOrderFromCellData(
+    vtkCellData* cell_data, vtkIdType numPts, vtkIdType cell_id, int* order);
+  virtual void SetUniformOrderFromNumPoints(vtkIdType numPts);
+  virtual void SetOrder(int s, int t);
   virtual const int* GetOrder();
   virtual int GetOrder(int i) { return this->GetOrder()[i]; }
+  /// Return true if the number of points supports a cell of uniform
+  /// degree along each axis.
+  ///
+  /// For quadrilaterals, \a pointsPerCell must be a perfect square >= 4.
+  static bool PointCountSupportsUniformOrder(vtkIdType pointsPerCell);
 
   void InterpolateFunctions(const double pcoords[3], double* weights) override = 0;
   void InterpolateDerivs(const double pcoords[3], double* derivs) override = 0;
@@ -89,14 +88,14 @@ public:
   static int PointIndexFromIJK(int i, int j, const int* order);
   bool TransformApproxToCellParams(int subCell, double* pcoords);
 
-  virtual vtkHigherOrderCurve* getEdgeCell() = 0;
+  virtual vtkHigherOrderCurve* GetEdgeCell() = 0;
 
 protected:
   vtkHigherOrderQuadrilateral();
   ~vtkHigherOrderQuadrilateral() override;
 
   vtkQuad* GetApprox();
-  // The verion of GetApproximateQuad between Lagrange and Bezier is different because Bezier is
+  // The version of GetApproximateQuad between Lagrange and Bezier is different because Bezier is
   // non-interpolatory
   void PrepareApproxData(
     vtkPointData* pd, vtkCellData* cd, vtkIdType cellId, vtkDataArray* cellScalars);
@@ -110,8 +109,6 @@ protected:
   vtkSmartPointer<vtkCellData> ApproxCD;
   vtkNew<vtkDoubleArray> CellScalars;
   vtkNew<vtkDoubleArray> Scalars;
-  vtkNew<vtkPoints> TmpPts;
-  vtkNew<vtkIdList> TmpIds;
 
 private:
   vtkHigherOrderQuadrilateral(const vtkHigherOrderQuadrilateral&) = delete;
@@ -125,4 +122,5 @@ inline int vtkHigherOrderQuadrilateral::GetParametricCenter(double center[3])
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkHigherOrderQuadrilateral_h

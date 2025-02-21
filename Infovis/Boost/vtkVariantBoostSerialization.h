@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVariantBoostSerialization.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*
- * Copyright (C) 2008 The Trustees of Indiana University.
- * Use, modification and distribution is subject to the Boost Software
- * License, Version 1.0. (See http://www.boost.org/LICENSE_1_0.txt)
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (C) 2008 The Trustees of Indiana University.
+// SPDX-License-Identifier: BSD-3-Clause AND BSL-1.0
 /**
  * @class   vtkVariantBoostSerialization
  * @brief   Serialization support for
@@ -47,6 +31,8 @@
 #include <boost/serialization/extended_type_info_no_rtti.hpp>
 #include <boost/serialization/split_free.hpp>
 
+VTK_ABI_NAMESPACE_BEGIN
+
 //----------------------------------------------------------------------------
 // vtkStdString serialization code
 //----------------------------------------------------------------------------
@@ -57,25 +43,20 @@ void serialize(Archiver& ar, vtkStdString& str, const unsigned int vtkNotUsed(ve
 }
 
 //----------------------------------------------------------------------------
-// vtkUnicodeString serialization code
-//----------------------------------------------------------------------------
 
 template <typename Archiver>
-void save(Archiver& ar, const vtkUnicodeString& str, const unsigned int vtkNotUsed(version))
+void save(Archiver& ar, const std::string& str, const unsigned int vtkNotUsed(version))
 {
-  std::string utf8(str.utf8_str());
-  ar& utf8;
+  ar& str;
 }
 
 template <typename Archiver>
-void load(Archiver& ar, vtkUnicodeString& str, const unsigned int vtkNotUsed(version))
+void load(Archiver& ar, std::string& str, const unsigned int vtkNotUsed(version))
 {
   std::string utf8;
   ar& utf8;
-  str = vtkUnicodeString::from_utf8(utf8);
+  str = utf8;
 }
-
-BOOST_SERIALIZATION_SPLIT_FREE(vtkUnicodeString)
 
 //----------------------------------------------------------------------------
 // vtkVariant serialization code
@@ -107,7 +88,6 @@ void save(Archiver& ar, const vtkVariant& variant, const unsigned int vtkNotUsed
   switch (Type)
   {
     VTK_VARIANT_SAVE(VTK_STRING, vtkStdString, ToString);
-    VTK_VARIANT_SAVE(VTK_UNICODE_STRING, vtkUnicodeString, ToUnicodeString);
     VTK_VARIANT_SAVE(VTK_FLOAT, float, ToFloat);
     VTK_VARIANT_SAVE(VTK_DOUBLE, double, ToDouble);
     VTK_VARIANT_SAVE(VTK_CHAR, char, ToChar);
@@ -147,7 +127,6 @@ void load(Archiver& ar, vtkVariant& variant, const unsigned int vtkNotUsed(versi
       variant = vtkVariant();
       return;
       VTK_VARIANT_LOAD(VTK_STRING, vtkStdString);
-      VTK_VARIANT_LOAD(VTK_UNICODE_STRING, vtkUnicodeString);
       VTK_VARIANT_LOAD(VTK_FLOAT, float);
       VTK_VARIANT_LOAD(VTK_DOUBLE, double);
       VTK_VARIANT_LOAD(VTK_CHAR, char);
@@ -167,7 +146,11 @@ void load(Archiver& ar, vtkVariant& variant, const unsigned int vtkNotUsed(versi
 #undef VTK_VARIANT_LOAD
 }
 
+VTK_ABI_NAMESPACE_END
+
 BOOST_SERIALIZATION_SPLIT_FREE(vtkVariant)
+
+VTK_ABI_NAMESPACE_BEGIN
 
 //----------------------------------------------------------------------------
 // vtkVariantArray serialization code
@@ -203,7 +186,7 @@ void load(Archiver& ar, vtkVariantArray& array, const unsigned int vtkNotUsed(ve
 
   if (name.empty())
   {
-    array.SetName(0);
+    array.SetName(nullptr);
   }
   else
   {
@@ -221,6 +204,8 @@ void load(Archiver& ar, vtkVariantArray& array, const unsigned int vtkNotUsed(ve
     array.SetValue(i, value);
   }
 }
+
+VTK_ABI_NAMESPACE_END
 
 BOOST_SERIALIZATION_SPLIT_FREE(vtkVariantArray)
 

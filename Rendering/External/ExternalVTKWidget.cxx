@@ -1,37 +1,26 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    ExternalVTKWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "ExternalVTKWidget.h"
 #include "vtkObjectFactory.h"
 #include "vtkRendererCollection.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(ExternalVTKWidget);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 ExternalVTKWidget::ExternalVTKWidget()
 {
-  this->RenderWindow = 0;
+  this->RenderWindow = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 ExternalVTKWidget::~ExternalVTKWidget()
 {
   this->SetRenderWindow(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExternalOpenGLRenderWindow* ExternalVTKWidget::GetRenderWindow()
 {
   if (!this->RenderWindow)
@@ -43,8 +32,8 @@ vtkExternalOpenGLRenderWindow* ExternalVTKWidget::GetRenderWindow()
   return this->RenderWindow;
 }
 
-//----------------------------------------------------------------------------
-vtkExternalOpenGLRenderer* ExternalVTKWidget::AddRenderer(void)
+//------------------------------------------------------------------------------
+vtkExternalOpenGLRenderer* ExternalVTKWidget::AddRenderer()
 {
   vtkExternalOpenGLRenderer* ren = vtkExternalOpenGLRenderer::New();
   this->GetRenderWindow()->AddRenderer(ren);
@@ -52,13 +41,13 @@ vtkExternalOpenGLRenderer* ExternalVTKWidget::AddRenderer(void)
   return ren;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ExternalVTKWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ExternalVTKWidget::SetRenderWindow(vtkExternalOpenGLRenderWindow* w)
 {
   // Do nothing if we don't have to
@@ -68,7 +57,7 @@ void ExternalVTKWidget::SetRenderWindow(vtkExternalOpenGLRenderWindow* w)
   }
 
   // Swap the renderers from the old window to the new one
-  vtkRendererCollection* renderers = 0;
+  vtkRendererCollection* renderers = nullptr;
 
   // Unregister the previous window
   if (this->RenderWindow)
@@ -110,3 +99,4 @@ void ExternalVTKWidget::SetRenderWindow(vtkExternalOpenGLRenderWindow* w)
     renderers->UnRegister(this);
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPSurfaceLICComposite.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPSurfaceLICComposite
  *
@@ -35,6 +23,7 @@
 #include <list>             // for list
 #include <vector>           // for vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFloatArray;
 class vtkRenderWindow;
 class vtkTextureObject;
@@ -50,41 +39,39 @@ class VTKRENDERINGPARALLELLIC_EXPORT vtkPSurfaceLICComposite : public vtkSurface
 public:
   static vtkPSurfaceLICComposite* New();
   vtkTypeMacro(vtkPSurfaceLICComposite, vtkSurfaceLICComposite);
-  virtual void PrintSelf(ostream& os, vtkIndent indent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Set the rendering context. Must set prior to use. Reference is not
    * held, so caller must ensure the renderer is not destroyed during
    * use.
    */
-  virtual void SetContext(vtkOpenGLRenderWindow* rwin) override;
-  virtual vtkOpenGLRenderWindow* GetContext() override { return this->Context; }
+  void SetContext(vtkOpenGLRenderWindow* rwin) override;
+  vtkOpenGLRenderWindow* GetContext() override { return this->Context; }
 
   /**
    * Set the communicator for parallel communication. The Default is
    * COMM_NULL.
    */
-  virtual void SetCommunicator(vtkPainterCommunicator* comm) override;
+  void SetCommunicator(vtkPainterCommunicator* comm) override;
 
   /**
    * Build programs to move data to the new decomp
    * THIS IS A COLLECTIVE OPERATION
    */
-  virtual int BuildProgram(float* vectors) override;
+  int BuildProgram(float* vectors) override;
 
   /**
    * Move a single buffer from the geometry decomp to the LIC decomp.
    * THIS IS A COLLECTIVE OPERATION
    */
-  virtual int Gather(
-    void* pSendPBO, int dataType, int nComps, vtkTextureObject*& newImage) override;
+  int Gather(void* pSendPBO, int dataType, int nComps, vtkTextureObject*& newImage) override;
 
   /**
    * Move a single buffer from the LIC decomp to the geometry decomp
    * THIS IS A COLLECTIVE OPERATION
    */
-  virtual int Scatter(
-    void* pSendPBO, int dataType, int nComps, vtkTextureObject*& newImage) override;
+  int Scatter(void* pSendPBO, int dataType, int nComps, vtkTextureObject*& newImage) override;
 
 protected:
   vtkPSurfaceLICComposite();
@@ -106,22 +93,22 @@ private:
    * is given by the ratio of pixels to send off rank to the total
    * number of source pixels.
    */
-  double EstimateCommunicationCost(const std::deque<std::deque<vtkPixelExtent> >& srcExts,
-    const std::deque<std::deque<vtkPixelExtent> >& destExts);
+  double EstimateCommunicationCost(const std::deque<std::deque<vtkPixelExtent>>& srcExts,
+    const std::deque<std::deque<vtkPixelExtent>>& destExts);
 
   /**
    * The efficiency of a decomposition is the ratio of useful pixels
    * to guard pixels. If this factor shrinks below 1 there may be
    * an issue.
    */
-  double EstimateDecompEfficiency(const std::deque<std::deque<vtkPixelExtent> >& exts,
-    const std::deque<std::deque<vtkPixelExtent> >& guardExts);
+  double EstimateDecompEfficiency(const std::deque<std::deque<vtkPixelExtent>>& exts,
+    const std::deque<std::deque<vtkPixelExtent>>& guardExts);
 
   /**
    * Given a window extent, decompose into the requested number of
    * pieces.
    */
-  int DecomposeScreenExtent(std::deque<std::deque<vtkPixelExtent> >& newExts, float* vectors);
+  int DecomposeScreenExtent(std::deque<std::deque<vtkPixelExtent>>& newExts, float* vectors);
 
   /**
    * Given an extent, decompose into the requested number of
@@ -137,12 +124,12 @@ private:
    * extents with empty vectors are removed. This is a global operation
    * as the vector field is distributed and has not been composited yet.
    */
-  int MakeDecompDisjoint(const std::deque<std::deque<vtkPixelExtent> >& in,
-    std::deque<std::deque<vtkPixelExtent> >& out, float* vectors);
+  int MakeDecompDisjoint(const std::deque<std::deque<vtkPixelExtent>>& in,
+    std::deque<std::deque<vtkPixelExtent>>& out, float* vectors);
 
   // decomp set of extents
-  int MakeDecompLocallyDisjoint(const std::deque<std::deque<vtkPixelExtent> >& in,
-    std::deque<std::deque<vtkPixelExtent> >& out);
+  int MakeDecompLocallyDisjoint(
+    const std::deque<std::deque<vtkPixelExtent>>& in, std::deque<std::deque<vtkPixelExtent>>& out);
 
   using vtkSurfaceLICComposite::MakeDecompDisjoint;
 
@@ -152,23 +139,22 @@ private:
    * along with the dataset extent.
    */
   int AllGatherExtents(const std::deque<vtkPixelExtent>& localExts,
-    std::deque<std::deque<vtkPixelExtent> >& remoteExts, vtkPixelExtent& dataSetExt);
+    std::deque<std::deque<vtkPixelExtent>>& remoteExts, vtkPixelExtent& dataSetExt);
 
   /**
    * All reduce max(|V|) on the new decomposition.
    */
   int AllReduceVectorMax(const std::deque<vtkPixelExtent>& originalExts,
-    const std::deque<std::deque<vtkPixelExtent> >& newExts, float* vectors,
-    std::vector<std::vector<float> >& vectorMax);
+    const std::deque<std::deque<vtkPixelExtent>>& newExts, float* vectors,
+    std::vector<std::vector<float>>& vectorMax);
 
   /**
    * Add guard pixels (Parallel run)
    */
-  int AddGuardPixels(const std::deque<std::deque<vtkPixelExtent> >& exts,
-    std::deque<std::deque<vtkPixelExtent> >& guardExts,
-    std::deque<std::deque<vtkPixelExtent> >& disjointGuardExts, float* vectors);
+  int AddGuardPixels(const std::deque<std::deque<vtkPixelExtent>>& exts,
+    std::deque<std::deque<vtkPixelExtent>>& guardExts,
+    std::deque<std::deque<vtkPixelExtent>>& disjointGuardExts, float* vectors);
 
-private:
   vtkPPainterCommunicator* PainterComm; // mpi state
   vtkPPixelExtentOps* PixelOps;
   int CommRank;
@@ -193,4 +179,5 @@ private:
 VTKRENDERINGPARALLELLIC_EXPORT
 ostream& operator<<(ostream& os, vtkPSurfaceLICComposite& ss);
 
+VTK_ABI_NAMESPACE_END
 #endif

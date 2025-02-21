@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestPCompositeZPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // The scene consists of
 // * 4 actors: a rectangle, a box, a cone and a sphere. The box, the cone and
 // the sphere are above the rectangle.
@@ -95,7 +83,7 @@ class MyProcess : public vtkProcess
 public:
   static MyProcess* New();
 
-  virtual void Execute();
+  void Execute() override;
 
   void SetArgs(int anArgc, char* anArgv[])
   {
@@ -296,7 +284,7 @@ void MyProcess::Execute()
   }
 
   int retVal;
-  const int MY_RETURN_VALUE_MESSAGE = 0x518113;
+  const int MY_RETURN_VALUE_MESSAGE = 0xcafe;
 
   if (me > 0)
   {
@@ -314,7 +302,7 @@ void MyProcess::Execute()
     camera->Elevation(10.0);
     renderer->ResetCamera();
     // testing code
-    double thresh = 10;
+    double thresh = 0.05;
     int i;
     VTK_CREATE(vtkTesting, testing);
     for (i = 0; i < this->Argc; ++i)

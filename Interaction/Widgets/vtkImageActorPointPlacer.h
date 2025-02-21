@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageActorPointPlacer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageActorPointPlacer
  * @brief   Converts 2D display positions to world positions such that they lie on an ImageActor
@@ -29,6 +17,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPointPlacer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkBoundedPlanePointPlacer;
 class vtkImageActor;
 class vtkRenderer;
@@ -41,13 +30,13 @@ public:
    */
   static vtkImageActorPointPlacer* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkImageActorPointPlacer, vtkPointPlacer);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Given and renderer and a display position in pixels,
@@ -100,7 +89,7 @@ public:
    */
   int UpdateInternalState() override;
 
-  //@{
+  ///@{
   /**
    * Set / get the reference vtkImageActor used to place the points.
    * An image actor must be set for this placer to work. An internal
@@ -109,9 +98,9 @@ public:
    */
   void SetImageActor(vtkImageActor*);
   vtkGetObjectMacro(ImageActor, vtkImageActor);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Optionally, you may set bounds to restrict the placement of the points.
    * The placement of points will then be constrained to lie not only on
@@ -120,13 +109,13 @@ public:
    */
   vtkSetVector6Macro(Bounds, double);
   vtkGetVector6Macro(Bounds, double);
-  //@}
+  ///@}
 
   /**
    * Set the world tolerance. This propagates it to the internal
    * BoundedPlanePointPlacer.
    */
-  void SetWorldTolerance(double s) override;
+  void SetWorldTolerance(double tol) override;
 
 protected:
   vtkImageActorPointPlacer();
@@ -151,4 +140,5 @@ private:
   void operator=(const vtkImageActorPointPlacer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiProcessStream.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMultiProcessStream
  * @brief   stream used to pass data across processes
@@ -34,6 +22,7 @@
 #include <string>                  // needed for string.
 #include <vector>                  // needed for vector.
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKPARALLELCORE_EXPORT vtkMultiProcessStream
 {
 public:
@@ -42,7 +31,7 @@ public:
   ~vtkMultiProcessStream();
   vtkMultiProcessStream& operator=(const vtkMultiProcessStream&);
 
-  //@{
+  ///@{
   /**
    * Add-to-stream operators. Adds to the end of the stream.
    */
@@ -60,9 +49,9 @@ public:
   // a char* to a bool instead of a std::string.
   vtkMultiProcessStream& operator<<(const char* value);
   vtkMultiProcessStream& operator<<(const vtkMultiProcessStream&);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Remove-from-stream operators. Removes from the head of the stream.
    */
@@ -77,9 +66,9 @@ public:
   vtkMultiProcessStream& operator>>(vtkTypeUInt64& value);
   vtkMultiProcessStream& operator>>(std::string& value);
   vtkMultiProcessStream& operator>>(vtkMultiProcessStream&);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add-array-to-stream methods. Adds to the end of the stream
    */
@@ -91,9 +80,9 @@ public:
   void Push(unsigned char array[], unsigned int size);
   void Push(vtkTypeInt64 array[], unsigned int size);
   void Push(vtkTypeUInt64 array[], unsigned int size);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Remove-array-to-stream methods. Removes from the head of the stream.
    * Note: If the input array is nullptr, the array will be allocated internally
@@ -109,7 +98,7 @@ public:
   void Pop(unsigned char*& array, unsigned int& size);
   void Pop(vtkTypeInt64*& array, unsigned int& size);
   void Pop(vtkTypeUInt64*& array, unsigned int& size);
-  //@}
+  ///@}
 
   /**
    * Clears everything in the stream.
@@ -132,7 +121,7 @@ public:
    */
   bool Empty();
 
-  //@{
+  ///@{
   /**
    * Serialization methods used to save/restore the stream to/from raw data.
    * Note: The 1st byte of the raw data buffer consists of the endian type.
@@ -142,7 +131,7 @@ public:
   void SetRawData(const std::vector<unsigned char>& data);
   void SetRawData(const unsigned char*, unsigned int size);
   std::vector<unsigned char> GetRawData() const;
-  //@}
+  ///@}
 
 private:
   class vtkInternals;
@@ -155,6 +144,7 @@ private:
   };
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 
 // VTK-HeaderTest-Exclude: vtkMultiProcessStream.h

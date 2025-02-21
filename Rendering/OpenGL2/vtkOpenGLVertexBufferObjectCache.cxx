@@ -1,30 +1,19 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLVertexBufferObjectCache.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLVertexBufferObjectCache.h"
 
 #include "vtkDataArray.h"
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLVertexBufferObject.h"
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLVertexBufferObjectCache);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLVertexBufferObjectCache::vtkOpenGLVertexBufferObjectCache() = default;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLVertexBufferObjectCache::~vtkOpenGLVertexBufferObjectCache() = default;
 
 void vtkOpenGLVertexBufferObjectCache::RemoveVBO(vtkOpenGLVertexBufferObject* vbo)
@@ -44,7 +33,7 @@ void vtkOpenGLVertexBufferObjectCache::RemoveVBO(vtkOpenGLVertexBufferObject* vb
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLVertexBufferObject* vtkOpenGLVertexBufferObjectCache::GetVBO(
   vtkDataArray* array, int destType)
 {
@@ -77,8 +66,9 @@ vtkOpenGLVertexBufferObject* vtkOpenGLVertexBufferObjectCache::GetVBO(
   return vbo;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLVertexBufferObjectCache::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

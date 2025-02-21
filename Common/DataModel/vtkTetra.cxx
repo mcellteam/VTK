@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkTetra.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkTetra.h"
 
 #include "vtkCellArray.h"
@@ -26,13 +15,13 @@
 #include "vtkUnstructuredGrid.h"
 
 #include <cassert>
-#ifndef VTK_LEGACY_REMOVE // needed temporarily in deprecated methods
+#include <numeric> //std::iota
 #include <vector>
-#endif
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTetra);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the tetra with four points.
 vtkTetra::vtkTetra()
 {
@@ -47,14 +36,14 @@ vtkTetra::vtkTetra()
   this->Triangle = vtkTriangle::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTetra::~vtkTetra()
 {
   this->Triangle->Delete();
   this->Line->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTetra::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& minDist2, double weights[])
 {
@@ -65,8 +54,14 @@ int vtkTetra::EvaluatePosition(const double x[3], double closestPoint[3], int& s
   subId = 0;
   pcoords[0] = pcoords[1] = pcoords[2] = 0.0;
 
-  vtkDoubleArray* pointArray = static_cast<vtkDoubleArray*>(this->Points->GetData());
-  const double* pts = pointArray->GetPointer(0);
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
   const double* pt1 = pts + 3;
   const double* pt2 = pts + 6;
   const double* pt3 = pts + 9;
@@ -133,20 +128,20 @@ int vtkTetra::EvaluatePosition(const double x[3], double closestPoint[3], int& s
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTetra::GetCentroid(double centroid[3]) const
 {
   return vtkTetra::ComputeCentroid(this->Points, nullptr, centroid);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTetra::ComputeCentroid(vtkPoints* points, const vtkIdType* pointIds, double centroid[3])
 {
   double p[3];
   centroid[0] = centroid[1] = centroid[2] = 0.0;
   if (!pointIds)
   {
-    for (vtkIdType i = 0; i < vtkTetra::MaximumFaceSize; ++i)
+    for (vtkIdType i = 0; i < vtkTetra::NumberOfPoints; ++i)
     {
       points->GetPoint(i, p);
       centroid[0] += p[0];
@@ -156,7 +151,7 @@ bool vtkTetra::ComputeCentroid(vtkPoints* points, const vtkIdType* pointIds, dou
   }
   else
   {
-    for (vtkIdType i = 0; i < vtkTetra::MaximumFaceSize; ++i)
+    for (vtkIdType i = 0; i < vtkTetra::NumberOfPoints; ++i)
     {
       points->GetPoint(pointIds[i], p);
       centroid[0] += p[0];
@@ -164,13 +159,13 @@ bool vtkTetra::ComputeCentroid(vtkPoints* points, const vtkIdType* pointIds, dou
       centroid[2] += p[2];
     }
   }
-  centroid[0] /= vtkTetra::MaximumFaceSize;
-  centroid[1] /= vtkTetra::MaximumFaceSize;
-  centroid[2] /= vtkTetra::MaximumFaceSize;
+  centroid[0] /= vtkTetra::NumberOfPoints;
+  centroid[1] /= vtkTetra::NumberOfPoints;
+  centroid[2] /= vtkTetra::NumberOfPoints;
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTetra::IsInsideOut()
 {
   double v[3], a[3], b[3], c[3], d[3], e[3];
@@ -191,7 +186,7 @@ bool vtkTetra::IsInsideOut()
   return vtkMath::Dot(a, v) < 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTetra::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
@@ -199,8 +194,13 @@ void vtkTetra::EvaluateLocation(
   int i;
 
   // Efficient point access
-  vtkDoubleArray* pointArray = static_cast<vtkDoubleArray*>(this->Points->GetData());
-  const double* pts = pointArray->GetPointer(0);
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
   const double* pt1 = pts + 3;
   const double* pt2 = pts + 6;
   const double* pt3 = pts + 9;
@@ -219,7 +219,7 @@ void vtkTetra::EvaluateLocation(
   weights[3] = pcoords[2];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Returns the set of points that are on the boundary of the tetrahedron that
 // are closest parametrically to the point specified. This may include faces,
 // edges, or vertices.
@@ -276,7 +276,7 @@ int vtkTetra::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], vtkId
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Marching tetrahedron
 //
 namespace
@@ -290,7 +290,7 @@ namespace
 //   |/___\|
 //   0     1
 //
-static constexpr vtkIdType edges[vtkTetra::NumberOfEdges][2] = {
+constexpr vtkIdType edges[vtkTetra::NumberOfEdges][2] = {
   { 0, 1 }, // 0
   { 1, 2 }, // 1
   { 2, 0 }, // 2
@@ -298,13 +298,13 @@ static constexpr vtkIdType edges[vtkTetra::NumberOfEdges][2] = {
   { 1, 3 }, // 4
   { 2, 3 }, // 5
 };
-static constexpr vtkIdType faces[vtkTetra::NumberOfFaces][vtkTetra::MaximumFaceSize + 1] = {
+constexpr vtkIdType faces[vtkTetra::NumberOfFaces][vtkTetra::MaximumFaceSize + 1] = {
   { 0, 1, 3, -1 }, // 0
   { 1, 2, 3, -1 }, // 1
   { 2, 0, 3, -1 }, // 2
   { 0, 2, 1, -1 }, // 3
 };
-static constexpr vtkIdType edgeToAdjacentFaces[vtkTetra::NumberOfEdges][2] = {
+constexpr vtkIdType edgeToAdjacentFaces[vtkTetra::NumberOfEdges][2] = {
   { 0, 3 }, // 0
   { 1, 3 }, // 1
   { 2, 3 }, // 2
@@ -312,42 +312,38 @@ static constexpr vtkIdType edgeToAdjacentFaces[vtkTetra::NumberOfEdges][2] = {
   { 0, 1 }, // 4
   { 1, 2 }, // 5
 };
-static constexpr vtkIdType
-  faceToAdjacentFaces[vtkTetra::NumberOfFaces][vtkTetra::MaximumFaceSize] = {
-    { 3, 1, 2 }, // 0
-    { 3, 2, 0 }, // 1
-    { 3, 0, 1 }, // 2
-    { 2, 1, 0 }, // 3
-  };
-static constexpr vtkIdType
-  pointToIncidentEdges[vtkTetra::NumberOfPoints][vtkTetra::MaximumValence] = {
-    { 0, 3, 2 }, // 0
-    { 0, 1, 4 }, // 1
-    { 1, 2, 5 }, // 2
-    { 3, 4, 5 }, // 3
-  };
-static constexpr vtkIdType
-  pointToIncidentFaces[vtkTetra::NumberOfPoints][vtkTetra::MaximumValence] = {
-    { 0, 2, 3 }, // 0
-    { 3, 1, 0 }, // 1
-    { 0, 2, 1 }, // 2
-    { 0, 1, 2 }, // 3
-  };
-static constexpr vtkIdType
-  pointToOneRingPoints[vtkTetra::NumberOfPoints][vtkTetra::MaximumValence] = {
-    { 1, 3, 2 }, // 0
-    { 0, 2, 3 }, // 1
-    { 1, 0, 3 }, // 2
-    { 0, 1, 2 }, // 3
-  };
+constexpr vtkIdType faceToAdjacentFaces[vtkTetra::NumberOfFaces][vtkTetra::MaximumFaceSize] = {
+  { 3, 1, 2 }, // 0
+  { 3, 2, 0 }, // 1
+  { 3, 0, 1 }, // 2
+  { 2, 1, 0 }, // 3
+};
+constexpr vtkIdType pointToIncidentEdges[vtkTetra::NumberOfPoints][vtkTetra::MaximumValence] = {
+  { 0, 3, 2 }, // 0
+  { 0, 1, 4 }, // 1
+  { 1, 2, 5 }, // 2
+  { 3, 4, 5 }, // 3
+};
+constexpr vtkIdType pointToIncidentFaces[vtkTetra::NumberOfPoints][vtkTetra::MaximumValence] = {
+  { 0, 2, 3 }, // 0
+  { 3, 1, 0 }, // 1
+  { 3, 2, 1 }, // 2
+  { 0, 1, 2 }, // 3
+};
+constexpr vtkIdType pointToOneRingPoints[vtkTetra::NumberOfPoints][vtkTetra::MaximumValence] = {
+  { 1, 3, 2 }, // 0
+  { 0, 2, 3 }, // 1
+  { 1, 0, 3 }, // 2
+  { 0, 1, 2 }, // 3
+};
 
-typedef int EDGE_LIST;
-typedef struct
+struct TRIANGLE_CASES_t
 {
-  EDGE_LIST edges[7];
-} TRIANGLE_CASES;
+  int edges[7];
+};
+using TRIANGLE_CASES = struct TRIANGLE_CASES_t;
 
-static TRIANGLE_CASES triCases[] = {
+TRIANGLE_CASES triCases[] = {
   { { -1, -1, -1, -1, -1, -1, -1 } },
   { { 3, 0, 2, -1, -1, -1, -1 } },
   { { 1, 0, 4, -1, -1, -1, -1 } },
@@ -367,14 +363,14 @@ static TRIANGLE_CASES triCases[] = {
 };
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTetra::Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
   vtkCellArray* verts, vtkCellArray* lines, vtkCellArray* polys, vtkPointData* inPd,
   vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId, vtkCellData* outCd)
 {
   static const int CASE_MASK[4] = { 1, 2, 4, 8 };
   TRIANGLE_CASES* triCase;
-  EDGE_LIST* edge;
+  int* edge;
   int i, j, index, v1, v2, newCellId;
   const vtkIdType* vert;
   vtkIdType pts[3];
@@ -446,49 +442,49 @@ void vtkTetra::Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPo
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTetra::GetEdgeToAdjacentFacesArray(vtkIdType edgeId)
 {
   assert(edgeId < vtkTetra::NumberOfEdges && "edgeId too large");
   return edgeToAdjacentFaces[edgeId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTetra::GetFaceToAdjacentFacesArray(vtkIdType faceId)
 {
   assert(faceId < vtkTetra::NumberOfFaces && "faceId too large");
   return faceToAdjacentFaces[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTetra::GetPointToIncidentEdgesArray(vtkIdType pointId)
 {
   assert(pointId < vtkTetra::NumberOfPoints && "pointId too large");
   return pointToIncidentEdges[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTetra::GetPointToIncidentFacesArray(vtkIdType pointId)
 {
   assert(pointId < vtkTetra::NumberOfPoints && "pointId too large");
   return pointToIncidentFaces[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTetra::GetPointToOneRingPointsArray(vtkIdType pointId)
 {
   assert(pointId < vtkTetra::NumberOfPoints && "pointId too large");
   return pointToOneRingPoints[pointId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTetra::GetEdgeArray(vtkIdType edgeId)
 {
   assert(edgeId < vtkTetra::NumberOfEdges && "edgeId too large");
   return edges[edgeId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the case table for table-based isocontouring (aka marching cubes
 // style implementations). A linear 3D cell with N vertices will have 2**N
 // cases. The cases list three edges in order to produce one output triangle.
@@ -497,7 +493,7 @@ int* vtkTetra::GetTriangleCases(int caseId)
   return triCases[caseId].edges;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkTetra::GetEdge(int edgeId)
 {
   const vtkIdType* verts;
@@ -515,34 +511,27 @@ vtkCell* vtkTetra::GetEdge(int edgeId)
   return this->Line;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkTetra::GetFaceArray(vtkIdType faceId)
 {
   assert(faceId < vtkTetra::NumberOfFaces && "faceId too large");
   return faces[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkTetra::GetFace(int faceId)
 {
-  const vtkIdType* verts;
-
-  verts = faces[faceId];
-
-  // load point id's
-  this->Triangle->PointIds->SetId(0, this->PointIds->GetId(verts[0]));
-  this->Triangle->PointIds->SetId(1, this->PointIds->GetId(verts[1]));
-  this->Triangle->PointIds->SetId(2, this->PointIds->GetId(verts[2]));
-
-  // load coordinates
-  this->Triangle->Points->SetPoint(0, this->Points->GetPoint(verts[0]));
-  this->Triangle->Points->SetPoint(1, this->Points->GetPoint(verts[1]));
-  this->Triangle->Points->SetPoint(2, this->Points->GetPoint(verts[2]));
+  const vtkIdType* verts = ::faces[faceId];
+  for (int i = 0; i < 3; ++i)
+  {
+    this->Triangle->PointIds->SetId(i, this->PointIds->GetId(verts[i]));
+    this->Triangle->Points->SetPoint(i, this->Points->GetPoint(verts[i]));
+  }
 
   return this->Triangle;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Intersect triangle faces against line.
 //
@@ -550,23 +539,15 @@ int vtkTetra::IntersectWithLine(const double p1[3], const double p2[3], double t
   double x[3], double pcoords[3], int& subId)
 {
   int intersection = 0;
-  double pt1[3], pt2[3], pt3[3];
-  double tTemp;
-  double pc[3], xTemp[3];
-  int faceNum;
 
   t = VTK_DOUBLE_MAX;
-  for (faceNum = 0; faceNum < 4; faceNum++)
+  for (int faceNum = 0; faceNum < 4; faceNum++)
   {
-    this->Points->GetPoint(faces[faceNum][0], pt1);
-    this->Points->GetPoint(faces[faceNum][1], pt2);
-    this->Points->GetPoint(faces[faceNum][2], pt3);
+    vtkCell* face = this->GetFace(faceNum);
 
-    this->Triangle->Points->SetPoint(0, pt1);
-    this->Triangle->Points->SetPoint(1, pt2);
-    this->Triangle->Points->SetPoint(2, pt3);
-
-    if (this->Triangle->IntersectWithLine(p1, p2, tol, tTemp, xTemp, pc, subId))
+    double pcTemp[3], xTemp[3];
+    double tTemp = VTK_DOUBLE_MAX;
+    if (face->IntersectWithLine(p1, p2, tol, tTemp, xTemp, pcTemp, subId))
     {
       intersection = 1;
       if (tTemp < t)
@@ -578,27 +559,27 @@ int vtkTetra::IntersectWithLine(const double p1[3], const double p2[3], double t
         switch (faceNum)
         {
           case 0:
-            pcoords[0] = pc[0];
-            pcoords[1] = pc[1];
-            pcoords[2] = 0.0;
+            pcoords[0] = pcTemp[0];
+            pcoords[1] = 0.0;
+            pcoords[2] = pcTemp[1];
             break;
 
           case 1:
-            pcoords[0] = 0.0;
-            pcoords[1] = pc[1];
-            pcoords[2] = 0.0;
+            pcoords[0] = 1.0 - pcTemp[0] - pcTemp[1];
+            pcoords[1] = pcTemp[0];
+            pcoords[2] = pcTemp[1];
             break;
 
           case 2:
-            pcoords[0] = pc[0];
-            pcoords[1] = 0.0;
-            pcoords[2] = 0.0;
+            pcoords[0] = 0.0;
+            pcoords[1] = 1 - pcTemp[0] - pcTemp[1];
+            pcoords[2] = pcTemp[1];
             break;
 
           case 3:
-            pcoords[0] = pc[0];
-            pcoords[1] = pc[1];
-            pcoords[2] = pc[2];
+            pcoords[0] = pcTemp[0];
+            pcoords[1] = pcTemp[1];
+            pcoords[2] = pcTemp[2];
             break;
         }
       }
@@ -607,22 +588,15 @@ int vtkTetra::IntersectWithLine(const double p1[3], const double p2[3], double t
   return intersection;
 }
 
-//----------------------------------------------------------------------------
-int vtkTetra::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkTetra::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  ptIds->Reset();
-  pts->Reset();
-
-  for (int i = 0; i < 4; i++)
-  {
-    ptIds->InsertId(i, this->PointIds->GetId(i));
-    pts->InsertPoint(i, this->Points->GetPoint(i));
-  }
-
+  ptIds->SetNumberOfIds(4);
+  std::iota(ptIds->begin(), ptIds->end(), 0);
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTetra::Derivatives(int vtkNotUsed(subId), const double vtkNotUsed(pcoords)[3],
   const double* values, int dim, double* derivs)
 {
@@ -655,7 +629,7 @@ void vtkTetra::Derivatives(int vtkNotUsed(subId), const double vtkNotUsed(pcoord
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the center of the tetrahedron,
 void vtkTetra::TetraCenter(double p1[3], double p2[3], double p3[3], double p4[3], double center[3])
 {
@@ -664,7 +638,7 @@ void vtkTetra::TetraCenter(double p1[3], double p2[3], double p3[3], double p4[3
   center[2] = (p1[2] + p2[2] + p3[2] + p4[2]) / 4.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkTetra::ComputeVolume(double p1[3], double p2[3], double p3[3], double p4[3])
 {
   return (vtkMath::Determinant3x3(p2[0] - p1[0], p3[0] - p1[0], p4[0] - p1[0], p2[1] - p1[1],
@@ -672,7 +646,7 @@ double vtkTetra::ComputeVolume(double p1[3], double p2[3], double p3[3], double 
     6.0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the circumcenter (center[3]) and radius squared (method
 // return value) of a tetrahedron defined by the four points x1, x2,
 // x3, and x4.
@@ -746,7 +720,7 @@ double vtkTetra::Circumsphere(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the incenter (center[3]) and radius (method return value) of
 // a tetrahedron defined by the four points p1, p2, p3, and p4.
 double vtkTetra::Insphere(double p1[3], double p2[3], double p3[3], double p4[3], double center[3])
@@ -814,7 +788,7 @@ double vtkTetra::Insphere(double p1[3], double p2[3], double p3[3], double p4[3]
   return (fabs(t * vtkMath::Dot(y, p)));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a 3D point x[3], determine the barycentric coordinates of the point.
 // Barycentric coordinates are a natural coordinate system for simplices that
 // express a position as a linear combination of the vertices. For a
@@ -875,7 +849,7 @@ int vtkTetra::BarycentricCoords(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Compute iso-parametric interpolation functions
 //
@@ -887,7 +861,7 @@ void vtkTetra::InterpolationFunctions(const double pcoords[3], double sf[4])
   sf[3] = pcoords[2];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTetra::InterpolationDerivs(const double pcoords[3], double derivs[12])
 {
   (void)pcoords;
@@ -910,7 +884,7 @@ void vtkTetra::InterpolationDerivs(const double pcoords[3], double derivs[12])
   derivs[11] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given parametric coordinates compute inverse Jacobian transformation
 // matrix. Returns 9 elements of 3x3 inverse Jacobian plus interpolation
 // function derivatives. Returns 0 if no inverse exists.
@@ -946,21 +920,17 @@ int vtkTetra::JacobianInverse(double** inverse, double derivs[12])
   // now find the inverse
   if (vtkMath::InvertMatrix(m, inverse, 3) == 0)
   {
-#define VTK_MAX_WARNS 3
-    static int numWarns = 0;
-    if (numWarns++ < VTK_MAX_WARNS)
-    {
-      vtkErrorMacro(<< "Jacobian inverse not found");
-      vtkErrorMacro(<< "Matrix:" << m[0][0] << " " << m[0][1] << " " << m[0][2] << m[1][0] << " "
-                    << m[1][1] << " " << m[1][2] << m[2][0] << " " << m[2][1] << " " << m[2][2]);
-      return 0;
-    }
+    vtkErrorMacro(<< "Jacobian inverse not found"
+                  << "Matrix:(" << m[0][0] << "," << m[0][1] << "," << m[0][2] << " " << m[1][0]
+                  << "," << m[1][1] << "," << m[1][2] << " " << m[2][0] << "," << m[2][1] << ","
+                  << m[2][2] << ")");
+    return 0;
   }
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkTetra::GetPointToOneRingPoints(vtkIdType pointId, const vtkIdType*& pts)
 {
   assert(pointId < vtkTetra::NumberOfPoints && "pointId too large");
@@ -968,7 +938,7 @@ vtkIdType vtkTetra::GetPointToOneRingPoints(vtkIdType pointId, const vtkIdType*&
   return vtkTetra::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkTetra::GetPointToIncidentFaces(vtkIdType pointId, const vtkIdType*& faceIds)
 {
   assert(pointId < vtkTetra::NumberOfPoints && "pointId too large");
@@ -976,7 +946,7 @@ vtkIdType vtkTetra::GetPointToIncidentFaces(vtkIdType pointId, const vtkIdType*&
   return vtkTetra::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkTetra::GetPointToIncidentEdges(vtkIdType pointId, const vtkIdType*& edgeIds)
 {
   assert(pointId < vtkTetra::NumberOfPoints && "pointId too large");
@@ -984,7 +954,7 @@ vtkIdType vtkTetra::GetPointToIncidentEdges(vtkIdType pointId, const vtkIdType*&
   return vtkTetra::MaximumValence;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkTetra::GetFaceToAdjacentFaces(vtkIdType faceId, const vtkIdType*& faceIds)
 {
   assert(faceId < vtkTetra::NumberOfFaces && "faceId too large");
@@ -992,41 +962,21 @@ vtkIdType vtkTetra::GetFaceToAdjacentFaces(vtkIdType faceId, const vtkIdType*& f
   return vtkTetra::MaximumFaceSize;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTetra::GetEdgeToAdjacentFaces(vtkIdType edgeId, const vtkIdType*& pts)
 {
   assert(edgeId < vtkTetra::NumberOfEdges && "edgeId too large");
   pts = edgeToAdjacentFaces[edgeId];
 }
 
-#ifndef VTK_LEGACY_REMOVE
-//----------------------------------------------------------------------------
-void vtkTetra::GetEdgePoints(int edgeId, int*& pts)
-{
-  VTK_LEGACY_REPLACED_BODY(vtkTetra::GetEdgePoints(int, int*&), "VTK 9.0",
-    vtkTetra::GetEdgePoints(vtkIdType, const vtkIdType*&));
-  static std::vector<int> tmp(std::begin(faces[edgeId]), std::end(faces[edgeId]));
-  pts = tmp.data();
-}
-
-//----------------------------------------------------------------------------
-void vtkTetra::GetFacePoints(int faceId, int*& pts)
-{
-  VTK_LEGACY_REPLACED_BODY(vtkTetra::GetFacePoints(int, int*&), "VTK 9.0",
-    vtkTetra::GetFacePoints(vtkIdType, const vtkIdType*&));
-  static std::vector<int> tmp(std::begin(faces[faceId]), std::end(faces[faceId]));
-  pts = tmp.data();
-}
-#endif
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTetra::GetEdgePoints(vtkIdType edgeId, const vtkIdType*& pts)
 {
   assert(edgeId < vtkTetra::NumberOfEdges && "edgeId too large");
   pts = this->GetEdgeArray(edgeId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkTetra::GetFacePoints(vtkIdType faceId, const vtkIdType*& pts)
 {
   assert(faceId < vtkTetra::NumberOfFaces && "faceId too large");
@@ -1034,7 +984,7 @@ vtkIdType vtkTetra::GetFacePoints(vtkIdType faceId, const vtkIdType*& pts)
   return vtkTetra::MaximumFaceSize;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The clip table produces either a single tetrahedron or a single wedge as
 // output.  The format of the case table is #pts, ptids. Points >= 100 are
 // existing vertices; otherwise the number is an edge number requiring that
@@ -1042,10 +992,11 @@ vtkIdType vtkTetra::GetFacePoints(vtkIdType faceId, const vtkIdType*& pts)
 
 // support tetra clipping
 typedef int TETRA_EDGE_LIST;
-typedef struct
+struct TETRA_CASES_t
 {
   TETRA_EDGE_LIST edges[7];
-} TETRA_CASES;
+};
+using TETRA_CASES = struct TETRA_CASES_t;
 
 static TETRA_CASES tetraCases[] = {
   { { 0, 0, 0, 0, 0, 0, 0 } },        // 0
@@ -1066,11 +1017,11 @@ static TETRA_CASES tetraCases[] = {
   { { 4, 100, 101, 102, 103, 0, 0 } } // 15
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip this tetra using scalar value provided. Like contouring, except that
 // it cuts the tetra to produce other 3D cells (note that this method will
 // produce a single tetrahedra or a single wedge). The table has been
-// carefully designed to insure that face neighbors--after clipping--are
+// carefully designed to ensure that face neighbors--after clipping--are
 // remain compatible.
 void vtkTetra::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
   vtkCellArray* tets, vtkPointData* inPD, vtkPointData* outPD, vtkCellData* inCD, vtkIdType cellId,
@@ -1194,7 +1145,7 @@ void vtkTetra::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPoint
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkTetraCellPCoords[12] = {
   0.0, 0.0, 0.0, //
   1.0, 0.0, 0.0, //
@@ -1207,7 +1158,7 @@ double* vtkTetra::GetParametricCoords()
   return vtkTetraCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkTetra::GetParametricDistance(const double pcoords[3])
 {
   int i;
@@ -1242,7 +1193,7 @@ double vtkTetra::GetParametricDistance(const double pcoords[3])
   return pDistMax;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTetra::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1252,3 +1203,4 @@ void vtkTetra::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Triangle:\n";
   this->Triangle->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMutableDirectedGraph.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkMutableDirectedGraph.h"
 
@@ -25,23 +9,24 @@
 #include "vtkGraphInternals.h"
 #include "vtkObjectFactory.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // class vtkMutableDirectedGraph
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMutableDirectedGraph);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMutableDirectedGraph::vtkMutableDirectedGraph()
 {
   this->GraphEdge = vtkGraphEdge::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMutableDirectedGraph::~vtkMutableDirectedGraph()
 {
   this->GraphEdge->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkMutableDirectedGraph::SetNumberOfVertices(vtkIdType numVerts)
 {
   vtkIdType retval = -1;
@@ -57,7 +42,7 @@ vtkIdType vtkMutableDirectedGraph::SetNumberOfVertices(vtkIdType numVerts)
   return retval;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkMutableDirectedGraph::AddVertex()
 {
   if (this->Internals->UsingPedigreeIds && this->GetDistributedGraphHelper() != nullptr)
@@ -68,7 +53,7 @@ vtkIdType vtkMutableDirectedGraph::AddVertex()
 
   return this->AddVertex(nullptr);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkMutableDirectedGraph::AddVertex(vtkVariantArray* propertyArr)
 {
   if (this->GetVertexData()->GetPedigreeIds() != nullptr)
@@ -81,7 +66,7 @@ vtkIdType vtkMutableDirectedGraph::AddVertex(vtkVariantArray* propertyArr)
   return vertex;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkMutableDirectedGraph::AddVertex(const vtkVariant& pedigreeId)
 {
   this->Internals->UsingPedigreeIds = true;
@@ -91,13 +76,13 @@ vtkIdType vtkMutableDirectedGraph::AddVertex(const vtkVariant& pedigreeId)
   return vertex;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEdgeType vtkMutableDirectedGraph::AddEdge(vtkIdType u, vtkIdType v)
 {
   return this->AddEdge(u, v, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEdgeType vtkMutableDirectedGraph::AddEdge(vtkIdType u, vtkIdType v, vtkVariantArray* propertyArr)
 {
   vtkEdgeType e;
@@ -105,7 +90,7 @@ vtkEdgeType vtkMutableDirectedGraph::AddEdge(vtkIdType u, vtkIdType v, vtkVarian
   return e;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEdgeType vtkMutableDirectedGraph::AddEdge(
   const vtkVariant& u, vtkIdType v, vtkVariantArray* propertyArr)
 {
@@ -116,7 +101,7 @@ vtkEdgeType vtkMutableDirectedGraph::AddEdge(
   return e;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEdgeType vtkMutableDirectedGraph::AddEdge(
   vtkIdType u, const vtkVariant& v, vtkVariantArray* propertyArr)
 {
@@ -127,7 +112,7 @@ vtkEdgeType vtkMutableDirectedGraph::AddEdge(
   return e;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEdgeType vtkMutableDirectedGraph::AddEdge(
   const vtkVariant& u, const vtkVariant& v, vtkVariantArray* propertyArr)
 {
@@ -138,7 +123,7 @@ vtkEdgeType vtkMutableDirectedGraph::AddEdge(
   return e;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::LazyAddVertex()
 {
   if (this->Internals->UsingPedigreeIds && this->GetDistributedGraphHelper() != nullptr)
@@ -149,7 +134,7 @@ void vtkMutableDirectedGraph::LazyAddVertex()
 
   this->LazyAddVertex(nullptr);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::LazyAddVertex(vtkVariantArray* propertyArr)
 {
   if (this->GetVertexData()->GetPedigreeIds() != nullptr)
@@ -160,7 +145,7 @@ void vtkMutableDirectedGraph::LazyAddVertex(vtkVariantArray* propertyArr)
   this->AddVertexInternal(propertyArr, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::LazyAddVertex(const vtkVariant& pedigreeId)
 {
   this->Internals->UsingPedigreeIds = true;
@@ -168,13 +153,13 @@ void vtkMutableDirectedGraph::LazyAddVertex(const vtkVariant& pedigreeId)
   this->AddVertexInternal(pedigreeId, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::LazyAddEdge(vtkIdType u, vtkIdType v, vtkVariantArray* propertyArr)
 {
   this->AddEdgeInternal(u, v, true, propertyArr, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::LazyAddEdge(
   const vtkVariant& u, vtkIdType v, vtkVariantArray* propertyArr)
 {
@@ -183,7 +168,7 @@ void vtkMutableDirectedGraph::LazyAddEdge(
   this->AddEdgeInternal(u, v, true, propertyArr, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::LazyAddEdge(
   vtkIdType u, const vtkVariant& v, vtkVariantArray* propertyArr)
 {
@@ -192,7 +177,7 @@ void vtkMutableDirectedGraph::LazyAddEdge(
   this->AddEdgeInternal(u, v, true, propertyArr, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::LazyAddEdge(
   const vtkVariant& u, const vtkVariant& v, vtkVariantArray* propertyArr)
 {
@@ -201,7 +186,7 @@ void vtkMutableDirectedGraph::LazyAddEdge(
   this->AddEdgeInternal(u, v, true, propertyArr, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGraphEdge* vtkMutableDirectedGraph::AddGraphEdge(vtkIdType u, vtkIdType v)
 {
   vtkEdgeType e = this->AddEdge(u, v);
@@ -211,7 +196,7 @@ vtkGraphEdge* vtkMutableDirectedGraph::AddGraphEdge(vtkIdType u, vtkIdType v)
   return this->GraphEdge;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkMutableDirectedGraph::AddChild(vtkIdType parent, vtkVariantArray* propertyArr /* = 0*/)
 {
   vtkIdType v = this->AddVertex();
@@ -219,32 +204,33 @@ vtkIdType vtkMutableDirectedGraph::AddChild(vtkIdType parent, vtkVariantArray* p
   return v;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::RemoveVertex(vtkIdType v)
 {
   this->RemoveVertexInternal(v, true);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::RemoveEdge(vtkIdType e)
 {
   this->RemoveEdgeInternal(e, true);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::RemoveVertices(vtkIdTypeArray* arr)
 {
   this->RemoveVerticesInternal(arr, true);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::RemoveEdges(vtkIdTypeArray* arr)
 {
   this->RemoveEdgesInternal(arr, true);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMutableDirectedGraph::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

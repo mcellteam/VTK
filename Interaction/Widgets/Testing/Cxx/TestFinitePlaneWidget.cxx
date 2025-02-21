@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestFinitePlaneWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 //
 // This example tests the vtkFinitePlaneWidget
 
@@ -26,7 +14,8 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 
-const char eventLog[] = "EnterEvent 273 40 0 0 0 0 0\n"
+const char eventLog[] = "# StreamVersion 1\n"
+                        "EnterEvent 273 40 0 0 0 0 0\n"
                         "MouseMoveEvent 273 40 0 0 0 0 0\n"
                         "RenderEvent 273 40 0 0 0 0 0\n"
                         "RenderEvent 273 40 0 0 0 0 0\n"
@@ -402,6 +391,7 @@ int TestFinitePlaneWidget(int, char*[])
   fpr2->SetTubing(false);
   fpr2->SetDrawPlane(false);
   fpr2->SetHandles(false);
+  fpr2->SetRectangularShape(false);
 
   double bounds2[6] = { 1.2, 2.2, 0, 1, 0, 1 };
   fpr2->PlaceWidget(bounds2);

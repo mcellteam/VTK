@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangeWedge.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLagrangeWedge
  * @brief   A 3D cell that represents an arbitrary order Lagrange wedge
@@ -40,6 +28,7 @@
 #include "vtkNew.h"          // For member variable.
 #include "vtkSmartPointer.h" // For member variable.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellData;
 class vtkDoubleArray;
 class vtkWedge;
@@ -66,10 +55,10 @@ public:
   void InterpolateFunctions(const double pcoords[3], double* weights) override;
   void InterpolateDerivs(const double pcoords[3], double* derivs) override;
 
-  virtual vtkHigherOrderQuadrilateral* getBdyQuad() override;
-  virtual vtkHigherOrderTriangle* getBdyTri() override;
-  virtual vtkHigherOrderCurve* getEdgeCell() override;
-  virtual vtkHigherOrderInterpolation* getInterp() override;
+  vtkHigherOrderQuadrilateral* GetBoundaryQuad() override;
+  vtkHigherOrderTriangle* GetBoundaryTri() override;
+  vtkHigherOrderCurve* GetEdgeCell() override;
+  vtkHigherOrderInterpolation* GetInterpolation() override;
 
 protected:
   vtkLagrangeWedge();
@@ -86,4 +75,5 @@ private:
   void operator=(const vtkLagrangeWedge&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkLagrangeWedge_h

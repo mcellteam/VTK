@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkResliceCursorActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkResliceCursorActor
  * @brief   Represent a reslice cursor
@@ -30,6 +18,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkProp3D.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkResliceCursor;
 class vtkResliceCursorPolyDataAlgorithm;
 class vtkPolyDataMapper;
@@ -41,21 +30,21 @@ class VTKINTERACTIONWIDGETS_EXPORT vtkResliceCursorActor : public vtkProp3D
 {
 
 public:
-  //@{
+  ///@{
   /**
    * Standard VTK methods
    */
   static vtkResliceCursorActor* New();
   vtkTypeMacro(vtkResliceCursorActor, vtkProp3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the cursor algorithm. The cursor must be set on the algorithm
    */
   vtkGetObjectMacro(CursorAlgorithm, vtkResliceCursorPolyDataAlgorithm);
-  //@}
+  ///@}
 
   /**
    * Support the standard render methods.
@@ -84,13 +73,13 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Get property of the internal actor.
    */
   vtkProperty* GetCenterlineProperty(int i);
   vtkProperty* GetThickSlabProperty(int i);
-  //@}
+  ///@}
 
   /**
    * Get the centerline actor along a particular axis
@@ -122,4 +111,5 @@ private:
   void operator=(const vtkResliceCursorActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

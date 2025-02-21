@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMarchingSquares.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMarchingSquares.h"
 
 #include "vtkArrayDispatch.h"
@@ -40,6 +28,7 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMarchingSquares);
 
 // Description:
@@ -101,7 +90,8 @@ vtkMTimeType vtkMarchingSquares::GetMTime()
   return mTime;
 }
 
-namespace {
+namespace
+{
 
 //
 // Contouring filter specialized for images
@@ -109,17 +99,9 @@ namespace {
 struct ContourImageWorker
 {
   template <typename ScalarArrayT>
-  void operator()(ScalarArrayT *inScalars,
-                  vtkDataArray *newScalars,
-                  int roi[6],
-                  int dir[3],
-                  int start[2],
-                  int end[2],
-                  int offset[3],
-                  double *values,
-                  vtkIdType numValues,
-                  vtkIncrementalPointLocator *p,
-                  vtkCellArray *lines)
+  void operator()(ScalarArrayT* inScalars, vtkDataArray* newScalars, int roi[6], int dir[3],
+    int start[2], int end[2], int offset[3], double* values, vtkIdType numValues,
+    vtkIncrementalPointLocator* p, vtkCellArray* lines, vtkMarchingSquares* self)
   {
     const auto scalars = vtk::DataArrayValueRange<1>(inScalars);
 
@@ -128,61 +110,64 @@ struct ContourImageWorker
     double t, x[3];
     double min, max;
     int contNum, jOffset, idx, ii, jj, index, *vert;
-    static const int CASE_MASK[4] = {1,2,8,4};
+    static const int CASE_MASK[4] = { 1, 2, 8, 4 };
     vtkMarchingSquaresLineCases *lineCase, *lineCases;
-    static int edges[4][2] = { {0,1}, {1,3}, {2,3}, {0,2} };
-    EDGE_LIST  *edge;
+    static int edges[4][2] = { { 0, 1 }, { 1, 3 }, { 2, 3 }, { 0, 2 } };
+    int* edge;
     double value, s[4];
+    bool abortExecute = false;
 
     lineCases = vtkMarchingSquaresLineCases::GetCases();
     //
     // Get min/max contour values
     //
-    if ( numValues < 1 )
+    if (numValues < 1)
     {
       return;
     }
-    for ( min=max=values[0], i=1; i < numValues; i++)
+    for (min = max = values[0], i = 1; i < numValues; i++)
     {
-      if ( values[i] < min )
+      if (values[i] < min)
       {
         min = values[i];
       }
-      if ( values[i] > max )
+      if (values[i] > max)
       {
         max = values[i];
       }
     }
 
-    //assign coordinate value to non-varying coordinate direction
-    x[dir[2]] = roi[dir[2]*2];
+    // assign coordinate value to non-varying coordinate direction
+    x[dir[2]] = roi[dir[2] * 2];
+
+    vtkIdType checkAbortInterval = std::min(numValues / 10 + 1, (vtkIdType)1000);
 
     // Traverse all pixel cells, generating line segments using marching squares.
-    for ( j=roi[start[1]]; j < roi[end[1]]; j++ )
+    for (j = roi[start[1]]; j < roi[end[1]] && !abortExecute; j++)
     {
 
       jOffset = j * offset[1];
       pts[0][dir[1]] = j;
-      yp = j+1;
+      yp = j + 1;
 
-      for ( i=roi[start[0]]; i < roi[end[0]]; i++)
+      for (i = roi[start[0]]; i < roi[end[0]] && !abortExecute; i++)
       {
-        //get scalar values
+        // get scalar values
         idx = i * offset[0] + jOffset + offset[2];
         s[0] = scalars[idx];
-        s[1] = scalars[idx+offset[0]];
+        s[1] = scalars[idx + offset[0]];
         s[2] = scalars[idx + offset[1]];
-        s[3] = scalars[idx+offset[0] + offset[1]];
+        s[3] = scalars[idx + offset[0] + offset[1]];
 
-        if ( (s[0] < min && s[1] < min && s[2] < min && s[3] < min) ||
-             (s[0] > max && s[1] > max && s[2] > max && s[3] > max) )
+        if ((s[0] < min && s[1] < min && s[2] < min && s[3] < min) ||
+          (s[0] > max && s[1] > max && s[2] > max && s[3] > max))
         {
           continue; // no contours possible
         }
 
-        //create pixel points
+        // create pixel points
         pts[0][dir[0]] = i;
-        xp = i+1;
+        xp = i + 1;
 
         pts[1][dir[0]] = xp;
         pts[1][dir[1]] = pts[0][dir[1]];
@@ -194,53 +179,58 @@ struct ContourImageWorker
         pts[3][dir[1]] = yp;
 
         // Loop over contours in this pixel
-        for (contNum=0; contNum < numValues; contNum++)
+        for (contNum = 0; contNum < numValues; contNum++)
         {
+          if (contNum % checkAbortInterval == 0 && self->CheckAbort())
+          {
+            abortExecute = true;
+            break;
+          }
           value = values[contNum];
 
           // Build the case table
-          for ( ii=0, index = 0; ii < 4; ii++)
+          for (ii = 0, index = 0; ii < 4; ii++)
           {
-            if ( s[ii] >= value )
+            if (s[ii] >= value)
             {
               index |= CASE_MASK[ii];
             }
           }
-          if ( index == 0 || index == 15 )
+          if (index == 0 || index == 15)
           {
-            continue; //no lines
+            continue; // no lines
           }
 
           lineCase = lineCases + index;
           edge = lineCase->edges;
 
-          for ( ; edge[0] > -1; edge += 2 )
+          for (; edge[0] > -1; edge += 2)
           {
-            for (ii=0; ii<2; ii++) //insert line
+            for (ii = 0; ii < 2; ii++) // insert line
             {
               vert = edges[edge[ii]];
               t = (value - s[vert[0]]) / (s[vert[1]] - s[vert[0]]);
               x1 = pts[vert[0]];
               x2 = pts[vert[1]];
-              for (jj=0; jj<2; jj++) //only need to interpolate two values
+              for (jj = 0; jj < 2; jj++) // only need to interpolate two values
               {
                 x[dir[jj]] = x1[dir[jj]] + t * (x2[dir[jj]] - x1[dir[jj]]);
               }
-              if ( p->InsertUniquePoint(x, ptIds[ii]) )
+              if (p->InsertUniquePoint(x, ptIds[ii]))
               {
-                newScalars->InsertComponent(ptIds[ii],0,value);
+                newScalars->InsertComponent(ptIds[ii], 0, value);
               }
             }
 
-            if ( ptIds[0] != ptIds[1] ) //check for degenerate line
+            if (ptIds[0] != ptIds[1]) // check for degenerate line
             {
-              lines->InsertNextCell(2,ptIds);
+              lines->InsertNextCell(2, ptIds);
             }
 
-          }//for each line
-        }//for all contours
-      }//for i
-    }//for j
+          } // for each line
+        }   // for all contours
+      }     // for i
+    }       // for j
   }
 };
 
@@ -257,16 +247,16 @@ int vtkMarchingSquares::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
   // get the input and output
-  vtkImageData *input = vtkImageData::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPolyData *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkImageData* input = vtkImageData::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPolyData* output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  vtkPointData *pd;
-  vtkPoints *newPts;
-  vtkCellArray *newLines;
-  vtkDataArray *inScalars;
-  vtkDataArray *newScalars = nullptr;
-  int i, dims[3], roi[6], dim, plane=0;
-  int *ext;
+  vtkPointData* pd;
+  vtkPoints* newPts;
+  vtkCellArray* newLines;
+  vtkDataArray* inScalars;
+  vtkDataArray* newScalars = nullptr;
+  int i, dims[3], roi[6], dim, plane = 0;
+  int* ext;
   int start[2], end[2], offset[3], dir[3], estimatedSize;
   vtkIdType numContours = this->ContourValues->GetNumberOfContours();
   double* values = this->ContourValues->GetValues();
@@ -302,9 +292,9 @@ int vtkMarchingSquares::RequestData(vtkInformation* vtkNotUsed(request),
     return 1;
   }
 
-//
-// Check dimensionality of data and get appropriate form
-//
+  //
+  // Check dimensionality of data and get appropriate form
+  //
   input->GetDimensions(dims);
   ext = input->GetExtent();
 
@@ -418,18 +408,18 @@ int vtkMarchingSquares::RequestData(vtkInformation* vtkNotUsed(request),
   {
     this->CreateDefaultLocator();
   }
-  this->Locator->InitPointInsertion (newPts, input->GetBounds());
+  this->Locator->InitPointInsertion(newPts, input->GetBounds());
 
   newScalars = inScalars->NewInstance();
   newScalars->Allocate(5000, 25000);
 
   ContourImageWorker worker;
   using Dispatcher = vtkArrayDispatch::Dispatch;
-  if (!Dispatcher::Execute(inScalars, worker, newScalars, roi, dir, start, end,
-                           offset, values, numContours, this->Locator, newLines))
+  if (!Dispatcher::Execute(inScalars, worker, newScalars, roi, dir, start, end, offset, values,
+        numContours, this->Locator, newLines, this))
   { // Fallback to slow path for unknown arrays:
-    worker(inScalars, newScalars, roi, dir, start, end, offset, values,
-           numContours, this->Locator, newLines);
+    worker(inScalars, newScalars, roi, dir, start, end, offset, values, numContours, this->Locator,
+      newLines, this);
   }
 
   vtkDebugMacro(<< "Created: " << newPts->GetNumberOfPoints() << " points, "
@@ -514,3 +504,4 @@ void vtkMarchingSquares::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Locator: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

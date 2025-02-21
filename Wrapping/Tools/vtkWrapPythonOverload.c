@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWrapPythonOverload.c
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /*
   When wrapping overloaded C++ methods, it is necessary to provide
   hints so that Python can choose which overload to call (see
@@ -55,6 +43,7 @@
     W VTK special type
     P Pointer to numeric type
     A Multi-dimensional array of numeric type
+    T std::vector
 
     | marks the end of required parameters, following parameters are optional
 
@@ -80,6 +69,7 @@
 #include "vtkWrapPythonMethod.h"
 #include "vtkWrapPythonTemplate.h"
 
+#include "vtkParseExtras.h"
 #include "vtkWrap.h"
 #include "vtkWrapText.h"
 
@@ -95,7 +85,7 @@
 static char vtkWrapPython_FormatChar(unsigned int argtype);
 
 /* create a string for checking arguments against available signatures */
-static char* vtkWrapPython_ArgCheckString(ClassInfo* data, FunctionInfo* currentFunction);
+static char* vtkWrapPython_ArgCheckString(const ClassInfo* data, FunctionInfo* currentFunction);
 
 /* -------------------------------------------------------------------- */
 /* Get the python format char for the give type, after retrieving the
@@ -132,12 +122,10 @@ static char vtkWrapPython_FormatChar(unsigned int argtype)
       break;
     case VTK_PARSE_SIZE_T:
     case VTK_PARSE_UNSIGNED_LONG_LONG:
-    case VTK_PARSE_UNSIGNED___INT64:
       typeChar = 'K';
       break;
     case VTK_PARSE_SSIZE_T:
     case VTK_PARSE_LONG_LONG:
-    case VTK_PARSE___INT64:
       typeChar = 'k';
       break;
     case VTK_PARSE_SIGNED_CHAR:
@@ -158,9 +146,6 @@ static char vtkWrapPython_FormatChar(unsigned int argtype)
     case VTK_PARSE_STRING:
       typeChar = 's';
       break;
-    case VTK_PARSE_UNICODE_STRING:
-      typeChar = 'u';
-      break;
   }
 
   return typeChar;
@@ -169,7 +154,7 @@ static char vtkWrapPython_FormatChar(unsigned int argtype)
 /* -------------------------------------------------------------------- */
 /* Create a string to describe the signature of a method. */
 
-static char* vtkWrapPython_ArgCheckString(ClassInfo* data, FunctionInfo* currentFunction)
+static char* vtkWrapPython_ArgCheckString(const ClassInfo* data, FunctionInfo* currentFunction)
 {
   static char result[2048]; /* max literal string length */
   char classname[1024];
@@ -222,7 +207,7 @@ static char* vtkWrapPython_ArgCheckString(ClassInfo* data, FunctionInfo* current
     if (vtkWrap_IsEnumMember(data, arg))
     {
       c = 'E';
-      sprintf(classname, "%.200s.%.200s", data->Name, arg->Class);
+      snprintf(classname, sizeof(classname), "%.200s.%.200s", data->Name, arg->Class);
     }
     else if (arg->IsEnum)
     {
@@ -238,6 +223,14 @@ static char* vtkWrapPython_ArgCheckString(ClassInfo* data, FunctionInfo* current
     {
       c = 'V';
       vtkWrapText_PythonName(arg->Class, classname);
+    }
+    else if (vtkWrap_IsVTKSmartPointer(arg))
+    {
+      char* templateArg = vtkWrap_TemplateArg(arg->Class);
+      argtype = VTK_PARSE_OBJECT_PTR;
+      c = 'V';
+      vtkWrapText_PythonName(templateArg, classname);
+      free(templateArg);
     }
     else if (vtkWrap_IsSpecialObject(arg))
     {
@@ -255,10 +248,6 @@ static char* vtkWrapPython_ArgCheckString(ClassInfo* data, FunctionInfo* current
     else if (vtkWrap_IsString(arg))
     {
       c = 's';
-      if ((argtype & VTK_PARSE_BASE_TYPE) == VTK_PARSE_UNICODE_STRING)
-      {
-        c = 'u';
-      }
     }
     else if (vtkWrap_IsCharPointer(arg))
     {
@@ -293,6 +282,37 @@ static char* vtkWrapPython_ArgCheckString(ClassInfo* data, FunctionInfo* current
           result[endPos++] = ']';
         }
       }
+    }
+    else if (vtkWrap_IsStdVector(arg))
+    {
+      /* tclass, ttype will hold the value type of the vector */
+      const char* tclass;
+      unsigned int ttype;
+      /* first, decompose template into template name + args */
+      const char* tname;                      /* for template name, "std::vector" */
+      size_t n;                               /* for length of tname string */
+      const char** targs;                     /* for template args */
+      const char* defaults[2] = { NULL, "" }; /* NULL means "not optional" */
+      const size_t m = 16;                    /* length of "vtkSmartPointer<" */
+      vtkParse_DecomposeTemplatedType(arg->Class, &tname, 2, &targs, defaults);
+      vtkParse_BasicTypeFromString(targs[0], &ttype, &tclass, &n);
+      c = 'T';
+      result[endPos++] = ' ';
+      if (ttype == VTK_PARSE_OBJECT && strncmp(tclass, "vtkSmartPointer<", m) == 0)
+      {
+        /* The '*' indicates a pointer (in this case, a vtkSmartPointer) */
+        result[endPos++] = '*';
+        /* get the VTK object type "T" from "vtkSmartPointer<T>" */
+        vtkParse_BasicTypeFromString(&tclass[m], &ttype, &tclass, &n);
+        memcpy(&result[endPos], tclass, n);
+        endPos += n;
+      }
+      else
+      {
+        /* for vectors of anything that isn't a vtkSmartPointer */
+        result[endPos++] = vtkWrapPython_FormatChar(ttype);
+      }
+      vtkParse_FreeTemplateDecomposition(tname, 2, targs);
     }
 
     /* add the format char to the string */
@@ -334,8 +354,8 @@ int* vtkWrapPython_ArgCountToOverloadMap(FunctionInfo** wrappedFunctions,
   static int overloadMap[512];
   int totalArgs, requiredArgs;
   int occ, occCounter;
-  FunctionInfo* theOccurrence;
-  FunctionInfo* theFunc;
+  const FunctionInfo* theOccurrence;
+  const FunctionInfo* theFunc;
   int mixed_static, any_static;
   int i;
 
@@ -413,24 +433,19 @@ int* vtkWrapPython_ArgCountToOverloadMap(FunctionInfo** wrappedFunctions,
 /* output the method table for all overloads of a particular method,
  * this is also used to write out all constructors for the class */
 
-void vtkWrapPython_OverloadMethodDef(FILE* fp, const char* classname, ClassInfo* data,
-  int* overloadMap, FunctionInfo** wrappedFunctions, int numberOfWrappedFunctions, int fnum,
-  int numberOfOccurrences, int all_legacy)
+void vtkWrapPython_OverloadMethodDef(FILE* fp, const char* classname, const ClassInfo* data,
+  const int* overloadMap, FunctionInfo** wrappedFunctions, int numberOfWrappedFunctions, int fnum,
+  int numberOfOccurrences)
 {
   char occSuffix[16];
   int occ, occCounter;
   FunctionInfo* theOccurrence;
-  FunctionInfo* theFunc;
+  const FunctionInfo* theFunc;
   int totalArgs, requiredArgs;
   int i;
   int putInTable;
 
   theFunc = wrappedFunctions[fnum];
-
-  if (all_legacy)
-  {
-    fprintf(fp, "#if !defined(VTK_LEGACY_REMOVE)\n");
-  }
 
   fprintf(fp, "static PyMethodDef Py%s_%s_Methods[] = {\n", classname, theFunc->Name);
 
@@ -472,51 +487,36 @@ void vtkWrapPython_OverloadMethodDef(FILE* fp, const char* classname, ClassInfo*
       continue;
     }
 
-    if (theOccurrence->IsLegacy && !all_legacy)
-    {
-      fprintf(fp, "#if !defined(VTK_LEGACY_REMOVE)\n");
-    }
-
     /* method suffix to distinguish between signatures */
     occSuffix[0] = '\0';
     if (numberOfOccurrences > 1)
     {
-      sprintf(occSuffix, "_s%d", occCounter);
+      snprintf(occSuffix, sizeof(occSuffix), "_s%d", occCounter);
     }
 
     fprintf(fp,
-      "  {nullptr, Py%s_%s%s, METH_VARARGS%s,\n"
+      "  {\"%s\", Py%s_%s%s, METH_VARARGS%s,\n"
       "   \"%s\"},\n",
-      classname, theOccurrence->Name, occSuffix, theOccurrence->IsStatic ? " | METH_STATIC" : "",
+      theOccurrence->Name, classname, theOccurrence->Name, occSuffix,
+      theOccurrence->IsStatic ? " | METH_STATIC" : "",
       vtkWrapPython_ArgCheckString(data, theOccurrence));
-
-    if (theOccurrence->IsLegacy && !all_legacy)
-    {
-      fprintf(fp, "#endif\n");
-    }
   }
 
   fprintf(fp,
     "  {nullptr, nullptr, 0, nullptr}\n"
-    "};\n");
-
-  if (all_legacy)
-  {
-    fprintf(fp, "#endif\n");
-  }
-
-  fprintf(fp, "\n");
+    "};\n"
+    "\n");
 }
 
 /* -------------------------------------------------------------------- */
 /* make a method that will choose which overload to call */
 
-void vtkWrapPython_OverloadMasterMethod(FILE* fp, const char* classname, int* overloadMap,
+void vtkWrapPython_OverloadMasterMethod(FILE* fp, const char* classname, const int* overloadMap,
   int maxArgs, FunctionInfo** wrappedFunctions, int numberOfWrappedFunctions, int fnum,
-  int is_vtkobject, int all_legacy)
+  int is_vtkobject)
 {
-  FunctionInfo* currentFunction;
-  FunctionInfo* theOccurrence;
+  const FunctionInfo* currentFunction;
+  const FunctionInfo* theOccurrence;
   int overlap = 0;
   int occ, occCounter;
   int i;
@@ -542,11 +542,6 @@ void vtkWrapPython_OverloadMasterMethod(FILE* fp, const char* classname, int* ov
     {
       overlap = 1;
     }
-  }
-
-  if (all_legacy)
-  {
-    fprintf(fp, "#if !defined(VTK_LEGACY_REMOVE)\n");
   }
 
   fprintf(fp,
@@ -585,10 +580,6 @@ void vtkWrapPython_OverloadMasterMethod(FILE* fp, const char* classname, int* ov
       {
         if (overloadMap[i] == occCounter)
         {
-          if (!foundOne && theOccurrence->IsLegacy && !all_legacy)
-          {
-            fprintf(fp, "#if !defined(VTK_LEGACY_REMOVE)\n");
-          }
           fprintf(fp, "    case %d:\n", i);
           foundOne = 1;
         }
@@ -597,10 +588,6 @@ void vtkWrapPython_OverloadMasterMethod(FILE* fp, const char* classname, int* ov
       {
         fprintf(fp, "      return Py%s_%s_s%d(self, args);\n", classname, currentFunction->Name,
           occCounter);
-        if (theOccurrence->IsLegacy && !all_legacy)
-        {
-          fprintf(fp, "#endif\n");
-        }
       }
     }
   }
@@ -627,11 +614,4 @@ void vtkWrapPython_OverloadMasterMethod(FILE* fp, const char* classname, int* ov
     "  return nullptr;\n"
     "}\n"
     "\n");
-
-  if (all_legacy)
-  {
-    fprintf(fp, "#endif\n");
-  }
-
-  fprintf(fp, "\n");
 }

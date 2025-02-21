@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAbstractElectronicData.h"
 #include "vtkDataSetCollection.h"
@@ -20,7 +9,6 @@
 #include "vtkOpenQubeElectronicData.h"
 #include "vtkOpenQubeMoleculeSource.h"
 #include "vtkTestUtilities.h"
-#include "vtkWeakPointer.h"
 
 #include <openqube/basissetloader.h>
 
@@ -32,8 +20,8 @@ int TestOpenQubeElectronicData(int argc, char* argv[])
   oq->SetFileName(fname);
   oq->Update();
 
-  vtkWeakPointer<vtkOpenQubeElectronicData> oqed;
-  oqed = vtkOpenQubeElectronicData::SafeDownCast(oq->GetOutput()->GetElectronicData());
+  vtkOpenQubeElectronicData* oqed =
+    vtkOpenQubeElectronicData::SafeDownCast(oq->GetOutput()->GetElectronicData());
 
   if (!oqed)
   {

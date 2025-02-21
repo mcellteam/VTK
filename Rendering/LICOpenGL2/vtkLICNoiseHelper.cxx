@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLICNoiseHelper.h"
 
 #include "vtkBase64Utilities.h"
@@ -20,6 +9,7 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -42,7 +32,7 @@ int ilog2(unsigned int n)
 
 } // end anonymous namespace
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLICRandomNoise2D::GetValidDimensionAndGrainSize(int type, int& sideLen, int& grainSize)
 {
   // perlin noise both side len and grain size need to be powers of 2
@@ -67,7 +57,7 @@ void vtkLICRandomNoise2D::GetValidDimensionAndGrainSize(int type, int& sideLen, 
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLICRandomNoise2D::ShouldGenerateValue(double prob)
 {
   if (this->ProbGen.GetRandomNumber() > (1.0 - prob))
@@ -77,7 +67,7 @@ int vtkLICRandomNoise2D::ShouldGenerateValue(double prob)
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float* vtkLICRandomNoise2D::Generate(int type, int& sideLen, int& grainSize, float minNoiseVal,
   float maxNoiseVal, int nLevels, double impulseProb, float impulseBgNoiseVal, int seed)
 {
@@ -100,7 +90,7 @@ float* vtkLICRandomNoise2D::Generate(int type, int& sideLen, int& grainSize, flo
   return nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float* vtkLICRandomNoise2D::GenerateUniform(int sideLen, int grainSize, float minNoiseVal,
   float maxNoiseVal, int nLevels, double impulseProb, float impulseBgNoiseVal, int seed)
 {
@@ -165,7 +155,7 @@ float* vtkLICRandomNoise2D::GenerateUniform(int sideLen, int grainSize, float mi
   return noise;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float* vtkLICRandomNoise2D::GenerateGaussian(int sideLen, int grainSize, float minNoiseVal,
   float maxNoiseVal, int nLevels, double impulseProb, float impulseBgNoiseVal, int seed)
 {
@@ -240,9 +230,9 @@ float* vtkLICRandomNoise2D::GenerateGaussian(int sideLen, int grainSize, float m
     // restrict
     int l = static_cast<int>(val * nLevels);
     l = l > maxLevel ? maxLevel : l;
-    rvals[i] = rvals[i] < minVal
-      ? impulseBgNoiseVal
-      : nLevels == 1 ? maxNoiseVal : minNoiseVal + (l * delta) * noiseRange;
+    rvals[i] = rvals[i] < minVal ? impulseBgNoiseVal
+      : nLevels == 1             ? maxNoiseVal
+                                 : minNoiseVal + (l * delta) * noiseRange;
   }
 
   // map single pixel random values onto a patch of values of
@@ -270,7 +260,7 @@ float* vtkLICRandomNoise2D::GenerateGaussian(int sideLen, int grainSize, float m
   return noise;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float* vtkLICRandomNoise2D::GeneratePerlin(int sideLen, int grainSize, float minNoiseVal,
   float maxNoiseVal, int nLevels, double impulseProb, float impulseBgNoiseVal, int seed)
 {
@@ -401,3 +391,4 @@ vtkImageData* vtkLICRandomNoise2D::GetNoiseResource()
   reader->Delete();
   return data;
 }
+VTK_ABI_NAMESPACE_END

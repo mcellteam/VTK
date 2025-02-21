@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostBreadthFirstSearch.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkBoostBreadthFirstSearch
  * @brief   Boost breadth_first_search on a vtkGraph
@@ -40,6 +24,7 @@
 
 #include "vtkGraphAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSelection;
 
 class VTKINFOVISBOOSTGRAPHALGORITHMS_EXPORT vtkBoostBreadthFirstSearch : public vtkGraphAlgorithm
@@ -49,7 +34,7 @@ public:
   vtkTypeMacro(vtkBoostBreadthFirstSearch, vtkGraphAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Convenience methods for setting the origin selection input.
    */
@@ -58,7 +43,7 @@ public:
   {
     this->SetInputConnection(1, algOutput);
   }
-  //@}
+  ///@}
 
   /**
    * Set the index (into the vertex array) of the
@@ -84,15 +69,15 @@ public:
    */
   void SetOriginVertexString(char* arrayName, char* value);
 
-  //@{
+  ///@{
   /**
    * Set the output array name. If no output array name is
    * set then the name 'BFS' is used.
    */
   vtkSetStringMacro(OutputArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Use the vtkSelection from input port 1 as the origin vertex.
    * The selection should be a IDS selection with field type POINTS.
@@ -102,9 +87,9 @@ public:
   vtkSetMacro(OriginFromSelection, bool);
   vtkGetMacro(OriginFromSelection, bool);
   vtkBooleanMacro(OriginFromSelection, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Create an output selection containing the ID of a vertex based
    * on the output selection type. The default is to use the
@@ -113,26 +98,26 @@ public:
   vtkGetMacro(OutputSelection, bool);
   vtkSetMacro(OutputSelection, bool);
   vtkBooleanMacro(OutputSelection, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the output selection type. The default is to use the
    * the maximum distance from the starting vertex "MAX_DIST_FROM_ROOT".
    * But you can also specify other things like "ROOT","2D_MAX", etc
    */
   vtkSetStringMacro(OutputSelectionType);
-  //@}
+  ///@}
 
 protected:
   vtkBoostBreadthFirstSearch();
   ~vtkBoostBreadthFirstSearch() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info) override;
+  int FillInputPortInformation(int port, vtkInformation* info) override;
 
-  virtual int FillOutputPortInformation(int port, vtkInformation* info) override;
+  int FillOutputPortInformation(int port, vtkInformation* info) override;
 
 private:
   vtkIdType OriginVertexIndex;
@@ -143,12 +128,12 @@ private:
   bool OriginFromSelection;
   char* OutputSelectionType;
 
-  //@{
+  ///@{
   /**
    * Using the convenience function internally
    */
   vtkSetStringMacro(InputArrayName);
-  //@}
+  ///@}
 
   /**
    * This method is basically a helper function to find
@@ -160,4 +145,5 @@ private:
   void operator=(const vtkBoostBreadthFirstSearch&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

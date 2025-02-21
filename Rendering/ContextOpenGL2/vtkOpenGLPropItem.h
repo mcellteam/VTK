@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLPropItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkOpenGLPropItem
@@ -30,14 +18,17 @@
 #include "vtkNew.h" // for vtkNew
 #include "vtkPropItem.h"
 #include "vtkRenderingContextOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"                 // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCamera;
 
-class VTKRENDERINGCONTEXTOPENGL2_EXPORT vtkOpenGLPropItem : public vtkPropItem
+class VTKRENDERINGCONTEXTOPENGL2_EXPORT VTK_MARSHALAUTO vtkOpenGLPropItem : public vtkPropItem
 {
 public:
   static vtkOpenGLPropItem* New();
   vtkTypeMacro(vtkOpenGLPropItem, vtkPropItem);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   bool Paint(vtkContext2D* painter) override;
 
@@ -59,4 +50,5 @@ private:
   void operator=(const vtkOpenGLPropItem&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkOpenGLPropItem_h

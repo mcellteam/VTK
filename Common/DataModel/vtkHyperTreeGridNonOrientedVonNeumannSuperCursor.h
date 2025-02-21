@@ -1,22 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHyperTreeGridNonOrientedVonNeumannSuperCursor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright Nonice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHyperTreeGridNonOrientedVonNeumannSuperCursor
  * @brief   Objects for traversal a HyperTreeGrid.
  *
- * JB A REVOIR
  * Objects that can perform depth traversal of a hyper tree grid,
  * take into account more parameters (related to the grid structure) than
  * the compact hyper tree cursor implemented in vtkHyperTree can.
@@ -24,7 +11,10 @@
  * Cursors are created by the HyperTreeGrid implementation.
  *
  * @sa
- * vtkHyperTreeCursor vtkHyperTree vtkHyperTreeGrid
+ * vtkHyperTree vtkHyperTreeGrid
+ *
+ * This supercursor allows to traverse neighbors attached to coface of
+ * the current position.
  *
  * @par Thanks:
  * This class was written by Guenole Harel and Jacques-Bernard Lekien, 2014.
@@ -40,6 +30,7 @@
 
 #include "vtkHyperTreeGridNonOrientedSuperCursor.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHyperTreeGrid;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkHyperTreeGridNonOrientedVonNeumannSuperCursor
@@ -53,7 +44,7 @@ public:
 
   /**
    * Initialize cursor at root of given tree index in grid.
-   * JB Le create ne s'applique que sur le HT central.
+   * "create" only applies to the central HT
    */
   void Initialize(vtkHyperTreeGrid* grid, vtkIdType treeIndex, bool create = false) override;
 
@@ -61,7 +52,7 @@ protected:
   /**
    * Constructor
    */
-  vtkHyperTreeGridNonOrientedVonNeumannSuperCursor() {}
+  vtkHyperTreeGridNonOrientedVonNeumannSuperCursor() = default;
 
   /**
    * Destructor
@@ -74,4 +65,5 @@ private:
   void operator=(const vtkHyperTreeGridNonOrientedVonNeumannSuperCursor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

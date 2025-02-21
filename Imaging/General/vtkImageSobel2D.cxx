@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSobel2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageSobel2D.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageSobel2D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageSobel2D filter.
 vtkImageSobel2D::vtkImageSobel2D()
 {
@@ -37,13 +26,13 @@ vtkImageSobel2D::vtkImageSobel2D()
   this->HandleBoundaries = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageSobel2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageSobel2D::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -53,7 +42,7 @@ int vtkImageSobel2D::RequestInformation(
   return retval;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This execute method handles boundaries.
 // it handles boundaries. Pixels are just replicated to get values
 // out of extent.
@@ -154,7 +143,7 @@ void vtkImageSobel2DExecute(vtkImageSobel2D* self, vtkImageData* inData, T* inPt
         sum = 2.0 * (*inPtrR - *inPtrL);
         sum += static_cast<double>(inPtrR[inInc0L] + inPtrR[inInc0R]);
         sum -= static_cast<double>(inPtrL[inInc0L] + inPtrL[inInc0R]);
-        *outPtrV = static_cast<double>(sum * r1);
+        *outPtrV = sum * r1;
 
         outPtr0 += outInc0;
         inPtr0 += inInc0;
@@ -167,7 +156,7 @@ void vtkImageSobel2DExecute(vtkImageSobel2D* self, vtkImageData* inData, T* inPt
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains a switch statement that calls the correct
 // templated function for the input region type.  The output region
 // must be of type double.  This method does handle boundary conditions.
@@ -210,3 +199,4 @@ void vtkImageSobel2D::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
       return;
   }
 }
+VTK_ABI_NAMESPACE_END

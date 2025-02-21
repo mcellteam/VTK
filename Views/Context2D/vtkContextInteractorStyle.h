@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkContextInteractorStyle.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkContextInteractorStyle
  * @brief   An interactor for chart views.
@@ -29,11 +17,13 @@
 #include "vtkNew.h"                  // For ivars
 #include "vtkViewsContext2DModule.h" // For export macro
 #include "vtkWeakPointer.h"          // For ivars
+#include "vtkWrappingHints.h"        // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkContextMouseEvent;
 class vtkContextScene;
 
-class VTKVIEWSCONTEXT2D_EXPORT vtkContextInteractorStyle : public vtkInteractorStyle
+class VTKVIEWSCONTEXT2D_EXPORT VTK_MARSHALAUTO vtkContextInteractorStyle : public vtkInteractorStyle
 {
 public:
   static vtkContextInteractorStyle* New();
@@ -78,6 +68,12 @@ public:
   void OnLeftButtonUp() override;
 
   /**
+   * Called when the user double-clicks the mouse left button.
+   * Default behavior forwards the event to the observed scene.
+   */
+  void OnLeftButtonDoubleClick() override;
+
+  /**
    * Called when the user clicks the mouse middle button.
    * Default behavior forwards the event to the observed scene.
    */
@@ -90,6 +86,12 @@ public:
   void OnMiddleButtonUp() override;
 
   /**
+   * Called when the user double-clicks the mouse middle button.
+   * Default behavior forwards the event to the observed scene.
+   */
+  void OnMiddleButtonDoubleClick() override;
+
+  /**
    * Called when the user clicks the mouse right button.
    * Default behavior forwards the event to the observed scene.
    */
@@ -100,6 +102,12 @@ public:
    * Default behavior forwards the event to the observed scene.
    */
   void OnRightButtonUp() override;
+
+  /**
+   * Called when the user double-clicks the mouse right button.
+   * Default behavior forwards the event to the observed scene.
+   */
+  void OnRightButtonDoubleClick() override;
 
   /**
    * Called when the user moves the mouse wheel forward.
@@ -177,4 +185,5 @@ private:
   bool ProcessMousePress(const vtkContextMouseEvent& event);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

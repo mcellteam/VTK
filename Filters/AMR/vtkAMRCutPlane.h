@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRCutPlane.h
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAMRCutPlane
  *
@@ -24,12 +12,14 @@
 #ifndef vtkAMRCutPlane_h
 #define vtkAMRCutPlane_h
 
+#include "vtkDeprecation.h"      // For VTK_DEPRECATED
 #include "vtkFiltersAMRModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
 #include <map>    // For STL map
 #include <vector> // For STL vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiBlockDataSet;
 class vtkOverlappingAMR;
 class vtkMultiProcessController;
@@ -38,6 +28,7 @@ class vtkInformationVector;
 class vtkIndent;
 class vtkPlane;
 class vtkUniformGrid;
+class vtkUnstructuredGrid;
 class vtkCell;
 class vtkPoints;
 class vtkCellArray;
@@ -51,45 +42,47 @@ public:
   vtkTypeMacro(vtkAMRCutPlane, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& oss, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Sets the center
    */
   vtkSetVector3Macro(Center, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Sets the normal
    */
   vtkSetVector3Macro(Normal, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Sets the level of resolution
    */
   vtkSetMacro(LevelOfResolution, int);
   vtkGetMacro(LevelOfResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-
+   * Sets if plane cutter is used instead of the specialized AMR cutter.
+   *
+   * Default is true.
    */
   vtkSetMacro(UseNativeCutter, bool);
   vtkGetMacro(UseNativeCutter, bool);
   vtkBooleanMacro(UseNativeCutter, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a multiprocess controller for parallel processing.
    * By default this parameter is set to nullptr by the constructor.
    */
-  vtkSetMacro(Controller, vtkMultiProcessController*);
-  vtkGetMacro(Controller, vtkMultiProcessController*);
-  //@}
+  virtual void SetController(vtkMultiProcessController*);
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  ///@}
 
   // Standard pipeline routines
 
@@ -108,6 +101,11 @@ public:
    * Performs upstream requests to the reader
    */
   int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+
+  /**
+   * Set if it's the initial request.
+   */
+  vtkSetMacro(InitialRequest, bool);
 
 protected:
   vtkAMRCutPlane();
@@ -151,13 +149,13 @@ protected:
   // Initializes the cut-plane center given the min/max bounds.
   void InitializeCenter(double min[3], double max[3]);
 
-  //@{
+  ///@{
   /**
    * Determines if a plane intersects with an AMR box
    */
   bool PlaneIntersectsAMRBox(vtkPlane* pl, double bounds[6]);
   bool PlaneIntersectsAMRBox(double plane[4], double bounds[6]);
-  //@}
+  ///@}
 
   /**
    * Determines if a plane intersects with a grid cell
@@ -172,13 +170,19 @@ protected:
   /**
    * Applies cutting to an AMR block
    */
+  vtkSmartPointer<vtkUnstructuredGrid> CutAMRBlock(vtkPlane* cutPlane, vtkUniformGrid* grid);
+
+  /**
+   * Applies cutting to an AMR block
+   */
+  VTK_DEPRECATED_IN_9_4_0("Use CutAMRBlock(vtkPlane*, vtkUniformGrid*) instead.")
   void CutAMRBlock(
     vtkPlane* cutPlane, unsigned int blockIdx, vtkUniformGrid* grid, vtkMultiBlockDataSet* dataSet);
 
   int LevelOfResolution;
   double Center[3];
   double Normal[3];
-  bool initialRequest;
+  bool InitialRequest;
   bool UseNativeCutter;
   vtkMultiProcessController* Controller;
 
@@ -189,4 +193,5 @@ private:
   void operator=(const vtkAMRCutPlane&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkAMRCutPlane_h */

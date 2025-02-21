@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
@@ -32,7 +21,7 @@
 
 #define VTK_CREATE(type, name) vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 
-// -----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Update a uniform in the shader for each render. We do this with a
 // callback for the UpdateShaderEvent
 class vtkShaderCallback : public vtkCommand
@@ -82,7 +71,7 @@ public:
   vtkShaderCallback() { this->Renderer = nullptr; }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestUserShader2(int argc, char* argv[])
 {
   vtkNew<vtkActor> actor;

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageVariance3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageVariance3D.h"
 
 #include "vtkImageData.h"
@@ -21,9 +9,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageVariance3D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageVariance3D::vtkImageVariance3D()
 {
   this->HandleBoundaries = 1;
@@ -36,7 +25,7 @@ vtkImageVariance3D::vtkImageVariance3D()
   this->SetKernelSize(1, 1, 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageVariance3D::~vtkImageVariance3D()
 {
   if (this->Ellipse)
@@ -46,13 +35,13 @@ vtkImageVariance3D::~vtkImageVariance3D()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageVariance3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method sets the size of the neighborhood.  It also sets the
 // default middle of the neighborhood and computes the Elliptical foot print.
 void vtkImageVariance3D::SetKernelSize(int size0, int size1, int size2)
@@ -83,11 +72,10 @@ void vtkImageVariance3D::SetKernelSize(int size0, int size1, int size2)
     this->Modified();
     this->Ellipse->SetWholeExtent(
       0, this->KernelSize[0] - 1, 0, this->KernelSize[1] - 1, 0, this->KernelSize[2] - 1);
-    this->Ellipse->SetCenter(static_cast<float>(this->KernelSize[0] - 1) * 0.5,
-      static_cast<float>(this->KernelSize[1] - 1) * 0.5,
-      static_cast<float>(this->KernelSize[2] - 1) * 0.5);
-    this->Ellipse->SetRadius(static_cast<float>(this->KernelSize[0]) * 0.5,
-      static_cast<float>(this->KernelSize[1]) * 0.5, static_cast<float>(this->KernelSize[2]) * 0.5);
+    this->Ellipse->SetCenter((this->KernelSize[0] - 1) * 0.5, (this->KernelSize[1] - 1) * 0.5,
+      (this->KernelSize[2] - 1) * 0.5);
+    this->Ellipse->SetRadius(
+      this->KernelSize[0] * 0.5, this->KernelSize[1] * 0.5, this->KernelSize[2] * 0.5);
 
     // make sure scalars have been allocated (needed if multithreaded is used)
     vtkInformation* ellipseOutInfo = this->Ellipse->GetExecutive()->GetOutputInformation(0);
@@ -97,7 +85,7 @@ void vtkImageVariance3D::SetKernelSize(int size0, int size1, int size2)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Output is always float
 int vtkImageVariance3D::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -108,7 +96,7 @@ int vtkImageVariance3D::RequestInformation(
   return retval;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter on any region,
 // whether it needs boundary checking or not.
 // If the filter needs to be faster, the function could be duplicated
@@ -264,7 +252,7 @@ void vtkImageVariance3DExecute(vtkImageVariance3D* self, vtkImageData* mask, vtk
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains the first switch statement that calls the correct
 // templated function for the input and output Data types.
 // It handles image boundaries, so the image does not shrink.
@@ -306,10 +294,11 @@ void vtkImageVariance3D::ThreadedRequestData(vtkInformation* vtkNotUsed(request)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageVariance3D::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   this->Ellipse->Update();
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
+VTK_ABI_NAMESPACE_END

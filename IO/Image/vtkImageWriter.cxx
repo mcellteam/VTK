@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageWriter.h"
 
 #include "vtkAssume.h"
@@ -28,9 +16,10 @@
 #include <vtksys/FStream.hxx>
 #include <vtksys/SystemTools.hxx>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageWriter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageWriter::vtkImageWriter()
 {
   this->FilePrefix = nullptr;
@@ -53,7 +42,7 @@ vtkImageWriter::vtkImageWriter()
   this->SetNumberOfOutputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageWriter::~vtkImageWriter()
 {
   // get rid of memory allocated for file names
@@ -65,7 +54,7 @@ vtkImageWriter::~vtkImageWriter()
   this->FileName = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -78,7 +67,7 @@ void vtkImageWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "WriteToMemory: " << this->WriteToMemory << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkImageWriter::GetInput()
 {
   if (this->GetNumberOfInputConnections(0) < 1)
@@ -87,7 +76,7 @@ vtkImageData* vtkImageWriter::GetInput()
   }
   return vtkImageData::SafeDownCast(this->GetExecutive()->GetInputData(0, 0));
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
@@ -149,7 +138,7 @@ int vtkImageWriter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Writes all the data from the input.
 void vtkImageWriter::Write()
 {
@@ -158,7 +147,7 @@ void vtkImageWriter::Write()
   this->UpdateWholeExtent();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Breaks region into pieces with correct dimensionality.
 void vtkImageWriter::RecursiveWrite(
   int axis, vtkImageData* cache, vtkInformation* inInfo, ostream* file)
@@ -256,7 +245,7 @@ void vtkImageWriter::RecursiveWrite(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // same idea as the previous method, but it knows that the data is ready
 void vtkImageWriter::RecursiveWrite(
   int axis, vtkImageData* cache, vtkImageData* data, vtkInformation* inInfo, ostream* file)
@@ -351,7 +340,7 @@ void vtkImageWriter::RecursiveWrite(
     return;
   }
 
-  // if the current region is too high a dimension forthe file
+  // if the current region is too high a dimension for the file
   // the we will split the current axis
   int* updateExtent = inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT());
   cache->GetAxisUpdateExtent(axis, min, max, updateExtent);
@@ -396,14 +385,14 @@ void vtkImageWriter::RecursiveWrite(
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), axisUpdateExtent, 6);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 unsigned long vtkImageWriterGetSize(T*)
 {
   return sizeof(T);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Writes a region in a file.  Subclasses can override this method
 // to produce a header. This method only handles 3d data (plus components).
 void vtkImageWriter::WriteFile(ostream* file, vtkImageData* data, int extent[6], int wExtent[6])
@@ -512,3 +501,4 @@ void vtkImageWriter::DeleteFiles()
   }
   this->FilesDeleted = 1;
 }
+VTK_ABI_NAMESPACE_END

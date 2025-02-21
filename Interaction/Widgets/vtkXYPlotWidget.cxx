@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXYPlotWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXYPlotWidget.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCoordinate.h"
@@ -21,10 +9,13 @@
 #include "vtkRenderer.h"
 #include "vtkXYPlotActor.h"
 
+#include <cmath>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXYPlotWidget);
 vtkCxxSetObjectMacro(vtkXYPlotWidget, XYPlotActor, vtkXYPlotActor);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXYPlotWidget::vtkXYPlotWidget()
 {
   this->XYPlotActor = vtkXYPlotActor::New();
@@ -33,7 +24,7 @@ vtkXYPlotWidget::vtkXYPlotWidget()
   this->Priority = 0.55;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXYPlotWidget::~vtkXYPlotWidget()
 {
   if (this->XYPlotActor)
@@ -42,7 +33,7 @@ vtkXYPlotWidget::~vtkXYPlotWidget()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXYPlotWidget::SetEnabled(int enabling)
 {
   if (!this->Interactor)
@@ -102,7 +93,7 @@ void vtkXYPlotWidget::SetEnabled(int enabling)
   this->Interactor->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXYPlotWidget::ProcessEvents(
   vtkObject* vtkNotUsed(object), unsigned long event, void* clientdata, void* vtkNotUsed(calldata))
 {
@@ -123,7 +114,7 @@ void vtkXYPlotWidget::ProcessEvents(
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXYPlotWidget::ComputeStateBasedOnPosition(int X, int Y, int* pos1, int* pos2)
 {
   int Result;
@@ -191,7 +182,7 @@ int vtkXYPlotWidget::ComputeStateBasedOnPosition(int X, int Y, int* pos1, int* p
   return Result;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXYPlotWidget::SetCursor(int cState)
 {
   switch (cState)
@@ -222,7 +213,7 @@ void vtkXYPlotWidget::SetCursor(int cState)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXYPlotWidget::OnLeftButtonDown()
 {
   // We're only here is we are enabled
@@ -260,7 +251,7 @@ void vtkXYPlotWidget::OnLeftButtonDown()
   this->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXYPlotWidget::OnMouseMove()
 {
   // compute some info we need for all cases
@@ -416,7 +407,7 @@ void vtkXYPlotWidget::OnMouseMove()
   this->Interactor->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXYPlotWidget::OnLeftButtonUp()
 {
   if (this->State == vtkXYPlotWidget::Outside)
@@ -433,10 +424,11 @@ void vtkXYPlotWidget::OnLeftButtonUp()
   this->Interactor->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXYPlotWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "XYPlotActor: " << this->XYPlotActor << "\n";
 }
+VTK_ABI_NAMESPACE_END

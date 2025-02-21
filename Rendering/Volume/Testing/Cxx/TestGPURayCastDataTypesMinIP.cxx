@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastDataTypesMinIP.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // This test volume renders the same dataset using 8 different data types
 // (unsigned char, signed char, unsigned short, signed short, unsigned int
@@ -43,7 +31,7 @@
 
 namespace
 {
-typedef struct
+struct VTKData_t
 {
   vtkSmartPointer<vtkGPUVolumeRayCastMapper> volumeMapper[4][4];
   vtkSmartPointer<vtkVolumeProperty> volumeProperty[4][4];
@@ -53,7 +41,8 @@ typedef struct
   vtkSmartPointer<vtkAlgorithmOutput> algoOut[4][4];
   vtkSmartPointer<vtkColorTransferFunction> color[4][4];
   vtkSmartPointer<vtkPiecewiseFunction> opacity[4][4];
-} VTKData;
+};
+using VTKData = struct VTKData_t;
 
 void RegisterVolumeToRender(VTKData& data, vtkRenderer* ren1, const int i, const int j)
 {

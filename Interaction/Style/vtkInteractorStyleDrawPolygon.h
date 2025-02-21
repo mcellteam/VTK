@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleDrawPolygon.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInteractorStyleDrawPolygon
  * @brief   draw polygon during mouse move
@@ -26,36 +14,39 @@
 
 #include "vtkInteractionStyleModule.h" // For export macro
 #include "vtkInteractorStyle.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
 #include "vtkVector.h" // For Polygon Points
 #include <vector>      // For returning Polygon Points
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUnsignedCharArray;
 
-class VTKINTERACTIONSTYLE_EXPORT vtkInteractorStyleDrawPolygon : public vtkInteractorStyle
+class VTKINTERACTIONSTYLE_EXPORT VTK_MARSHALAUTO vtkInteractorStyleDrawPolygon
+  : public vtkInteractorStyle
 {
 public:
   static vtkInteractorStyleDrawPolygon* New();
   vtkTypeMacro(vtkInteractorStyleDrawPolygon, vtkInteractorStyle);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Event bindings
    */
   void OnMouseMove() override;
   void OnLeftButtonDown() override;
   void OnLeftButtonUp() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Whether to draw polygon in screen pixels. Default is ON
    */
   vtkSetMacro(DrawPolygonPixels, bool);
   vtkGetMacro(DrawPolygonPixels, bool);
   vtkBooleanMacro(DrawPolygonPixels, bool);
-  //@}
+  ///@}
 
   /**
    * Get the current polygon points in display units
@@ -84,4 +75,5 @@ private:
   vtkInternal* Internal;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

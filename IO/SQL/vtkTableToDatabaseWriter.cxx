@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTableToDatabaseWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDoubleArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -28,16 +16,17 @@
 
 #include "vtkTableToDatabaseWriter.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkTableToDatabaseWriter::vtkTableToDatabaseWriter()
 {
   this->Database = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTableToDatabaseWriter::~vtkTableToDatabaseWriter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTableToDatabaseWriter::SetDatabase(vtkSQLDatabase* db)
 {
   if (!db)
@@ -45,7 +34,7 @@ bool vtkTableToDatabaseWriter::SetDatabase(vtkSQLDatabase* db)
     return false;
   }
   this->Database = db;
-  if (this->Database->IsOpen() == false)
+  if (!this->Database->IsOpen())
   {
     vtkErrorMacro(<< "SetDatabase must be passed an open database connection");
     this->Database = nullptr;
@@ -59,7 +48,7 @@ bool vtkTableToDatabaseWriter::SetDatabase(vtkSQLDatabase* db)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTableToDatabaseWriter::SetTableName(const char* name)
 {
   std::string nameStr = name;
@@ -71,7 +60,7 @@ bool vtkTableToDatabaseWriter::SetTableName(const char* name)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkTableToDatabaseWriter::TableNameIsNew()
 {
   if (this->Database == nullptr)
@@ -114,8 +103,9 @@ vtkTable* vtkTableToDatabaseWriter::GetInput(int port)
   return vtkTable::SafeDownCast(this->Superclass::GetInput(port));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTableToDatabaseWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

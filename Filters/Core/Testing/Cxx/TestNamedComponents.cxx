@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestNamedComponents.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkArrayCalculator.h"
 #include "vtkCellData.h"
 #include "vtkIdTypeArray.h"
@@ -128,8 +116,9 @@ int TestNamedComponents(int, char*[])
   thresh->SetInputData(poly);
   thresh->SetInputArrayToProcess(
     0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
-
-  thresh->ThresholdBetween(0, 10);
+  thresh->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  thresh->SetLowerThreshold(0.0);
+  thresh->SetUpperThreshold(10.0);
   thresh->Update();
 
   vtkSmartPointer<vtkUnstructuredGrid> out = thresh->GetOutput();
@@ -166,8 +155,8 @@ int TestNamedComponents(int, char*[])
   calc->SetAttributeTypeToPointData();
   // Add coordinate scalar and vector variables
   calc->AddCoordinateScalarVariable("coordsX", 0);
-  calc->AddScalarVariable("point coords_YLOC", "point coords", 1);
-  calc->SetFunction("coordsX + point coords_YLOC");
+  calc->AddScalarVariable("\"point coords_YLOC\"", "point coords", 1);
+  calc->SetFunction("coordsX + \"point coords_YLOC\"");
   calc->SetResultArrayName("Result");
   calc->Update();
 

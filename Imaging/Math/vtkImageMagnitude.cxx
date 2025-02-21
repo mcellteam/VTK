@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMagnitude.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageMagnitude.h"
 
 #include "vtkDataArray.h"
@@ -25,9 +13,16 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageMagnitude);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageMagnitude::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 vtkImageMagnitude::vtkImageMagnitude()
 {
   this->SetNumberOfInputPorts(1);
@@ -41,7 +36,7 @@ int vtkImageMagnitude::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This execute method handles boundaries.
 // it handles boundaries. Pixels are just replicated to get values
 // out of extent.
@@ -51,7 +46,7 @@ void vtkImageMagnitudeExecute(
 {
   vtkImageIterator<T> inIt(inData, outExt);
   vtkImageProgressIterator<T> outIt(outData, outExt, self, id);
-  float sum;
+  double sum;
 
   // find the region to loop over
   int maxC = inData->GetNumberOfScalarComponents();
@@ -69,7 +64,7 @@ void vtkImageMagnitudeExecute(
       sum = 0.0;
       for (idxC = 0; idxC < maxC; idxC++)
       {
-        sum += static_cast<float>(*inSI * *inSI);
+        sum += static_cast<double>(*inSI) * static_cast<double>(*inSI);
         ++inSI;
       }
       *outSI = static_cast<T>(sqrt(sum));
@@ -80,7 +75,7 @@ void vtkImageMagnitudeExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains a switch statement that calls the correct
 // templated function for the input data type.  The output data
 // must match input type.  This method does handle boundary conditions.
@@ -112,3 +107,4 @@ void vtkImageMagnitude::ThreadedExecute(
       return;
   }
 }
+VTK_ABI_NAMESPACE_END

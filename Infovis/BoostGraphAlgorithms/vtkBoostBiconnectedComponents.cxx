@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostBiconnectedComponents.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkBoostBiconnectedComponents.h"
 
 #include "vtkCellData.h"
@@ -38,17 +22,18 @@
 
 using namespace boost;
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostBiconnectedComponents);
 
 vtkBoostBiconnectedComponents::vtkBoostBiconnectedComponents()
 {
-  this->OutputArrayName = 0;
+  this->OutputArrayName = nullptr;
 }
 
 vtkBoostBiconnectedComponents::~vtkBoostBiconnectedComponents()
 {
   // release mem
-  this->SetOutputArrayName(0);
+  this->SetOutputArrayName(nullptr);
 }
 
 int vtkBoostBiconnectedComponents::RequestData(vtkInformation* vtkNotUsed(request),
@@ -88,7 +73,7 @@ int vtkBoostBiconnectedComponents::RequestData(vtkInformation* vtkNotUsed(reques
   // Create vector of articulation points and set it up for insertion
   // by the algorithm.
   std::vector<vtkIdType> artPoints;
-  std::pair<size_t, std::back_insert_iterator<std::vector<vtkIdType> > > res(
+  std::pair<size_t, std::back_insert_iterator<std::vector<vtkIdType>>> res(
     0, std::back_inserter(artPoints));
 
   // Call BGL biconnected_components.
@@ -164,3 +149,4 @@ void vtkBoostBiconnectedComponents::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "OutputArrayName: " << (this->OutputArrayName ? this->OutputArrayName : "(none)")
      << endl;
 }
+VTK_ABI_NAMESPACE_END

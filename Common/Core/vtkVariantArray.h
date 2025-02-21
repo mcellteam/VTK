@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVariantArray.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkVariantArray
  * @brief   An array holding vtkVariants.
@@ -35,8 +19,6 @@
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkVariant.h"          // For variant type
 
-class vtkVariantArrayLookup;
-
 /// Forward declaration required for Boost serialization
 namespace boost
 {
@@ -45,6 +27,9 @@ namespace serialization
 class access;
 }
 }
+
+VTK_ABI_NAMESPACE_BEGIN
+class vtkVariantArrayLookup;
 
 class VTKCOMMONCORE_EXPORT vtkVariantArray : public vtkAbstractArray
 {
@@ -130,6 +115,9 @@ public:
    */
   void InsertTuples(vtkIdList* dstIds, vtkIdList* srcIds, vtkAbstractArray* source) override;
 
+  void InsertTuplesStartingAt(
+    vtkIdType dstStart, vtkIdList* srcIds, vtkAbstractArray* source) override;
+
   /**
    * Copy n consecutive tuples starting at srcStart from the source array to
    * this array, starting at the dstStart location.
@@ -192,7 +180,7 @@ public:
    */
   vtkTypeBool Resize(vtkIdType numTuples) override;
 
-  //@{
+  ///@{
   /**
    * This method lets the user specify data to be held by the array.  The
    * array argument is a pointer to the data.  size is the size of
@@ -203,7 +191,7 @@ public:
    */
   void SetVoidArray(void* arr, vtkIdType size, int save) override;
   void SetVoidArray(void* arr, vtkIdType size, int save, int deleteM) override;
-  //@}
+  ///@}
 
   /**
    * Return the memory in kibibytes (1024 bytes) consumed by this data array. Used to
@@ -287,15 +275,15 @@ public:
   /**
    * Return the number of values in the array.
    */
-  vtkIdType GetNumberOfValues() { return this->MaxId + 1; }
+  vtkIdType GetNumberOfValues() const { return (this->MaxId + 1); }
 
-  //@{
+  ///@{
   /**
    * Return the indices where a specific value appears.
    */
   vtkIdType LookupValue(vtkVariant value) override;
   void LookupValue(vtkVariant value, vtkIdList* ids) override;
-  //@}
+  ///@}
 
   /**
    * Tell the array explicitly that the data has changed.
@@ -348,4 +336,5 @@ private:
   void UpdateLookup();
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

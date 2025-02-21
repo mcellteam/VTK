@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAnnotationLink.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkAnnotationLink.h"
 
@@ -27,12 +15,13 @@
 #include "vtkSmartPointer.h"
 #include "vtkTable.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAnnotationLink);
 // vtkCxxSetObjectMacro(vtkAnnotationLink, AnnotationLayers, vtkAnnotationLayers);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkAnnotationLink::Command
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 class vtkAnnotationLink::Command : public vtkCommand
 {
@@ -52,7 +41,7 @@ private:
   vtkAnnotationLink* Target;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAnnotationLink::vtkAnnotationLink()
 {
   this->SetNumberOfInputPorts(2);
@@ -65,7 +54,7 @@ vtkAnnotationLink::vtkAnnotationLink()
   this->AnnotationLayers->AddObserver(vtkCommand::ModifiedEvent, this->Observer);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAnnotationLink::~vtkAnnotationLink()
 {
   this->Observer->Delete();
@@ -80,7 +69,7 @@ vtkAnnotationLink::~vtkAnnotationLink()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnnotationLink::ProcessEvents(
   vtkObject* caller, unsigned long eventId, void* vtkNotUsed(callData))
 {
@@ -94,7 +83,7 @@ void vtkAnnotationLink::ProcessEvents(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnnotationLink::SetAnnotationLayers(vtkAnnotationLayers* layers)
 {
   // This method is a cut and paste of vtkCxxSetObjectMacro
@@ -121,22 +110,22 @@ void vtkAnnotationLink::SetAnnotationLayers(vtkAnnotationLayers* layers)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnnotationLink::AddDomainMap(vtkTable* map)
 {
-  if (!this->DomainMaps->IsItemPresent(map))
+  if (this->DomainMaps->IndexOfFirstOccurence(map) < 0)
   {
     this->DomainMaps->AddItem(map);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnnotationLink::RemoveDomainMap(vtkTable* map)
 {
   this->DomainMaps->RemoveItem(map);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnnotationLink::RemoveAllDomainMaps()
 {
   if (this->DomainMaps->GetNumberOfItems() > 0)
@@ -145,19 +134,19 @@ void vtkAnnotationLink::RemoveAllDomainMaps()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAnnotationLink::GetNumberOfDomainMaps()
 {
   return this->DomainMaps->GetNumberOfItems();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTable* vtkAnnotationLink::GetDomainMap(int i)
 {
   return vtkTable::SafeDownCast(this->DomainMaps->GetItem(i));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnnotationLink::SetCurrentSelection(vtkSelection* sel)
 {
   if (this->AnnotationLayers)
@@ -166,7 +155,7 @@ void vtkAnnotationLink::SetCurrentSelection(vtkSelection* sel)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSelection* vtkAnnotationLink::GetCurrentSelection()
 {
   if (this->AnnotationLayers)
@@ -176,7 +165,7 @@ vtkSelection* vtkAnnotationLink::GetCurrentSelection()
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAnnotationLink::RequestData(vtkInformation* vtkNotUsed(info),
   vtkInformationVector** inVector, vtkInformationVector* outVector)
 {
@@ -237,10 +226,12 @@ int vtkAnnotationLink::RequestData(vtkInformation* vtkNotUsed(info),
     }
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnnotationLink::ShallowCopyToOutput(
   vtkAnnotationLayers* input, vtkAnnotationLayers* output, vtkSelection* sel)
 {
@@ -252,7 +243,7 @@ void vtkAnnotationLink::ShallowCopyToOutput(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAnnotationLink::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -272,7 +263,7 @@ int vtkAnnotationLink::FillInputPortInformation(int port, vtkInformation* info)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAnnotationLink::FillOutputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -293,7 +284,7 @@ int vtkAnnotationLink::FillOutputPortInformation(int port, vtkInformation* info)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkAnnotationLink::GetMTime()
 {
   vtkMTimeType mtime = this->Superclass::GetMTime();
@@ -318,7 +309,7 @@ vtkMTimeType vtkAnnotationLink::GetMTime()
   return mtime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAnnotationLink::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -343,3 +334,4 @@ void vtkAnnotationLink::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

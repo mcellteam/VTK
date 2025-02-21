@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageThresholdConnectivity.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkImageThresholdConnectivity.h"
 
@@ -29,10 +17,11 @@
 
 #include <stack>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageThresholdConnectivity);
 vtkCxxSetObjectMacro(vtkImageThresholdConnectivity, SeedPoints, vtkPoints);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constructor sets default values
 vtkImageThresholdConnectivity::vtkImageThresholdConnectivity()
 {
@@ -65,7 +54,7 @@ vtkImageThresholdConnectivity::vtkImageThresholdConnectivity()
   this->SetNumberOfInputPorts(2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageThresholdConnectivity::~vtkImageThresholdConnectivity()
 {
   if (this->SeedPoints)
@@ -75,7 +64,7 @@ vtkImageThresholdConnectivity::~vtkImageThresholdConnectivity()
   this->ImageMask->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageThresholdConnectivity::SetInValue(double val)
 {
   if (val != this->InValue || this->ReplaceIn != 1)
@@ -86,7 +75,7 @@ void vtkImageThresholdConnectivity::SetInValue(double val)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageThresholdConnectivity::SetOutValue(double val)
 {
   if (val != this->OutValue || this->ReplaceOut != 1)
@@ -97,7 +86,7 @@ void vtkImageThresholdConnectivity::SetOutValue(double val)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values greater than or equal to the value match.
 void vtkImageThresholdConnectivity::ThresholdByUpper(double thresh)
 {
@@ -109,7 +98,7 @@ void vtkImageThresholdConnectivity::ThresholdByUpper(double thresh)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values less than or equal to the value match.
 void vtkImageThresholdConnectivity::ThresholdByLower(double thresh)
 {
@@ -121,7 +110,7 @@ void vtkImageThresholdConnectivity::ThresholdByLower(double thresh)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The values in a range (inclusive) match
 void vtkImageThresholdConnectivity::ThresholdBetween(double lower, double upper)
 {
@@ -133,7 +122,7 @@ void vtkImageThresholdConnectivity::ThresholdBetween(double lower, double upper)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageThresholdConnectivity::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 1)
@@ -148,13 +137,13 @@ int vtkImageThresholdConnectivity::FillInputPortInformation(int port, vtkInforma
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageThresholdConnectivity::SetStencilData(vtkImageStencilData* stencil)
 {
   this->SetInputData(1, stencil);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageStencilData* vtkImageThresholdConnectivity::GetStencil()
 {
   if (this->GetNumberOfInputConnections(1) < 1)
@@ -165,7 +154,7 @@ vtkImageStencilData* vtkImageThresholdConnectivity::GetStencil()
   return vtkImageStencilData::SafeDownCast(this->GetExecutive()->GetInputData(1, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkImageThresholdConnectivity::GetMTime()
 {
   vtkMTimeType mTime = this->MTime.GetMTime();
@@ -180,7 +169,7 @@ vtkMTimeType vtkImageThresholdConnectivity::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // seed struct: just a set of indices
 class vtkFloodFillSeed
 {
@@ -206,6 +195,11 @@ public:
   const int& operator[](int i) const { return store[i]; }
   vtkFloodFillSeed& operator=(const vtkFloodFillSeed& seed)
   {
+    if (this == &seed)
+    {
+      return *this;
+    }
+
     store[0] = seed.store[0];
     store[1] = seed.store[1];
     store[2] = seed.store[2];
@@ -216,7 +210,7 @@ private:
   int store[3];
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Make sure the thresholds are valid for the input scalar range
 template <class IT>
 void vtkImageThresholdConnectivityThresholds(
@@ -254,7 +248,7 @@ void vtkImageThresholdConnectivityThresholds(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Make sure the replacement values are within the output scalar range
 template <class OT>
 void vtkImageThresholdConnectivityValues(
@@ -292,7 +286,7 @@ void vtkImageThresholdConnectivityValues(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void vtkImageThresholdConnectivityApplyStencil(
   vtkImageData* maskData, vtkImageStencilData* stencil, int extent[6])
 {
@@ -312,7 +306,7 @@ static void vtkImageThresholdConnectivityApplyStencil(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class IT, class OT>
 void vtkImageThresholdConnectivityExecute(vtkImageThresholdConnectivity* self, vtkImageData* inData,
@@ -638,27 +632,27 @@ void vtkImageThresholdConnectivityExecute(vtkImageThresholdConnectivity* self, v
       // push the new seeds
       if (seed[2] > 0 && *(maskPtr1 - maskInc[2]) == 0)
       {
-        seedStack.push(vtkFloodFillSeed(seed[0], seed[1], seed[2] - 1));
+        seedStack.emplace(seed[0], seed[1], seed[2] - 1);
       }
       if (seed[2] < maxIdZ && *(maskPtr1 + maskInc[2]) == 0)
       {
-        seedStack.push(vtkFloodFillSeed(seed[0], seed[1], seed[2] + 1));
+        seedStack.emplace(seed[0], seed[1], seed[2] + 1);
       }
       if (seed[1] > 0 && *(maskPtr1 - maskInc[1]) == 0)
       {
-        seedStack.push(vtkFloodFillSeed(seed[0], seed[1] - 1, seed[2]));
+        seedStack.emplace(seed[0], seed[1] - 1, seed[2]);
       }
       if (seed[1] < maxIdY && *(maskPtr1 + maskInc[1]) == 0)
       {
-        seedStack.push(vtkFloodFillSeed(seed[0], seed[1] + 1, seed[2]));
+        seedStack.emplace(seed[0], seed[1] + 1, seed[2]);
       }
       if (seed[0] > 0 && *(maskPtr1 - maskInc[0]) == 0)
       {
-        seedStack.push(vtkFloodFillSeed(seed[0] - 1, seed[1], seed[2]));
+        seedStack.emplace(seed[0] - 1, seed[1], seed[2]);
       }
       if (seed[0] < maxIdX && *(maskPtr1 + maskInc[0]) == 0)
       {
-        seedStack.push(vtkFloodFillSeed(seed[0] + 1, seed[1], seed[2]));
+        seedStack.emplace(seed[0] + 1, seed[1], seed[2]);
       }
     }
   }
@@ -671,7 +665,7 @@ void vtkImageThresholdConnectivityExecute(vtkImageThresholdConnectivity* self, v
   voxelCount = counter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageThresholdConnectivity::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -709,7 +703,7 @@ int vtkImageThresholdConnectivity::RequestUpdateExtent(vtkInformation* vtkNotUse
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageThresholdConnectivity::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -758,7 +752,7 @@ int vtkImageThresholdConnectivity::RequestData(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageThresholdConnectivity::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -784,3 +778,4 @@ void vtkImageThresholdConnectivity::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Stencil: " << this->GetStencil() << "\n";
   os << indent << "ActiveComponent: " << this->ActiveComponent << "\n";
 }
+VTK_ABI_NAMESPACE_END

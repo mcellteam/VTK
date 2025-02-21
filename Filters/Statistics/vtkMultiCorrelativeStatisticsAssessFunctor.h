@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkMultiCorrelativeStatisticsAssessFunctor_h
 #define vtkMultiCorrelativeStatisticsAssessFunctor_h
 
@@ -5,6 +7,7 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkTable;
 
@@ -19,8 +22,8 @@ class vtkMultiCorrelativeAssessFunctor : public vtkStatisticsAlgorithm::AssessFu
 public:
   static vtkMultiCorrelativeAssessFunctor* New();
 
-  vtkMultiCorrelativeAssessFunctor() {}
-  ~vtkMultiCorrelativeAssessFunctor() override {}
+  vtkMultiCorrelativeAssessFunctor() = default;
+  ~vtkMultiCorrelativeAssessFunctor() override = default;
   virtual bool Initialize(vtkTable* inData, vtkTable* reqModel, bool cholesky = true);
 
   void operator()(vtkDoubleArray* result, vtkIdType row) override;
@@ -37,5 +40,6 @@ public:
   std::vector<double> EmptyTuple; // Used to quickly initialize Tuple for each datum
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkMultiCorrelativeStatisticsAssessFunctor_h
 // VTK-HeaderTest-Exclude: vtkMultiCorrelativeStatisticsAssessFunctor.h

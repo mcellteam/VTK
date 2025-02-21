@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArrowSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkArrowSource.h"
 
 #include "vtkAppendPolyData.h"
@@ -25,8 +13,10 @@
 #include "vtkTransform.h"
 #include "vtkTransformFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkArrowSource);
 
+//------------------------------------------------------------------------------
 vtkArrowSource::vtkArrowSource()
 {
   this->TipResolution = 6;
@@ -35,10 +25,12 @@ vtkArrowSource::vtkArrowSource()
   this->ShaftResolution = 6;
   this->ShaftRadius = 0.03;
   this->Invert = false;
+  this->ArrowOrigin = ArrowOrigins::Default;
 
   this->SetNumberOfInputPorts(0);
 }
 
+//------------------------------------------------------------------------------
 int vtkArrowSource::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -46,6 +38,7 @@ int vtkArrowSource::RequestInformation(
   return Superclass::RequestInformation(request, inputVector, outputVector);
 }
 
+//------------------------------------------------------------------------------
 int vtkArrowSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -97,17 +90,41 @@ int vtkArrowSource::RequestData(vtkInformation* vtkNotUsed(request),
   tf2->SetTransform(trans2);
   tf2->SetInputConnection(append->GetOutputPort());
 
+  // used only when this->ArrowOrigin is Center (we aim to orient and scale from the centre).
+  vtkTransform* trans3 = vtkTransform::New();
+  vtkTransformFilter* tf3 = vtkTransformFilter::New();
+  trans3->Translate(-0.5, 0.0, 0.0);
+  tf3->SetTransform(trans3);
+
   if (piece == 0 && numPieces > 0)
   {
     if (this->Invert)
     {
-      tf2->Update();
-      output->ShallowCopy(tf2->GetOutput());
+      if (this->ArrowOrigin == ArrowOrigins::Center)
+      {
+        tf3->SetInputConnection(tf2->GetOutputPort());
+        tf3->Update();
+        output->ShallowCopy(tf3->GetOutput());
+      }
+      else
+      {
+        tf2->Update();
+        output->ShallowCopy(tf2->GetOutput());
+      }
     }
     else
     {
-      append->Update();
-      output->ShallowCopy(append->GetOutput());
+      if (this->ArrowOrigin == ArrowOrigins::Center)
+      {
+        tf3->SetInputConnection(append->GetOutputPort());
+        tf3->Update();
+        output->ShallowCopy(tf3->GetOutput());
+      }
+      else
+      {
+        append->Update();
+        output->ShallowCopy(append->GetOutput());
+      }
     }
   }
 
@@ -120,10 +137,26 @@ int vtkArrowSource::RequestData(vtkInformation* vtkNotUsed(request),
   append->Delete();
   tf2->Delete();
   trans2->Delete();
+  tf3->Delete();
+  trans3->Delete();
 
   return 1;
 }
 
+//------------------------------------------------------------------------------
+std::string vtkArrowSource::GetArrowOriginAsString() const
+{
+  switch (this->ArrowOrigin)
+  {
+    case ArrowOrigins::Default:
+      return "Default";
+    case ArrowOrigins::Center:
+      return "Center";
+  }
+  return "Invalid";
+}
+
+//------------------------------------------------------------------------------
 void vtkArrowSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -136,4 +169,6 @@ void vtkArrowSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ShaftRadius: " << this->ShaftRadius << "\n";
 
   os << indent << "Invert: " << this->Invert << "\n";
+  os << indent << "Arrow Origin: " << this->GetArrowOriginAsString() << endl;
 }
+VTK_ABI_NAMESPACE_END

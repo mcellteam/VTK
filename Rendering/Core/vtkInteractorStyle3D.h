@@ -1,24 +1,12 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyle3D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInteractorStyle3D
  * @brief   extends interaction to support 3D input
  *
  * vtkInteractorStyle3D allows the user to interact with (rotate,
- * pan, etc.) objects in the scene indendent of each other. It is designed
- * to use 3d positions and orientations instead of 2D.
+ * pan, etc.) objects in the scene independent of each other. It is
+ * designed to use 3d positions and orientations instead of 2D.
  *
  * The following interactions are specified by default.
  *
@@ -55,6 +43,7 @@
 #include "vtkNew.h"                 // ivars
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractPropPicker;
 class vtkCamera;
 class vtkProp3D;
@@ -72,13 +61,16 @@ public:
 
   // This method handles updating the prop based on changes in the devices
   // pose. We use rotate as the state to mean adjusting-the-actor-pose
-  virtual void PositionProp(vtkEventData*);
+  // if last world event position \p lwpos and orientation \p lwori are defined
+  // then this function do not use the Interactor3D to get the last world event position
+  // and orientation. This is useful when one needs to pass custom world event data.
+  virtual void PositionProp(vtkEventData*, double* lwpos = nullptr, double* lwori = nullptr);
 
   // This method handles updating the camera based on changes in the devices
   // pose. We use Dolly as the state to mean moving the camera forward
   virtual void Dolly3D(vtkEventData*);
 
-  //@{
+  ///@{
   /**
    * Set/Get the maximum dolly speed used when flying in 3D, in meters per second.
    * Default is 1.6666, corresponding to walking speed (= 6 km/h).
@@ -86,7 +78,7 @@ public:
    */
   vtkSetMacro(DollyPhysicalSpeed, double);
   vtkGetMacro(DollyPhysicalSpeed, double);
-  //@}
+  ///@}
 
   /**
    * Set the scaling factor from world to physical space.
@@ -95,7 +87,7 @@ public:
    */
   virtual void SetScale(vtkCamera* cam, double newScale);
 
-  //@{
+  ///@{
   /**
    * Get/Set the interaction picker.
    * By default, a vtkPropPicker is instancied.
@@ -122,10 +114,12 @@ protected:
 
   double DollyPhysicalSpeed;
   vtkNew<vtkTimerLog> LastDolly3DEventTime;
+  double LastTrackPadPosition[2];
 
 private:
-  vtkInteractorStyle3D(const vtkInteractorStyle3D&) = delete; // Not implemented.
-  void operator=(const vtkInteractorStyle3D&) = delete;       // Not implemented.
+  vtkInteractorStyle3D(const vtkInteractorStyle3D&) = delete;
+  void operator=(const vtkInteractorStyle3D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

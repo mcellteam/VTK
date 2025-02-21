@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBSPIntersections.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkBSPIntersections
@@ -37,6 +22,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTimeStamp;
 class vtkCell;
 class vtkKdNode;
@@ -85,17 +71,16 @@ public:
 
   int GetRegionDataBounds(int regionID, double bounds[6]);
 
-  //@{
+  ///@{
   /**
    * Determine whether a region of the spatial decomposition
    * intersects an axis aligned box.
    */
   int IntersectsBox(int regionId, double* x);
-  int IntersectsBox(
-    int regionId, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
-  //@}
+  int IntersectsBox(int regionId, double x0, double x1, double y0, double y1, double z0, double z1);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Compute a list of the Ids of all regions that
    * intersect the specified axis aligned box.
@@ -104,7 +89,7 @@ public:
   int IntersectsBox(int* ids, int len, double* x);
   int IntersectsBox(
     int* ids, int len, double x0, double x1, double y0, double y1, double z0, double z1);
-  //@}
+  ///@}
 
   /**
    * Determine whether a region of the spatial decomposition
@@ -179,13 +164,13 @@ private:
 
   static void SetCellBounds(vtkCell* cell, double* bounds);
 
-  int _IntersectsBox(vtkKdNode* node, int* ids, int len, double x0, double x1, double y0, double y1,
+  int IntersectsBox_(vtkKdNode* node, int* ids, int len, double x0, double x1, double y0, double y1,
     double z0, double z1);
 
-  int _IntersectsSphere2(
+  int IntersectsSphere2_(
     vtkKdNode* node, int* ids, int len, double x, double y, double z, double rSquared);
 
-  int _IntersectsCell(vtkKdNode* node, int* ids, int len, vtkCell* cell, int cellRegion = -1);
+  int IntersectsCell_(vtkKdNode* node, int* ids, int len, vtkCell* cell, int cellRegion = -1);
 
   vtkBSPCuts* Cuts;
 
@@ -199,4 +184,5 @@ private:
   vtkBSPIntersections(const vtkBSPIntersections&) = delete;
   void operator=(const vtkBSPIntersections&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif

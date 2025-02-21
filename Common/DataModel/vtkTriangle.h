@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTriangle.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTriangle
  * @brief   a cell that represents a triangle
@@ -28,6 +16,7 @@
 
 #include "vtkMath.h" // Needed for inline methods
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLine;
 class vtkQuadric;
 class vtkIncrementalPointLocator;
@@ -45,7 +34,7 @@ public:
    */
   vtkCell* GetEdge(int edgeId) override;
 
-  //@{
+  ///@{
   /**
    * See the vtkCell API for descriptions of these methods.
    */
@@ -61,11 +50,11 @@ public:
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
   double* GetParametricCoords() override;
-  //@}
+  ///@}
 
   /**
    * A convenience function to compute the area of a vtkTriangle.
@@ -82,7 +71,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double sf[3]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[6]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -95,7 +84,7 @@ public:
   {
     vtkTriangle::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
+  ///@}
   /**
    * Return the ids of the vertices defining edge (`edgeId`).
    * Ids are related to the cell, not to the dataset.
@@ -107,8 +96,10 @@ public:
   const vtkIdType* GetEdgeArray(vtkIdType edgeId);
 
   /**
-   * Plane intersection plus in/out test on triangle. The in/out test is
-   * performed using tol as the tolerance.
+   * Given a line defined by two points p1 and p2, determine whether it intersects the triangle.
+   * The tolerance tol is used to verify whether the intersection is inside or outside of the
+   * triangle. If the line and triangle are coplanar and there is intersection, the intersecting
+   * point is chosen as the point closest to p1 that is inside the triangle.
    */
   int IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t, double x[3],
     double pcoords[3], int& subId) override;
@@ -200,10 +191,10 @@ public:
   // coordinate values p1, p2, p3. Method is via comparing dot products.
   // (Note: in current implementation the tolerance only works in the
   // neighborhood of the three vertices of the triangle.
-  static int PointInTriangle(const double x[3], const double x1[3], const double x2[3],
-    const double x3[3], const double tol2);
+  static int PointInTriangle(
+    const double x[3], const double x1[3], const double x2[3], const double x3[3], double tol2);
 
-  //@{
+  ///@{
   /**
    * Calculate the error quadric for this triangle.  Return the
    * quadric as a 4x4 matrix or a vtkQuadric.  (from Peter
@@ -214,7 +205,7 @@ public:
     const double x1[3], const double x2[3], const double x3[3], double quadric[4][4]);
   static void ComputeQuadric(
     const double x1[3], const double x2[3], const double x3[3], vtkQuadric* quadric);
-  //@}
+  ///@}
 
   /**
    * Get the centroid of the triangle.
@@ -236,7 +227,7 @@ private:
 //----------------------------------------------------------------------------
 inline int vtkTriangle::GetParametricCenter(double pcoords[3])
 {
-  pcoords[0] = pcoords[1] = 1. / 3;
+  pcoords[0] = pcoords[1] = 1.0 / 3.0;
   pcoords[2] = 0.0;
   return 0;
 }
@@ -245,15 +236,13 @@ inline int vtkTriangle::GetParametricCenter(double pcoords[3])
 inline void vtkTriangle::ComputeNormalDirection(
   const double v1[3], const double v2[3], const double v3[3], double n[3])
 {
-  double ax, ay, az, bx, by, bz;
-
   // order is important!!! maintain consistency with triangle vertex order
-  ax = v3[0] - v2[0];
-  ay = v3[1] - v2[1];
-  az = v3[2] - v2[2];
-  bx = v1[0] - v2[0];
-  by = v1[1] - v2[1];
-  bz = v1[2] - v2[2];
+  double ax = v3[0] - v2[0];
+  double ay = v3[1] - v2[1];
+  double az = v3[2] - v2[2];
+  double bx = v1[0] - v2[0];
+  double by = v1[1] - v2[1];
+  double bz = v1[2] - v2[2];
 
   n[0] = (ay * bz - az * by);
   n[1] = (az * bx - ax * bz);
@@ -264,11 +253,10 @@ inline void vtkTriangle::ComputeNormalDirection(
 inline void vtkTriangle::ComputeNormal(
   const double v1[3], const double v2[3], const double v3[3], double n[3])
 {
-  double length;
-
   vtkTriangle::ComputeNormalDirection(v1, v2, v3, n);
 
-  if ((length = sqrt((n[0] * n[0] + n[1] * n[1] + n[2] * n[2]))) != 0.0)
+  double length = sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+  if (length != 0.0)
   {
     n[0] /= length;
     n[1] /= length;
@@ -294,4 +282,5 @@ inline double vtkTriangle::TriangleArea(const double p1[3], const double p2[3], 
   return 0.5 * vtkMath::Norm(n);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageEuclideanDistance.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageEuclideanDistance.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageEuclideanDistance);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This defines the default values for the EDT parameters
 vtkImageEuclideanDistance::vtkImageEuclideanDistance()
 {
@@ -34,7 +23,7 @@ vtkImageEuclideanDistance::vtkImageEuclideanDistance()
   this->Algorithm = VTK_EDT_SAITO;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This extent of the components changes to real and imaginary values.
 int vtkImageEuclideanDistance::IterativeRequestInformation(
   vtkInformation* vtkNotUsed(input), vtkInformation* output)
@@ -43,7 +32,7 @@ int vtkImageEuclideanDistance::IterativeRequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method tells the superclass that the whole input array is needed
 // to compute any output region.
 int vtkImageEuclideanDistance::IterativeRequestUpdateExtent(
@@ -55,7 +44,7 @@ int vtkImageEuclideanDistance::IterativeRequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated execute method handles any type input, but the output
 // is always doubles.
 template <class TT>
@@ -73,8 +62,16 @@ void vtkImageEuclideanDistanceCopyData(vtkImageEuclideanDistance* self, vtkImage
 
   // Reorder axes
   self->PermuteExtent(outExt, outMin0, outMax0, outMin1, outMax1, outMin2, outMax2);
-  self->PermuteIncrements(inData->GetIncrements(), inInc0, inInc1, inInc2);
-  self->PermuteIncrements(outData->GetIncrements(), outInc0, outInc1, outInc2);
+
+  // Compute the increments into a local array as `GetIncrements()` introduces
+  // a data race on `vtkImageData::Increments`.
+  vtkIdType inIncrements[3];
+  vtkIdType outIncrements[3];
+  inData->GetIncrements(inIncrements);
+  outData->GetIncrements(outIncrements);
+
+  self->PermuteIncrements(inIncrements, inInc0, inInc1, inInc2);
+  self->PermuteIncrements(outIncrements, outInc0, outInc1, outInc2);
 
   inPtr2 = inPtr;
   outPtr2 = outPtr;
@@ -101,7 +98,7 @@ void vtkImageEuclideanDistanceCopyData(vtkImageEuclideanDistance* self, vtkImage
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated execute method handles any type input, but the output
 // is always doubles.
 template <class T>
@@ -120,8 +117,16 @@ void vtkImageEuclideanDistanceInitialize(vtkImageEuclideanDistance* self, vtkIma
 
   // Reorder axes
   self->PermuteExtent(outExt, outMin0, outMax0, outMin1, outMax1, outMin2, outMax2);
-  self->PermuteIncrements(inData->GetIncrements(), inInc0, inInc1, inInc2);
-  self->PermuteIncrements(outData->GetIncrements(), outInc0, outInc1, outInc2);
+
+  // Compute the increments into a local array as `GetIncrements()` introduces
+  // a data race on `vtkImageData::Increments`.
+  vtkIdType inIncrements[3];
+  vtkIdType outIncrements[3];
+  inData->GetIncrements(inIncrements);
+  outData->GetIncrements(outIncrements);
+
+  self->PermuteIncrements(inIncrements, inInc0, inInc1, inInc2);
+  self->PermuteIncrements(outIncrements, outInc0, outInc1, outInc2);
 
   if (self->GetInitialize() == 1)
   // Initialization required. Input image is only used as binary mask,
@@ -166,12 +171,11 @@ void vtkImageEuclideanDistanceInitialize(vtkImageEuclideanDistance* self, vtkIma
   else
   // No initialization required. We just copy inData to outData.
   {
-    vtkImageEuclideanDistanceCopyData(
-      self, inData, static_cast<T*>(inPtr), outData, outExt, static_cast<double*>(outPtr));
+    vtkImageEuclideanDistanceCopyData(self, inData, inPtr, outData, outExt, outPtr);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Execute Saito's algorithm.
 //
 // T. Saito and J.I. Toriwaki. New algorithms for Euclidean distance
@@ -388,7 +392,7 @@ static void vtkImageEuclideanDistanceExecuteSaito(
   free(sq);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Execute Saito's algorithm, modified for Cache Efficiency
 //
 static void vtkImageEuclideanDistanceExecuteSaitoCached(
@@ -611,7 +615,7 @@ static void vtkImageEuclideanDistanceExecuteSaitoCached(
   free(temp);
   free(sq);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageEuclideanDistance::AllocateOutputScalars(
   vtkImageData* outData, int outExt[6], vtkInformation* outInfo)
 {
@@ -619,7 +623,7 @@ void vtkImageEuclideanDistance::AllocateOutputScalars(
   outData->AllocateScalars(outInfo);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed input and output Datas, and executes the
 // EuclideanDistance algorithm to fill the output from the input.
 int vtkImageEuclideanDistance::IterativeRequestData(vtkInformation* vtkNotUsed(request),
@@ -714,7 +718,7 @@ int vtkImageEuclideanDistance::IterativeRequestData(vtkInformation* vtkNotUsed(r
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageEuclideanDistance::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -736,3 +740,4 @@ void vtkImageEuclideanDistance::PrintSelf(ostream& os, vtkIndent indent)
     os << "Saito Cached\n";
   }
 }
+VTK_ABI_NAMESPACE_END

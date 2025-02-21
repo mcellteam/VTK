@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkExodusIIReaderParser.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExodusIIReaderParser.h"
 
 #include "vtkDataSetAttributes.h"
@@ -21,9 +10,11 @@
 #include "vtkUnsignedCharArray.h"
 
 #include <cassert>
+#include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExodusIIReaderParser);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExodusIIReaderParser::vtkExodusIIReaderParser()
 {
   this->SIL = vtkMutableDirectedGraph::New();
@@ -31,14 +22,14 @@ vtkExodusIIReaderParser::vtkExodusIIReaderParser()
   this->InMaterialAssignments = false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExodusIIReaderParser::~vtkExodusIIReaderParser()
 {
   this->SIL->Delete();
   this->SIL = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIReaderParser::StartElement(const char* tagName, const char** attrs)
 {
   const char* name = strrchr(tagName, ':');
@@ -102,7 +93,7 @@ void vtkExodusIIReaderParser::StartElement(const char* tagName, const char** att
 
     // Save the description for this part, this description is used later to
     // name the block appropriately.
-    this->PartVertexID_To_Descriptions[partVertex] = partDescString.c_str();
+    this->PartVertexID_To_Descriptions[partVertex] = partDescString;
 
     // Add a "part" vertex in the "Assemblies" hierarchy.
     this->CurrentVertex.push_back(partVertex);
@@ -216,7 +207,7 @@ void vtkExodusIIReaderParser::StartElement(const char* tagName, const char** att
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIReaderParser::EndElement(const char* tagName)
 {
   const char* name = strrchr(tagName, ':');
@@ -251,7 +242,7 @@ void vtkExodusIIReaderParser::EndElement(const char* tagName)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIReaderParser::FinishedParsing()
 {
   std::map<int, vtkIdType> blockID_to_partVertexID;
@@ -265,7 +256,7 @@ void vtkExodusIIReaderParser::FinishedParsing()
     {
       if (this->Part_To_VertexID.find(iterIS->second) == this->Part_To_VertexID.end())
       {
-        // This block blongs to a part not present in the assembly.
+        // This block belongs to a part not present in the assembly.
         continue;
       }
       vtkIdType partVertex = this->Part_To_VertexID[iterIS->second];
@@ -289,8 +280,8 @@ void vtkExodusIIReaderParser::FinishedParsing()
     }
 
     std::ostringstream stream;
-    stream << "Block: " << iter->first << " (" << desc.c_str() << ") "
-           << this->BlockID_To_Part[iter->first].c_str();
+    stream << "Block: " << iter->first << " (" << desc << ") "
+           << this->BlockID_To_Part[iter->first];
     this->NamesArray->SetValue(iter->second, stream.str().c_str());
   }
 
@@ -335,7 +326,7 @@ void vtkExodusIIReaderParser::FinishedParsing()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkExodusIIReaderParser::AddVertexToSIL(const char* name)
 {
   vtkIdType vertex = this->SIL->AddVertex();
@@ -343,7 +334,7 @@ vtkIdType vtkExodusIIReaderParser::AddVertexToSIL(const char* name)
   return vertex;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkExodusIIReaderParser::AddChildEdgeToSIL(vtkIdType src, vtkIdType dst)
 {
   vtkIdType id = this->SIL->AddEdge(src, dst).Id;
@@ -351,7 +342,7 @@ vtkIdType vtkExodusIIReaderParser::AddChildEdgeToSIL(vtkIdType src, vtkIdType ds
   return id;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkExodusIIReaderParser::AddCrossEdgeToSIL(vtkIdType src, vtkIdType dst)
 {
   vtkIdType id = this->SIL->AddEdge(src, dst).Id;
@@ -359,7 +350,7 @@ vtkIdType vtkExodusIIReaderParser::AddCrossEdgeToSIL(vtkIdType src, vtkIdType ds
   return id;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkExodusIIReaderParser::GetPartVertex(const char* part_number_instance_string)
 {
   std::map<std::string, vtkIdType>::iterator iter =
@@ -377,7 +368,7 @@ vtkIdType vtkExodusIIReaderParser::GetPartVertex(const char* part_number_instanc
   return vertex;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIReaderParser::Go(const char* filename)
 {
   this->SIL->Initialize();
@@ -412,7 +403,7 @@ void vtkExodusIIReaderParser::Go(const char* filename)
   this->FinishedParsing();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkExodusIIReaderParser::GetBlockName(int id)
 {
   if (this->BlockID_To_VertexID.find(id) != this->BlockID_To_VertexID.end())
@@ -423,9 +414,10 @@ std::string vtkExodusIIReaderParser::GetBlockName(int id)
   return "";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExodusIIReaderParser::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "SIL: " << this->SIL << endl;
 }
+VTK_ABI_NAMESPACE_END

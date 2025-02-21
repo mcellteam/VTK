@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOctreePointLocatorNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOctreePointLocatorNode.h"
 
@@ -26,9 +11,10 @@
 #include "vtkPlanesIntersection.h"
 #include "vtkPoints.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOctreePointLocatorNode);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOctreePointLocatorNode::vtkOctreePointLocatorNode()
   : NumberOfPoints(0)
   , Children(nullptr)
@@ -46,13 +32,13 @@ vtkOctreePointLocatorNode::vtkOctreePointLocatorNode()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOctreePointLocatorNode::~vtkOctreePointLocatorNode()
 {
   this->DeleteChildNodes();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocatorNode::CreateChildNodes()
 {
   if (!this->Children)
@@ -87,7 +73,7 @@ void vtkOctreePointLocatorNode::CreateChildNodes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocatorNode::DeleteChildNodes()
 {
   if (this->Children)
@@ -101,7 +87,7 @@ void vtkOctreePointLocatorNode::DeleteChildNodes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOctreePointLocatorNode* vtkOctreePointLocatorNode::GetChild(int i)
 {
   if (this->Children)
@@ -111,7 +97,7 @@ vtkOctreePointLocatorNode* vtkOctreePointLocatorNode::GetChild(int i)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOctreePointLocatorNode::GetSubOctantIndex(double* point, int CheckContainment)
 {
   int i, index = 0;
@@ -136,7 +122,7 @@ int vtkOctreePointLocatorNode::GetSubOctantIndex(double* point, int CheckContain
   return index;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocatorNode::ComputeOctreeNodeInformation(
   vtkOctreePointLocatorNode* Parent, int& NextLeafId, int& NextMinId, float* coordinates)
 {
@@ -154,8 +140,8 @@ void vtkOctreePointLocatorNode::ComputeOctreeNodeInformation(
 
     for (i = 1; i < 8; i++)
     {
-      double* min = this->Children[i]->GetMinDataBounds();
-      double* max = this->Children[i]->GetMaxDataBounds();
+      const double* min = this->Children[i]->GetMinDataBounds();
+      const double* max = this->Children[i]->GetMaxDataBounds();
       for (int j = 0; j < 3; j++)
       {
         if (min[j] < this->MinDataBounds[j])
@@ -208,7 +194,7 @@ void vtkOctreePointLocatorNode::ComputeOctreeNodeInformation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocatorNode::SetBounds(
   double xMin, double xMax, double yMin, double yMax, double zMin, double zMax)
 {
@@ -220,7 +206,7 @@ void vtkOctreePointLocatorNode::SetBounds(
   this->MaxBounds[2] = zMax;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocatorNode::GetBounds(double* b) const
 {
   b[0] = this->MinBounds[0];
@@ -231,7 +217,7 @@ void vtkOctreePointLocatorNode::GetBounds(double* b) const
   b[5] = this->MaxBounds[2];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocatorNode::SetDataBounds(
   double xMin, double xMax, double yMin, double yMax, double zMin, double zMax)
 {
@@ -243,7 +229,7 @@ void vtkOctreePointLocatorNode::SetDataBounds(
   this->MaxDataBounds[2] = zMax;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocatorNode::GetDataBounds(double* b) const
 {
   b[0] = this->MinDataBounds[0];
@@ -254,26 +240,26 @@ void vtkOctreePointLocatorNode::GetDataBounds(double* b) const
   b[5] = this->MaxDataBounds[2];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Squared distance from any point anywhere to the boundary of spatial region
 //
 double vtkOctreePointLocatorNode::GetDistance2ToBoundary(
   double x, double y, double z, vtkOctreePointLocatorNode* top, int useDataBounds = 0)
 {
-  return this->_GetDistance2ToBoundary(x, y, z, nullptr, 0, top, useDataBounds);
+  return this->GetDistance2ToBoundaryPrivate(x, y, z, nullptr, 0, top, useDataBounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Squared distance from any point anywhere to the boundary of spatial region,
 // and give me the point on the boundary closest to this point.
 //
 double vtkOctreePointLocatorNode::GetDistance2ToBoundary(
   double x, double y, double z, double* p, vtkOctreePointLocatorNode* top, int useDataBounds = 0)
 {
-  return this->_GetDistance2ToBoundary(x, y, z, p, 0, top, useDataBounds);
+  return this->GetDistance2ToBoundaryPrivate(x, y, z, p, 0, top, useDataBounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The point is inside the region, and I want the distance (squared)
 // to the closest "interior" wall, one that is not an outer boundary of
 // the entire space.
@@ -281,11 +267,11 @@ double vtkOctreePointLocatorNode::GetDistance2ToBoundary(
 double vtkOctreePointLocatorNode::GetDistance2ToInnerBoundary(
   double x, double y, double z, vtkOctreePointLocatorNode* top)
 {
-  return this->_GetDistance2ToBoundary(x, y, z, nullptr, 1, top, 0);
+  return this->GetDistance2ToBoundaryPrivate(x, y, z, nullptr, 1, top, 0);
 }
 
-//----------------------------------------------------------------------------
-double vtkOctreePointLocatorNode::_GetDistance2ToBoundary(double x, double y,
+//------------------------------------------------------------------------------
+double vtkOctreePointLocatorNode::GetDistance2ToBoundaryPrivate(double x, double y,
   double z,                       // from this point
   double* p,                      // set to point on boundary that is closest
   int innerBoundaryOnly,          // ignore boundaries on "outside"
@@ -541,7 +527,7 @@ double vtkOctreePointLocatorNode::_GetDistance2ToBoundary(double x, double y,
   return minDistance;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkOctreePointLocatorNode::ContainsPoint(
   double x, double y, double z, int useDataBounds = 0)
 {
@@ -569,7 +555,7 @@ vtkTypeBool vtkOctreePointLocatorNode::ContainsPoint(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOctreePointLocatorNode::IntersectsRegion(vtkPlanesIntersection* pi, int useDataBounds)
 {
   double xMin, xMax, yMin, yMax, zMin, zMax;
@@ -613,7 +599,7 @@ int vtkOctreePointLocatorNode::IntersectsRegion(vtkPlanesIntersection* pi, int u
   return intersects;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOctreePointLocatorNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -631,3 +617,4 @@ void vtkOctreePointLocatorNode::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "MaxDataBounds: " << this->MaxDataBounds[0] << " " << this->MaxDataBounds[1]
      << " " << this->MaxDataBounds[2] << endl;
 }
+VTK_ABI_NAMESPACE_END

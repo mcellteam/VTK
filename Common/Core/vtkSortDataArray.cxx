@@ -1,26 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSortDataArray.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*
- * Copyright 2003 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkSortDataArray.h"
 
@@ -35,17 +15,18 @@
 #include "vtkVariantArray.h"
 #include <functional> //std::greater
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSortDataArray);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSortDataArray::vtkSortDataArray() = default;
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSortDataArray::~vtkSortDataArray() = default;
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSortDataArray::Sort(vtkIdList* keys, int dir)
 {
   if (keys == nullptr)
@@ -60,11 +41,11 @@ void vtkSortDataArray::Sort(vtkIdList* keys, int dir)
   }
   else
   {
-    vtkSMPTools::Sort(data, data + numKeys, std::greater<vtkIdType>());
+    vtkSMPTools::Sort(data, data + numKeys, std::greater<>());
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSortDataArray::Sort(vtkAbstractArray* keys, int dir)
 {
   if (keys == nullptr)
@@ -94,17 +75,18 @@ void vtkSortDataArray::Sort(vtkAbstractArray* keys, int dir)
     switch (keys->GetDataType())
     {
       vtkExtendedTemplateMacro(vtkSMPTools::Sort(
-        static_cast<VTK_TT*>(data), static_cast<VTK_TT*>(data) + numKeys, std::greater<VTK_TT>()));
+        static_cast<VTK_TT*>(data), static_cast<VTK_TT*>(data) + numKeys, std::greater<>()));
     }
   }
 }
+VTK_ABI_NAMESPACE_END
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Hide some stuff; mostly things plugged into templated functions
 namespace
 {
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // We sort the indices based on a key value in another array. Produces sort
 // in ascending direction. Note that sort comparison operator is for single
 // component arrays.
@@ -119,7 +101,7 @@ struct KeyComp
   bool operator()(vtkIdType idx0, vtkIdType idx1) const { return (Array[idx0] < Array[idx1]); }
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Special comparison functor using tuple component as a key. Note that this
 // comparison function is for general arrays of n components.
 template <typename T>
@@ -140,12 +122,12 @@ struct TupleComp
   }
 };
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a set of indices (after sorting), copy the data from a pre-sorted
 // array to a final, post-sorted array, Implementation note: the direction of
 // sort (dir) is treated here rather than in the std::sort() function to
 // reduce object file .obj size; e.g., running std::sort with a different
-// comporator function causes inline expansion to produce very large object
+// comparator function causes inline expansion to produce very large object
 // files.
 template <typename T>
 void Shuffle1Tuples(vtkIdType* idx, vtkIdType sze, vtkAbstractArray* arrayIn, T* preSort, int dir)
@@ -171,7 +153,7 @@ void Shuffle1Tuples(vtkIdType* idx, vtkIdType sze, vtkAbstractArray* arrayIn, T*
   arrayIn->SetVoidArray(postSort, sze, 0, vtkAbstractArray::VTK_DATA_ARRAY_DELETE);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a set of indices (after sorting), copy the data from a pre-sorted
 // data array to a final, post-sorted array. Note that the data array is
 // assumed to have arbitrary sized components.
@@ -210,7 +192,8 @@ void ShuffleTuples(
 
 } // anonymous namespace
 
-//---------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 // Allocate and initialize sort indices
 vtkIdType* vtkSortDataArray::InitializeSortIndices(vtkIdType num)
 {
@@ -222,7 +205,7 @@ vtkIdType* vtkSortDataArray::InitializeSortIndices(vtkIdType num)
   return idx;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Efficient function for generating sort ordering specialized to single
 // component arrays.
 void vtkSortDataArray::GenerateSort1Indices(
@@ -242,7 +225,7 @@ void vtkSortDataArray::GenerateSort1Indices(
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Function for generating sort ordering for general arrays.
 void vtkSortDataArray::GenerateSortIndices(
   int dataType, void* dataIn, vtkIdType numKeys, int numComp, int k, vtkIdType* idx)
@@ -250,7 +233,8 @@ void vtkSortDataArray::GenerateSortIndices(
   // Specialized and faster for single component arrays
   if (numComp == 1)
   {
-    return vtkSortDataArray::GenerateSort1Indices(dataType, dataIn, numKeys, idx);
+    vtkSortDataArray::GenerateSort1Indices(dataType, dataIn, numKeys, idx);
+    return;
   }
 
   if (dataType == VTK_VARIANT)
@@ -268,7 +252,7 @@ void vtkSortDataArray::GenerateSortIndices(
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set up the actual templated shuffling operation. This method is for
 // VTK arrays that are precsisely one component.
 void vtkSortDataArray::Shuffle1Array(
@@ -288,7 +272,7 @@ void vtkSortDataArray::Shuffle1Array(
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set up the actual templated shuffling operation
 void vtkSortDataArray::ShuffleArray(vtkIdType* idx, int dataType, vtkIdType numKeys, int numComp,
   vtkAbstractArray* arr, void* dataIn, int dir)
@@ -296,7 +280,8 @@ void vtkSortDataArray::ShuffleArray(vtkIdType* idx, int dataType, vtkIdType numK
   // Specialized for single component arrays
   if (numComp == 1)
   {
-    return vtkSortDataArray::Shuffle1Array(idx, dataType, numKeys, arr, dataIn, dir);
+    vtkSortDataArray::Shuffle1Array(idx, dataType, numKeys, arr, dataIn, dir);
+    return;
   }
 
   if (dataType == VTK_VARIANT)
@@ -313,7 +298,7 @@ void vtkSortDataArray::ShuffleArray(vtkIdType* idx, int dataType, vtkIdType numK
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a set of indices (after sorting), copy the ids from a pre-sorted
 // id array to a final, post-sorted array.
 void vtkSortDataArray::ShuffleIdList(
@@ -340,7 +325,7 @@ void vtkSortDataArray::ShuffleIdList(
   arrayIn->SetArray(postSort, sze);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Sort a position index based on the values in the abstract array. Once
 // sorted, then shuffle the keys and values around into new arrays.
 void vtkSortDataArray::Sort(vtkAbstractArray* keys, vtkAbstractArray* values, int dir)
@@ -384,7 +369,7 @@ void vtkSortDataArray::Sort(vtkAbstractArray* keys, vtkAbstractArray* values, in
   delete[] idx;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSortDataArray::Sort(vtkAbstractArray* keys, vtkIdList* values, int dir)
 {
   // Check input
@@ -425,7 +410,7 @@ void vtkSortDataArray::Sort(vtkAbstractArray* keys, vtkIdList* values, int dir)
   delete[] idx;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSortDataArray::SortArrayByComponent(vtkAbstractArray* arr, int k, int dir)
 {
   // Check input
@@ -456,10 +441,11 @@ void vtkSortDataArray::SortArrayByComponent(vtkAbstractArray* arr, int k, int di
   delete[] idx;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSortDataArray::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
 // vtkSortDataArray methods -------------------------------------------------------
+VTK_ABI_NAMESPACE_END

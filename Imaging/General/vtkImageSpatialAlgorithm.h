@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSpatialAlgorithm.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageSpatialAlgorithm
  * @brief   Filters that operate on pixel neighborhoods.
@@ -30,6 +18,7 @@
 #include "vtkImagingGeneralModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGGENERAL_EXPORT vtkImageSpatialAlgorithm : public vtkThreadedImageAlgorithm
 {
 public:
@@ -37,23 +26,23 @@ public:
   vtkTypeMacro(vtkImageSpatialAlgorithm, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the Kernel size.
    */
   vtkGetVector3Macro(KernelSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the Kernel middle.
    */
   vtkGetVector3Macro(KernelMiddle, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageSpatialAlgorithm();
-  ~vtkImageSpatialAlgorithm() override {}
+  ~vtkImageSpatialAlgorithm() override = default;
 
   int KernelSize[3];
   int KernelMiddle[3];  // Index of kernel origin
@@ -70,4 +59,5 @@ private:
   void operator=(const vtkImageSpatialAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

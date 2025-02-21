@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadraticTetra.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkQuadraticTetra
  * @brief   cell represents a parabolic, 10-node isoparametric tetrahedron
@@ -40,6 +28,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkNonLinearCell.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkQuadraticEdge;
 class vtkQuadraticTriangle;
 class vtkTetra;
@@ -52,7 +41,7 @@ public:
   vtkTypeMacro(vtkQuadraticTetra, vtkNonLinearCell);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Implement the vtkCell API. See the vtkCell API for descriptions
    * of these methods.
@@ -63,7 +52,7 @@ public:
   int GetNumberOfFaces() override { return 4; }
   vtkCell* GetEdge(int) override;
   vtkCell* GetFace(int) override;
-  //@}
+  ///@}
 
   int CellBoundary(int subId, const double pcoords[3], vtkIdList* pts) override;
   void Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
@@ -72,7 +61,7 @@ public:
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
   double* GetParametricCoords() override;
@@ -82,6 +71,18 @@ public:
    * that it cuts the tetra to produce new tetras.
    */
   void Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
+    vtkCellArray* tetras, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd,
+    vtkIdType cellId, vtkCellData* outCd, int insideOut) override;
+
+  /**
+   * Clip this edge using scalar value provided. Like contouring, except
+   * that it cuts the tetra to produce new tetras.
+   *
+   * Returns true if newly inserted cell is a quadratic tetra, false otherwise.
+   *
+   * @see vtkNonLinearCell::StableClip
+   */
+  bool StableClip(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
     vtkCellArray* tetras, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd,
     vtkIdType cellId, vtkCellData* outCd, int insideOut) override;
 
@@ -105,7 +106,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[10]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[30]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -118,8 +119,8 @@ public:
   {
     vtkQuadraticTetra::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * Return the ids of the vertices defining edge/face (`edgeId`/`faceId').
    * Ids are related to the cell, not to the dataset.
@@ -129,7 +130,7 @@ public:
    */
   static const vtkIdType* GetEdgeArray(vtkIdType edgeId);
   static const vtkIdType* GetFaceArray(vtkIdType faceId);
-  //@}
+  ///@}
 
   /**
    * Given parametric coordinates compute inverse Jacobian transformation
@@ -152,4 +153,5 @@ private:
   void operator=(const vtkQuadraticTetra&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,26 +1,18 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAmoebaMinimizer.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 1993,1994,1995 David MacDonald, McConnell Brain Imaging Centre
+// SPDX-License-Identifier: BSD-3-Clause AND MIT
 #include "vtkAmoebaMinimizer.h"
 #include "vtkObjectFactory.h"
 
-#define N_STEPS_NO_VALUE_IMPROVEMENT 2
-#define N_STEPS_NO_PARAM_IMPROVEMENT 18
+#include <cmath>
 
+constexpr int N_STEPS_NO_VALUE_IMPROVEMENT = 2;
+constexpr int N_STEPS_NO_PARAM_IMPROVEMENT = 18;
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAmoebaMinimizer);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAmoebaMinimizer::vtkAmoebaMinimizer()
 {
   this->Function = nullptr;
@@ -52,7 +44,7 @@ vtkAmoebaMinimizer::vtkAmoebaMinimizer()
   this->AmoebaNStepsNoImprovement = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAmoebaMinimizer::~vtkAmoebaMinimizer()
 {
   this->TerminateAmoeba();
@@ -82,7 +74,7 @@ vtkAmoebaMinimizer::~vtkAmoebaMinimizer()
   this->NumberOfParameters = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -134,7 +126,7 @@ void vtkAmoebaMinimizer::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ExpansionRatio: " << this->GetExpansionRatio() << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::SetFunction(void (*f)(void*), void* arg)
 {
   if (f != this->Function || arg != this->FunctionArg)
@@ -150,7 +142,7 @@ void vtkAmoebaMinimizer::SetFunction(void (*f)(void*), void* arg)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::SetFunctionArgDelete(void (*f)(void*))
 {
   if (f != this->FunctionArgDelete)
@@ -160,7 +152,7 @@ void vtkAmoebaMinimizer::SetFunctionArgDelete(void (*f)(void*))
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkAmoebaMinimizer::GetParameterValue(const char* name)
 {
   for (int i = 0; i < this->NumberOfParameters; i++)
@@ -174,7 +166,7 @@ double vtkAmoebaMinimizer::GetParameterValue(const char* name)
   return 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::SetParameterValue(const char* name, double val)
 {
   int i;
@@ -197,7 +189,7 @@ void vtkAmoebaMinimizer::SetParameterValue(const char* name, double val)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::SetParameterValue(int i, double val)
 {
   if (i < this->NumberOfParameters)
@@ -241,7 +233,7 @@ void vtkAmoebaMinimizer::SetParameterValue(int i, double val)
   this->FunctionEvaluations = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkAmoebaMinimizer::GetParameterScale(const char* name)
 {
   for (int i = 0; i < this->NumberOfParameters; i++)
@@ -255,7 +247,7 @@ double vtkAmoebaMinimizer::GetParameterScale(const char* name)
   return 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::SetParameterScale(const char* name, double scale)
 {
   for (int i = 0; i < this->NumberOfParameters; i++)
@@ -269,7 +261,7 @@ void vtkAmoebaMinimizer::SetParameterScale(const char* name, double scale)
   vtkErrorMacro("SetParameterScale: no parameter named " << name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::SetParameterScale(int i, double scale)
 {
   if (i < 0 || i > this->NumberOfParameters)
@@ -285,7 +277,7 @@ void vtkAmoebaMinimizer::SetParameterScale(int i, double scale)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // reset the number of parameters to zero
 void vtkAmoebaMinimizer::Initialize()
 {
@@ -311,7 +303,7 @@ void vtkAmoebaMinimizer::Initialize()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::EvaluateFunction()
 {
   if (this->Function)
@@ -321,7 +313,7 @@ void vtkAmoebaMinimizer::EvaluateFunction()
   this->FunctionEvaluations++;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAmoebaMinimizer::CheckParameterTolerance()
 {
   int n = this->NumberOfParameters;
@@ -355,7 +347,7 @@ int vtkAmoebaMinimizer::CheckParameterTolerance()
   return (size <= this->ParameterTolerance);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAmoebaMinimizer::Iterate()
 {
   if (this->Iterations == 0)
@@ -380,7 +372,7 @@ int vtkAmoebaMinimizer::Iterate()
   return (improved || !paramsWithinTol);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAmoebaMinimizer::Minimize()
 {
   if (this->Iterations == 0)
@@ -407,20 +399,6 @@ void vtkAmoebaMinimizer::Minimize()
 
   this->GetAmoebaParameterValues();
 }
-
-/* ----------------------------------------------------------------------------
-@COPYRIGHT  :
-              Copyright 1993,1994,1995 David MacDonald,
-              McConnell Brain Imaging Centre,
-              Montreal Neurological Institute, McGill University.
-              Permission to use, copy, modify, and distribute this
-              software and its documentation for any purpose and without
-              fee is hereby granted, provided that the above copyright
-              notice appear in all copies.  The author and McGill University
-              make no representations about the suitability of this
-              software for any purpose.  It is provided "as is" without
-              express or implied warranty.
----------------------------------------------------------------------------- */
 
 /* ------------------------------------------------
   This code has been modified from the original.  Several macros
@@ -770,3 +748,4 @@ int vtkAmoebaMinimizer::PerformAmoeba()
 
   return (improvement_found);
 }
+VTK_ABI_NAMESPACE_END

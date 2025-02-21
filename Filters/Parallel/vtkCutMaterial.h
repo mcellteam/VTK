@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCutMaterial.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCutMaterial
  * @brief   Automatically computes the cut plane for a material array pair.
@@ -28,6 +16,7 @@
 #include "vtkFiltersParallelModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPlane;
 
 class VTKFILTERSPARALLEL_EXPORT vtkCutMaterial : public vtkPolyDataAlgorithm
@@ -37,40 +26,40 @@ public:
   vtkTypeMacro(vtkCutMaterial, vtkPolyDataAlgorithm);
   static vtkCutMaterial* New();
 
-  //@{
+  ///@{
   /**
    * Cell array that contains the material values.
    */
   vtkSetStringMacro(MaterialArrayName);
   vtkGetStringMacro(MaterialArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Material to probe.
    */
   vtkSetMacro(Material, int);
   vtkGetMacro(Material, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * For now, we just use the cell values.
    * The array name to cut.
    */
   vtkSetStringMacro(ArrayName);
   vtkGetStringMacro(ArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The last piece of information that specifies the plane.
    */
   vtkSetVector3Macro(UpVector, double);
   vtkGetVector3Macro(UpVector, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Accesses to the values computed during the execute method.  They
    * could be used to get a good camera view for the resulting plane.
@@ -78,7 +67,7 @@ public:
   vtkGetVector3Macro(MaximumPoint, double);
   vtkGetVector3Macro(CenterPoint, double);
   vtkGetVector3Macro(Normal, double);
-  //@}
+  ///@}
 
 protected:
   vtkCutMaterial();
@@ -105,4 +94,5 @@ private:
   void operator=(const vtkCutMaterial&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

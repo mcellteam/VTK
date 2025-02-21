@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDotProductSimilarity.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkDotProductSimilarity.h"
 #include "vtkArrayData.h"
@@ -45,10 +28,11 @@
 // The key threshold can be overridden by specifying a lower-limit on the
 // number of values stored in the container.
 
+VTK_ABI_NAMESPACE_BEGIN
 template <typename KeyT, typename ValueT>
-class threshold_multimap : public std::multimap<KeyT, ValueT, std::less<KeyT> >
+class threshold_multimap : public std::multimap<KeyT, ValueT, std::less<>>
 {
-  typedef std::multimap<KeyT, ValueT, std::less<KeyT> > container_t;
+  typedef std::multimap<KeyT, ValueT, std::less<>> container_t;
 
 public:
   threshold_multimap(KeyT minimum_threshold, size_t minimum_count, size_t maximum_count)
@@ -83,11 +67,11 @@ private:
   size_t MaximumCount;
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkDotProductSimilarity);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkDotProductSimilarity::vtkDotProductSimilarity()
   : VectorDimension(1)
@@ -104,11 +88,11 @@ vtkDotProductSimilarity::vtkDotProductSimilarity()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkDotProductSimilarity::~vtkDotProductSimilarity() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkDotProductSimilarity::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -140,7 +124,7 @@ int vtkDotProductSimilarity::FillInputPortInformation(int port, vtkInformation* 
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static double DotProduct(vtkDenseArray<double>* input_a, vtkDenseArray<double>* input_b,
   const vtkIdType vector_a, const vtkIdType vector_b, const vtkIdType vector_dimension,
@@ -344,3 +328,4 @@ int vtkDotProductSimilarity::RequestData(
     return 0;
   }
 }
+VTK_ABI_NAMESPACE_END

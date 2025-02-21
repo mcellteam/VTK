@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAssemblyPath.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAssemblyPath.h"
 
 #include "vtkAssemblyNode.h"
@@ -19,6 +7,7 @@
 #include "vtkProp.h"
 #include "vtkTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAssemblyPath);
 
 vtkAssemblyPath::vtkAssemblyPath()
@@ -52,7 +41,7 @@ void vtkAssemblyPath::AddNode(vtkAssemblyNode* n)
   this->vtkCollection::AddItem(n);
 
   // Grab the matrix, if any, and concatenate it
-  this->Transform->Push(); // keep in synch with list of nodes
+  this->Transform->Push(); // keep in sync with list of nodes
   vtkMatrix4x4* matrix;
   if ((matrix = n->GetMatrix()) != nullptr)
   {
@@ -114,3 +103,4 @@ void vtkAssemblyPath::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

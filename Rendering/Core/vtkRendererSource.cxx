@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRendererSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRendererSource.h"
 
 #include "vtkCommand.h"
@@ -27,11 +15,12 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRendererSource);
 
 vtkCxxSetObjectMacro(vtkRendererSource, Input, vtkRenderer);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRendererSource::vtkRendererSource()
 {
   this->Input = nullptr;
@@ -45,7 +34,7 @@ vtkRendererSource::vtkRendererSource()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRendererSource::~vtkRendererSource()
 {
   if (this->Input)
@@ -55,7 +44,7 @@ vtkRendererSource::~vtkRendererSource()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRendererSource::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -81,7 +70,7 @@ void vtkRendererSource::RequestData(
   vtkRenderWindow* renWin = this->Input->GetRenderWindow();
   if (renWin == nullptr)
   {
-    vtkErrorMacro(<< "Renderer needs to be associated with renderin window!");
+    vtkErrorMacro(<< "Renderer needs to be associated with rendering window!");
     return;
   }
 
@@ -217,7 +206,7 @@ void vtkRendererSource::RequestData(
   delete[] pixels;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRendererSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -240,7 +229,7 @@ void vtkRendererSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Depth Values Only: " << (this->DepthValuesOnly ? "On\n" : "Off\n");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkRendererSource::GetMTime()
 {
   vtkRenderer* ren = this->GetInput();
@@ -301,7 +290,7 @@ vtkMTimeType vtkRendererSource::GetMTime()
   return t1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRendererSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -343,7 +332,7 @@ void vtkRendererSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkRendererSource::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -364,16 +353,17 @@ vtkTypeBool vtkRendererSource::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkRendererSource::GetOutput()
 {
   return vtkImageData::SafeDownCast(this->GetOutputDataObject(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRendererSource::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   // now add our info
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkImageData");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

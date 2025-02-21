@@ -5,6 +5,8 @@
 #include <direct.h>
 #include <io.h>
 #include <share.h>
+#define NOMINMAX
+#include <windows.h>
 #else
 #include <unistd.h>     // mkstemp() on Mac
 #include <dirent.h>
@@ -115,7 +117,7 @@ namespace utils
     s_template[filename.size()] = 0;
 
     int handle = -1;
-#if defined(__MACH__)
+#if defined(__MACH__) || defined(__ANDROID_API__)
     // TODO: figure out how to open with O_SYNC
     handle = ::mkstemp(s_template.get());
 #else

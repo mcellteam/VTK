@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataArrayIteratorMacro.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @def   vtkDataArrayIteratorMacro
  * @brief   (deprecated) A macro for obtaining iterators to
@@ -62,6 +50,7 @@
  *
  * To use this macro, create a templated worker function:
  *
+ * @code
  * template <class Iterator>
  * void myFunc(Iterator begin, Iterator end, ...) {...}
  *
@@ -70,9 +59,10 @@
  *
  * vtkAbstractArray *someArray = ...;
  * switch (someArray->GetDataType())
- *   {
+ * {
  *   vtkDataArrayIteratorMacro(someArray, myFunc(vtkDABegin, vtkDAEnd, ...));
- *   }
+ * }
+ * @endcode
  *
  * @sa
  * vtkArrayDispatch vtkGenericDataArray
@@ -81,8 +71,6 @@
 
 #ifndef vtkDataArrayIteratorMacro_h
 #define vtkDataArrayIteratorMacro_h
-
-#ifndef VTK_LEGACY_REMOVE
 
 #include "vtkAOSDataArrayTemplate.h" // For classes referred to in the macro
 #include "vtkSetGet.h"               // For vtkTemplateMacro
@@ -130,8 +118,6 @@
       (void)vtkDAEnd;                                                                              \
       _call;                                                                                       \
     })
-
-#endif // legacy remove
 
 #endif // vtkDataArrayIteratorMacro_h
 

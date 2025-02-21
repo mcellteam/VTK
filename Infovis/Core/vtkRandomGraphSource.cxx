@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRandomGraphSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkRandomGraphSource.h"
 
 #include "vtkCellData.h"
@@ -35,9 +19,10 @@
 #include <algorithm>
 #include <set>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRandomGraphSource);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkRandomGraphSource::vtkRandomGraphSource()
 {
@@ -45,9 +30,9 @@ vtkRandomGraphSource::vtkRandomGraphSource()
   this->NumberOfEdges = 10;
   this->EdgeProbability = 0.5;
   this->IncludeEdgeWeights = false;
-  this->Directed = 0;
-  this->UseEdgeProbability = 0;
-  this->StartWithTree = 0;
+  this->Directed = false;
+  this->UseEdgeProbability = false;
+  this->StartWithTree = false;
   this->AllowSelfLoops = false;
   this->AllowParallelEdges = false;
   this->GeneratePedigreeIds = true;
@@ -62,7 +47,7 @@ vtkRandomGraphSource::vtkRandomGraphSource()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkRandomGraphSource::~vtkRandomGraphSource()
 {
@@ -71,7 +56,7 @@ vtkRandomGraphSource::~vtkRandomGraphSource()
   this->SetEdgeWeightArrayName(nullptr);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkRandomGraphSource::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -95,7 +80,7 @@ void vtkRandomGraphSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Seed: " << this->Seed << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkRandomGraphSource::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
@@ -163,7 +148,7 @@ int vtkRandomGraphSource::RequestData(
   else
   {
     // Don't duplicate edges.
-    std::set<std::pair<vtkIdType, vtkIdType> > existingEdges;
+    std::set<std::pair<vtkIdType, vtkIdType>> existingEdges;
 
     vtkIdType MaxEdges;
     if (this->AllowParallelEdges)
@@ -296,7 +281,7 @@ int vtkRandomGraphSource::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRandomGraphSource::RequestDataObject(
   vtkInformation*, vtkInformationVector**, vtkInformationVector*)
 {
@@ -319,3 +304,4 @@ int vtkRandomGraphSource::RequestDataObject(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

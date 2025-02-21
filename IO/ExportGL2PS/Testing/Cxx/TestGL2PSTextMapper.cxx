@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGL2PSTextMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkTextMapper.h"
 
@@ -55,7 +43,7 @@ void setupTextMapper(vtkTextMapper* mapper, vtkActor2D* actor, vtkPolyData* anch
 }
 } // end namespace vtkTestGL2PSTextMapper
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestGL2PSTextMapper(int, char*[])
 {
   using namespace vtkTestGL2PSTextMapper;

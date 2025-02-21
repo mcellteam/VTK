@@ -1,24 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCorrelativeStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
-
-#include "vtkToolkits.h"
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkCorrelativeStatistics.h"
 #include "vtkStatisticsAlgorithmPrivate.h"
@@ -31,7 +13,6 @@
 #include "vtkMath.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkObjectFactory.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
 #include "vtkVariantArray.h"
@@ -40,9 +21,10 @@
 #include <sstream>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkCorrelativeStatistics);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCorrelativeStatistics::vtkCorrelativeStatistics()
 {
   this->AssessNames->SetNumberOfValues(3);
@@ -51,16 +33,16 @@ vtkCorrelativeStatistics::vtkCorrelativeStatistics()
   this->AssessNames->SetValue(2, "Residual X/Y");
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCorrelativeStatistics::~vtkCorrelativeStatistics() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::Aggregate(
   vtkDataObjectCollection* inMetaColl, vtkMultiBlockDataSet* outMeta)
 {
@@ -159,7 +141,7 @@ void vtkCorrelativeStatistics::Aggregate(
       double M2Y_c = primaryTab->GetValueByName(r, "M2 Y").ToDouble();
       double MXY_c = primaryTab->GetValueByName(r, "M XY").ToDouble();
 
-      // Update global statics
+      // Update global statistics
       int N = n + n_c;
 
       double invN = 1. / static_cast<double>(N);
@@ -202,7 +184,7 @@ void vtkCorrelativeStatistics::Aggregate(
   aggregatedTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::Learn(
   vtkTable* inData, vtkTable* vtkNotUsed(inParameters), vtkMultiBlockDataSet* outMeta)
 {
@@ -261,26 +243,24 @@ void vtkCorrelativeStatistics::Learn(
 
   // Loop over requests
   vtkIdType nRow = inData->GetNumberOfRows();
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one pair of column of interest (if there are others, they are
     // ignored)
     std::set<vtkStdString>::const_iterator it = rit->begin();
     vtkStdString colX = *it;
-    if (!inData->GetColumnByName(colX))
+    if (!inData->GetColumnByName(colX.c_str()))
     {
-      vtkWarningMacro(
-        "InData table does not have a column " << colX.c_str() << ". Ignoring this pair.");
+      vtkWarningMacro("InData table does not have a column " << colX << ". Ignoring this pair.");
       continue;
     }
 
     ++it;
     vtkStdString colY = *it;
-    if (!inData->GetColumnByName(colY))
+    if (!inData->GetColumnByName(colY.c_str()))
     {
-      vtkWarningMacro(
-        "InData table does not have a column " << colY.c_str() << ". Ignoring this pair.");
+      vtkWarningMacro("InData table does not have a column " << colY << ". Ignoring this pair.");
       continue;
     }
 
@@ -295,13 +275,13 @@ void vtkCorrelativeStatistics::Learn(
     {
       inv_n = 1. / (r + 1.);
 
-      x = inData->GetValueByName(r, colX).ToDouble();
+      x = inData->GetValueByName(r, colX.c_str()).ToDouble();
       delta = x - meanX;
       meanX += delta * inv_n;
       deltaXn = x - meanX;
       mom2X += delta * deltaXn;
 
-      y = inData->GetValueByName(r, colY).ToDouble();
+      y = inData->GetValueByName(r, colY.c_str()).ToDouble();
       delta = y - meanY;
       meanY += delta * inv_n;
       mom2Y += delta * (y - meanY);
@@ -337,7 +317,7 @@ void vtkCorrelativeStatistics::Learn(
   primaryTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 {
   if (!inMeta || inMeta->GetNumberOfBlocks() < 1)
@@ -352,7 +332,7 @@ void vtkCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   }
 
   int numDoubles = 9;
-  vtkStdString doubleNames[] = { "Variance X", "Variance Y", "Covariance", "Determinant",
+  std::string doubleNames[] = { "Variance X", "Variance Y", "Covariance", "Determinant",
     "Slope Y/X", "Intercept Y/X", "Slope X/Y", "Intercept X/Y", "Pearson r" };
 
   // Create table for derived statistics
@@ -361,10 +341,10 @@ void vtkCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   vtkDoubleArray* doubleCol;
   for (int j = 0; j < numDoubles; ++j)
   {
-    if (!derivedTab->GetColumnByName(doubleNames[j]))
+    if (!derivedTab->GetColumnByName(doubleNames[j].c_str()))
     {
       doubleCol = vtkDoubleArray::New();
-      doubleCol->SetName(doubleNames[j]);
+      doubleCol->SetName(doubleNames[j].c_str());
       doubleCol->SetNumberOfTuples(nRow);
       derivedTab->AddColumn(doubleCol);
       doubleCol->Delete();
@@ -445,7 +425,7 @@ void vtkCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 
     for (int j = 0; j < numDoubles; ++j)
     {
-      derivedTab->SetValueByName(i, doubleNames[j], derivedVals[j]);
+      derivedTab->SetValueByName(i, doubleNames[j].c_str(), derivedVals[j]);
     }
   } // nRow
 
@@ -459,7 +439,7 @@ void vtkCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   derivedTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDoubleArray* vtkCorrelativeStatistics::CalculatePValues(vtkDoubleArray* statCol)
 {
   vtkDoubleArray* testCol = vtkDoubleArray::New();
@@ -475,7 +455,7 @@ vtkDoubleArray* vtkCorrelativeStatistics::CalculatePValues(vtkDoubleArray* statC
   return testCol;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::Test(
   vtkTable* inData, vtkMultiBlockDataSet* inMeta, vtkTable* outMeta)
 {
@@ -543,26 +523,26 @@ void vtkCorrelativeStatistics::Test(
 
   // Loop over requests
   vtkIdType nRowData = inData->GetNumberOfRows();
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one pair of column of interest (if there are others, they are
     // ignored)
     std::set<vtkStdString>::const_iterator it = rit->begin();
-    vtkStdString varNameX = *it;
-    if (!inData->GetColumnByName(varNameX))
+    std::string varNameX = *it;
+    if (!inData->GetColumnByName(varNameX.c_str()))
     {
       vtkWarningMacro(
-        "InData table does not have a column " << varNameX.c_str() << ". Ignoring this pair.");
+        "InData table does not have a column " << varNameX << ". Ignoring this pair.");
       continue;
     }
 
     ++it;
-    vtkStdString varNameY = *it;
-    if (!inData->GetColumnByName(varNameY))
+    std::string varNameY = *it;
+    if (!inData->GetColumnByName(varNameY.c_str()))
     {
       vtkWarningMacro(
-        "InData table does not have a column " << varNameY.c_str() << ". Ignoring this pair.");
+        "InData table does not have a column " << varNameY << ". Ignoring this pair.");
       continue;
     }
 
@@ -575,7 +555,7 @@ void vtkCorrelativeStatistics::Test(
     if (r >= nRowPrim)
     {
       vtkWarningMacro("Incomplete input: model does not have a row for pair"
-        << varNameX.c_str() << ", " << varNameY.c_str() << ". Cannot test.");
+        << varNameX << ", " << varNameY << ". Cannot test.");
       continue;
     }
 
@@ -584,8 +564,8 @@ void vtkCorrelativeStatistics::Test(
     {
       vtkWarningMacro("Inconsistent input: input data has "
         << nRowData << " rows but primary model has cardinality "
-        << primaryTab->GetValueByName(r, "Cardinality").ToDouble() << " for pair "
-        << varNameX.c_str() << ", " << varNameY.c_str() << ". Cannot test.");
+        << primaryTab->GetValueByName(r, "Cardinality").ToDouble() << " for pair " << varNameX
+        << ", " << varNameY << ". Cannot test.");
       continue;
     }
 
@@ -631,8 +611,8 @@ void vtkCorrelativeStatistics::Test(
         for (vtkIdType j = 0; j < nRowData; ++j)
         {
           // Read and center observation
-          x = inData->GetValueByName(j, varNameX).ToDouble() - mX;
-          y = inData->GetValueByName(j, varNameY).ToDouble() - mY;
+          x = inData->GetValueByName(j, varNameX.c_str()).ToDouble() - mX;
+          y = inData->GetValueByName(j, varNameY.c_str()).ToDouble() - mY;
 
           // Update third and fourth order sums for each eigencoordinate
           tmp = x * x;
@@ -677,8 +657,8 @@ void vtkCorrelativeStatistics::Test(
         for (vtkIdType j = 0; j < nRowData; ++j)
         {
           // Read and center observation
-          x = inData->GetValueByName(j, varNameX).ToDouble() - mX;
-          y = inData->GetValueByName(j, varNameY).ToDouble() - mY;
+          x = inData->GetValueByName(j, varNameX.c_str()).ToDouble() - mX;
+          y = inData->GetValueByName(j, varNameY.c_str()).ToDouble() - mY;
 
           // Transform coordinates into eigencoordinates
           t1 = hd * x + h21 * y;
@@ -750,7 +730,7 @@ void vtkCorrelativeStatistics::Test(
   statCol->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class BivariateRegressionDeviationsFunctor : public vtkStatisticsAlgorithm::AssessFunctor
 {
 public:
@@ -813,7 +793,7 @@ public:
   }
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::SelectAssessFunctor(
   vtkTable* outData, vtkDataObject* inMetaDO, vtkStringArray* rowNames, AssessFunctor*& dfunc)
 {
@@ -842,8 +822,8 @@ void vtkCorrelativeStatistics::SelectAssessFunctor(
     return;
   }
 
-  vtkStdString varNameX = rowNames->GetValue(0);
-  vtkStdString varNameY = rowNames->GetValue(1);
+  std::string varNameX = rowNames->GetValue(0);
+  std::string varNameY = rowNames->GetValue(1);
 
   // Downcast meta columns to string arrays for efficient data access
   vtkStringArray* varX =
@@ -861,8 +841,8 @@ void vtkCorrelativeStatistics::SelectAssessFunctor(
     if (varX->GetValue(r) == varNameX && varY->GetValue(r) == varNameY)
     {
       // Grab the data for the requested variables
-      vtkAbstractArray* arrX = outData->GetColumnByName(varNameX);
-      vtkAbstractArray* arrY = outData->GetColumnByName(varNameY);
+      vtkAbstractArray* arrX = outData->GetColumnByName(varNameX.c_str());
+      vtkAbstractArray* arrY = outData->GetColumnByName(varNameY.c_str());
       if (!arrX || !arrY)
       {
         return;
@@ -915,3 +895,4 @@ void vtkCorrelativeStatistics::SelectAssessFunctor(
   // If arrived here, it means that the pair of variables of interest was not found in the parameter
   // table
 }
+VTK_ABI_NAMESPACE_END

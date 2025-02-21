@@ -1,23 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleUnicam.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /*
  * This work was produced under a grant from the Department of Energy to Brown
- * University.  Neither Brown University nor the authors assert any copyright
- * with respect to this work and it may be used, reproduced, and distributed
- * without permission.
+ * University.
  */
 
 #include "vtkInteractorStyleUnicam.h"
@@ -36,19 +22,24 @@
 #include "vtkTransform.h"
 #include "vtkWorldPointPicker.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkInteractorStyleUnicam);
 
 // define 'TheTime()' function-- returns time in elapsed seconds
 #if defined(_WIN32)
+VTK_ABI_NAMESPACE_END
 #include "vtkWindows.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 static double TheTime()
 {
   return GetTickCount() / 1000.0;
 }
 #else
+VTK_ABI_NAMESPACE_END
 #include <sys/time.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 static double TheTime()
 {
   struct timeval ts;
@@ -107,7 +98,7 @@ void vtkInteractorStyleUnicam::PrintSelf(ostream& os, vtkIndent indent)
 
 void vtkInteractorStyleUnicam::OnTimer()
 {
-  ; // timer just keeps ticking since we are using repeating timers
+  // timer just keeps ticking since we are using repeating timers
 }
 
 void vtkInteractorStyleUnicam::SetWorldUpVector(double x, double y, double z)
@@ -117,7 +108,7 @@ void vtkInteractorStyleUnicam::SetWorldUpVector(double x, double y, double z)
   WorldUpVector[2] = z;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleUnicam::OnLeftButtonDown()
 {
   this->GrabFocus(this->EventCallbackCommand);
@@ -167,7 +158,7 @@ void vtkInteractorStyleUnicam::OnLeftButtonDown()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkInteractorStyleUnicam::WindowAspect()
 {
   double w = Interactor->GetRenderWindow()->GetSize()[0];
@@ -176,7 +167,7 @@ double vtkInteractorStyleUnicam::WindowAspect()
   return w / h;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleUnicam::NormalizeMouseXY(int X, int Y, double* NX, double* NY)
 {
   double w = Interactor->GetRenderWindow()->GetSize()[0];
@@ -186,7 +177,7 @@ void vtkInteractorStyleUnicam::NormalizeMouseXY(int X, int Y, double* NX, double
   *NY = -1.0 + 2.0 * double(Y) / h;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleUnicam::OnMouseMove()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -216,7 +207,7 @@ void vtkInteractorStyleUnicam::OnMouseMove()
   this->Interactor->Render(); // re-draw scene.. it should have changed
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleUnicam::OnLeftButtonUp()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -279,7 +270,7 @@ void vtkInteractorStyleUnicam::OnLeftButtonUp()
   this->ReleaseFocus();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleUnicam::OnLeftButtonMove()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -302,7 +293,7 @@ void vtkInteractorStyleUnicam::OnLeftButtonMove()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleUnicam::ChooseXY(int X, int Y)
 {
   int te[2]; // pixel location
@@ -356,7 +347,7 @@ void vtkInteractorStyleUnicam::ChooseXY(int X, int Y)
   }
 }
 
-// define some utilty functions
+// define some utility functions
 template <class Type>
 inline Type clamp(const Type a, const Type b, const Type c)
 {
@@ -367,7 +358,7 @@ inline int Sign(double a)
   return a > 0 ? 1 : a < 0 ? -1 : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleUnicam::RotateXY(int X, int Y)
 {
   double cpt[3];
@@ -376,7 +367,7 @@ void vtkInteractorStyleUnicam::RotateXY(int X, int Y)
   this->ComputeWorldToDisplay(center[0], center[1], center[2], cpt);
   this->NormalizeMouseXY(static_cast<int>(cpt[0]), static_cast<int>(cpt[1]), &cpt[0], &cpt[1]);
 
-  double radsq = pow(1.0 + fabs(cpt[0]), 2.0); // squared rad of virtual cylinder
+  double radsq = (1.0 + fabs(cpt[0])) * (1.0 + fabs(cpt[0])); // squared rad of virtual cylinder
 
   double tp[2], te[2];
   this->NormalizeMouseXY(
@@ -473,7 +464,7 @@ void vtkInteractorStyleUnicam::RotateXY(int X, int Y)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleUnicam::DollyXY(int X, int Y)
 {
   int i;
@@ -522,7 +513,7 @@ void vtkInteractorStyleUnicam::DollyXY(int X, int Y)
   this->MyTranslateCamera(offset2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Transform mouse horizontal & vertical movements to a world
 // space offset for the camera that maintains pick correlation.
@@ -678,3 +669,4 @@ void vtkInteractorStyleUnicam::MyTranslateCamera(double v[3])
     this->CurrentRenderer->ResetCameraClippingRange();
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,22 +1,6 @@
-// -*- c++ -*-
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPNrrdReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPNrrdReader
@@ -43,6 +27,7 @@
 #include "vtkIOMPIImageModule.h" // For export macro
 #include "vtkNrrdReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCharArray;
 class vtkMultiProcessController;
 class vtkMPIOpaqueFileHandle;
@@ -52,23 +37,23 @@ class VTKIOMPIIMAGE_EXPORT vtkPNrrdReader : public vtkNrrdReader
 public:
   vtkTypeMacro(vtkPNrrdReader, vtkNrrdReader);
   static vtkPNrrdReader* New();
-  virtual void PrintSelf(ostream& os, vtkIndent indent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/set the multi process controller to use for coordinated reads.  By
    * default, set to the global controller.
    */
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
   virtual void SetController(vtkMultiProcessController*);
-  //@}
+  ///@}
 
 protected:
   vtkPNrrdReader();
   ~vtkPNrrdReader() override;
 
-  virtual int ReadHeader() override;
-  virtual int ReadHeader(vtkCharArray* headerBuffer) override;
+  int ReadHeader() override;
+  int ReadHeader(vtkCharArray* headerBuffer) override;
 
   /**
    * Returns the size, in bytes of the scalar data type (GetDataScalarType).
@@ -110,16 +95,16 @@ protected:
    */
   virtual void TransformData(vtkImageData* data);
 
-  //@{
+  ///@{
   /**
    * A group of processes that are reading the same file (as determined by
    * PartitionController.
    */
   void SetGroupedController(vtkMultiProcessController*);
   vtkMultiProcessController* GroupedController;
-  //@}
+  ///@}
 
-  virtual void ExecuteDataWithInformation(vtkDataObject* data, vtkInformation* outInfo) override;
+  void ExecuteDataWithInformation(vtkDataObject* data, vtkInformation* outInfo) override;
 
   vtkMultiProcessController* Controller;
 
@@ -128,4 +113,5 @@ private:
   void operator=(const vtkPNrrdReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPNrrdReader_h

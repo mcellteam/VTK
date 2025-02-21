@@ -1,32 +1,21 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAssemblyNode.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAssemblyNode.h"
 #include "vtkMatrix4x4.h"
 #include "vtkObjectFactory.h"
 #include "vtkProp.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAssemblyNode);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAssemblyNode::vtkAssemblyNode()
 {
   this->ViewProp = nullptr;
   this->Matrix = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAssemblyNode::~vtkAssemblyNode()
 {
   if (this->Matrix)
@@ -36,14 +25,14 @@ vtkAssemblyNode::~vtkAssemblyNode()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Don't do reference counting
 void vtkAssemblyNode::SetViewProp(vtkProp* prop)
 {
   this->ViewProp = prop;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAssemblyNode::SetMatrix(vtkMatrix4x4* matrix)
 {
   // delete previous
@@ -64,7 +53,7 @@ void vtkAssemblyNode::SetMatrix(vtkMatrix4x4* matrix)
   this->Matrix = newMatrix;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkAssemblyNode::GetMTime()
 {
   vtkMTimeType propMTime = 0;
@@ -82,7 +71,7 @@ vtkMTimeType vtkAssemblyNode::GetMTime()
   return (propMTime > matrixMTime ? propMTime : matrixMTime);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAssemblyNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -105,3 +94,4 @@ void vtkAssemblyNode::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Matrix: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

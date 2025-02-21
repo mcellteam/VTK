@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBlueObeliskData.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBlueObeliskData
  * @brief   Contains chemical data from the Blue
@@ -40,10 +28,12 @@
 #include "vtkNew.h"                    // For vtkNew
 #include "vtkObject.h"
 
+#include <mutex> // for std::mutex
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractArray;
 class vtkFloatArray;
 class vtkStringArray;
-class vtkSimpleMutexLock;
 class vtkUnsignedShortArray;
 
 // Hidden STL reference: std::vector<vtkAbstractArray*>
@@ -57,10 +47,9 @@ public:
   static vtkBlueObeliskData* New();
 
   /**
-   * Fill this object using an internal vtkBlueObeliskDataParser
-   * instance. Check that the vtkSimpleMutexLock GetWriteMutex() is
-   * locked before calling this method on a static instance in a
-   * multithreaded environment.
+   * Fill this object using an internal vtkBlueObeliskDataParser instance.
+   * Wrap this call with calls to LockWriteMutex and UnlockWriteMutex before calling
+   * this method on a static instance in a multithreaded environment.
    */
   void Initialize();
 
@@ -69,23 +58,31 @@ public:
    */
   bool IsInitialized() { return this->Initialized; }
 
-  //@{
+  ///@{
   /**
-   * Access the mutex that protects the arrays during a call to
-   * Initialize()
+   * Lock the mutex that protects the arrays during a call to
+   * Initialize().
    */
-  vtkGetObjectMacro(WriteMutex, vtkSimpleMutexLock);
-  //@}
+  void LockWriteMutex();
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Unlock the mutex that protects the arrays during a call to
+   * Initialize().
+   */
+  void UnlockWriteMutex();
+  ///@}
+
+  ///@{
   /**
    * Return the number of elements for which this vtkBlueObeliskData
    * instance contains information.
    */
   vtkGetMacro(NumberOfElements, unsigned short);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access the raw arrays stored in this vtkBlueObeliskData.
    */
@@ -96,7 +93,7 @@ public:
   vtkGetNewMacro(PeriodicTableBlocks, vtkStringArray);
   vtkGetNewMacro(ElectronicConfigurations, vtkStringArray);
   vtkGetNewMacro(Families, vtkStringArray);
-  //@}
+  ///@}
 
   vtkGetNewMacro(Masses, vtkFloatArray);
   vtkGetNewMacro(ExactMasses, vtkFloatArray);
@@ -124,7 +121,6 @@ protected:
   vtkBlueObeliskData();
   ~vtkBlueObeliskData() override;
 
-  vtkSimpleMutexLock* WriteMutex;
   bool Initialized;
 
   /**
@@ -180,6 +176,9 @@ protected:
 private:
   vtkBlueObeliskData(const vtkBlueObeliskData&) = delete;
   void operator=(const vtkBlueObeliskData&) = delete;
+
+  std::mutex NewWriteMutex;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

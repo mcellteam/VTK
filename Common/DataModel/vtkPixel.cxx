@@ -1,25 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPixel.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPixel.h"
 
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
+#include "vtkDataArrayRange.h"
+#include "vtkDoubleArray.h"
 #include "vtkIncrementalPointLocator.h"
 #include "vtkLine.h"
-#include "vtkMarchingSquaresLineCases.h"
 #include "vtkMath.h"
+#include "vtkMathUtilities.h"
 #include "vtkObjectFactory.h"
 #include "vtkPlane.h"
 #include "vtkPointData.h"
@@ -27,9 +17,13 @@
 #include "vtkQuad.h"
 #include "vtkTriangle.h"
 
+#include <algorithm>
+#include <array>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPixel);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the pixel with four points.
 vtkPixel::vtkPixel()
 {
@@ -48,17 +42,17 @@ vtkPixel::vtkPixel()
   this->Line = vtkLine::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPixel::~vtkPixel()
 {
   this->Line->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPixel::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& dist2, double weights[])
 {
-  double pt1[3], pt2[3], pt3[3];
+  const double *pt1, *pt2, *pt3;
   int i;
   double p[3], p21[3], p31[3], cp[3];
   double l21, l31, n[3];
@@ -66,11 +60,19 @@ int vtkPixel::EvaluatePosition(const double x[3], double closestPoint[3], int& s
   subId = 0;
   pcoords[2] = 0.0;
 
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
   // Get normal for pixel
-  //
-  this->Points->GetPoint(0, pt1);
-  this->Points->GetPoint(1, pt2);
-  this->Points->GetPoint(2, pt3);
+  pt1 = pts;
+  pt2 = pts + 3;
+  pt3 = pts + 6;
 
   vtkTriangle::ComputeNormal(pt1, pt2, pt3, n);
 
@@ -97,7 +99,7 @@ int vtkPixel::EvaluatePosition(const double x[3], double closestPoint[3], int& s
   pcoords[0] = vtkMath::Dot(p21, p) / (l21 * l21);
   pcoords[1] = vtkMath::Dot(p31, p) / (l31 * l31);
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkPixel::InterpolationFunctions(pcoords, weights);
 
   if (pcoords[0] >= 0.0 && pcoords[0] <= 1.0 && pcoords[1] >= 0.0 && pcoords[1] <= 1.0)
   {
@@ -137,24 +139,119 @@ int vtkPixel::EvaluatePosition(const double x[3], double closestPoint[3], int& s
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixel::EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights)
 {
-  double pt1[3], pt2[3], pt3[3];
+  const double *pt1, *pt2, *pt3;
   int i;
 
   subId = 0;
 
-  this->Points->GetPoint(0, pt1);
-  this->Points->GetPoint(1, pt2);
-  this->Points->GetPoint(2, pt3);
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
+  pt1 = pts;
+  pt2 = pts + 3;
+  pt3 = pts + 6;
 
   for (i = 0; i < 3; i++)
   {
     x[i] = pt1[i] + pcoords[0] * (pt2[i] - pt1[i]) + pcoords[1] * (pt3[i] - pt1[i]);
   }
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkPixel::InterpolationFunctions(pcoords, weights);
+}
+
+//------------------------------------------------------------------------------
+int vtkPixel::ComputeNormal(double n[3])
+{
+  double p0[3], p1[3], p2[3];
+  this->Points->GetPoint(0, p0);
+  this->Points->GetPoint(1, p1);
+  this->Points->GetPoint(2, p2);
+  p1[0] -= p0[0];
+  p1[1] -= p0[1];
+  p1[2] -= p0[2];
+  p2[0] -= p0[0];
+  p2[1] -= p0[1];
+  p2[2] -= p0[2];
+  vtkMath::Cross(p1, p2, n);
+  if (std::abs(n[0]) < VTK_DBL_EPSILON && std::abs(n[1]) < VTK_DBL_EPSILON &&
+    std::abs(n[2]) < VTK_DBL_EPSILON)
+  {
+    return -1;
+  }
+  vtkMath::Normalize(n);
+  return (std::abs(n[1]) > 0.5) + (std::abs(n[2]) > 0.5) * 2;
+}
+
+//----------------------------------------------------------------------------
+int vtkPixel::Inflate(double dist)
+{
+  auto range = vtk::DataArrayTupleRange<3>(this->Points->GetData());
+  using TupleRef = typename decltype(range)::TupleReferenceType;
+  using ConstTupleRef = typename decltype(range)::ConstTupleReferenceType;
+  using ConstScalar = typename ConstTupleRef::value_type;
+
+  ConstTupleRef p0 = range[0], p3 = range[3];
+
+  int normalDirection = static_cast<int>(vtkMathUtilities::NearlyEqual<ConstScalar>(p3[0], p0[0])) |
+    (static_cast<int>(vtkMathUtilities::NearlyEqual<ConstScalar>(p3[1], p0[1])) << 1) |
+    (static_cast<int>(vtkMathUtilities::NearlyEqual<ConstScalar>(p3[2], p0[2])) << 2);
+  int degeneratePixelDirection = -1;
+
+  if (normalDirection == 0x7)
+  {
+    // Pixel is collapsed to a single point
+    return 0;
+  }
+  if ((normalDirection - 1) & normalDirection)
+  {
+    static constexpr std::array<int, 5> myLog2{ -1, 0, 1, -1, 2 };
+    // Pixel is degenerate, it is homogeneous to a 1D line.
+    degeneratePixelDirection = myLog2[(~normalDirection & 0x7)];
+  }
+  int index = 0;
+  for (TupleRef point : range)
+  {
+    switch (normalDirection)
+    {
+      case 1:
+        point[1] += dist * (index % 2 ? 1.0 : -1.0);
+        point[2] += dist * (index / 2 ? 1.0 : -1.0);
+        break;
+      case 2:
+        point[0] += dist * (index % 2 ? 1.0 : -1.0);
+        point[2] += dist * (index / 2 ? 1.0 : -1.0);
+        break;
+      case 4:
+        point[0] += dist * (index % 2 ? 1.0 : -1.0);
+        point[1] += dist * (index / 2 ? 1.0 : -1.0);
+        break;
+      default:
+        point[degeneratePixelDirection] += dist * (index % 2 ? 1.0 : -1.0);
+        break;
+    }
+    ++index;
+  }
+  return 1;
+}
+
+//------------------------------------------------------------------------------
+double vtkPixel::ComputeBoundingSphere(double center[3]) const
+{
+  auto points = vtk::DataArrayTupleRange(this->Points->GetData());
+  auto p0 = points[0], p3 = points[3];
+  center[0] = 0.5 * (p0[0] + p3[0]);
+  center[1] = 0.5 * (p0[1] + p3[1]);
+  center[2] = 0.5 * (p0[2] + p3[2]);
+  return vtkMath::Distance2BetweenPoints(center, p0);
 }
 
 //----------------------------------------------------------------------------
@@ -201,12 +298,14 @@ int vtkPixel::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], vtkId
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Marching squares
 //
+VTK_ABI_NAMESPACE_END
 #include "vtkMarchingSquaresLineCases.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 static int edges[4][2] = { { 0, 1 }, { 1, 3 }, { 2, 3 }, { 0, 2 } };
 
 void vtkPixel::Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
@@ -215,7 +314,7 @@ void vtkPixel::Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPo
 {
   static const int CASE_MASK[4] = { 1, 2, 8, 4 }; // note differenceom quad!
   vtkMarchingSquaresLineCases* lineCase;
-  EDGE_LIST* edge;
+  int* edge;
   int i, j, index, *vert;
   int newCellId;
   vtkIdType pts[2];
@@ -268,7 +367,7 @@ void vtkPixel::Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPo
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkPixel::GetEdge(int edgeId)
 {
   int* verts;
@@ -286,7 +385,7 @@ vtkCell* vtkPixel::GetEdge(int edgeId)
   return this->Line;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Compute interpolation functions (similar but different than Quad interpolation
 // functions)
@@ -303,7 +402,7 @@ void vtkPixel::InterpolationFunctions(const double pcoords[3], double sf[4])
   sf[2] = rm * pcoords[1];
   sf[3] = pcoords[0] * pcoords[1];
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Compute derivatives of interpolation functions.
 //
@@ -327,29 +426,24 @@ void vtkPixel::InterpolationDerivs(const double pcoords[3], double derivs[8])
   derivs[7] = pcoords[0];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //
 // Intersect plane; see whether point is inside.
 //
 int vtkPixel::IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t,
   double x[3], double pcoords[3], int& subId)
 {
-  double pt1[3], pt4[3], n[3];
-  double tol2 = tol * tol;
-  double closestPoint[3];
-  double dist2, weights[4];
-  int i;
-
   subId = 0;
   pcoords[0] = pcoords[1] = pcoords[2] = 0.0;
-  //
-  // Get normal for triangle
-  //
+  double pt1[3], pt4[3];
   this->Points->GetPoint(0, pt1);
   this->Points->GetPoint(3, pt4);
 
-  n[0] = n[1] = n[2] = 0.0;
-  for (i = 0; i < 3; i++)
+  //
+  // Get normal for triangle
+  //
+  double n[3] = { 0.0, 0.0, 0.0 };
+  for (int i = 0; i < 3; i++)
   {
     if ((pt4[i] - pt1[i]) <= 0.0)
     {
@@ -357,70 +451,80 @@ int vtkPixel::IntersectWithLine(const double p1[3], const double p2[3], double t
       break;
     }
   }
-  //
-  // Intersect plane of pixel with line
-  //
-  if (!vtkPlane::IntersectWithLine(p1, p2, n, pt1, t, x))
+
+  // Because vtkPlane::IntersectWithLine cannot handle intersection with finite
+  // plane, we need to handle the coplanar case ourself and find the closest x/t possible.
+  // EvaluatePosition will take care of filling values for subId and pcoords.
+  const double v1[3] = { p1[0] - pt1[0], p1[1] - pt1[1], p1[2] - pt1[2] };
+  const double v2[3] = { p2[0] - pt1[0], p2[1] - pt1[1], p2[2] - pt1[2] };
+  bool isCoplanar = (std::abs(vtkMath::Dot(v1, n)) < tol) && (std::abs(vtkMath::Dot(v2, n)) < tol);
+  if (isCoplanar)
+  {
+    // if p1 is inside the pixel then return p1.
+    if (p1[0] <= pt4[0] && p1[0] >= pt1[0] && p1[1] <= pt4[1] && p1[1] >= pt1[1] &&
+      p1[2] <= pt4[2] && p1[2] >= pt1[2])
+    {
+      t = 0;
+      x[0] = p1[0];
+      x[1] = p1[1];
+      x[2] = p1[2];
+    }
+    // Else we check if we intersect any edges. If we dont that means we do not intersect the pixel.
+    else
+    {
+      double mint = VTK_DOUBLE_MAX;
+      double tmpt, tmpx[3], tmppcoords[3];
+      int tmpid;
+      for (int i = 0; i < 4; ++i)
+      {
+        bool res = this->GetEdge(i)->IntersectWithLine(p1, p2, tol, tmpt, tmpx, tmppcoords, tmpid);
+        if (res && (tmpt < mint))
+        {
+          mint = tmpt;
+          t = tmpt;
+          x[0] = tmpx[0];
+          x[1] = tmpx[1];
+          x[2] = tmpx[2];
+        }
+      }
+
+      if (mint == VTK_DOUBLE_MAX)
+      {
+        return 0;
+      }
+    }
+  }
+  else if (!vtkPlane::IntersectWithLine(p1, p2, n, pt1, t, x))
   {
     return 0;
   }
+
   //
   // Use evaluate position
   //
-  if (this->EvaluatePosition(x, closestPoint, subId, pcoords, dist2, weights))
-  {
-    if (dist2 <= tol2)
-    {
-      return 1;
-    }
-  }
-
-  return 0;
+  double closestPoint[3], dist2, weights[4];
+  return this->EvaluatePosition(x, closestPoint, subId, pcoords, dist2, weights) &&
+    (dist2 <= (tol * tol));
 }
 
-//----------------------------------------------------------------------------
-int vtkPixel::Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkPixel::TriangulateLocalIds(int index, vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
-
+  ptIds->SetNumberOfIds(6);
   if ((index % 2))
   {
-    ptIds->InsertId(0, this->PointIds->GetId(0));
-    pts->InsertPoint(0, this->Points->GetPoint(0));
-    ptIds->InsertId(1, this->PointIds->GetId(1));
-    pts->InsertPoint(1, this->Points->GetPoint(1));
-    ptIds->InsertId(2, this->PointIds->GetId(2));
-    pts->InsertPoint(2, this->Points->GetPoint(2));
-
-    ptIds->InsertId(3, this->PointIds->GetId(1));
-    pts->InsertPoint(3, this->Points->GetPoint(1));
-    ptIds->InsertId(4, this->PointIds->GetId(3));
-    pts->InsertPoint(4, this->Points->GetPoint(3));
-    ptIds->InsertId(5, this->PointIds->GetId(2));
-    pts->InsertPoint(5, this->Points->GetPoint(2));
+    constexpr std::array<vtkIdType, 6> localPtIds{ 0, 1, 2, 1, 3, 2 };
+    std::copy(localPtIds.begin(), localPtIds.end(), ptIds->begin());
   }
   else
   {
-    ptIds->InsertId(0, this->PointIds->GetId(0));
-    pts->InsertPoint(0, this->Points->GetPoint(0));
-    ptIds->InsertId(1, this->PointIds->GetId(1));
-    pts->InsertPoint(1, this->Points->GetPoint(1));
-    ptIds->InsertId(2, this->PointIds->GetId(3));
-    pts->InsertPoint(2, this->Points->GetPoint(3));
-
-    ptIds->InsertId(3, this->PointIds->GetId(0));
-    pts->InsertPoint(3, this->Points->GetPoint(0));
-    ptIds->InsertId(4, this->PointIds->GetId(3));
-    pts->InsertPoint(4, this->Points->GetPoint(3));
-    ptIds->InsertId(5, this->PointIds->GetId(2));
-    pts->InsertPoint(5, this->Points->GetPoint(2));
+    constexpr std::array<vtkIdType, 6> localPtIds{ 0, 1, 3, 0, 3, 2 };
+    std::copy(localPtIds.begin(), localPtIds.end(), ptIds->begin());
   }
-
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixel::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
@@ -484,13 +588,14 @@ void vtkPixel::Derivatives(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // support pixel clipping
 typedef int PIXEL_EDGE_LIST;
-typedef struct
+struct PIXEL_CASES_t
 {
   PIXEL_EDGE_LIST edges[14];
-} PIXEL_CASES;
+};
+using PIXEL_CASES = struct PIXEL_CASES_t;
 
 static PIXEL_CASES pixelCases[] = {
   { { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } },    // 0
@@ -530,7 +635,7 @@ static PIXEL_CASES pixelCasesComplement[] = {
   { { 4, 100, 101, 103, 102, -1, -1, -1, -1, -1, -1, -1, -1, -1 } }, // 15
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip this pixel using scalar value provided. Like contouring, except
 // that it cuts the pixel to produce quads and/or triangles.
 void vtkPixel::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
@@ -662,7 +767,7 @@ void vtkPixel::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPoint
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkPixelCellPCoords[12] = { 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0,
   0.0 };
 
@@ -671,7 +776,7 @@ double* vtkPixel::GetParametricCoords()
   return vtkPixelCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPixel::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -679,3 +784,4 @@ void vtkPixel::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Line:\n";
   this->Line->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

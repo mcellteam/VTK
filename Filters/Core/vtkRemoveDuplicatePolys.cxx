@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRemoveDuplicatePolys.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRemoveDuplicatePolys.h"
 
 #include "vtkCell.h"
@@ -30,21 +18,22 @@
 #include <set>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRemoveDuplicatePolys);
 
-//----------------------------------------------------------------------------
-vtkRemoveDuplicatePolys::vtkRemoveDuplicatePolys() {}
+//------------------------------------------------------------------------------
+vtkRemoveDuplicatePolys::vtkRemoveDuplicatePolys() = default;
 
-//----------------------------------------------------------------------------
-vtkRemoveDuplicatePolys::~vtkRemoveDuplicatePolys() {}
+//------------------------------------------------------------------------------
+vtkRemoveDuplicatePolys::~vtkRemoveDuplicatePolys() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRemoveDuplicatePolys::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRemoveDuplicatePolys::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -72,7 +61,7 @@ int vtkRemoveDuplicatePolys::RequestData(vtkInformation* vtkNotUsed(request),
   std::map<std::set<int>, vtkIdType>::iterator polyIter;
 
   // Now copy the polys.
-  vtkIdList* polyPoints = vtkIdList::New();
+  vtkNew<vtkIdList> polyPoints;
   const vtkIdType numberOfPolys = input->GetNumberOfPolys();
   vtkIdType progressStep = numberOfPolys / 100;
   if (progressStep == 0)
@@ -91,6 +80,10 @@ int vtkRemoveDuplicatePolys::RequestData(vtkInformation* vtkNotUsed(request),
     if (id % progressStep == 0)
     {
       this->UpdateProgress(0.8 + 0.2 * (static_cast<float>(id) / numberOfPolys));
+      if (this->CheckAbort())
+      {
+        break;
+      }
     }
 
     // duplicate points do not make poly vertices or triangles
@@ -136,10 +129,9 @@ int vtkRemoveDuplicatePolys::RequestData(vtkInformation* vtkNotUsed(request),
     vtkDebugMacro(<< "vtkRemoveDuplicatePolys : " << ndup
                   << " duplicate polys (multiple instances of a polygon) have been"
                   << " removed." << endl);
-
-    polyPoints->Delete();
     output->Squeeze();
   }
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

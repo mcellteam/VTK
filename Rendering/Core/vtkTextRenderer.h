@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextRenderer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkTextRenderer
@@ -23,8 +11,11 @@
  * objects that represent text. The advantage of using this class is to easily
  * integrate mathematical expressions into renderings by automatically switching
  * between FreeType and MathText backends. If the input string contains at least
- * two "$" symbols separated by text, the MathText backend will be used. If
- * the string does not meet this criteria, or if no MathText implementation is
+ * two "$" symbols separated by text, the MathText backend will be used.
+ * Alternatively, the presence of unescaped "|" symbols defines multicolumn lines,
+ * which are processed with the MathText backend.
+ *
+ * If the string does not meet these criteria, or if no MathText implementation is
  * available, the faster FreeType rendering facilities are used. Literal $
  * symbols can be used by escaping them with backslashes, "\$" (or "\\$" if the
  * string is set programmatically).
@@ -48,16 +39,19 @@
 #include "vtkTuple.h"               // For metrics struct
 #include "vtkVector.h"              // For metrics struct
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 class vtkPath;
 class vtkStdString;
-class vtkUnicodeString;
 class vtkTextProperty;
+VTK_ABI_NAMESPACE_END
 
 namespace vtksys
 {
 class RegularExpression;
 }
+
+VTK_ABI_NAMESPACE_BEGIN
 
 class VTKRENDERINGCORE_EXPORT vtkTextRendererCleanup
 {
@@ -96,7 +90,7 @@ public:
      */
     vtkTuple<int, 4> BoundingBox;
 
-    //@{
+    ///@{
     /**
      * The corners of the rendered text (or background, if applicable), in pixels.
      * Uses the same origin as BoundingBox.
@@ -105,7 +99,7 @@ public:
     vtkVector2i TopRight;
     vtkVector2i BottomLeft;
     vtkVector2i BottomRight;
-    //@}
+    ///@}
 
     /**
      * Vectors representing the rotated ascent and descent of the text. This is
@@ -153,21 +147,20 @@ public:
     UserBackend = 16
   };
 
-  //@{
+  ///@{
   /**
    * The backend to use when none is specified. Default: Detect
    */
   vtkSetMacro(DefaultBackend, int);
   vtkGetMacro(DefaultBackend, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Determine the appropriate back end needed to render the given string.
    */
   virtual int DetectBackend(const vtkStdString& str);
-  virtual int DetectBackend(const vtkUnicodeString& str);
-  //@}
+  ///@}
 
   /**
    * Test for availability of various backends
@@ -175,7 +168,7 @@ public:
   virtual bool FreeTypeIsSupported() { return false; }
   virtual bool MathTextIsSupported() { return false; }
 
-  //@{
+  ///@{
   /**
    * Given a text property and a string, get the bounding box {xmin, xmax,
    * ymin, ymax} of the rendered string in pixels. The origin of the bounding
@@ -188,14 +181,9 @@ public:
   {
     return this->GetBoundingBoxInternal(tprop, str, bbox, dpi, backend);
   }
-  bool GetBoundingBox(vtkTextProperty* tprop, const vtkUnicodeString& str, int bbox[4], int dpi,
-    int backend = Default)
-  {
-    return this->GetBoundingBoxInternal(tprop, str, bbox, dpi, backend);
-  }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given a text property and a string, get some metrics for the rendered
    * string.
@@ -206,14 +194,9 @@ public:
   {
     return this->GetMetricsInternal(tprop, str, metrics, dpi, backend);
   }
-  bool GetMetrics(vtkTextProperty* tprop, const vtkUnicodeString& str, Metrics& metrics, int dpi,
-    int backend = Default)
-  {
-    return this->GetMetricsInternal(tprop, str, metrics, dpi, backend);
-  }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given a text property and a string, this function initializes the
    * vtkImageData *data and renders it in a vtkImageData.
@@ -233,14 +216,9 @@ public:
   {
     return this->RenderStringInternal(tprop, str, data, textDims, dpi, backend);
   }
-  bool RenderString(vtkTextProperty* tprop, const vtkUnicodeString& str, vtkImageData* data,
-    int textDims[2], int dpi, int backend = Default)
-  {
-    return this->RenderStringInternal(tprop, str, data, textDims, dpi, backend);
-  }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This function returns the font size (in points) and sets the size in @a
    * tprop that is required to fit the string in the target rectangle. The
@@ -253,15 +231,9 @@ public:
     return this->GetConstrainedFontSizeInternal(
       str, tprop, targetWidth, targetHeight, dpi, backend);
   }
-  int GetConstrainedFontSize(const vtkUnicodeString& str, vtkTextProperty* tprop, int targetWidth,
-    int targetHeight, int dpi, int backend = Default)
-  {
-    return this->GetConstrainedFontSizeInternal(
-      str, tprop, targetWidth, targetHeight, dpi, backend);
-  }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given a text property and a string, this function populates the vtkPath
    * path with the outline of the rendered string. The origin of the path
@@ -274,12 +246,7 @@ public:
   {
     return this->StringToPathInternal(tprop, str, path, dpi, backend);
   }
-  bool StringToPath(vtkTextProperty* tprop, const vtkUnicodeString& str, vtkPath* path, int dpi,
-    int backend = Default)
-  {
-    return this->StringToPathInternal(tprop, str, path, dpi, backend);
-  }
-  //@}
+  ///@}
 
   /**
    * Set to true if the graphics implementation requires texture image dimensions
@@ -295,32 +262,22 @@ protected:
   vtkTextRenderer();
   ~vtkTextRenderer() override;
 
-  //@{
+  ///@{
   /**
    * Virtual methods for concrete implementations of the public methods.
    */
   virtual bool GetBoundingBoxInternal(
     vtkTextProperty* tprop, const vtkStdString& str, int bbox[4], int dpi, int backend) = 0;
-  virtual bool GetBoundingBoxInternal(
-    vtkTextProperty* tprop, const vtkUnicodeString& str, int bbox[4], int dpi, int backend) = 0;
   virtual bool GetMetricsInternal(
     vtkTextProperty* tprop, const vtkStdString& str, Metrics& metrics, int dpi, int backend) = 0;
-  virtual bool GetMetricsInternal(vtkTextProperty* tprop, const vtkUnicodeString& str,
-    Metrics& metrics, int dpi, int backend) = 0;
   virtual bool RenderStringInternal(vtkTextProperty* tprop, const vtkStdString& str,
-    vtkImageData* data, int textDims[2], int dpi, int backend) = 0;
-  virtual bool RenderStringInternal(vtkTextProperty* tprop, const vtkUnicodeString& str,
     vtkImageData* data, int textDims[2], int dpi, int backend) = 0;
   virtual int GetConstrainedFontSizeInternal(const vtkStdString& str, vtkTextProperty* tprop,
     int targetWidth, int targetHeight, int dpi, int backend) = 0;
-  virtual int GetConstrainedFontSizeInternal(const vtkUnicodeString& str, vtkTextProperty* tprop,
-    int targetWidth, int targetHeight, int dpi, int backend) = 0;
   virtual bool StringToPathInternal(
     vtkTextProperty* tprop, const vtkStdString& str, vtkPath* path, int dpi, int backend) = 0;
-  virtual bool StringToPathInternal(
-    vtkTextProperty* tprop, const vtkUnicodeString& str, vtkPath* path, int dpi, int backend) = 0;
   virtual void SetScaleToPowerOfTwoInternal(bool scale) = 0;
-  //@}
+  ///@}
 
   /**
    * Set the singleton instance. Call Delete() on the supplied
@@ -328,24 +285,24 @@ protected:
    */
   static void SetInstance(vtkTextRenderer* instance);
 
-  //@{
+  ///@{
   /**
    * The singleton instance and the singleton cleanup instance.
    */
   static vtkTextRenderer* Instance;
   static vtkTextRendererCleanup Cleanup;
-  //@}
+  ///@}
 
   vtksys::RegularExpression* MathTextRegExp;
   vtksys::RegularExpression* MathTextRegExp2;
+  vtksys::RegularExpression* MathTextRegExpColumn;
 
-  //@{
+  ///@{
   /**
    * Replace all instances of "\$" with "$".
    */
   virtual void CleanUpFreeTypeEscapes(vtkStdString& str);
-  virtual void CleanUpFreeTypeEscapes(vtkUnicodeString& str);
-  //@}
+  ///@}
 
   /**
    * The backend to use when none is specified. Default: Detect
@@ -357,4 +314,5 @@ private:
   void operator=(const vtkTextRenderer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkTextRenderer_h

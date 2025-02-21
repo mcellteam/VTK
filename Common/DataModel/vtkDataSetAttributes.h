@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSetAttributes.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataSetAttributes
  * @brief   represent and manipulate attribute data in a dataset
@@ -39,6 +27,13 @@
  * Finally this class provides a mechanism to determine which attributes a
  * group of sources have in common, and to copy tuples from a source into
  * the destination, for only those attributes that are held by all.
+ *
+ * @warning
+ * vtkDataSetAttributes is not in general thread safe due to the use of its
+ * vtkFieldData::BasicIterator RequiredArrays data member. The class
+ * vtkArrayListTemplate augments vtkDataSetAttributes for thread safety.
+ *
+ * @sa vtkArrayListTemplate
  */
 
 #ifndef vtkDataSetAttributes_h
@@ -47,10 +42,12 @@
 #include "vtkCommonDataModelModule.h"      // For export macro
 #include "vtkDataSetAttributesFieldList.h" // for vtkDataSetAttributesFieldList
 #include "vtkFieldData.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALMANUAL
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLookupTable;
 
-class VTKCOMMONDATAMODEL_EXPORT vtkDataSetAttributes : public vtkFieldData
+class VTKCOMMONDATAMODEL_EXPORT VTK_MARSHALMANUAL vtkDataSetAttributes : public vtkFieldData
 {
 public:
   /**
@@ -105,6 +102,7 @@ public:
     TANGENTS = 8,
     RATIONALWEIGHTS = 9,
     HIGHERORDERDEGREES = 10,
+    PROCESSIDS = 11,
     NUM_ATTRIBUTES
   };
 
@@ -144,101 +142,111 @@ public:
 
   //-----------------------------------------------------------------------------------
 
-  //@{
+  ///@{
   /**
    * Set/Get the scalar data.
    */
   int SetScalars(vtkDataArray* da);
   int SetActiveScalars(const char* name);
   vtkDataArray* GetScalars();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the vector data.
    */
   int SetVectors(vtkDataArray* da);
   int SetActiveVectors(const char* name);
   vtkDataArray* GetVectors();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the normal data.
    */
   int SetNormals(vtkDataArray* da);
   int SetActiveNormals(const char* name);
   vtkDataArray* GetNormals();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the tangent data.
    */
   int SetTangents(vtkDataArray* da);
   int SetActiveTangents(const char* name);
   vtkDataArray* GetTangents();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the texture coordinate data.
    */
   int SetTCoords(vtkDataArray* da);
   int SetActiveTCoords(const char* name);
   vtkDataArray* GetTCoords();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tensor data.
    */
   int SetTensors(vtkDataArray* da);
   int SetActiveTensors(const char* name);
   vtkDataArray* GetTensors();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the global id data.
    */
   int SetGlobalIds(vtkDataArray* da);
   int SetActiveGlobalIds(const char* name);
   vtkDataArray* GetGlobalIds();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the pedigree id data.
    */
   int SetPedigreeIds(vtkAbstractArray* da);
   int SetActivePedigreeIds(const char* name);
   vtkAbstractArray* GetPedigreeIds();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the rational weights data.
    */
   int SetRationalWeights(vtkDataArray* da);
   int SetActiveRationalWeights(const char* name);
   vtkDataArray* GetRationalWeights();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the rational degrees data.
    */
   int SetHigherOrderDegrees(vtkDataArray* da);
   int SetActiveHigherOrderDegrees(const char* name);
   vtkDataArray* GetHigherOrderDegrees();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * This will first look for an array with the correct name.
-   * If one exists, it is returned. Otherwise, the name argument
-   * is ignored, and the active attribute is returned.
+   * Set/Get the process id data.
+   */
+  int SetProcessIds(vtkDataArray* da);
+  int SetActiveProcessIds(const char* name);
+  vtkDataArray* GetProcessIds();
+  ///@}
+
+  ///@{
+  /**
+   * If the string is nullptr or empty, calls the alternate method
+   * of the same name (that takes no parameters).
+   * Otherwise, it will look for an array with the correct name.
+   * If one exists, it is returned. Otherwise, nullptr is returned.
    */
   vtkDataArray* GetScalars(const char* name);
   vtkDataArray* GetVectors(const char* name);
@@ -250,7 +258,8 @@ public:
   vtkAbstractArray* GetPedigreeIds(const char* name);
   vtkDataArray* GetRationalWeights(const char* name);
   vtkDataArray* GetHigherOrderDegrees(const char* name);
-  //@}
+  vtkDataArray* GetProcessIds(const char* name);
+  ///@}
 
   /**
    * Make the array with the given name the active attribute.
@@ -264,6 +273,9 @@ public:
    * vtkDataSetAttributes::PEDIGREEIDS = 6
    * vtkDataSetAttributes::EDGEFLAG = 7
    * vtkDataSetAttributes::TANGENTS = 8
+   * vtkDataSetAttributes::RATIONALWEIGHTS = 9
+   * vtkDataSetAttributes::HIGHERORDERDEGREES = 10
+   * vtkDataSetAttributes::PROCESSIDS = 11
    * Returns the index of the array if successful, -1 if the array
    * is not in the list of arrays.
    */
@@ -271,12 +283,15 @@ public:
 
   /**
    * Make the array with the given index the active attribute.
+   * Returns the index of the array if successful, -1 if the array
+   * is not in the list of arrays.
    */
   int SetActiveAttribute(int index, int attributeType);
 
   /**
    * Get the field data array indices corresponding to scalars,
-   * vectors, tensors, etc.
+   * vectors, tensors, etc.  The given buffer must be at least
+   * NUM_ATTRIBUTES elements big.
    */
   void GetAttributeIndices(int* indexArray);
 
@@ -329,22 +344,23 @@ public:
    */
   vtkAbstractArray* GetAbstractAttribute(int attributeType);
 
-  //@{
+  ///@{
   /**
-   * Remove an array (with the given name) from the list of arrays.
+   * Remove an array (with the given index) from the list of arrays.
+   * Does nothing if the index is out of range.
    */
   using vtkFieldData::RemoveArray;
   void RemoveArray(int index) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given an integer attribute type, this static method returns a string type
    * for the attribute (i.e. type = 0: returns "Scalars").
    */
   static const char* GetAttributeTypeAsString(int attributeType);
   static const char* GetLongAttributeTypeAsString(int attributeType);
-  //@}
+  ///@}
 
   // -- attribute copy properties ------------------------------------------
 
@@ -380,8 +396,8 @@ public:
   void SetCopyAttribute(int index, int value, int ctype = ALLCOPY);
 
   /**
-   * Get the attribute copy flag for copy operation <ctype> of attribute
-   * <index>.
+   * Get the attribute copy flag for copy operation \c ctype of attribute
+   * \c index.
    */
   int GetCopyAttribute(int index, int ctype);
 
@@ -436,6 +452,11 @@ public:
   vtkBooleanMacro(CopyHigherOrderDegrees, vtkTypeBool);
 
   /// @copydoc vtkDataSetAttributes::SetCopyAttribute()
+  void SetCopyProcessIds(vtkTypeBool i, int ctype = ALLCOPY);
+  vtkTypeBool GetCopyProcessIds(int ctype = ALLCOPY);
+  vtkBooleanMacro(CopyProcessIds, vtkTypeBool);
+
+  /// @copydoc vtkDataSetAttributes::SetCopyAttribute()
   void CopyAllOn(int ctype = ALLCOPY) override;
 
   /// @copydoc vtkDataSetAttributes::SetCopyAttribute()
@@ -445,7 +466,7 @@ public:
 
   /**
    * Pass entire arrays of input data through to output. Obey the "copy"
-   * flags. When passing a field,  the following copying rules are
+   * flags. When passing a field, the following copying rules are
    * followed: 1) Check if a field is an attribute, if yes and if there
    * is a PASSDATA copy flag for that attribute (on or off), obey the flag
    * for that attribute, ignore (2) and (3), 2) if there is a copy field for
@@ -456,7 +477,7 @@ public:
 
   // -- copytuple operations ------------------------------------------------
 
-  //@{
+  ///@{
   /**
    * Allocates point data for point-by-point (or cell-by-cell) copy operation.
    * If sze=0, then use the input DataSetAttributes to create (i.e., find
@@ -473,7 +494,7 @@ public:
     this->CopyAllocate(pd, sze, ext, 0);
   }
   void CopyAllocate(vtkDataSetAttributes* pd, vtkIdType sze, vtkIdType ext, int shallowCopyArrays);
-  //@}
+  ///@}
 
   /**
    * Create a mapping between the input attributes and this object
@@ -495,7 +516,7 @@ public:
   void CopyStructuredData(
     vtkDataSetAttributes* inDsa, const int* inExt, const int* outExt, bool setSize = true);
 
-  //@{
+  ///@{
   /**
    * Copy the attribute data from one id to another. Make sure CopyAllocate()
    * has been invoked before using this method. When copying a field,
@@ -505,10 +526,14 @@ public:
    * for that attribute, ignore (2) and (3), 2) if there is a copy field for
    * that field (on or off), obey the flag, ignore (3) 3) obey
    * CopyAllOn/Off
+   *
+   * @warning This method is prone to compile-time ambiguity when called using `0` parameters.
+   * To fix the ambiguity, please replace `0` by `vtkIdType(0)`.
    */
   void CopyData(vtkDataSetAttributes* fromPd, vtkIdType fromId, vtkIdType toId);
   void CopyData(vtkDataSetAttributes* fromPd, vtkIdList* fromIds, vtkIdList* toIds);
-  //@}
+  void CopyData(vtkDataSetAttributes* fromPd, vtkIdList* fromIds, vtkIdType destStartId = 0);
+  ///@}
 
   /**
    * Copy n consecutive attributes starting at srcStart from fromPd to this
@@ -517,7 +542,7 @@ public:
    */
   void CopyData(vtkDataSetAttributes* fromPd, vtkIdType dstStart, vtkIdType n, vtkIdType srcStart);
 
-  //@{
+  ///@{
   /**
    * Copy a tuple (or set of tuples) of data from one data array to another.
    * This method assumes that the fromData and toData objects are of the
@@ -530,11 +555,11 @@ public:
     vtkAbstractArray* fromData, vtkAbstractArray* toData, vtkIdList* fromIds, vtkIdList* toIds);
   void CopyTuples(vtkAbstractArray* fromData, vtkAbstractArray* toData, vtkIdType dstStart,
     vtkIdType n, vtkIdType srcStart);
-  //@}
+  ///@}
 
   // -- interpolate operations ----------------------------------------------
 
-  //@{
+  ///@{
   /**
    * Initialize point interpolation method.
    * Note that pd HAS to be the vtkDataSetAttributes object which
@@ -549,7 +574,7 @@ public:
   }
   void InterpolateAllocate(
     vtkDataSetAttributes* pd, vtkIdType sze, vtkIdType ext, int shallowCopyArrays);
-  //@}
+  ///@}
 
   /**
    * Interpolate data set attributes from other data set attributes
@@ -642,8 +667,8 @@ protected:
   int AttributeIndices[NUM_ATTRIBUTES];            // index to attribute array in field data
   int CopyAttributeFlags[ALLCOPY][NUM_ATTRIBUTES]; // copy flag for attribute data
 
+  friend struct ArrayList; // Friend to base class in vtkArrayListTemplate
   vtkFieldData::BasicIterator RequiredArrays;
-
   int* TargetIndices;
 
   static const int NumberOfAttributeComponents[NUM_ATTRIBUTES];
@@ -656,11 +681,11 @@ private:
 
   vtkFieldData::BasicIterator ComputeRequiredArrays(vtkDataSetAttributes* pd, int ctype);
 
-private:
   vtkDataSetAttributes(const vtkDataSetAttributes&) = delete;
   void operator=(const vtkDataSetAttributes&) = delete;
 
   friend class vtkDataSetAttributesFieldList;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolyPlane.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPolyPlane.h"
 
 #include "vtkDoubleArray.h"
@@ -21,11 +9,12 @@
 #include "vtkPoints.h"
 #include "vtkPolyLine.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPolyPlane);
 vtkCxxSetObjectMacro(vtkPolyPlane, PolyLine, vtkPolyLine);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyPlane::vtkPolyPlane()
 {
   this->ExtrusionDirection[0] = 0.0;
@@ -36,7 +25,7 @@ vtkPolyPlane::vtkPolyPlane()
   this->Normals = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyPlane::~vtkPolyPlane()
 {
   this->SetPolyLine(nullptr);
@@ -48,7 +37,7 @@ vtkPolyPlane::~vtkPolyPlane()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkPolyPlane::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -63,7 +52,7 @@ vtkMTimeType vtkPolyPlane::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function returns 1 if p3 is to the left the directed line from p1 to p2
 // and -1 otherwise
 // This is computed by testing the determinant:
@@ -80,7 +69,7 @@ static bool leftOf(double p1[2], double p2[2], double p3[2])
   return tmp > 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyPlane::ComputeNormals()
 {
   if (!this->PolyLine)
@@ -139,7 +128,7 @@ void vtkPolyPlane::ComputeNormals()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate the distance to the poly plane for point x[3].
 double vtkPolyPlane::EvaluateFunction(double x[3])
 {
@@ -281,7 +270,7 @@ double vtkPolyPlane::EvaluateFunction(double x[3])
   return signedDistance;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate function gradient at point x[3]. We simply return [0,1,0], ie the
 // Y Axis.
 void vtkPolyPlane::EvaluateGradient(double vtkNotUsed(x)[3], double n[3])
@@ -291,7 +280,7 @@ void vtkPolyPlane::EvaluateGradient(double vtkNotUsed(x)[3], double n[3])
   n[2] = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyPlane::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -311,3 +300,4 @@ void vtkPolyPlane::PrintSelf(ostream& os, vtkIndent indent)
     this->Normals->PrintSelf(os, indent.GetNextIndent());
   }
 }
+VTK_ABI_NAMESPACE_END

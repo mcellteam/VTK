@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSimpleScalarTree.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSimpleScalarTree.h"
 
 #include "vtkCell.h"
@@ -21,6 +9,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkScalarNode
 {
 };
@@ -37,7 +26,7 @@ public:
 
 vtkStandardNewMacro(vtkSimpleScalarTree);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate scalar tree with maximum level of 20 and branching
 // factor of 3.
 vtkSimpleScalarTree::vtkSimpleScalarTree()
@@ -59,13 +48,14 @@ vtkSimpleScalarTree::vtkSimpleScalarTree()
   this->NumCandidates = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSimpleScalarTree::~vtkSimpleScalarTree()
 {
   delete[] this->Tree;
+  delete[] this->CandidateCells;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Shallow copy enough information for a clone to produce the same result on
 // the same data.
 void vtkSimpleScalarTree::ShallowCopy(vtkScalarTree* stree)
@@ -80,7 +70,7 @@ void vtkSimpleScalarTree::ShallowCopy(vtkScalarTree* stree)
   this->Superclass::ShallowCopy(stree);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Initialize locator. Frees memory and resets object as appropriate.
 void vtkSimpleScalarTree::Initialize()
 {
@@ -88,7 +78,7 @@ void vtkSimpleScalarTree::Initialize()
   this->Tree = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the scalar tree from the dataset provided. Checks build times
 // and modified time from input and reconstructs the tree if necessary.
 void vtkSimpleScalarTree::BuildTree()
@@ -214,7 +204,7 @@ void vtkSimpleScalarTree::BuildTree()
   cellScalars->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Begin to traverse the cells based on a scalar value. Returned cells
 // will have scalar values that span the scalar value specified.
 void vtkSimpleScalarTree::InitTraversal(double scalarValue)
@@ -238,7 +228,7 @@ void vtkSimpleScalarTree::InitTraversal(double scalarValue)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSimpleScalarTree::FindStartLeaf(vtkIdType index, int level)
 {
   if (level < this->Level)
@@ -282,7 +272,7 @@ int vtkSimpleScalarTree::FindStartLeaf(vtkIdType index, int level)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSimpleScalarTree::FindNextLeaf(vtkIdType childIndex, int childLevel)
 {
   vtkIdType myIndex = (childIndex - 1) / this->BranchingFactor;
@@ -319,7 +309,7 @@ int vtkSimpleScalarTree::FindNextLeaf(vtkIdType childIndex, int childLevel)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the next cell that may contain scalar value specified to
 // initialize traversal. The value nullptr is returned if the list is
 // exhausted. Make sure that InitTraversal() has been invoked first or
@@ -370,10 +360,10 @@ vtkCell* vtkSimpleScalarTree::GetNextCell(
   return nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the number of cell batches.
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the number of chunks of data that can be iterated over.
 vtkIdType vtkSimpleScalarTree::GetNumberOfCellBatches(double scalarValue)
 {
@@ -394,11 +384,8 @@ vtkIdType vtkSimpleScalarTree::GetNumberOfCellBatches(double scalarValue)
   // Basically we do a traversal of the tree and identify potential candidates.
   // It is essential that InitTraversal() has been called first.
   this->NumCandidates = 0;
-  if (this->CandidateCells)
-  {
-    delete[] this->CandidateCells;
-    this->CandidateCells = nullptr;
-  }
+  delete[] this->CandidateCells;
+  this->CandidateCells = nullptr;
   if (this->NumCells < 1)
   {
     return 0;
@@ -429,7 +416,7 @@ vtkIdType vtkSimpleScalarTree::GetNumberOfCellBatches(double scalarValue)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the number of chunks of data that can be iterated over.
 const vtkIdType* vtkSimpleScalarTree::GetCellBatch(vtkIdType batchNum, vtkIdType& numCells)
 {
@@ -452,7 +439,7 @@ const vtkIdType* vtkSimpleScalarTree::GetCellBatch(vtkIdType batchNum, vtkIdType
   return this->CandidateCells + pos;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSimpleScalarTree::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -461,3 +448,4 @@ void vtkSimpleScalarTree::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Max Level: " << this->GetMaxLevel() << "\n";
   os << indent << "Branching Factor: " << this->GetBranchingFactor() << "\n";
 }
+VTK_ABI_NAMESPACE_END

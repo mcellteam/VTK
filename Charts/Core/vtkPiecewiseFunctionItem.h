@@ -1,29 +1,19 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPiecewiseFunctionItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkPiecewiseFunctionItem_h
 #define vtkPiecewiseFunctionItem_h
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkScalarsToColorsItem.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPiecewiseFunction;
 class vtkImageData;
 
 /// vtkPiecewiseFunctionItem internal uses vtkPlot::Color, white by default
-class VTKCHARTSCORE_EXPORT vtkPiecewiseFunctionItem : public vtkScalarsToColorsItem
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPiecewiseFunctionItem : public vtkScalarsToColorsItem
 {
 public:
   static vtkPiecewiseFunctionItem* New();
@@ -52,4 +42,5 @@ private:
   void operator=(const vtkPiecewiseFunctionItem&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

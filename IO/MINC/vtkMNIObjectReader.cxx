@@ -1,50 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMNIObjectReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=========================================================================
-
-Copyright (c) 2006 Atamai, Inc.
-
-Use, modification and redistribution of the software, in source or
-binary forms, are permitted provided that the following terms and
-conditions are met:
-
-1) Redistribution of the source code, in verbatim or modified
-   form, must retain the above copyright notice, this license,
-   the following disclaimer, and any notices that refer to this
-   license and/or the following disclaimer.
-
-2) Redistribution in binary form must include the above copyright
-   notice, a copy of this license and the following disclaimer
-   in the documentation or with other materials provided with the
-   distribution.
-
-3) Modified copies of the source code must be clearly marked as such,
-   and must not be misrepresented as verbatim copies of the source code.
-
-THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE SOFTWARE "AS IS"
-WITHOUT EXPRESSED OR IMPLIED WARRANTY INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  IN NO EVENT SHALL ANY COPYRIGHT HOLDER OR OTHER PARTY WHO MAY
-MODIFY AND/OR REDISTRIBUTE THE SOFTWARE UNDER THE TERMS OF THIS LICENSE
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, LOSS OF DATA OR DATA BECOMING INACCURATE
-OR LOSS OF PROFIT OR BUSINESS INTERRUPTION) ARISING IN ANY WAY OUT OF
-THE USE OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGES.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2006 Atamai, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMNIObjectReader.h"
 
@@ -77,12 +33,13 @@ POSSIBILITY OF SUCH DAMAGES.
 #define VTK_BINARY 2
 #endif
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMNIObjectReader);
 
 #define VTK_MNIOBJ_LINE_LENGTH 256
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMNIObjectReader::vtkMNIObjectReader()
 {
   this->SetNumberOfInputPorts(0);
@@ -102,7 +59,7 @@ vtkMNIObjectReader::vtkMNIObjectReader()
   this->CharPointer = this->LineText;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMNIObjectReader::~vtkMNIObjectReader()
 {
   if (this->Property)
@@ -113,7 +70,7 @@ vtkMNIObjectReader::~vtkMNIObjectReader()
   delete[] this->LineText;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMNIObjectReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -126,7 +83,7 @@ void vtkMNIObjectReader::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::CanReadFile(const char* fname)
 {
   // First make sure the file exists.  This prevents an empty file
@@ -163,7 +120,7 @@ int vtkMNIObjectReader::CanReadFile(const char* fname)
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Internal function to read in a line up to 256 characters and then
 // skip to the next line in the file.
 int vtkMNIObjectReader::ReadLine(char* line, unsigned int maxlen)
@@ -193,7 +150,7 @@ int vtkMNIObjectReader::ReadLine(char* line, unsigned int maxlen)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Skip all whitespace, reading additional lines if necessary
 int vtkMNIObjectReader::SkipWhitespace()
 {
@@ -223,7 +180,7 @@ int vtkMNIObjectReader::SkipWhitespace()
   return 0;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Read floating-point values into a vtkFloatArray.
 int vtkMNIObjectReader::ParseValues(vtkDataArray* array, vtkIdType n)
 {
@@ -317,7 +274,7 @@ int vtkMNIObjectReader::ParseValues(vtkDataArray* array, vtkIdType n)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Read an integer value
 int vtkMNIObjectReader::ParseIdValue(vtkIdType* value)
 {
@@ -339,8 +296,8 @@ int vtkMNIObjectReader::ParseIdValue(vtkIdType* value)
 
   char* cp = this->CharPointer;
 
-  long lval = strtol(cp, &cp, 10);
-  if (lval > static_cast<long>(VTK_INT_MAX) || lval < static_cast<long>(VTK_INT_MIN))
+  long long lval = strtoll(cp, &cp, 10);
+  if (lval > static_cast<long long>(VTK_INT_MAX) || lval < static_cast<long long>(VTK_INT_MIN))
   {
     vtkErrorMacro(
       "Value " << lval << " is too large for int " << this->FileName << ":" << this->LineNumber);
@@ -361,7 +318,7 @@ int vtkMNIObjectReader::ParseIdValue(vtkIdType* value)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadProperty(vtkProperty* property)
 {
   vtkFloatArray* tmpArray = vtkFloatArray::New();
@@ -382,7 +339,7 @@ int vtkMNIObjectReader::ReadProperty(vtkProperty* property)
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadLineThickness(vtkProperty* property)
 {
   vtkFloatArray* tmpArray = vtkFloatArray::New();
@@ -399,7 +356,7 @@ int vtkMNIObjectReader::ReadLineThickness(vtkProperty* property)
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadNumberOfPoints(vtkIdType* numPoints)
 {
   int status = this->ParseIdValue(numPoints);
@@ -423,7 +380,7 @@ int vtkMNIObjectReader::ReadNumberOfPoints(vtkIdType* numPoints)
 
   return status;
 }
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadNumberOfCells(vtkIdType* numCells)
 {
   int status = this->ParseIdValue(numCells);
@@ -447,7 +404,7 @@ int vtkMNIObjectReader::ReadNumberOfCells(vtkIdType* numCells)
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadPoints(vtkPolyData* data, vtkIdType numPoints)
 {
   vtkPoints* points = vtkPoints::New();
@@ -463,7 +420,7 @@ int vtkMNIObjectReader::ReadPoints(vtkPolyData* data, vtkIdType numPoints)
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadNormals(vtkPolyData* data, vtkIdType numPoints)
 {
   vtkFloatArray* normals = vtkFloatArray::New();
@@ -480,7 +437,7 @@ int vtkMNIObjectReader::ReadNormals(vtkPolyData* data, vtkIdType numPoints)
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadColors(
   vtkProperty* property, vtkPolyData* data, vtkIdType numPoints, vtkIdType numCells)
 {
@@ -541,7 +498,7 @@ int vtkMNIObjectReader::ReadColors(
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadCells(vtkPolyData* data, vtkIdType numCells, int cellType)
 {
   vtkIntArray* endIndices = vtkIntArray::New();
@@ -611,7 +568,7 @@ int vtkMNIObjectReader::ReadCells(vtkPolyData* data, vtkIdType numCells, int cel
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadPolygonObject(vtkPolyData* output)
 {
   // Read the surface property
@@ -661,7 +618,7 @@ int vtkMNIObjectReader::ReadPolygonObject(vtkPolyData* output)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadLineObject(vtkPolyData* output)
 {
   // Read the line thickness
@@ -705,7 +662,7 @@ int vtkMNIObjectReader::ReadLineObject(vtkPolyData* output)
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::ReadFile(vtkPolyData* output)
 {
   // Initialize the property to default values
@@ -832,7 +789,7 @@ int vtkMNIObjectReader::ReadFile(vtkPolyData* output)
   return status;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMNIObjectReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -851,3 +808,4 @@ int vtkMNIObjectReader::RequestData(vtkInformation* vtkNotUsed(request),
   // read the file
   return this->ReadFile(output);
 }
+VTK_ABI_NAMESPACE_END

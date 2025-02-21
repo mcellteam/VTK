@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGLTFDocumentLoader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkGLTFDocumentLoader.h"
 
@@ -19,6 +7,8 @@
 #include "vtkAssume.h"
 #include "vtkBase64Utilities.h"
 #include "vtkCommand.h"
+#include "vtkExecutive.h"
+#include "vtkFileResourceStream.h"
 #include "vtkFloatArray.h"
 #include "vtkGLTFDocumentLoaderInternals.h"
 #include "vtkGLTFUtils.h"
@@ -32,6 +22,7 @@
 #include "vtkIntArray.h"
 #include "vtkJPEGReader.h"
 #include "vtkMath.h"
+#include "vtkMatrix3x3.h"
 #include "vtkPNGReader.h"
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
@@ -62,9 +53,10 @@
 #define GL_NEAREST 0x2600
 #define GL_LINEAR 0x2601
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Replacement for std::to_string as it is not supported by certain compilers
 template <typename T>
 std::string value_to_string(const T& val)
@@ -74,7 +66,7 @@ std::string value_to_string(const T& val)
   return ss.str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType GetNumberOfCellsForPrimitive(int mode, int cellSize, int numberOfIndices)
 {
   if (cellSize <= 0)
@@ -101,7 +93,7 @@ vtkIdType GetNumberOfCellsForPrimitive(int mode, int cellSize, int numberOfIndic
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void GenerateIndicesForPrimitive(vtkGLTFDocumentLoader::Primitive& primitive)
 {
   primitive.Indices = vtkSmartPointer<vtkCellArray>::New();
@@ -147,41 +139,74 @@ void GenerateIndicesForPrimitive(vtkGLTFDocumentLoader::Primitive& primitive)
 }
 }
 
-//----------------------------------------------------------------------------
-const std::vector<std::string> vtkGLTFDocumentLoader::SupportedExtensions = {
-  "KHR_lights_punctual"
-};
+//------------------------------------------------------------------------------
+const std::vector<std::string> vtkGLTFDocumentLoader::SupportedExtensions = { "KHR_lights_punctual",
+  "KHR_materials_unlit" };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkGLTFDocumentLoader);
 
 /** Metadata loading **/
-//----------------------------------------------------------------------------
-bool vtkGLTFDocumentLoader::LoadModelMetaDataFromFile(std::string fileName)
+//------------------------------------------------------------------------------
+bool vtkGLTFDocumentLoader::LoadModelMetaDataFromFile(const std::string& fileName)
 {
-  vtkGLTFDocumentLoaderInternals impl;
+  // Setup file resource and URI loader
+  auto fullPath = vtksys::SystemTools::CollapseFullPath(fileName);
+  auto file = vtkSmartPointer<vtkFileResourceStream>::New();
+  if (!file->Open(fullPath.c_str()))
+  {
+    vtkErrorMacro("Failed to open file " << fullPath);
+    return false;
+  }
 
-  impl.Self = this;
+  vtkNew<vtkURILoader> loader;
+  if (!loader->SetBaseFileName(fullPath))
+  {
+    vtkErrorMacro("Failed to set " << fullPath << " as base URI");
+    return false;
+  }
+
+  if (!this->LoadModelMetaDataFromStream(file, loader))
+  {
+    return false;
+  }
+
+  this->InternalModel->FileName = std::move(fullPath); // store filename
+  return true;
+}
+
+//------------------------------------------------------------------------------
+bool vtkGLTFDocumentLoader::LoadModelMetaDataFromStream(
+  vtkResourceStream* stream, vtkURILoader* loader)
+{
   // Create new Model and delete previous one
   this->InternalModel = std::make_shared<Model>();
-  if (this->InternalModel == nullptr)
+  this->InternalModel->Stream = stream;
+
+  if (loader)
   {
-    vtkErrorMacro("Could not allocate InternalModel");
+    this->InternalModel->URILoader = loader;
+  }
+  else
+  {
+    // Use a default URI loader if user doesn't provide one, so we can still load data URIs.
+    this->InternalModel->URILoader = vtkSmartPointer<vtkURILoader>::New();
+  }
+
+  vtkGLTFDocumentLoaderInternals impl;
+  impl.Self = this;
+
+  if (!impl.LoadModelMetaData(this->UsedExtensions))
+  {
+    this->InternalModel = nullptr;
     return false;
   }
 
-  fileName = vtksys::SystemTools::CollapseFullPath(fileName);
-  this->InternalModel->FileName = fileName;
-
-  if (!impl.LoadModelMetaDataFromFile(fileName, this->UsedExtensions))
-  {
-    return false;
-  }
   return true;
 }
 
 /** Data loading **/
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename Type>
 struct vtkGLTFDocumentLoader::BufferDataExtractionWorker
 {
@@ -282,12 +307,12 @@ struct vtkGLTFDocumentLoader::BufferDataExtractionWorker
   }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct vtkGLTFDocumentLoader::AccessorLoadingWorker
 {
   const std::vector<Accessor>* Accessors;
   const std::vector<BufferView>* BufferViews;
-  const std::vector<std::vector<char> >* Buffers;
+  const std::vector<std::vector<char>>* Buffers;
   int AccessorId;
   AccessorType ExpectedType;
   bool NormalizeTuples = false;
@@ -471,7 +496,7 @@ struct vtkGLTFDocumentLoader::AccessorLoadingWorker
 
 namespace
 {
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * Extracts a primitive's connectivity indices, and stores the corresponding cells into a
  * vtkCellArray.
@@ -576,7 +601,7 @@ void ExtractAndCastCellBufferData(const std::vector<char>& inbuf,
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::ExtractPrimitiveAccessorData(Primitive& primitive)
 {
   // Load connectivity
@@ -630,7 +655,7 @@ bool vtkGLTFDocumentLoader::ExtractPrimitiveAccessorData(Primitive& primitive)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::ExtractPrimitiveAttributes(Primitive& primitive)
 {
   AccessorLoadingWorker worker;
@@ -701,9 +726,14 @@ bool vtkGLTFDocumentLoader::ExtractPrimitiveAttributes(Primitive& primitive)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::LoadAnimationData()
 {
+  if (!this->LoadAnimation)
+  {
+    // Skip loading animation key frames
+    return true;
+  }
   AccessorLoadingWorker worker;
   worker.Accessors = &(this->InternalModel->Accessors);
   worker.BufferViews = &(this->InternalModel->BufferViews);
@@ -746,7 +776,8 @@ bool vtkGLTFDocumentLoader::LoadAnimationData()
       // Get actual tuple size when loading morphing weights
       unsigned int numberOfComponents = sampler.OutputData->GetNumberOfComponents();
       // If we're loading T/R/S, tuple size is already set (to 3 or 4) in outputdata.
-      if (numberOfComponents == this->GetNumberOfComponentsForType(AccessorType::SCALAR))
+      if (numberOfComponents ==
+        vtkGLTFDocumentLoader::GetNumberOfComponentsForType(AccessorType::SCALAR))
       {
         unsigned int nInput = sampler.InputData->GetNumberOfValues();
         unsigned int nOutput = sampler.OutputData->GetNumberOfValues();
@@ -772,31 +803,48 @@ bool vtkGLTFDocumentLoader::LoadAnimationData()
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::LoadImageData()
 {
-  vtkNew<vtkImageReader2Factory> factory;
-
-  for (Image& image : this->InternalModel->Images)
+  if (!this->LoadImages)
   {
+    // Skip loading model images
+    return true;
+  }
+  vtkNew<vtkImageReader2Factory> factory;
+  size_t numberOfMeshes = this->InternalModel->Meshes.size();
+  size_t numberOfImages = this->InternalModel->Images.size();
+  for (size_t i = 0; i < numberOfImages; i++)
+  {
+    auto& image = this->InternalModel->Images[i];
     vtkSmartPointer<vtkImageReader2> reader = nullptr;
     image.ImageData = vtkSmartPointer<vtkImageData>::New();
-    std::vector<char> buffer;
-
-    // If mime-type is defined, get appropriate reader here (only two possible values)
-    if (image.MimeType == "image/jpeg")
-    {
-      reader = vtkSmartPointer<vtkJPEGReader>::New();
-    }
-    else if (image.MimeType == "image/png")
-    {
-      reader = vtkSmartPointer<vtkPNGReader>::New();
-    }
+    std::vector<std::uint8_t> buffer;
 
     // If image is defined via bufferview index
     if (image.BufferView >= 0 &&
       image.BufferView < static_cast<int>(this->InternalModel->BufferViews.size()))
     {
+      // mime-type must be defined with BufferView to get appropriate reader here (only two possible
+      // values)
+      if (image.MimeType == "image/jpeg")
+      {
+        reader = vtkSmartPointer<vtkJPEGReader>::New();
+      }
+      else if (image.MimeType == "image/png")
+      {
+        reader = vtkSmartPointer<vtkPNGReader>::New();
+      }
+      else
+      {
+        // Extensions allow other image types.
+        // It is perfectly valid to declare other extension-supported image types
+        // so long as they are never required by the scene. Therefore, the possible
+        // error is deferred until later.
+        image.ImageData = nullptr;
+        continue;
+      }
+
       BufferView& bufferView = this->InternalModel->BufferViews[image.BufferView];
       int bufferId = bufferView.Buffer;
       if (bufferId < 0 || bufferId >= static_cast<int>(this->InternalModel->Buffers.size()))
@@ -811,57 +859,80 @@ bool vtkGLTFDocumentLoader::LoadImageData()
     }
     else // If image is defined via uri
     {
-      // Check for data-uri
-      if (vtksys::SystemTools::StringStartsWith(image.Uri, "data:"))
+      auto stream = this->InternalModel->URILoader->Load(image.Uri);
+      if (!stream)
       {
-        vtkGLTFUtils::GetBinaryBufferFromUri(
-          image.Uri, this->InternalModel->FileName, buffer, image.Uri.size());
-        // If mime-type is defined, get appropriate reader here (only two possible values)
-        std::string type = vtkGLTFUtils::GetDataUriMimeType(image.Uri);
-        if (type == "image/jpeg")
-        {
-          reader = vtkSmartPointer<vtkJPEGReader>::New();
-        }
-        else if (type == "image/png")
-        {
-          reader = vtkSmartPointer<vtkPNGReader>::New();
-        }
-        else
-        {
-          vtkErrorMacro("Invalid MIME-Type for image");
-          return false;
-        }
-        reader->SetMemoryBufferLength(static_cast<vtkIdType>(image.Uri.size()));
-        reader->SetMemoryBuffer(buffer.data());
+        vtkErrorMacro("Invalid Uri:" << image.Uri);
+        return false;
       }
-      // Read from file
+
+      // Magic numbers used to detect image format
+      static constexpr std::array<std::uint8_t, 4> jpegMagic = { 0xFF, 0xD8, 0xFF, 0xE0 };
+      static constexpr std::array<std::uint8_t, 4> pngMagic = { 0x89, 0x50, 0x4E, 0x47 };
+
+      buffer.resize(4);
+      if (stream->Read(buffer.data(), buffer.size()) != buffer.size())
+      {
+        vtkErrorMacro("Invalid file");
+        return false;
+      }
+
+      if (std::equal(buffer.begin(), buffer.end(), jpegMagic.begin()))
+      {
+        reader = vtkSmartPointer<vtkJPEGReader>::New();
+      }
+      else if (std::equal(buffer.begin(), buffer.end(), pngMagic.begin()))
+      {
+        reader = vtkSmartPointer<vtkPNGReader>::New();
+      }
       else
       {
-        std::string imageFilePath(
-          vtkGLTFUtils::GetResourceFullPath(image.Uri, this->InternalModel->FileName));
-        reader.TakeReference(factory->CreateImageReader2(imageFilePath.c_str()));
-        if (reader == nullptr)
-        {
-          vtkErrorMacro("Invalid format for image " << image.Uri);
-          return false;
-        }
-        reader->SetFileName(imageFilePath.c_str());
+        // Extensions allow other image types.
+        // It is perfectly valid to use other image formats
+        // so long as they are never required by the scene. Therefore, the possible
+        // error is deferred until later.
+        image.ImageData = nullptr;
+        continue;
       }
+
+      stream->Seek(0, vtkResourceStream::SeekDirection::End);
+      const auto size = stream->Tell() - this->GLBStart;
+      stream->Seek(this->GLBStart, vtkResourceStream::SeekDirection::Begin);
+      buffer.resize(size);
+      if (stream->Read(buffer.data(), buffer.size()) != buffer.size())
+      {
+        vtkErrorMacro("Failed to read image file data");
+        return false;
+      }
+
+      reader->SetMemoryBufferLength(buffer.size());
+      reader->SetMemoryBuffer(buffer.data());
     }
-    if (reader == nullptr)
+
+    bool status = reader->GetExecutive()->Update();
+    image.ImageData = reader->GetOutput();
+
+    if (!status || !image.ImageData)
     {
-      vtkErrorMacro("Invalid image object");
+      vtkErrorMacro("Failed to read an image");
       return false;
     }
-    reader->Update();
-    image.ImageData = reader->GetOutput();
+
+    double progress =
+      (i + numberOfMeshes + 1) / static_cast<double>(numberOfMeshes + numberOfImages);
+    this->InvokeEvent(vtkCommand::ProgressEvent, &progress);
   }
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::LoadSkinMatrixData()
 {
+  if (!this->LoadSkinMatrix)
+  {
+    // Skip loading the skin bind matrices
+    return true;
+  }
   AccessorLoadingWorker worker;
   worker.Accessors = &(this->InternalModel->Accessors);
   worker.BufferViews = &(this->InternalModel->BufferViews);
@@ -876,7 +947,7 @@ bool vtkGLTFDocumentLoader::LoadSkinMatrixData()
       // Default is an identity matrix
       vtkNew<vtkMatrix4x4> id;
       id->Identity();
-      skin.InverseBindMatrices.push_back(id);
+      skin.InverseBindMatrices.emplace_back(id);
       continue;
     }
     vtkNew<vtkFloatArray> matrixValues;
@@ -884,7 +955,7 @@ bool vtkGLTFDocumentLoader::LoadSkinMatrixData()
     vtkArrayDispatch::DispatchByArray<AttributeArrayTypes>::Execute(matrixValues, worker);
 
     size_t totalNumberOfComponents =
-      skin.Joints.size() * this->GetNumberOfComponentsForType(AccessorType::MAT4);
+      skin.Joints.size() * vtkGLTFDocumentLoader::GetNumberOfComponentsForType(AccessorType::MAT4);
     if (!worker.Result ||
       static_cast<size_t>(matrixValues->GetNumberOfValues()) != totalNumberOfComponents)
     {
@@ -897,13 +968,13 @@ bool vtkGLTFDocumentLoader::LoadSkinMatrixData()
       vtkNew<vtkMatrix4x4> matrix;
       matrix->DeepCopy(matrixValues->GetTuple(matrixId));
       matrix->Transpose();
-      skin.InverseBindMatrices.push_back(matrix);
+      skin.InverseBindMatrices.emplace_back(matrix);
     }
   }
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::LoadModelData(const std::vector<char>& glbBuffer)
 {
   vtkGLTFDocumentLoaderInternals impl;
@@ -916,22 +987,28 @@ bool vtkGLTFDocumentLoader::LoadModelData(const std::vector<char>& glbBuffer)
   }
 
   // Push optional glB buffer
-  if (glbBuffer.size() > 0)
+  if (!glbBuffer.empty())
   {
     this->InternalModel->Buffers.push_back(glbBuffer);
   }
 
-  impl.LoadBuffers(!glbBuffer.empty());
+  if (!impl.LoadBuffers(!glbBuffer.empty()))
+  {
+    return false;
+  }
+
+  this->PrepareData();
 
   // Read primitive attributes from buffers
   size_t numberOfMeshes = this->InternalModel->Meshes.size();
+  size_t numberOfImages = this->InternalModel->Images.size();
   for (size_t i = 0; i < numberOfMeshes; i++)
   {
     for (Primitive& primitive : this->InternalModel->Meshes[i].Primitives)
     {
       this->ExtractPrimitiveAccessorData(primitive);
     }
-    double progress = (i + 1) / static_cast<double>(numberOfMeshes);
+    double progress = (i + 1) / static_cast<double>(numberOfMeshes + numberOfImages);
     this->InvokeEvent(vtkCommand::ProgressEvent, static_cast<void*>(&progress));
   }
   // Read additional buffer data
@@ -947,12 +1024,18 @@ bool vtkGLTFDocumentLoader::LoadModelData(const std::vector<char>& glbBuffer)
 }
 
 /** vtk object building and animation operations **/
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::ApplyAnimation(float t, int animationId, bool forceStep)
 {
   const Animation& animation = this->InternalModel->Animations[animationId];
   for (const Animation::Channel& channel : animation.Channels)
   {
+    if (channel.TargetNode >= static_cast<int>(this->InternalModel->Nodes.size()))
+    {
+      vtkErrorMacro("Invalid target node");
+      return false;
+    }
+
     Node& node = this->InternalModel->Nodes[channel.TargetNode];
     const Animation::Sampler& sampler = animation.Samplers[channel.Sampler];
 
@@ -962,15 +1045,18 @@ bool vtkGLTFDocumentLoader::ApplyAnimation(float t, int animationId, bool forceS
     switch (channel.TargetPath)
     {
       case Animation::Channel::PathType::ROTATION:
-        numberOfComponents = this->GetNumberOfComponentsForType(AccessorType::VEC4);
+        numberOfComponents =
+          vtkGLTFDocumentLoader::GetNumberOfComponentsForType(AccessorType::VEC4);
         target = &(node.Rotation);
         break;
       case Animation::Channel::PathType::TRANSLATION:
-        numberOfComponents = this->GetNumberOfComponentsForType(AccessorType::VEC3);
+        numberOfComponents =
+          vtkGLTFDocumentLoader::GetNumberOfComponentsForType(AccessorType::VEC3);
         target = &(node.Translation);
         break;
       case Animation::Channel::PathType::SCALE:
-        numberOfComponents = this->GetNumberOfComponentsForType(AccessorType::VEC3);
+        numberOfComponents =
+          vtkGLTFDocumentLoader::GetNumberOfComponentsForType(AccessorType::VEC3);
         target = &(node.Scale);
         break;
       case Animation::Channel::PathType::WEIGHTS:
@@ -1001,12 +1087,18 @@ bool vtkGLTFDocumentLoader::ApplyAnimation(float t, int animationId, bool forceS
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGLTFDocumentLoader::ResetAnimation(int animationId)
 {
   const Animation& animation = this->InternalModel->Animations[animationId];
   for (const Animation::Channel& channel : animation.Channels)
   {
+    if (channel.TargetNode >= static_cast<int>(this->InternalModel->Nodes.size()))
+    {
+      vtkWarningMacro("Invalid target node, skipping reset");
+      continue;
+    }
+
     Node& node = this->InternalModel->Nodes[channel.TargetNode];
     switch (channel.TargetPath)
     {
@@ -1030,7 +1122,7 @@ void vtkGLTFDocumentLoader::ResetAnimation(int animationId)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::BuildPolyDataFromPrimitive(Primitive& primitive)
 {
   // Positions
@@ -1071,7 +1163,7 @@ bool vtkGLTFDocumentLoader::BuildPolyDataFromPrimitive(Primitive& primitive)
   // Other attributes
 
   // Set array names
-  for (auto it : primitive.AttributeValues)
+  for (const auto& it : primitive.AttributeValues)
   {
     it.second->SetName(it.first.c_str());
   }
@@ -1129,7 +1221,7 @@ bool vtkGLTFDocumentLoader::BuildPolyDataFromPrimitive(Primitive& primitive)
   int targetId = 0;
   for (auto& target : primitive.Targets)
   {
-    std::string name = "";
+    std::string name;
     if (target.AttributeValues.count("POSITION"))
     {
       name = "target" + value_to_string(targetId) + "_position";
@@ -1153,11 +1245,89 @@ bool vtkGLTFDocumentLoader::BuildPolyDataFromPrimitive(Primitive& primitive)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+bool vtkGLTFDocumentLoader::BuildPolyDataFromSkin(Skin& skin)
+{
+  if (skin.Skeleton >= 0 && skin.Skeleton < static_cast<int>(this->InternalModel->Nodes.size()))
+  {
+    skin.Armature = vtkSmartPointer<vtkPolyData>::New();
+
+    vtkNew<vtkPoints> points;
+    points->SetNumberOfPoints(skin.Joints.size());
+
+    vtkNew<vtkCellArray> vertices;
+
+    std::vector<int> nodeMapping(this->InternalModel->Nodes.size(), -1);
+
+    for (size_t i = 0; i < skin.Joints.size(); i++)
+    {
+      if (skin.Joints[i] >= static_cast<int>(nodeMapping.size()))
+      {
+        // invalid index
+        return false;
+      }
+
+      double p[3] = {};
+
+      auto trs = this->InternalModel->Nodes[skin.Joints[i]].GlobalTransform;
+      if (trs)
+      {
+        p[0] = trs->GetElement(0, 3);
+        p[1] = trs->GetElement(1, 3);
+        p[2] = trs->GetElement(2, 3);
+      }
+
+      points->SetPoint(i, p);
+
+      vtkIdType vId = i;
+      vertices->InsertNextCell(1, &vId);
+
+      nodeMapping[skin.Joints[i]] = static_cast<int>(i);
+    }
+
+    vtkNew<vtkCellArray> lines;
+
+    std::function<bool(int)> VisitJoint = [&](int nodeIndex)
+    {
+      const Node& node = this->InternalModel->Nodes[nodeIndex];
+
+      int mappedNode = nodeMapping[nodeIndex];
+
+      if (mappedNode == -1)
+      {
+        return false;
+      }
+
+      for (int childIndex : node.Children)
+      {
+        int mappedChild = nodeMapping[childIndex];
+
+        if (mappedChild == -1)
+        {
+          return false;
+        }
+
+        lines->InsertNextCell({ mappedNode, mappedChild });
+        VisitJoint(childIndex);
+      }
+
+      return true;
+    };
+
+    skin.Armature->SetPoints(points);
+    skin.Armature->SetVerts(vertices);
+    skin.Armature->SetLines(lines);
+
+    return VisitJoint(skin.Skeleton);
+  }
+
+  return false;
+}
+
+//------------------------------------------------------------------------------
 void vtkGLTFDocumentLoader::Node::UpdateTransform()
 {
   this->Transform->Identity();
-  this->Transform->PostMultiply();
 
   if (this->TRSLoaded)
   {
@@ -1182,24 +1352,29 @@ void vtkGLTFDocumentLoader::Node::UpdateTransform()
       std::begin(rotationValues), std::begin(rotationValues) + 3, std::end(rotationValues));
     // Initialize quaternion
     vtkQuaternion<float> rotation;
-    rotation.Set(rotationValues.data());
-    float axis[3];
     rotation.Normalize();
-    float angle = rotation.GetRotationAngleAndAxis(axis);
-    angle = vtkMath::DegreesFromRadians(angle);
+    rotation.Set(rotationValues.data());
+
+    float rotationMatrix[3][3];
+    rotation.ToMatrix3x3(rotationMatrix);
 
     // Apply transformations
-    this->Transform->Scale(scale.data());
-    this->Transform->RotateWXYZ(angle, axis);
-    this->Transform->Translate(translation.data());
+    for (int i = 0; i < 3; i++)
+    {
+      for (int j = 0; j < 3; j++)
+      {
+        this->Transform->SetElement(i, j, scale[j] * rotationMatrix[i][j]);
+      }
+      this->Transform->SetElement(i, 3, translation[i]);
+    }
   }
   else
   {
-    this->Transform->SetMatrix(this->Matrix);
+    this->Transform->DeepCopy(this->Matrix);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGLTFDocumentLoader::Animation::Sampler::GetInterpolatedData(float t,
   size_t numberOfComponents, std::vector<float>* output, bool forceStep, bool isRotation) const
 {
@@ -1342,51 +1517,78 @@ void vtkGLTFDocumentLoader::Animation::Sampler::GetInterpolatedData(float t,
 }
 
 /** File operations **/
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::LoadFileBuffer(
   const std::string& fileName, std::vector<char>& glbBuffer)
 {
-  // Get base information
-  std::string magic;
-  uint32_t version;
-  uint32_t fileLength;
-  std::vector<vtkGLTFUtils::ChunkInfoType> chunkInfo;
-  if (!vtkGLTFUtils::ExtractGLBFileInformation(fileName, magic, version, fileLength, chunkInfo))
+  vtkNew<vtkFileResourceStream> file;
+  if (!file->Open(fileName.c_str()))
   {
-    vtkErrorMacro("Invalid .glb file " << fileName);
     return false;
   }
 
-  // Open the file in binary mode
-  vtksys::ifstream fin;
-  fin.open(fileName.c_str(), std::ios::binary | std::ios::in);
-  if (!fin.is_open())
+  return this->LoadStreamBuffer(file, glbBuffer);
+}
+
+//------------------------------------------------------------------------------
+bool vtkGLTFDocumentLoader::LoadStreamBuffer(
+  vtkResourceStream* stream, std::vector<char>& glbBuffer)
+{
+  stream->Seek(this->GLBStart, vtkResourceStream::SeekDirection::Begin);
+
+  // Get base information
+  std::array<char, 4> magic;
+  if (stream->Read(magic.data(), magic.size()) != magic.size())
   {
-    vtkErrorMacro("Error opening file " << fileName);
+    return false;
+  }
+
+  if (std::strncmp(magic.data(), "glTF", 4) != 0)
+  {
+    return false;
+  }
+
+  std::uint32_t version;
+  std::uint32_t fileLength;
+  std::vector<vtkGLTFUtils::ChunkInfoType> chunkInfo;
+  if (!vtkGLTFUtils::ExtractGLBFileInformation(
+        stream, version, fileLength, this->GLBStart, chunkInfo))
+  {
+    vtkErrorMacro("Invalid .glb file");
     return false;
   }
 
   // Look for BIN chunk while updating fstream position
-  fin.seekg(vtkGLTFUtils::GLBHeaderSize + vtkGLTFUtils::GLBChunkHeaderSize);
-  const std::string binaryHeader("BIN\0", 4);
+  stream->Seek(this->GLBStart + vtkGLTFUtils::GLBHeaderSize + vtkGLTFUtils::GLBChunkHeaderSize,
+    vtkResourceStream::SeekDirection::Begin);
   for (auto& chunk : chunkInfo)
   {
-    if (chunk.first == binaryHeader)
+    if (std::memcmp(chunk.first.data(), "BIN\0", 4) == 0)
     {
       // Read chunk data into output vector
-      std::vector<char> BINData(chunk.second);
-      fin.read(BINData.data(), chunk.second);
-      glbBuffer.insert(glbBuffer.end(), BINData.begin(), BINData.begin() + chunk.second);
+      std::vector<char> binData;
+      binData.resize(chunk.second);
+      if (stream->Read(binData.data(), chunk.second) != chunk.second)
+      {
+        vtkErrorMacro("Failed to read BIN chunk from .glb file");
+        return false;
+      }
+
+      glbBuffer.insert(glbBuffer.end(), binData.begin(), binData.begin() + chunk.second);
+
       return true;
     }
+
     // Jump to next chunk
-    fin.seekg(chunk.second + vtkGLTFUtils::GLBChunkHeaderSize, std::ios::cur);
+    stream->Seek(
+      chunk.second + vtkGLTFUtils::GLBChunkHeaderSize, vtkResourceStream::SeekDirection::Current);
   }
-  vtkErrorMacro("Could not find any valid BIN chunks in file " << fileName);
+
+  vtkErrorMacro("Could not find any valid BIN chunks in file");
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGLTFDocumentLoader::BuildModelVTKGeometry()
 {
   if (this->InternalModel == nullptr)
@@ -1411,59 +1613,75 @@ bool vtkGLTFDocumentLoader::BuildModelVTKGeometry()
       this->BuildGlobalTransforms(node, nullptr);
     }
   }
+  // Build armatures
+  for (Skin& skin : this->InternalModel->Skins)
+  {
+    this->BuildPolyDataFromSkin(skin);
+  }
 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGLTFDocumentLoader::BuildGlobalTransforms(
-  unsigned int nodeIndex, vtkSmartPointer<vtkTransform> parentTransform)
+  unsigned int nodeIndex, vtkSmartPointer<vtkMatrix4x4> parentTransform)
 {
   if (nodeIndex >= this->InternalModel->Nodes.size())
   {
     return;
   }
   Node& node = this->InternalModel->Nodes[nodeIndex];
-  node.GlobalTransform = vtkSmartPointer<vtkTransform>::New();
-  node.GlobalTransform->PostMultiply();
-  node.GlobalTransform->Concatenate(node.Transform);
+
+  node.GlobalTransform = vtkSmartPointer<vtkMatrix4x4>::New();
+  node.GlobalTransform->DeepCopy(node.Transform);
   if (parentTransform != nullptr)
   {
-    node.GlobalTransform->Concatenate(parentTransform);
+    vtkMatrix4x4::Multiply4x4(parentTransform, node.GlobalTransform, node.GlobalTransform);
   }
   for (auto childId : node.Children)
   {
     this->BuildGlobalTransforms(childId, node.GlobalTransform);
   }
-  return;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkGLTFDocumentLoader::BuildGlobalTransforms()
+{
+  for (const auto& scene : this->InternalModel->Scenes)
+  {
+    for (unsigned int node : scene.Nodes)
+    {
+      this->BuildGlobalTransforms(node, nullptr);
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkGLTFDocumentLoader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::shared_ptr<vtkGLTFDocumentLoader::Model> vtkGLTFDocumentLoader::GetInternalModel()
 {
   return std::shared_ptr<Model>(this->InternalModel);
 }
 
-//----------------------------------------------------------------------------
-const std::vector<std::string>& vtkGLTFDocumentLoader::GetSupportedExtensions()
+//------------------------------------------------------------------------------
+std::vector<std::string> vtkGLTFDocumentLoader::GetSupportedExtensions()
 {
   return vtkGLTFDocumentLoader::SupportedExtensions;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const std::vector<std::string>& vtkGLTFDocumentLoader::GetUsedExtensions()
 {
   return this->UsedExtensions;
 }
 
 /** types and enums **/
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned int vtkGLTFDocumentLoader::GetNumberOfComponentsForType(
   vtkGLTFDocumentLoader::AccessorType type)
 {
@@ -1487,3 +1705,41 @@ unsigned int vtkGLTFDocumentLoader::GetNumberOfComponentsForType(
       return 0;
   }
 }
+
+//------------------------------------------------------------------------------
+void vtkGLTFDocumentLoader::ComputeJointMatrices(const Model& model, const Skin& skin, Node& node,
+  std::vector<vtkSmartPointer<vtkMatrix4x4>>& jointMats)
+{
+  jointMats.clear();
+  jointMats.reserve(skin.Joints.size());
+
+  vtkNew<vtkMatrix4x4> inverseMeshGlobal;
+  vtkMatrix4x4::Invert(node.GlobalTransform, inverseMeshGlobal);
+
+  for (unsigned int jointId = 0; jointId < skin.Joints.size(); jointId++)
+  {
+    const Node& jointNode = model.Nodes[skin.Joints[jointId]];
+
+    /**
+     * Joint matrices:
+     * jointMatrix(j) =
+     * globalTransformOfNodeThatTheMeshIsAttachedTo^-1 *
+     * globalTransformOfJointNode(j) *
+     * inverseBindMatrixForJoint(j);
+     * The mesh will be transformed (using vtkWeightedTransformFilter) using this matrix:
+     * mat4 skinMat =
+     * weight.x * jointMatrix[joint.x] +
+     * weight.y * jointMatrix[joint.y] +
+     * weight.z * jointMatrix[joint.z] +
+     * weight.w * jointMatrix[joint.w];
+     */
+
+    vtkNew<vtkMatrix4x4> jointMat;
+    vtkMatrix4x4::Multiply4x4(
+      jointNode.GlobalTransform, skin.InverseBindMatrices[jointId], jointMat);
+    vtkMatrix4x4::Multiply4x4(inverseMeshGlobal, jointMat, jointMat);
+
+    jointMats.emplace_back(jointMat);
+  }
+}
+VTK_ABI_NAMESPACE_END

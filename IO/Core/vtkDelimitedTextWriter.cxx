@@ -1,23 +1,6 @@
-/*=========================================================================
-
-  Program:   ParaView
-  Module:    vtkDelimitedTextWriter.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2009 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
-
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2009 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkDelimitedTextWriter.h"
 
 #include "vtkAlgorithm.h"
@@ -34,8 +17,9 @@
 #include <sstream>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDelimitedTextWriter);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDelimitedTextWriter::vtkDelimitedTextWriter()
 {
   this->StringDelimiter = nullptr;
@@ -49,7 +33,7 @@ vtkDelimitedTextWriter::vtkDelimitedTextWriter()
   this->OutputString = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDelimitedTextWriter::~vtkDelimitedTextWriter()
 {
   this->SetStringDelimiter(nullptr);
@@ -59,14 +43,14 @@ vtkDelimitedTextWriter::~vtkDelimitedTextWriter()
   delete[] this->OutputString;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDelimitedTextWriter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkTable");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDelimitedTextWriter::OpenStream()
 {
   if (this->WriteToOutputString)
@@ -100,7 +84,7 @@ bool vtkDelimitedTextWriter::OpenStream()
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class iterT>
 void vtkDelimitedTextWriterGetDataString(
   iterT* iter, vtkIdType tupleIndex, ostream* stream, vtkDelimitedTextWriter* writer, bool* first)
@@ -111,7 +95,7 @@ void vtkDelimitedTextWriterGetDataString(
   {
     if ((index + cc) < iter->GetNumberOfValues())
     {
-      if (*first == false)
+      if (!*first)
       {
         (*stream) << writer->GetFieldDelimiter();
       }
@@ -120,7 +104,7 @@ void vtkDelimitedTextWriterGetDataString(
     }
     else
     {
-      if (*first == false)
+      if (!*first)
       {
         (*stream) << writer->GetFieldDelimiter();
       }
@@ -129,7 +113,7 @@ void vtkDelimitedTextWriterGetDataString(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <>
 void vtkDelimitedTextWriterGetDataString(vtkArrayIteratorTemplate<vtkStdString>* iter,
   vtkIdType tupleIndex, ostream* stream, vtkDelimitedTextWriter* writer, bool* first)
@@ -140,7 +124,7 @@ void vtkDelimitedTextWriterGetDataString(vtkArrayIteratorTemplate<vtkStdString>*
   {
     if ((index + cc) < iter->GetNumberOfValues())
     {
-      if (*first == false)
+      if (!*first)
       {
         (*stream) << writer->GetFieldDelimiter();
       }
@@ -149,7 +133,7 @@ void vtkDelimitedTextWriterGetDataString(vtkArrayIteratorTemplate<vtkStdString>*
     }
     else
     {
-      if (*first == false)
+      if (!*first)
       {
         (*stream) << writer->GetFieldDelimiter();
       }
@@ -158,19 +142,19 @@ void vtkDelimitedTextWriterGetDataString(vtkArrayIteratorTemplate<vtkStdString>*
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkDelimitedTextWriter::GetString(vtkStdString string)
 {
   if (this->UseStringDelimiter && this->StringDelimiter)
   {
-    vtkStdString temp = this->StringDelimiter;
+    std::string temp = this->StringDelimiter;
     temp += string + this->StringDelimiter;
     return temp;
   }
   return string;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDelimitedTextWriter::WriteData()
 {
   vtkTable* rg = vtkTable::SafeDownCast(this->GetInput());
@@ -184,7 +168,7 @@ void vtkDelimitedTextWriter::WriteData()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDelimitedTextWriter::WriteTable(vtkTable* table)
 {
   vtkIdType numRows = table->GetNumberOfRows();
@@ -194,7 +178,7 @@ void vtkDelimitedTextWriter::WriteTable(vtkTable* table)
     return;
   }
 
-  std::vector<vtkSmartPointer<vtkArrayIterator> > columnsIters;
+  std::vector<vtkSmartPointer<vtkArrayIterator>> columnsIters;
 
   int cc;
   int numArrays = dsa->GetNumberOfArrays();
@@ -220,7 +204,7 @@ void vtkDelimitedTextWriter::WriteTable(vtkTable* table)
       (*this->Stream) << this->GetString(array_name.str());
     }
     vtkArrayIterator* iter = array->NewIterator();
-    columnsIters.push_back(iter);
+    columnsIters.emplace_back(iter);
     iter->Delete();
   }
   (*this->Stream) << "\n";
@@ -228,7 +212,7 @@ void vtkDelimitedTextWriter::WriteTable(vtkTable* table)
   for (vtkIdType index = 0; index < numRows; index++)
   {
     first = true;
-    std::vector<vtkSmartPointer<vtkArrayIterator> >::iterator iter;
+    std::vector<vtkSmartPointer<vtkArrayIterator>>::iterator iter;
     for (iter = columnsIters.begin(); iter != columnsIters.end(); ++iter)
     {
       switch ((*iter)->GetDataType())
@@ -260,7 +244,7 @@ void vtkDelimitedTextWriter::WriteTable(vtkTable* table)
   this->Stream = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkDelimitedTextWriter::RegisterAndGetOutputString()
 {
   char* tmp = this->OutputString;
@@ -269,7 +253,7 @@ char* vtkDelimitedTextWriter::RegisterAndGetOutputString()
   return tmp;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDelimitedTextWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -281,3 +265,4 @@ void vtkDelimitedTextWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "FileName: " << (this->FileName ? this->FileName : "none") << endl;
   os << indent << "WriteToOutputString: " << this->WriteToOutputString << endl;
 }
+VTK_ABI_NAMESPACE_END

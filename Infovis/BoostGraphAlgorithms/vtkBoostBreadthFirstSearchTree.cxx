@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoostBreadthFirstSearchTree.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkBoostBreadthFirstSearchTree.h"
 
 #include "vtkCellArray.h"
@@ -44,6 +28,7 @@
 
 using namespace boost;
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostBreadthFirstSearchTree);
 
 #if BOOST_VERSION >= 104800 // Boost 1.48.x
@@ -70,7 +55,7 @@ template <typename IdMap>
 class bfs_tree_builder : public default_bfs_visitor
 {
 public:
-  bfs_tree_builder() {}
+  bfs_tree_builder() = default;
 
   bfs_tree_builder(IdMap& g2t, IdMap& t2g, vtkGraph* g, vtkMutableDirectedGraph* t, vtkIdType root)
     : graph_to_tree(g2t)
@@ -133,7 +118,7 @@ vtkBoostBreadthFirstSearchTree::vtkBoostBreadthFirstSearchTree()
 {
   // Default values for the origin vertex
   this->OriginVertexIndex = 0;
-  this->ArrayName = 0;
+  this->ArrayName = nullptr;
   this->SetArrayName("Not Set");
   this->ArrayNameSet = false;
   this->OriginValue = 0;
@@ -164,7 +149,7 @@ void vtkBoostBreadthFirstSearchTree::SetOriginVertex(vtkIdType index)
 // know the specific index of the vertex.
 void vtkBoostBreadthFirstSearchTree::SetOriginVertex(vtkStdString arrayName, vtkVariant value)
 {
-  this->SetArrayName(arrayName);
+  this->SetArrayName(arrayName.c_str());
   this->ArrayNameSet = true;
   this->OriginValue = value;
   this->Modified();
@@ -190,7 +175,7 @@ vtkIdType vtkBoostBreadthFirstSearchTree::GetVertexIndex(
   else
   {
     vtkStringArray* stringArray = vtkArrayDownCast<vtkStringArray>(abstract);
-    vtkStdString stringValue(value.ToString());
+    std::string stringValue(value.ToString());
     for (int i = 0; i < stringArray->GetNumberOfTuples(); ++i)
     {
       if (stringValue == stringArray->GetValue(i))
@@ -326,3 +311,4 @@ void vtkBoostBreadthFirstSearchTree::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "ReverseEdges: " << (this->ReverseEdges ? "on" : "off") << endl;
 }
+VTK_ABI_NAMESPACE_END

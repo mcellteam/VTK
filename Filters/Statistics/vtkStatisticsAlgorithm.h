@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkStatisticsAlgorithm.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkStatisticsAlgorithm
  * @brief   Base class for statistics algorithms
@@ -59,6 +43,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkFiltersStatisticsModule.h" // For export macro
 #include "vtkTableAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataObjectCollection;
 class vtkMultiBlockDataSet;
 class vtkStdString;
@@ -130,55 +115,55 @@ public:
     this->SetInputData(vtkStatisticsAlgorithm::INPUT_MODEL, model);
   }
 
-  //@{
+  ///@{
   /**
    * Set/Get the Learn operation.
    */
   vtkSetMacro(LearnOption, bool);
   vtkGetMacro(LearnOption, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Derive operation.
    */
   vtkSetMacro(DeriveOption, bool);
   vtkGetMacro(DeriveOption, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Assess operation.
    */
   vtkSetMacro(AssessOption, bool);
   vtkGetMacro(AssessOption, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Test operation.
    */
   vtkSetMacro(TestOption, bool);
   vtkGetMacro(TestOption, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of tables in the primary model.
    */
   vtkSetMacro(NumberOfPrimaryTables, vtkIdType);
   vtkGetMacro(NumberOfPrimaryTables, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get assessment names.
    */
   virtual void SetAssessNames(vtkStringArray*);
   vtkGetObjectMacro(AssessNames, vtkStringArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * A base class for a functor that assesses data.
    */
@@ -186,9 +171,9 @@ public:
   {
   public:
     virtual void operator()(vtkDoubleArray*, vtkIdType) = 0;
-    virtual ~AssessFunctor() {}
+    virtual ~AssessFunctor() = default;
   };
-  //@}
+  ///@}
 
   /**
    * Add or remove a column from the current analysis request.
@@ -340,4 +325,5 @@ private:
   void operator=(const vtkStatisticsAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

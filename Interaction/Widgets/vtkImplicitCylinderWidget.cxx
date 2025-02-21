@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitCylinderWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImplicitCylinderWidget.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCamera.h"
@@ -22,14 +10,14 @@
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
-#include "vtkStdString.h"
 #include "vtkWidgetCallbackMapper.h"
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImplicitCylinderWidget);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImplicitCylinderWidget::vtkImplicitCylinderWidget()
 {
   this->WidgetState = vtkImplicitCylinderWidget::Start;
@@ -59,31 +47,43 @@ vtkImplicitCylinderWidget::vtkImplicitCylinderWidget()
     "Left", vtkWidgetEvent::Down, this, vtkImplicitCylinderWidget::MoveCylinderAction);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 'x', 1,
     "x", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
+  this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 24, 1,
+    "x", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 'X', 1,
     "X", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 'y', 1,
+    "y", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
+  this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 25, 1,
     "y", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 'Y', 1,
     "Y", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 'z', 1,
     "z", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
+  this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 26, 1,
+    "z", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyPressEvent, vtkEvent::AnyModifier, 'Z', 1,
     "Z", vtkWidgetEvent::ModifyEvent, this, vtkImplicitCylinderWidget::TranslationAxisLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 'x',
     1, "x", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
+  this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 24, 1,
+    "x", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 'X',
     1, "X", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 'y',
     1, "y", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
+  this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 25, 1,
+    "y", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 'Y',
     1, "Y", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 'z',
     1, "z", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
+  this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 26, 1,
+    "z", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
   this->CallbackMapper->SetCallbackMethod(vtkCommand::KeyReleaseEvent, vtkEvent::AnyModifier, 'Z',
     1, "Z", vtkWidgetEvent::Reset, this, vtkImplicitCylinderWidget::TranslationAxisUnLock);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::SelectAction(vtkAbstractWidget* w)
 {
   vtkImplicitCylinderWidget* self = reinterpret_cast<vtkImplicitCylinderWidget*>(w);
@@ -124,7 +124,7 @@ void vtkImplicitCylinderWidget::SelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::TranslateAction(vtkAbstractWidget* w)
 {
   vtkImplicitCylinderWidget* self = reinterpret_cast<vtkImplicitCylinderWidget*>(w);
@@ -158,7 +158,7 @@ void vtkImplicitCylinderWidget::TranslateAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::ScaleAction(vtkAbstractWidget* w)
 {
   vtkImplicitCylinderWidget* self = reinterpret_cast<vtkImplicitCylinderWidget*>(w);
@@ -192,7 +192,7 @@ void vtkImplicitCylinderWidget::ScaleAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::MoveAction(vtkAbstractWidget* w)
 {
   vtkImplicitCylinderWidget* self = reinterpret_cast<vtkImplicitCylinderWidget*>(w);
@@ -241,7 +241,7 @@ void vtkImplicitCylinderWidget::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkImplicitCylinderWidget* self = reinterpret_cast<vtkImplicitCylinderWidget*>(w);
@@ -268,7 +268,7 @@ void vtkImplicitCylinderWidget::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::MoveCylinderAction(vtkAbstractWidget* w)
 {
   vtkImplicitCylinderWidget* self = reinterpret_cast<vtkImplicitCylinderWidget*>(w);
@@ -291,8 +291,10 @@ void vtkImplicitCylinderWidget::MoveCylinderAction(vtkAbstractWidget* w)
 
   // Move the cylinder
   double factor = (self->Interactor->GetControlKey() ? 0.5 : 1.0);
-  if (vtkStdString(self->Interactor->GetKeySym()) == vtkStdString("Down") ||
-    vtkStdString(self->Interactor->GetKeySym()) == vtkStdString("Left"))
+  char* cKeySym = self->Interactor->GetKeySym();
+  std::string keySym = cKeySym != nullptr ? cKeySym : "";
+
+  if (keySym == "Down" || keySym == "Left")
   {
     self->GetCylinderRepresentation()->BumpCylinder(-1, factor);
   }
@@ -307,7 +309,7 @@ void vtkImplicitCylinderWidget::MoveCylinderAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -316,13 +318,13 @@ void vtkImplicitCylinderWidget::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::SetRepresentation(vtkImplicitCylinderRepresentation* rep)
 {
   this->Superclass::SetWidgetRepresentation(reinterpret_cast<vtkWidgetRepresentation*>(rep));
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImplicitCylinderWidget::UpdateCursorShape(int state)
 {
   // So as to change the cursor shape when the mouse is poised over
@@ -346,35 +348,39 @@ int vtkImplicitCylinderWidget::UpdateCursorShape(int state)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::TranslationAxisLock(vtkAbstractWidget* widget)
 {
   vtkImplicitCylinderWidget* self = reinterpret_cast<vtkImplicitCylinderWidget*>(widget);
   vtkImplicitCylinderRepresentation* rep =
     vtkImplicitCylinderRepresentation::SafeDownCast(self->WidgetRep);
-  if (self->Interactor->GetKeyCode() == 'x' || self->Interactor->GetKeyCode() == 'X')
+  char* cKeySym = self->Interactor->GetKeySym();
+  std::string keySym = cKeySym != nullptr ? cKeySym : "";
+  std::transform(keySym.begin(), keySym.end(), keySym.begin(), ::toupper);
+  if (keySym == "X")
   {
     rep->SetXTranslationAxisOn();
   }
-  if (self->Interactor->GetKeyCode() == 'y' || self->Interactor->GetKeyCode() == 'Y')
+  else if (keySym == "Y")
   {
     rep->SetYTranslationAxisOn();
   }
-  if (self->Interactor->GetKeyCode() == 'z' || self->Interactor->GetKeyCode() == 'Z')
+  else if (keySym == "Z")
   {
     rep->SetZTranslationAxisOn();
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::TranslationAxisUnLock(vtkAbstractWidget* widget)
 {
   vtkImplicitCylinderWidget* self = reinterpret_cast<vtkImplicitCylinderWidget*>(widget);
   vtkImplicitCylinderRepresentation::SafeDownCast(self->WidgetRep)->SetTranslationAxisOff();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImplicitCylinderWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

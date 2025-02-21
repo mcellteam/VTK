@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkDIYDataExchanger.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkDIYDataExchanger.h"
 
 #include "vtkDIYUtilities.h"
@@ -34,24 +23,25 @@
 
 #include <functional>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDIYDataExchanger);
 vtkCxxSetObjectMacro(vtkDIYDataExchanger, Controller, vtkMultiProcessController);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDIYDataExchanger::vtkDIYDataExchanger()
   : Controller(nullptr)
 {
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDIYDataExchanger::~vtkDIYDataExchanger()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
-bool vtkDIYDataExchanger::AllToAll(const std::vector<vtkSmartPointer<vtkDataSet> >& sendBuffer,
-  const std::vector<int>& sendCounts, std::vector<vtkSmartPointer<vtkDataSet> >& recvBuffer,
+//------------------------------------------------------------------------------
+bool vtkDIYDataExchanger::AllToAll(const std::vector<vtkSmartPointer<vtkDataSet>>& sendBuffer,
+  const std::vector<int>& sendCounts, std::vector<vtkSmartPointer<vtkDataSet>>& recvBuffer,
   std::vector<int>& recvCounts)
 {
   if (this->Controller == nullptr || (this->Controller->GetNumberOfProcesses() <= 1))
@@ -80,10 +70,10 @@ bool vtkDIYDataExchanger::AllToAll(const std::vector<vtkSmartPointer<vtkDataSet>
 
   // collect information from all ranks about who has data from whom. this helps
   // us setup links.
-  std::vector<std::vector<int> > allCounts;
+  std::vector<std::vector<int>> allCounts;
   diy::mpi::all_gather(comm, sendCounts, allCounts);
 
-  using VectorOfDataSet = std::vector<vtkSmartPointer<vtkDataSet> >;
+  using VectorOfDataSet = std::vector<vtkSmartPointer<vtkDataSet>>;
   using VectorOfVectorOfDataSet = std::vector<VectorOfDataSet>;
   using BlockT = VectorOfVectorOfDataSet;
 
@@ -119,26 +109,29 @@ bool vtkDIYDataExchanger::AllToAll(const std::vector<vtkSmartPointer<vtkDataSet>
   }
 
   master.add(/*gid=*/comm.rank(), block, link);
-  master.foreach ([](BlockT* b, const diy::Master::ProxyWithLink& cp) {
-    for (const auto& neighbor : cp.link()->neighbors())
+  master.foreach (
+    [](BlockT* b, const diy::Master::ProxyWithLink& cp)
     {
-      if (neighbor.gid == cp.gid())
+      for (const auto& neighbor : cp.link()->neighbors())
       {
-        continue;
-      } // don't enqueue for self
-      auto& vector_of_ds = (*b)[neighbor.gid];
-      // cp.enqueue(neighbor, static_cast<int>(vector_of_ds.size()));
-      for (auto& ds : vector_of_ds)
-      {
-        vtkLogF(TRACE, "enqueue for %d (%p)", neighbor.gid, ds.GetPointer());
-        cp.enqueue<vtkDataSet*>(neighbor, ds.GetPointer());
+        if (neighbor.gid == cp.gid())
+        {
+          continue;
+        } // don't enqueue for self
+        auto& vector_of_ds = (*b)[neighbor.gid];
+        // cp.enqueue(neighbor, static_cast<int>(vector_of_ds.size()));
+        for (auto& ds : vector_of_ds)
+        {
+          vtkLogF(TRACE, "enqueue for %d (%p)", neighbor.gid, static_cast<void*>(ds.GetPointer()));
+          cp.enqueue<vtkDataSet*>(neighbor, ds.GetPointer());
+        }
+        vector_of_ds.clear();
       }
-      vector_of_ds.clear();
-    }
-  });
+    });
   master.exchange();
   master.foreach (
-    [&offsets, &sendBuffer, &sendCounts](BlockT* b, const diy::Master::ProxyWithLink& cp) {
+    [&offsets, &sendBuffer, &sendCounts](BlockT* b, const diy::Master::ProxyWithLink& cp)
+    {
       for (const auto& neighbor : cp.link()->neighbors())
       {
         auto& vector_of_ds = (*b)[neighbor.gid];
@@ -179,9 +172,10 @@ bool vtkDIYDataExchanger::AllToAll(const std::vector<vtkSmartPointer<vtkDataSet>
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDIYDataExchanger::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
+VTK_ABI_NAMESPACE_END

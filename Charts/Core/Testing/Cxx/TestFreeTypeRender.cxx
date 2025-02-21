@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestContext.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkContext2D.h"
 #include "vtkContextScene.h"
@@ -26,8 +14,6 @@
 #include "vtkTextProperty.h"
 #include "vtkTransform2D.h"
 
-#include "vtkUnicodeString.h"
-
 #include "vtkFreeTypeStringToImage.h"
 #include "vtkQtStringToImage.h"
 
@@ -35,7 +21,7 @@
 
 #include <QApplication>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestFreeTypeRender(int argc, char* argv[])
 {
   QApplication app(argc, argv);
@@ -57,14 +43,12 @@ int TestFreeTypeRender(int argc, char* argv[])
   double orientation = 0.0;
   prop->SetOrientation(orientation);
   vtkSmartPointer<vtkImageData> imageqt = vtkSmartPointer<vtkImageData>::New();
-  int result =
-    qt->RenderString(prop, vtkUnicodeString::from_utf8("My String\n AV \xe2\x84\xab"), imageqt);
+  int result = qt->RenderString(prop, "My String\n AV \xe2\x84\xab", imageqt);
   item->SetImage(imageqt);
   item->SetPosition(20, 20);
 
   vtkSmartPointer<vtkImageData> imageft = vtkSmartPointer<vtkImageData>::New();
-  result = freetype->RenderString(
-    prop, vtkUnicodeString::from_utf8("My String\n AV \xe2\x84\xab"), imageft);
+  result = freetype->RenderString("My String\n AV \xe2\x84\xab", imageft);
   item2->SetImage(imageft);
   item2->SetPosition(80, 110 - orientation);
 

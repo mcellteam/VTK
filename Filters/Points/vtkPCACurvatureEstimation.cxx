@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPCACurvatureEstimation.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPCACurvatureEstimation.h"
 
 #include "vtkAbstractPointLocator.h"
@@ -27,13 +15,14 @@
 #include "vtkSMPTools.h"
 #include "vtkStaticPointLocator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPCACurvatureEstimation);
 vtkCxxSetObjectMacro(vtkPCACurvatureEstimation, Locator, vtkAbstractPointLocator);
 
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The threaded core of the algorithm.
 template <typename T>
 struct GenerateCurvature
@@ -155,7 +144,7 @@ struct GenerateCurvature
 } // anonymous namespace
 
 //================= Begin VTK class proper =======================================
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPCACurvatureEstimation::vtkPCACurvatureEstimation()
 {
 
@@ -163,13 +152,13 @@ vtkPCACurvatureEstimation::vtkPCACurvatureEstimation()
   this->Locator = vtkStaticPointLocator::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPCACurvatureEstimation::~vtkPCACurvatureEstimation()
 {
   this->SetLocator(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Produce the output data
 int vtkPCACurvatureEstimation::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -224,14 +213,14 @@ int vtkPCACurvatureEstimation::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPCACurvatureEstimation::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPointSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPCACurvatureEstimation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -239,3 +228,4 @@ void vtkPCACurvatureEstimation::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Sample Size: " << this->SampleSize << "\n";
   os << indent << "Locator: " << this->Locator << "\n";
 }
+VTK_ABI_NAMESPACE_END

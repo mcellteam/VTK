@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPolygonalSurfaceContourLineInterpolator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPolygonalSurfaceContourLineInterpolator.h"
 
 #include "vtkCell.h"
@@ -26,9 +14,10 @@
 #include "vtkPolyData.h"
 #include "vtkPolygonalSurfacePointPlacer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPolygonalSurfaceContourLineInterpolator);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolygonalSurfaceContourLineInterpolator ::vtkPolygonalSurfaceContourLineInterpolator()
 {
   this->LastInterpolatedVertexIds[0] = -1;
@@ -37,20 +26,20 @@ vtkPolygonalSurfaceContourLineInterpolator ::vtkPolygonalSurfaceContourLineInter
   this->DijkstraGraphGeodesicPath = vtkDijkstraGraphGeodesicPath::New();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolygonalSurfaceContourLineInterpolator ::~vtkPolygonalSurfaceContourLineInterpolator()
 {
   this->DijkstraGraphGeodesicPath->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolygonalSurfaceContourLineInterpolator::UpdateNode(
   vtkRenderer*, vtkContourRepresentation*, double* vtkNotUsed(node), int vtkNotUsed(idx))
 {
   return 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolygonalSurfaceContourLineInterpolator::InterpolateLine(
   vtkRenderer*, vtkContourRepresentation* rep, int idx1, int idx2)
 {
@@ -187,7 +176,7 @@ int vtkPolygonalSurfaceContourLineInterpolator::InterpolateLine(
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolygonalSurfaceContourLineInterpolator ::GetContourPointIds(
   vtkContourRepresentation* rep, vtkIdList* ids)
 {
@@ -220,10 +209,11 @@ void vtkPolygonalSurfaceContourLineInterpolator ::GetContourPointIds(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolygonalSurfaceContourLineInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "DistanceOffset: " << this->DistanceOffset << endl;
 }
+VTK_ABI_NAMESPACE_END

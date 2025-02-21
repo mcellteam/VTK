@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPairwiseExtractHistogram2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2009 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2009 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkPairwiseExtractHistogram2D
  * @brief   compute a 2D histogram between
@@ -48,6 +32,7 @@
 #include "vtkFiltersImagingModule.h" // For export macro
 #include "vtkSmartPointer.h"         //needed for smart pointer ivars
 #include "vtkStatisticsAlgorithm.h"
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCollection;
 class vtkExtractHistogram2D;
 class vtkImageData;
@@ -61,15 +46,15 @@ public:
   vtkTypeMacro(vtkPairwiseExtractHistogram2D, vtkStatisticsAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/get the bin dimensions of the histograms to compute
    */
   vtkSetVector2Macro(NumberOfBins, int);
   vtkGetVector2Macro(NumberOfBins, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Strange method for setting an index to be used for setting custom
    * column range. This was (probably) necessary to get this class
@@ -77,9 +62,9 @@ public:
    */
   vtkSetMacro(CustomColumnRangeIndex, int);
   void SetCustomColumnRangeByIndex(double, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * More standard way to set the custom range for a particular column.
    * This makes sure that only the affected histograms know that they
@@ -87,9 +72,9 @@ public:
    */
   void SetCustomColumnRange(int col, double range[2]);
   void SetCustomColumnRange(int col, double rmin, double rmax);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the scalar type for each of the computed histograms.
    */
@@ -99,7 +84,7 @@ public:
   void SetScalarTypeToUnsignedShort() { this->SetScalarType(VTK_UNSIGNED_SHORT); }
   void SetScalarTypeToUnsignedChar() { this->SetScalarType(VTK_UNSIGNED_CHAR); }
   vtkGetMacro(ScalarType, int);
-  //@}
+  ///@}
 
   /**
    * Get the maximum bin count for a single histogram
@@ -187,7 +172,7 @@ protected:
   /**
    * Execute the calculations required by the Test option.
    */
-  void Test(vtkTable*, vtkMultiBlockDataSet*, vtkTable*) override { return; }
+  void Test(vtkTable*, vtkMultiBlockDataSet*, vtkTable*) override {}
 
   /**
    * Provide the appropriate assessment functor.
@@ -211,4 +196,5 @@ private:
   void operator=(const vtkPairwiseExtractHistogram2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

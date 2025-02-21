@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGESignaReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGESignaReader.h"
 
 #include "vtkByteSwap.h"
@@ -25,6 +13,7 @@
 #include <cassert>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGESignaReader);
 
 int vtkGESignaReader::CanReadFile(const char* fname)
@@ -442,11 +431,9 @@ void vtkGESignaReader::ExecuteInformation()
 static void vtkcopygenesisimage(FILE* infp, int width, int height, int compress, short* map_left,
   short* map_wide, unsigned short* output)
 {
-  unsigned short row;
   unsigned short last_pixel = 0;
-  for (row = 0; row < height; ++row)
+  for (int row = 0; row < height; ++row)
   {
-    unsigned short j;
     unsigned short start;
     unsigned short end;
 
@@ -463,7 +450,7 @@ static void vtkcopygenesisimage(FILE* infp, int width, int height, int compress,
       end = width;
     }
     // Pad the first "empty" part of the line ...
-    for (j = 0; j < start; j++)
+    for (unsigned short k = 0; k < start; k++)
     {
       (*output) = 0;
       ++output;
@@ -536,7 +523,7 @@ static void vtkcopygenesisimage(FILE* infp, int width, int height, int compress,
     }
 
     // Pad the last "empty" part of the line ...
-    for (j = end; j < width; j++)
+    for (int j = end; j < width; j++)
     {
       (*output) = 0;
       ++output;
@@ -684,7 +671,7 @@ static void vtkGESignaReaderUpdate2(
   fclose(fp);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads in one data of data.
 // templated to handle different data types.
 static void vtkGESignaReaderUpdate(
@@ -709,7 +696,7 @@ static void vtkGESignaReaderUpdate(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads a data from a file.  The datas extent/axes
 // are assumed to be the same as the file extent/order.
 void vtkGESignaReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
@@ -734,8 +721,9 @@ void vtkGESignaReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInfo
   vtkGESignaReaderUpdate(this, data, (unsigned short*)(outPtr));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGESignaReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

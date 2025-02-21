@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkButtonWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkButtonWidget.h"
 #include "vtkButtonRepresentation.h"
 #include "vtkCallbackCommand.h"
@@ -26,9 +14,10 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkButtonWidget);
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkButtonWidget::vtkButtonWidget()
 {
   // Set the initial state
@@ -43,7 +32,7 @@ vtkButtonWidget::vtkButtonWidget()
     vtkWidgetEvent::EndSelect, this, vtkButtonWidget::EndSelectAction);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkButtonWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -52,7 +41,7 @@ void vtkButtonWidget::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkButtonWidget::SetEnabled(int enabling)
 {
   if (enabling) //----------------
@@ -76,7 +65,7 @@ void vtkButtonWidget::SetEnabled(int enabling)
   Superclass::SetEnabled(enabling);
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkButtonWidget::MoveAction(vtkAbstractWidget* w)
 {
   vtkButtonWidget* self = reinterpret_cast<vtkButtonWidget*>(w);
@@ -128,7 +117,7 @@ void vtkButtonWidget::MoveAction(vtkAbstractWidget* w)
   }
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkButtonWidget::SelectAction(vtkAbstractWidget* w)
 {
   vtkButtonWidget* self = reinterpret_cast<vtkButtonWidget*>(w);
@@ -157,7 +146,7 @@ void vtkButtonWidget::SelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkButtonWidget::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkButtonWidget* self = reinterpret_cast<vtkButtonWidget*>(w);
@@ -197,9 +186,10 @@ void vtkButtonWidget::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkButtonWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

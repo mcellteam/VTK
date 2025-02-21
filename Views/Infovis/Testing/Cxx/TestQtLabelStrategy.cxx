@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestQtLabelStrategy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkActor2D.h"
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
@@ -40,8 +24,6 @@
 #include "vtkStringToNumeric.h"
 #include "vtkTestUtilities.h"
 #include "vtkTextProperty.h"
-#include "vtkUnicodeString.h"
-#include "vtkUnicodeStringArray.h"
 #include "vtkXMLTreeReader.h"
 
 #include <sstream>
@@ -84,7 +66,7 @@ int TestQtLabelStrategy(int argc, char* argv[])
     verts->InsertNextCell(1);
     verts->InsertCellPoint(i);
     orient->InsertNextValue((double)(rand() % 100) * 3.60);
-    vtkStdString s;
+    std::string s;
     std::stringstream out;
     out << i;
     s = out.str();
@@ -136,7 +118,7 @@ int TestQtLabelStrategy(int argc, char* argv[])
   VTK_CREATE(vtkRenderWindowInteractor, iren);
   iren->SetRenderWindow(win);
 
-  int retVal = vtkRegressionTestImageThreshold(win, 200);
+  int retVal = vtkRegressionTestImageThreshold(win, 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Initialize();

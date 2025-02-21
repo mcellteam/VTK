@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPropAssembly.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPropAssembly
  * @brief   create hierarchies of props
@@ -28,7 +16,7 @@
  *
  * vtkPropAssembly's and vtkProp's that compose a prop assembly need not be
  * added to a renderer's list of props, as long as the parent assembly is in
- * the prop list. This is because they are automatically renderered during
+ * the prop list. This is because they are automatically rendered during
  * the hierarchical traversal process.
  *
  * @warning
@@ -47,6 +35,7 @@
 #include "vtkProp.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGCORE_EXPORT vtkPropAssembly : public vtkProp
 {
 public:
@@ -73,7 +62,7 @@ public:
    */
   vtkPropCollection* GetParts();
 
-  //@{
+  ///@{
   /**
    * Render this assembly and all its parts.  The rendering process is
    * recursive. The parts of each assembly are rendered only if the
@@ -83,7 +72,7 @@ public:
   int RenderTranslucentPolygonalGeometry(vtkViewport* ren) override;
   int RenderVolumetricGeometry(vtkViewport* ren) override;
   int RenderOverlay(vtkViewport* ren) override;
-  //@}
+  ///@}
 
   /**
    * Does this prop have some translucent polygonal geometry?
@@ -114,7 +103,7 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Methods to traverse the paths (i.e., leaf nodes) of a prop
    * assembly. These methods should be contrasted to those that traverse the
@@ -128,7 +117,7 @@ public:
   void InitPathTraversal() override;
   vtkAssemblyPath* GetNextPath() override;
   int GetNumberOfPaths() override;
-  //@}
+  ///@}
 
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
@@ -152,4 +141,5 @@ private:
   void operator=(const vtkPropAssembly&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

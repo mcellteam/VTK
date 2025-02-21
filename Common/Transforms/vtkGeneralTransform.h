@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeneralTransform.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGeneralTransform
  * @brief   allows operations on any transforms
@@ -34,6 +22,7 @@
 
 #include "vtkMatrix4x4.h" // Needed for inline methods
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONTRANSFORMS_EXPORT vtkGeneralTransform : public vtkAbstractTransform
 {
 public:
@@ -64,7 +53,7 @@ public:
     this->Modified();
   }
 
-  //@{
+  ///@{
   /**
    * Create a translation matrix and concatenate it with the current
    * transformation according to PreMultiply or PostMultiply semantics.
@@ -72,9 +61,9 @@ public:
   void Translate(double x, double y, double z) { this->Concatenation->Translate(x, y, z); }
   void Translate(const double x[3]) { this->Translate(x[0], x[1], x[2]); }
   void Translate(const float x[3]) { this->Translate(x[0], x[1], x[2]); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Create a rotation matrix and concatenate it with the current
    * transformation according to PreMultiply or PostMultiply semantics.
@@ -93,9 +82,9 @@ public:
   {
     this->RotateWXYZ(angle, axis[0], axis[1], axis[2]);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Create a rotation matrix about the X, Y, or Z axis and concatenate
    * it with the current transformation according to PreMultiply or
@@ -104,9 +93,9 @@ public:
   void RotateX(double angle) { this->RotateWXYZ(angle, 1, 0, 0); }
   void RotateY(double angle) { this->RotateWXYZ(angle, 0, 1, 0); }
   void RotateZ(double angle) { this->RotateWXYZ(angle, 0, 0, 1); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Create a scale matrix (i.e. set the diagonal elements to x, y, z)
    * and concatenate it with the current transformation according to
@@ -115,16 +104,16 @@ public:
   void Scale(double x, double y, double z) { this->Concatenation->Scale(x, y, z); }
   void Scale(const double s[3]) { this->Scale(s[0], s[1], s[2]); }
   void Scale(const float s[3]) { this->Scale(s[0], s[1], s[2]); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Concatenates the matrix with the current transformation according
    * to PreMultiply or PostMultiply semantics.
    */
   void Concatenate(vtkMatrix4x4* matrix) { this->Concatenate(*matrix->Element); }
   void Concatenate(const double elements[16]) { this->Concatenation->Concatenate(elements); }
-  //@}
+  ///@}
 
   /**
    * Concatenate the specified transform with the current transformation
@@ -209,7 +198,7 @@ public:
     }
   }
 
-  //@{
+  ///@{
   /**
    * Set the input for this transformation.  This will be used as the
    * base transformation if it is set.  This method allows you to build
@@ -220,7 +209,7 @@ public:
    */
   void SetInput(vtkAbstractTransform* input);
   vtkAbstractTransform* GetInput() { return this->Input; }
-  //@}
+  ///@}
 
   /**
    * Get the inverse flag of the transformation.  This controls
@@ -229,9 +218,9 @@ public:
    * flipped every time Inverse() is called.  The InverseFlag
    * is off when a transform is first created.
    */
-  int GetInverseFlag() { return this->Concatenation->GetInverseFlag(); }
+  vtkTypeBool GetInverseFlag() { return this->Concatenation->GetInverseFlag(); }
 
-  //@{
+  ///@{
   /**
    * Pushes the current transformation onto the transformation stack.
    */
@@ -244,9 +233,9 @@ public:
     this->Stack->Push(&this->Concatenation);
     this->Modified();
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Deletes the transformation on the top of the stack and sets the top
    * to the next transformation on the stack.
@@ -260,18 +249,18 @@ public:
     this->Stack->Pop(&this->Concatenation);
     this->Modified();
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation without calling Update.
    * Meant for use only within other VTK classes.
    */
   void InternalTransformPoint(const float in[3], float out[3]) override;
   void InternalTransformPoint(const double in[3], double out[3]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will calculate the transformation as well as its derivative
    * without calling Update.  Meant for use only within other VTK
@@ -281,7 +270,7 @@ public:
     const float in[3], float out[3], float derivative[3][3]) override;
   void InternalTransformDerivative(
     const double in[3], double out[3], double derivative[3][3]) override;
-  //@}
+  ///@}
 
   /**
    * Check for self-reference.  Will return true if concatenating
@@ -319,4 +308,5 @@ private:
   void operator=(const vtkGeneralTransform&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

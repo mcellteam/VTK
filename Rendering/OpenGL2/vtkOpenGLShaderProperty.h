@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShaderProperty.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkOpenGLShaderProperty
  * @brief   represent GPU shader properties
@@ -33,11 +21,13 @@
 #include "vtkRenderingOpenGL2Module.h" // For export macro
 #include "vtkShader.h"                 // For methods (shader types)
 #include "vtkShaderProperty.h"
-#include <map> // used for ivar
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
+#include <map>                // used for ivar
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLUniforms;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkOpenGLShaderProperty : public vtkShaderProperty
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkOpenGLShaderProperty : public vtkShaderProperty
 {
 public:
   vtkTypeMacro(vtkOpenGLShaderProperty, vtkShaderProperty);
@@ -53,33 +43,42 @@ public:
    */
   void DeepCopy(vtkOpenGLShaderProperty* p);
 
-  virtual void AddVertexShaderReplacement(const std::string& originalValue,
+  void AddVertexShaderReplacement(const std::string& originalValue,
     bool replaceFirst, // do this replacement before the default
     const std::string& replacementValue, bool replaceAll) override;
-  virtual void AddFragmentShaderReplacement(const std::string& originalValue,
+  void AddFragmentShaderReplacement(const std::string& originalValue,
     bool replaceFirst, // do this replacement before the default
     const std::string& replacementValue, bool replaceAll) override;
-  virtual void AddGeometryShaderReplacement(const std::string& originalValue,
+  void AddGeometryShaderReplacement(const std::string& originalValue,
+    bool replaceFirst, // do this replacement before the default
+    const std::string& replacementValue, bool replaceAll) override;
+  void AddTessControlShaderReplacement(const std::string& originalValue,
+    bool replaceFirst, // do this replacement before the default
+    const std::string& replacementValue, bool replaceAll) override;
+  void AddTessEvaluationShaderReplacement(const std::string& originalValue,
     bool replaceFirst, // do this replacement before the default
     const std::string& replacementValue, bool replaceAll) override;
 
-  virtual int GetNumberOfShaderReplacements() override;
-  virtual std::string GetNthShaderReplacementTypeAsString(vtkIdType index) override;
-  virtual void GetNthShaderReplacement(vtkIdType index, std::string& name, bool& replaceFirst,
+  int GetNumberOfShaderReplacements() override;
+  std::string GetNthShaderReplacementTypeAsString(vtkIdType index) override;
+  void GetNthShaderReplacement(vtkIdType index, std::string& name, bool& replaceFirst,
     std::string& replacementValue, bool& replaceAll) override;
 
-  virtual void ClearVertexShaderReplacement(
+  void ClearVertexShaderReplacement(const std::string& originalValue, bool replaceFirst) override;
+  void ClearFragmentShaderReplacement(const std::string& originalValue, bool replaceFirst) override;
+  void ClearGeometryShaderReplacement(const std::string& originalValue, bool replaceFirst) override;
+  void ClearTessControlShaderReplacement(
     const std::string& originalValue, bool replaceFirst) override;
-  virtual void ClearFragmentShaderReplacement(
+  void ClearTessEvaluationShaderReplacement(
     const std::string& originalValue, bool replaceFirst) override;
-  virtual void ClearGeometryShaderReplacement(
-    const std::string& originalValue, bool replaceFirst) override;
-  virtual void ClearAllVertexShaderReplacements() override;
-  virtual void ClearAllFragmentShaderReplacements() override;
-  virtual void ClearAllGeometryShaderReplacements() override;
-  virtual void ClearAllShaderReplacements() override;
+  void ClearAllVertexShaderReplacements() override;
+  void ClearAllFragmentShaderReplacements() override;
+  void ClearAllGeometryShaderReplacements() override;
+  void ClearAllTessControlShaderReplacements() override;
+  void ClearAllTessEvalShaderReplacements() override;
+  void ClearAllShaderReplacements() override;
 
-  //@{
+  ///@{
   /**
    * This function enables you to apply your own substitutions
    * to the shader creation process. The shader code in this class
@@ -94,11 +93,11 @@ public:
   void ClearShaderReplacement(vtkShader::Type shaderType, // vertex, fragment, etc
     const std::string& originalValue, bool replaceFirst);
   void ClearAllShaderReplacements(vtkShader::Type shaderType);
-  //@}
+  ///@}
 
   /**
    * @brief GetAllShaderReplacements returns all user-specified shader
-   * replacements. It is provided for iteration purpuses only (const)
+   * replacements. It is provided for iteration purposes only (const)
    * and is mainly used by mappers when building the shaders.
    * @return const reference to internal map holding all replacements
    */
@@ -116,4 +115,5 @@ private:
   void operator=(const vtkOpenGLShaderProperty&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

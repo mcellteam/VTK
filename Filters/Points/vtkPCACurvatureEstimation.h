@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPCACurvatureEstimation.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPCACurvatureEstimation
  * @brief   generate curvature estimates using
@@ -54,12 +42,13 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractPointLocator;
 
 class VTKFILTERSPOINTS_EXPORT vtkPCACurvatureEstimation : public vtkPolyDataAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiating, obtaining type information, and
    * printing information.
@@ -67,9 +56,9 @@ public:
   static vtkPCACurvatureEstimation* New();
   vtkTypeMacro(vtkPCACurvatureEstimation, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * For each sampled point, specify the number of the closest, surrounding
    * points used to estimate the normal (the so called k-neighborhood). By
@@ -78,9 +67,9 @@ public:
    */
   vtkSetClampMacro(SampleSize, int, 1, VTK_INT_MAX);
   vtkGetMacro(SampleSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify a point locator. By default a vtkStaticPointLocator is
    * used. The locator performs efficient searches to locate points
@@ -88,7 +77,7 @@ public:
    */
   void SetLocator(vtkAbstractPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkAbstractPointLocator);
-  //@}
+  ///@}
 
 protected:
   vtkPCACurvatureEstimation();
@@ -106,4 +95,5 @@ private:
   void operator=(const vtkPCACurvatureEstimation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

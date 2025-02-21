@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractiveArea.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkInteractiveArea
@@ -25,12 +13,14 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkContextArea.h"
-#include "vtkNew.h" // For vtkNew
+#include "vtkNew.h"           // For vtkNew
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkContextTransform;
 class vtkRectd;
 
-class VTKCHARTSCORE_EXPORT vtkInteractiveArea : public vtkContextArea
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkInteractiveArea : public vtkContextArea
 {
 public:
   vtkTypeMacro(vtkInteractiveArea, vtkContextArea);
@@ -63,7 +53,7 @@ private:
   /**
    * Re-scale axis when interacting.
    */
-  void RecalculateTickSpacing(vtkAxis* axis, int const numClicks);
+  void RecalculateTickSpacing(vtkAxis* axis, int numClicks);
 
   /**
    * Re-computes the transformation expressing the current zoom, panning, etc.
@@ -80,4 +70,5 @@ private:
   void operator=(const vtkInteractiveArea&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkInteractiveArea_h

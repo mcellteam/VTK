@@ -1,27 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericDataObjectReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGenericDataObjectReader.h"
 
+#include "vtkCellGrid.h"
 #include "vtkCompositeDataReader.h"
 #include "vtkDirectedGraph.h"
 #include "vtkGraph.h"
 #include "vtkGraphReader.h"
-#include "vtkHierarchicalBoxDataSet.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkLegacyCellGridReader.h"
 #include "vtkMolecule.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkMultiPieceDataSet.h"
@@ -47,6 +36,7 @@
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericDataObjectReader);
 
 template <typename ReaderT, typename DataT>
@@ -154,7 +144,7 @@ vtkDataObject* vtkGenericDataObjectReader::CreateOutput(vtkDataObject* currentOu
       output = vtkMultiPieceDataSet::New();
       break;
     case VTK_HIERARCHICAL_BOX_DATA_SET:
-      output = vtkHierarchicalBoxDataSet::New();
+      output = vtkOverlappingAMR::New();
       break;
     case VTK_OVERLAPPING_AMR:
       output = vtkOverlappingAMR::New();
@@ -235,7 +225,7 @@ int vtkGenericDataObjectReader::ReadMetaDataSimple(
     reader->SetReadFromInputString(this->GetReadFromInputString());
     reader->SetInputArray(this->GetInputArray());
     reader->SetInputString(this->GetInputString());
-    retVal = reader->ReadMetaDataSimple(fname.c_str(), metadata);
+    retVal = reader->ReadMetaDataSimple(fname, metadata);
     reader->Delete();
     return retVal;
   }
@@ -249,6 +239,11 @@ int vtkGenericDataObjectReader::ReadMeshSimple(const std::string& fname, vtkData
 
   switch (this->ReadOutputType())
   {
+    case VTK_CELL_GRID:
+    {
+      this->ReadData<vtkLegacyCellGridReader, vtkCellGrid>(fname.c_str(), "vtkCellGrid", output);
+      return 1;
+    }
     case VTK_MOLECULE:
     {
       this->ReadData<vtkGraphReader, vtkMolecule>(fname.c_str(), "vtkMolecule", output);
@@ -324,20 +319,20 @@ int vtkGenericDataObjectReader::ReadMeshSimple(const std::string& fname, vtkData
     }
     case VTK_HIERARCHICAL_BOX_DATA_SET:
     {
-      this->ReadData<vtkCompositeDataReader, vtkHierarchicalBoxDataSet>(
-        fname.c_str(), "vtkHierarchicalBoxDataSet", output);
+      this->ReadData<vtkCompositeDataReader, vtkOverlappingAMR>(
+        fname.c_str(), "vtkOverlappingAMR", output);
       return 1;
     }
     case VTK_OVERLAPPING_AMR:
     {
       this->ReadData<vtkCompositeDataReader, vtkOverlappingAMR>(
-        fname.c_str(), "vtkHierarchicalBoxDataSet", output);
+        fname.c_str(), "vtkOverlappingAMR", output);
       return 1;
     }
     case VTK_NON_OVERLAPPING_AMR:
     {
       this->ReadData<vtkCompositeDataReader, vtkNonOverlappingAMR>(
-        fname.c_str(), "vtkHierarchicalBoxDataSet", output);
+        fname.c_str(), "vtkNonOverlappingAMR", output);
       return 1;
     }
     case VTK_PARTITIONED_DATA_SET:
@@ -390,6 +385,10 @@ int vtkGenericDataObjectReader::ReadOutputType()
 
     this->CloseVTKFile();
 
+    if (!strncmp(this->LowerCase(line), "cell_grid", 9))
+    {
+      return VTK_CELL_GRID;
+    }
     if (!strncmp(this->LowerCase(line), "molecule", 8))
     {
       return VTK_MOLECULE;
@@ -450,16 +449,15 @@ int vtkGenericDataObjectReader::ReadOutputType()
     {
       return VTK_NON_OVERLAPPING_AMR;
     }
-    if (strncmp(this->LowerCase(line), "partitioned", strlen("partitioned")) == 0)
-    {
-      return VTK_PARTITIONED_DATA_SET;
-    }
     if (strncmp(
           this->LowerCase(line), "partitioned_collection", strlen("partitioned_collection")) == 0)
     {
       return VTK_PARTITIONED_DATA_SET_COLLECTION;
     }
-
+    if (strncmp(this->LowerCase(line), "partitioned", strlen("partitioned")) == 0)
+    {
+      return VTK_PARTITIONED_DATA_SET;
+    }
     vtkDebugMacro(<< "Cannot read dataset type: " << line);
     return -1;
   }
@@ -473,6 +471,11 @@ int vtkGenericDataObjectReader::ReadOutputType()
   }
 
   return -1;
+}
+
+vtkCellGrid* vtkGenericDataObjectReader::GetCellGridOutput()
+{
+  return vtkCellGrid::SafeDownCast(this->GetOutput());
 }
 
 vtkGraph* vtkGenericDataObjectReader::GetGraphOutput()
@@ -540,3 +543,4 @@ int vtkGenericDataObjectReader::FillOutputPortInformation(int, vtkInformation* i
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataObject");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

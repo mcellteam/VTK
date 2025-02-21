@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOutlineFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOutlineFilter.h"
 
 #include "vtkCompositeDataIterator.h"
@@ -25,13 +13,14 @@
 
 #include <set>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOutlineFilter::vtkIndexSet : public std::set<unsigned int>
 {
 };
 
 vtkStandardNewMacro(vtkOutlineFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOutlineFilter::vtkOutlineFilter()
 {
   this->GenerateFaces = 0;
@@ -40,13 +29,13 @@ vtkOutlineFilter::vtkOutlineFilter()
   this->Indices = new vtkOutlineFilter::vtkIndexSet();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOutlineFilter::~vtkOutlineFilter()
 {
   delete this->Indices;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOutlineFilter::AddIndex(unsigned int index)
 {
   if (this->Indices->find(index) == this->Indices->end())
@@ -56,7 +45,7 @@ void vtkOutlineFilter::AddIndex(unsigned int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOutlineFilter::RemoveIndex(unsigned int index)
 {
   if (this->Indices->find(index) != this->Indices->end())
@@ -66,7 +55,7 @@ void vtkOutlineFilter::RemoveIndex(unsigned int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOutlineFilter::RemoveAllIndices()
 {
   if (!this->Indices->empty())
@@ -76,7 +65,7 @@ void vtkOutlineFilter::RemoveAllIndices()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOutlineFilter::AppendOutline(
   vtkPoints* points, vtkCellArray* lines, vtkCellArray* faces, double bounds[6])
 {
@@ -195,7 +184,7 @@ void vtkOutlineFilter::AppendOutline(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOutlineFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -254,6 +243,10 @@ int vtkOutlineFilter::RequestData(vtkInformation* vtkNotUsed(request),
       vtkCompositeDataIterator* iter = compInput->NewIterator();
       for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
       {
+        if (this->CheckAbort())
+        {
+          break;
+        }
         vtkDataSet* ds = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
         if (ds)
         {
@@ -276,6 +269,10 @@ int vtkOutlineFilter::RequestData(vtkInformation* vtkNotUsed(request),
       unsigned int index;
       for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
       {
+        if (this->CheckAbort())
+        {
+          break;
+        }
         vtkDataSet* ds = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
         if (ds)
         {
@@ -300,10 +297,12 @@ int vtkOutlineFilter::RequestData(vtkInformation* vtkNotUsed(request),
     output->SetPolys(faces.GetPointer());
   }
 
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOutlineFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -311,7 +310,7 @@ int vtkOutlineFilter::FillInputPortInformation(int, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOutlineFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -322,3 +321,4 @@ void vtkOutlineFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent
      << "Composite indices: " << (!this->Indices->empty() ? "(Specified)\n" : "(Not specified)\n");
 }
+VTK_ABI_NAMESPACE_END

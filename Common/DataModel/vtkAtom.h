@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAtom.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAtom
  * @brief   convenience proxy for vtkMolecule
@@ -24,6 +12,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"                // For macros, defines, etc
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMolecule;
 class vtkVector3d;
 class vtkVector3f;
@@ -43,15 +32,15 @@ public:
    */
   vtkMolecule* GetMolecule();
 
-  //@{
+  ///@{
   /**
    * Get/Set the atomic number of this atom
    */
   unsigned short GetAtomicNumber() const;
   void SetAtomicNumber(unsigned short atomicNum);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the position of this atom
    */
@@ -61,7 +50,7 @@ public:
   void SetPosition(float x, float y, float z);
   vtkVector3f GetPosition() const;
   void SetPosition(const vtkVector3f& pos);
-  //@}
+  ///@}
 
 protected:
   friend class vtkMolecule;
@@ -82,5 +71,6 @@ inline vtkMolecule* vtkAtom::GetMolecule()
   return this->Molecule;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkAtom.h

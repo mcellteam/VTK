@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSVGContextDevice2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSVGContextDevice2D.h"
 
@@ -38,11 +26,11 @@
 #include "vtkTextProperty.h"
 #include "vtkTextRenderer.h"
 #include "vtkTransform.h"
-#include "vtkUnicodeString.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 #include "vtkXMLDataElement.h"
+
+#include <vtk_utf8.h>
 
 #include <algorithm>
 #include <cassert>
@@ -53,6 +41,7 @@
 #include <sstream>
 #include <utility>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -131,10 +120,7 @@ struct FontKey
     this->TextProperty->SetOrientation(0.);
   }
 
-  FontKey(const FontKey& o)
-    : TextProperty(o.TextProperty)
-  {
-  }
+  FontKey(const FontKey& o) = default;
 
   bool operator<(const FontKey& other) const
   {
@@ -191,7 +177,7 @@ struct FontKey
 
 struct FontInfo
 {
-  using CharType = vtkUnicodeString::value_type;
+  using CharType = vtkTypeUInt32;
   using KerningPairType = std::pair<CharType, CharType>;
 
   explicit FontInfo(const std::string& svgId)
@@ -199,27 +185,23 @@ struct FontInfo
   {
   }
 
-  void ProcessString(const vtkUnicodeString& str)
+  void ProcessString(const std::string& str)
   {
-    vtkUnicodeString::const_iterator it = str.begin();
-    vtkUnicodeString::const_iterator end = str.end();
-    if (it == end)
+    if (!str.empty())
     {
-      return;
-    }
+      std::string::const_iterator it = str.begin();
+      std::string::const_iterator end = str.end();
 
-    vtkUnicodeString::const_iterator next = it;
-    std::advance(next, 1);
-    while (next != end)
-    {
-      this->Chars.insert(*it);
-      this->KerningPairs.insert(std::make_pair(*it, *next));
-      std::advance(it, 1);
-      std::advance(next, 1);
+      vtkTypeUInt32 value = utf8::next(it, end);
+      this->Chars.insert(value);
+      while (it != end)
+      {
+        vtkTypeUInt32 next = utf8::next(it, end);
+        this->Chars.insert(next);
+        this->KerningPairs.insert(std::make_pair(value, next));
+        value = next;
+      }
     }
-
-    // Last char:
-    this->Chars.insert(*it);
   }
 
   std::string SVGId;
@@ -266,8 +248,8 @@ struct ImageInfo
     this->PNGBase64 = base64Stream.str();
   }
 
-  ImageInfo(ImageInfo&& o)
-    : Size(std::move(o.Size))
+  ImageInfo(ImageInfo&& o) noexcept
+    : Size(o.Size)
     , Id(std::move(o.Id))
     , PNGBase64(std::move(o.PNGBase64))
   {
@@ -321,9 +303,9 @@ struct PatternInfo
   {
   }
 
-  PatternInfo(PatternInfo&& o)
-    : TextureProperty(std::move(o.TextureProperty))
-    , ImageSize(std::move(o.ImageSize))
+  PatternInfo(PatternInfo&& o) noexcept
+    : TextureProperty(o.TextureProperty)
+    , ImageSize(o.ImageSize)
     , ImageId(std::move(o.ImageId))
     , PatternId(std::move(o.PatternId))
   {
@@ -365,8 +347,8 @@ struct ClipRectInfo
   {
   }
 
-  ClipRectInfo(ClipRectInfo&& o)
-    : Rect(std::move(o.Rect))
+  ClipRectInfo(ClipRectInfo&& o) noexcept
+    : Rect(o.Rect)
     , Id(std::move(o.Id))
   {
   }
@@ -1345,18 +1327,6 @@ void vtkSVGContextDevice2D::DrawEllipticArc(
 //------------------------------------------------------------------------------
 void vtkSVGContextDevice2D::DrawString(float* point, const vtkStdString& string)
 {
-  this->DrawString(point, vtkUnicodeString::from_utf8(string));
-}
-
-//------------------------------------------------------------------------------
-void vtkSVGContextDevice2D::ComputeStringBounds(const vtkStdString& string, float bounds[4])
-{
-  this->ComputeStringBounds(vtkUnicodeString::from_utf8(string), bounds);
-}
-
-//------------------------------------------------------------------------------
-void vtkSVGContextDevice2D::DrawString(float* point, const vtkUnicodeString& string)
-{
   vtkTextRenderer* tren = vtkTextRenderer::GetInstance();
   if (!tren)
   {
@@ -1381,8 +1351,7 @@ void vtkSVGContextDevice2D::DrawString(float* point, const vtkUnicodeString& str
     text->SetFloatAttribute("x", 0.f);
     text->SetFloatAttribute("y", 0.f);
 
-    std::string utf8String = string.utf8_str();
-    text->SetCharacterData(utf8String.c_str(), static_cast<int>(utf8String.size()));
+    text->SetCharacterData(string.c_str(), static_cast<int>(string.length()));
   }
   else
   {
@@ -1407,7 +1376,7 @@ void vtkSVGContextDevice2D::DrawString(float* point, const vtkUnicodeString& str
 }
 
 //------------------------------------------------------------------------------
-void vtkSVGContextDevice2D::ComputeStringBounds(const vtkUnicodeString& string, float bounds[4])
+void vtkSVGContextDevice2D::ComputeStringBounds(const vtkStdString& string, float bounds[4])
 {
   vtkTextRenderer* tren = vtkTextRenderer::GetInstance();
   if (!tren)
@@ -1438,7 +1407,7 @@ void vtkSVGContextDevice2D::ComputeStringBounds(const vtkUnicodeString& string, 
 //------------------------------------------------------------------------------
 void vtkSVGContextDevice2D::ComputeJustifiedStringBounds(const char* string, float bounds[4])
 {
-  this->ComputeStringBounds(vtkUnicodeString::from_utf8(string), bounds);
+  this->ComputeStringBounds(vtkStdString(string), bounds);
 }
 
 //------------------------------------------------------------------------------
@@ -1491,7 +1460,7 @@ void vtkSVGContextDevice2D::DrawImage(const vtkRectf& pos, vtkImageData* image)
 }
 
 //------------------------------------------------------------------------------
-void vtkSVGContextDevice2D::SetColor4(unsigned char[])
+void vtkSVGContextDevice2D::SetColor4(unsigned char[4])
 {
   // This is how the OpenGL2 impl handles this...
   vtkErrorMacro("color cannot be set this way.");
@@ -2410,16 +2379,17 @@ void vtkSVGContextDevice2D::WriteFonts()
     face->SetAttribute("bbox", BBoxToString(faceMetrics.BoundingBox).c_str());
     face->SetAttribute("alphabetic", "0");
 
-    for (auto charId : info->Chars)
+    for (auto value : info->Chars)
     {
-      GlyphOutline glyphInfo = ftt->GetUnscaledGlyphOutline(key.TextProperty, charId);
-      vtkUnicodeString unicode(1, charId);
+      GlyphOutline glyphInfo = ftt->GetUnscaledGlyphOutline(key.TextProperty, value);
+      std::string text;
+      utf8::append(value, std::back_inserter(text));
 
       vtkNew<vtkXMLDataElement> glyph;
       face->AddNestedElement(glyph);
       glyph->SetName("glyph");
       glyph->SetAttributeEncoding(VTK_ENCODING_UTF_8);
-      glyph->SetAttribute("unicode", unicode.utf8_str());
+      glyph->SetAttribute("unicode", text.c_str());
       glyph->SetIntAttribute("horiz-adv-x", glyphInfo.HorizAdvance);
 
       std::ostringstream d;
@@ -2429,23 +2399,24 @@ void vtkSVGContextDevice2D::WriteFonts()
 
     for (auto charPair : info->KerningPairs)
     {
-      const vtkUnicodeString unicode1(1, charPair.first);
-      const vtkUnicodeString unicode2(1, charPair.second);
       std::array<int, 2> kerning =
         ftt->GetUnscaledKerning(key.TextProperty, charPair.first, charPair.second);
 
-      if (std::abs(kerning[0]) == 0)
+      if (kerning[0] != 0)
       {
-        continue;
-      }
+        std::string left;
+        utf8::append(charPair.first, std::back_inserter(left));
+        std::string right;
+        utf8::append(charPair.second, std::back_inserter(right));
 
-      vtkNew<vtkXMLDataElement> hkern;
-      font->AddNestedElement(hkern);
-      hkern->SetName("hkern");
-      hkern->SetAttributeEncoding(VTK_ENCODING_UTF_8);
-      hkern->SetAttribute("u1", unicode1.utf8_str());
-      hkern->SetAttribute("u2", unicode2.utf8_str());
-      hkern->SetIntAttribute("k", -kerning[0]);
+        vtkNew<vtkXMLDataElement> hkern;
+        font->AddNestedElement(hkern);
+        hkern->SetName("hkern");
+        hkern->SetAttributeEncoding(VTK_ENCODING_UTF_8);
+        hkern->SetAttribute("u1", left.c_str());
+        hkern->SetAttribute("u2", right.c_str());
+        hkern->SetIntAttribute("k", -kerning[0]);
+      }
     }
   }
 }
@@ -2716,3 +2687,4 @@ vtkImageData* vtkSVGContextDevice2D::PreparePointSprite(vtkImageData* in)
 
   return in;
 }
+VTK_ABI_NAMESPACE_END

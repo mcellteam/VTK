@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRayCastImageDisplayHelper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkRayCastImageDisplayHelper
@@ -31,6 +19,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingVolumeModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkFixedPointRayCastImage;
 class vtkRenderer;
 class vtkVolume;
@@ -58,7 +47,7 @@ public:
   vtkGetMacro(PreMultipliedColors, vtkTypeBool);
   vtkBooleanMacro(PreMultipliedColors, vtkTypeBool);
 
-  //@{
+  ///@{
   /**
    * Set / Get the pixel scale to be applied to the image before display.
    * Can be set to scale the incoming pixel values - for example the
@@ -67,7 +56,7 @@ public:
    */
   vtkSetMacro(PixelScale, float);
   vtkGetMacro(PixelScale, float);
-  //@}
+  ///@}
 
   /**
    * Derived class should implement this if needed
@@ -90,4 +79,5 @@ private:
   void operator=(const vtkRayCastImageDisplayHelper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

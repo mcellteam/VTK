@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkResliceCursorActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkResliceCursorActor.h"
 
@@ -27,9 +15,10 @@
 #include "vtkResliceCursorPolyDataAlgorithm.h"
 #include "vtkViewport.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkResliceCursorActor);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkResliceCursorActor::vtkResliceCursorActor()
 {
   this->CursorAlgorithm = vtkResliceCursorPolyDataAlgorithm::New();
@@ -74,7 +63,7 @@ vtkResliceCursorActor::vtkResliceCursorActor()
   this->ThickSlabProperty[2]->SetEdgeVisibility(1);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkResliceCursorActor::~vtkResliceCursorActor()
 {
   for (int i = 0; i < 3; i++)
@@ -89,7 +78,7 @@ vtkResliceCursorActor::~vtkResliceCursorActor()
   this->CursorAlgorithm->Delete();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Support the standard render methods.
 int vtkResliceCursorActor::RenderOpaqueGeometry(vtkViewport* viewport)
@@ -116,7 +105,7 @@ int vtkResliceCursorActor::RenderOpaqueGeometry(vtkViewport* viewport)
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry? No.
 vtkTypeBool vtkResliceCursorActor::HasTranslucentPolygonalGeometry()
@@ -124,7 +113,7 @@ vtkTypeBool vtkResliceCursorActor::HasTranslucentPolygonalGeometry()
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorActor::ReleaseGraphicsResources(vtkWindow* window)
 {
   for (int i = 0; i < 3; i++)
@@ -134,7 +123,7 @@ void vtkResliceCursorActor::ReleaseGraphicsResources(vtkWindow* window)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the bounds for this Actor as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
 double* vtkResliceCursorActor::GetBounds()
 {
@@ -142,7 +131,7 @@ double* vtkResliceCursorActor::GetBounds()
   // vtkProp3D::GetLength() does not check if the Bounds are initialized or
   // not and makes a call to sqrt(). This call to sqrt with invalid values
   // would raise a floating-point overflow exception (notably on BCC).
-  // As vtkMath::UninitializeBounds initialized finite unvalid bounds, it
+  // As vtkMath::UninitializeBounds initialized finite invalid bounds, it
   // passes silently and GetLength() returns 0.
   vtkMath::UninitializeBounds(this->Bounds);
 
@@ -173,7 +162,7 @@ double* vtkResliceCursorActor::GetBounds()
   return this->Bounds;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkResliceCursorActor::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -190,19 +179,19 @@ vtkMTimeType vtkResliceCursorActor::GetMTime()
   return mTime;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProperty* vtkResliceCursorActor::GetCenterlineProperty(int i)
 {
   return this->CenterlineProperty[i];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProperty* vtkResliceCursorActor::GetThickSlabProperty(int i)
 {
   return this->ThickSlabProperty[i];
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorActor::UpdateHoleSize(vtkViewport* v)
 {
   vtkResliceCursor* r = this->CursorAlgorithm->GetResliceCursor();
@@ -229,7 +218,11 @@ void vtkResliceCursorActor::UpdateHoleSize(vtkViewport* v)
 
     const double holeWidth =
       2.0 * sqrt(vtkMath::Distance2BetweenPoints(wCenter, wCenterHoleWidthAway));
-    r->SetHoleWidth(holeWidth);
+
+    if (fabs(r->GetHoleWidth() - holeWidth) > 1e-5)
+    {
+      r->SetHoleWidth(holeWidth);
+    }
 
     // MTime checks ensure that this will update only if the hole width
     // has actually changed.
@@ -237,7 +230,7 @@ void vtkResliceCursorActor::UpdateHoleSize(vtkViewport* v)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorActor::UpdateViewProps(vtkViewport* v)
 {
   if (this->CursorAlgorithm->GetResliceCursor() == nullptr)
@@ -261,7 +254,7 @@ void vtkResliceCursorActor::UpdateViewProps(vtkViewport* v)
   this->CursorCenterlineMapper[axis1]->SetInputConnection(this->CursorAlgorithm->GetOutputPort(0));
   this->CursorCenterlineMapper[axis2]->SetInputConnection(this->CursorAlgorithm->GetOutputPort(1));
 
-  const bool thickMode = this->CursorAlgorithm->GetResliceCursor()->GetThickMode() ? true : false;
+  const bool thickMode = this->CursorAlgorithm->GetResliceCursor()->GetThickMode() != 0;
 
   if (thickMode)
   {
@@ -287,7 +280,7 @@ void vtkResliceCursorActor::UpdateViewProps(vtkViewport* v)
   this->CursorCenterlineActor[axisNormal]->GetProperty()->SetEdgeVisibility(0);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorActor::SetUserMatrix(vtkMatrix4x4* m)
 {
   this->CursorThickSlabActor[0]->SetUserMatrix(m);
@@ -300,26 +293,29 @@ void vtkResliceCursorActor::SetUserMatrix(vtkMatrix4x4* m)
   this->Superclass::SetUserMatrix(m);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkActor* vtkResliceCursorActor::GetCenterlineActor(int axis)
 {
   return this->CursorCenterlineActor[axis];
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Prints an object if it exists.
 #define vtkPrintMemberObjectMacro(obj, os, indent)                                                 \
-  os << (indent) << #obj << ": ";                                                                  \
-  if (this->obj)                                                                                   \
+  do                                                                                               \
   {                                                                                                \
-    os << this->obj << "\n";                                                                       \
-  }                                                                                                \
-  else                                                                                             \
-  {                                                                                                \
-    os << "(null)\n";                                                                              \
-  }
+    os << (indent) << #obj << ": ";                                                                \
+    if (this->obj)                                                                                 \
+    {                                                                                              \
+      os << this->obj << "\n";                                                                     \
+    }                                                                                              \
+    else                                                                                           \
+    {                                                                                              \
+      os << "(null)\n";                                                                            \
+    }                                                                                              \
+  } while (false)
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResliceCursorActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -337,3 +333,4 @@ void vtkResliceCursorActor::PrintSelf(ostream& os, vtkIndent indent)
   // this->ThickSlabProperty[3];
   // this->CursorAlgorithm;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExternalOpenGLRenderWindow.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExternalOpenGLRenderWindow
  * @brief   OpenGL render window that allows using
@@ -44,6 +32,7 @@
 #include "vtkGenericOpenGLRenderWindow.h"
 #include "vtkRenderingExternalModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGEXTERNAL_EXPORT vtkExternalOpenGLRenderWindow
   : public vtkGenericOpenGLRenderWindow
 {
@@ -55,7 +44,7 @@ public:
   /**
    * Begin the rendering process using the existing context.
    */
-  void Start(void) override;
+  void Start() override;
 
   /**
    * Tells if this window is the current graphics context for the calling
@@ -63,7 +52,7 @@ public:
    */
   bool IsCurrent() override;
 
-  //@{
+  ///@{
   /**
    * Turn on/off a flag which enables/disables automatic positioning and
    * resizing of the render window. By default, vtkExternalOpenGLRenderWindow
@@ -78,18 +67,18 @@ public:
   vtkGetMacro(AutomaticWindowPositionAndResize, int);
   vtkSetMacro(AutomaticWindowPositionAndResize, int);
   vtkBooleanMacro(AutomaticWindowPositionAndResize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off a flag which enables/disables using the content from an
-   * outside applicaiton.  When on the active read buffer is first blitted
-   * into VTK and becomes the starting poiint for VTK's rendering.
+   * outside application.  When on the active read buffer is first blitted
+   * into VTK and becomes the starting point for VTK's rendering.
    */
   vtkGetMacro(UseExternalContent, bool);
   vtkSetMacro(UseExternalContent, bool);
   vtkBooleanMacro(UseExternalContent, bool);
-  //@}
+  ///@}
 
 protected:
   vtkExternalOpenGLRenderWindow();
@@ -102,4 +91,5 @@ private:
   vtkExternalOpenGLRenderWindow(const vtkExternalOpenGLRenderWindow&) = delete;
   void operator=(const vtkExternalOpenGLRenderWindow&) = delete;
 };
+VTK_ABI_NAMESPACE_END
 #endif // vtkExternalOpenGLRenderWindow_h

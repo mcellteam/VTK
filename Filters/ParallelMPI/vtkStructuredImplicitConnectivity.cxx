@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStructuredImplicitConnectivity.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkStructuredImplicitConnectivity.h"
 
 // VTK includes
@@ -56,6 +44,7 @@ namespace vtk
 {
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 // Given two intervals A=[a1,a2] and B[b1,b2] the IntervalsConnect struct
 // enumerates the cases where interval A connects to Interval B.
@@ -145,18 +134,18 @@ public:
     , hi(-1)
   {
   }
-  Interval(const int l, const int h)
+  Interval(int l, int h)
     : lo(l)
     , hi(h)
   {
   }
-  ~Interval() {}
+  ~Interval() = default;
 
   int Low() const { return this->lo; }
   int High() const { return this->hi; }
   int Cardinality() const { return (this->hi - this->lo + 1); }
   bool Valid() const { return (this->lo <= this->hi); }
-  void Set(const int l, const int h)
+  void Set(int l, int h)
   {
     this->lo = l;
     this->hi = h;
@@ -344,7 +333,7 @@ struct DomainMetaData
 
   /// \brief Checks if a grid with the given extent is within this domain
   /// \param ext the extent of the grid in query
-  /// \return status true if the grid is insided, else false.
+  /// \return status true if the grid is inside, else false.
   bool HasGrid(int ext[6]) { return (vtkStructuredExtent::Smaller(ext, this->WholeExtent)); }
 
   /// \brief Initializes the domain metadata.
@@ -421,11 +410,7 @@ struct StructuredGrid
   //------------------------------------------------------------------------------
   bool IsRectilinearGrid()
   {
-    if ((this->X_Coords != nullptr) && (this->Y_Coords != nullptr) && (this->Z_Coords != nullptr))
-    {
-      return true;
-    }
-    return false;
+    return this->X_Coords != nullptr && this->Y_Coords != nullptr && this->Z_Coords != nullptr;
   }
 
   //------------------------------------------------------------------------------
@@ -656,14 +641,14 @@ struct StructuredGrid
 class CommunicationManager
 {
 public:
-  CommunicationManager() {}
+  CommunicationManager() = default;
   ~CommunicationManager() { this->Clear(); }
 
-  unsigned char* GetRcvBuffer(const int fromRank);
-  unsigned int GetRcvBufferSize(const int fromRank);
+  unsigned char* GetRcvBuffer(int fromRank);
+  unsigned int GetRcvBufferSize(int fromRank);
 
-  void EnqueueRcv(const int fromRank);
-  void EnqueueSend(const int toRank, unsigned char* data, unsigned int nbytes);
+  void EnqueueRcv(int fromRank);
+  void EnqueueSend(int toRank, unsigned char* data, unsigned int nbytes);
   void Exchange(vtkMPIController* comm);
   int NumMsgs();
   void Clear();
@@ -702,7 +687,7 @@ void CommunicationManager::Clear()
 }
 
 //------------------------------------------------------------------------------
-unsigned char* CommunicationManager::GetRcvBuffer(const int fromRank)
+unsigned char* CommunicationManager::GetRcvBuffer(int fromRank)
 {
   assert(
     "pre: cannot find buffer for requested rank!" && (this->Rcv.find(fromRank) != this->Rcv.end()));
@@ -710,7 +695,7 @@ unsigned char* CommunicationManager::GetRcvBuffer(const int fromRank)
 }
 
 //------------------------------------------------------------------------------
-unsigned int CommunicationManager::GetRcvBufferSize(const int fromRank)
+unsigned int CommunicationManager::GetRcvBufferSize(int fromRank)
 {
   assert("pre: cannot find bytesize size of requested rank!" &&
     (this->RcvByteSize.find(fromRank) != this->RcvByteSize.end()));
@@ -724,7 +709,7 @@ int CommunicationManager::NumMsgs()
 }
 
 //------------------------------------------------------------------------------
-void CommunicationManager::EnqueueRcv(const int fromRank)
+void CommunicationManager::EnqueueRcv(int fromRank)
 {
   assert("pre: rcv from rank has already been enqueued!" &&
     (this->Rcv.find(fromRank) == this->Rcv.end()));
@@ -734,7 +719,7 @@ void CommunicationManager::EnqueueRcv(const int fromRank)
 }
 
 //------------------------------------------------------------------------------
-void CommunicationManager::EnqueueSend(const int toRank, unsigned char* data, unsigned int nbytes)
+void CommunicationManager::EnqueueSend(int toRank, unsigned char* data, unsigned int nbytes)
 {
   assert("pre: send to rank has already been enqueued!" &&
     (this->Send.find(toRank) == this->Send.end()));
@@ -773,7 +758,7 @@ void CommunicationManager::AllocateRcvBuffers(vtkMPIController* comm)
   // STEP 3: WaitAll
   if (!this->Requests.empty())
   {
-    comm->WaitAll(this->NumMsgs(), &this->Requests[0]);
+    comm->WaitAll(this->NumMsgs(), this->Requests.data());
   }
   this->Requests.clear();
 
@@ -806,7 +791,7 @@ void CommunicationManager::Exchange(vtkMPIController* comm)
     unsigned char* buffer = it->second;
     assert("pre: rcv buffer size not found!" &&
       this->RcvByteSize.find(fromRank) != this->RcvByteSize.end());
-    unsigned int bytesize = this->RcvByteSize[fromRank];
+    int bytesize = this->RcvByteSize[fromRank];
 
     comm->NoBlockReceive(buffer, bytesize, fromRank, 0, this->Requests[rqstIdx]);
     ++rqstIdx;
@@ -819,7 +804,7 @@ void CommunicationManager::Exchange(vtkMPIController* comm)
     unsigned char* buffer = it->second;
     assert("pre: rcv buffer size not found!" &&
       this->SendByteSize.find(toRank) != this->SendByteSize.end());
-    unsigned int bytesize = this->SendByteSize[toRank];
+    int bytesize = this->SendByteSize[toRank];
 
     comm->NoBlockSend(buffer, bytesize, toRank, 0, this->Requests[rqstIdx]);
     ++rqstIdx;
@@ -828,18 +813,21 @@ void CommunicationManager::Exchange(vtkMPIController* comm)
   // STEP 4: WaitAll
   if (!this->Requests.empty())
   {
-    comm->WaitAll(this->NumMsgs(), &this->Requests[0]);
+    comm->WaitAll(this->NumMsgs(), this->Requests.data());
   }
   this->Requests.clear();
 }
 
+VTK_ABI_NAMESPACE_END
 } // END namespace detail
 } // END namespace vtk
 //==============================================================================
 // END INTERNAL DATASTRUCTURE DEFINITIONS
 //==============================================================================
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStructuredImplicitConnectivity);
+vtkCxxSetObjectMacro(vtkStructuredImplicitConnectivity, Controller, vtkMPIController);
 
 //------------------------------------------------------------------------------
 vtkStructuredImplicitConnectivity::vtkStructuredImplicitConnectivity()
@@ -848,8 +836,9 @@ vtkStructuredImplicitConnectivity::vtkStructuredImplicitConnectivity()
   this->InputGrid = nullptr;
   this->OutputGrid = nullptr;
   this->CommManager = nullptr;
-  this->Controller =
-    vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController());
+  this->Controller = nullptr;
+  this->SetController(
+    vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController()));
 }
 
 //------------------------------------------------------------------------------
@@ -879,7 +868,7 @@ vtkStructuredImplicitConnectivity::~vtkStructuredImplicitConnectivity()
     this->CommManager = nullptr;
   }
 
-  this->Controller = nullptr;
+  this->SetController(nullptr);
 }
 
 //------------------------------------------------------------------------------
@@ -934,7 +923,7 @@ void vtkStructuredImplicitConnectivity::SetWholeExtent(int wholeExt[6])
 
 //------------------------------------------------------------------------------
 void vtkStructuredImplicitConnectivity::RegisterGrid(
-  const int gridID, int extent[6], vtkPoints* gridNodes, vtkPointData* pointData)
+  int gridID, int extent[6], vtkPoints* gridNodes, vtkPointData* pointData)
 {
   // Sanity Checks!
   assert("pre: nullptr Domain, whole extent is not set!" && (this->DomainInfo != nullptr));
@@ -954,7 +943,7 @@ void vtkStructuredImplicitConnectivity::RegisterGrid(
 }
 
 //------------------------------------------------------------------------------
-void vtkStructuredImplicitConnectivity::RegisterRectilinearGrid(const int gridID, int extent[6],
+void vtkStructuredImplicitConnectivity::RegisterRectilinearGrid(int gridID, int extent[6],
   vtkDataArray* xcoords, vtkDataArray* ycoords, vtkDataArray* zcoords, vtkPointData* pointData)
 {
   // Sanity Checks!
@@ -1000,7 +989,7 @@ void vtkStructuredImplicitConnectivity::ExchangeExtents()
   this->DomainInfo->ExtentListInfo.resize(7 * nranks, 0);
 
   // STEP 2: AllGather
-  int* rcvbuffer = &(this->DomainInfo->ExtentListInfo)[0];
+  int* rcvbuffer = this->DomainInfo->ExtentListInfo.data();
   this->Controller->AllGather(extbuffer, rcvbuffer, 7);
 }
 
@@ -1101,11 +1090,7 @@ bool vtkStructuredImplicitConnectivity::GlobalDataDescriptionMatch()
 {
   int sum = -1;
   this->Controller->AllReduce(&this->DomainInfo->DataDescription, &sum, 1, vtkCommunicator::SUM_OP);
-  if ((sum / this->Controller->GetNumberOfProcesses()) == this->DomainInfo->DataDescription)
-  {
-    return true;
-  }
-  return false;
+  return (sum / this->Controller->GetNumberOfProcesses()) == this->DomainInfo->DataDescription;
 }
 
 //------------------------------------------------------------------------------
@@ -1117,12 +1102,8 @@ bool vtkStructuredImplicitConnectivity::HasImplicitConnectivity()
     return false;
   }
 
-  if ((this->DomainInfo->GlobalImplicit[0] > 0) || (this->DomainInfo->GlobalImplicit[1] > 0) ||
-    (this->DomainInfo->GlobalImplicit[2] > 0))
-  {
-    return true;
-  }
-  return false;
+  return this->DomainInfo->GlobalImplicit[0] > 0 || this->DomainInfo->GlobalImplicit[1] > 0 ||
+    this->DomainInfo->GlobalImplicit[2] > 0;
 }
 
 //------------------------------------------------------------------------------
@@ -1166,8 +1147,7 @@ void vtkStructuredImplicitConnectivity::EstablishConnectivity()
 }
 
 //------------------------------------------------------------------------------
-void vtkStructuredImplicitConnectivity::GetOutputStructuredGrid(
-  const int gridID, vtkStructuredGrid* grid)
+void vtkStructuredImplicitConnectivity::GetOutputStructuredGrid(int gridID, vtkStructuredGrid* grid)
 {
   assert("pre: nullptr output grid!" && (grid != nullptr));
   assert("pre: output grid is nullptr!" && (this->OutputGrid != nullptr));
@@ -1185,7 +1165,7 @@ void vtkStructuredImplicitConnectivity::GetOutputStructuredGrid(
 }
 
 //------------------------------------------------------------------------------
-void vtkStructuredImplicitConnectivity::GetOutputImageData(const int gridID, vtkImageData* grid)
+void vtkStructuredImplicitConnectivity::GetOutputImageData(int gridID, vtkImageData* grid)
 {
   assert("pre: nullptr output grid!" && (grid != nullptr));
   assert("pre: output grid is nullptr!" && (this->OutputGrid != nullptr));
@@ -1201,7 +1181,7 @@ void vtkStructuredImplicitConnectivity::GetOutputImageData(const int gridID, vtk
 
 //------------------------------------------------------------------------------
 void vtkStructuredImplicitConnectivity::GetOutputRectilinearGrid(
-  const int gridID, vtkRectilinearGrid* grid)
+  int gridID, vtkRectilinearGrid* grid)
 {
   assert("pre: nullptr output grid!" && (grid != nullptr));
   assert("pre: output grid is nullptr!" && (this->OutputGrid != nullptr));
@@ -1233,7 +1213,7 @@ void vtkStructuredImplicitConnectivity::ConstructOutput()
 }
 
 //------------------------------------------------------------------------------
-void vtkStructuredImplicitConnectivity::UpdateNeighborList(const int dim)
+void vtkStructuredImplicitConnectivity::UpdateNeighborList(int dim)
 {
   assert("pre: dimension index out-of-bounds!" && (dim >= 0) && (dim <= 2));
   assert("pre: input grid is nullptr!" && this->InputGrid != nullptr);
@@ -1431,7 +1411,7 @@ void vtkStructuredImplicitConnectivity::UnPackData(unsigned char* buffer, unsign
 }
 
 //------------------------------------------------------------------------------
-void vtkStructuredImplicitConnectivity::AllocateBuffers(const int dim)
+void vtkStructuredImplicitConnectivity::AllocateBuffers(int dim)
 {
   assert("pre: dimension index out-of-bounds!" && (dim >= 0) && (dim <= 2));
 
@@ -1472,7 +1452,7 @@ void vtkStructuredImplicitConnectivity::AllocateBuffers(const int dim)
 }
 
 //------------------------------------------------------------------------------
-void vtkStructuredImplicitConnectivity::GrowGrid(const int dim)
+void vtkStructuredImplicitConnectivity::GrowGrid(int dim)
 {
   assert("pre: dimension index out-of-bounds!" && (dim >= 0) && (dim <= 2));
   assert("pre: input grid is nullptr!" && this->InputGrid != nullptr);
@@ -1531,3 +1511,4 @@ void vtkStructuredImplicitConnectivity::ExchangeData()
   // Barrier synchronization
   this->Controller->Barrier();
 }
+VTK_ABI_NAMESPACE_END

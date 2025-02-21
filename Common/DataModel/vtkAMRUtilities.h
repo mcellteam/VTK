@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRUtilities.h
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAMRUtilities
  *
@@ -31,9 +19,12 @@
 #include <vector> // For C++ vector
 
 // Forward declarations
+VTK_ABI_NAMESPACE_BEGIN
+class vtkDataArray;
 class vtkFieldData;
 class vtkOverlappingAMR;
 class vtkUniformGrid;
+class vtkUnsignedCharArray;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkAMRUtilities : public vtkObject
 {
@@ -68,8 +59,8 @@ public:
   static void BlankCells(vtkOverlappingAMR* amr);
 
 protected:
-  vtkAMRUtilities() {}
-  ~vtkAMRUtilities() override {}
+  vtkAMRUtilities() = default;
+  ~vtkAMRUtilities() override = default;
 
   /**
    * Given the real-extent w.r.t. the ghosted grid, this method copies the
@@ -94,11 +85,14 @@ protected:
   static vtkUniformGrid* StripGhostLayersFromGrid(vtkUniformGrid* grid, int ghost[6]);
 
   static void BlankGridsAtLevel(vtkOverlappingAMR* amr, int levelIdx,
-    std::vector<std::vector<unsigned int> >& children, const std::vector<int>& processMap);
+    std::vector<std::vector<unsigned int>>& children, const std::vector<int>& processMap);
 
 private:
   vtkAMRUtilities(const vtkAMRUtilities&) = delete;
   void operator=(const vtkAMRUtilities&) = delete;
+
+  static void MergeGhostArrays(vtkDataArray* existingArray, vtkUnsignedCharArray* ghosts);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkAMRUtilities_h */

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCellTypeSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCellTypeSource
  * @brief   Create cells of a given type
@@ -32,29 +20,30 @@
 #include "vtkFiltersSourcesModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMergePoints;
 
 class VTKFILTERSSOURCES_EXPORT vtkCellTypeSource : public vtkUnstructuredGridAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation, obtaining type and printing instance values.
    */
   static vtkCellTypeSource* New();
   vtkTypeMacro(vtkCellTypeSource, vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the type of cells to be generated.
    */
   void SetCellType(int cellType);
   vtkGetMacro(CellType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the order of Lagrange interpolation to be used.
    *
@@ -66,9 +55,9 @@ public:
    */
   vtkSetMacro(CellOrder, int);
   vtkGetMacro(CellOrder, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get whether quadratic cells with simplicial shapes should be "completed".
    *
@@ -91,25 +80,25 @@ public:
   vtkSetMacro(CompleteQuadraticSimplicialElements, bool);
   vtkGetMacro(CompleteQuadraticSimplicialElements, bool);
   vtkBooleanMacro(CompleteQuadraticSimplicialElements, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the polynomial order of the "Polynomial" point field.
    * The default is 1.
    */
   vtkSetClampMacro(PolynomialFieldOrder, int, 0, VTK_INT_MAX);
   vtkGetMacro(PolynomialFieldOrder, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the dimension of the cell blocks to be generated
    */
   int GetCellDimension();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output points.
    * vtkAlgorithm::SINGLE_PRECISION (0) - Output single-precision floating point.
@@ -117,9 +106,9 @@ public:
    */
   vtkSetClampMacro(OutputPrecision, int, 0, 1);
   vtkGetMacro(OutputPrecision, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of cells in each direction. If a 1D cell type is
    * selected then only the first dimension is used and if a 2D cell
@@ -129,40 +118,63 @@ public:
   void SetBlocksDimensions(int*);
   void SetBlocksDimensions(int, int, int);
   vtkGetVector3Macro(BlocksDimensions, int);
-  //@}
+  ///@}
 
 protected:
   vtkCellTypeSource();
-  ~vtkCellTypeSource() override {}
+  ~vtkCellTypeSource() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   void GenerateTriangles(vtkUnstructuredGrid*, int extent[6]);
   void GenerateQuads(vtkUnstructuredGrid*, int extent[6]);
+  void GeneratePolygons(vtkUnstructuredGrid*, int extent[6]);
+  void GeneratePixels(vtkUnstructuredGrid*, int extent[6]);
   void GenerateQuadraticTriangles(vtkUnstructuredGrid*, int extent[6]);
   void GenerateQuadraticQuads(vtkUnstructuredGrid*, int extent[6]);
   void GenerateTetras(vtkUnstructuredGrid*, int extent[6]);
   void GenerateHexahedron(vtkUnstructuredGrid*, int extent[6]);
+  void GeneratePolyhedron(vtkUnstructuredGrid*, int extent[6]);
+  void GenerateVoxels(vtkUnstructuredGrid*, int extent[6]);
   void GenerateWedges(vtkUnstructuredGrid*, int extent[6]);
   void GeneratePyramids(vtkUnstructuredGrid*, int extent[6]);
+  void GeneratePentagonalPrism(vtkUnstructuredGrid*, int extent[6]);
+  void GenerateHexagonalPrism(vtkUnstructuredGrid*, int extent[6]);
   void GenerateQuadraticTetras(vtkUnstructuredGrid*, int extent[6]);
   void GenerateQuadraticHexahedron(vtkUnstructuredGrid*, int extent[6]);
   void GenerateQuadraticWedges(vtkUnstructuredGrid*, int extent[6]);
   void GenerateQuadraticPyramids(vtkUnstructuredGrid*, int extent[6]);
+  void GenerateTriQuadraticPyramids(vtkUnstructuredGrid*, int extent[6]);
 
+  void GenerateHighOrderQuads(
+    vtkUnstructuredGrid* output, int extent[6], int cellType, int cellOrder);
+  void GenerateHighOrderHexes(
+    vtkUnstructuredGrid* output, int extent[6], int cellType, int cellOrder);
+  void GenerateHighOrderCurves(vtkUnstructuredGrid*, int extent[6], int cellType, int cellOrder);
+  void GenerateHighOrderTris(
+    vtkUnstructuredGrid*, int extent[6], int cellType, int cellOrder, bool complete);
+  void GenerateHighOrderTets(
+    vtkUnstructuredGrid*, int extent[6], int cellType, int cellOrder, bool complete);
+  void GenerateHighOrderWedges(
+    vtkUnstructuredGrid*, int extent[6], int cellType, int cellOrder, bool complete);
+
+  VTK_DEPRECATED_IN_9_4_0("Use GenerateHighOrderCurve instead.")
   void GenerateLagrangeCurves(vtkUnstructuredGrid*, int extent[6]);
+  VTK_DEPRECATED_IN_9_4_0("Use GenerateHighOrderTris instead.")
   void GenerateLagrangeTris(vtkUnstructuredGrid*, int extent[6]);
-  void GenerateLagrangeQuads(vtkUnstructuredGrid*, int extent[6]);
+  VTK_DEPRECATED_IN_9_4_0("Use GenerateHighOrderTets instead.")
   void GenerateLagrangeTets(vtkUnstructuredGrid*, int extent[6]);
-  void GenerateLagrangeHexes(vtkUnstructuredGrid*, int extent[6]);
+  VTK_DEPRECATED_IN_9_4_0("Use GenerateHighOrderWedges instead.")
   void GenerateLagrangeWedges(vtkUnstructuredGrid*, int extent[6]);
 
+  VTK_DEPRECATED_IN_9_4_0("Use GenerateHighOrderCurve instead.")
   void GenerateBezierCurves(vtkUnstructuredGrid*, int extent[6]);
+  VTK_DEPRECATED_IN_9_4_0("Use GenerateHighOrderTris instead.")
   void GenerateBezierTris(vtkUnstructuredGrid*, int extent[6]);
-  void GenerateBezierQuads(vtkUnstructuredGrid*, int extent[6]);
+  VTK_DEPRECATED_IN_9_4_0("Use GenerateHighOrderTets instead.")
   void GenerateBezierTets(vtkUnstructuredGrid*, int extent[6]);
-  void GenerateBezierHexes(vtkUnstructuredGrid*, int extent[6]);
+  VTK_DEPRECATED_IN_9_4_0("Use GenerateHighOrderWedges instead.")
   void GenerateBezierWedges(vtkUnstructuredGrid*, int extent[6]);
 
   virtual void ComputeFields(vtkUnstructuredGrid*);
@@ -181,4 +193,5 @@ private:
   void operator=(const vtkCellTypeSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

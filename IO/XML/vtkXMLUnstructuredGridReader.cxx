@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLUnstructuredGridReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLUnstructuredGridReader.h"
 
 #include "vtkCellArray.h"
@@ -22,13 +10,15 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkUnstructuredGrid.h"
+#include "vtkUpdateCellsV8toV9.h"
 #include "vtkXMLDataElement.h"
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLUnstructuredGridReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLUnstructuredGridReader::vtkXMLUnstructuredGridReader()
 {
   this->CellElements = nullptr;
@@ -37,7 +27,7 @@ vtkXMLUnstructuredGridReader::vtkXMLUnstructuredGridReader()
   this->CellsOffset = static_cast<unsigned long>(-1); // almost invalid state
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLUnstructuredGridReader::~vtkXMLUnstructuredGridReader()
 {
   if (this->NumberOfPieces)
@@ -46,31 +36,31 @@ vtkXMLUnstructuredGridReader::~vtkXMLUnstructuredGridReader()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGrid* vtkXMLUnstructuredGridReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUnstructuredGrid* vtkXMLUnstructuredGridReader::GetOutput(int idx)
 {
   return vtkUnstructuredGrid::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLUnstructuredGridReader::GetDataSetName()
 {
   return "UnstructuredGrid";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridReader::GetOutputUpdateExtent(
   int& piece, int& numberOfPieces, int& ghostLevel)
 {
@@ -80,7 +70,7 @@ void vtkXMLUnstructuredGridReader::GetOutputUpdateExtent(
   ghostLevel = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridReader::SetupOutputTotals()
 {
   this->Superclass::SetupOutputTotals();
@@ -96,7 +86,7 @@ void vtkXMLUnstructuredGridReader::SetupOutputTotals()
   this->StartCell = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridReader::SetupPieces(int numPieces)
 {
   this->Superclass::SetupPieces(numPieces);
@@ -108,7 +98,7 @@ void vtkXMLUnstructuredGridReader::SetupPieces(int numPieces)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridReader::DestroyPieces()
 {
   delete[] this->CellElements;
@@ -116,13 +106,13 @@ void vtkXMLUnstructuredGridReader::DestroyPieces()
   this->Superclass::DestroyPieces();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLUnstructuredGridReader::GetNumberOfCellsInPiece(int piece)
 {
   return this->NumberOfCells[piece];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridReader::SetupOutputData()
 {
   this->Superclass::SetupOutputData();
@@ -138,7 +128,7 @@ void vtkXMLUnstructuredGridReader::SetupOutputData()
   output->SetCells(cellTypes, outCells);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLUnstructuredGridReader::ReadPiece(vtkXMLDataElement* ePiece)
 {
   if (!this->Superclass::ReadPiece(ePiece))
@@ -165,7 +155,7 @@ int vtkXMLUnstructuredGridReader::ReadPiece(vtkXMLDataElement* ePiece)
     }
   }
 
-  if (!this->CellElements[this->Piece])
+  if (!this->CellElements[this->Piece] && this->NumberOfCells[this->Piece] > 0)
   {
     vtkErrorMacro("A piece is missing its Cells element.");
     return 0;
@@ -174,14 +164,14 @@ int vtkXMLUnstructuredGridReader::ReadPiece(vtkXMLDataElement* ePiece)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLUnstructuredGridReader::SetupNextPiece()
 {
   this->Superclass::SetupNextPiece();
   this->StartCell += this->NumberOfCells[this->Piece];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLUnstructuredGridReader::ReadPieceData()
 {
   // The amount of data read by the superclass's ReadPieceData comes
@@ -235,8 +225,15 @@ int vtkXMLUnstructuredGridReader::ReadPieceData()
   vtkXMLDataElement* eCells = this->CellElements[this->Piece];
   if (!eCells)
   {
-    vtkErrorMacro("Cannot find cell arrays in piece " << this->Piece);
-    return 0;
+    if (this->NumberOfCells[this->Piece] > 0)
+    {
+      vtkErrorMacro("Cannot find cell arrays in piece " << this->Piece);
+      return 0;
+    }
+
+    // An empty grid with no cells is allowed to have the DataArray child elements missing
+    this->UpdateProgressDiscrete(progressRange[1]);
+    return 1;
   }
 
   //  int needToRead = this->CellsNeedToReadTimeStep(eNested,
@@ -302,51 +299,103 @@ int vtkXMLUnstructuredGridReader::ReadPieceData()
     memcpy(output->GetCellTypesArray()->GetPointer(this->StartCell), cellTypes->GetPointer(0),
       numberOfCells);
 
+    // Permute node numbering on higher order hexahedra for legacy files (see
+    // https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6678 )
+    if (this->GetFileMajorVersion() < 2 ||
+      (this->GetFileMajorVersion() == 2 && this->GetFileMinorVersion() < 1))
+    {
+      vtkUpdateCellsV8toV9(output);
+    }
+
     cellTypes->Delete();
   }
 
   // Set the range of progress for the faces.
   this->SetProgressRange(progressRange, 3, fractions);
 
-  //
-  // Read face array. Used for polyhedron mesh support. First need to
-  // check if faces and faceoffsets arrays are available in this piece.
-  if (!this->FindDataArrayWithName(eCells, "faces") ||
-    !this->FindDataArrayWithName(eCells, "faceoffsets"))
+  if (this->GetFileMajorVersion() < 2 ||
+    (this->GetFileMajorVersion() == 2 && this->GetFileMinorVersion() < 3))
   {
-    if (output->GetFaces())
+    //
+    // Read face array. Used for polyhedron mesh support. First need to
+    // check if faces and faceoffsets arrays are available in this piece.
+    if (!this->FindDataArrayWithName(eCells, "faces") ||
+      !this->FindDataArrayWithName(eCells, "faceoffsets"))
     {
-      // This piece doesn't have any polyhedron but other pieces that
-      // we've already processed do so we need to add in face information
-      // for cells that don't have that by marking -1.
-      for (vtkIdType c = 0; c < numberOfCells; c++)
+      if (output->GetPolyhedronFaces())
       {
-        output->GetFaceLocations()->InsertNextValue(-1);
+        // This piece doesn't have any polyhedron but other pieces that
+        // we've already processed do so we need to add in face information
+        // for cells that don't have that by marking -1.
+        for (vtkIdType c = 0; c < numberOfCells; c++)
+        {
+          output->GetPolyhedronFaceLocations()->InsertNextCell(0);
+        }
       }
+      return 1;
     }
-    return 1;
-  }
 
-  // By default vtkUnstructuredGrid does not contain face information, which is
-  // only used by polyhedron cells. If so far no polyhedron cells have been
-  // added, the pointers to the arrays will be nullptr. In this case, we need to
-  // initialize the arrays and assign values to the previous non-polyhedron cells.
-  if (!output->GetFaces() || !output->GetFaceLocations())
-  {
-    output->InitializeFacesRepresentation(this->StartCell);
-  }
+    // By default vtkUnstructuredGrid does not contain face information, which is
+    // only used by polyhedron cells. If so far no polyhedron cells have been
+    // added, the pointers to the arrays will be nullptr. In this case, we need to
+    // initialize the arrays and assign values to the previous non-polyhedron cells.
+    if (!output->GetPolyhedronFaces() || !output->GetPolyhedronFaceLocations())
+    {
+      output->InitializeFacesRepresentation(this->StartCell);
+    }
 
-  // Read face arrays.
-  if (!this->ReadFaceArray(
-        this->NumberOfCells[this->Piece], eCells, output->GetFaces(), output->GetFaceLocations()))
+    // Read face arrays.
+    if (!this->ReadFaceCellArray(this->NumberOfCells[this->Piece], eCells,
+          output->GetPolyhedronFaces(), output->GetPolyhedronFaceLocations()))
+    {
+      return 0;
+    }
+  }
+  else
   {
-    return 0;
+    // Support new file layout
+    //
+    // Read face array. Used for polyhedron mesh support. First need to
+    // check if faces and faceoffsets arrays are available in this piece.
+    if (!this->FindDataArrayWithName(eCells, "face_connectivity") ||
+      !this->FindDataArrayWithName(eCells, "face_offsets") ||
+      !this->FindDataArrayWithName(eCells, "polyhedron_to_faces") ||
+      !this->FindDataArrayWithName(eCells, "polyhedron_offsets"))
+    {
+      if (output->GetPolyhedronFaces())
+      {
+        // This piece doesn't have any polyhedron but other pieces that
+        // we've already processed do so we need to add in face information
+        // for cells that don't have that by marking -1.
+        for (vtkIdType c = 0; c < numberOfCells; c++)
+        {
+          output->GetPolyhedronFaceLocations()->InsertNextCell(0);
+        }
+      }
+      return 1;
+    }
+
+    // By default vtkUnstructuredGrid does not contain face information, which is
+    // only used by polyhedron cells. If so far no polyhedron cells have been
+    // added, the pointers to the arrays will be nullptr. In this case, we need to
+    // initialize the arrays and assign values to the previous non-polyhedron cells.
+    if (!output->GetPolyhedronFaces() || !output->GetPolyhedronFaceLocations())
+    {
+      output->InitializeFacesRepresentation(this->StartCell);
+    }
+
+    // Read face arrays.
+    if (!this->ReadPolyhedronCellArray(this->NumberOfCells[this->Piece], eCells,
+          output->GetPolyhedronFaces(), output->GetPolyhedronFaceLocations()))
+    {
+      return 0;
+    }
   }
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLUnstructuredGridReader::ReadArrayForCells(
   vtkXMLDataElement* da, vtkAbstractArray* outArray)
 {
@@ -356,9 +405,10 @@ int vtkXMLUnstructuredGridReader::ReadArrayForCells(
   return this->ReadArrayValues(da, startCell * components, outArray, 0, numCells * components);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLUnstructuredGridReader::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkUnstructuredGrid");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

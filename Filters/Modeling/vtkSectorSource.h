@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkSectorSource.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSectorSource
  * @brief   create a sector of a disk
@@ -30,6 +18,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkFiltersModelingModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSMODELING_EXPORT vtkSectorSource : public vtkPolyDataAlgorithm
 {
 public:
@@ -37,65 +26,65 @@ public:
   vtkTypeMacro(vtkSectorSource, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify inner radius of the sector.
    */
   vtkSetClampMacro(InnerRadius, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(InnerRadius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify outer radius of the sector.
    */
   vtkSetClampMacro(OuterRadius, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(OuterRadius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the z coordinate of the sector.
    */
   vtkSetClampMacro(ZCoord, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(ZCoord, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of points in radius direction.
    */
   vtkSetClampMacro(RadialResolution, int, 1, VTK_INT_MAX);
   vtkGetMacro(RadialResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of points in circumferential direction.
    */
   vtkSetClampMacro(CircumferentialResolution, int, 3, VTK_INT_MAX);
   vtkGetMacro(CircumferentialResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the start angle of the sector.
    */
   vtkSetClampMacro(StartAngle, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(StartAngle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the end angle of the sector.
    */
   vtkSetClampMacro(EndAngle, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(EndAngle, double);
-  //@}
+  ///@}
 
 protected:
   vtkSectorSource();
-  ~vtkSectorSource() override {}
+  ~vtkSectorSource() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   double InnerRadius;
@@ -111,4 +100,5 @@ private:
   void operator=(const vtkSectorSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

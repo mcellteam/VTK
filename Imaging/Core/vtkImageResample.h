@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageResample.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageResample
  * @brief   Resamples an image to be larger or smaller.
@@ -28,6 +16,7 @@
 #include "vtkImageReslice.h"
 #include "vtkImagingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImageResample : public vtkImageReslice
 {
 public:
@@ -35,7 +24,7 @@ public:
   vtkTypeMacro(vtkImageResample, vtkImageReslice);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set desired spacing.
    * Zero is a reserved value indicating spacing has not been set.
@@ -46,9 +35,9 @@ public:
     this->SetOutputSpacing(spacing[0], spacing[1], spacing[2]);
   }
   void SetAxisOutputSpacing(int axis, double spacing);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get Magnification factors.
    * Zero is a reserved value indicating values have not been computed.
@@ -60,7 +49,7 @@ public:
   }
   vtkGetVector3Macro(MagnificationFactors, double);
   void SetAxisMagnificationFactor(int axis, double factor);
-  //@}
+  ///@}
 
   /**
    * Get the computed magnification factor for a specific axis.
@@ -68,7 +57,7 @@ public:
    */
   double GetAxisMagnificationFactor(int axis, vtkInformation* inInfo = nullptr);
 
-  //@{
+  ///@{
   /**
    * Dimensionality is the number of axes which are considered during
    * execution. To process images dimensionality would be set to 2.
@@ -77,11 +66,11 @@ public:
    */
   vtkSetMacro(Dimensionality, int);
   vtkGetMacro(Dimensionality, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageResample();
-  ~vtkImageResample() override {}
+  ~vtkImageResample() override = default;
 
   double MagnificationFactors[3];
   int Dimensionality;
@@ -93,4 +82,5 @@ private:
   void operator=(const vtkImageResample&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

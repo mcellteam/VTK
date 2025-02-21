@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSVGExporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkSVGExporter.h"
 
@@ -38,6 +26,7 @@
 #include <sstream>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -146,7 +135,7 @@ void vtkSVGExporter::WriteSVG()
 //------------------------------------------------------------------------------
 void vtkSVGExporter::PrepareDocument()
 {
-  int* size = this->RenderWindow->GetSize();
+  const int* size = this->RenderWindow->GetSize();
 
   this->RootNode = vtkXMLDataElement::New();
   this->RootNode->SetName("svg");
@@ -247,7 +236,7 @@ void vtkSVGExporter::RenderBackground(vtkRenderer* ren)
   }
 
   int* renOrigin = ren->GetOrigin();
-  int* renSize = ren->GetSize();
+  const int* renSize = ren->GetSize();
   vtkRectf renRect(renOrigin[0], renOrigin[1], renSize[0], renSize[1]);
 
   vtkNew<vtkContext2D> ctx;
@@ -343,3 +332,4 @@ void vtkSVGExporter::RenderContextActor(vtkContextActor* actor, vtkRenderer* ren
   actor->RenderOverlay(ren);
   actor->SetForceDevice(oldForceDevice);
 }
+VTK_ABI_NAMESPACE_END

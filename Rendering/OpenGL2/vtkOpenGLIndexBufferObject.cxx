@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLIndexBufferObject.h"
 #include "vtkObjectFactory.h"
 
@@ -24,10 +13,11 @@
 #include "vtkProperty.h"
 #include "vtkUnsignedCharArray.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include <set>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLIndexBufferObject);
 
 vtkOpenGLIndexBufferObject::vtkOpenGLIndexBufferObject()
@@ -45,6 +35,8 @@ namespace
 struct AppendTrianglesWorker
 {
   std::vector<unsigned int>* indexArray;
+  std::vector<unsigned char>* edgeArray;
+  unsigned char* edgeFlags;
   vtkCellArray* cells;
   vtkIdType vOffset;
 
@@ -79,6 +71,20 @@ struct AppendTrianglesWorker
             indexArray->push_back(static_cast<unsigned int>(id1 + vOffset));
             indexArray->push_back(static_cast<unsigned int>(id2 + vOffset));
             indexArray->push_back(static_cast<unsigned int>(id3 + vOffset));
+            if (edgeArray)
+            {
+              int val = cellSize == 3 ? 7 : i == 1 ? 3 : i == cellSize - 2 ? 6 : 2;
+              if (edgeFlags)
+              {
+                int mask = 0;
+                mask = edgeFlags[id1] + edgeFlags[id2] * 2 + edgeFlags[id3] * 4;
+                edgeArray->push_back(val & mask);
+              }
+              else
+              {
+                edgeArray->push_back(val);
+              }
+            }
           }
         }
       }
@@ -127,9 +133,17 @@ struct AppendTrianglesWorker
 } // end anon namespace
 
 // used to create an IBO for triangle primitives
-void vtkOpenGLIndexBufferObject::AppendTriangleIndexBuffer(
-  std::vector<unsigned int>& indexArray, vtkCellArray* cells, vtkPoints* points, vtkIdType vOffset)
+void vtkOpenGLIndexBufferObject::AppendTriangleIndexBuffer(std::vector<unsigned int>& indexArray,
+  vtkCellArray* cells, vtkPoints* points, vtkIdType vOffset, std::vector<unsigned char>* edgeArray,
+  vtkDataArray* edgeFlags)
 {
+  const bool hasOnlyTriangles =
+    cells->GetNumberOfConnectivityIds() == cells->GetNumberOfCells() * 3;
+  if (hasOnlyTriangles)
+  {
+    indexArray.reserve(cells->GetNumberOfConnectivityIds());
+  }
+
   if (cells->GetNumberOfConnectivityIds() > cells->GetNumberOfCells() * 3)
   {
     size_t targetSize =
@@ -144,9 +158,17 @@ void vtkOpenGLIndexBufferObject::AppendTriangleIndexBuffer(
     }
   }
 
+  unsigned char* ucef = nullptr;
+  if (edgeFlags)
+  {
+    ucef = vtkArrayDownCast<vtkUnsignedCharArray>(edgeFlags)->GetPointer(0);
+  }
+
   // Create our worker functor:
   AppendTrianglesWorker worker;
   worker.indexArray = &indexArray;
+  worker.edgeArray = edgeArray;
+  worker.edgeFlags = ucef;
   worker.cells = cells;
   worker.vOffset = vOffset;
 
@@ -164,18 +186,34 @@ void vtkOpenGLIndexBufferObject::AppendTriangleIndexBuffer(
 }
 
 // used to create an IBO for triangle primitives
-size_t vtkOpenGLIndexBufferObject::CreateTriangleIndexBuffer(vtkCellArray* cells, vtkPoints* points)
+size_t vtkOpenGLIndexBufferObject::CreateTriangleIndexBuffer(vtkCellArray* cells, vtkPoints* points,
+  std::vector<unsigned char>* edgeValues, vtkDataArray* edgeFlags)
 {
   if (!cells->GetNumberOfCells())
   {
     this->IndexCount = 0;
     return 0;
   }
-  std::vector<unsigned int> indexArray;
-  AppendTriangleIndexBuffer(indexArray, cells, points, 0);
-  this->Upload(indexArray, vtkOpenGLIndexBufferObject::ElementArrayBuffer);
-  this->IndexCount = indexArray.size();
-  return indexArray.size();
+
+  const bool hasOnlyTriangles =
+    cells->GetNumberOfConnectivityIds() == cells->GetNumberOfCells() * 3;
+  if (!cells->IsStorage64Bit() && hasOnlyTriangles)
+  {
+    // If connectivity ids are 32-bits and we only have triangles, upload them as-is.
+    vtkCellArray::ArrayType32* array = cells->GetConnectivityArray32();
+    this->Upload(array->GetPointer(0), array->GetNumberOfValues(),
+      vtkOpenGLIndexBufferObject::ElementArrayBuffer);
+    this->IndexCount = array->GetNumberOfValues();
+  }
+  else
+  {
+    std::vector<unsigned int> indexArray;
+    AppendTriangleIndexBuffer(indexArray, cells, points, 0, edgeValues, edgeFlags);
+    this->Upload(indexArray, vtkOpenGLIndexBufferObject::ElementArrayBuffer);
+    this->IndexCount = indexArray.size();
+  }
+
+  return this->IndexCount;
 }
 
 // used to create an IBO for point primitives
@@ -481,8 +519,9 @@ size_t vtkOpenGLIndexBufferObject::CreateVertexIndexBuffer(vtkCellArray** cells)
   return indexArray.size();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLIndexBufferObject::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

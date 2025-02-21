@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridVolumeZSweepMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkUnstructuredGridVolumeZSweepMapper
  * @brief   Unstructured grid volume mapper based the ZSweep Algorithm
@@ -38,6 +26,7 @@
 #include "vtkRenderingVolumeModule.h" // For export macro
 #include "vtkUnstructuredGridVolumeMapper.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkVolume;
 class vtkRayCastImageDisplayHelper;
@@ -51,10 +40,12 @@ class vtkVolumeProperty;
 class vtkDoubleArray;
 class vtkUnstructuredGridVolumeRayIntegrator;
 class vtkRenderWindow;
+VTK_ABI_NAMESPACE_END
 
 // Internal classes
 namespace vtkUnstructuredGridVolumeZSweepMapperNamespace
 {
+VTK_ABI_NAMESPACE_BEGIN
 class vtkScreenEdge;
 class vtkSpan;
 class vtkPixelListFrame;
@@ -64,8 +55,10 @@ class vtkSimpleScreenEdge;
 class vtkDoubleScreenEdge;
 class vtkVertexEntry;
 class vtkPixelListEntryMemory;
-};
+VTK_ABI_NAMESPACE_END
+}
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKRENDERINGVOLUME_EXPORT vtkUnstructuredGridVolumeZSweepMapper
   : public vtkUnstructuredGridVolumeMapper
 {
@@ -78,7 +71,7 @@ public:
    */
   static vtkUnstructuredGridVolumeZSweepMapper* New();
 
-  //@{
+  ///@{
   /**
    * Sampling distance in the XY image dimensions. Default value of 1 meaning
    * 1 ray cast per pixel. If set to 0.5, 4 rays will be cast per pixel. If
@@ -86,27 +79,27 @@ public:
    */
   vtkSetClampMacro(ImageSampleDistance, float, 0.1f, 100.0f);
   vtkGetMacro(ImageSampleDistance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This is the minimum image sample distance allow when the image
    * sample distance is being automatically adjusted
    */
   vtkSetClampMacro(MinimumImageSampleDistance, float, 0.1f, 100.0f);
   vtkGetMacro(MinimumImageSampleDistance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This is the maximum image sample distance allow when the image
    * sample distance is being automatically adjusted
    */
   vtkSetClampMacro(MaximumImageSampleDistance, float, 0.1f, 100.0f);
   vtkGetMacro(MaximumImageSampleDistance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If AutoAdjustSampleDistances is on, the ImageSampleDistance
    * will be varied to achieve the allocated render time of this
@@ -116,9 +109,9 @@ public:
   vtkSetClampMacro(AutoAdjustSampleDistances, vtkTypeBool, 0, 1);
   vtkGetMacro(AutoAdjustSampleDistances, vtkTypeBool);
   vtkBooleanMacro(AutoAdjustSampleDistances, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If IntermixIntersectingGeometry is turned on, the zbuffer will be
    * captured and used to limit the traversal of the rays.
@@ -126,7 +119,7 @@ public:
   vtkSetClampMacro(IntermixIntersectingGeometry, vtkTypeBool, 0, 1);
   vtkGetMacro(IntermixIntersectingGeometry, vtkTypeBool);
   vtkBooleanMacro(IntermixIntersectingGeometry, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Maximum size allowed for a pixel list. Default is 32.
@@ -143,14 +136,14 @@ public:
    */
   void SetMaxPixelListSize(int size);
 
-  //@{
+  ///@{
   /**
    * Set/Get the helper class for integrating rays.  If set to NULL, a
    * default integrator will be assigned.
    */
   virtual void SetRayIntegrator(vtkUnstructuredGridVolumeRayIntegrator* ri);
   vtkGetObjectMacro(RayIntegrator, vtkUnstructuredGridVolumeRayIntegrator);
-  //@}
+  ///@}
 
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
@@ -365,4 +358,5 @@ private:
   void operator=(const vtkUnstructuredGridVolumeZSweepMapper&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

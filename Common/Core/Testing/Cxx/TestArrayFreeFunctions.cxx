@@ -1,17 +1,5 @@
-/*==============================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestDataArrayAPI.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-==============================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAbstractArray.h"
 
 // Helpers:
@@ -57,11 +45,14 @@ int timesLambdaFreeCalled = 0;
 
 //------------------------------------------------------------------------------
 #define testAssert(expr, errorMessage)                                                             \
-  if (!(expr))                                                                                     \
+  do                                                                                               \
   {                                                                                                \
-    ++errors;                                                                                      \
-    vtkGenericWarningMacro(<< "Assertion failed: " #expr << "\n" << errorMessage);                 \
-  }
+    if (!(expr))                                                                                   \
+    {                                                                                              \
+      ++errors;                                                                                    \
+      vtkGenericWarningMacro(<< "Assertion failed: " #expr << "\n" << errorMessage);               \
+    }                                                                                              \
+  } while (false)
 
 //------------------------------------------------------------------------------
 void* make_allocation(UseFree, std::size_t size, int)
@@ -106,10 +97,12 @@ void assign_user_free(FreeType, vtkAbstractArray*)
 
 void assign_user_free(UseLambda, vtkAbstractArray* array)
 {
-  array->SetArrayFreeFunction([](void* ptr) {
-    delete[] reinterpret_cast<uint8_t*>(ptr);
-    timesLambdaFreeCalled++;
-  });
+  array->SetArrayFreeFunction(
+    [](void* ptr)
+    {
+      delete[] reinterpret_cast<uint8_t*>(ptr);
+      timesLambdaFreeCalled++;
+    });
 }
 
 //------------------------------------------------------------------------------
@@ -119,7 +112,7 @@ int assign_void_array(
 {
   int errors = 0;
   if (vtkSOADataArrayTemplate<double>* is_soa =
-        vtkArrayDownCast<vtkSOADataArrayTemplate<double> >(array))
+        vtkArrayDownCast<vtkSOADataArrayTemplate<double>>(array))
   {
     is_soa->SetNumberOfComponents(1);
     is_soa->SetArray(0, reinterpret_cast<double*>(ptr), static_cast<vtkIdType>(size), false,
@@ -127,7 +120,7 @@ int assign_void_array(
   }
 #ifdef VTK_USE_SCALED_SOA_ARRAYS
   else if (vtkScaledSOADataArrayTemplate<double>* is_scale_soa =
-             vtkArrayDownCast<vtkScaledSOADataArrayTemplate<double> >(array))
+             vtkArrayDownCast<vtkScaledSOADataArrayTemplate<double>>(array))
   {
     is_scale_soa->SetNumberOfComponents(1);
     is_scale_soa->SetArray(0, reinterpret_cast<double*>(ptr), static_cast<vtkIdType>(size), false,

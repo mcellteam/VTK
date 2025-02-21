@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPDataSetReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPDataSetReader
  * @brief   Manages reading pieces of a data set.
@@ -26,6 +14,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkIOParallelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 
 class VTKIOPARALLEL_EXPORT vtkPDataSetReader : public vtkDataSetAlgorithm
@@ -35,26 +24,26 @@ public:
   vtkTypeMacro(vtkPDataSetReader, vtkDataSetAlgorithm);
   static vtkPDataSetReader* New();
 
-  //@{
+  ///@{
   /**
    * This file to open and read.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This is set when UpdateInformation is called.
    * It shows the type of the output.
    */
   vtkGetMacro(DataType, int);
-  //@}
+  ///@}
 
   /**
    * Called to determine if the file can be read by the reader.
    */
-  int CanReadFile(const char* filename);
+  int CanReadFile(VTK_FILEPATH const char* filename);
 
 protected:
   vtkPDataSetReader();
@@ -62,7 +51,7 @@ protected:
 
   int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
-  void ReadPVTKFileInformation(istream* fp, vtkInformation* request,
+  void ReadPVTKFileInformation(istream* file, vtkInformation* request,
     vtkInformationVector** inputVector, vtkInformationVector* outputVector);
   void ReadVTKFileInformation(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector);
@@ -96,4 +85,5 @@ private:
   void operator=(const vtkPDataSetReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,26 +1,13 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRCutPlane.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMRCutPlane.h"
-#include "vtkAMRUtilities.h"
+
 #include "vtkCell.h"
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
 #include "vtkCompositeDataPipeline.h"
 #include "vtkCutter.h"
 #include "vtkDoubleArray.h"
-#include "vtkIdList.h"
 #include "vtkIndent.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -37,27 +24,31 @@
 #include <algorithm>
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAMRCutPlane);
 
+vtkCxxSetObjectMacro(vtkAMRCutPlane, Controller, vtkMultiProcessController);
 //------------------------------------------------------------------------------
 vtkAMRCutPlane::vtkAMRCutPlane()
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
   this->LevelOfResolution = 0;
-  this->initialRequest = true;
+  this->InitialRequest = true;
   for (int i = 0; i < 3; ++i)
   {
     this->Center[i] = 0.0;
     this->Normal[i] = 0.0;
   }
-  this->Controller = vtkMultiProcessController::GetGlobalController();
-  this->UseNativeCutter = 1;
+  this->Controller = nullptr;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
+  this->UseNativeCutter = true;
 }
 
 //------------------------------------------------------------------------------
 vtkAMRCutPlane::~vtkAMRCutPlane()
 {
+  this->SetController(nullptr);
   this->BlocksToLoad.clear();
 }
 
@@ -130,7 +121,7 @@ int vtkAMRCutPlane::RequestUpdateExtent(vtkInformation* vtkNotUsed(rqst),
   vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
   assert("pre: inInfo is nullptr" && (inInfo != nullptr));
 
-  inInfo->Set(vtkCompositeDataPipeline::UPDATE_COMPOSITE_INDICES(), &this->BlocksToLoad[0],
+  inInfo->Set(vtkCompositeDataPipeline::UPDATE_COMPOSITE_INDICES(), this->BlocksToLoad.data(),
     static_cast<int>(this->BlocksToLoad.size()));
   return 1;
 }
@@ -140,85 +131,85 @@ int vtkAMRCutPlane::RequestData(vtkInformation* vtkNotUsed(rqst),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   // STEP 0: Get input object
-  vtkInformation* input = inputVector[0]->GetInformationObject(0);
-  assert("pre: input information object is nullptr" && (input != nullptr));
-  vtkOverlappingAMR* inputAMR =
-    vtkOverlappingAMR::SafeDownCast(input->Get(vtkDataObject::DATA_OBJECT()));
-  assert("pre: input AMR dataset is nullptr!" && (inputAMR != nullptr));
+  vtkOverlappingAMR* input = vtkOverlappingAMR::GetData(inputVector[0]);
+  if (!input)
+  {
+    vtkErrorMacro("Input AMR dataset is nullptr!");
+    return 0;
+  }
 
   // STEP 1: Get output object
-  vtkInformation* output = outputVector->GetInformationObject(0);
-  assert("pre: output information is nullptr" && (output != nullptr));
-  vtkMultiBlockDataSet* mbds =
-    vtkMultiBlockDataSet::SafeDownCast(output->Get(vtkDataObject::DATA_OBJECT()));
-  assert("pre: output multi-block dataset is nullptr" && (mbds != nullptr));
+  auto output = vtkMultiBlockDataSet::GetData(outputVector);
+  if (!output)
+  {
+    vtkErrorMacro("Output multi-block dataset is nullptr!");
+    return 0;
+  }
 
-  if (this->IsAMRData2D(inputAMR))
+  if (this->IsAMRData2D(input))
   {
     // Return an empty multi-block, we cannot cut a 2-D dataset
     return 1;
   }
 
-  vtkPlane* cutPlane = this->GetCutPlane(inputAMR);
-  assert("pre: cutPlane should not be nullptr!" && (cutPlane != nullptr));
-
-  unsigned int blockIdx = 0;
-  unsigned int level = 0;
-  for (; level < inputAMR->GetNumberOfLevels(); ++level)
+  auto cutPlane = vtk::TakeSmartPointer(this->GetCutPlane(input));
+  if (!cutPlane)
   {
-    unsigned int dataIdx = 0;
-    for (; dataIdx < inputAMR->GetNumberOfDataSets(level); ++dataIdx)
+    vtkErrorMacro("Cut plane is nullptr!");
+    return 0;
+  }
+
+  output->CopyStructure(input);
+
+  auto inIter = vtk::TakeSmartPointer(input->NewIterator());
+  for (inIter->InitTraversal(); !inIter->IsDoneWithTraversal(); inIter->GoToNextItem())
+  {
+    if (this->CheckAbort())
     {
-      vtkUniformGrid* grid = inputAMR->GetDataSet(level, dataIdx);
-      if (this->UseNativeCutter == 1)
+      break;
+    }
+    auto grid = vtkUniformGrid::SafeDownCast(inIter->GetCurrentDataObject());
+    if (this->UseNativeCutter == 1)
+    {
+      if (grid != nullptr)
       {
-        if (grid != nullptr)
-        {
-          vtkCutter* myCutter = vtkCutter::New();
-          myCutter->SetInputData(grid);
-          myCutter->SetCutFunction(cutPlane);
-          myCutter->Update();
-          mbds->SetBlock(blockIdx, myCutter->GetOutput());
-          ++blockIdx;
-          myCutter->Delete();
-        }
-        else
-        {
-          mbds->SetBlock(blockIdx, nullptr);
-          ++blockIdx;
-        }
+        vtkNew<vtkCutter> myCutter;
+        myCutter->SetInputData(grid);
+        myCutter->SetCutFunction(cutPlane);
+        myCutter->SetContainerAlgorithm(this);
+        myCutter->Update();
+        output->SetDataSet(inIter, myCutter->GetOutput());
       }
       else
       {
-        if (grid != nullptr)
-        {
-          this->CutAMRBlock(cutPlane, blockIdx, grid, mbds);
-          ++blockIdx;
-        }
-        else
-        {
-          mbds->SetBlock(blockIdx, nullptr);
-          ++blockIdx;
-        }
+        output->SetDataSet(inIter, nullptr);
       }
-    } // END for all data
-  }   // END for all levels
-
-  cutPlane->Delete();
+    }
+    else
+    {
+      if (grid != nullptr)
+      {
+        output->SetDataSet(inIter, this->CutAMRBlock(cutPlane, grid));
+      }
+      else
+      {
+        output->SetDataSet(inIter, nullptr);
+      }
+    }
+  }
   return 1;
 }
 
 //------------------------------------------------------------------------------
-void vtkAMRCutPlane::CutAMRBlock(
-  vtkPlane* cutPlane, unsigned int blockIdx, vtkUniformGrid* grid, vtkMultiBlockDataSet* output)
+vtkSmartPointer<vtkUnstructuredGrid> vtkAMRCutPlane::CutAMRBlock(
+  vtkPlane* cutPlane, vtkUniformGrid* grid)
 {
-  assert("pre: multiblock output object is nullptr!" && (output != nullptr));
   assert("pre: grid is nullptr" && (grid != nullptr));
 
-  vtkUnstructuredGrid* mesh = vtkUnstructuredGrid::New();
-  vtkPoints* meshPts = vtkPoints::New();
+  vtkNew<vtkUnstructuredGrid> mesh;
+  vtkNew<vtkPoints> meshPts;
   meshPts->SetDataTypeToDouble();
-  vtkCellArray* cells = vtkCellArray::New();
+  vtkNew<vtkCellArray> cells;
 
   // Maps points from the input grid to the output grid
   std::map<vtkIdType, vtkIdType> grdPntMapping;
@@ -242,7 +233,6 @@ void vtkAMRCutPlane::CutAMRBlock(
 
   // Insert the points
   mesh->SetPoints(meshPts);
-  meshPts->Delete();
 
   std::vector<int> types;
   if (grid->GetDataDimension() == 3)
@@ -252,23 +242,28 @@ void vtkAMRCutPlane::CutAMRBlock(
   else
   {
     vtkErrorMacro("Cannot cut a grid of dimension=" << grid->GetDataDimension());
-    output->SetBlock(blockIdx, nullptr);
-    return;
+    return nullptr;
   }
 
   // Insert the cells
-  mesh->SetCells(&types[0], cells);
-  cells->Delete();
+  mesh->SetCells(types.data(), cells);
 
   // Extract fields
   this->ExtractPointDataFromGrid(
     grid, grdPntMapping, mesh->GetNumberOfPoints(), mesh->GetPointData());
   this->ExtractCellDataFromGrid(grid, extractedCells, mesh->GetCellData());
 
-  output->SetBlock(blockIdx, mesh);
-  mesh->Delete();
-  grdPntMapping.clear();
-  extractedCells.clear();
+  return mesh;
+}
+
+//------------------------------------------------------------------------------
+void vtkAMRCutPlane::CutAMRBlock(
+  vtkPlane* cutPlane, unsigned int blockIdx, vtkUniformGrid* grid, vtkMultiBlockDataSet* dataSet)
+{
+  if (auto mesh = this->CutAMRBlock(cutPlane, grid))
+  {
+    dataSet->SetBlock(blockIdx, mesh);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -280,8 +275,7 @@ void vtkAMRCutPlane::ExtractCellFromGrid(vtkUniformGrid* grid, vtkCell* cell,
   assert("pre: cells is nullptr" && (cells != nullptr));
 
   cells->InsertNextCell(cell->GetNumberOfPoints());
-  vtkIdType nodeIdx = 0;
-  for (; nodeIdx < cell->GetNumberOfPoints(); ++nodeIdx)
+  for (vtkIdType nodeIdx = 0; nodeIdx < cell->GetNumberOfPoints(); ++nodeIdx)
   {
     // Get the point ID w.r.t. the grid
     vtkIdType meshPntIdx = cell->GetPointId(nodeIdx);
@@ -451,7 +445,7 @@ void vtkAMRCutPlane::ComputeAMRBlocksToLoad(vtkPlane* p, vtkOverlappingAMR* m)
 //------------------------------------------------------------------------------
 void vtkAMRCutPlane::InitializeCenter(double min[3], double max[3])
 {
-  if (!this->initialRequest)
+  if (!this->InitialRequest)
   {
     return;
   }
@@ -459,7 +453,7 @@ void vtkAMRCutPlane::InitializeCenter(double min[3], double max[3])
   this->Center[0] = 0.5 * (max[0] - min[0]);
   this->Center[1] = 0.5 * (max[1] - min[1]);
   this->Center[2] = 0.5 * (max[2] - min[2]);
-  this->initialRequest = false;
+  this->InitialRequest = false;
 }
 
 //------------------------------------------------------------------------------
@@ -529,10 +523,6 @@ bool vtkAMRCutPlane::IsAMRData2D(vtkOverlappingAMR* input)
 {
   assert("pre: Input AMR dataset is nullptr" && (input != nullptr));
 
-  if (input->GetGridDescription() != VTK_XYZ_GRID)
-  {
-    return true;
-  }
-
-  return false;
+  return input->GetGridDescription() != VTK_XYZ_GRID;
 }
+VTK_ABI_NAMESPACE_END

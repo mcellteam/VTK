@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVertex.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkVertex.h"
 
 #include "vtkCellArray.h"
@@ -22,9 +10,10 @@
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkVertex);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the vertex with a single point.
 vtkVertex::vtkVertex()
 {
@@ -37,7 +26,7 @@ vtkVertex::vtkVertex()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Make a new vtkVertex object with the same information as this object.
 int vtkVertex::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& dist2, double weights[])
@@ -70,7 +59,7 @@ int vtkVertex::EvaluatePosition(const double x[3], double closestPoint[3], int& 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVertex::EvaluateLocation(
   int& vtkNotUsed(subId), const double vtkNotUsed(pcoords)[3], double x[3], double* weights)
 {
@@ -79,7 +68,7 @@ void vtkVertex::EvaluateLocation(
   weights[0] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given parametric coordinates of a point, return the closest cell boundary,
 // and whether the point is inside or outside of the cell. The cell boundary
 // is defined by a list of points (pts) that specify a vertex (1D cell).
@@ -100,7 +89,7 @@ int vtkVertex::CellBoundary(int vtkNotUsed(subId), const double pcoords[3], vtkI
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Generate contouring primitives. The scalar list cellScalars are
 // scalar values at each cell point. The point locator is essentially a
 // points list that merges points as they are inserted (i.e., prevents
@@ -127,7 +116,7 @@ void vtkVertex::Contour(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Intersect with a ray. Return parametric coordinates (both line and cell)
 // and global intersection coordinates, given ray definition and tolerance.
 // The method returns non-zero value if intersection occurs.
@@ -180,20 +169,17 @@ int vtkVertex::IntersectWithLine(const double p1[3], const double p2[3], double 
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Triangulate the vertex. This method fills pts and ptIds with information
 // from the only point in the vertex.
-int vtkVertex::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+int vtkVertex::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
-  pts->InsertPoint(0, this->Points->GetPoint(0));
-  ptIds->InsertId(0, this->PointIds->GetId(0));
-
+  ptIds->SetNumberOfIds(1);
+  ptIds->SetId(0, 0);
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the derivative of the vertex. Returns (0.0, 0.0, 0.0) for all
 // dimensions.
 void vtkVertex::Derivatives(int vtkNotUsed(subId), const double vtkNotUsed(pcoords)[3],
@@ -210,7 +196,7 @@ void vtkVertex::Derivatives(int vtkNotUsed(subId), const double vtkNotUsed(pcoor
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVertex::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
   vtkCellArray* verts, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
   vtkCellData* outCd, int insideOut)
@@ -233,14 +219,14 @@ void vtkVertex::Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPoin
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute interpolation functions
 void vtkVertex::InterpolationFunctions(const double[3], double weights[1])
 {
   weights[0] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVertex::InterpolationDerivs(const double[3], double derivs[3])
 {
   derivs[0] = 0.0;
@@ -248,15 +234,16 @@ void vtkVertex::InterpolationDerivs(const double[3], double derivs[3])
   derivs[2] = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static double vtkVertexCellPCoords[3] = { 0.0, 0.0, 0.0 };
 double* vtkVertex::GetParametricCoords()
 {
   return vtkVertexCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVertex::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

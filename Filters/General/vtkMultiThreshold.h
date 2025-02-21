@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiThreshold.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkMultiThreshold
@@ -98,6 +83,7 @@
  * \enddot
  *
  * The filled rectangles represent sets that are output.
+ * @sa vtkThreshold, vtkSplitByCellScalarFilter, vtkExplodeDataset
  */
 
 #ifndef vtkMultiThreshold_h
@@ -112,6 +98,7 @@
 #include <string> // for holding array names in NormKey
 #include <vector> // for lists of threshold rules
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCell;
 class vtkCellData;
 class vtkDataArray;
@@ -150,11 +137,11 @@ public:
     NAND //!< Only include elements that don't belong to any input set
   };
 
-  //@{
+  ///@{
   /**
    * Add a mesh subset to be computed by thresholding an attribute of the input mesh.
-   * The subset can then be added to an output mesh with OutputSet() or combined with other sets
-   using AddBooleanSet.
+   * The subset can then be added to an output mesh with OutputSet() or
+   * combined with other sets using AddBooleanSet.
    * If you wish to include all cells with values below some number \a a, call
    * with xmin set to vtkMath::NegInf() and xmax set to \a a.
    * Similarly, if you wish to include all cells with values above some number \a a,
@@ -207,9 +194,9 @@ public:
     int component, int allScalars);
   int AddIntervalSet(double xmin, double xmax, int omin, int omax, int assoc, int attribType,
     int component, int allScalars);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These convenience members make it easy to insert closed intervals.
    * The "notch" interval is accomplished by creating a bandpass interval and applying a NAND
@@ -225,7 +212,7 @@ public:
     double xmin, double xmax, int assoc, const char* arrayName, int component, int allScalars);
   int AddNotchIntervalSet(
     double xlo, double xhi, int assoc, const char* arrayName, int component, int allScalars);
-  //@}
+  ///@}
 
   /**
    * Create a new mesh subset using boolean operations on pre-existing sets.
@@ -319,11 +306,11 @@ public:
     int OutputId; /// The index of the output mesh that will hold this set or -1 if the set is not
                   /// output.
 
-    /// Default constructur. The grid output ID is initialized to indicate that the set should not
+    /// Default constructor. The grid output ID is initialized to indicate that the set should not
     /// be output.
     Set() { this->OutputId = -1; }
     /// Virtual destructor since we have virtual members.
-    virtual ~Set() {}
+    virtual ~Set() = default;
     /// Print a graphviz node label statement (with fancy node name and shape).
     virtual void PrintNodeName(ostream& os);
     /// Print a graphviz node name for use in an edge statement.
@@ -351,7 +338,7 @@ public:
      */
     int Match(double cellNorm[2]);
 
-    ~Interval() override {}
+    ~Interval() override = default;
     void PrintNode(ostream& os) override;
     Interval* GetIntervalPointer() override;
   };
@@ -372,7 +359,7 @@ public:
       this->Id = sId;
       this->Operator = op;
     }
-    ~BooleanSet() override {}
+    ~BooleanSet() override = default;
     void PrintNode(ostream& os) override;
     BooleanSet* GetBooleanSetPointer() override;
   };
@@ -527,4 +514,5 @@ inline vtkMultiThreshold::BooleanSet* vtkMultiThreshold::BooleanSet::GetBooleanS
   return this;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkMultiThreshold_h

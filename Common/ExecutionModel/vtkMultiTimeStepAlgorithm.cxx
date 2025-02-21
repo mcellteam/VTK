@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-Program:   Visualization Toolkit
-Module:    vtkMultiTimeStepAlgorithm.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkMultiTimeStepAlgorithm.h"
 
 #include "vtkCommand.h"
@@ -26,11 +15,12 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkSmartPointer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMultiTimeStepAlgorithm);
 
 vtkInformationKeyMacro(vtkMultiTimeStepAlgorithm, UPDATE_TIME_STEPS, DoubleVector);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object so that cell data is not passed to output.
 vtkMultiTimeStepAlgorithm::vtkMultiTimeStepAlgorithm()
 {
@@ -40,7 +30,7 @@ vtkMultiTimeStepAlgorithm::vtkMultiTimeStepAlgorithm()
   this->NumberOfCacheEntries = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMultiTimeStepAlgorithm::IsInCache(double time, size_t& idx)
 {
   std::vector<TimeCache>::iterator it = this->Cache.begin();
@@ -54,7 +44,7 @@ bool vtkMultiTimeStepAlgorithm::IsInCache(double time, size_t& idx)
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkMultiTimeStepAlgorithm::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -115,7 +105,7 @@ vtkTypeBool vtkMultiTimeStepAlgorithm::ProcessRequest(
   {
     int retVal = 1;
     vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
-    vtkDataObject* inData = inInfo->Get(vtkDataObject::DATA_OBJECT());
+    auto inData = vtk::MakeSmartPointer(inInfo->Get(vtkDataObject::DATA_OBJECT()));
 
     if (this->UpdateTimeSteps.empty())
     {
@@ -123,51 +113,39 @@ vtkTypeBool vtkMultiTimeStepAlgorithm::ProcessRequest(
       return 0;
     }
 
-    if (this->RequestUpdateIndex == 0) // first time step
-    {
-      this->MDataSet = vtkSmartPointer<vtkMultiBlockDataSet>::New();
-      this->MDataSet->SetNumberOfBlocks(static_cast<unsigned int>(this->UpdateTimeSteps.size()));
-    }
-
-    vtkSmartPointer<vtkDataObject> inDataCopy;
-    inDataCopy.TakeReference(inData->NewInstance());
-    inDataCopy->ShallowCopy(inData);
-
     size_t idx;
     if (!this->IsInCache(this->UpdateTimeSteps[this->RequestUpdateIndex], idx))
     {
-      this->Cache.push_back(TimeCache(this->UpdateTimeSteps[this->RequestUpdateIndex], inDataCopy));
+      auto inDataCopy = vtk::TakeSmartPointer(inData->NewInstance());
+      inDataCopy->ShallowCopy(inData);
+      this->Cache.emplace_back(this->UpdateTimeSteps[this->RequestUpdateIndex], inDataCopy);
     }
 
     this->RequestUpdateIndex++;
 
-    size_t nTimeSteps = this->UpdateTimeSteps.size();
+    const size_t nTimeSteps = this->UpdateTimeSteps.size();
     if (this->RequestUpdateIndex == static_cast<int>(nTimeSteps)) // all the time steps are here
     {
-      for (size_t i = 0; i < nTimeSteps; i++)
+      // try calling the newer / recommended API first.
+      std::vector<vtkSmartPointer<vtkDataObject>> inputs(nTimeSteps);
+      for (size_t cc = 0; cc < nTimeSteps; ++cc)
       {
-        if (this->IsInCache(this->UpdateTimeSteps[i], idx))
+        if (this->IsInCache(this->UpdateTimeSteps[cc], idx))
         {
-          this->MDataSet->SetBlock(static_cast<unsigned int>(i), this->Cache[idx].Data);
+          inputs[cc] = this->Cache[idx].Data;
         }
         else
         {
           // This should never happen
-          abort();
+          vtkErrorMacro("exceptional condition reached! Please report.");
+          return 0;
         }
       }
 
-      // change the input to the multiblock data and let child class to do the work
-      // make sure to set the input back to what it was to not break anything upstream
-      inData->Register(this);
-      inInfo->Set(vtkDataObject::DATA_OBJECT(), this->MDataSet);
-      retVal = this->RequestData(request, inputVector, outputVector);
-      inInfo->Set(vtkDataObject::DATA_OBJECT(), inData);
-      inData->Delete();
+      retVal = this->Execute(request, inputs, outputVector);
 
       this->UpdateTimeSteps.clear();
       this->RequestUpdateIndex = 0;
-      this->MDataSet = nullptr;
       if (!this->CacheData)
       {
         // No caching, remove all
@@ -205,8 +183,9 @@ vtkTypeBool vtkMultiTimeStepAlgorithm::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiTimeStepAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

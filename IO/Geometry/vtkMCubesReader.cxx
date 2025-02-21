@@ -1,21 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMCubesReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMCubesReader.h"
 
 #include "vtkByteSwap.h"
 #include "vtkCellArray.h"
+#include "vtkEndian.h"
 #include "vtkFloatArray.h"
 #include "vtkIncrementalPointLocator.h"
 #include "vtkInformation.h"
@@ -29,6 +18,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMCubesReader);
 
 // Construct object with FlipNormals turned off and Normals set to true.
@@ -79,10 +69,12 @@ int vtkMCubesReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkFloatArray* newNormals = nullptr;
   double bounds[6];
   int i, j, k, numPts, numTris;
-  typedef struct
+  struct pointType_t
   {
     float x[3], n[3];
-  } pointType;
+  };
+  using pointType = struct pointType_t;
+
   pointType point;
   struct stat buf = {};
   int numDegenerate = 0;
@@ -274,7 +266,7 @@ int vtkMCubesReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkDebugMacro(<< "Read: " << newPts->GetNumberOfPoints() << " points, "
                 << newPolys->GetNumberOfCells() << " triangles\n"
                 << "(Removed " << numDegenerate << " degenerate triangles)");
-
+  (void)numDegenerate;
   fclose(fp);
   //
   // Update ourselves
@@ -439,3 +431,4 @@ vtkMTimeType vtkMCubesReader::GetMTime()
   }
   return mTime;
 }
+VTK_ABI_NAMESPACE_END

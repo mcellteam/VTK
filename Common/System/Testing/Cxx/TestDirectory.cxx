@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestDirectory.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // .NAME
 // .SECTION Description
@@ -26,7 +14,7 @@ int TestDirectory(int, char*[])
   vtkDirectory* testDir = vtkDirectory::New();
   myDir->Open(".");
   char buf[1024];
-  myDir->GetCurrentWorkingDirectory(buf, 1024);
+  vtkDirectory::GetCurrentWorkingDirectory(buf, 1024);
   cout << "Working Directory: " << buf << endl;
   // Get each file name in the directory
   for (int i = 0; i < myDir->GetNumberOfFiles(); i++)

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEncodedGradientEstimator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkEncodedGradientEstimator
@@ -36,7 +24,9 @@
 
 #include "vtkObject.h"
 #include "vtkRenderingVolumeModule.h" // For export macro
+#include "vtkThreads.h"               // for VTK_MAX_THREADS
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 class vtkDirectionEncoder;
 class vtkMultiThreader;
@@ -47,7 +37,7 @@ public:
   vtkTypeMacro(vtkEncodedGradientEstimator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the scalar input for which the normals will be
    * calculated. Note that this call does not setup a pipeline
@@ -58,9 +48,9 @@ public:
    */
   virtual void SetInputData(vtkImageData*);
   vtkGetObjectMacro(InputData, vtkImageData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale and bias for the gradient magnitude
    */
@@ -68,9 +58,9 @@ public:
   vtkGetMacro(GradientMagnitudeScale, float);
   vtkSetMacro(GradientMagnitudeBias, float);
   vtkGetMacro(GradientMagnitudeBias, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on / off the bounding of the normal computation by
    * the this->Bounds bounding box
@@ -78,9 +68,9 @@ public:
   vtkSetClampMacro(BoundsClip, vtkTypeBool, 0, 1);
   vtkGetMacro(BoundsClip, vtkTypeBool);
   vtkBooleanMacro(BoundsClip, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / Get the bounds of the computation (used if
    * this->ComputationBounds is 1.) The bounds are specified
@@ -88,50 +78,50 @@ public:
    */
   vtkSetVector6Macro(Bounds, int);
   vtkGetVectorMacro(Bounds, int, 6);
-  //@}
+  ///@}
 
   /**
    * Recompute the encoded normals and gradient magnitudes.
    */
-  void Update(void);
+  void Update();
 
   /**
    * Get the encoded normals.
    */
-  unsigned short* GetEncodedNormals(void);
+  unsigned short* GetEncodedNormals();
 
-  //@{
+  ///@{
   /**
    * Get the encoded normal at an x,y,z location in the volume
    */
   int GetEncodedNormalIndex(vtkIdType xyzIndex);
   int GetEncodedNormalIndex(int xIndex, int yIndex, int zIndex);
-  //@}
+  ///@}
 
   /**
    * Get the gradient magnitudes
    */
-  unsigned char* GetGradientMagnitudes(void);
+  unsigned char* GetGradientMagnitudes();
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of threads to create when encoding normals
    * This defaults to the number of available processors on the machine
    */
   vtkSetClampMacro(NumberOfThreads, int, 1, VTK_MAX_THREADS);
   vtkGetMacro(NumberOfThreads, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / Get the direction encoder used to encode normal directions
    * to fit within two bytes
    */
   void SetDirectionEncoder(vtkDirectionEncoder* direnc);
   vtkGetObjectMacro(DirectionEncoder, vtkDirectionEncoder);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If you don't want to compute gradient magnitudes (but you
    * do want normals for shading) this can be used. Be careful - if
@@ -141,9 +131,9 @@ public:
   vtkSetMacro(ComputeGradientMagnitudes, vtkTypeBool);
   vtkGetMacro(ComputeGradientMagnitudes, vtkTypeBool);
   vtkBooleanMacro(ComputeGradientMagnitudes, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the data in each slice is only contained within a circle circumscribed
    * within the slice, and the slice is square, then don't compute anything
@@ -152,20 +142,20 @@ public:
   vtkSetMacro(CylinderClip, vtkTypeBool);
   vtkGetMacro(CylinderClip, vtkTypeBool);
   vtkBooleanMacro(CylinderClip, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the time required for the last update in seconds or cpu seconds
    */
   vtkGetMacro(LastUpdateTimeInSeconds, float);
   vtkGetMacro(LastUpdateTimeInCPUSeconds, float);
-  //@}
+  ///@}
 
   vtkGetMacro(UseCylinderClip, int);
   int* GetCircleLimits() { return this->CircleLimits; }
 
-  //@{
+  ///@{
   /**
    * Set / Get the ZeroNormalThreshold - this defines the minimum magnitude
    * of a gradient that is considered sufficient to define a
@@ -176,9 +166,9 @@ public:
    */
   void SetZeroNormalThreshold(float v);
   vtkGetMacro(ZeroNormalThreshold, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Assume that the data value outside the volume is zero when
    * computing normals.
@@ -186,7 +176,7 @@ public:
   vtkSetClampMacro(ZeroPad, vtkTypeBool, 0, 1);
   vtkGetMacro(ZeroPad, vtkTypeBool);
   vtkBooleanMacro(ZeroPad, vtkTypeBool);
-  //@}
+  ///@}
 
   // These variables should be protected but are being
   // made public to be accessible to the templated function.
@@ -222,7 +212,7 @@ protected:
 
   vtkDirectionEncoder* DirectionEncoder;
 
-  virtual void UpdateNormals(void) = 0;
+  virtual void UpdateNormals() = 0;
 
   float GradientMagnitudeScale;
   float GradientMagnitudeBias;
@@ -253,4 +243,5 @@ private:
   void operator=(const vtkEncodedGradientEstimator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

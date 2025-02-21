@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXdmfWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkXdmfWriter
@@ -33,6 +21,17 @@
 #include <string> // Needed for private members
 #include <vector> //
 
+namespace xdmf2
+{
+class XdmfArray;
+class XdmfDOM;
+class XdmfElement;
+class XdmfGrid;
+class XdmfGeometry;
+class XdmfTopology;
+}
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkExecutive;
 
 class vtkCompositeDataSet;
@@ -43,16 +42,6 @@ class vtkFieldData;
 class vtkInformation;
 class vtkInformationVector;
 class vtkXdmfWriterDomainMemoryHandler;
-
-namespace xdmf2
-{
-class XdmfArray;
-class XdmfDOM;
-class XdmfElement;
-class XdmfGrid;
-class XdmfGeometry;
-class XdmfTopology;
-}
 
 class VTKIOXDMF2_EXPORT vtkXdmfWriter : public vtkDataObjectAlgorithm
 {
@@ -66,31 +55,31 @@ public:
    */
   virtual void SetInputData(vtkDataObject* dobj);
 
-  //@{
+  ///@{
   /**
    * Set or get the file name of the xdmf file.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set or get the file name of the hdf5 file.
    * Note that if the File name is not specified, then the group name is ignore
    */
-  vtkSetStringMacro(HeavyDataFileName);
-  vtkGetStringMacro(HeavyDataFileName);
-  //@}
+  vtkSetFilePathMacro(HeavyDataFileName);
+  vtkGetFilePathMacro(HeavyDataFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set or get the group name into which data will be written
    * it may contain nested groups as in "/Proc0/Block0"
    */
   vtkSetStringMacro(HeavyDataGroupName);
   vtkGetStringMacro(HeavyDataGroupName);
-  //@}
+  ///@}
 
   /**
    * Write data to output. Method executes subclasses WriteData() method, as
@@ -99,7 +88,7 @@ public:
    */
   virtual int Write();
 
-  //@{
+  ///@{
   /**
    * Topology Geometry and Attribute arrays smaller than this are written in line into the XML.
    * Default is 100.
@@ -107,9 +96,9 @@ public:
    */
   vtkSetMacro(LightDataLimit, int);
   vtkGetMacro(LightDataLimit, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Controls whether writer automatically writes all input time steps, or
    * just the timestep that is currently on the input.
@@ -118,9 +107,9 @@ public:
   vtkSetMacro(WriteAllTimeSteps, int);
   vtkGetMacro(WriteAllTimeSteps, int);
   vtkBooleanMacro(WriteAllTimeSteps, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set of get the flag that specify if input mesh is static over time.
    * If so, the mesh topology and geometry heavy data will be written only once.
@@ -130,16 +119,16 @@ public:
   vtkSetMacro(MeshStaticOverTime, bool);
   vtkGetMacro(MeshStaticOverTime, bool);
   vtkBooleanMacro(MeshStaticOverTime, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Called in parallel runs to identify the portion this process is responsible for
    * TODO: respect this
    */
   vtkSetMacro(Piece, int);
   vtkSetMacro(NumberOfPieces, int);
-  //@}
+  ///@}
 
   // TODO: control choice of heavy data format (xml, hdf5, sql, raw)
 
@@ -214,4 +203,5 @@ private:
   void operator=(const vtkXdmfWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkXdmfWriter_h */

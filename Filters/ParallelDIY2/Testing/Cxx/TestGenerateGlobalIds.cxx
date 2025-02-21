@@ -1,21 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGenerateGlobalIds.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-===========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCellData.h"
 #include "vtkCommunicator.h"
 #include "vtkDataSet.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkExtentTranslator.h"
 #include "vtkGenerateGlobalIds.h"
 #include "vtkIdTypeArray.h"
@@ -35,7 +24,7 @@
 
 namespace
 {
-static int whole_extent[] = { 0, 99, 0, 99, 0, 99 };
+int whole_extent[] = { 0, 99, 0, 99, 0, 99 };
 
 vtkSmartPointer<vtkMultiBlockDataSet> CreateDataSet(
   vtkMultiProcessController* contr, int ghost_level, int nblocks)
@@ -130,6 +119,22 @@ bool ValidateDataset(vtkMultiBlockDataSet* mb, vtkMultiProcessController* contr,
   return true;
 }
 
+bool ValidateOutputHiddenGhosts(vtkUnsignedCharArray* ghosts)
+{
+  vtkIdType numberOfGhosts = 0;
+  for (vtkIdType id = 0; id < ghosts->GetNumberOfValues(); ++id)
+  {
+    numberOfGhosts += (ghosts->GetValue(id) & vtkDataSetAttributes::HIDDENPOINT) != 0;
+  }
+
+  if (numberOfGhosts != ghosts->GetNumberOfValues() / 2)
+  {
+    vtkLogF(ERROR, "incorrect hidden ghosts in output");
+    return false;
+  }
+
+  return true;
+}
 }
 
 int TestGenerateGlobalIds(int argc, char* argv[])
@@ -172,14 +177,39 @@ int TestGenerateGlobalIds(int argc, char* argv[])
   // test a dataset with 1 block per rank.
   if (auto dataset = CreateDataSet(contr, 1, 1))
   {
-    vtkNew<vtkGenerateGlobalIds> generator;
-    generator->SetInputDataObject(dataset);
-    generator->Update();
-
-    if (!ValidateDataset(
-          vtkMultiBlockDataSet::SafeDownCast(generator->GetOutputDataObject(0)), contr, 1, 1))
     {
-      status = EXIT_FAILURE;
+      vtkNew<vtkGenerateGlobalIds> generator;
+      generator->SetInputDataObject(dataset);
+      generator->Update();
+
+      if (!ValidateDataset(
+            vtkMultiBlockDataSet::SafeDownCast(generator->GetOutputDataObject(0)), contr, 1, 1))
+      {
+        status = EXIT_FAILURE;
+      }
+    }
+
+    {
+      int rank = contr->GetLocalProcessId();
+      vtkNew<vtkUnsignedCharArray> inputGhosts;
+      inputGhosts->SetName(vtkDataSetAttributes::GhostArrayName());
+      auto block = vtkDataSet::SafeDownCast(dataset->GetBlock(rank));
+      inputGhosts->SetNumberOfValues(block->GetNumberOfPoints());
+      for (vtkIdType pointId = 0; pointId < inputGhosts->GetNumberOfValues(); ++pointId)
+      {
+        inputGhosts->SetValue(pointId, pointId % 2 ? 0 : vtkDataSetAttributes::HIDDENPOINT);
+      }
+      block->GetPointData()->AddArray(inputGhosts);
+      vtkNew<vtkGenerateGlobalIds> generator;
+      generator->SetInputDataObject(dataset);
+      generator->Update();
+
+      auto outMB = vtkMultiBlockDataSet::SafeDownCast(generator->GetOutputDataObject(0));
+      auto outDS = vtkDataSet::SafeDownCast(outMB->GetBlock(rank));
+      if (!ValidateOutputHiddenGhosts(outDS->GetPointData()->GetGhostArray()))
+      {
+        status = EXIT_FAILURE;
+      }
     }
   }
 

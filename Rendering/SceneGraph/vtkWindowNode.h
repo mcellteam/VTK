@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWindowNode.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWindowNode
  * @brief   vtkViewNode specialized for vtkRenderWindows
@@ -25,6 +13,7 @@
 #include "vtkRenderingSceneGraphModule.h" // For export macro
 #include "vtkViewNode.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUnsignedCharArray;
 class vtkFloatArray;
 
@@ -38,12 +27,12 @@ public:
   /**
    * Build containers for our child nodes.
    */
-  virtual void Build(bool prepass) override;
+  void Build(bool prepass) override;
 
   /**
    * Get state of my renderable.
    */
-  virtual void Synchronize(bool prepass) override;
+  void Synchronize(bool prepass) override;
 
   /**
    * Return the size of the last rendered image
@@ -77,4 +66,5 @@ private:
   void operator=(const vtkWindowNode&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

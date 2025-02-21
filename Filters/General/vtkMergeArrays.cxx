@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMergeArrays.cxx
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Kitware, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMergeArrays.h"
 
 #include "vtkCellData.h"
@@ -25,16 +14,21 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkSmartPointer.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
 
+#include <set>
+#include <vector>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMergeArrays);
 
-//----------------------------------------------------------------------------
-vtkMergeArrays::vtkMergeArrays() {}
+//------------------------------------------------------------------------------
+vtkMergeArrays::vtkMergeArrays() = default;
 
-//----------------------------------------------------------------------------
-vtkMergeArrays::~vtkMergeArrays() {}
+//------------------------------------------------------------------------------
+vtkMergeArrays::~vtkMergeArrays() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMergeArrays::GetOutputArrayName(
   vtkFieldData* arrays, const char* arrayName, int inputIndex, std::string& outputArrayName)
 {
@@ -46,7 +40,7 @@ bool vtkMergeArrays::GetOutputArrayName(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMergeArrays::MergeArrays(int inputIndex, vtkFieldData* inputFD, vtkFieldData* outputFD)
 {
   if (inputFD == nullptr || outputFD == nullptr)
@@ -81,9 +75,14 @@ void vtkMergeArrays::MergeArrays(int inputIndex, vtkFieldData* inputFD, vtkField
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMergeArrays::MergeDataObjectFields(vtkDataObject* input, int idx, vtkDataObject* output)
 {
+  if (!input || !output)
+  {
+    return 0;
+  }
+
   int checks[vtkDataObject::NUMBER_OF_ATTRIBUTE_TYPES];
   for (int attr = 0; attr < vtkDataObject::NUMBER_OF_ATTRIBUTE_TYPES; attr++)
   {
@@ -109,14 +108,70 @@ int vtkMergeArrays::MergeDataObjectFields(vtkDataObject* input, int idx, vtkData
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMergeArrays::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_IS_REPEATABLE(), 1);
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkMergeArrays::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+{
+  int numberOfInputs = inputVector[0]->GetNumberOfInformationObjects();
+  if (numberOfInputs < 2)
+  {
+    vtkErrorMacro(<< "This filter needs at least 2 inputs.");
+    return 0;
+  }
+
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+
+  // Aggregates time values
+  std::set<double> allTimeSteps;
+  for (int idx = 0; idx < numberOfInputs; ++idx)
+  {
+    vtkInformation* inInfo = inputVector[0]->GetInformationObject(idx);
+    if (!inInfo)
+    {
+      continue;
+    }
+
+    if (!inInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
+    {
+      continue;
+    }
+
+    int numberOfTimeSteps = inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+    double* values = inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+
+    for (int step = 0; step < numberOfTimeSteps; step++)
+    {
+      allTimeSteps.insert(values[step]);
+    }
+  }
+
+  if (allTimeSteps.empty())
+  {
+    // Not having any timesteps is fine, just return.
+    return 1;
+  }
+
+  // Forward these timesteps to the output
+  std::vector<double> allTimeStepsVec(allTimeSteps.begin(), allTimeSteps.end());
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), allTimeStepsVec.data(),
+    static_cast<int>(allTimeStepsVec.size()));
+
+  double timeRange[2];
+  timeRange[0] = allTimeStepsVec.front();
+  timeRange[1] = allTimeStepsVec.back();
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+
+  return 1;
+}
+
+//------------------------------------------------------------------------------
 int vtkMergeArrays::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -158,6 +213,10 @@ int vtkMergeArrays::RequestData(vtkInformation* vtkNotUsed(request),
 
   for (int idx = 1; idx < num; ++idx)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     inInfo = inputVector[0]->GetInformationObject(idx);
     input = inInfo->Get(vtkDataObject::DATA_OBJECT());
     if (!this->MergeDataObjectFields(input, idx, output))
@@ -184,8 +243,9 @@ int vtkMergeArrays::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMergeArrays::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

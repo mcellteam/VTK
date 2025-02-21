@@ -1,26 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridPartialPreIntegration.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*
- * Copyright 2004 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2004 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 /**
  * @class   vtkUnstructuredGridPartialPreIntegration
@@ -46,6 +26,7 @@
 #include "vtkRenderingVolumeModule.h" // For export macro
 #include "vtkUnstructuredGridVolumeRayIntegrator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPartialPreIntegrationTransferFunction;
 class vtkVolumeProperty;
 
@@ -62,7 +43,7 @@ public:
   void Integrate(vtkDoubleArray* intersectionLengths, vtkDataArray* nearIntersections,
     vtkDataArray* farIntersections, float color[4]) override;
 
-  //@{
+  ///@{
   /**
    * Integrates a single ray segment.  \c color is blended with the result
    * (with \c color in front).  The result is written back into \c color.
@@ -71,9 +52,9 @@ public:
     double intensity_back, double attenuation_back, float color[4]);
   static void IntegrateRay(double length, const double color_front[3], double attenuation_front,
     const double color_back[3], double attenuation_back, float color[4]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Looks up Psi (as defined by Moreland and Angel, "A Fast High Accuracy
    * Volume Renderer for Unstructured Data") in a table.  The table must be
@@ -83,7 +64,7 @@ public:
   static float Psi(float taufD, float taubD);
   static float* GetPsiTable(int& size);
   static void BuildPsiTable();
-  //@}
+  ///@}
 
 protected:
   vtkUnstructuredGridPartialPreIntegration();
@@ -113,8 +94,8 @@ inline float vtkUnstructuredGridPartialPreIntegration::Psi(float taufD, float ta
 {
   float gammaf = taufD / (taufD + 1);
   float gammab = taubD / (taubD + 1);
-  int gammafi = vtkMath::Floor(gammaf * PSI_TABLE_SIZE);
-  int gammabi = vtkMath::Floor(gammab * PSI_TABLE_SIZE);
+  int gammafi = vtkMath::Floor(gammaf * static_cast<int>(PSI_TABLE_SIZE));
+  int gammabi = vtkMath::Floor(gammab * static_cast<int>(PSI_TABLE_SIZE));
   return PsiTable[gammafi * PSI_TABLE_SIZE + gammabi];
 }
 
@@ -159,4 +140,5 @@ inline void vtkUnstructuredGridPartialPreIntegration::IntegrateRay(double length
   color[3] += (1 - color[3]) * alpha;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkUnstructuredGridPartialPreIntegration_h

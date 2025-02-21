@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include <vtkActor.h>
 #include <vtkImageActor.h>
 #include <vtkImageData.h>
@@ -45,7 +47,7 @@ int TestRenderToImage(int argc, char* argv[])
   glRenderWindow->SetUseOffScreenBuffers(true);
   renderWindow->Render();
   // Create an (empty) image at the window size
-  int* size = renderWindow->GetSize();
+  const int* size = renderWindow->GetSize();
   vtkNew<vtkImageData> image;
   image->SetDimensions(size[0], size[1], 1);
   image->AllocateScalars(VTK_UNSIGNED_CHAR, 3);

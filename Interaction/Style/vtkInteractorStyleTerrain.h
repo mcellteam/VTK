@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleTerrain.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInteractorStyleTerrain
  * @brief   manipulate camera in scene with natural view up (e.g., terrain)
@@ -51,12 +39,15 @@
 
 #include "vtkInteractionStyleModule.h" // For export macro
 #include "vtkInteractorStyle.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyDataMapper;
 class vtkSphereSource;
 class vtkExtractEdges;
 
-class VTKINTERACTIONSTYLE_EXPORT vtkInteractorStyleTerrain : public vtkInteractorStyle
+class VTKINTERACTIONSTYLE_EXPORT VTK_MARSHALAUTO vtkInteractorStyleTerrain
+  : public vtkInteractorStyle
 {
 public:
   /**
@@ -67,7 +58,7 @@ public:
   vtkTypeMacro(vtkInteractorStyleTerrain, vtkInteractorStyle);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Event bindings controlling the effects of pressing mouse buttons
    * or moving the mouse.
@@ -79,7 +70,7 @@ public:
   void OnMiddleButtonUp() override;
   void OnRightButtonDown() override;
   void OnRightButtonUp() override;
-  //@}
+  ///@}
 
   /**
    * Override the "fly-to" (f keypress) for images.
@@ -92,14 +83,14 @@ public:
   void Pan() override;
   void Dolly() override;
 
-  //@{
+  ///@{
   /**
    * Turn on/off the latitude/longitude lines.
    */
   vtkSetMacro(LatLongLines, vtkTypeBool);
   vtkGetMacro(LatLongLines, vtkTypeBool);
   vtkBooleanMacro(LatLongLines, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkInteractorStyleTerrain();
@@ -123,4 +114,5 @@ private:
   void operator=(const vtkInteractorStyleTerrain&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

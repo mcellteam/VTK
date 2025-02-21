@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangianMatidaIntegrationModel.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLagrangianMatidaIntegrationModel.h"
 
 #include "vtkCellData.h"
@@ -26,9 +14,10 @@
 
 #include <cstring>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkLagrangianMatidaIntegrationModel);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLagrangianMatidaIntegrationModel::vtkLagrangianMatidaIntegrationModel()
 {
   // Fill the helper array
@@ -43,16 +32,16 @@ vtkLagrangianMatidaIntegrationModel::vtkLagrangianMatidaIntegrationModel()
   this->NumIndepVars = 7; // x, y, z, u, v, w, t
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLagrangianMatidaIntegrationModel::~vtkLagrangianMatidaIntegrationModel() = default;
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLagrangianMatidaIntegrationModel::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLagrangianMatidaIntegrationModel::FunctionValues(vtkLagrangianParticle* particle,
   vtkDataSet* dataSet, vtkIdType cellId, double* weights, double* x, double* f)
 {
@@ -140,21 +129,21 @@ int vtkLagrangianMatidaIntegrationModel::FunctionValues(vtkLagrangianParticle* p
   // Compute function values
   for (int i = 0; i < 3; i++)
   {
-    double drag = this->GetDragCoefficient(
+    double drag = vtkLagrangianMatidaIntegrationModel::GetDragCoefficient(
       flowVelocity, particle->GetVelocity(), flowDynamicViscosity, particleDiameter, flowDensity);
-    double relax = this->GetRelaxationTime(flowDynamicViscosity, particleDiameter, particleDensity);
+    double relax = vtkLagrangianMatidaIntegrationModel::GetRelaxationTime(
+      flowDynamicViscosity, particleDiameter, particleDensity);
     // Matida Equation
     f[i + 3] = (relax == 0) ? std::numeric_limits<double>::infinity()
-                            : (flowVelocity[i] - x[i + 3]) * drag / relax;
+                            : (flowVelocity[i] - x[i + 3]) * drag / relax +
+        this->Gravity[i] * (1 - (flowDensity / particleDensity));
     f[i] = x[i + 3];
   }
 
-  const double G = 9.8; // Gravity
-  f[5] -= G * (1 - (flowDensity / particleDensity));
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkLagrangianMatidaIntegrationModel::GetRelaxationTime(
   double dynVisc, double diameter, double density)
 {
@@ -162,7 +151,7 @@ double vtkLagrangianMatidaIntegrationModel::GetRelaxationTime(
                         : (density * diameter * diameter) / (18.0 * dynVisc);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkLagrangianMatidaIntegrationModel::GetDragCoefficient(const double* flowVelocity,
   const double* particleVelocity, double dynVisc, double particleDiameter, double flowDensity)
 {
@@ -179,3 +168,4 @@ double vtkLagrangianMatidaIntegrationModel::GetDragCoefficient(const double* flo
   double reynolds = flowDensity * relativeSpeed * particleDiameter / dynVisc;
   return (1.0 + 0.15 * pow(reynolds, 0.687));
 }
+VTK_ABI_NAMESPACE_END

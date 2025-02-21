@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTemporalInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTemporalInterpolator
  * @brief   interpolate datasets between time steps to produce a new dataset
@@ -38,7 +26,7 @@
  * will produce an irregular sequence of regular steps between
  * each of the original irregular steps (clear enough, yes?).
  *
- * @TODO
+ * @todo
  * Higher order interpolation schemes will require changes to the API
  * as most calls assume only two timesteps are used.
  *
@@ -58,6 +46,7 @@
 #include "vtkFiltersHybridModule.h" // For export macro
 #include "vtkMultiTimeStepAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class VTKFILTERSHYBRID_EXPORT vtkTemporalInterpolator : public vtkMultiTimeStepAlgorithm
 {
@@ -66,7 +55,7 @@ public:
   vtkTypeMacro(vtkTemporalInterpolator, vtkMultiTimeStepAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * If you require a discrete number of outputs steps, to be
    * generated from an input source - for example, you required
@@ -78,9 +67,9 @@ public:
    */
   vtkSetMacro(DiscreteTimeStepInterval, double);
   vtkGetMacro(DiscreteTimeStepInterval, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When ResampleFactor is a non zero positive integer, each pair
    * of input time steps will be interpolated between with the number
@@ -92,16 +81,16 @@ public:
    */
   vtkSetMacro(ResampleFactor, int);
   vtkGetMacro(ResampleFactor, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Controls whether input data is cached to avoid updating input
    * when multiple interpolations are asked between 2 time steps.
    */
   vtkSetMacro(CacheData, bool);
   vtkGetMacro(CacheData, bool);
-  //@}
+  ///@}
 
 protected:
   vtkTemporalInterpolator();
@@ -114,11 +103,10 @@ protected:
   int FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info) override;
 
   int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-
   int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int Execute(vtkInformation* request, const std::vector<vtkSmartPointer<vtkDataObject>>& inputs,
+    vtkInformationVector* outputVector) override;
 
   /**
    * General interpolation routine for any type on input data. This is
@@ -166,4 +154,5 @@ private:
   void operator=(const vtkTemporalInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

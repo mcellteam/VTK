@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHardwareWindow.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWin32HardwareWindow
  * @brief   represents a window in a windows GUI
@@ -23,8 +11,10 @@
 #include "vtkHardwareWindow.h"
 #include "vtkRenderingUIModule.h" // For export macro
 #include "vtkWindows.h"           // For windows API
+#include "vtkWrappingHints.h"     // For VTK_MARSHALAUTO
 
-class VTKRENDERINGUI_EXPORT vtkWin32HardwareWindow : public vtkHardwareWindow
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGUI_EXPORT VTK_MARSHALAUTO vtkWin32HardwareWindow : public vtkHardwareWindow
 {
 public:
   static vtkWin32HardwareWindow* New();
@@ -38,7 +28,7 @@ public:
   void Create() override;
   void Destroy() override;
 
-  //@{
+  ///@{
   /**
    * These are window system independent methods that are used
    * to help interface vtkWindow to native windowing systems.
@@ -49,7 +39,23 @@ public:
   void* GetGenericDisplayId() override;
   void* GetGenericWindowId() override;
   void* GetGenericParentId() override;
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set the size of the window in pixels.
+   */
+  void SetSize(int, int) override;
+  using vtkHardwareWindow::SetSize;
+  ///@}
+
+  ///@{
+  /**
+   * Set the position of the window.
+   */
+  void SetPosition(int, int) override;
+  using vtkHardwareWindow::SetPosition;
+  ///@}
 
 protected:
   vtkWin32HardwareWindow();
@@ -64,4 +70,5 @@ private:
   void operator=(const vtkWin32HardwareWindow&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

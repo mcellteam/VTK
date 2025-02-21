@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBalloonWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBalloonWidget.h"
 #include "vtkAssemblyPath.h"
 #include "vtkBalloonRepresentation.h"
@@ -32,17 +20,17 @@
 #include <cassert>
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBalloonWidget);
 
 //-- Define the PIMPLd array of vtkProp and vtkString --
 struct vtkBalloon
 {
-  vtkStdString Text;
+  std::string Text;
   vtkImageData* Image;
 
   vtkBalloon()
-    : Text()
-    , Image(nullptr)
+    : Image(nullptr)
   {
   }
   vtkBalloon(const vtkBalloon& balloon)
@@ -54,7 +42,7 @@ struct vtkBalloon
       this->Image->Register(nullptr);
     }
   }
-  vtkBalloon(vtkStdString* str, vtkImageData* img)
+  vtkBalloon(std::string* str, vtkImageData* img)
   {
     this->Text = *str;
     this->Image = img;
@@ -65,7 +53,7 @@ struct vtkBalloon
   }
   vtkBalloon(const char* str, vtkImageData* img)
   {
-    this->Text = vtkStdString(str);
+    this->Text = str;
     this->Image = img;
     if (this->Image)
     {
@@ -81,6 +69,11 @@ struct vtkBalloon
   }
   vtkBalloon& operator=(const vtkBalloon& balloon)
   {
+    if (this == &balloon)
+    {
+      return *this;
+    }
+
     this->Text = balloon.Text;
 
     // Don't leak if we already have an image.
@@ -117,7 +110,7 @@ class vtkPropMap : public std::map<vtkProp*, vtkBalloon>
 };
 typedef std::map<vtkProp*, vtkBalloon>::iterator vtkPropMapIterator;
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBalloonWidget::vtkBalloonWidget()
 {
   this->Picker = vtkPropPicker::New();
@@ -127,7 +120,7 @@ vtkBalloonWidget::vtkBalloonWidget()
   this->PropMap = new vtkPropMap;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBalloonWidget::~vtkBalloonWidget()
 {
   this->Picker->Delete();
@@ -142,7 +135,7 @@ vtkBalloonWidget::~vtkBalloonWidget()
   delete this->PropMap;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::SetEnabled(int enabling)
 {
   this->Superclass::SetEnabled(enabling);
@@ -171,7 +164,7 @@ void vtkBalloonWidget::SetEnabled(int enabling)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::SetPicker(vtkAbstractPropPicker* picker)
 {
   if (picker == nullptr || picker == this->Picker)
@@ -191,7 +184,7 @@ void vtkBalloonWidget::SetPicker(vtkAbstractPropPicker* picker)
   this->Modified();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::RegisterPickers()
 {
   vtkPickingManager* pm = this->GetPickingManager();
@@ -202,7 +195,7 @@ void vtkBalloonWidget::RegisterPickers()
   pm->AddPicker(this->Picker, this);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -211,7 +204,7 @@ void vtkBalloonWidget::CreateDefaultRepresentation()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::AddBalloon(vtkProp* prop, vtkStdString* str, vtkImageData* img)
 {
   assert(prop);
@@ -225,7 +218,7 @@ void vtkBalloonWidget::AddBalloon(vtkProp* prop, vtkStdString* str, vtkImageData
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::AddBalloon(vtkProp* prop, const char* str, vtkImageData* img)
 {
   vtkStdString s;
@@ -236,7 +229,7 @@ void vtkBalloonWidget::AddBalloon(vtkProp* prop, const char* str, vtkImageData* 
   this->AddBalloon(prop, &s, img);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::RemoveBalloon(vtkProp* prop)
 {
   vtkPropMapIterator iter = this->PropMap->find(prop);
@@ -251,7 +244,7 @@ void vtkBalloonWidget::RemoveBalloon(vtkProp* prop)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkBalloonWidget::GetBalloonString(vtkProp* prop)
 {
   vtkPropMapIterator iter = this->PropMap->find(prop);
@@ -262,7 +255,7 @@ const char* vtkBalloonWidget::GetBalloonString(vtkProp* prop)
   return nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkBalloonWidget::GetBalloonImage(vtkProp* prop)
 {
   vtkPropMapIterator iter = this->PropMap->find(prop);
@@ -273,7 +266,7 @@ vtkImageData* vtkBalloonWidget::GetBalloonImage(vtkProp* prop)
   return nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::UpdateBalloonString(vtkProp* prop, const char* str)
 {
   vtkPropMapIterator iter = this->PropMap->find(prop);
@@ -284,7 +277,7 @@ void vtkBalloonWidget::UpdateBalloonString(vtkProp* prop, const char* str)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::UpdateBalloonImage(vtkProp* prop, vtkImageData* image)
 {
   vtkPropMapIterator iter = this->PropMap->find(prop);
@@ -295,7 +288,7 @@ void vtkBalloonWidget::UpdateBalloonImage(vtkProp* prop, vtkImageData* image)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBalloonWidget::SubclassHoverAction()
 {
   double e[2];
@@ -317,7 +310,7 @@ int vtkBalloonWidget::SubclassHoverAction()
       this->CurrentProp = (*iter).first;
       this->CurrentProp->Register(this);
       reinterpret_cast<vtkBalloonRepresentation*>(this->WidgetRep)
-        ->SetBalloonText((*iter).second.Text);
+        ->SetBalloonText((*iter).second.Text.c_str());
       reinterpret_cast<vtkBalloonRepresentation*>(this->WidgetRep)
         ->SetBalloonImage((*iter).second.Image);
       this->WidgetRep->StartWidgetInteraction(e);
@@ -328,7 +321,7 @@ int vtkBalloonWidget::SubclassHoverAction()
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBalloonWidget::SubclassEndHoverAction()
 {
   double e[2];
@@ -340,7 +333,7 @@ int vtkBalloonWidget::SubclassEndHoverAction()
   return 1;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -357,3 +350,4 @@ void vtkBalloonWidget::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Picker: " << this->Picker << "\n";
 }
+VTK_ABI_NAMESPACE_END

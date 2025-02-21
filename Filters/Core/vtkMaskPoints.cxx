@@ -1,25 +1,17 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkMaskPoints.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkMaskPoints.h"
 
+#include "vtkBoundingBox.h"
 #include "vtkCellArray.h"
 #include "vtkDataSet.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMath.h"
+#include "vtkMinimalStandardRandomSequence.h"
 #include "vtkObjectFactory.h"
+#include "vtkOctreePointLocator.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
@@ -29,16 +21,17 @@
 #include <cstdlib>
 #include <random>
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline double d_rand()
 {
   return rand() / (double)((unsigned long)RAND_MAX + 1);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline void SwapPoint(
   vtkPoints* points, vtkPointData* data, vtkPointData* temp, vtkIdType a, vtkIdType b)
 {
@@ -54,15 +47,15 @@ inline void SwapPoint(
 
   // temp -> b
   points->SetPoint(b, ta);
-  data->CopyData(temp, 0, b);
+  data->CopyData(temp, vtkIdType(0), b);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // AKA select, quickselect, nth_element:
 // this is average case linear, worse case quadratic implementation
 // (i.e., just like quicksort) -- there is the median of 5 or
 // median of medians algorithm, but I'm too lazy to implement it
-static void QuickSelect(vtkPoints* points, vtkPointData* data, vtkPointData* temp, vtkIdType start,
+void QuickSelect(vtkPoints* points, vtkPointData* data, vtkPointData* temp, vtkIdType start,
   vtkIdType end, vtkIdType nth, int axis)
 {
   // base case
@@ -111,11 +104,11 @@ static void QuickSelect(vtkPoints* points, vtkPointData* data, vtkPointData* tem
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // divide the data into sampling strata and randomly sample it
 // (one sample per stratum)
-static void SortAndSample(vtkPoints* points, vtkPointData* data, vtkPointData* temp,
-  vtkIdType start, vtkIdType end, vtkIdType size, int depth)
+void SortAndSample(vtkPoints* points, vtkPointData* data, vtkPointData* temp, vtkIdType start,
+  vtkIdType end, vtkIdType size, int depth)
 {
   // if size >= end - start return them all
   if (size >= (end - start))
@@ -196,18 +189,44 @@ static void SortAndSample(vtkPoints* points, vtkPointData* data, vtkPointData* t
   }
 }
 
+//------------------------------------------------------------------------------
+// For UNIFORM_SPATIAL_BOUNDS only,
+// Compute the nearestPointRadius for the point locator
+double GetNearestPointRadius(double bounds[3], vtkIdType maximumNumberOfPoints)
+{
+  vtkBoundingBox boundingBox;
+  boundingBox.AddBounds(bounds);
+  double l[3];
+  boundingBox.GetLengths(l);
+
+  int dim = (l[0] > 0.0 && l[1] > 0.0 && l[2] > 0.0) ? 3 : 2;
+
+  double volume = std::pow(boundingBox.GetDiagonalLength(), dim);
+  if (volume > 0.0)
+  {
+    assert(maximumNumberOfPoints > 0);
+    double volumePerGlyph = volume / maximumNumberOfPoints;
+    double delta = std::pow(volumePerGlyph, 1.0 / dim);
+    return delta * 0.5;
+  }
+  else
+  {
+    return 0.0001;
+  }
 }
 
-//-----------------------------------------------------------------------------
+}
+
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkMaskPoints);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMaskPoints::vtkMaskPoints()
 {
   this->MaximumNumberOfPoints = VTK_ID_MAX;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned long vtkMaskPoints::GetLocalSampleSize(vtkIdType numPts, int np)
 {
   // send number of points to process 0
@@ -288,13 +307,13 @@ unsigned long vtkMaskPoints::GetLocalSampleSize(vtkIdType numPts, int np)
   return retval;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkMaskPoints::GetLocalAreaFactor(double localArea, int np)
 {
   if (np > 1)
   {
     double globalArea;
-    double send = (double)localArea;
+    double send = localArea;
     double* recv = new double[np];
 
     this->InternalGather(&send, recv, 1, 0);
@@ -321,7 +340,7 @@ double vtkMaskPoints::GetLocalAreaFactor(double localArea, int np)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -336,11 +355,11 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
   vtkPointData* pd = input->GetPointData();
   vtkIdType numNewPts;
   double x[3];
-  vtkIdType ptId, id = 0;
+  vtkIdType id = 0;
   vtkPointData* outputPD = output->GetPointData();
   vtkIdType numPts = input->GetNumberOfPoints();
 
-  int abort = 0;
+  bool abort = false;
 
   // figure out how many sample points per process
   vtkIdType localMaxPts;
@@ -423,8 +442,8 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
           cap = 2.0 * this->OnRatio - 1;
         }
 
-        for (ptId = this->Offset; (ptId < numPts) && (id < localMaxPts) && !abort;
-             ptId += (1 + static_cast<int>(static_cast<double>(vtkMath::Random()) * cap)))
+        for (vtkIdType ptId = this->Offset; (ptId < numPts) && (id < localMaxPts) && !abort;
+             ptId += (1 + static_cast<int>(vtkMath::Random() * cap)))
         {
           input->GetPoint(ptId, x);
           id = newPts->InsertNextPoint(x);
@@ -432,7 +451,7 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
           if (!(id % progressInterval)) // abort/progress
           {
             this->UpdateProgress(0.5 * id / numPts);
-            abort = this->GetAbortExecute();
+            abort = this->CheckAbort();
           }
         }
         break;
@@ -441,7 +460,7 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
       {
         // Vitter's algorithm D (without A)
         // for generating random samples incrementally: O(samplesize)
-        ptId = -1;
+        vtkIdType ptId = -1;
         double vprime = log(d_rand());
         vtkIdType size = numPts;
         vtkIdType samplesize = localMaxPts;
@@ -451,11 +470,15 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
         {
           double q2 = (q1 - 1.0) / (size - 1.0);
           double q3 = log(q2);
-          vtkIdType s;
+          vtkIdType s = 0;
 
-          while (1)
+          while (true)
           {
-            while (1)
+            if (this->CheckAbort())
+            {
+              break;
+            }
+            while (true)
             {
               s = (vtkIdType)(vprime / q3);
               if (s < q1)
@@ -565,7 +588,7 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
         SortAndSample(pointCopy, dataCopy, tempData, 0, numPts, numNewPts, 0);
 
         // copy the results back
-        for (vtkIdType i = 0; i < numNewPts; i = i + 1)
+        for (vtkIdType i = 0; i < numNewPts; i++)
         {
           pointCopy->GetPoint(i, x);
           id = newPts->InsertNextPoint(x);
@@ -575,6 +598,59 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
         tempData->Delete();
         dataCopy->Delete();
         pointCopy->Delete();
+        this->CheckAbort();
+        break;
+      }
+      case UNIFORM_SPATIAL_BOUNDS:
+      {
+        double bounds[6];
+        input->GetBounds(bounds);
+        double nearestPointRadius = ::GetNearestPointRadius(bounds, numNewPts);
+
+        vtkNew<vtkOctreePointLocator> pointLocator;
+        pointLocator->Initialize();
+        pointLocator->SetDataSet(input);
+        pointLocator->BuildLocator();
+
+        vtkNew<vtkMinimalStandardRandomSequence> randomGenerator;
+        randomGenerator->SetSeed(this->GetRandomSeed());
+
+        vtkIdType numAddedPts = localMaxPts;
+        if (this->ProportionalMaximumNumberOfPoints)
+        {
+          // How many point to add in each region in function of its contribution
+          // to the global area.
+          vtkBoundingBox boundingBox;
+          boundingBox.AddBounds(bounds);
+          const double localAreaEstimator = boundingBox.GetDiagonalLength();
+          const double localAreaFactor =
+            this->GetLocalAreaFactor(localAreaEstimator, this->InternalGetNumberOfProcesses());
+          numAddedPts = this->MaximumNumberOfPoints * localAreaFactor;
+        }
+
+        for (vtkIdType i = 0; i < numAddedPts; i++)
+        {
+          if (this->CheckAbort())
+          {
+            break;
+          }
+          randomGenerator->Next();
+          double randX = randomGenerator->GetRangeValue(bounds[0], bounds[1]);
+          randomGenerator->Next();
+          double randY = randomGenerator->GetRangeValue(bounds[2], bounds[3]);
+          randomGenerator->Next();
+          double randZ = randomGenerator->GetRangeValue(bounds[4], bounds[5]);
+          double dist2;
+          double pos[3] = { randX, randY, randZ };
+          vtkIdType ptId =
+            pointLocator->FindClosestPointWithinRadius(nearestPointRadius, pos, dist2);
+          if (ptId >= 0)
+          {
+            input->GetPoint(ptId, x);
+            id = newPts->InsertNextPoint(x);
+            outputPD->CopyData(pd, ptId, id);
+          }
+        }
         break;
       }
       case UNIFORM_SPATIAL_SURFACE:
@@ -589,6 +665,10 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
         double localArea = 0.0;
         for (vtkIdType cellId = 0; cellId < nbCells; ++cellId)
         {
+          if (this->CheckAbort())
+          {
+            break;
+          }
           vtkCell* currentCell = input->GetCell(cellId);
           if (currentCell->GetCellDimension() != dim)
           {
@@ -634,8 +714,12 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
           std::vector<bool> maskedPoints(numPts, false);
           std::mt19937 gen(this->GetRandomSeed());
           std::uniform_real_distribution<> dis(0.0, localArea);
-          for (ptId = 0; ptId < numAddedPts; ptId++)
+          for (vtkIdType ptId = 0; ptId < numAddedPts; ptId++)
           {
+            if (this->CheckAbort())
+            {
+              break;
+            }
             // The sampling vector being sorted, just find the index of the sampled cell
             double sample = dis(gen);
             auto it = std::upper_bound(cellContribs.cbegin(), cellContribs.cend(), sample);
@@ -670,7 +754,7 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
   }
   else // striding mode
   {
-    for (ptId = this->Offset; (ptId < numPts) && (id < localMaxPts) && !abort;
+    for (vtkIdType ptId = this->Offset; (ptId < numPts) && (id < localMaxPts) && !abort;
          ptId += this->OnRatio)
     {
       input->GetPoint(ptId, x);
@@ -679,7 +763,7 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
       if (!(id % progressInterval)) // abort/progress
       {
         this->UpdateProgress(0.5 * id / numPts);
-        abort = this->GetAbortExecute();
+        abort = this->CheckAbort();
       }
     }
   }
@@ -697,12 +781,12 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
       verts->AllocateEstimate(1, id + 1);
       verts->InsertNextCell(id + 1);
     }
-    for (ptId = 0; ptId < (id + 1) && !abort; ptId++)
+    for (vtkIdType ptId = 0; ptId < (id + 1) && !abort; ptId++)
     {
       if (!(ptId % progressInterval)) // abort/progress
       {
         this->UpdateProgress(0.5 + 0.5 * ptId / (id + 1));
-        abort = this->GetAbortExecute();
+        abort = this->CheckAbort();
       }
       if (this->SingleVertexPerCell)
       {
@@ -728,14 +812,14 @@ int vtkMaskPoints::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMaskPoints::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMaskPoints::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -753,3 +837,4 @@ void vtkMaskPoints::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Output Points Precision: " << this->GetOutputPointsPrecision() << "\n";
 }
+VTK_ABI_NAMESPACE_END

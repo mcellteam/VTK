@@ -1,17 +1,9 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkGenericCell.cxx
+// VTK_DEPRECATED_IN_9_4_0()
+#define VTK_DEPRECATION_LEVEL 0
 
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkGenericCell.h"
 
 #include "vtkBezierCurve.h"
@@ -59,15 +51,17 @@
 #include "vtkQuadraticWedge.h"
 #include "vtkTetra.h"
 #include "vtkTriQuadraticHexahedron.h"
+#include "vtkTriQuadraticPyramid.h"
 #include "vtkTriangle.h"
 #include "vtkTriangleStrip.h"
 #include "vtkVertex.h"
 #include "vtkVoxel.h"
 #include "vtkWedge.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericCell);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct cell.
 vtkGenericCell::vtkGenericCell()
 {
@@ -85,7 +79,7 @@ vtkGenericCell::vtkGenericCell()
   this->PointIds->Register(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericCell::~vtkGenericCell()
 {
   for (int i = 0; i < VTK_NUMBER_OF_CELL_TYPES; ++i)
@@ -97,111 +91,147 @@ vtkGenericCell::~vtkGenericCell()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::ShallowCopy(vtkCell* c)
 {
   this->Cell->ShallowCopy(c);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::DeepCopy(vtkCell* c)
 {
   this->Cell->DeepCopy(c);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::GetCellType()
 {
   return this->Cell->GetCellType();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::GetCellDimension()
 {
   return this->Cell->GetCellDimension();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::IsLinear()
 {
   return this->Cell->IsLinear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::RequiresInitialization()
 {
   return this->Cell->RequiresInitialization();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::RequiresExplicitFaceRepresentation()
 {
   return this->Cell->RequiresExplicitFaceRepresentation();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::SetFaces(vtkIdType* faces)
 {
   this->Cell->SetFaces(faces);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType* vtkGenericCell::GetFaces()
 {
   return this->Cell->GetFaces();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkGenericCell::SetCellFaces(vtkCellArray* faces)
+{
+  vtkPolyhedron* cell = vtkPolyhedron::SafeDownCast(this->Cell);
+  if (!cell)
+  {
+    vtkErrorMacro("SafeDownCast to vtkPolyhedron failed, the cell is not a polyhedron");
+    return 0;
+  }
+  return cell->SetCellFaces(faces);
+}
+
+//------------------------------------------------------------------------------
+vtkCellArray* vtkGenericCell::GetCellFaces()
+{
+  vtkPolyhedron* cell = vtkPolyhedron::SafeDownCast(this->Cell);
+  if (!cell)
+  {
+    vtkErrorMacro("SafeDownCast to vtkPolyhedron failed, the cell is not a polyhedron");
+    return nullptr;
+  }
+  return cell->GetCellFaces();
+}
+
+//------------------------------------------------------------------------------
+void vtkGenericCell::GetCellFaces(vtkCellArray* faces)
+{
+  vtkPolyhedron* cell = vtkPolyhedron::SafeDownCast(this->Cell);
+  if (!cell)
+  {
+    vtkErrorMacro("SafeDownCast to vtkPolyhedron failed, the cell is not a polyhedron");
+    return;
+  }
+  cell->GetCellFaces(faces);
+}
+
+//------------------------------------------------------------------------------
 void vtkGenericCell::Initialize()
 {
   this->Cell->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::GetNumberOfEdges()
 {
   return this->Cell->GetNumberOfEdges();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::GetNumberOfFaces()
 {
   return this->Cell->GetNumberOfFaces();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkGenericCell::GetEdge(int edgeId)
 {
   return this->Cell->GetEdge(edgeId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkGenericCell::GetFace(int faceId)
 {
   return this->Cell->GetFace(faceId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::CellBoundary(int subId, const double pcoords[3], vtkIdList* pts)
 {
   return this->Cell->CellBoundary(subId, pcoords, pts);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& dist2, double weights[])
 {
   return this->Cell->EvaluatePosition(x, closestPoint, subId, pcoords, dist2, weights);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::EvaluateLocation(
   int& subId, const double pcoords[3], double x[3], double* weights)
 {
   this->Cell->EvaluateLocation(subId, pcoords, x, weights);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::Contour(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* verts, vtkCellArray* lines,
   vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
@@ -211,7 +241,7 @@ void vtkGenericCell::Contour(double value, vtkDataArray* cellScalars,
     value, cellScalars, locator, verts, lines, polys, inPd, outPd, inCd, cellId, outCd);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::Clip(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* connectivity, vtkPointData* inPd,
   vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId, vtkCellData* outCd, int insideOut)
@@ -220,45 +250,57 @@ void vtkGenericCell::Clip(double value, vtkDataArray* cellScalars,
     value, cellScalars, locator, connectivity, inPd, outPd, inCd, cellId, outCd, insideOut);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t,
   double x[3], double pcoords[3], int& subId)
 {
   return this->Cell->IntersectWithLine(p1, p2, tol, t, x, pcoords, subId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts)
 {
   return this->Cell->Triangulate(index, ptIds, pts);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkGenericCell::TriangulateLocalIds(int index, vtkIdList* ptIds)
+{
+  return this->Cell->TriangulateLocalIds(index, ptIds);
+}
+
+//------------------------------------------------------------------------------
+int vtkGenericCell::TriangulateIds(int index, vtkIdList* ptIds)
+{
+  return this->Cell->TriangulateIds(index, ptIds);
+}
+
+//------------------------------------------------------------------------------
 void vtkGenericCell::Derivatives(
   int subId, const double pcoords[3], const double* values, int dim, double* derivs)
 {
   this->Cell->Derivatives(subId, pcoords, values, dim, derivs);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::GetParametricCenter(double pcoords[3])
 {
   return this->Cell->GetParametricCenter(pcoords);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkGenericCell::GetParametricCoords()
 {
   return this->Cell->GetParametricCoords();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericCell::IsPrimaryCell()
 {
   return this->Cell->IsPrimaryCell();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkGenericCell::InstantiateCell(int cellType)
 {
   vtkCell* cell = nullptr;
@@ -348,6 +390,9 @@ vtkCell* vtkGenericCell::InstantiateCell(int cellType)
     case VTK_TRIQUADRATIC_HEXAHEDRON:
       cell = vtkTriQuadraticHexahedron::New();
       break;
+    case VTK_TRIQUADRATIC_PYRAMID:
+      cell = vtkTriQuadraticPyramid::New();
+      break;
     case VTK_QUADRATIC_LINEAR_WEDGE:
       cell = vtkQuadraticLinearWedge::New();
       break;
@@ -409,7 +454,7 @@ vtkCell* vtkGenericCell::InstantiateCell(int cellType)
   return cell;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the type of dereferenced cell. Checks to see whether cell type
 // has changed and creates a new cell only if necessary.
 void vtkGenericCell::SetCellType(int cellType)
@@ -444,19 +489,19 @@ void vtkGenericCell::SetCellType(int cellType)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::InterpolateFunctions(const double pcoords[3], double* weights)
 {
   this->Cell->InterpolateFunctions(pcoords, weights);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::InterpolateDerivs(const double pcoords[3], double* derivs)
 {
   this->Cell->InterpolateDerivs(pcoords, derivs);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -465,7 +510,7 @@ void vtkGenericCell::PrintSelf(ostream& os, vtkIndent indent)
   this->Cell->PrintSelf(os, indent.GetNextIndent());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::SetPoints(vtkPoints* points)
 {
   if (points != this->Points)
@@ -479,7 +524,7 @@ void vtkGenericCell::SetPoints(vtkPoints* points)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericCell::SetPointIds(vtkIdList* pointIds)
 {
   if (pointIds != this->PointIds)
@@ -492,3 +537,4 @@ void vtkGenericCell::SetPointIds(vtkIdList* pointIds)
     this->Cell->PointIds->Register(this);
   }
 }
+VTK_ABI_NAMESPACE_END

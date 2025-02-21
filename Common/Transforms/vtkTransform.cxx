@@ -1,26 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransform.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTransform.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 
 #include <cstdlib>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTransform);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransform::vtkTransform()
 {
   this->Input = nullptr;
@@ -39,7 +28,7 @@ vtkTransform::vtkTransform()
   this->MatrixUpdateMTime = this->Matrix->GetMTime();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransform::~vtkTransform()
 {
   this->SetInput(nullptr);
@@ -54,7 +43,7 @@ vtkTransform::~vtkTransform()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransform::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Update();
@@ -83,7 +72,7 @@ void vtkTransform::PrintSelf(ostream& os, vtkIndent indent)
      << this->Point[3] << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransform::Identity()
 {
   this->Concatenation->Identity();
@@ -97,7 +86,7 @@ void vtkTransform::Identity()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransform::Inverse()
 {
   this->Concatenation->Inverse();
@@ -111,7 +100,7 @@ void vtkTransform::Inverse()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransform::InternalDeepCopy(vtkAbstractTransform* gtrans)
 {
   vtkTransform* transform = static_cast<vtkTransform*>(gtrans);
@@ -152,7 +141,7 @@ void vtkTransform::InternalDeepCopy(vtkAbstractTransform* gtrans)
   this->MatrixUpdateMTime = this->Matrix->GetMTime();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransform::InternalUpdate()
 {
   int i;
@@ -231,7 +220,7 @@ void vtkTransform::InternalUpdate()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransform::Concatenate(vtkLinearTransform* transform)
 {
   if (transform->CircuitCheck(this))
@@ -243,7 +232,7 @@ void vtkTransform::Concatenate(vtkLinearTransform* transform)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransform::SetInput(vtkLinearTransform* input)
 {
   if (this->Input == input)
@@ -267,7 +256,7 @@ void vtkTransform::SetInput(vtkLinearTransform* input)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTransform::CircuitCheck(vtkAbstractTransform* transform)
 {
   if (this->vtkLinearTransform::CircuitCheck(transform) ||
@@ -288,13 +277,13 @@ int vtkTransform::CircuitCheck(vtkAbstractTransform* transform)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractTransform* vtkTransform::MakeTransform()
 {
   return vtkTransform::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkTransform::GetMTime()
 {
   vtkMTimeType mtime = this->vtkLinearTransform::GetMTime();
@@ -325,12 +314,12 @@ vtkMTimeType vtkTransform::GetMTime()
   return mtime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the x, y, z orientation angles from the transformation matrix as an
 // array of three floating point values.
 void vtkTransform::GetOrientation(double orientation[3], vtkMatrix4x4* amatrix)
 {
-#define VTK_AXIS_EPSILON 0.001
+#define VTK_AXIS_EPSILON 2e-12
 #define VTK_ORTHO_EPSILON 4e-16
   int i;
 
@@ -446,7 +435,7 @@ void vtkTransform::GetOrientation(double orientation[3], vtkMatrix4x4* amatrix)
   orientation[2] = vtkMath::DegreesFromRadians(alpha);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the x, y, z orientation angles from the transformation matrix as an
 // array of three floating point values.
 void vtkTransform::GetOrientation(double orientation[3])
@@ -455,7 +444,7 @@ void vtkTransform::GetOrientation(double orientation[3])
   this->GetOrientation(orientation, this->Matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // vtkTransform::GetOrientationWXYZ
 void vtkTransform::GetOrientationWXYZ(double wxyz[4])
 {
@@ -500,7 +489,7 @@ void vtkTransform::GetOrientationWXYZ(double wxyz[4])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the position from the current transformation matrix as an array
 // of three floating point numbers. This is simply returning the translation
 // component of the 4x4 matrix.
@@ -513,7 +502,7 @@ void vtkTransform::GetPosition(double position[3])
   position[2] = this->Matrix->Element[2][3];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the x, y, z scale factors of the current transformation matrix as
 // an array of three float numbers.
 void vtkTransform::GetScale(double scale[3])
@@ -534,16 +523,17 @@ void vtkTransform::GetScale(double scale[3])
   vtkMath::SingularValueDecomposition3x3(U, U, scale, VT);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the inverse of the current transformation matrix.
 void vtkTransform::GetInverse(vtkMatrix4x4* inverse)
 {
   vtkMatrix4x4::Invert(this->GetMatrix(), inverse);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Obtain the transpose of the current transformation matrix.
 void vtkTransform::GetTranspose(vtkMatrix4x4* transpose)
 {
   vtkMatrix4x4::Transpose(this->GetMatrix(), transpose);
 }
+VTK_ABI_NAMESPACE_END

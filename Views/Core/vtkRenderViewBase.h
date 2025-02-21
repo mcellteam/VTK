@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderViewBase.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkRenderViewBase
@@ -32,13 +20,15 @@
 #include "vtkSmartPointer.h" // For SP ivars
 #include "vtkView.h"
 #include "vtkViewsCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"   // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkInteractorObserver;
 class vtkRenderer;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
 
-class VTKVIEWSCORE_EXPORT vtkRenderViewBase : public vtkView
+class VTKVIEWSCORE_EXPORT VTK_MARSHALAUTO vtkRenderViewBase : public vtkView
 {
 public:
   static vtkRenderViewBase* New();
@@ -65,7 +55,7 @@ public:
    */
   virtual void SetRenderWindow(vtkRenderWindow* win);
 
-  //@{
+  ///@{
   /**
    * The render window interactor. Note that this requires special
    * handling in order to do correctly - see the notes in the detailed
@@ -73,7 +63,7 @@ public:
    */
   virtual vtkRenderWindowInteractor* GetInteractor();
   virtual void SetInteractor(vtkRenderWindowInteractor*);
-  //@}
+  ///@}
 
   /**
    * Updates the representations, then calls Render() on the render window
@@ -110,4 +100,5 @@ private:
   void operator=(const vtkRenderViewBase&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

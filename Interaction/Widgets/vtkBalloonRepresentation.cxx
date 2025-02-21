@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBalloonRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBalloonRepresentation.h"
 #include "vtkActor2D.h"
 #include "vtkCellArray.h"
@@ -32,6 +20,7 @@
 #include "vtkTexturedActor2D.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBalloonRepresentation);
 
 vtkCxxSetObjectMacro(vtkBalloonRepresentation, TextProperty, vtkTextProperty);
@@ -39,7 +28,7 @@ vtkCxxSetObjectMacro(vtkBalloonRepresentation, FrameProperty, vtkProperty2D);
 vtkCxxSetObjectMacro(vtkBalloonRepresentation, BalloonImage, vtkImageData);
 vtkCxxSetObjectMacro(vtkBalloonRepresentation, ImageProperty, vtkProperty2D);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBalloonRepresentation::vtkBalloonRepresentation()
 {
   // Initially we are not visible
@@ -129,7 +118,7 @@ vtkBalloonRepresentation::vtkBalloonRepresentation()
   this->FrameActor->SetProperty(this->FrameProperty);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBalloonRepresentation::~vtkBalloonRepresentation()
 {
   delete[] this->BalloonText;
@@ -159,7 +148,7 @@ vtkBalloonRepresentation::~vtkBalloonRepresentation()
   this->FrameProperty->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonRepresentation::StartWidgetInteraction(double e[2])
 {
   this->StartEventPosition[0] = e[0];
@@ -167,14 +156,14 @@ void vtkBalloonRepresentation::StartWidgetInteraction(double e[2])
   this->VisibilityOn();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonRepresentation::EndWidgetInteraction(double vtkNotUsed(e)[2])
 {
   this->VisibilityOff();
 }
 
-//----------------------------------------------------------------------
-inline void vtkBalloonRepresentation::AdjustImageSize(double imageSize[2])
+//------------------------------------------------------------------------------
+void vtkBalloonRepresentation::AdjustImageSize(double imageSize[2])
 {
   double r0 = this->ImageSize[0] / imageSize[0];
   double r1 = this->ImageSize[1] / imageSize[1];
@@ -190,14 +179,14 @@ inline void vtkBalloonRepresentation::AdjustImageSize(double imageSize[2])
   }
 }
 
-//----------------------------------------------------------------------
-inline void vtkBalloonRepresentation::ScaleImage(double imageSize[2], double scale)
+//------------------------------------------------------------------------------
+void vtkBalloonRepresentation::ScaleImage(double imageSize[2], double scale)
 {
   imageSize[0] *= scale;
   imageSize[1] *= scale;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonRepresentation::BuildRepresentation()
 {
   if (this->GetMTime() > this->BuildTime ||
@@ -391,7 +380,7 @@ void vtkBalloonRepresentation::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonRepresentation::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->Texture->ReleaseGraphicsResources(w);
@@ -400,7 +389,7 @@ void vtkBalloonRepresentation::ReleaseGraphicsResources(vtkWindow* w)
   this->TextureActor->ReleaseGraphicsResources(w);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBalloonRepresentation::RenderOverlay(vtkViewport* v)
 {
   int count = 0;
@@ -424,7 +413,7 @@ int vtkBalloonRepresentation::RenderOverlay(vtkViewport* v)
   return count;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBalloonRepresentation::ComputeInteractionState(int X, int Y, int)
 {
   // Is it in the text region or the image region?
@@ -468,7 +457,7 @@ int vtkBalloonRepresentation::ComputeInteractionState(int X, int Y, int)
   return vtkBalloonRepresentation::Outside;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBalloonRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -544,3 +533,4 @@ void vtkBalloonRepresentation::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Text Property: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

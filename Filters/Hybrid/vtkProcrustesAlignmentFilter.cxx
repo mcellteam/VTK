@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProcrustesAlignmentFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkProcrustesAlignmentFilter.h"
 
@@ -25,9 +13,10 @@
 #include "vtkPolyData.h"
 #include "vtkTransformPolyDataFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkProcrustesAlignmentFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // protected
 vtkProcrustesAlignmentFilter::vtkProcrustesAlignmentFilter()
 {
@@ -39,7 +28,7 @@ vtkProcrustesAlignmentFilter::vtkProcrustesAlignmentFilter()
   this->MeanPoints = vtkPoints::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // protected
 vtkProcrustesAlignmentFilter::~vtkProcrustesAlignmentFilter()
 {
@@ -53,7 +42,7 @@ vtkProcrustesAlignmentFilter::~vtkProcrustesAlignmentFilter()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Calculate the centroid of a point cloud
 static inline void Centroid(vtkPoints* pd, double* cp)
 {
@@ -78,7 +67,7 @@ static inline void Centroid(vtkPoints* pd, double* cp)
   cp[2] /= np;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Calculate the centroid size of a point cloud
 static inline double CentroidSize(vtkPoints* pd, double* cp)
 {
@@ -95,7 +84,7 @@ static inline double CentroidSize(vtkPoints* pd, double* cp)
   return sqrt(S);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Translation of point cloud. Could be done using transformations
 static inline void TranslateShape(vtkPoints* pd, double* tp)
 {
@@ -107,7 +96,7 @@ static inline void TranslateShape(vtkPoints* pd, double* tp)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Scaling of point cloud. Could be done using transformations
 static inline void ScaleShape(vtkPoints* pd, double S)
 {
@@ -119,7 +108,7 @@ static inline void ScaleShape(vtkPoints* pd, double S)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Normalise a point cloud to have centroid (0,0,0) and centroid size 1
 static inline int NormaliseShape(vtkPoints* pd)
 {
@@ -137,7 +126,7 @@ static inline int NormaliseShape(vtkPoints* pd)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // protected
 int vtkProcrustesAlignmentFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -466,7 +455,7 @@ int vtkProcrustesAlignmentFilter::RequestData(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // public
 void vtkProcrustesAlignmentFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -476,3 +465,4 @@ void vtkProcrustesAlignmentFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Start From Centroid: " << (this->StartFromCentroid ? "On\n" : "Off\n");
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << "\n";
 }
+VTK_ABI_NAMESPACE_END

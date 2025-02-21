@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBoxWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBoxWidget
  * @brief   orthogonal hexahedron 3D widget
@@ -43,9 +31,9 @@
  * rotate vtkBoxWidget, pick a face (but not a face handle) and move the left
  * mouse. (Note: the mouse button must be held down during manipulation.)
  * Events that occur outside of the widget (i.e., no part of the widget is
- * picked) are propagated to any other registered obsevers (such as the
+ * picked) are propagated to any other registered observes (such as the
  * interaction style).  Turn off the widget by pressing the "i" key again.
- * (See the superclass documentation on key press activiation.)
+ * (See the superclass documentation on key press activation.)
  *
  * The vtkBoxWidget is very flexible. It can be used to select, cut, clip, or
  * perform any other operation that depends on an implicit function (use the
@@ -78,6 +66,7 @@
 #include "vtk3DWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkCellPicker;
 class vtkPlanes;
@@ -100,7 +89,7 @@ public:
   vtkTypeMacro(vtkBoxWidget, vtk3DWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Methods that satisfy the superclass' API.
    */
@@ -112,7 +101,7 @@ public:
   {
     this->Superclass::PlaceWidget(xmin, xmax, ymin, ymax, zmin, zmax);
   }
-  //@}
+  ///@}
 
   /**
    * Get the planes describing the implicit function defined by the box
@@ -124,7 +113,7 @@ public:
    */
   void GetPlanes(vtkPlanes* planes);
 
-  //@{
+  ///@{
   /**
    * Set/Get the InsideOut flag. When off, the normals point out of the
    * box. When on, the normals point into the hexahedron.  InsideOut
@@ -133,7 +122,7 @@ public:
   vtkSetMacro(InsideOut, vtkTypeBool);
   vtkGetMacro(InsideOut, vtkTypeBool);
   vtkBooleanMacro(InsideOut, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Retrieve a linear transform characterizing the transformation of the
@@ -164,7 +153,7 @@ public:
    */
   void GetPolyData(vtkPolyData* pd);
 
-  //@{
+  ///@{
   /**
    * Get the handle properties (the little balls are the handles). The
    * properties of the handles when selected and normal can be
@@ -172,18 +161,18 @@ public:
    */
   vtkGetObjectMacro(HandleProperty, vtkProperty);
   vtkGetObjectMacro(SelectedHandleProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Switches handles (the spheres) on or off by manipulating the actor
    * visibility.
    */
   void HandlesOn();
   void HandlesOff();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the face properties (the faces of the box). The
    * properties of the face when selected and normal can be
@@ -191,9 +180,9 @@ public:
    */
   vtkGetObjectMacro(FaceProperty, vtkProperty);
   vtkGetObjectMacro(SelectedFaceProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the outline properties (the outline of the box). The
    * properties of the outline when selected and normal can be
@@ -201,9 +190,9 @@ public:
    */
   vtkGetObjectMacro(OutlineProperty, vtkProperty);
   vtkGetObjectMacro(SelectedOutlineProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the representation of the outline. This flag enables
    * face wires. By default face wires are off.
@@ -212,9 +201,9 @@ public:
   vtkGetMacro(OutlineFaceWires, int);
   void OutlineFaceWiresOn() { this->SetOutlineFaceWires(1); }
   void OutlineFaceWiresOff() { this->SetOutlineFaceWires(0); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the representation of the outline. This flag enables
    * the cursor lines running between the handles. By default cursor
@@ -224,9 +213,9 @@ public:
   vtkGetMacro(OutlineCursorWires, int);
   void OutlineCursorWiresOn() { this->SetOutlineCursorWires(1); }
   void OutlineCursorWiresOff() { this->SetOutlineCursorWires(0); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the behavior of the widget. Translation, rotation, and
    * scaling can all be enabled and disabled.
@@ -240,7 +229,7 @@ public:
   vtkSetMacro(RotationEnabled, vtkTypeBool);
   vtkGetMacro(RotationEnabled, vtkTypeBool);
   vtkBooleanMacro(RotationEnabled, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkBoxWidget();
@@ -354,4 +343,5 @@ private:
   void operator=(const vtkBoxWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

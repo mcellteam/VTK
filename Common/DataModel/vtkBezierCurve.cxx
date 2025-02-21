@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBezierCurve.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBezierCurve.h"
 
 #include "vtkBezierInterpolation.h"
@@ -25,14 +13,11 @@
 #include "vtkPoints.h"
 #include "vtkTriangle.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBezierCurve);
 
-vtkBezierCurve::vtkBezierCurve()
-  : vtkHigherOrderCurve()
-{
-}
+vtkBezierCurve::vtkBezierCurve() = default;
 
 vtkBezierCurve::~vtkBezierCurve() = default;
 
@@ -41,33 +26,21 @@ void vtkBezierCurve::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 
-/**\brief EvaluateLocation Given a point_id. This is required by Bezier because the interior points
- * are non-interpolatory .
- */
-void vtkBezierCurve::EvaluateLocationProjectedNode(
-  int& subId, const vtkIdType point_id, double x[3], double* weights)
-{
-  this->vtkHigherOrderCurve::SetParametricCoords();
-  double pcoords[3];
-  this->PointParametricCoordinates->GetPoint(this->PointIds->FindIdLocation(point_id), pcoords);
-  this->vtkHigherOrderCurve::EvaluateLocation(subId, pcoords, x, weights);
-}
-
 /**\brief Set the rational weight of the cell, given a vtkDataSet
  */
-void vtkBezierCurve::SetRationalWeightsFromPointData(
-  vtkPointData* point_data, const vtkIdType numPts)
+void vtkBezierCurve::SetRationalWeightsFromPointData(vtkPointData* point_data, vtkIdType numPts)
 {
-  if (point_data->SetActiveAttribute(
-        "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
+  vtkDataArray* v = point_data->GetRationalWeights();
+  if (v)
   {
-    vtkDataArray* v = point_data->GetRationalWeights();
     this->GetRationalWeights()->SetNumberOfTuples(numPts);
     for (vtkIdType i = 0; i < numPts; i++)
     {
       this->GetRationalWeights()->SetValue(i, v->GetTuple1(this->PointIds->GetId(i)));
     }
   }
+  else
+    this->GetRationalWeights()->Reset();
 }
 
 /**\brief Populate the linear segment returned by GetApprox() with point-data from one voxel-like
@@ -128,7 +101,7 @@ void vtkBezierCurve::InterpolateFunctions(const double pcoords[3], double* weigh
 {
   vtkBezierInterpolation::Tensor1ShapeFunctions(this->GetOrder(), pcoords, weights);
 
-  // If the unit cell has rational weigths: weights_i = weights_i * rationalWeights / sum( weights_i
+  // If the unit cell has rational weights: weights_i = weights_i * rationalWeights / sum( weights_i
   // * rationalWeights )
   const bool has_rational_weights = RationalWeights->GetNumberOfTuples() > 0;
   if (has_rational_weights)
@@ -154,3 +127,4 @@ vtkDoubleArray* vtkBezierCurve::GetRationalWeights()
 {
   return RationalWeights.Get();
 }
+VTK_ABI_NAMESPACE_END

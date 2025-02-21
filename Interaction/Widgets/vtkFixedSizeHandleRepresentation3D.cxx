@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFixedSizeHandleRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkFixedSizeHandleRepresentation3D.h"
 
 #include "vtkCamera.h"
@@ -23,9 +11,10 @@
 #include "vtkTransform.h"
 #include "vtkTransformPolyDataFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkFixedSizeHandleRepresentation3D);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFixedSizeHandleRepresentation3D::vtkFixedSizeHandleRepresentation3D()
 {
   // Instantiate a handle template shape as a sphere
@@ -40,13 +29,13 @@ vtkFixedSizeHandleRepresentation3D::vtkFixedSizeHandleRepresentation3D()
   this->HandleSizeToleranceInPixels = 0.5;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFixedSizeHandleRepresentation3D::~vtkFixedSizeHandleRepresentation3D()
 {
   this->SphereSource->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFixedSizeHandleRepresentation3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -60,7 +49,7 @@ void vtkFixedSizeHandleRepresentation3D::PrintSelf(ostream& os, vtkIndent indent
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Convert a given point from world to display coords.
 void vtkFixedSizeHandleRepresentation3D ::WorldToDisplay(double w[4], double d[4])
 {
@@ -70,7 +59,7 @@ void vtkFixedSizeHandleRepresentation3D ::WorldToDisplay(double w[4], double d[4
   viewport->GetDisplayPoint(d);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Convert a given point from display to world coords.
 void vtkFixedSizeHandleRepresentation3D ::DisplayToWorld(double d[4], double w[4])
 {
@@ -81,7 +70,7 @@ void vtkFixedSizeHandleRepresentation3D ::DisplayToWorld(double d[4], double w[4
   viewport->GetWorldPoint(w);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFixedSizeHandleRepresentation3D::BuildRepresentation()
 {
   if (!this->GetRenderer() || !this->GetRenderer()->GetActiveCamera())
@@ -150,3 +139,4 @@ void vtkFixedSizeHandleRepresentation3D::BuildRepresentation()
     this->SetHandle(this->SphereSource->GetOutput());
   }
 }
+VTK_ABI_NAMESPACE_END

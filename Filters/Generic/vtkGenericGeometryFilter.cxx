@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkGenericGeometryFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkGenericGeometryFilter.h"
 
 #include "vtkCellArray.h"
@@ -42,10 +31,11 @@
 #include "vtkVoxel.h"
 #include "vtkWedge.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGenericGeometryFilter);
 
 vtkCxxSetObjectMacro(vtkGenericGeometryFilter, Locator, vtkIncrementalPointLocator);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct with all types of clipping turned off.
 vtkGenericGeometryFilter::vtkGenericGeometryFilter()
 {
@@ -72,7 +62,7 @@ vtkGenericGeometryFilter::vtkGenericGeometryFilter()
 
   this->PassThroughCellIds = 0;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericGeometryFilter::~vtkGenericGeometryFilter()
 {
   if (this->Locator)
@@ -83,7 +73,7 @@ vtkGenericGeometryFilter::~vtkGenericGeometryFilter()
   this->InternalPD->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a (xmin,xmax, ymin,ymax, zmin,zmax) bounding box to clip data.
 void vtkGenericGeometryFilter::SetExtent(
   double xMin, double xMax, double yMin, double yMax, double zMin, double zMax)
@@ -100,7 +90,7 @@ void vtkGenericGeometryFilter::SetExtent(
   this->SetExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a (xmin,xmax, ymin,ymax, zmin,zmax) bounding box to clip data.
 void vtkGenericGeometryFilter::SetExtent(double extent[6])
 {
@@ -123,7 +113,7 @@ void vtkGenericGeometryFilter::SetExtent(double extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericGeometryFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -296,7 +286,7 @@ int vtkGenericGeometryFilter::RequestData(vtkInformation* vtkNotUsed(request),
 
   // Traverse cells to extract geometry
   //
-  int abort = 0;
+  bool abort = false;
   vtkIdType progressInterval = numCells / 20 + 1;
 
   vtkIdList* faceList = vtkIdList::New();
@@ -320,7 +310,7 @@ int vtkGenericGeometryFilter::RequestData(vtkInformation* vtkNotUsed(request),
     {
       vtkDebugMacro(<< "Process cell #" << cellId);
       this->UpdateProgress(static_cast<double>(cellId) / numCells);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
     }
 
     vtkIdType BeginTopOutCId = outputCD->GetNumberOfTuples();
@@ -399,7 +389,7 @@ int vtkGenericGeometryFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericGeometryFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -410,7 +400,7 @@ int vtkGenericGeometryFilter::FillInputPortInformation(int port, vtkInformation*
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify a spatial locator for merging points. By
 // default an instance of vtkMergePoints is used.
 void vtkGenericGeometryFilter::CreateDefaultLocator()
@@ -421,7 +411,7 @@ void vtkGenericGeometryFilter::CreateDefaultLocator()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericGeometryFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -454,7 +444,7 @@ void vtkGenericGeometryFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "PassThroughCellIds: " << (this->GetPassThroughCellIds() ? "On\n" : "Off\n");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkGenericGeometryFilter::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -468,7 +458,7 @@ vtkMTimeType vtkGenericGeometryFilter::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericGeometryFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -494,3 +484,4 @@ int vtkGenericGeometryFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(req
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

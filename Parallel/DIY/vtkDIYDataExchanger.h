@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDIYDataExchanger.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkDIYDataExchanger
  * @brief exchange data-object among ranks.
@@ -33,6 +21,7 @@
 
 #include <vector> // for std::vector
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 class vtkMultiProcessController;
 
@@ -43,14 +32,14 @@ public:
   vtkTypeMacro(vtkDIYDataExchanger, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the controller to use. By default
    * vtkMultiProcessController::GetGlobalController is used.
    */
   void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
   /**
    * Exchange data between all ranks in the process group defined by the
@@ -81,8 +70,8 @@ public:
    *
    * @returns true on success, else false
    */
-  bool AllToAll(const std::vector<vtkSmartPointer<vtkDataSet> >& sendBuffer,
-    const std::vector<int>& sendCounts, std::vector<vtkSmartPointer<vtkDataSet> >& recvBuffer,
+  bool AllToAll(const std::vector<vtkSmartPointer<vtkDataSet>>& sendBuffer,
+    const std::vector<int>& sendCounts, std::vector<vtkSmartPointer<vtkDataSet>>& recvBuffer,
     std::vector<int>& recvCounts);
 
 protected:
@@ -96,4 +85,5 @@ private:
   vtkMultiProcessController* Controller;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

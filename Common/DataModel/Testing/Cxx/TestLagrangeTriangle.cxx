@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestInterpolationDerivs.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #define VTK_EPSILON 1e-10
 
 #include "vtkLagrangeTriangle.h"
@@ -246,7 +234,7 @@ void RandomSphere(
   value[2] = radius * cos(phi) + offset[2];
 }
 
-static int testNum = 0;
+int testNum = 0;
 
 vtkIdType IntersectWithCell(unsigned nTest, vtkMinimalStandardRandomSequence* sequence,
   bool threeDimensional, double radius, double* offset, vtkCell* cell

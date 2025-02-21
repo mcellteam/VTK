@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShrinkFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkShrinkFilter.h"
 
 #include "vtkCell.h"
@@ -24,34 +12,35 @@
 #include "vtkSmartPointer.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkShrinkFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkShrinkFilter::vtkShrinkFilter()
 {
   this->ShrinkFactor = 0.5;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkShrinkFilter::~vtkShrinkFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkShrinkFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Shrink Factor: " << this->ShrinkFactor << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkShrinkFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   // This filter uses the vtkDataSet cell traversal methods so it
-  // suppors any data set type as input.
+  // supports any data set type as input.
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkShrinkFilter::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -92,7 +81,7 @@ int vtkShrinkFilter::RequestData(
   // Support progress and abort.
   vtkIdType tenth = (numCells >= 10 ? numCells / 10 : 1);
   double numCellsInv = 1.0 / numCells;
-  int abort = 0;
+  bool abort = false;
 
   // Point Id map.
   vtkIdType* pointMap = new vtkIdType[input->GetNumberOfPoints()];
@@ -109,7 +98,7 @@ int vtkShrinkFilter::RequestData(
     if (cellId % tenth == 0)
     {
       this->UpdateProgress((cellId + 1) * numCellsInv);
-      abort = this->GetAbortExecute();
+      abort = this->CheckAbort();
     }
 
     // Compute the center of mass of the cell points.
@@ -185,3 +174,4 @@ int vtkShrinkFilter::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

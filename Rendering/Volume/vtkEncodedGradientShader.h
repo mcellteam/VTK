@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEncodedGradientShader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkEncodedGradientShader
@@ -36,6 +24,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingVolumeModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkVolume;
 class vtkRenderer;
 class vtkEncodedGradientEstimator;
@@ -53,7 +42,7 @@ public:
    */
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set / Get the intensity diffuse / specular light used for the
    * zero normals.
@@ -62,14 +51,14 @@ public:
   vtkGetMacro(ZeroNormalDiffuseIntensity, float);
   vtkSetClampMacro(ZeroNormalSpecularIntensity, float, 0.0f, 1.0f);
   vtkGetMacro(ZeroNormalSpecularIntensity, float);
-  //@}
+  ///@}
 
   /**
    * Cause the shading table to be updated
    */
   void UpdateShadingTable(vtkRenderer* ren, vtkVolume* vol, vtkEncodedGradientEstimator* gradest);
 
-  //@{
+  ///@{
   /**
    * Get the red/green/blue shading table.
    */
@@ -79,9 +68,9 @@ public:
   float* GetRedSpecularShadingTable(vtkVolume* vol);
   float* GetGreenSpecularShadingTable(vtkVolume* vol);
   float* GetBlueSpecularShadingTable(vtkVolume* vol);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the active component for shading. This component's
    * ambient / diffuse / specular / specular power values will
@@ -89,7 +78,7 @@ public:
    */
   vtkSetClampMacro(ActiveComponent, int, 0, 3);
   vtkGetMacro(ActiveComponent, int);
-  //@}
+  ///@}
 
 protected:
   vtkEncodedGradientShader();
@@ -135,4 +124,5 @@ private:
   void operator=(const vtkEncodedGradientShader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

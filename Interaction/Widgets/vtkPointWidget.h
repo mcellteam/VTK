@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPointWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPointWidget
  * @brief   position a point in 3D space
@@ -68,6 +56,7 @@
 #include "vtkCursor3D.h"                 // Needed for faster access to the Cursor3D
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkPolyDataMapper;
 class vtkCellPicker;
@@ -85,7 +74,7 @@ public:
   vtkTypeMacro(vtkPointWidget, vtk3DWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Methods that satisfy the superclass' API.
    */
@@ -97,7 +86,7 @@ public:
   {
     this->Superclass::PlaceWidget(xmin, xmax, ymin, ymax, zmin, zmax);
   }
-  //@}
+  ///@}
 
   /**
    * Grab the polydata (including points) that defines the point. A
@@ -161,7 +150,7 @@ public:
   void TranslationModeOn() { this->SetTranslationMode(1); }
   void TranslationModeOff() { this->SetTranslationMode(0); }
 
-  //@{
+  ///@{
   /**
    * Convenience methods to turn outline and shadows on and off.
    */
@@ -179,9 +168,9 @@ public:
     this->YShadowsOff();
     this->ZShadowsOff();
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the handle properties (the little balls are the handles). The
    * properties of the handles when selected and normal can be
@@ -189,9 +178,9 @@ public:
    */
   vtkGetObjectMacro(Property, vtkProperty);
   vtkGetObjectMacro(SelectedProperty, vtkProperty);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the "hot spot" size; i.e., the region around the focus, in which the
    * motion vector is used to control the constrained sliding action. Note the
@@ -200,7 +189,7 @@ public:
    */
   vtkSetClampMacro(HotSpotSize, double, 0.0, 1.0);
   vtkGetMacro(HotSpotSize, double);
-  //@}
+  ///@}
 
 protected:
   vtkPointWidget();
@@ -268,4 +257,5 @@ private:
   void operator=(const vtkPointWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMask.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageMask
  * @brief   Combines a mask and an image.
@@ -33,6 +21,7 @@
 #include "vtkImagingCoreModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkImageMask : public vtkThreadedImageAlgorithm
 {
 public:
@@ -63,7 +52,7 @@ public:
   double* GetMaskedOutputValue() { return this->MaskedOutputValue; }
   int GetMaskedOutputValueLength() { return this->MaskedOutputValueLength; }
 
-  //@{
+  ///@{
   /**
    * Set/Get the alpha blending value for the mask
    * The input image is assumed to be at alpha = 1.0
@@ -72,7 +61,7 @@ public:
    */
   vtkSetClampMacro(MaskAlpha, double, 0.0, 1.0);
   vtkGetMacro(MaskAlpha, double);
-  //@}
+  ///@}
 
   /**
    * Set the input to be masked.
@@ -84,7 +73,7 @@ public:
    */
   void SetMaskInputData(vtkImageData* in);
 
-  //@{
+  ///@{
   /**
    * When Not Mask is on, the mask is passed through a boolean not
    * before it is used to mask the image.  The effect is to pass the
@@ -94,7 +83,7 @@ public:
   vtkSetMacro(NotMask, vtkTypeBool);
   vtkGetMacro(NotMask, vtkTypeBool);
   vtkBooleanMacro(NotMask, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Set the two inputs to this filter
@@ -122,4 +111,5 @@ private:
   void operator=(const vtkImageMask&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

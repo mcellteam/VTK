@@ -1,23 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHomogeneousTransform.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkHomogeneousTransform.h"
 
 #include "vtkMath.h"
 #include "vtkMatrix4x4.h"
 #include "vtkPoints.h"
+#include "vtkSMPTools.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 void TransformVector(double M[4][4], double* outPnt, double f, double* inVec, double* outVec)
@@ -35,13 +25,13 @@ void TransformVector(double M[4][4], double* outPnt, double f, double* inVec, do
   outVec[2] = (outVec[2] - w * outPnt[2]) * f;
 }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHomogeneousTransform::vtkHomogeneousTransform()
 {
   this->Matrix = vtkMatrix4x4::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHomogeneousTransform::~vtkHomogeneousTransform()
 {
   if (this->Matrix)
@@ -50,7 +40,7 @@ vtkHomogeneousTransform::~vtkHomogeneousTransform()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHomogeneousTransform::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -61,7 +51,7 @@ void vtkHomogeneousTransform::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T1, class T2, class T3>
 inline double vtkHomogeneousTransformPoint(T1 M[4][4], T2 in[3], T3 out[3])
 {
@@ -78,7 +68,7 @@ inline double vtkHomogeneousTransformPoint(T1 M[4][4], T2 in[3], T3 out[3])
   return f;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // computes a coordinate transformation and also returns the Jacobian matrix
 template <class T1, class T2, class T3, class T4>
 inline void vtkHomogeneousTransformDerivative(T1 M[4][4], T2 in[3], T3 out[3], T4 derivative[3][3])
@@ -93,52 +83,56 @@ inline void vtkHomogeneousTransformDerivative(T1 M[4][4], T2 in[3], T3 out[3], T
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHomogeneousTransform::InternalTransformPoint(const float in[3], float out[3])
 {
   vtkHomogeneousTransformPoint(this->Matrix->Element, in, out);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHomogeneousTransform::InternalTransformPoint(const double in[3], double out[3])
 {
   vtkHomogeneousTransformPoint(this->Matrix->Element, in, out);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHomogeneousTransform::InternalTransformDerivative(
   const float in[3], float out[3], float derivative[3][3])
 {
   vtkHomogeneousTransformDerivative(this->Matrix->Element, in, out, derivative);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHomogeneousTransform::InternalTransformDerivative(
   const double in[3], double out[3], double derivative[3][3])
 {
   vtkHomogeneousTransformDerivative(this->Matrix->Element, in, out, derivative);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHomogeneousTransform::TransformPoints(vtkPoints* inPts, vtkPoints* outPts)
 {
   vtkIdType n = inPts->GetNumberOfPoints();
+  vtkIdType m = outPts->GetNumberOfPoints();
+  outPts->SetNumberOfPoints(m + n);
   double(*M)[4] = this->Matrix->Element;
-  double point[3];
 
   this->Update();
 
-  for (int i = 0; i < n; i++)
-  {
-    inPts->GetPoint(i, point);
-
-    vtkHomogeneousTransformPoint(M, point, point);
-
-    outPts->InsertNextPoint(point);
-  }
+  vtkSMPTools::For(0, n, vtkSMPTools::THRESHOLD,
+    [&](vtkIdType ptId, vtkIdType endPtId)
+    {
+      double point[3];
+      for (; ptId < endPtId; ++ptId)
+      {
+        inPts->GetPoint(ptId, point);
+        vtkHomogeneousTransformPoint(M, point, point);
+        outPts->SetPoint(m + ptId, point);
+      }
+    });
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Transform the normals and vectors using the derivative of the
 // transformation.  Either inNms or inVrs can be set to nullptr.
 // Normals are multiplied by the inverse transpose of the transform
@@ -149,66 +143,84 @@ void vtkHomogeneousTransform::TransformPointsNormalsVectors(vtkPoints* inPts, vt
   vtkDataArray* inNms, vtkDataArray* outNms, vtkDataArray* inVrs, vtkDataArray* outVrs,
   int nOptionalVectors, vtkDataArray** inVrsArr, vtkDataArray** outVrsArr)
 {
-  vtkIdType n = inPts->GetNumberOfPoints();
   double(*M)[4] = this->Matrix->Element;
   double L[4][4];
-  double inPnt[3], outPnt[3], inNrm[3], outNrm[3], inVec[3], outVec[3];
-  double w;
 
   this->Update();
 
+  vtkIdType n = inPts->GetNumberOfPoints();
+  vtkIdType m = outPts->GetNumberOfPoints();
+  outPts->SetNumberOfPoints(m + n);
+  if (inVrs)
+  {
+    outVrs->SetNumberOfTuples(m + n);
+  }
+  if (inVrsArr)
+  {
+    for (int iArr = 0; iArr < nOptionalVectors; iArr++)
+    {
+      outVrsArr[iArr]->SetNumberOfTuples(m + n);
+    }
+  }
   if (inNms)
-  { // need inverse of the matrix to calculate normals
+  {
+    outNms->SetNumberOfTuples(m + n);
+    // need inverse of the matrix to calculate normals
     vtkMatrix4x4::DeepCopy(*L, this->Matrix);
     vtkMatrix4x4::Invert(*L, *L);
     vtkMatrix4x4::Transpose(*L, *L);
   }
 
-  for (int i = 0; i < n; i++)
-  {
-    inPts->GetPoint(i, inPnt);
-
-    // do the coordinate transformation, get 1/w
-    double f = vtkHomogeneousTransformPoint(M, inPnt, outPnt);
-    outPts->InsertNextPoint(outPnt);
-
-    if (inVrs)
+  vtkSMPTools::For(0, n, vtkSMPTools::THRESHOLD,
+    [&](vtkIdType ptId, vtkIdType endPtId)
     {
-      inVrs->GetTuple(i, inVec);
-      TransformVector(M, outPnt, f, inVec, outVec);
-      outVrs->InsertNextTuple(outVec);
-    }
-
-    if (inVrsArr)
-    {
-      for (int iArr = 0; iArr < nOptionalVectors; iArr++)
+      double inPnt[3], outPnt[3], inNrm[3], outNrm[3], inVec[3], outVec[3];
+      for (; ptId < endPtId; ++ptId)
       {
-        inVrsArr[iArr]->GetTuple(i, inVec);
-        TransformVector(M, outPnt, f, inVec, outVec);
-        outVrsArr[iArr]->InsertNextTuple(outVec);
+        inPts->GetPoint(ptId, inPnt);
+
+        // do the coordinate transformation, get 1/w
+        double f = vtkHomogeneousTransformPoint(M, inPnt, outPnt);
+        outPts->SetPoint(m + ptId, outPnt);
+
+        if (inVrs)
+        {
+          inVrs->GetTuple(ptId, inVec);
+          TransformVector(M, outPnt, f, inVec, outVec);
+          outVrs->SetTuple(m + ptId, outVec);
+        }
+
+        if (inVrsArr)
+        {
+          for (int iArr = 0; iArr < nOptionalVectors; iArr++)
+          {
+            inVrsArr[iArr]->GetTuple(ptId, inVec);
+            TransformVector(M, outPnt, f, inVec, outVec);
+            outVrsArr[iArr]->SetTuple(m + ptId, outVec);
+          }
+        }
+
+        if (inNms)
+        {
+          inNms->GetTuple(ptId, inNrm);
+
+          // calculate the w component of the normal
+          double w = -(inNrm[0] * inPnt[0] + inNrm[1] * inPnt[1] + inNrm[2] * inPnt[2]);
+
+          // perform the transformation in homogeneous coordinates
+          outNrm[0] = L[0][0] * inNrm[0] + L[0][1] * inNrm[1] + L[0][2] * inNrm[2] + L[0][3] * w;
+          outNrm[1] = L[1][0] * inNrm[0] + L[1][1] * inNrm[1] + L[1][2] * inNrm[2] + L[1][3] * w;
+          outNrm[2] = L[2][0] * inNrm[0] + L[2][1] * inNrm[1] + L[2][2] * inNrm[2] + L[2][3] * w;
+
+          // re-normalize
+          vtkMath::Normalize(outNrm);
+          outNms->SetTuple(m + ptId, outNrm);
+        }
       }
-    }
-
-    if (inNms)
-    {
-      inNms->GetTuple(i, inNrm);
-
-      // calculate the w component of the normal
-      w = -(inNrm[0] * inPnt[0] + inNrm[1] * inPnt[1] + inNrm[2] * inPnt[2]);
-
-      // perform the transformation in homogeneous coordinates
-      outNrm[0] = L[0][0] * inNrm[0] + L[0][1] * inNrm[1] + L[0][2] * inNrm[2] + L[0][3] * w;
-      outNrm[1] = L[1][0] * inNrm[0] + L[1][1] * inNrm[1] + L[1][2] * inNrm[2] + L[1][3] * w;
-      outNrm[2] = L[2][0] * inNrm[0] + L[2][1] * inNrm[1] + L[2][2] * inNrm[2] + L[2][3] * w;
-
-      // re-normalize
-      vtkMath::Normalize(outNrm);
-      outNms->InsertNextTuple(outNrm);
-    }
-  }
+    });
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // update and copy out the current matrix
 void vtkHomogeneousTransform::GetMatrix(vtkMatrix4x4* m)
 {
@@ -216,10 +228,11 @@ void vtkHomogeneousTransform::GetMatrix(vtkMatrix4x4* m)
   m->DeepCopy(this->Matrix);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHomogeneousTransform::InternalDeepCopy(vtkAbstractTransform* transform)
 {
   vtkHomogeneousTransform* t = static_cast<vtkHomogeneousTransform*>(transform);
 
   this->Matrix->DeepCopy(t->Matrix);
 }
+VTK_ABI_NAMESPACE_END

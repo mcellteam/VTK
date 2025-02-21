@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSQLiteQuery.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkSQLiteQuery.h"
 
 #include "vtkObjectFactory.h"
@@ -37,6 +21,7 @@
 #define COMMIT_TRANSACTION "COMMIT"
 #define ROLLBACK_TRANSACTION "ROLLBACK"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSQLiteQuery::Priv
 {
 public:
@@ -45,7 +30,7 @@ public:
 
 vtkStandardNewMacro(vtkSQLiteQuery);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSQLiteQuery::vtkSQLiteQuery()
 {
   this->Private = new Priv;
@@ -56,7 +41,7 @@ vtkSQLiteQuery::vtkSQLiteQuery()
   this->TransactionInProgress = false;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSQLiteQuery::~vtkSQLiteQuery()
 {
   this->SetLastErrorText(nullptr);
@@ -76,7 +61,7 @@ vtkSQLiteQuery::~vtkSQLiteQuery()
   delete this->Private;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSQLiteQuery::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -98,7 +83,7 @@ void vtkSQLiteQuery::PrintSelf(ostream& os, vtkIndent indent)
      << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteQuery::SetQuery(const char* newQuery)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting Query to "
@@ -180,7 +165,7 @@ bool vtkSQLiteQuery::SetQuery(const char* newQuery)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteQuery::Execute()
 {
 
@@ -233,7 +218,7 @@ bool vtkSQLiteQuery::Execute()
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSQLiteQuery::GetNumberOfFields()
 {
   if (!this->Active)
@@ -247,7 +232,7 @@ int vtkSQLiteQuery::GetNumberOfFields()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkSQLiteQuery::GetFieldName(int column)
 {
   if (!this->Active)
@@ -266,7 +251,7 @@ const char* vtkSQLiteQuery::GetFieldName(int column)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSQLiteQuery::GetFieldType(int column)
 {
   if (!this->Active)
@@ -303,7 +288,7 @@ int vtkSQLiteQuery::GetFieldType(int column)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteQuery::NextRow()
 {
   if (!this->IsActive())
@@ -316,14 +301,7 @@ bool vtkSQLiteQuery::NextRow()
   {
     vtkDebugMacro(<< "NextRow(): Initial fetch being handled.");
     this->InitialFetch = false;
-    if (this->InitialFetchResult == SQLITE_DONE)
-    {
-      return false;
-    }
-    else
-    {
-      return true;
-    }
+    return this->InitialFetchResult != SQLITE_DONE;
   }
   else
   {
@@ -350,10 +328,10 @@ bool vtkSQLiteQuery::NextRow()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVariant vtkSQLiteQuery::DataValue(vtkIdType column)
 {
-  if (this->IsActive() == false)
+  if (!this->IsActive())
   {
     vtkWarningMacro(<< "DataValue() called on inactive query");
     return vtkVariant();
@@ -398,19 +376,19 @@ vtkVariant vtkSQLiteQuery::DataValue(vtkIdType column)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkSQLiteQuery::GetLastErrorText()
 {
   return this->LastErrorText;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteQuery::HasError()
 {
   return (this->GetLastErrorText() != nullptr);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteQuery::BeginTransaction()
 {
   if (this->TransactionInProgress)
@@ -445,7 +423,7 @@ bool vtkSQLiteQuery::BeginTransaction()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteQuery::CommitTransaction()
 {
   if (this->Private->Statement)
@@ -487,7 +465,7 @@ bool vtkSQLiteQuery::CommitTransaction()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLiteQuery::RollbackTransaction()
 {
   if (!this->TransactionInProgress)
@@ -522,119 +500,119 @@ bool vtkSQLiteQuery::RollbackTransaction()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, unsigned char value)
 {
   return this->BindIntegerParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, signed char value)
 {
   return this->BindIntegerParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, unsigned short value)
 {
   return this->BindIntegerParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, short value)
 {
   return this->BindIntegerParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, unsigned int value)
 {
   return this->BindIntegerParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, int value)
 {
   return this->BindIntegerParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, unsigned long value)
 {
   return this->BindIntegerParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, long value)
 {
   return this->BindIntegerParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, unsigned long long value)
 {
   return this->BindInt64Parameter(index, static_cast<vtkTypeInt64>(value));
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, long long value)
 {
   return this->BindInt64Parameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, float value)
 {
   return this->BindDoubleParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, double value)
 {
   return this->BindDoubleParameter(index, value);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, const char* value)
 {
   return this->BindParameter(index, value, strlen(value));
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, const char* data, size_t length)
 {
   return this->BindStringParameter(index, data, static_cast<int>(length));
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, const vtkStdString& value)
 {
   return this->BindParameter(index, value.c_str());
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, const void* data, size_t length)
 {
   return this->BindBlobParameter(index, data, static_cast<int>(length));
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindIntegerParameter(int index, int value)
 {
@@ -656,13 +634,13 @@ bool vtkSQLiteQuery::BindIntegerParameter(int index, int value)
     std::ostringstream errormessage;
     errormessage << "sqlite_bind_int returned error: " << status;
     this->SetLastErrorText(errormessage.str().c_str());
-    vtkErrorMacro(<< errormessage.str().c_str());
+    vtkErrorMacro(<< errormessage.str());
     return false;
   }
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindInt64Parameter(int index, vtkTypeInt64 value)
 {
@@ -691,7 +669,7 @@ bool vtkSQLiteQuery::BindInt64Parameter(int index, vtkTypeInt64 value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindDoubleParameter(int index, double value)
 {
@@ -720,7 +698,7 @@ bool vtkSQLiteQuery::BindDoubleParameter(int index, double value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindStringParameter(int index, const char* value, int length)
 {
@@ -750,7 +728,7 @@ bool vtkSQLiteQuery::BindStringParameter(int index, const char* value, int lengt
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindBlobParameter(int index, const void* data, int length)
 {
@@ -780,7 +758,7 @@ bool vtkSQLiteQuery::BindBlobParameter(int index, const void* data, int length)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::ClearParameterBindings()
 {
@@ -809,9 +787,10 @@ bool vtkSQLiteQuery::ClearParameterBindings()
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkSQLiteQuery::BindParameter(int index, vtkVariant value)
 {
   return this->Superclass::BindParameter(index, value);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkQuadRotationalExtrusionFilter.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkQuadRotationalExtrusionFilter
  * @brief   sweep polygonal data creating "skirt" from free edges and lines, and lines from vertices
@@ -66,6 +54,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkMultiBlockDataSetAlgorithm.h"
 #include <map> // STL vector need for per block angles
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 class vtkPointData;
 
@@ -90,7 +79,7 @@ public:
     USE_Z = 2
   };
 
-  //@{
+  ///@{
   /**
    * Set the axis of rotation to use. It is set by default to Z.
    */
@@ -99,61 +88,61 @@ public:
   void SetAxisToX() { this->SetAxis(USE_X); }
   void SetAxisToY() { this->SetAxis(USE_Y); }
   void SetAxisToZ() { this->SetAxis(USE_Z); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get resolution of sweep operation. Resolution controls the number
    * of intermediate node points.
    */
   vtkSetClampMacro(Resolution, int, 1, VTK_INT_MAX);
   vtkGetMacro(Resolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the capping of the skirt.
    */
   vtkSetMacro(Capping, vtkTypeBool);
   vtkGetMacro(Capping, vtkTypeBool);
   vtkBooleanMacro(Capping, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get angle of rotation.
    */
   vtkSetMacro(DefaultAngle, double);
   vtkGetMacro(DefaultAngle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get angles of rotation for each block in a composite data set.
    */
   void RemoveAllPerBlockAngles();
   void AddPerBlockAngle(vtkIdType blockId, double angle);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get total amount of translation along the z-axis.
    */
   vtkSetMacro(Translation, double);
   vtkGetMacro(Translation, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get change in radius during sweep process.
    */
   vtkSetMacro(DeltaRadius, double);
   vtkGetMacro(DeltaRadius, double);
-  //@}
+  ///@}
 
 protected:
   vtkQuadRotationalExtrusionFilter();
-  ~vtkQuadRotationalExtrusionFilter() override {}
+  ~vtkQuadRotationalExtrusionFilter() override = default;
 
   int FillInputPortInformation(int, vtkInformation*) override;
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
@@ -173,4 +162,5 @@ private:
   void operator=(const vtkQuadRotationalExtrusionFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

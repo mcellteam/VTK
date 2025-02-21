@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCheckerboardRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCheckerboardRepresentation.h"
 #include "vtkCommand.h"
 #include "vtkImageActor.h"
@@ -21,6 +9,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkSliderRepresentation3D.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCheckerboardRepresentation);
 
 vtkCxxSetObjectMacro(vtkCheckerboardRepresentation, Checkerboard, vtkImageCheckerboard);
@@ -32,7 +21,7 @@ vtkCxxSetObjectMacro(
   vtkCheckerboardRepresentation, BottomRepresentation, vtkSliderRepresentation3D);
 vtkCxxSetObjectMacro(vtkCheckerboardRepresentation, LeftRepresentation, vtkSliderRepresentation3D);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCheckerboardRepresentation::vtkCheckerboardRepresentation()
 {
   this->Checkerboard = nullptr;
@@ -94,7 +83,7 @@ vtkCheckerboardRepresentation::vtkCheckerboardRepresentation()
   this->OrthoAxis = 2;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCheckerboardRepresentation::~vtkCheckerboardRepresentation()
 {
   if (this->Checkerboard)
@@ -112,7 +101,7 @@ vtkCheckerboardRepresentation::~vtkCheckerboardRepresentation()
   this->LeftRepresentation->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardRepresentation::SliderValueChanged(int sliderNum)
 {
   int* numDivisions = this->Checkerboard->GetNumberOfDivisions();
@@ -209,7 +198,7 @@ void vtkCheckerboardRepresentation::SliderValueChanged(int sliderNum)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardRepresentation::BuildRepresentation()
 {
   // Make sure that the checkerboard is up to date
@@ -329,7 +318,7 @@ void vtkCheckerboardRepresentation::BuildRepresentation()
   this->LeftRepresentation->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardRepresentation::GetActors(vtkPropCollection* pc)
 {
   this->TopRepresentation->GetActors(pc);
@@ -338,7 +327,7 @@ void vtkCheckerboardRepresentation::GetActors(vtkPropCollection* pc)
   this->LeftRepresentation->GetActors(pc);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardRepresentation::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->TopRepresentation->ReleaseGraphicsResources(w);
@@ -347,7 +336,7 @@ void vtkCheckerboardRepresentation::ReleaseGraphicsResources(vtkWindow* w)
   this->LeftRepresentation->ReleaseGraphicsResources(w);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCheckerboardRepresentation::RenderOverlay(vtkViewport* v)
 {
   int count = this->TopRepresentation->RenderOverlay(v);
@@ -357,7 +346,7 @@ int vtkCheckerboardRepresentation::RenderOverlay(vtkViewport* v)
   return count;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCheckerboardRepresentation::RenderOpaqueGeometry(vtkViewport* v)
 {
   int count = this->TopRepresentation->RenderOpaqueGeometry(v);
@@ -367,7 +356,7 @@ int vtkCheckerboardRepresentation::RenderOpaqueGeometry(vtkViewport* v)
   return count;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCheckerboardRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* v)
 {
   int count = this->TopRepresentation->RenderTranslucentPolygonalGeometry(v);
@@ -376,7 +365,7 @@ int vtkCheckerboardRepresentation::RenderTranslucentPolygonalGeometry(vtkViewpor
   count += this->LeftRepresentation->RenderTranslucentPolygonalGeometry(v);
   return count;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkCheckerboardRepresentation::HasTranslucentPolygonalGeometry()
 {
   int result = this->TopRepresentation->HasTranslucentPolygonalGeometry();
@@ -386,7 +375,7 @@ vtkTypeBool vtkCheckerboardRepresentation::HasTranslucentPolygonalGeometry()
   return result;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCheckerboardRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -424,3 +413,4 @@ void vtkCheckerboardRepresentation::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Left Representation\n";
   this->LeftRepresentation->PrintSelf(os, indent.GetNextIndent());
 }
+VTK_ABI_NAMESPACE_END

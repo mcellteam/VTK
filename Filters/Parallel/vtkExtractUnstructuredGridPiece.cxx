@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractUnstructuredGridPiece.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkExtractUnstructuredGridPiece.h"
 
 #include "vtkCell.h"
@@ -30,6 +18,7 @@
 #include "vtkUnsignedCharArray.h"
 #include "vtkUnstructuredGrid.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -103,6 +92,7 @@ void vtkExtractUnstructuredGridPiece::ComputeCellTags(vtkIntArray* tags, vtkIdLi
   vtkIdType maxCell = 0;
   determineMinMax(piece, numPieces, numCells, minCell, maxCell);
 
+  tags->SetNumberOfValues(numCells);
   for (idx = 0; idx < minCell; ++idx)
   {
     tags->SetValue(idx, -1);
@@ -126,7 +116,7 @@ void vtkExtractUnstructuredGridPiece::ComputeCellTags(vtkIntArray* tags, vtkIdLi
       vtkIdType numCellPts;
       const vtkIdType* ids;
       cellIter->GetCurrentCell(numCellPts, ids);
-
+      idx = cellIter->GetCurrentCellId();
       for (vtkIdType j = 0; j < numCellPts; ++j)
       {
         ptId = ids[j];
@@ -171,6 +161,7 @@ int vtkExtractUnstructuredGridPiece::RequestData(vtkInformation* vtkNotUsed(requ
   vtkIdType numFaces;
   vtkIdType numFacePts;
   double* x;
+  vtkNew<vtkIdList> faceStreamList;
 
   // Pipeline update piece will tell us what to generate.
   ghostLevel = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
@@ -274,7 +265,8 @@ int vtkExtractUnstructuredGridPiece::RequestData(vtkInformation* vtkNotUsed(requ
         }
         else
         { // Polyhedron, need to process face stream.
-          faceStream = input->GetFaces(cellId);
+          input->GetFaceStream(cellId, faceStreamList);
+          faceStream = faceStreamList->GetPointer(0);
           numFaces = *faceStream++;
           newCellPts->InsertNextId(numFaces);
           for (vtkIdType face = 0; face < numFaces; ++face)
@@ -450,3 +442,4 @@ void vtkExtractUnstructuredGridPiece::AddGhostLevel(
     }
   }
 }
+VTK_ABI_NAMESPACE_END

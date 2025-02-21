@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGLUTRenderWindow.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This example tests the vtkRenderingExternal module by drawing a GLUT window
 // and rendering a VTK cube in it. It uses an ExternalVTKWidget and sets a
 // vtkExternalOpenGLRenderWindow to it.
@@ -21,7 +9,7 @@
 // vtkExternalOpenGLRenderer by drawing a GL_TRIANGLE in the scene before
 // drawing the vtk sphere.
 
-#include <vtk_glew.h>
+#include <vtk_glad.h>
 // GLUT includes
 #if defined(__APPLE__)
 #include <AvailabilityMacros.h>
@@ -56,18 +44,18 @@ namespace
 {
 
 // Global variables used by the glutDisplayFunc and glutIdleFunc
-vtkNew<ExternalVTKWidget> externalVTKWidget;
-static bool initialized = false;
-static int NumArgs;
+ExternalVTKWidget* externalVTKWidget = nullptr;
+bool initialized = false;
+int NumArgs;
 char** ArgV;
-static bool tested = false;
-static int retVal = 0;
-static int windowId = -1;
-static int windowH = 301;
-static int windowW = 300;
+bool tested = false;
+int retVal = 0;
+int windowId = -1;
+int windowH = 301;
+int windowW = 300;
 
-static void MakeCurrentCallback(vtkObject* vtkNotUsed(caller),
-  long unsigned int vtkNotUsed(eventId), void* vtkNotUsed(clientData), void* vtkNotUsed(callData))
+void MakeCurrentCallback(vtkObject* vtkNotUsed(caller), long unsigned int vtkNotUsed(eventId),
+  void* vtkNotUsed(clientData), void* vtkNotUsed(callData))
 {
   vtkLogScopeFunction(1);
   if (initialized)
@@ -160,7 +148,7 @@ void test()
   t->SetRenderWindow(externalVTKWidget->GetRenderWindow());
   if (!tested)
   {
-    retVal = t->RegressionTest(0);
+    retVal = t->RegressionTest(0.05);
     tested = true;
   }
   t->Delete();
@@ -178,7 +166,7 @@ void handleResize(int w, int h)
   glutPostRedisplay();
 }
 
-void onexit(void)
+void onexit()
 {
   initialized = false;
 }
@@ -188,6 +176,8 @@ void onexit(void)
 /* Main function: GLUT runs as a console application starting at main()  */
 int TestGLUTRenderWindow(int argc, char* argv[])
 {
+  vtkNew<ExternalVTKWidget> staticExternalVTKWidget;
+  externalVTKWidget = staticExternalVTKWidget;
   NumArgs = argc;
   ArgV = argv;
   glutInit(&argc, argv); // Initialize GLUT
@@ -200,7 +190,7 @@ int TestGLUTRenderWindow(int argc, char* argv[])
   glutIdleFunc(test);            // Register test callback handler for vtkTesting
   glutReshapeFunc(handleResize); // Register resize callback handler for window resize
   atexit(onexit);                // Register callback to uninitialize on exit
-  glewInit();
+  gladLoaderLoadGL();
   glutMainLoop(); // Enter the infinitely event-processing loop
   return 0;
 }

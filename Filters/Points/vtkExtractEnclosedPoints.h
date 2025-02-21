@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractEnclosedPoints.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractEnclosedPoints
  * @brief   extract points inside of a closed polygonal surface
@@ -56,19 +44,20 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkPointCloudFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSPOINTS_EXPORT vtkExtractEnclosedPoints : public vtkPointCloudFilter
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation, type information, and printing.
    */
   static vtkExtractEnclosedPoints* New();
   vtkTypeMacro(vtkExtractEnclosedPoints, vtkPointCloudFilter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the surface to be used to test for containment. Two methods are
    * provided: one directly for vtkPolyData, and one for the output of a
@@ -76,17 +65,17 @@ public:
    */
   void SetSurfaceData(vtkPolyData* pd);
   void SetSurfaceConnection(vtkAlgorithmOutput* algOutput);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return a pointer to the enclosing surface.
    */
   vtkPolyData* GetSurface();
   vtkPolyData* GetSurface(vtkInformationVector* sourceInfo);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether to check the surface for closure. If on, then the
    * algorithm first checks to see if the surface is closed and manifold.
@@ -94,16 +83,16 @@ public:
   vtkSetMacro(CheckSurface, vtkTypeBool);
   vtkBooleanMacro(CheckSurface, vtkTypeBool);
   vtkGetMacro(CheckSurface, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the tolerance on the intersection. The tolerance is expressed as
    * a fraction of the diagonal of the bounding box of the enclosing surface.
    */
   vtkSetClampMacro(Tolerance, double, 0.0, VTK_FLOAT_MAX);
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
 
 protected:
   vtkExtractEnclosedPoints();
@@ -126,4 +115,5 @@ private:
   void operator=(const vtkExtractEnclosedPoints&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

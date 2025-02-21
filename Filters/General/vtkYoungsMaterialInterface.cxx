@@ -1,17 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkYoungsMaterialInterface.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 1993-2007 NVIDIA Corporation.
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-NVIDIA-USGov
 // .SECTION Thanks
 // This file is part of the generalized Youngs material interface reconstruction algorithm
 // contributed by CEA/DIF - Commissariat a l'Energie Atomique, Centre DAM Ile-De-France <br> BP12,
@@ -52,11 +41,13 @@ PURPOSE.  See the above copyright notice for more information.
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cassert>
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkYoungsMaterialInterfaceCellCut
 {
 public:
@@ -76,8 +67,8 @@ public:
     int& np, int eids[], double weights[], int& nInside, int inPoints[], int& nOutside,
     int outPoints[]);
 
-  static double findTetraSetCuttingPlane(const double normal[3], const double fraction,
-    const int vertexCount, const double vertices[][3], const int tetraCount, const int tetras[][4]);
+  static double findTetraSetCuttingPlane(const double normal[3], double fraction, int vertexCount,
+    const double vertices[][3], int tetraCount, const int tetras[][4]);
 
   static bool cellInterfaceD(
 
@@ -89,9 +80,9 @@ public:
     int eids[4], double weights[2], int& polygonPoints, int polygonIds[], int& nRemPoints,
     int remPoints[]);
 
-  static double findTriangleSetCuttingPlane(const double normal[3], const double fraction,
-    const int vertexCount, const double vertices[][3], const int triangleCount,
-    const int triangles[][3], bool axisSymetric = false);
+  static double findTriangleSetCuttingPlane(const double normal[3], double fraction,
+    int vertexCount, const double vertices[][3], int triangleCount, const int triangles[][3],
+    bool axisSymetric = false);
 };
 
 class vtkYoungsMaterialInterfaceInternals
@@ -336,7 +327,7 @@ void vtkYoungsMaterialInterface::SetMaterialArrays(int M, const char* volume, co
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkYoungsMaterialInterface::SetMaterialNormalArray(const char* volume, const char* normal)
 {
   // not sure why this is done, but all SetMaterialNormalArray(int,..) variants
@@ -349,7 +340,7 @@ void vtkYoungsMaterialInterface::SetMaterialNormalArray(const char* volume, cons
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkYoungsMaterialInterface::SetMaterialOrderingArray(const char* volume, const char* ordering)
 {
   // not sure why this is done, but all SetMaterialOrderingArray(int,..) variants
@@ -362,7 +353,7 @@ void vtkYoungsMaterialInterface::SetMaterialOrderingArray(const char* volume, co
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkYoungsMaterialInterface::RemoveAllMaterials()
 {
   this->NumberOfDomains = -1;
@@ -384,7 +375,7 @@ struct vtkYoungsMaterialInterface_IndexedValue
 {
   double value;
   int index;
-  inline bool operator<(const vtkYoungsMaterialInterface_IndexedValue& iv) const
+  bool operator<(const vtkYoungsMaterialInterface_IndexedValue& iv) const
   {
     return value < iv.value;
   }
@@ -417,7 +408,7 @@ struct vtkYoungsMaterialInterface_Mat
 
 static inline void vtkYoungsMaterialInterface_GetPointData(int nPointData,
   vtkDataArray** inPointArrays, vtkDataSet* input,
-  std::vector<std::pair<int, vtkIdType> >& prevPointsMap, int vtkNotUsed(nmat),
+  std::vector<std::pair<int, vtkIdType>>& prevPointsMap, int vtkNotUsed(nmat),
   vtkYoungsMaterialInterface_Mat* Mats, int a, vtkIdType i, double* t)
 {
   if ((i) >= 0)
@@ -467,7 +458,7 @@ struct CellInfo
   bool triangulationOk;
   bool needTriangulation;
 
-  inline CellInfo()
+  CellInfo()
     : dim(2)
     , np(0)
     , nf(0)
@@ -518,7 +509,7 @@ void vtkYoungsMaterialInterface::UpdateBlockMapping()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkYoungsMaterialInterface::Aggregate(int nmat, int* inputsPerMaterial)
 {
   // Calculate number of domains
@@ -537,7 +528,7 @@ void vtkYoungsMaterialInterface::Aggregate(int nmat, int* inputsPerMaterial)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -592,6 +583,10 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
 
   while (!inputIterator->IsDoneWithTraversal())
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkDataSet* input = vtkDataSet::SafeDownCast(inputIterator->GetCurrentDataObject());
     // Composite indices begin at 1 (0 is the root)
     int composite_index = inputIterator->GetCurrentFlatIndex();
@@ -604,32 +599,36 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
              this->Internals->Materials.begin();
            it != this->Internals->Materials.end(); ++it, ++m)
       {
-        vtkDataArray* fraction = input->GetCellData()->GetArray((*it).volume().c_str());
+        double range[2];
         bool materialHasBlock = ((*it).blocks.find(composite_index) != (*it).blocks.end());
-        if (fraction && (this->UseAllBlocks || materialHasBlock))
+        if ((this->UseAllBlocks || materialHasBlock) &&
+          input->GetCellData()->GetRange(it->volume().c_str(), range) &&
+          range[1] > this->VolumeFractionRange[0])
         {
-          double range[2];
-          fraction->GetRange(range);
-          if (range[1] > this->VolumeFractionRange[0])
-          {
-            ++inputsPerMaterial[m];
-          }
+          ++inputsPerMaterial[m];
         }
       }
     }
   }
 
   // Perform parallel aggregation when needed (nothing in serial)
-  this->Aggregate(nmat, inputsPerMaterial);
+  if (!this->CheckAbort())
+  {
+    this->Aggregate(nmat, inputsPerMaterial);
+  }
 
   // map containing output blocks
-  std::map<int, vtkSmartPointer<vtkUnstructuredGrid> > outputBlocks;
+  std::map<int, vtkSmartPointer<vtkUnstructuredGrid>> outputBlocks;
 
   // iterate over input blocks
   inputIterator->InitTraversal();
   inputIterator->GoToFirstItem();
   while (inputIterator->IsDoneWithTraversal() == 0)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     vtkDataSet* input = vtkDataSet::SafeDownCast(inputIterator->GetCurrentDataObject());
 
     // Composite indices begin at 1 (0 is the root)
@@ -792,18 +791,21 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
 
     // --------------------------- core computation --------------------------
     vtkIdList* ptIds = vtkIdList::New();
-    vtkPoints* pts = vtkPoints::New();
     vtkConvexPointSet* cpsCell = vtkConvexPointSet::New();
 
     double* interpolatedValues = new double[MAX_CELL_POINTS * pointDataComponents];
     vtkYoungsMaterialInterface_IndexedValue* matOrdering =
       new vtkYoungsMaterialInterface_IndexedValue[nmat];
 
-    std::vector<std::pair<int, vtkIdType> > prevPointsMap;
+    std::vector<std::pair<int, vtkIdType>> prevPointsMap;
     prevPointsMap.reserve(MAX_CELL_POINTS * nmat);
 
     for (vtkIdType ci = 0; ci < nCells; ci++)
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       int interfaceEdges[MAX_CELL_POINTS * 2];
       double interfaceWeights[MAX_CELL_POINTS];
       int nInterfaceEdges;
@@ -861,7 +863,7 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
          IMPORTANT NOTE: triangulation is given with mesh point ids (not local cell ids)
          and are translated to cell local point ids. */
       cell.needTriangulation = false;
-      cell.triangulationOk = (vtkcell->Triangulate(ci, ptIds, pts) != 0);
+      cell.triangulationOk = (vtkcell->TriangulateIds(ci, ptIds) != 0);
       cell.ntri = 0;
       if (cell.triangulationOk)
       {
@@ -1056,8 +1058,8 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
                 {
                   id = -(int)(prevPointsMap.size() + 1);
                   DBG_ASSERT((-id - 1) == prevPointsMap.size());
-                  prevPointsMap.push_back(std::make_pair(
-                    m, Mats[m].pointCount + ni)); // intersection points will be added first
+                  prevPointsMap.emplace_back(
+                    m, Mats[m].pointCount + ni); // intersection points will be added first
                   ni++;
                 }
                 else
@@ -1115,7 +1117,7 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
                 tetras[i][j] = cell.triangulation[i * 4 + j];
               }
 
-            // compute innterface polygon
+            // compute interface polygon
             vtkYoungsMaterialInterfaceCellCut::cellInterface3D(cell.np, cell.points, cell.nEdges,
               cell.edges, cell.ntri, tetras, fraction, normal, this->UseFractionAsDistance != 0,
               nInterfaceEdges, interfaceEdges, interfaceWeights, nInsidePoints, insidePointIds,
@@ -1188,7 +1190,7 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
                 vtkIdType id = -(int)(prevPointsMap.size() + 1);
                 DBG_ASSERT((-id - 1) == prevPointsMap.size());
                 // Interpolated points will be added consecutively
-                prevPointsMap.push_back(std::make_pair(m, Mats[m].pointCount + i));
+                prevPointsMap.emplace_back(m, Mats[m].pointCount + i);
                 nextCell.pointIds[i] = id;
               }
               for (int i = 0; i < nOutsidePoints; i++)
@@ -1319,6 +1321,7 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
               Mats[m].cells.push_back(nptId);
               Mats[m].cellArrayCount++;
             }
+            (void)prevMatInterfToBeAdded;
 
             Mats[m].pointCount += nInterfaceEdges + pointsCopied + prevMatInterfAdded;
 
@@ -1370,7 +1373,7 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
                   DBG_ASSERT(nextCell.edges[i][1] >= 0 && nextCell.edges[i][1] < nextCell.np);
                 }
               }
-              nextCell.triangulationOk = (vtkcell->Triangulate(ci, ptIds, pts) != 0);
+              nextCell.triangulationOk = (vtkcell->TriangulateIds(ci, ptIds) != 0);
               nextCell.ntri = 0;
               if (nextCell.triangulationOk)
               {
@@ -1422,7 +1425,6 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
     delete[] inCellArrays;
 
     ptIds->Delete();
-    pts->Delete();
     cpsCell->Delete();
     delete[] interpolatedValues;
     delete[] matOrdering;
@@ -1471,7 +1473,7 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
       for (vtkIdType i = 0; i < Mats[m].cellCount; i++)
         cellTypesPtr[i] = Mats[m].cellTypes[i];
 
-      // attach conectivity arrays to data set
+      // attach connectivity arrays to data set
       ugOutput->SetCells(cellTypes, cellArray);
       cellArray->Delete();
       cellTypes->Delete();
@@ -1543,14 +1545,13 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
   {
     vtkDebugMacro(<< "NoInterfaceFound " << debugStats_NoInterfaceFound << "\n");
   }
-
   // Build final composite output. also tagging blocks with their associated Id
   vtkDebugMacro(<< this->NumberOfDomains << " Domains, " << nmat << " Materials\n");
 
   output->SetNumberOfBlocks(0);
   output->SetNumberOfBlocks(nmat);
 
-  for (int m = 0; m < nmat; ++m)
+  for (int m = 0; m < nmat && !this->CheckAbort(); ++m)
   {
     vtkMultiBlockDataSet* matBlock = vtkMultiBlockDataSet::New();
     matBlock->SetNumberOfBlocks(this->NumberOfDomains);
@@ -1559,8 +1560,8 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
   }
 
   int blockIndex = 0;
-  for (std::map<int, vtkSmartPointer<vtkUnstructuredGrid> >::iterator it = outputBlocks.begin();
-       it != outputBlocks.end(); ++it, ++blockIndex)
+  for (std::map<int, vtkSmartPointer<vtkUnstructuredGrid>>::iterator it = outputBlocks.begin();
+       it != outputBlocks.end() && !this->CheckAbort(); ++it, ++blockIndex)
   {
     if (it->second->GetNumberOfCells() > 0)
     {
@@ -1576,6 +1577,7 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
 
 #undef GET_POINT_DATA
 
+VTK_ABI_NAMESPACE_END
 /* ------------------------------------------------------------------------------------------
    --- Low level computations including interface placement and intersection line/polygon ---
    ------------------------------------------------------------------------------------------ */
@@ -1584,6 +1586,7 @@ int vtkYoungsMaterialInterface::RequestData(vtkInformation* vtkNotUsed(request),
 // and a set of simplices
 namespace vtkYoungsMaterialInterfaceCellCutInternals
 {
+VTK_ABI_NAMESPACE_BEGIN
 #define REAL_PRECISION 64 // use double precision
 #define REAL_COORD REAL3
 
@@ -1677,47 +1680,8 @@ namespace vtkYoungsMaterialInterfaceCellCutInternals
 
 #endif /* __CUDACC__ */
 
-/*
-  Some of the vector functions where found in the file vector_operators.h from the NVIDIA's CUDA
-  Toolkit. Please read the above notice.
-*/
-
-/*
- * Copyright 1993-2007 NVIDIA Corporation.  All rights reserved.
- *
- * NOTICE TO USER:
- *
- * This source code is subject to NVIDIA ownership rights under U.S. and
- * international Copyright laws.  Users and possessors of this source code
- * are hereby granted a nonexclusive, royalty-free license to use this code
- * in individual and commercial software.
- *
- * NVIDIA MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOURCE
- * CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT EXPRESS OR
- * IMPLIED WARRANTY OF ANY KIND.  NVIDIA DISCLAIMS ALL WARRANTIES WITH
- * REGARD TO THIS SOURCE CODE, INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE.
- * IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL,
- * OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
- * OF USE, DATA OR PROFITS,  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
- * OR OTHER TORTIOUS ACTION,  ARISING OUT OF OR IN CONNECTION WITH THE USE
- * OR PERFORMANCE OF THIS SOURCE CODE.
- *
- * U.S. Government End Users.   This source code is a "commercial item" as
- * that term is defined at  48 C.F.R. 2.101 (OCT 1995), consisting  of
- * "commercial computer  software"  and "commercial computer software
- * documentation" as such terms are  used in 48 C.F.R. 12.212 (SEPT 1995)
- * and is provided to the U.S. Government only as a commercial end item.
- * Consistent with 48 C.F.R.12.212 and 48 C.F.R. 227.7202-1 through
- * 227.7202-4 (JUNE 1995), all U.S. Government End Users acquire the
- * source code with only those rights set forth herein.
- *
- * Any use of this source code in individual and commercial software must
- * include, in the user documentation and internal comments to the code,
- * the above Disclaimer and U.S. Government End Users Notice.
- */
-
 // define base vector types and operators or use those provided by CUDA
+
 #ifndef __CUDACC__
 struct float2
 {
@@ -2281,7 +2245,7 @@ REAL evalPolynomialFunc(const REAL4 F, const REAL x)
 }
 
 /*****************************************
- *** Intergal of a polynomial function ***
+ *** Integral of a polynomial function ***
  *****************************************/
 FUNC_DECL
 REAL3 integratePolynomialFunc(REAL2 linearFunc)
@@ -2455,19 +2419,12 @@ REAL newtonSearchPolynomialFunc(
 FUNC_DECL
 uchar3 sortTriangle(uchar3 t, unsigned char* i)
 {
-#define SWAP(a, b)                                                                                 \
-  {                                                                                                \
-    unsigned char tmp = a;                                                                         \
-    a = b;                                                                                         \
-    b = tmp;                                                                                       \
-  }
   if (i[t.y] < i[t.x])
-    SWAP(t.x, t.y);
+    std::swap(t.x, t.y);
   if (i[t.z] < i[t.y])
-    SWAP(t.y, t.z);
+    std::swap(t.y, t.z);
   if (i[t.y] < i[t.x])
-    SWAP(t.x, t.y);
-#undef SWAP
+    std::swap(t.x, t.y);
   return t;
 }
 
@@ -2479,12 +2436,6 @@ FUNC_DECL
 void sortVertices(const int n, const REAL3* vertices, const REAL3 normal, IntType* indices)
 {
   // insertion sort : slow but symmetrical across all instances
-#define SWAP(a, b)                                                                                 \
-  {                                                                                                \
-    IntType t = indices[a];                                                                        \
-    indices[a] = indices[b];                                                                       \
-    indices[b] = t;                                                                                \
-  }
   for (int i = 0; i < n; i++)
   {
     int imin = i;
@@ -2495,21 +2446,14 @@ void sortVertices(const int n, const REAL3* vertices, const REAL3 normal, IntTyp
       imin = (d < dmin) ? j : imin;
       dmin = min(dmin, d);
     }
-    SWAP(i, imin);
+    std::swap(i, imin);
   }
-#undef SWAP
 }
 
 FUNC_DECL
 void sortVertices(const int n, const REAL2* vertices, const REAL2 normal, IntType* indices)
 {
   // insertion sort : slow but symmetrical across all instances
-#define SWAP(a, b)                                                                                 \
-  {                                                                                                \
-    IntType t = indices[a];                                                                        \
-    indices[a] = indices[b];                                                                       \
-    indices[b] = t;                                                                                \
-  }
   for (int i = 0; i < n; i++)
   {
     int imin = i;
@@ -2520,33 +2464,25 @@ void sortVertices(const int n, const REAL2* vertices, const REAL2 normal, IntTyp
       imin = (d < dmin) ? j : imin;
       dmin = min(dmin, d);
     }
-    SWAP(i, imin);
+    std::swap(i, imin);
   }
-#undef SWAP
 }
 
 FUNC_DECL
 uchar4 sortTetra(uchar4 t, IntType* i)
 {
-#define SWAP(a, b)                                                                                 \
-  {                                                                                                \
-    IntType tmp = a;                                                                               \
-    a = b;                                                                                         \
-    b = tmp;                                                                                       \
-  }
   if (i[t.y] < i[t.x])
-    SWAP(t.x, t.y);
+    std::swap(t.x, t.y);
   if (i[t.w] < i[t.z])
-    SWAP(t.z, t.w);
+    std::swap(t.z, t.w);
   if (i[t.z] < i[t.y])
-    SWAP(t.y, t.z);
+    std::swap(t.y, t.z);
   if (i[t.y] < i[t.x])
-    SWAP(t.x, t.y);
+    std::swap(t.x, t.y);
   if (i[t.w] < i[t.z])
-    SWAP(t.z, t.w);
+    std::swap(t.z, t.w);
   if (i[t.z] < i[t.y])
-    SWAP(t.y, t.z);
-#undef SWAP
+    std::swap(t.y, t.z);
   return t;
 }
 
@@ -3103,11 +3039,12 @@ struct CWVertex
   double coord[3];
   double weight;
   int eid[2];
-  inline bool operator<(const CWVertex& v) const { return angle < v.angle; }
+  bool operator<(const CWVertex& v) const { return angle < v.angle; }
 };
-
+VTK_ABI_NAMESPACE_END
 } /* namespace vtkYoungsMaterialInterfaceCellCutInternals */
 
+VTK_ABI_NAMESPACE_BEGIN
 // ------------------------------------
 //         ####     ####
 //             #    #   #
@@ -3480,3 +3417,4 @@ double vtkYoungsMaterialInterfaceCellCut::findTriangleSetCuttingPlane(const doub
 
   return -d;
 }
+VTK_ABI_NAMESPACE_END

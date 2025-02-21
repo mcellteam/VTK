@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVoxelModeller.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVoxelModeller
  * @brief   convert an arbitrary dataset to a voxel representation
@@ -34,6 +22,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingHybridModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGHYBRID_EXPORT vtkVoxelModeller : public vtkImageAlgorithm
 {
 public:
@@ -54,7 +43,7 @@ public:
    */
   double ComputeModelBounds(double origin[3], double spacing[3]);
 
-  //@{
+  ///@{
   /**
    * Set the i-j-k dimensions on which to sample the distance function.
    * Default is (50, 50, 50)
@@ -62,18 +51,18 @@ public:
   void SetSampleDimensions(int i, int j, int k);
   void SetSampleDimensions(int dim[3]);
   vtkGetVectorMacro(SampleDimensions, int, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify distance away from surface of input geometry to sample. Smaller
    * values make large increases in performance. Default is 1.0.
    */
   vtkSetClampMacro(MaximumDistance, double, 0.0, 1.0);
   vtkGetMacro(MaximumDistance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the position in space to perform the voxelization.
    * Default is (0, 0, 0, 0, 0, 0)
@@ -81,9 +70,9 @@ public:
   void SetModelBounds(const double bounds[6]);
   void SetModelBounds(double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
   vtkGetVectorMacro(ModelBounds, double, 6);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the scalar type of the output image. The default is
    * VTK_BIT.
@@ -103,9 +92,9 @@ public:
   void SetScalarTypeToChar() { this->SetScalarType(VTK_CHAR); }
   void SetScalarTypeToBit() { this->SetScalarType(VTK_BIT); }
   vtkGetMacro(ScalarType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the Foreground/Background values of the output. The
    * Foreground value is set when a voxel is occupied. The Background
@@ -117,11 +106,11 @@ public:
   vtkGetMacro(ForegroundValue, double);
   vtkSetMacro(BackgroundValue, double);
   vtkGetMacro(BackgroundValue, double);
-  //@}
+  ///@}
 
 protected:
   vtkVoxelModeller();
-  ~vtkVoxelModeller() override {}
+  ~vtkVoxelModeller() override = default;
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -144,4 +133,5 @@ private:
   void operator=(const vtkVoxelModeller&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

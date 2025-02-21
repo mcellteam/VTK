@@ -1,19 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSocket.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSocket.h"
 
+#include "vtkLogger.h"
 #include "vtkObjectFactory.h"
 
 // The VTK_SOCKET_FAKE_API definition is given to the compiler
@@ -28,6 +17,7 @@
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #define VTK_WINDOWS_FULL
 #include "vtkWindows.h"
+#include "vtksys/Encoding.hxx"
 #else
 #include <arpa/inet.h>
 #include <cerrno>
@@ -71,8 +61,7 @@
   do                                                                                               \
   {                                                                                                \
     (_ret) = (_call);                                                                              \
-  } while (                                                                                        \
-    ((_ret) == vtkSocketErrorReturnMacro) && (vtkErrnoMacro == vtkSocketErrorIdMacro(EINTR)));
+  } while (((_ret) == vtkSocketErrorReturnMacro) && (vtkErrnoMacro == vtkSocketErrorIdMacro(EINTR)))
 
 // use when _str may be a null pointer but _fallback is not.
 #define vtkSafeStrMacro(_str, _fallback) ((_str) ? (_str) : (_fallback))
@@ -80,36 +69,51 @@
 // convert error number to string and report via vtkErrorMacro.
 #define vtkSocketErrorMacro(_eno, _message)                                                        \
   vtkErrorMacro(<< (_message) << " " << vtkSafeStrMacro(vtkStrerrorMacro(_eno), "unknown error")   \
-                << ".");
+                << ".")
 
 // convert error number to string and report via vtkGenericWarningMacro
 #define vtkSocketGenericErrorMacro(_message)                                                       \
   vtkGenericWarningMacro(<< (_message) << " "                                                      \
                          << vtkSafeStrMacro(vtkStrerrorMacro(vtkErrnoMacro), "unknown error")      \
-                         << ".");
+                         << ".")
 
 // on windows strerror doesn't handle socket error codes
 #if defined(_WIN32) && !defined(__CYGWIN__)
+VTK_ABI_NAMESPACE_BEGIN
 static const char* wsaStrerror(int wsaeid)
 {
-  static char buf[256] = { '\0' };
-  int ok;
-  ok = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, wsaeid, 0, buf, 256, 0);
+  wchar_t wbuf[256];
+  int ok = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0, wsaeid, 0,
+    wbuf, sizeof(wbuf), 0);
   if (!ok)
   {
-    return 0;
+    return nullptr;
   }
+
+  std::string result = vtksys::Encoding::ToNarrow(wbuf);
+  size_t count = result.length();
+
+  static char buf[256];
+  if (count >= sizeof(buf))
+  {
+    count = sizeof(buf) - 1;
+  }
+  strncpy(buf, result.c_str(), count);
+  buf[count + 1] = '\0';
+
   return buf;
 }
+VTK_ABI_NAMESPACE_END
 #endif
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkSocket::vtkSocket()
 {
   this->SocketDescriptor = -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSocket::~vtkSocket()
 {
   if (this->SocketDescriptor != -1)
@@ -119,7 +123,7 @@ vtkSocket::~vtkSocket()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::CreateSocket()
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -148,21 +152,44 @@ int vtkSocket::CreateSocket()
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocket::CloseSocket()
 {
   this->CloseSocket(this->SocketDescriptor);
   this->SocketDescriptor = -1;
 }
 
-//-----------------------------------------------------------------------------
-int vtkSocket::BindSocket(int socketdescriptor, int port)
+//------------------------------------------------------------------------------
+int vtkSocket::BindSocket(int socketdescriptor, int port, const std::string& bindAddr)
 {
 #ifndef VTK_SOCKET_FAKE_API
   struct sockaddr_in server;
 
   server.sin_family = AF_INET;
-  server.sin_addr.s_addr = INADDR_ANY;
+
+  // Cross-platform equivalent of inet_pton for IPv4 addresses with error reporting
+  server.sin_addr.s_addr = 0;
+  {
+    size_t lastDot = 0, nextDot = 0;
+    for (int section = 0; section < 4; section++)
+    {
+      nextDot = bindAddr.find('.', lastDot);
+      if (nextDot == std::string::npos)
+      {
+        nextDot = bindAddr.size();
+      }
+      int byte = std::stoi(bindAddr.substr(lastDot, nextDot - lastDot));
+      if (byte < 0 || byte > 255)
+      {
+        vtkSocketErrorMacro(vtkErrnoMacro, "Wrong bind address.");
+        return -1;
+      }
+      // Network big endian
+      server.sin_addr.s_addr += byte << (8 * section);
+      lastDot = nextDot + 1;
+    }
+  }
+
   server.sin_port = htons(port);
   // Allow the socket to be bound to an address that is already in use
   int opt = 1;
@@ -191,12 +218,19 @@ int vtkSocket::BindSocket(int socketdescriptor, int port)
   return 0;
 #else
   static_cast<void>(socketdescriptor);
+  static_cast<void>(bindAddr);
   static_cast<void>(port);
   return -1;
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkSocket::BindSocket(int socketdescriptor, int port)
+{
+  return this->BindSocket(socketdescriptor, port, "0.0.0.0");
+}
+
+//------------------------------------------------------------------------------
 int vtkSocket::Accept(int socketdescriptor)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -221,7 +255,7 @@ int vtkSocket::Accept(int socketdescriptor)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Listen(int socketdescriptor)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -246,7 +280,7 @@ int vtkSocket::Listen(int socketdescriptor)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::SelectSocket(int socketdescriptor, unsigned long msec)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -305,7 +339,7 @@ int vtkSocket::SelectSocket(int socketdescriptor, unsigned long msec)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::SelectSockets(
   const int* sockets_to_select, int size, unsigned long msec, int* selected_index)
 {
@@ -381,7 +415,7 @@ int vtkSocket::SelectSockets(
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Connect(int socketdescriptor, const char* hostName, int port)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -457,7 +491,7 @@ int vtkSocket::Connect(int socketdescriptor, const char* hostName, int port)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::GetPort(int sock)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -484,7 +518,7 @@ int vtkSocket::GetPort(int sock)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocket::CloseSocket(int socketdescriptor)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -505,7 +539,7 @@ void vtkSocket::CloseSocket(int socketdescriptor)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Send(const void* data, int length)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -543,7 +577,7 @@ int vtkSocket::Send(const void* data, int length)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Receive(void* data, int length, int readFully /*=1*/)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -572,15 +606,27 @@ int vtkSocket::Receive(void* data, int length, int readFully /*=1*/)
     }
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
-    if ((nRecvd == vtkSocketErrorReturnMacro) && (WSAGetLastError() == WSAENOBUFS))
+    if ((nRecvd == vtkSocketErrorReturnMacro))
     {
-      // On long messages, Windows recv sometimes fails with WSAENOBUFS, but
-      // will work if you try again.
-      if ((tries++ < 1000))
+      int lastError = WSAGetLastError();
+      if (lastError == WSAECONNABORTED)
       {
-        Sleep(1);
-        continue;
+        // From the receiver we cannot know if the connection abort is expected or not, this is why
+        // we output a trace instead of an error.
+        vtkLog(TRACE, "Socket error: connection abort.");
+        return 0;
       }
+      else if (lastError == WSAENOBUFS)
+      {
+        // On long messages, Windows recv sometimes fails with WSAENOBUFS, but
+        // will work if you try again.
+        if ((tries++ < 1000))
+        {
+          Sleep(1);
+          continue;
+        }
+      }
+
       vtkSocketErrorMacro(vtkErrnoMacro, "Socket error in call to recv.");
       return 0;
     }
@@ -598,9 +644,10 @@ int vtkSocket::Receive(void* data, int length, int readFully /*=1*/)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocket::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "SocketDescriptor: " << this->SocketDescriptor << endl;
 }
+VTK_ABI_NAMESPACE_END

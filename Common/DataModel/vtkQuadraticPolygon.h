@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadraticPolygon.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkQuadraticPolygon
  * @brief   a cell that represents a parabolic n-sided polygon
@@ -36,6 +24,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkNonLinearCell.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkQuadraticEdge;
 class vtkPolygon;
 class vtkIdTypeArray;
@@ -59,7 +48,7 @@ public:
   vtkCell* GetFace(int) override { return nullptr; }
   int IsPrimaryCell() override { return 0; }
 
-  //@{
+  ///@{
   /**
    * These methods are based on the vtkPolygon ones :
    * the vtkQuadraticPolygon (with n edges and 2*n points)
@@ -83,8 +72,13 @@ public:
   int ParameterizePolygon(
     double p0[3], double p10[3], double& l10, double p20[3], double& l20, double n[3]);
   static int PointInPolygon(double x[3], int numPts, double* pts, double bounds[6], double n[3]);
-  int Triangulate(vtkIdList* outTris);
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  // Needed to remove warning "member function does not override any
+  // base class virtual member function"
+  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override
+  {
+    return vtkCell::Triangulate(index, ptIds, pts);
+  }
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   int NonDegenerateTriangulate(vtkIdList* outTris);
   static double DistanceToPolygon(
     double x[3], int numPts, double* pts, double bounds[6], double closest[3]);
@@ -92,13 +86,13 @@ public:
     double* pts2, double bounds2[6], double tol, double x[3]);
   static int IntersectConvex2DCells(
     vtkCell* cell1, vtkCell* cell2, double tol, double p0[3], double p1[3]);
-  //@}
+  ///@}
 
   // Not implemented
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the flag indicating whether to use Mean Value Coordinate for the
    * interpolation. If true, InterpolateFunctions() uses the Mean Value
@@ -107,7 +101,7 @@ public:
    */
   vtkGetMacro(UseMVCInterpolation, bool);
   vtkSetMacro(UseMVCInterpolation, bool);
-  //@}
+  ///@}
 
 protected:
   vtkQuadraticPolygon();
@@ -121,7 +115,7 @@ protected:
   // for interpolation. The parameter is true by default.
   bool UseMVCInterpolation;
 
-  //@{
+  ///@{
   /**
    * Methods to transform a vtkQuadraticPolygon variable into a vtkPolygon
    * variable.
@@ -133,21 +127,22 @@ protected:
   static void PermuteToPolygon(vtkIdTypeArray* inIds, vtkIdTypeArray* outIds);
   static void PermuteToPolygon(vtkDataArray* inDataArray, vtkDataArray* outDataArray);
   void InitializePolygon();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to transform a vtkPolygon variable into a vtkQuadraticPolygon
    * variable.
    */
   static void GetPermutationToPolygon(vtkIdType nb, vtkIdList* permutation);
   static void PermuteFromPolygon(vtkIdType nb, double* values);
-  static void ConvertFromPolygon(vtkIdList* ids);
-  //@}
+  static void ConvertFromPolygon(vtkIdType nb, vtkIdList* ids);
+  ///@}
 
 private:
   vtkQuadraticPolygon(const vtkQuadraticPolygon&) = delete;
   void operator=(const vtkQuadraticPolygon&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

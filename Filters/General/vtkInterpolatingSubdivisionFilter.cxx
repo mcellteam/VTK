@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInterpolatingSubdivisionFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkInterpolatingSubdivisionFilter.h"
 
 #include "vtkCellArray.h"
@@ -23,6 +11,7 @@
 #include "vtkPolyData.h"
 
 // Construct object with number of subdivisions set to 1.
+VTK_ABI_NAMESPACE_BEGIN
 vtkInterpolatingSubdivisionFilter::vtkInterpolatingSubdivisionFilter() = default;
 
 int vtkInterpolatingSubdivisionFilter::RequestData(
@@ -60,6 +49,10 @@ int vtkInterpolatingSubdivisionFilter::RequestData(
 
   for (level = 0; level < this->NumberOfSubdivisions; level++)
   {
+    if (this->CheckAbort())
+    {
+      break;
+    }
     // Generate topology for the input dataset
     inputDS->BuildLinks();
     numCells = inputDS->GetNumberOfCells();
@@ -67,7 +60,7 @@ int vtkInterpolatingSubdivisionFilter::RequestData(
     // Copy points from input. The new points will include the old points
     // and points calculated by the subdivision algorithm
     outputPts = vtkPoints::New();
-    outputPts->GetData()->DeepCopy(inputDS->GetPoints()->GetData());
+    outputPts->DeepCopy(inputDS->GetPoints());
 
     // Copy pointdata structure from input
     outputPD = vtkPointData::New();
@@ -239,3 +232,4 @@ void vtkInterpolatingSubdivisionFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

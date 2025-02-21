@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHandleWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHandleWidget
  * @brief   a general widget for moving handles
@@ -66,10 +54,12 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHandleRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkHandleWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkHandleWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -77,13 +67,13 @@ public:
    */
   static vtkHandleWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK class macros.
    */
   vtkTypeMacro(vtkHandleWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -109,7 +99,7 @@ public:
    */
   void CreateDefaultRepresentation() override;
 
-  //@{
+  ///@{
   /**
    * Enable / disable axis constrained motion of the handles. By default the
    * widget responds to the shift modifier to constrain the handle along the
@@ -118,18 +108,18 @@ public:
   vtkSetMacro(EnableAxisConstraint, vtkTypeBool);
   vtkGetMacro(EnableAxisConstraint, vtkTypeBool);
   vtkBooleanMacro(EnableAxisConstraint, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable moving of handles. By default, the handle can be moved.
    */
   vtkSetMacro(EnableTranslation, vtkTypeBool);
   vtkGetMacro(EnableTranslation, vtkTypeBool);
   vtkBooleanMacro(EnableTranslation, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Allow resizing of handles ? By default the right mouse button scales
    * the handle size.
@@ -137,16 +127,16 @@ public:
   vtkSetMacro(AllowHandleResize, vtkTypeBool);
   vtkGetMacro(AllowHandleResize, vtkTypeBool);
   vtkBooleanMacro(AllowHandleResize, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the widget state.
    */
   vtkGetMacro(WidgetState, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Allow the widget to be visible as an inactive representation when disabled.
    * By default, this is false i.e. the representation is not visible when the
@@ -155,10 +145,10 @@ public:
   vtkSetMacro(ShowInactive, vtkTypeBool);
   vtkGetMacro(ShowInactive, vtkTypeBool);
   vtkBooleanMacro(ShowInactive, vtkTypeBool);
-  //@}
+  ///@}
 
   // Manage the state of the widget
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Active,
@@ -206,4 +196,5 @@ private:
   void operator=(const vtkHandleWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

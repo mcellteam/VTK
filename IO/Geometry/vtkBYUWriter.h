@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBYUWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBYUWriter
  * @brief   write MOVIE.BYU files
@@ -32,6 +20,7 @@
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 
 class VTKIOGEOMETRY_EXPORT vtkBYUWriter : public vtkWriter
@@ -42,72 +31,72 @@ public:
   vtkTypeMacro(vtkBYUWriter, vtkWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the name of the geometry file to write.
    */
-  vtkSetStringMacro(GeometryFileName);
-  vtkGetStringMacro(GeometryFileName);
-  //@}
+  vtkSetFilePathMacro(GeometryFileName);
+  vtkGetFilePathMacro(GeometryFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the name of the displacement file to write.
    */
-  vtkSetStringMacro(DisplacementFileName);
-  vtkGetStringMacro(DisplacementFileName);
-  //@}
+  vtkSetFilePathMacro(DisplacementFileName);
+  vtkGetFilePathMacro(DisplacementFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the name of the scalar file to write.
    */
-  vtkSetStringMacro(ScalarFileName);
-  vtkGetStringMacro(ScalarFileName);
-  //@}
+  vtkSetFilePathMacro(ScalarFileName);
+  vtkGetFilePathMacro(ScalarFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the name of the texture file to write.
    */
-  vtkSetStringMacro(TextureFileName);
-  vtkGetStringMacro(TextureFileName);
-  //@}
+  vtkSetFilePathMacro(TextureFileName);
+  vtkGetFilePathMacro(TextureFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off writing the displacement file.
    */
   vtkSetMacro(WriteDisplacement, vtkTypeBool);
   vtkGetMacro(WriteDisplacement, vtkTypeBool);
   vtkBooleanMacro(WriteDisplacement, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off writing the scalar file.
    */
   vtkSetMacro(WriteScalar, vtkTypeBool);
   vtkGetMacro(WriteScalar, vtkTypeBool);
   vtkBooleanMacro(WriteScalar, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off writing the texture file.
    */
   vtkSetMacro(WriteTexture, vtkTypeBool);
   vtkGetMacro(WriteTexture, vtkTypeBool);
   vtkBooleanMacro(WriteTexture, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkPolyData* GetInput();
   vtkPolyData* GetInput(int port);
-  //@}
+  ///@}
 
 protected:
   vtkBYUWriter();
@@ -135,4 +124,5 @@ private:
   void operator=(const vtkBYUWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

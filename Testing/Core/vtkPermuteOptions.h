@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPermuteOptions.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkPermuteOptions_h
 #define vtkPermuteOptions_h
@@ -119,6 +107,7 @@
  * returns false. E.g. the third iteration will be named
  * "ByteOrder.BigEndian-CompressorType.LZ4".
  */
+VTK_ABI_NAMESPACE_BEGIN
 template <typename ObjType>
 class vtkPermuteOptions
 {
@@ -243,7 +232,7 @@ public:
   {
     using std::placeholders::_1;
 
-    std::function<void(ObjType*)> func = std::bind(setter, _1, value);
+    std::function<void(ObjType*)> func = [setter, value](ObjType* obj) { (obj->*setter)(value); };
     Option& opt = this->FindOrCreateOption(optionName);
     opt.Values.emplace_back(valueName, func);
     this->OptionTime.Modified();
@@ -309,5 +298,6 @@ public:
   }
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkPermuteOptions.h

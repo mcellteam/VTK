@@ -1,20 +1,11 @@
-/*=========================================================================
-Program:   Visualization Toolkit
-Module:    TestGPURayCastClippingUserTransform.cxx
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Description
 // This test creates a vtkImageData with two components.
 // The data is volume rendered considering the two components as independent.
 #include <fstream>
 #include <iostream>
-using namespace std;
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
@@ -165,7 +156,7 @@ int TestGPURayCastClippingUserTransform(int argc, char* argv[])
   double spacing[3] = { 1.4844, 1.4844, 1.2 };
 
   // Read the image
-  streampos size;
+  std::streampos size;
   char* memblock;
 
   char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/MagnitudeImage_256x256x148");
@@ -343,7 +334,7 @@ int TestGPURayCastClippingUserTransform(int argc, char* argv[])
   iren->Initialize();
   renWin->Render();
 
-  int retVal = vtkRegressionTestImageThreshold(renWin, 70);
+  int retVal = vtkRegressionTestImageThreshold(renWin, 0.05);
 
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {

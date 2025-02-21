@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiBlockPLOT3DReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include <sstream>
 
 #include "vtkMultiBlockPLOT3DReader.h"
@@ -46,9 +34,11 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkMultiBlockPLOT3DReader);
 vtkInformationKeyMacro(vtkMultiBlockPLOT3DReader, INTERMEDIATE_RESULT, Integer);
 vtkCxxSetObjectMacro(vtkMultiBlockPLOT3DReader, Controller, vtkMultiProcessController);
+VTK_ABI_NAMESPACE_END
 
 namespace
 {
@@ -81,6 +71,7 @@ public:
 
 namespace Functors
 {
+VTK_ABI_NAMESPACE_BEGIN
 class ComputeFunctor
 {
 public:
@@ -148,7 +139,7 @@ protected:
         (val != "Points" && !pd->GetArray(val.c_str()) && !fd->GetArray(val.c_str())))
       {
         message = "Cannot compute ";
-        message = message + target;
+        message += target;
         vtkErrorWithObjectMacro(nullptr, << message);
         return nullptr;
       }
@@ -431,7 +422,7 @@ public:
       v = m[1] * rr;
       w = m[2] * rr;
       v2 = u * u + v * v + w * w;
-      Result->SetTuple1(i, sqrt((double)v2));
+      Result->SetTuple1(i, sqrt(v2));
     }
   }
 
@@ -1231,7 +1222,20 @@ public:
       { "Density", "Momentum", "Points", "Velocity" }, "StrainRate", 3);
   }
 };
+VTK_ABI_NAMESPACE_END
 }
+
+VTK_ABI_NAMESPACE_BEGIN
+
+#ifdef _WIN64
+#define vtk_fseek _fseeki64
+#define vtk_ftell _ftelli64
+#define vtk_off_t __int64
+#else
+#define vtk_fseek fseek
+#define vtk_ftell ftell
+#define vtk_off_t long
+#endif
 
 template <class DataType>
 class vtkPLOT3DArrayReader
@@ -1268,8 +1272,8 @@ public:
     {
       // need to read in chunks to skip separators.
       vtkTypeUInt64 pos = vtk_ftell(fp);
-      std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64> > chunks =
-        record.GetChunksToRead(pos, sizeof(DataType) * n, separators);
+      std::vector<std::pair<vtkTypeUInt64, vtkTypeUInt64>> chunks =
+        vtkMultiBlockPLOT3DReaderRecord::GetChunksToRead(pos, sizeof(DataType) * n, separators);
 
       vtkTypeUInt64 bytesread = 0;
       for (size_t cc = 0; cc < chunks.size(); ++cc)
@@ -1735,7 +1739,7 @@ int vtkMultiBlockPLOT3DReader::ReadMesh(
       this->Internal->Dimensions.resize(numBlocks);
     }
 
-    int* rawdims = reinterpret_cast<int*>(&this->Internal->Dimensions[0]);
+    int* rawdims = reinterpret_cast<int*>(this->Internal->Dimensions.data());
     mp->Broadcast(rawdims, 3 * numBlocks, 0);
 
     mp->Broadcast(&offset, 1, 0);
@@ -2098,7 +2102,7 @@ int vtkMultiBlockPLOT3DReader::ReadArrays(
       mp->Broadcast(&error, 1, 0);
       if (error)
       {
-        vtkErrorMacro("Error reading file " << fname.c_str());
+        vtkErrorMacro("Error reading file " << fname);
         this->ClearGeometryCache();
         return 0;
       }
@@ -2322,7 +2326,7 @@ int vtkMultiBlockPLOT3DReader::ReadArrays(
         }
       }
       // Remove intermediate results, if requested.
-      if (this->PreserveIntermediateFunctions == false)
+      if (!this->PreserveIntermediateFunctions)
       {
         this->RemoveIntermediateFunctions(nthOutput->GetPointData());
         this->RemoveIntermediateFunctions(nthOutput->GetCellData());
@@ -2351,7 +2355,7 @@ int vtkMultiBlockPLOT3DReader::ReadArrays(
           throw Plot3DException();
         }
 
-        if (this->ReadFunctionHeader(fFp, &nFunctions[0]) != VTK_OK)
+        if (this->ReadFunctionHeader(fFp, nFunctions.data()) != VTK_OK)
         {
           throw Plot3DException();
         }
@@ -2370,7 +2374,7 @@ int vtkMultiBlockPLOT3DReader::ReadArrays(
       return 0;
     }
 
-    mp->Broadcast(&nFunctions[0], numBlocks, 0);
+    mp->Broadcast(nFunctions.data(), numBlocks, 0);
     mp->Broadcast(&offset, 1, 0);
 
     void* fFp2;
@@ -2467,75 +2471,83 @@ void vtkMultiBlockPLOT3DReader::ClearGeometryCache()
 
 int vtkMultiBlockPLOT3DReader::AutoDetectionCheck(FILE* fp)
 {
-  this->Internal->CheckBinaryFile(fp, this->FileSize);
+  auto& internals = (*this->Internal);
 
-  if (!this->Internal->Settings.BinaryFile)
+  // attempt to auto-detect other settings; we do this irrespective of
+  // this->AutoDetectionCheck flag; if auto-detection code could successfully
+  // determine settings and they don't match with the user-specified ones, we
+  // report an error.
+  try
   {
-    vtkDebugMacro("Auto-detection only works with binary files.");
-    if (this->BinaryFile)
+    if (!internals.CheckBinaryFile(fp, this->FileSize))
     {
-      vtkWarningMacro("This appears to be an ASCII file. Please make sure "
-                      "that all settings are correct to read it correctly.");
+      throw "Could not determine binary/ascii file type";
     }
-    this->Internal->Settings.ByteOrder = this->ByteOrder;
-    this->Internal->Settings.HasByteCount = this->HasByteCount;
-    this->Internal->Settings.MultiGrid = this->MultiGrid;
-    this->Internal->Settings.NumberOfDimensions = this->TwoDimensionalGeometry ? 2 : 3;
-    this->Internal->Settings.Precision = this->DoublePrecision ? 8 : 4;
-    this->Internal->Settings.IBlanking = this->IBlanking;
-    return 1;
-  }
 
-  if (!this->Internal->CheckByteOrder(fp))
-  {
-    vtkErrorMacro("Could not determine big/little endianness of file.");
-    return 0;
-  }
-  if (!this->Internal->CheckByteCount(fp))
-  {
-    vtkErrorMacro("Could not determine if file has Fortran byte counts.");
-    return 0;
-  }
+    if (!internals.Settings.BinaryFile)
+    {
+      // ascii file, not much to auto-detect.
+      vtkDebugMacro("Auto-detection only works with binary files.");
+      if (this->BinaryFile && !this->AutoDetectFormat)
+      {
+        vtkWarningMacro("This appears to be an ASCII file. Please make sure "
+                        "that all settings are correct to read it correctly.");
+      }
+      this->Internal->Settings.ByteOrder = this->ByteOrder;
+      this->Internal->Settings.HasByteCount = this->HasByteCount;
+      this->Internal->Settings.MultiGrid = this->MultiGrid;
+      this->Internal->Settings.NumberOfDimensions = this->TwoDimensionalGeometry ? 2 : 3;
+      this->Internal->Settings.Precision = this->DoublePrecision ? 8 : 4;
+      this->Internal->Settings.IBlanking = this->IBlanking;
+      return 1;
+    }
 
-  if (!this->Internal->Settings.HasByteCount)
-  {
-    if (!this->Internal->CheckCFile(fp, this->FileSize))
+    // binary file, continue with auto-detection.
+    if (!internals.CheckByteOrder(fp))
     {
-      vtkErrorMacro("Could not determine settings for file. Cannot read.");
-      return 0;
+      throw "Could not determine big/little endianness of file.";
     }
-  }
-  else
-  {
-    if (!this->Internal->CheckMultiGrid(fp))
+    if (!internals.CheckByteCount(fp))
     {
-      vtkErrorMacro("Could not determine settings for file. Cannot read.");
-      return 0;
+      throw "Could not determine if file has Fortran byte counts.";
     }
-    if (!this->Internal->Check2DGeom(fp))
+
+    if (!internals.Settings.HasByteCount)
     {
-      vtkErrorMacro("Could not determine settings for file. Cannot read.");
-      return 0;
+      if (!internals.CheckCFile(fp, this->FileSize))
+      {
+        throw "CheckCFile failed; could not determine settings for file.";
+      }
     }
-    if (!this->Internal->CheckBlankingAndPrecision(fp))
+    else
     {
-      vtkErrorMacro("Could not determine settings for file. Cannot read.");
-      return 0;
+      if (!internals.CheckMultiGrid(fp))
+      {
+        throw "CheckMultiGrid failed; could not determine settings for file.";
+      }
+      if (!internals.Check2DGeom(fp))
+      {
+        throw "Check2DGeom failed; could not determine settings for file.";
+      }
+      if (!internals.CheckBlankingAndPrecision(fp))
+      {
+        throw "CheckBlankingAndPrecision failed; could not determine settings for file.";
+      }
     }
-  }
-  if (!this->AutoDetectFormat)
-  {
-    if (!this->ForceRead &&
-      (this->Internal->Settings.BinaryFile != this->BinaryFile ||
-        this->Internal->Settings.ByteOrder != this->ByteOrder ||
-        this->Internal->Settings.HasByteCount != this->HasByteCount ||
-        this->Internal->Settings.MultiGrid != this->MultiGrid ||
-        this->Internal->Settings.NumberOfDimensions != (this->TwoDimensionalGeometry ? 2 : 3) ||
-        this->Internal->Settings.Precision != (this->DoublePrecision ? 8 : 4) ||
-        this->Internal->Settings.IBlanking != this->IBlanking))
+
+    // if we reached here, auto-detection was reasonably successful;
+    if (!this->AutoDetectFormat && !this->ForceRead &&
+      (internals.Settings.BinaryFile != this->BinaryFile ||
+        internals.Settings.ByteOrder != this->ByteOrder ||
+        internals.Settings.HasByteCount != this->HasByteCount ||
+        internals.Settings.MultiGrid != this->MultiGrid ||
+        internals.Settings.NumberOfDimensions != (this->TwoDimensionalGeometry ? 2 : 3) ||
+        internals.Settings.Precision != (this->DoublePrecision ? 8 : 4) ||
+        internals.Settings.IBlanking != this->IBlanking))
     {
       vtkErrorMacro(<< "The settings that you provided do not match what was auto-detected "
-                    << "in the file. The detected settings are: "
+                    << "in the file. Set `ForceRead` to true to get past this error.\n"
+                    << "The detected settings are: "
                     << "\n"
                     << "BinaryFile: " << (this->Internal->Settings.BinaryFile ? 1 : 0) << "\n"
                     << "ByteOrder: " << this->Internal->Settings.ByteOrder << "\n"
@@ -2547,14 +2559,25 @@ int vtkMultiBlockPLOT3DReader::AutoDetectionCheck(FILE* fp)
                     << "IBlanking: " << (this->Internal->Settings.IBlanking ? 1 : 0) << endl);
       return 0;
     }
-    this->Internal->Settings.BinaryFile = this->BinaryFile;
-    this->Internal->Settings.ByteOrder = this->ByteOrder;
-    this->Internal->Settings.HasByteCount = this->HasByteCount;
-    this->Internal->Settings.MultiGrid = this->MultiGrid;
-    this->Internal->Settings.NumberOfDimensions = this->TwoDimensionalGeometry ? 2 : 3;
-    this->Internal->Settings.Precision = this->DoublePrecision ? 8 : 4;
-    this->Internal->Settings.IBlanking = this->IBlanking;
-    return 1;
+  }
+  catch (const char* msg)
+  {
+    if (this->AutoDetectFormat)
+    {
+      vtkErrorMacro(<< "Auto detection check failed. Cannot read. See error below:\n" << msg);
+      return 0;
+    }
+  }
+
+  if (!this->AutoDetectFormat)
+  {
+    internals.Settings.BinaryFile = this->BinaryFile;
+    internals.Settings.ByteOrder = this->ByteOrder;
+    internals.Settings.HasByteCount = this->HasByteCount;
+    internals.Settings.MultiGrid = this->MultiGrid;
+    internals.Settings.NumberOfDimensions = this->TwoDimensionalGeometry ? 2 : 3;
+    internals.Settings.Precision = this->DoublePrecision ? 8 : 4;
+    internals.Settings.IBlanking = this->IBlanking;
   }
   return 1;
 }
@@ -2717,14 +2740,14 @@ vtkIdType vtkMultiBlockPLOT3DReader::ReadValues(FILE* fp, int n, vtkDataArray* s
       vtkPLOT3DArrayReader<float> arrayReader;
       arrayReader.ByteOrder = this->Internal->Settings.ByteOrder;
       vtkFloatArray* floatArray = static_cast<vtkFloatArray*>(scalar);
-      return arrayReader.ReadScalar(fp, 0, n, 0, floatArray->GetPointer(0));
+      return arrayReader.ReadScalar(fp, 0, n, 0, floatArray->WritePointer(0, n));
     }
     else
     {
       vtkPLOT3DArrayReader<double> arrayReader;
       arrayReader.ByteOrder = this->Internal->Settings.ByteOrder;
       vtkDoubleArray* doubleArray = static_cast<vtkDoubleArray*>(scalar);
-      return arrayReader.ReadScalar(fp, 0, n, 0, doubleArray->GetPointer(0));
+      return arrayReader.ReadScalar(fp, 0, n, 0, doubleArray->WritePointer(0, n));
     }
   }
   else
@@ -2732,7 +2755,7 @@ vtkIdType vtkMultiBlockPLOT3DReader::ReadValues(FILE* fp, int n, vtkDataArray* s
     if (this->Internal->Settings.Precision == 4)
     {
       vtkFloatArray* floatArray = static_cast<vtkFloatArray*>(scalar);
-      float* values = floatArray->GetPointer(0);
+      float* values = floatArray->WritePointer(0, n);
 
       int count = 0;
       for (int i = 0; i < n; i++)
@@ -2752,7 +2775,7 @@ vtkIdType vtkMultiBlockPLOT3DReader::ReadValues(FILE* fp, int n, vtkDataArray* s
     else
     {
       vtkDoubleArray* doubleArray = static_cast<vtkDoubleArray*>(scalar);
-      double* values = doubleArray->GetPointer(0);
+      double* values = doubleArray->WritePointer(0, n);
 
       int count = 0;
       for (int i = 0; i < n; i++)
@@ -2792,12 +2815,13 @@ int vtkMultiBlockPLOT3DReader::ReadIntScalar(void* vfp, int extent[6], int wexte
     vtkIdType preskip, postskip;
     vtkMultiBlockPLOT3DReaderInternals::CalculateSkips(extent, wextent, preskip, postskip);
     vtkIntArray* intArray = static_cast<vtkIntArray*>(scalar);
-    return arrayReader.ReadScalar(fp, preskip, n, postskip, intArray->GetPointer(0), record) == n;
+    return arrayReader.ReadScalar(fp, preskip, n, postskip, intArray->WritePointer(0, n), record) ==
+      n;
   }
   else
   {
     vtkIntArray* intArray = static_cast<vtkIntArray*>(scalar);
-    return this->ReadIntBlock(fp, n, intArray->GetPointer(0));
+    return this->ReadIntBlock(fp, n, intArray->WritePointer(0, n));
   }
 }
 
@@ -2824,8 +2848,8 @@ int vtkMultiBlockPLOT3DReader::ReadScalar(void* vfp, int extent[6], int wextent[
       vtkIdType preskip, postskip;
       vtkMultiBlockPLOT3DReaderInternals::CalculateSkips(extent, wextent, preskip, postskip);
       vtkFloatArray* floatArray = static_cast<vtkFloatArray*>(scalar);
-      return arrayReader.ReadScalar(fp, preskip, n, postskip, floatArray->GetPointer(0), record) ==
-        n;
+      return arrayReader.ReadScalar(
+               fp, preskip, n, postskip, floatArray->WritePointer(0, n), record) == n;
     }
     else
     {
@@ -2834,8 +2858,8 @@ int vtkMultiBlockPLOT3DReader::ReadScalar(void* vfp, int extent[6], int wextent[
       vtkIdType preskip, postskip;
       vtkMultiBlockPLOT3DReaderInternals::CalculateSkips(extent, wextent, preskip, postskip);
       vtkDoubleArray* doubleArray = static_cast<vtkDoubleArray*>(scalar);
-      return arrayReader.ReadScalar(fp, preskip, n, postskip, doubleArray->GetPointer(0), record) ==
-        n;
+      return arrayReader.ReadScalar(
+               fp, preskip, n, postskip, doubleArray->WritePointer(0, n), record) == n;
     }
   }
   else
@@ -2843,7 +2867,7 @@ int vtkMultiBlockPLOT3DReader::ReadScalar(void* vfp, int extent[6], int wextent[
     if (this->Internal->Settings.Precision == 4)
     {
       vtkFloatArray* floatArray = static_cast<vtkFloatArray*>(scalar);
-      float* values = floatArray->GetPointer(0);
+      float* values = floatArray->WritePointer(0, n);
 
       int count = 0;
       for (int i = 0; i < n; i++)
@@ -2863,7 +2887,7 @@ int vtkMultiBlockPLOT3DReader::ReadScalar(void* vfp, int extent[6], int wextent[
     else
     {
       vtkDoubleArray* doubleArray = static_cast<vtkDoubleArray*>(scalar);
-      double* values = doubleArray->GetPointer(0);
+      double* values = doubleArray->WritePointer(0, n);
 
       int count = 0;
       for (int i = 0; i < n; i++)
@@ -2904,16 +2928,18 @@ int vtkMultiBlockPLOT3DReader::ReadVector(void* vfp, int extent[6], int wextent[
       vtkPLOT3DArrayReader<float> arrayReader;
       arrayReader.ByteOrder = this->Internal->Settings.ByteOrder;
       vtkFloatArray* floatArray = static_cast<vtkFloatArray*>(vector);
-      return arrayReader.ReadVector(
-               fp, extent, wextent, numDims, floatArray->GetPointer(0), record) == nValues;
+      return arrayReader.ReadVector(fp, extent, wextent, numDims,
+               floatArray->WritePointer(0, 3 * vtkStructuredData::GetNumberOfPoints(extent)),
+               record) == nValues;
     }
     else
     {
       vtkPLOT3DArrayReader<double> arrayReader;
       arrayReader.ByteOrder = this->Internal->Settings.ByteOrder;
       vtkDoubleArray* doubleArray = static_cast<vtkDoubleArray*>(vector);
-      return arrayReader.ReadVector(
-               fp, extent, wextent, numDims, doubleArray->GetPointer(0), record) == nValues;
+      return arrayReader.ReadVector(fp, extent, wextent, numDims,
+               doubleArray->WritePointer(0, 3 * vtkStructuredData::GetNumberOfPoints(extent)),
+               record) == nValues;
     }
   }
   else
@@ -3615,3 +3641,4 @@ void vtkMultiBlockPLOT3DReader::PrintSelf(ostream& os, vtkIndent indent)
      << "PreserveIntermediateFunctions: " << (this->PreserveIntermediateFunctions ? "on" : "off")
      << endl;
 }
+VTK_ABI_NAMESPACE_END

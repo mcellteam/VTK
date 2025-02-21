@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBridgeCellIteratorStrategy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME vtkBridgeCellIteratorStrategy - Interface used by vtkBridgeCellIterator
 // vtkBridgeCellIterator has different behaviors depending on the way it is
 // initialized. vtkBridgeCellIteratorStrategy is the interface for one of those
@@ -28,13 +16,14 @@
 
 #include <cassert>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 void vtkBridgeCellIteratorStrategy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Create an empty cell. NOT USED
 // \post result_exists: result!=0
@@ -43,3 +32,4 @@ vtkGenericAdaptorCell* vtkBridgeCellIteratorStrategy::NewCell()
   assert("check: should not be called: see vtkBridgeCellIterator::NewCell()" && 0);
   return nullptr;
 }
+VTK_ABI_NAMESPACE_END

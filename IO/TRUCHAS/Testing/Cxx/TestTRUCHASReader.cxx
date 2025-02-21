@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestTRUCHASReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Input test to validate ability to read GE TRUCHAS files
 #include "vtkCellData.h"
@@ -202,7 +190,7 @@ int TestTRUCHASReader(int argc, char* argv[])
     double tNext = tAlpha - 0.1 + i * (tOmega - tAlpha) * 2.5 / divs;
     reader->UpdateTimeStep(tNext);
     grid = vtkUnstructuredGrid::SafeDownCast(reader->GetOutput()->GetBlock(1));
-    da = vtkDoubleArray::SafeDownCast(grid->GetCellData()->GetArray("dTdt"));
+    da = vtkDoubleArray::SafeDownCast(grid->GetCellData()->GetArray("dT/dt"));
     double* mM = da->GetRange();
     cerr << "ts " << i << ":" << tNext << " got " << mM[0] << "," << mM[1] << endl;
     if (!AE(mM[0], expectedRanges[i][0]) || !AE(mM[1], expectedRanges[i][1]))

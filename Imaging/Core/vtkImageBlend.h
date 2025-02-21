@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageBlend.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageBlend
  * @brief   blend images together using alpha or opacity
@@ -33,7 +21,8 @@
  * packages.  The output always has the same number of components
  * and the same extent as the first input.  The alpha value of the first
  * input is not used in the blending computation, instead it is copied
- * directly to the output.
+ * directly to the output. If BlendAlpha is set, the alpha value of the
+ * output is also computed using:
  *
  * \code
  * output <- input[0]
@@ -79,6 +68,7 @@
 #include "vtkImagingCoreModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageStencilData;
 
 #define VTK_IMAGE_BLEND_MODE_NORMAL 0
@@ -99,7 +89,7 @@ public:
    */
   virtual void ReplaceNthInputConnection(int idx, vtkAlgorithmOutput* input);
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection() to
@@ -107,9 +97,9 @@ public:
    */
   void SetInputData(int num, vtkDataObject* input);
   void SetInputData(vtkDataObject* input) { this->SetInputData(0, input); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get one input to this filter. This method is only for support of
    * old-style pipeline connections.  When writing new code you should
@@ -117,7 +107,7 @@ public:
    */
   vtkDataObject* GetInput(int num);
   vtkDataObject* GetInput() { return this->GetInput(0); }
-  //@}
+  ///@}
 
   /**
    * Get the number of inputs to this filter. This method is only for
@@ -126,14 +116,14 @@ public:
    */
   int GetNumberOfInputs() { return this->GetNumberOfInputConnections(0); }
 
-  //@{
+  ///@{
   /**
    * Set the opacity of an input image: the alpha values of the image are
    * multiplied by the opacity.  The opacity of image idx=0 is ignored.
    */
   void SetOpacity(int idx, double opacity);
   double GetOpacity(int idx);
-  //@}
+  ///@}
 
   /**
    * Set a stencil to apply when blending the data.
@@ -141,15 +131,15 @@ public:
    */
   void SetStencilConnection(vtkAlgorithmOutput* algOutput);
 
-  //@{
+  ///@{
   /**
    * Set a stencil to apply when blending the data.
    */
   void SetStencilData(vtkImageStencilData* stencil);
   vtkImageStencilData* GetStencil();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the blend mode
    */
@@ -157,28 +147,49 @@ public:
   vtkGetMacro(BlendMode, int);
   void SetBlendModeToNormal() { this->SetBlendMode(VTK_IMAGE_BLEND_MODE_NORMAL); }
   void SetBlendModeToCompound() { this->SetBlendMode(VTK_IMAGE_BLEND_MODE_COMPOUND); }
-  const char* GetBlendModeAsString(void);
-  //@}
+  const char* GetBlendModeAsString();
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set whether to blend the alpha component.
+   * If false, the output alpha component is set to the input alpha component.
+   * It has effect only if BlendMode is set to VTK_IMAGE_BLEND_MODE_NORMAL.
+   *
+   * Example:
+   * This blending option is useful when overlaying two images where the transparency of the
+   * foreground image needs to be used in the images blending. For instance when aligning two images
+   * with BlendAlpha set to false, the foreground image would be cropped to the region of interest
+   * defined by the alpha channel of the background image. While with BlendAlpha set to true, the
+   * foreground image would be blended with the background image allowing the visualization of both
+   * images.
+   */
+  vtkSetMacro(BlendAlpha, vtkTypeBool);
+  vtkGetMacro(BlendAlpha, vtkTypeBool);
+  vtkBooleanMacro(BlendAlpha, vtkTypeBool);
+  ///@}
+
+  ///@{
   /**
    * Specify a threshold in compound mode. Pixels with opacity*alpha less
    * or equal the threshold are ignored.
+   * It has effect only if BlendMode is set to VTK_IMAGE_BLEND_MODE_COMPOUND.
    */
   vtkSetMacro(CompoundThreshold, double);
   vtkGetMacro(CompoundThreshold, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set whether to use the alpha weighted blending calculation on the alpha
    * component. If false, the alpha component is set to the sum of the product
    * of opacity and alpha from all inputs.
+   * It has effect only if BlendMode is set to VTK_IMAGE_BLEND_MODE_COMPOUND
    */
   vtkSetMacro(CompoundAlpha, vtkTypeBool);
   vtkGetMacro(CompoundAlpha, vtkTypeBool);
   vtkBooleanMacro(CompoundAlpha, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageBlend();
@@ -204,6 +215,7 @@ protected:
   int BlendMode;
   double CompoundThreshold;
   int DataWasPassed;
+  vtkTypeBool BlendAlpha;
   vtkTypeBool CompoundAlpha;
 
 private:
@@ -211,7 +223,6 @@ private:
   void operator=(const vtkImageBlend&) = delete;
 };
 
-//@{
 /**
  * Get the blending mode as a descriptive string
  */
@@ -227,6 +238,6 @@ inline const char* vtkImageBlend::GetBlendModeAsString()
       return "Unknown Blend Mode";
   }
 }
-//@}
 
+VTK_ABI_NAMESPACE_END
 #endif

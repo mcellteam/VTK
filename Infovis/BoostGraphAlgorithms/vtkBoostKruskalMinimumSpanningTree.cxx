@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkBoostKruskalMinimumSpanningTree.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkBoostKruskalMinimumSpanningTree.h"
 
 #include "vtkBoostGraphAdapter.h"
@@ -44,13 +28,14 @@ PURPOSE.  See the above copyright notice for more information.
 
 using namespace boost;
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBoostKruskalMinimumSpanningTree);
 
 // Constructor/Destructor
 vtkBoostKruskalMinimumSpanningTree::vtkBoostKruskalMinimumSpanningTree()
 {
-  this->EdgeWeightArrayName = 0;
-  this->OutputSelectionType = 0;
+  this->EdgeWeightArrayName = nullptr;
+  this->OutputSelectionType = nullptr;
   this->SetOutputSelectionType("MINIMUM_SPANNING_TREE_EDGES");
   this->NegateEdgeWeights = false;
   this->EdgeWeightMultiplier = 1;
@@ -58,7 +43,7 @@ vtkBoostKruskalMinimumSpanningTree::vtkBoostKruskalMinimumSpanningTree()
 
 vtkBoostKruskalMinimumSpanningTree::~vtkBoostKruskalMinimumSpanningTree()
 {
-  this->SetEdgeWeightArrayName(0);
+  this->SetEdgeWeightArrayName(nullptr);
 }
 
 void vtkBoostKruskalMinimumSpanningTree::SetNegateEdgeWeights(bool value)
@@ -139,7 +124,7 @@ int vtkBoostKruskalMinimumSpanningTree::RequestData(vtkInformation* vtkNotUsed(r
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostKruskalMinimumSpanningTree::FillInputPortInformation(int port, vtkInformation* info)
 {
   // now add our info
@@ -150,7 +135,7 @@ int vtkBoostKruskalMinimumSpanningTree::FillInputPortInformation(int port, vtkIn
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostKruskalMinimumSpanningTree::FillOutputPortInformation(int port, vtkInformation* info)
 {
   // now add our info
@@ -161,7 +146,7 @@ int vtkBoostKruskalMinimumSpanningTree::FillOutputPortInformation(int port, vtkI
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoostKruskalMinimumSpanningTree::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -176,3 +161,4 @@ void vtkBoostKruskalMinimumSpanningTree::PrintSelf(ostream& os, vtkIndent indent
 
   os << indent << "EdgeWeightMultiplier: " << this->EdgeWeightMultiplier << endl;
 }
+VTK_ABI_NAMESPACE_END

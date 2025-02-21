@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestStructuredGridLIC2DSlice.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
@@ -40,7 +28,7 @@
 #include <string>
 #include <vtksys/CommandLineArguments.hxx>
 
-// --------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static inline int CLAMP(int a, int low, int high)
 {
   a = (a < low) ? low : a;
@@ -48,7 +36,7 @@ static inline int CLAMP(int a, int low, int high)
   return a;
 }
 
-// --------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStructuredGridLIC2DTestDriver(int argc, char* argv[])
 {
   std::string filename;
@@ -64,7 +52,7 @@ int vtkStructuredGridLIC2DTestDriver(int argc, char* argv[])
   double zoom_factor = 2.8;
 
   vtksys::CommandLineArguments arg;
-  arg.StoreUnusedArguments(1);
+  arg.StoreUnusedArguments(true);
   arg.Initialize(argc, argv);
 
   typedef vtksys::CommandLineArguments argT;
@@ -93,7 +81,7 @@ int vtkStructuredGridLIC2DTestDriver(int argc, char* argv[])
   arg.AddArgument(
     "--zoom-factor", argT::EQUAL_ARGUMENT, &zoom_factor, "(optional: default 2.8) set camera zoom");
 
-  if (!arg.Parse() || filename == "")
+  if (!arg.Parse() || filename.empty())
   {
     cerr << "Problem parsing arguments." << endl;
     cerr << arg.GetHelp() << endl;
@@ -206,7 +194,7 @@ int vtkStructuredGridLIC2DTestDriver(int argc, char* argv[])
 
   filter->SetInputConnection(extractVOI->GetOutputPort());
 
-  if (noise_filename != "")
+  if (!noise_filename.empty())
   {
     vtkSmartPointer<vtkPNGReader> pngReader = vtkSmartPointer<vtkPNGReader>::New();
 
@@ -302,7 +290,7 @@ int vtkStructuredGridLIC2DTestDriver(int argc, char* argv[])
 
   renWin->Render();
   int reply =
-    (!tester->IsValidImageSpecified() || (tester->RegressionTest(10) == vtkTesting::PASSED))
+    (!tester->IsValidImageSpecified() || (tester->RegressionTest(0.05) == vtkTesting::PASSED))
     ? /*success*/ 0
     : /*failure*/ 1;
 
@@ -314,7 +302,7 @@ int vtkStructuredGridLIC2DTestDriver(int argc, char* argv[])
   return reply;
 }
 
-// --------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int StructuredGridLIC2DDemo(int argc, char* argv[])
 {
   return vtkStructuredGridLIC2DTestDriver(argc, argv);

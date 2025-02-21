@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTextActor
  * @brief   An actor that displays text. Scaled or unscaled
@@ -37,7 +25,9 @@
 
 #include "vtkRenderingCoreModule.h" // For export macro
 #include "vtkTexturedActor2D.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImageData;
 class vtkPoints;
 class vtkPolyData;
@@ -47,7 +37,7 @@ class vtkTextProperty;
 class vtkTextRenderer;
 class vtkTransform;
 
-class VTKRENDERINGCORE_EXPORT vtkTextActor : public vtkTexturedActor2D
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkTextActor : public vtkTexturedActor2D
 {
 public:
   vtkTypeMacro(vtkTextActor, vtkTexturedActor2D);
@@ -65,7 +55,7 @@ public:
    */
   void ShallowCopy(vtkProp* prop) override;
 
-  //@{
+  ///@{
   /**
    * Set the text string to be displayed. "\n" is recognized
    * as a carriage return/linefeed (line separator).
@@ -74,9 +64,9 @@ public:
    */
   void SetInput(const char* inputString);
   char* GetInput();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the minimum size in pixels for this actor.
    * Defaults to 10,10.
@@ -84,9 +74,9 @@ public:
    */
   vtkSetVector2Macro(MinimumSize, int);
   vtkGetVector2Macro(MinimumSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the maximum height of a line of text as a
    * percentage of the vertical area allocated to this
@@ -95,9 +85,9 @@ public:
    */
   vtkSetMacro(MaximumLineHeight, float);
   vtkGetMacro(MaximumLineHeight, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set how text should be scaled.  If set to
    * vtkTextActor::TEXT_SCALE_MODE_NONE, the font size will be fixed by the
@@ -112,7 +102,7 @@ public:
   void SetTextScaleModeToNone() { this->SetTextScaleMode(TEXT_SCALE_MODE_NONE); }
   void SetTextScaleModeToProp() { this->SetTextScaleMode(TEXT_SCALE_MODE_PROP); }
   void SetTextScaleModeToViewport() { this->SetTextScaleMode(TEXT_SCALE_MODE_VIEWPORT); }
-  //@}
+  ///@}
 
   enum
   {
@@ -121,7 +111,7 @@ public:
     TEXT_SCALE_MODE_VIEWPORT
   };
 
-  //@{
+  ///@{
   /**
    * Turn on or off the UseBorderAlign option.
    * When UseBorderAlign is on, the bounding rectangle is used to align the text,
@@ -130,9 +120,9 @@ public:
   vtkSetMacro(UseBorderAlign, vtkTypeBool);
   vtkGetMacro(UseBorderAlign, vtkTypeBool);
   vtkBooleanMacro(UseBorderAlign, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This method is being deprecated.  Use SetJustification and
    * SetVerticalJustification in text property instead.
@@ -148,11 +138,13 @@ public:
    * This is the same as setting the TextProperty's justification.
    * Currently TextActor is not oriented around its AlignmentPoint.
    */
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_REDUNDANT)
   void SetAlignmentPoint(int point);
+  VTK_MARSHALEXCLUDE(VTK_MARSHAL_EXCLUDE_REASON_IS_REDUNDANT)
   int GetAlignmentPoint();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Counterclockwise rotation around the Alignment point.
    * Units are in degrees and defaults to 0.
@@ -162,15 +154,15 @@ public:
    */
   void SetOrientation(float orientation);
   vtkGetMacro(Orientation, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the text property.
    */
   virtual void SetTextProperty(vtkTextProperty* p);
   vtkGetObjectMacro(TextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
   /**
    * Return the bounding box coordinates of the text in pixels.
@@ -184,7 +176,7 @@ public:
    */
   virtual void GetSize(vtkViewport* vport, double size[2]);
 
-  //@{
+  ///@{
   /**
    * Set and return the font size required to make this mapper fit in a given
    * target rectangle (width x height, in pixels). A static version of the
@@ -192,7 +184,7 @@ public:
    */
   virtual int SetConstrainedFontSize(vtkViewport*, int targetWidth, int targetHeight);
   static int SetConstrainedFontSize(vtkTextActor*, vtkViewport*, int targetWidth, int targetHeight);
-  //@}
+  ///@}
 
   /**
    * Set and return the font size required to make each element of an array
@@ -232,13 +224,13 @@ public:
    */
   virtual void ComputeScaledFont(vtkViewport* viewport);
 
-  //@{
+  ///@{
   /**
    * Get the scaled font.  Use ComputeScaledFont to set the scale for a given
    * viewport.
    */
   vtkGetObjectMacro(ScaledTextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
   /**
    * Provide a font scaling based on a viewport.  This is the scaling factor
@@ -258,7 +250,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow*) override;
 
-  //@{
+  ///@{
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
    * DO NOT USE THIS METHOD OUTSIDE OF THE RENDERING PROCESS.
@@ -267,7 +259,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override { return 0; }
   int RenderOverlay(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Does this prop have some translucent polygonal geometry?
@@ -335,4 +327,5 @@ private:
   void operator=(const vtkTextActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

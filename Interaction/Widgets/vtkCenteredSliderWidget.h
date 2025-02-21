@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCenteredSliderWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCenteredSliderWidget
  * @brief   set a value by manipulating a slider
@@ -73,10 +61,13 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSliderRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkCenteredSliderWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkCenteredSliderWidget
+  : public vtkAbstractWidget
 {
 public:
   /**
@@ -84,13 +75,13 @@ public:
    */
   static vtkCenteredSliderWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard macros.
    */
   vtkTypeMacro(vtkCenteredSliderWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -122,7 +113,7 @@ public:
 
 protected:
   vtkCenteredSliderWidget();
-  ~vtkCenteredSliderWidget() override {}
+  ~vtkCenteredSliderWidget() override = default;
 
   // These are the events that are handled
   static void SelectAction(vtkAbstractWidget*);
@@ -132,7 +123,7 @@ protected:
 
   // Manage the state of the widget
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Sliding
@@ -148,4 +139,5 @@ private:
   void operator=(const vtkCenteredSliderWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

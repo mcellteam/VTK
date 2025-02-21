@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkShadowMapPass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkShadowMapPass
  * @brief   Implement a shadow mapping render pass.
@@ -20,7 +8,7 @@
  * technique to render hard shadows in hardware).
  *
  * This pass expects an initialized depth buffer and color buffer.
- * Initialized buffers means they have been cleared with farest z-value and
+ * Initialized buffers means they have been cleared with farthest z-value and
  * background color/gradient/transparent color.
  * An opaque pass may have been performed right after the initialization.
  *
@@ -43,9 +31,11 @@
 
 #include "vtkOpenGLRenderPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 #include <string>                      // For member variables.
 #include <vector>                      // STL Header
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLRenderWindow;
 class vtkInformationIntegerKey;
 class vtkCamera;
@@ -57,7 +47,7 @@ class vtkShadowMapBakerPass;
 class vtkInformationObjectBaseKey;
 class vtkShaderProgram;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkShadowMapPass : public vtkOpenGLRenderPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkShadowMapPass : public vtkOpenGLRenderPass
 {
 public:
   static vtkShadowMapPass* New();
@@ -77,7 +67,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Pass that generates the shadow maps.
    * the vtkShadowMapPass will use the Resolution ivar of
@@ -86,19 +76,19 @@ public:
    */
   vtkGetObjectMacro(ShadowMapBakerPass, vtkShadowMapBakerPass);
   virtual void SetShadowMapBakerPass(vtkShadowMapBakerPass* shadowMapBakerPass);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Pass that render the lights and opaque geometry
    * Typically a sequence pass with a light pass and opaque pass.
    */
   vtkGetObjectMacro(OpaqueSequence, vtkRenderPass);
   virtual void SetOpaqueSequence(vtkRenderPass* opaqueSequence);
-  //@}
+  ///@}
 
   /**
-   * get the matricies for all the
+   * get the matrices for all the
    * shadow maps.
    */
   std::vector<double> ShadowMapTransforms() { return this->ShadowTransforms; }
@@ -176,4 +166,5 @@ private:
   void operator=(const vtkShadowMapPass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

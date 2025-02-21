@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBarChartActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBarChartActor.h"
 
 #include "vtkAxisActor2D.h"
@@ -34,6 +22,7 @@
 #include <string>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBarChartActor);
 
 vtkCxxSetObjectMacro(vtkBarChartActor, Input, vtkDataObject);
@@ -45,7 +34,7 @@ class vtkBarLabelArray : public std::vector<std::string>
 {
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object
 vtkBarChartActor::vtkBarChartActor()
 {
@@ -127,7 +116,7 @@ vtkBarChartActor::vtkBarChartActor()
   this->P1[0] = this->P1[1] = this->P2[0] = this->P2[1] = 0.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBarChartActor::~vtkBarChartActor()
 {
   if (this->Input)
@@ -161,7 +150,7 @@ vtkBarChartActor::~vtkBarChartActor()
   this->PlotActor->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Free-up axes and related stuff
 void vtkBarChartActor::Initialize()
 {
@@ -183,7 +172,7 @@ void vtkBarChartActor::Initialize()
   this->Heights = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Plot scalar data for each input dataset.
 int vtkBarChartActor::RenderOverlay(vtkViewport* viewport)
 {
@@ -225,7 +214,7 @@ int vtkBarChartActor::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Plot scalar data for each input dataset.
 int vtkBarChartActor::RenderOpaqueGeometry(vtkViewport* viewport)
 {
@@ -267,7 +256,7 @@ int vtkBarChartActor::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkBarChartActor::HasTranslucentPolygonalGeometry()
@@ -275,7 +264,7 @@ vtkTypeBool vtkBarChartActor::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBarChartActor::BuildPlot(vtkViewport* viewport)
 {
   // Initialize
@@ -327,7 +316,7 @@ int vtkBarChartActor::BuildPlot(vtkViewport* viewport)
     vtkDebugMacro(<< "Rebuilding plot");
 
     // Build axes
-    int* size = viewport->GetSize();
+    const int* size = viewport->GetSize();
     if (!this->PlaceAxes(viewport, size))
     {
       return 0;
@@ -339,8 +328,8 @@ int vtkBarChartActor::BuildPlot(vtkViewport* viewport)
   return 1;
 }
 
-//----------------------------------------------------------------------------
-int vtkBarChartActor::PlaceAxes(vtkViewport* viewport, int* vtkNotUsed(size))
+//------------------------------------------------------------------------------
+int vtkBarChartActor::PlaceAxes(vtkViewport* viewport, const int* vtkNotUsed(size))
 {
   vtkIdType i;
   vtkDataObject* input = this->GetInput();
@@ -583,7 +572,7 @@ int vtkBarChartActor::PlaceAxes(vtkViewport* viewport, int* vtkNotUsed(size))
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -599,8 +588,8 @@ void vtkBarChartActor::ReleaseGraphicsResources(vtkWindow* win)
   }
 }
 
-//----------------------------------------------------------------------------
-void vtkBarChartActor::SetBarLabel(const int i, const char* label)
+//------------------------------------------------------------------------------
+void vtkBarChartActor::SetBarLabel(int i, const char* label)
 {
   if (i < 0)
   {
@@ -615,7 +604,7 @@ void vtkBarChartActor::SetBarLabel(const int i, const char* label)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkBarChartActor::GetBarLabel(int i)
 {
   if (i < 0 || static_cast<unsigned int>(i) >= this->Labels->size())
@@ -626,19 +615,19 @@ const char* vtkBarChartActor::GetBarLabel(int i)
   return this->Labels->at(i).c_str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBarChartActor::SetBarColor(int i, double r, double g, double b)
 {
   this->LegendActor->SetEntryColor(i, r, g, b);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkBarChartActor::GetBarColor(int i)
 {
   return this->LegendActor->GetEntryColor(i);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBarChartActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -678,3 +667,4 @@ void vtkBarChartActor::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "YTitle: " << (this->YTitle ? this->YTitle : "(none)") << "\n";
 }
+VTK_ABI_NAMESPACE_END

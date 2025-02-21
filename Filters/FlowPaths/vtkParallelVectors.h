@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParallelVectors.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParallelVectors
  * @brief   Compute polylines corresponding to locations where two vector fields
@@ -36,28 +24,42 @@
 #include "vtkFiltersFlowPathsModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+#include "vtkNew.h" // for vtkNew
+
+namespace detail
+{
+VTK_ABI_NAMESPACE_BEGIN
+template <typename VArrayType, typename WArrayType>
+class CollectValidCellSurfacePointsFunctor;
+VTK_ABI_NAMESPACE_END
+}
+
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSFLOWPATHS_EXPORT vtkParallelVectors : public vtkPolyDataAlgorithm
 {
+  template <typename, typename>
+  friend class detail::CollectValidCellSurfacePointsFunctor;
+
 public:
   static vtkParallelVectors* New();
   vtkTypeMacro(vtkParallelVectors, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the name of first vector field.
    */
   vtkSetStringMacro(FirstVectorFieldName);
   vtkGetStringMacro(FirstVectorFieldName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the name of second vector field.
    */
   vtkSetStringMacro(SecondVectorFieldName);
   vtkGetStringMacro(SecondVectorFieldName);
-  //@}
+  ///@}
 
 protected:
   vtkParallelVectors();
@@ -66,13 +68,22 @@ protected:
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int, vtkInformation*) override;
 
+  /**
+   * Prefilter should resize the CriteriaArrays, initialize them and set their names.
+   */
   virtual void Prefilter(vtkInformation*, vtkInformationVector**, vtkInformationVector*) {}
-  virtual void Postfilter(vtkInformation*, vtkInformationVector**, vtkInformationVector*) {}
+  virtual void Postfilter(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   virtual bool AcceptSurfaceTriangle(const vtkIdType surfaceSimplexIndices[3]);
 
-  virtual bool ComputeAdditionalCriteria(
-    const vtkIdType surfaceSimplexIndices[3], double s, double t);
+  /**
+   * Computes additional criteria to determine if a point should be added to a vortex core.
+   * Criteria are returned in the criteria parameter.
+   *
+   * @note criterionArrayValues has the size of the number of the CriteriaArrays.
+   */
+  virtual bool ComputeAdditionalCriteria(const vtkIdType surfaceSimplexIndices[3], double s,
+    double t, std::vector<double>& criterionArrayValues);
 
   /**
    * Contains the name of the first vector field to compare.
@@ -84,9 +95,14 @@ protected:
    */
   char* SecondVectorFieldName;
 
+  // The arrays are used to store additional criteria related arrays with 1 component.
+  // The size of this vector should be resized inside Prefilter.
+  std::vector<vtkSmartPointer<vtkDoubleArray>> CriteriaArrays;
+
 private:
   vtkParallelVectors(const vtkParallelVectors&) = delete;
   void operator=(const vtkParallelVectors&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

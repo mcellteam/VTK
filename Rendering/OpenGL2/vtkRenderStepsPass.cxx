@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderStepsPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkRenderStepsPass.h"
 #include "vtkObjectFactory.h"
@@ -26,6 +14,7 @@
 #include "vtkTranslucentPass.h"
 #include "vtkVolumetricPass.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkRenderStepsPass);
 
 vtkCxxSetObjectMacro(vtkRenderStepsPass, CameraPass, vtkCameraPass);
@@ -36,7 +25,7 @@ vtkCxxSetObjectMacro(vtkRenderStepsPass, VolumetricPass, vtkRenderPass);
 vtkCxxSetObjectMacro(vtkRenderStepsPass, OverlayPass, vtkRenderPass);
 vtkCxxSetObjectMacro(vtkRenderStepsPass, PostProcessPass, vtkRenderPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderStepsPass::vtkRenderStepsPass()
 {
   this->CameraPass = vtkCameraPass::New();
@@ -53,7 +42,7 @@ vtkRenderStepsPass::vtkRenderStepsPass()
   this->PostProcessPass = nullptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRenderStepsPass::~vtkRenderStepsPass()
 {
   if (this->CameraPass)
@@ -98,7 +87,7 @@ vtkRenderStepsPass::~vtkRenderStepsPass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderStepsPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -168,7 +157,7 @@ void vtkRenderStepsPass::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -213,7 +202,7 @@ void vtkRenderStepsPass::Render(const vtkRenderState* s)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.
@@ -251,3 +240,4 @@ void vtkRenderStepsPass::ReleaseGraphicsResources(vtkWindow* w)
     this->PostProcessPass->ReleaseGraphicsResources(w);
   }
 }
+VTK_ABI_NAMESPACE_END

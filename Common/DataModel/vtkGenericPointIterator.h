@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericPointIterator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericPointIterator
  * @brief   iterator used to traverse points
@@ -36,16 +24,17 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONDATAMODEL_EXPORT vtkGenericPointIterator : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard VTK construction and type macros.
    */
   vtkTypeMacro(vtkGenericPointIterator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Move iterator to first position if any (loop initialization).
@@ -84,17 +73,18 @@ public:
   virtual vtkIdType GetId() = 0;
 
 protected:
-  //@{
+  ///@{
   /**
    * Destructor.
    */
   vtkGenericPointIterator();
   ~vtkGenericPointIterator() override;
-  //@}
+  ///@}
 
 private:
   vtkGenericPointIterator(const vtkGenericPointIterator&) = delete;
   void operator=(const vtkGenericPointIterator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLoopSubdivisionFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkLoopSubdivisionFilter
  * @brief   generate a subdivision surface using the Loop Scheme
@@ -49,6 +37,7 @@
 #include "vtkApproximatingSubdivisionFilter.h"
 #include "vtkFiltersModelingModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 class vtkIntArray;
 class vtkPoints;
@@ -57,17 +46,18 @@ class vtkIdList;
 class VTKFILTERSMODELING_EXPORT vtkLoopSubdivisionFilter : public vtkApproximatingSubdivisionFilter
 {
 public:
-  //@{
+  ///@{
   /**
    * Construct object with NumberOfSubdivisions set to 1.
    */
   static vtkLoopSubdivisionFilter* New();
   vtkTypeMacro(vtkLoopSubdivisionFilter, vtkApproximatingSubdivisionFilter);
-  //@}
+  void PrintSelf(ostream& os, vtkIndent indent) override;
+  ///@}
 
 protected:
-  vtkLoopSubdivisionFilter() {}
-  ~vtkLoopSubdivisionFilter() override {}
+  vtkLoopSubdivisionFilter() = default;
+  ~vtkLoopSubdivisionFilter() override = default;
 
   int GenerateSubdivisionPoints(vtkPolyData* inputDS, vtkIntArray* edgeData, vtkPoints* outputPts,
     vtkPointData* outputPD) override;
@@ -82,5 +72,5 @@ private:
   void operator=(const vtkLoopSubdivisionFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
-// VTK-HeaderTest-Exclude: vtkLoopSubdivisionFilter.h

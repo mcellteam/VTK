@@ -1,24 +1,12 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkBlueObeliskData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkBlueObeliskData.h"
 
 #include "vtkAbstractArray.h"
 #include "vtkBlueObeliskDataInternal.h"
 #include "vtkBlueObeliskDataParser.h"
 #include "vtkFloatArray.h"
-#include "vtkMutexLock.h"
 #include "vtkObjectFactory.h"
 #include "vtkStringArray.h"
 #include "vtkTypeTraits.h"
@@ -27,16 +15,16 @@
 #include <vector>
 
 // Hidden STL reference: std::vector<vtkAbstractArray*>
+VTK_ABI_NAMESPACE_BEGIN
 class MyStdVectorOfVtkAbstractArrays : public std::vector<vtkAbstractArray*>
 {
 };
 
 vtkStandardNewMacro(vtkBlueObeliskData);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBlueObeliskData::vtkBlueObeliskData()
-  : WriteMutex(vtkSimpleMutexLock::New())
-  , Initialized(false)
+  : Initialized(false)
   , NumberOfElements(0)
   , Arrays(new MyStdVectorOfVtkAbstractArrays)
 {
@@ -101,14 +89,13 @@ vtkBlueObeliskData::vtkBlueObeliskData()
   this->Arrays->push_back(this->Groups.GetPointer());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBlueObeliskData::~vtkBlueObeliskData()
 {
   delete Arrays;
-  this->WriteMutex->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -142,7 +129,7 @@ void vtkBlueObeliskData::PrintSelf(ostream& os, vtkIndent indent)
   this->PrintSelfIfExists("this->Groups", this->Groups.GetPointer(), os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::PrintSelfIfExists(
   const char* name, vtkObject* obj, ostream& os, vtkIndent indent)
 {
@@ -156,6 +143,7 @@ void vtkBlueObeliskData::PrintSelfIfExists(
     os << indent << name << " is null.\n";
   }
 }
+VTK_ABI_NAMESPACE_END
 
 // Helpers for reading raw data from the private header into a VTK array.
 namespace
@@ -187,7 +175,20 @@ void LoadDataArray(
 
 } // End anon namespace
 
-//----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
+void vtkBlueObeliskData::LockWriteMutex()
+{
+  this->NewWriteMutex.lock();
+}
+
+//------------------------------------------------------------------------------
+void vtkBlueObeliskData::UnlockWriteMutex()
+{
+  this->NewWriteMutex.unlock();
+}
+
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::Initialize()
 {
   if (IsInitialized())
@@ -196,10 +197,10 @@ void vtkBlueObeliskData::Initialize()
     return;
   }
 
-  this->NumberOfElements = _vtkBlueObeliskData::numberOfElements;
+  this->NumberOfElements = vtkBlueObeliskData_::numberOfElements;
   vtkIdType arraySize = this->NumberOfElements + 1; // 0 is dummy element
 
-#define READARRAY(name) LoadStringArray(this->name.Get(), _vtkBlueObeliskData::name, arraySize)
+#define READARRAY(name) LoadStringArray(this->name.Get(), vtkBlueObeliskData_::name, arraySize)
 
   READARRAY(Symbols);
   READARRAY(LowerSymbols);
@@ -211,7 +212,7 @@ void vtkBlueObeliskData::Initialize()
 
 #undef READARRAY
 #define READARRAY(numComps, name)                                                                  \
-  LoadDataArray<numComps>(this->name.Get(), _vtkBlueObeliskData::name, arraySize)
+  LoadDataArray<numComps>(this->name.Get(), vtkBlueObeliskData_::name, arraySize)
 
   READARRAY(1, Masses);
   READARRAY(1, ExactMasses);
@@ -231,6 +232,7 @@ void vtkBlueObeliskData::Initialize()
   this->Initialized = true;
 }
 
+VTK_ABI_NAMESPACE_END
 // Helpers for GenerateHeaderFromXML:
 namespace
 {
@@ -305,7 +307,8 @@ void WriteDataArray(const std::string& name, ArrayT* data, std::ostream& out)
 
 } // end anon namespace
 
-//----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 bool vtkBlueObeliskData::GenerateHeaderFromXML(std::istream& xml, std::ostream& out)
 {
   vtkNew<vtkBlueObeliskData> data;
@@ -320,7 +323,7 @@ bool vtkBlueObeliskData::GenerateHeaderFromXML(std::istream& xml, std::ostream& 
   out << "// Autogenerated by vtkBlueObeliskData::GenerateHeaderFromXML.\n"
          "// Do not edit. Any modifications may be lost.\n"
          "\n"
-         "namespace _vtkBlueObeliskData {\n"
+         "namespace vtkBlueObeliskData_ {\n"
          "\n"
          "static const unsigned int numberOfElements = "
       << data->GetNumberOfElements() << ";\n\n";
@@ -350,12 +353,12 @@ bool vtkBlueObeliskData::GenerateHeaderFromXML(std::istream& xml, std::ostream& 
 
 #undef DUMPARRAY
 
-  out << "} // end namespace _vtkBlueObeliskData\n";
+  out << "} // end namespace vtkBlueObeliskData_\n";
 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkBlueObeliskData::Allocate(vtkIdType sz, vtkIdType ext)
 {
   for (MyStdVectorOfVtkAbstractArrays::iterator it = this->Arrays->begin(),
@@ -370,7 +373,7 @@ vtkTypeBool vtkBlueObeliskData::Allocate(vtkIdType sz, vtkIdType ext)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::Squeeze()
 {
   for (MyStdVectorOfVtkAbstractArrays::iterator it = this->Arrays->begin(),
@@ -381,7 +384,7 @@ void vtkBlueObeliskData::Squeeze()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::Reset()
 {
   for (MyStdVectorOfVtkAbstractArrays::iterator it = this->Arrays->begin(),
@@ -391,3 +394,4 @@ void vtkBlueObeliskData::Reset()
     (*it)->Reset();
   }
 }
+VTK_ABI_NAMESPACE_END

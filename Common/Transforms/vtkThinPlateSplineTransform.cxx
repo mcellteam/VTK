@@ -1,26 +1,15 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkThinPlateSplineTransform.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkThinPlateSplineTransform.h"
 
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkPoints.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkThinPlateSplineTransform);
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // some dull matrix things
 
 inline double** vtkNewMatrix(int rows, int cols)
@@ -34,14 +23,14 @@ inline double** vtkNewMatrix(int rows, int cols)
   return m;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline void vtkDeleteMatrix(double** m)
 {
-  delete[] * m;
+  delete[] *m;
   delete[] m;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline void vtkZeroMatrix(double** m, int rows, int cols)
 {
   for (int i = 0; i < rows; i++)
@@ -53,7 +42,7 @@ inline void vtkZeroMatrix(double** m, int rows, int cols)
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline void vtkMatrixMultiply(
   double** a, double** b, double** c, int arows, int acols, int brows, int bcols)
 {
@@ -77,7 +66,7 @@ inline void vtkMatrixMultiply(
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline void vtkMatrixTranspose(double** a, double** b, int rows, int cols)
 {
   for (int i = 0; i < rows; i++)
@@ -91,7 +80,7 @@ inline void vtkMatrixTranspose(double** a, double** b, int rows, int cols)
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkThinPlateSplineTransform::vtkThinPlateSplineTransform()
 {
   this->SourceLandmarks = nullptr;
@@ -114,7 +103,7 @@ vtkThinPlateSplineTransform::vtkThinPlateSplineTransform()
   this->RegularizeBulkTransform = true;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkThinPlateSplineTransform::~vtkThinPlateSplineTransform()
 {
   if (this->SourceLandmarks)
@@ -132,7 +121,7 @@ vtkThinPlateSplineTransform::~vtkThinPlateSplineTransform()
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThinPlateSplineTransform::SetSourceLandmarks(vtkPoints* source)
 {
   if (this->SourceLandmarks == source)
@@ -151,7 +140,7 @@ void vtkThinPlateSplineTransform::SetSourceLandmarks(vtkPoints* source)
   this->Modified();
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThinPlateSplineTransform::SetTargetLandmarks(vtkPoints* target)
 {
   if (this->TargetLandmarks == target)
@@ -169,7 +158,7 @@ void vtkThinPlateSplineTransform::SetTargetLandmarks(vtkPoints* target)
   this->Modified();
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkThinPlateSplineTransform::GetMTime()
 {
   vtkMTimeType result = this->vtkWarpTransform::GetMTime();
@@ -194,7 +183,7 @@ vtkMTimeType vtkThinPlateSplineTransform::GetMTime()
   return result;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThinPlateSplineTransform::InternalUpdate()
 {
   if (this->SourceLandmarks == nullptr || this->TargetLandmarks == nullptr)
@@ -504,7 +493,7 @@ void vtkThinPlateSplineTransform::InternalUpdate()
   this->NumberOfPoints = N;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The matrix W was created by Update.  Not much has to be done to
 // apply the transform:  do an affine transformation, then do
 // perturbations based on the landmarks.
@@ -568,7 +557,7 @@ void vtkThinPlateSplineTransform::ForwardTransformPoint(const float point[3], fl
     this, this->MatrixW, this->NumberOfPoints, this->BasisFunction, point, output);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // calculate the thin plate spline as well as the jacobian
 template <class T>
 inline void vtkThinPlateSplineForwardTransformDerivative(vtkThinPlateSplineTransform* self,
@@ -672,7 +661,7 @@ void vtkThinPlateSplineTransform::ForwardTransformDerivative(
     this, this->MatrixW, this->NumberOfPoints, this->BasisDerivative, point, output, derivative);
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThinPlateSplineTransform::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -692,13 +681,13 @@ void vtkThinPlateSplineTransform::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractTransform* vtkThinPlateSplineTransform::MakeTransform()
 {
   return vtkThinPlateSplineTransform::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThinPlateSplineTransform::InternalDeepCopy(vtkAbstractTransform* transform)
 {
   vtkThinPlateSplineTransform* t = (vtkThinPlateSplineTransform*)transform;
@@ -718,7 +707,7 @@ void vtkThinPlateSplineTransform::InternalDeepCopy(vtkAbstractTransform* transfo
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // a very basic radial basis function
 static double vtkRBFr(double r)
 {
@@ -732,7 +721,7 @@ static double vtkRBFDRr(double r, double& dUdr)
   return r;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // the standard 2D thin plate spline basis function
 static double vtkRBFr2logr(double r)
 {
@@ -762,7 +751,7 @@ static double vtkRBFDRr2logr(double r, double& dUdr)
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkThinPlateSplineTransform::SetBasis(int basis)
 {
   if (basis == this->Basis)
@@ -791,7 +780,7 @@ void vtkThinPlateSplineTransform::SetBasis(int basis)
   this->Modified();
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkThinPlateSplineTransform::GetBasisAsString()
 {
   switch (this->Basis)
@@ -805,3 +794,4 @@ const char* vtkThinPlateSplineTransform::GetBasisAsString()
   }
   return "Unknown";
 }
+VTK_ABI_NAMESPACE_END

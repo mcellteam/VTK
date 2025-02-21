@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSortFileNames.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSortFileNames
  * @brief   Group and sort a set of filenames
@@ -34,6 +22,7 @@
 #include "vtkIOCoreModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkStringArray;
 
 // this is a helper class defined in the .cxx file
@@ -46,7 +35,7 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkSortFileNames* New();
 
-  //@{
+  ///@{
   /**
    * Sort the file names into groups, according to similarity in
    * filename name and path.  Files in different directories,
@@ -57,9 +46,9 @@ public:
   vtkSetMacro(Grouping, vtkTypeBool);
   vtkGetMacro(Grouping, vtkTypeBool);
   vtkBooleanMacro(Grouping, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Sort the files numerically, rather than lexicographically.
    * For filenames that contain numbers, this means the order will be
@@ -71,9 +60,9 @@ public:
   vtkSetMacro(NumericSort, vtkTypeBool);
   vtkGetMacro(NumericSort, vtkTypeBool);
   vtkBooleanMacro(NumericSort, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Ignore case when sorting.  This flag is honored by both
    * the sorting and the grouping. This is off by default.
@@ -81,9 +70,9 @@ public:
   vtkSetMacro(IgnoreCase, vtkTypeBool);
   vtkGetMacro(IgnoreCase, vtkTypeBool);
   vtkBooleanMacro(IgnoreCase, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Skip directories. If this flag is set, any input item that
    * is a directory rather than a file will not be included in
@@ -92,15 +81,15 @@ public:
   vtkSetMacro(SkipDirectories, vtkTypeBool);
   vtkGetMacro(SkipDirectories, vtkTypeBool);
   vtkBooleanMacro(SkipDirectories, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set a list of file names to group and sort.
    */
   void SetInputFileNames(vtkStringArray* input);
   vtkGetObjectMacro(InputFileNames, vtkStringArray);
-  //@}
+  ///@}
 
   /**
    * Get the full list of sorted filenames.
@@ -165,4 +154,5 @@ private:
   void operator=(const vtkSortFileNames&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

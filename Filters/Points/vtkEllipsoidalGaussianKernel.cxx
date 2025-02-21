@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEllipsoidalGaussianKernel.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkEllipsoidalGaussianKernel.h"
 #include "vtkAbstractPointLocator.h"
 #include "vtkDataSet.h"
@@ -22,9 +10,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkEllipsoidalGaussianKernel);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEllipsoidalGaussianKernel::vtkEllipsoidalGaussianKernel()
 {
   this->UseNormals = true;
@@ -43,13 +32,13 @@ vtkEllipsoidalGaussianKernel::vtkEllipsoidalGaussianKernel()
   this->ScalarsArray = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkEllipsoidalGaussianKernel::~vtkEllipsoidalGaussianKernel()
 {
   this->FreeStructures();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEllipsoidalGaussianKernel::FreeStructures()
 {
   this->Superclass::FreeStructures();
@@ -67,7 +56,7 @@ void vtkEllipsoidalGaussianKernel::FreeStructures()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEllipsoidalGaussianKernel::Initialize(
   vtkAbstractPointLocator* loc, vtkDataSet* ds, vtkPointData* pd)
 {
@@ -79,7 +68,7 @@ void vtkEllipsoidalGaussianKernel::Initialize(
     this->ScalarsArray = pd->GetScalars();
     if (!this->ScalarsArray)
     {
-      this->ScalarsArray = pd->GetArray(this->ScalarsArrayName);
+      this->ScalarsArray = pd->GetArray(this->ScalarsArrayName.c_str());
     }
     if (this->ScalarsArray && this->ScalarsArray->GetNumberOfComponents() == 1)
     {
@@ -97,7 +86,7 @@ void vtkEllipsoidalGaussianKernel::Initialize(
     this->NormalsArray = pd->GetNormals();
     if (!this->NormalsArray)
     {
-      this->NormalsArray = pd->GetArray(this->NormalsArrayName);
+      this->NormalsArray = pd->GetArray(this->NormalsArrayName.c_str());
     }
     if (this->NormalsArray)
     {
@@ -115,7 +104,7 @@ void vtkEllipsoidalGaussianKernel::Initialize(
   this->E2 = this->Eccentricity * this->Eccentricity;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkEllipsoidalGaussianKernel::ComputeWeights(
   double x[3], vtkIdList* pIds, vtkDoubleArray* prob, vtkDoubleArray* weights)
 {
@@ -196,7 +185,7 @@ vtkIdType vtkEllipsoidalGaussianKernel::ComputeWeights(
   return numPts;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkEllipsoidalGaussianKernel::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -212,3 +201,4 @@ void vtkEllipsoidalGaussianKernel::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Sharpness: " << this->GetSharpness() << endl;
   os << indent << "Eccentricity: " << this->GetEccentricity() << endl;
 }
+VTK_ABI_NAMESPACE_END

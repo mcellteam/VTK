@@ -1,22 +1,6 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkStatisticsAlgorithmPrivate.h
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkDescriptiveStatistics
  * @brief   Private implementation for bivariate
@@ -38,18 +22,17 @@ PURPOSE.  See the above copyright notice for more information.
 
 #include <set> // used to iterate over internal organs
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkStatisticsAlgorithmPrivate
 {
 public:
-  vtkStatisticsAlgorithmPrivate() {}
-  ~vtkStatisticsAlgorithmPrivate() {}
   // --------------------------------------------------------------------
   /**
    * Empty current set of requests
    */
   void ResetRequests() { this->Requests.clear(); }
   // --------------------------------------------------------------------
-  //@{
+  ///@{
   /**
    * Empty current buffer
    */
@@ -83,14 +66,14 @@ public:
     return result ? 1 : 0;
   }
   // --------------------------------------------------------------------
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * This function does not use the buffer like other column selection methods.
    */
   int AddColumnToRequests(const char* col)
   {
-    if (col && strlen(col))
+    if (col && *col)
     {
       std::set<vtkStdString> tmp;
       tmp.insert(col);
@@ -102,14 +85,14 @@ public:
     return 0;
   }
   // --------------------------------------------------------------------
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * This function does not use the buffer like other column selection methods.
    */
   int AddColumnPairToRequests(const char* cola, const char* colb)
   {
-    if (cola && colb && strlen(cola) && strlen(colb))
+    if (cola && colb && *cola && *colb)
     {
       std::set<vtkStdString> tmp;
       tmp.insert(cola);
@@ -122,13 +105,13 @@ public:
     return 0;
   }
   // --------------------------------------------------------------------
-  //@}
+  ///@}
   /**
    * Return the number of currently-defined requests
    */
   vtkIdType GetNumberOfRequests() { return static_cast<vtkIdType>(this->Requests.size()); }
   // --------------------------------------------------------------------
-  //@{
+  ///@{
   /**
    * Return the number of columns associated with request \a r.
    */
@@ -138,7 +121,7 @@ public:
     {
       return 0;
     }
-    std::set<std::set<vtkStdString> >::iterator it = this->Requests.begin();
+    std::set<std::set<vtkStdString>>::iterator it = this->Requests.begin();
     for (vtkIdType i = 0; i < r; ++i)
     {
       ++it;
@@ -146,8 +129,8 @@ public:
     return static_cast<vtkIdType>(it->size());
   }
   // --------------------------------------------------------------------
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * Provide the name of the \a c-th column of the \a r-th request in \a columnName.
    * Returns false if the request or column does not exist and true otherwise.
@@ -158,7 +141,7 @@ public:
     {
       return false;
     }
-    std::set<std::set<vtkStdString> >::const_iterator it = this->Requests.begin();
+    std::set<std::set<vtkStdString>>::const_iterator it = this->Requests.begin();
     for (vtkIdType i = 0; i < r; ++i)
     {
       ++it;
@@ -175,12 +158,13 @@ public:
     columnName = *cit;
     return true;
   }
-  //@}
+  ///@}
 
-  std::set<std::set<vtkStdString> > Requests;
+  std::set<std::set<vtkStdString>> Requests;
   std::set<vtkStdString> Buffer;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkStatisticsAlgorithmPrivate_h
 
 // VTK-HeaderTest-Exclude: vtkStatisticsAlgorithmPrivate.h

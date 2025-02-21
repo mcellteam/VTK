@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageQuantizeRGBToIndex.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageQuantizeRGBToIndex
  * @brief   generalized histograms up to 4 dimensions
@@ -46,6 +34,7 @@
 #include "vtkImageAlgorithm.h"
 #include "vtkImagingColorModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLookupTable;
 
 class VTKIMAGINGCOLOR_EXPORT vtkImageQuantizeRGBToIndex : public vtkImageAlgorithm
@@ -55,14 +44,14 @@ public:
   vtkTypeMacro(vtkImageQuantizeRGBToIndex, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set / Get the number of color index values to produce - must be
    * a number between 2 and 65536.
    */
   vtkSetClampMacro(NumberOfColors, int, 2, 65536);
   vtkGetMacro(NumberOfColors, int);
-  //@}
+  ///@}
 
   vtkSetVector3Macro(SamplingRate, int);
   vtkGetVector3Macro(SamplingRate, int);
@@ -71,33 +60,33 @@ public:
   vtkGetMacro(SortIndexByLuminance, bool);
   vtkBooleanMacro(SortIndexByLuminance, bool);
 
-  //@{
+  ///@{
   /**
    * Get the resulting lookup table that contains the color definitions
    * corresponding to the index values in the output image.
    */
   vtkGetObjectMacro(LookupTable, vtkLookupTable);
-  //@}
+  ///@}
 
   vtkGetMacro(InitializeExecuteTime, double);
   vtkGetMacro(BuildTreeExecuteTime, double);
   vtkGetMacro(LookupIndexExecuteTime, double);
 
-  //@{
+  ///@{
   /**
    * For internal use only - get the type of the image
    */
   vtkGetMacro(InputType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * For internal use only - set the times for execution
    */
   vtkSetMacro(InitializeExecuteTime, double);
   vtkSetMacro(BuildTreeExecuteTime, double);
   vtkSetMacro(LookupIndexExecuteTime, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageQuantizeRGBToIndex();
@@ -123,4 +112,5 @@ private:
   void operator=(const vtkImageQuantizeRGBToIndex&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

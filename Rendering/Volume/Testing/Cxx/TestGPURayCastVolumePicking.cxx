@@ -1,22 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestGPURayCastVolumePicking.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // This test covers volume picking with vtkGPURayCastVolumePicking using
 // vtkHardwareSelector.
 // This test renders volume data along with polydata objects and selects
 // the volume.
-// Use 'p' for poin picking and 'r' for area selection.
+// Use 'p' for point picking and 'r' for area selection.
 
 #include "vtkInteractorStyleRubberBandPick.h"
 #include "vtkRenderedAreaPicker.h"
@@ -84,7 +72,7 @@ public:
     {
       vtkSelectionNode* node = result->GetNode(n);
       vtkInformation* properties = node->GetProperties();
-      vtkInformationIntegerKey* infoIntKey = node->PROP_ID();
+      vtkInformationIntegerKey* infoIntKey = vtkSelectionNode::PROP_ID();
 
       vtkAbstractArray* abs = node->GetSelectionList();
       vtkIdType size = abs->GetSize();
@@ -95,7 +83,7 @@ public:
 
       // Get the vtkAlgorithm instance of the prop to connect it to
       // the outline filter.
-      vtkInformationObjectBaseKey* key = node->PROP();
+      vtkInformationObjectBaseKey* key = vtkSelectionNode::PROP();
       vtkObjectBase* keyObj = key->Get(properties);
       if (!keyObj)
         continue;
@@ -121,7 +109,7 @@ public:
     }
 
     result->Delete();
-  };
+  }
   //////////////////////////////////////////////////////////////////////////////
 
   vtkSmartPointer<vtkRenderer> Renderer;

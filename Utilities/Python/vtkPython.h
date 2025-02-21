@@ -1,22 +1,9 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPython.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkPython_h
 #define vtkPython_h
 
 #include "vtkABI.h"
-#include "vtkConfigure.h"
 #include "vtkPythonConfigure.h"
 
 /*
@@ -103,7 +90,7 @@ they are system headers.  Do NOT add any #undef lines here.  */
 #undef toupper
 #endif
 
-/* This logic is borrowed from mpi4py/vtkmpi4py/src/atimport.h */
+/* This logic is borrowed from mpi4py/vtkmpi4py/src/pycompat.h */
 #ifdef VTK_NO_PYTHON_THREADS
 #undef PyGILState_Ensure
 #define PyGILState_Ensure() ((PyGILState_STATE)0)
@@ -116,6 +103,7 @@ they are system headers.  Do NOT add any #undef lines here.  */
 // RAII class to manage Python threading using GIL (Global Interpreter Lock).
 // GIL is locked at object creation and unlocked at destruction.
 // Note: behaviour of this class depends on VTK_PYTHON_FULL_THREADSAFE.
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPythonScopeGilEnsurer
 {
 public:
@@ -158,6 +146,7 @@ private:
   void operator=(const vtkPythonScopeGilEnsurer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // __cplusplus
 
 #endif

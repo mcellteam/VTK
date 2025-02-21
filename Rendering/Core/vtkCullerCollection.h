@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCullerCollection.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCullerCollection
  * @brief   an ordered list of Cullers
@@ -30,8 +18,10 @@
 #include "vtkCollection.h"
 #include "vtkCuller.h"              // for inline functions
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
-class VTKRENDERINGCORE_EXPORT vtkCullerCollection : public vtkCollection
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkCullerCollection : public vtkCollection
 {
 public:
   static vtkCullerCollection* New();
@@ -63,14 +53,13 @@ public:
   }
 
 protected:
-  vtkCullerCollection() {}
-  ~vtkCullerCollection() override {}
+  vtkCullerCollection() = default;
+  ~vtkCullerCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
   void AddItem(vtkObject* o) { this->vtkCollection::AddItem(o); }
 
-private:
   vtkCullerCollection(const vtkCullerCollection&) = delete;
   void operator=(const vtkCullerCollection&) = delete;
 };
@@ -87,4 +76,5 @@ inline vtkCuller* vtkCullerCollection::GetLastItem()
   }
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

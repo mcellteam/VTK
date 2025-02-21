@@ -1,26 +1,16 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPIOReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2021, Triad National Security, LLC
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-LANL-Triad-USGov
 /**
- * @class   vtkPIOReader
+ *
+ * @class vtkPIOReader
  * @brief   class for reading PIO (Parallel Input Output) data files
  *
  * This class reads in dump files generated from xRage, a LANL physics code.
  * The PIO (Parallel Input Output) library is used to create the dump files.
  *
- * @sa
- * vtkMultiBlockReader
+ * @par Thanks:
+ * Developed by Patricia Fasel at Los Alamos National Laboratory
  */
 
 #ifndef vtkPIOReader_h
@@ -28,14 +18,16 @@
 
 #include "vtkIOPIOModule.h" // For export macro
 #include "vtkMultiBlockDataSetAlgorithm.h"
+#include "vtkStdString.h" // for vtkStdString
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCallbackCommand;
 class vtkDataArraySelection;
 class vtkFloatArray;
 class vtkInformation;
 class vtkMultiBlockDataSet;
 class vtkMultiProcessController;
-class vtkStdString;
+class vtkStringArray;
 
 class PIOAdaptor;
 class PIO_DATA;
@@ -47,55 +39,55 @@ public:
   vtkTypeMacro(vtkPIOReader, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify file name of PIO data file to read.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the timestep to be loaded
    */
   vtkSetMacro(CurrentTimeStep, int);
   vtkGetMacro(CurrentTimeStep, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the creation of hypertree grid
    */
   vtkGetMacro(HyperTreeGrid, bool);
   vtkSetMacro(HyperTreeGrid, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the creation of tracer data
    */
   vtkSetMacro(Tracers, bool);
   vtkGetMacro(Tracers, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the use of float64 for data
    */
   vtkSetMacro(Float64, bool);
   vtkGetMacro(Float64, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the reader's output
    */
   vtkMultiBlockDataSet* GetOutput();
   vtkMultiBlockDataSet* GetOutput(int index);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The following methods allow selective reading of solutions fields.
    * By default, ALL data fields on the nodes are read, but this can
@@ -107,7 +99,27 @@ public:
   void SetCellArrayStatus(const char* name, int status);
   void DisableAllCellArrays();
   void EnableAllCellArrays();
-  //@}
+  vtkGetObjectMacro(CellDataArraySelection, vtkDataArraySelection);
+  ///@}
+
+  ///@{
+  /**
+   * Getters for time data array candidates.
+   */
+  int GetNumberOfTimeDataArrays() const;
+  const char* GetTimeDataArray(int idx) const;
+  vtkGetObjectMacro(TimeDataStringArray, vtkStringArray);
+  ///@}
+
+  ///@{
+  /**
+   * Setter / Getter on ActiveTimeDataArrayName. This string
+   * holds the selected time array name. If set to `nullptr`,
+   * time values are the sequence of positive integers starting at zero.
+   */
+  vtkGetStringMacro(ActiveTimeDataArrayName);
+  vtkSetStringMacro(ActiveTimeDataArrayName);
+  ///@}
 
 protected:
   vtkPIOReader();
@@ -125,17 +137,24 @@ protected:
   int NumberOfTimeSteps; // Temporal domain
   double* TimeSteps;     // Times available for request
   int CurrentTimeStep;   // Time currently displayed
-  int LastTimeStep;      // Last time displayed
 
   bool HyperTreeGrid; // Create HTG rather than UnstructuredGrid
   bool Tracers;       // Create UnstructuredGrid for tracer info
   bool Float64;       // Load variable data as 64 bit float
 
-  // Controls initializing and querrying MPI
-  vtkMultiProcessController* MPIController;
+  // Controls initializing and querying MPI
+  void SetController(vtkMultiProcessController*);
+  vtkMultiProcessController* Controller;
 
   // Selected field of interest
   vtkDataArraySelection* CellDataArraySelection;
+
+  // Time array selection
+  vtkStringArray* TimeDataStringArray;
+
+  // Active index of array used for time. If no time array is used, value should be -1.
+  char* ActiveTimeDataArrayName;
+  vtkStdString CurrentTimeDataArrayName;
 
   // Observer to modify this object when array selections are modified
   vtkCallbackCommand* SelectionObserver;
@@ -152,4 +171,5 @@ private:
   void operator=(const vtkPIOReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

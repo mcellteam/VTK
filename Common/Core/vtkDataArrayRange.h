@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataArrayRange.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @file vtkDataArrayRange.h
@@ -97,9 +85,9 @@ VTK_ITER_OPTIMIZE_START
 
 namespace vtk
 {
-
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 // Internal detail: This utility is not directly needed by users of
 // DataArrayRange.
@@ -131,7 +119,8 @@ public:
       std::declval<ArrayType*>()))>::type;
 };
 
-template <typename ArrayTypePtr, ComponentIdType TupleSize>
+template <typename ArrayTypePtr, ComponentIdType TupleSize,
+  typename ForceValueTypeForVtkDataArray = double>
 struct SelectValueRange
 {
 private:
@@ -144,9 +133,10 @@ private:
 public:
   using type =
     typename std::remove_reference<decltype(vtk::detail::DeclareValueRangeSpecialization<ArrayType,
-      TupleSize>(std::declval<ArrayType*>()))>::type;
+      TupleSize, ForceValueTypeForVtkDataArray>(std::declval<ArrayType*>()))>::type;
 };
 
+VTK_ABI_NAMESPACE_END
 } // end namespace detail
 
 /**
@@ -252,7 +242,10 @@ public:
  *   }
  * }
  * ```
+ * @todo Just like the `DataArrayValueRange`, the tuple range can also accept a forced value type
+ * for generic vtkDataArray.
  */
+VTK_ABI_NAMESPACE_BEGIN
 template <ComponentIdType TupleSize = detail::DynamicTupleSize,
   typename ArrayTypePtr = vtkDataArray*>
 VTK_ITER_INLINE auto DataArrayTupleRange(const ArrayTypePtr& array, TupleIdType start = -1,
@@ -364,17 +357,20 @@ VTK_ITER_INLINE auto DataArrayTupleRange(const ArrayTypePtr& array, TupleIdType 
  * ```
  */
 template <ComponentIdType TupleSize = detail::DynamicTupleSize,
-  typename ArrayTypePtr = vtkDataArray*>
-VTK_ITER_INLINE auto DataArrayValueRange(const ArrayTypePtr& array, ValueIdType start = -1,
-  ValueIdType end = -1) -> typename detail::SelectValueRange<ArrayTypePtr, TupleSize>::type
+  typename ForceValueTypeForVtkDataArray = double, typename ArrayTypePtr = vtkDataArray*>
+VTK_ITER_INLINE auto DataArrayValueRange(
+  const ArrayTypePtr& array, ValueIdType start = -1, ValueIdType end = -1) ->
+  typename detail::SelectValueRange<ArrayTypePtr, TupleSize, ForceValueTypeForVtkDataArray>::type
 {
-  using RangeType = typename detail::SelectValueRange<ArrayTypePtr, TupleSize>::type;
+  using RangeType =
+    typename detail::SelectValueRange<ArrayTypePtr, TupleSize, ForceValueTypeForVtkDataArray>::type;
 
   assert(array);
 
   return RangeType(array, start < 0 ? 0 : start, end < 0 ? array->GetNumberOfValues() : end);
 }
 
+VTK_ABI_NAMESPACE_END
 } // end namespace vtk
 
 VTK_ITER_OPTIMIZE_END

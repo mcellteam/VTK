@@ -1,23 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkInteractorStyleTrackballActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkInteractorStyleTrackballActor
  * @brief   manipulate objects in the scene independent of each other
  *
  * vtkInteractorStyleTrackballActor allows the user to interact with (rotate,
- * pan, etc.) objects in the scene indendent of each other.  In trackball
+ * pan, etc.) objects in the scene independent of each other.  In trackball
  * interaction, the magnitude of the mouse motion is proportional to the
  * actor motion associated with a particular mouse binding. For example,
  * small left-button motions cause small changes in the rotation of the
@@ -39,17 +27,20 @@
 
 #include "vtkInteractionStyleModule.h" // For export macro
 #include "vtkInteractorStyle.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellPicker;
 
-class VTKINTERACTIONSTYLE_EXPORT vtkInteractorStyleTrackballActor : public vtkInteractorStyle
+class VTKINTERACTIONSTYLE_EXPORT VTK_MARSHALAUTO vtkInteractorStyleTrackballActor
+  : public vtkInteractorStyle
 {
 public:
   static vtkInteractorStyleTrackballActor* New();
   vtkTypeMacro(vtkInteractorStyleTrackballActor, vtkInteractorStyle);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Event bindings controlling the effects of pressing mouse buttons
    * or moving the mouse.
@@ -61,7 +52,7 @@ public:
   void OnMiddleButtonUp() override;
   void OnRightButtonDown() override;
   void OnRightButtonUp() override;
-  //@}
+  ///@}
 
   // These methods for the different interactions in different modes
   // are overridden in subclasses to perform the correct motion. Since
@@ -92,4 +83,5 @@ private:
   void operator=(const vtkInteractorStyleTrackballActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

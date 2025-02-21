@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSimpleScalarTree.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSimpleScalarTree
  * @brief   organize data according to scalar values (used to accelerate contouring operations)
@@ -50,6 +38,7 @@
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkScalarTree.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkScalarNode;
 class vtkSimpleScalarTree;
 
@@ -62,13 +51,13 @@ public:
    */
   static vtkSimpleScalarTree* New();
 
-  //@{
+  ///@{
   /**
    * Standard type related macros and PrintSelf() method.
    */
   vtkTypeMacro(vtkSimpleScalarTree, vtkScalarTree);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * This method is used to copy data members when cloning an instance of the
@@ -76,7 +65,7 @@ public:
    */
   void ShallowCopy(vtkScalarTree* stree) override;
 
-  //@{
+  ///@{
   /**
    * Set the branching factor for the tree. This is the number of
    * children per tree node. Smaller values (minimum is 2) mean deeper
@@ -85,23 +74,23 @@ public:
    */
   vtkSetClampMacro(BranchingFactor, int, 2, VTK_INT_MAX);
   vtkGetMacro(BranchingFactor, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the level of the scalar tree. This value may change each time the
    * scalar tree is built and the branching factor changes.
    */
   vtkGetMacro(Level, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the maximum allowable level for the tree.
    */
   vtkSetClampMacro(MaxLevel, int, 1, VTK_INT_MAX);
   vtkGetMacro(MaxLevel, int);
-  //@}
+  ///@}
 
   /**
    * Construct the scalar tree from the dataset provided. Checks build times
@@ -168,9 +157,9 @@ private:
   vtkIdType* CandidateCells; // to support parallel computing
   vtkIdType NumCandidates;
 
-private:
   vtkSimpleScalarTree(const vtkSimpleScalarTree&) = delete;
   void operator=(const vtkSimpleScalarTree&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

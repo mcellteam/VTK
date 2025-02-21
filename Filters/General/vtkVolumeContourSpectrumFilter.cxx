@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkVolumeContourSpectrumFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkVolumeContourSpectrumFilter.h"
 
 #include "vtkDataArray.h"
@@ -28,9 +17,10 @@
 #include "vtkUnstructuredGrid.h"
 #include "vtkVariantArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkVolumeContourSpectrumFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVolumeContourSpectrumFilter::vtkVolumeContourSpectrumFilter()
 {
   this->SetNumberOfInputPorts(2);
@@ -39,10 +29,10 @@ vtkVolumeContourSpectrumFilter::vtkVolumeContourSpectrumFilter()
   this->NumberOfSamples = 100;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVolumeContourSpectrumFilter::~vtkVolumeContourSpectrumFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVolumeContourSpectrumFilter::FillInputPortInformation(int portNumber, vtkInformation* info)
 {
   switch (portNumber)
@@ -59,7 +49,7 @@ int vtkVolumeContourSpectrumFilter::FillInputPortInformation(int portNumber, vtk
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVolumeContourSpectrumFilter::FillOutputPortInformation(
   int vtkNotUsed(portNumber), vtkInformation* info)
 {
@@ -69,7 +59,7 @@ int vtkVolumeContourSpectrumFilter::FillOutputPortInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumeContourSpectrumFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -78,13 +68,13 @@ void vtkVolumeContourSpectrumFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Field Id: " << this->FieldId << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTable* vtkVolumeContourSpectrumFilter::GetOutput()
 {
   return vtkTable::SafeDownCast(this->GetOutputDataObject(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVolumeContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -189,6 +179,10 @@ int vtkVolumeContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(reque
              max = scalarField->GetComponent(vertexIds[vertexIds.size() - 1], 0);
       for (unsigned int i = 0; i < vertexIds.size(); i++)
       {
+        if (this->CheckAbort())
+        {
+          break;
+        }
         scalarValues[i] = scalarField->GetComponent(vertexIds[i], 0);
 
         vtkIdList* starTetrahedronList = vtkIdList::New();
@@ -229,7 +223,7 @@ int vtkVolumeContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(reque
       }
 
       // now adjust to the desired sampling
-      std::vector<std::pair<int, double> > samples(NumberOfSamples);
+      std::vector<std::pair<int, double>> samples(NumberOfSamples);
       unsigned int pos = 0;
       for (int i = 0; i < NumberOfSamples; i++)
       {
@@ -303,3 +297,4 @@ int vtkVolumeContourSpectrumFilter::RequestData(vtkInformation* vtkNotUsed(reque
   }
   return 0;
 }
+VTK_ABI_NAMESPACE_END

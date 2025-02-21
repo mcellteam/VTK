@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSpanSpace.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSpanSpace
  * @brief   organize data according to scalar span space
@@ -42,6 +30,7 @@
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkScalarTree.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSpanSpace;
 struct vtkInternalSpanSpace;
 
@@ -54,13 +43,13 @@ public:
    */
   static vtkSpanSpace* New();
 
-  //@{
+  ///@{
   /**
    * Standard type related macros and PrintSelf() method.
    */
   vtkTypeMacro(vtkSpanSpace, vtkScalarTree);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * This method is used to copy data members when cloning an instance of the
@@ -72,7 +61,7 @@ public:
   // The following methods are specific to the creation and configuration of
   // vtkSpanSpace.
 
-  //@{
+  ///@{
   /**
    * Specify the scalar range in terms of minimum and maximum values
    * (smin,smax). These values are used to build the span space. Note that
@@ -83,9 +72,9 @@ public:
    */
   vtkSetVector2Macro(ScalarRange, double);
   vtkGetVectorMacro(ScalarRange, double, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This boolean controls whether the determination of the scalar range is
    * computed from the input scalar data. By default this is enabled.
@@ -93,9 +82,9 @@ public:
   vtkSetMacro(ComputeScalarRange, vtkTypeBool);
   vtkGetMacro(ComputeScalarRange, vtkTypeBool);
   vtkBooleanMacro(ComputeScalarRange, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the resolution N of the span space. The span space can be
    * envisioned as a rectangular lattice of NXN buckets/bins (i.e., N rows
@@ -106,9 +95,9 @@ public:
    */
   vtkSetClampMacro(Resolution, vtkIdType, 1, 10000);
   vtkGetMacro(Resolution, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether the resolution of span space is computed
    * automatically from the average number of cells falling in each bucket.
@@ -116,16 +105,16 @@ public:
   vtkSetMacro(ComputeResolution, vtkTypeBool);
   vtkGetMacro(ComputeResolution, vtkTypeBool);
   vtkBooleanMacro(ComputeResolution, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the average number of cells in each bucket. This is used to
    * indirectly control the resolution if ComputeResolution is enabled.
    */
   vtkSetClampMacro(NumberOfCellsPerBucket, int, 1, VTK_INT_MAX);
   vtkGetMacro(NumberOfCellsPerBucket, int);
-  //@}
+  ///@}
 
   //----------------------------------------------------------------------
   // The following methods satisfy the vtkScalarTree abstract API.
@@ -177,14 +166,14 @@ public:
    */
   const vtkIdType* GetCellBatch(vtkIdType batchNum, vtkIdType& numCells) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the size of the cell batches when processing in
    * parallel. By default the batch size = 100 cells in each batch.
    */
   vtkSetClampMacro(BatchSize, vtkIdType, 100, VTK_INT_MAX);
   vtkGetMacro(BatchSize, vtkIdType);
-  //@}
+  ///@}
 
 protected:
   vtkSpanSpace();
@@ -209,9 +198,9 @@ private:
   vtkIdType CurrentIdx;      // position into the current span row
   vtkIdType CurrentNumCells; // number of cells on the current span row
 
-private:
   vtkSpanSpace(const vtkSpanSpace&) = delete;
   void operator=(const vtkSpanSpace&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

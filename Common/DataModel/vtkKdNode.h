@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkKdNode.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkKdNode
@@ -36,6 +21,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCell;
 class vtkPlanesIntersection;
 
@@ -47,14 +33,14 @@ public:
 
   static vtkKdNode* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the dimension along which this region is divided.
    * (0 - x, 1 - y, 2 - z, 3 - leaf node (default)).
    */
   vtkSetMacro(Dim, int);
   vtkGetMacro(Dim, int);
-  //@}
+  ///@}
 
   /**
    * Get the location of the division plane along the axis the region
@@ -63,15 +49,15 @@ public:
    */
   virtual double GetDivisionPosition();
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of points contained in this region.
    */
   vtkSetMacro(NumberOfPoints, int);
   vtkGetMacro(NumberOfPoints, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the bounds of the spatial region represented by this node.
    * Caller allocates storage for 6-vector in GetBounds.
@@ -79,9 +65,9 @@ public:
   void SetBounds(double x1, double x2, double y1, double y2, double z1, double z2);
   void SetBounds(const double b[6]) { this->SetBounds(b[0], b[1], b[2], b[3], b[4], b[5]); }
   void GetBounds(double* b) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the bounds of the points contained in this spatial region.
    * This may be smaller than the bounds of the region itself.
@@ -89,7 +75,7 @@ public:
    */
   void SetDataBounds(double x1, double x2, double y1, double y2, double z1, double z2);
   void GetDataBounds(double* b) const;
-  //@}
+  ///@}
 
   /**
    * Given a pointer to NumberOfPoints points, set the DataBounds of this
@@ -133,16 +119,16 @@ public:
    */
   void SetMaxDataBounds(const double* mb);
 
-  //@{
+  ///@{
   /**
    * Set/Get the ID associated with the region described by this node.  If
    * this is not a leaf node, this value should be -1.
    */
   vtkSetMacro(ID, int);
   vtkGetMacro(ID, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this node is not a leaf node, there are leaf nodes below it whose
    * regions represent a partitioning of this region.  The IDs of these
@@ -154,7 +140,7 @@ public:
   vtkGetMacro(MaxID, int);
   vtkSetMacro(MinID, int);
   vtkSetMacro(MaxID, int);
-  //@}
+  ///@}
 
   /**
    * Add the left and right children.
@@ -166,29 +152,29 @@ public:
    */
   void DeleteChildNodes();
 
-  //@{
+  ///@{
   /**
    * Set/Get a pointer to the left child of this node.
    */
   vtkGetObjectMacro(Left, vtkKdNode);
   void SetLeft(vtkKdNode* left);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a pointer to the right child of this node.
    */
   vtkGetObjectMacro(Right, vtkKdNode);
   void SetRight(vtkKdNode* right);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get a pointer to the parent of this node.
    */
   vtkGetObjectMacro(Up, vtkKdNode);
   void SetUp(vtkKdNode* up);
-  //@}
+  ///@}
 
   /**
    * Return 1 if this spatial region intersects the axis-aligned box given
@@ -265,20 +251,20 @@ public:
    */
   double GetDistance2ToInnerBoundary(double x, double y, double z);
 
-  //@{
+  ///@{
   /**
    * For debugging purposes, print out this node.
    */
   void PrintNode(int depth);
   void PrintVerboseNode(int depth);
-  //@}
+  ///@}
 
 protected:
   vtkKdNode();
   ~vtkKdNode() override;
 
 private:
-  double _GetDistance2ToBoundary(
+  double GetDistance2ToBoundaryPrivate(
     double x, double y, double z, double* boundaryPt, int innerBoundaryOnly, int useDataBounds);
 
   double Min[3];    // spatial bounds of node
@@ -303,4 +289,5 @@ private:
   void operator=(const vtkKdNode&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

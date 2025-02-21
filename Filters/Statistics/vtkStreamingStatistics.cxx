@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkStreamingStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2010 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2010 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkStreamingStatistics.h"
 
@@ -27,11 +11,12 @@
 #include "vtkStatisticsAlgorithm.h"
 #include "vtkTable.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkStreamingStatistics);
 
 vtkCxxSetObjectMacro(vtkStreamingStatistics, StatisticsAlgorithm, vtkStatisticsAlgorithm);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStreamingStatistics::vtkStreamingStatistics()
 {
   // Setup input/output ports
@@ -46,7 +31,7 @@ vtkStreamingStatistics::vtkStreamingStatistics()
   this->InternalModel = vtkMultiBlockDataSet::New();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStreamingStatistics::~vtkStreamingStatistics()
 {
   // Release/delete internal stats algorithm
@@ -58,7 +43,7 @@ vtkStreamingStatistics::~vtkStreamingStatistics()
   this->InternalModel = nullptr;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStreamingStatistics::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == INPUT_DATA)
@@ -83,7 +68,7 @@ int vtkStreamingStatistics::FillInputPortInformation(int port, vtkInformation* i
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStreamingStatistics::FillOutputPortInformation(int port, vtkInformation* info)
 {
   if (port == OUTPUT_DATA)
@@ -105,7 +90,7 @@ int vtkStreamingStatistics::FillOutputPortInformation(int port, vtkInformation* 
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStreamingStatistics::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -147,13 +132,14 @@ int vtkStreamingStatistics::RequestData(
 
   // Shallow copy the internal output to external output
   outData->ShallowCopy(this->StatisticsAlgorithm->GetOutput(OUTPUT_DATA));
-  outModel->ShallowCopy(this->StatisticsAlgorithm->GetOutputDataObject(OUTPUT_MODEL));
+  outModel->CompositeShallowCopy(vtkCompositeDataSet::SafeDownCast(
+    this->StatisticsAlgorithm->GetOutputDataObject(OUTPUT_MODEL)));
   outTest->ShallowCopy(this->StatisticsAlgorithm->GetOutput(OUTPUT_TEST));
 
   return 1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStreamingStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -165,3 +151,4 @@ void vtkStreamingStatistics::PrintSelf(ostream& os, vtkIndent indent)
   }
   os << indent << "InternalModel: " << this->InternalModel << "\n";
 }
+VTK_ABI_NAMESPACE_END

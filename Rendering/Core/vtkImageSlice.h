@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSlice.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageSlice
  * @brief   represents an image in a 3D scene
@@ -21,7 +9,7 @@
  * perspective. Adjusting the position and orientation of the slice
  * is done by adjusting the focal point and direction of the camera,
  * or alternatively the slice can be set manually in vtkImageMapper3D.
- * The lookup table and window/leve are set in vtkImageProperty.
+ * The lookup table and window/level are set in vtkImageProperty.
  * Prop3D methods such as SetPosition() and RotateWXYZ() change the
  * position and orientation of the data with respect to VTK world
  * coordinates.
@@ -37,13 +25,15 @@
 
 #include "vtkProp3D.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkPropCollection;
 class vtkImageProperty;
 class vtkImageMapper3D;
 
-class VTKRENDERINGCORE_EXPORT vtkImageSlice : public vtkProp3D
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkImageSlice : public vtkProp3D
 {
 public:
   vtkTypeMacro(vtkImageSlice, vtkProp3D);
@@ -56,28 +46,28 @@ public:
    */
   static vtkImageSlice* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the mapper.
    */
   void SetMapper(vtkImageMapper3D* mapper);
   vtkGetObjectMacro(Mapper, vtkImageMapper3D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the image display properties.
    */
   void SetProperty(vtkImageProperty* property);
   virtual vtkImageProperty* GetProperty();
-  //@}
+  ///@}
 
   /**
    * Update the rendering pipeline by updating the ImageMapper
    */
   void Update();
 
-  //@{
+  ///@{
   /**
    * Get the bounds - either all six at once
    * (xmin, xmax, ymin, ymax, zmin, zmax) or one at a time.
@@ -90,7 +80,7 @@ public:
   double GetMaxYBound();
   double GetMinZBound();
   double GetMaxZBound();
-  //@}
+  ///@}
 
   /**
    * Return the MTime also considering the property etc.
@@ -105,14 +95,14 @@ public:
    */
   vtkMTimeType GetRedrawMTime() override;
 
-  //@{
+  ///@{
   /**
    * Force the actor to be treated as translucent.
    */
   vtkGetMacro(ForceTranslucent, bool);
   vtkSetMacro(ForceTranslucent, bool);
   vtkBooleanMacro(ForceTranslucent, bool);
-  //@}
+  ///@}
 
   /**
    * Shallow copy of this vtkImageSlice. Overloads the virtual vtkProp method.
@@ -126,14 +116,14 @@ public:
    */
   void GetImages(vtkPropCollection*);
 
-  //@{
+  ///@{
   /**
    * Support the standard render methods.
    */
   int RenderOverlay(vtkViewport* viewport) override;
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Internal method, should only be used by rendering.
@@ -174,4 +164,5 @@ private:
   void operator=(const vtkImageSlice&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

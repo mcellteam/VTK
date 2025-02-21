@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDIYAggregateDataSetFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDIYAggregateDataSetFilter.h"
 
 #include "vtkCellData.h"
@@ -56,11 +44,12 @@
 #include VTK_DIY2(diy/decomposition.hpp)
 // clang-format on
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDIYAggregateDataSetFilter);
 
 namespace
 {
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline diy::mpi::communicator GetDiyCommunicator(vtkMPIController* controller)
 {
   vtkMPICommunicator* vtkcomm = vtkMPICommunicator::SafeDownCast(controller->GetCommunicator());
@@ -79,16 +68,16 @@ struct Block
 };
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDIYAggregateDataSetFilter::vtkDIYAggregateDataSetFilter()
 {
   this->OutputInitialized = false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDIYAggregateDataSetFilter::~vtkDIYAggregateDataSetFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDIYAggregateDataSetFilter::RequestInformation(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -111,7 +100,7 @@ int vtkDIYAggregateDataSetFilter::RequestInformation(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDIYAggregateDataSetFilter::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -267,7 +256,7 @@ int vtkDIYAggregateDataSetFilter::RequestData(
   // int retVal = this->MoveDataWithDIY(inputExtent, wholeExtent, outputExtent, serializedDataSets,
   // output);
 
-  for (auto it : receivedDataSets)
+  for (const auto& it : receivedDataSets)
   {
     vtkSmartPointer<vtkDataSet> tempDataSet = nullptr;
 
@@ -307,7 +296,7 @@ int vtkDIYAggregateDataSetFilter::RequestData(
   return retVal;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDIYAggregateDataSetFilter::MoveDataWithDIY(int inputExtent[6], int wholeExtent[6],
   int outputExtent[6], std::map<int, std::string>& serializedDataSets,
   std::vector<std::string>& receivedDataSets)
@@ -327,7 +316,7 @@ int vtkDIYAggregateDataSetFilter::MoveDataWithDIY(int inputExtent[6], int wholeE
 
   diy::Link* link = new diy::Link; // master will delete this automatically
 
-  for (auto it : serializedDataSets)
+  for (const auto& it : serializedDataSets)
   { // processes I send data to
     diy::BlockID neighbor;
     neighbor.gid = it.first;
@@ -345,7 +334,7 @@ int vtkDIYAggregateDataSetFilter::MoveDataWithDIY(int inputExtent[6], int wholeE
   master.add(myRank, &block, link);
 
   int counter = 0;
-  for (auto it : serializedDataSets)
+  for (const auto& it : serializedDataSets)
   { // processes I send data to
     master.proxy(0).enqueue(master.proxy(0).link()->target(counter), it.second);
     counter++;
@@ -361,7 +350,7 @@ int vtkDIYAggregateDataSetFilter::MoveDataWithDIY(int inputExtent[6], int wholeE
   {
     if (proxyWithLink.incoming(in[i]))
     {
-      receivedDataSets.push_back("");
+      receivedDataSets.emplace_back("");
       proxyWithLink.dequeue(in[i], receivedDataSets.back());
       // now deserialize...
     }
@@ -369,7 +358,7 @@ int vtkDIYAggregateDataSetFilter::MoveDataWithDIY(int inputExtent[6], int wholeE
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDIYAggregateDataSetFilter::MoveData(int inputExtent[6], int wholeExtent[6],
   int outputExtent[6], std::map<int, std::string>& serializedDataSets,
   std::vector<std::string>& receivedDataSets)
@@ -392,7 +381,7 @@ int vtkDIYAggregateDataSetFilter::MoveData(int inputExtent[6], int wholeExtent[6
 
   std::vector<vtkMPICommunicator::Request> sizeSendRequests(serializedDataSets.size());
   int counter = 0;
-  for (auto it : serializedDataSets)
+  for (const auto& it : serializedDataSets)
   {
     int size = static_cast<int>(it.second.size());
     controller->NoBlockSend(&size, 1, it.first, 9318, sizeSendRequests[counter]);
@@ -419,7 +408,7 @@ int vtkDIYAggregateDataSetFilter::MoveData(int inputExtent[6], int wholeExtent[6
   // now it's not too bad though in that it really only has 2 copies of the sent data
   // to a single process since it clears out the string after it copies it over
   // to sendData.
-  std::vector<std::vector<unsigned char> > sendData(serializedDataSets.size());
+  std::vector<std::vector<unsigned char>> sendData(serializedDataSets.size());
   for (auto it : serializedDataSets)
   {
     int size = static_cast<int>(it.second.size());
@@ -456,7 +445,7 @@ int vtkDIYAggregateDataSetFilter::MoveData(int inputExtent[6], int wholeExtent[6
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDIYAggregateDataSetFilter::ComputeProcessesIReceiveFrom(
   int inputExtent[6], int wholeExtent[6], int outputExtent[6], vtkIdList* processesIReceiveFrom)
 {
@@ -490,7 +479,7 @@ void vtkDIYAggregateDataSetFilter::ComputeProcessesIReceiveFrom(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDIYAggregateDataSetFilter::GetTargetProcessId(int sourceProcessId, int numberOfProcesses)
 {
   if (this->GetNumberOfTargetProcesses() == 1)
@@ -505,7 +494,7 @@ int vtkDIYAggregateDataSetFilter::GetTargetProcessId(int sourceProcessId, int nu
   return -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDIYAggregateDataSetFilter::DoExtentsOverlap(
   int extent1[6], int extent2[6], int dimensions[3], int* overlappingExtent)
 {
@@ -527,7 +516,7 @@ bool vtkDIYAggregateDataSetFilter::DoExtentsOverlap(
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDIYAggregateDataSetFilter::GetExtent(vtkDataSet* dataSet, int extent[6])
 {
   if (vtkImageData* id = vtkImageData::SafeDownCast(dataSet))
@@ -548,7 +537,7 @@ void vtkDIYAggregateDataSetFilter::GetExtent(vtkDataSet* dataSet, int extent[6])
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDIYAggregateDataSetFilter::ExtractDataSetInformation(vtkDataSet* source, vtkDataSet* target)
 {
   if (!source)
@@ -659,19 +648,39 @@ void vtkDIYAggregateDataSetFilter::ExtractDataSetInformation(vtkDataSet* source,
   }
   target->GetPointData()->CopyStructuredData(
     source->GetPointData(), sourceExtent, targetExtent, !this->OutputInitialized);
-  sourceExtent[1]--;
-  sourceExtent[3]--;
-  sourceExtent[5]--;
-  targetExtent[1]--;
-  targetExtent[3]--;
-  targetExtent[5]--;
+  // keep in mind that for 1D or 2D structured grids that we still have cell data
+  // but the extent in that topological direction is already 0 so we can't decrement it
+  if (sourceExtent[1] > sourceExtent[0])
+  {
+    sourceExtent[1]--;
+  }
+  if (sourceExtent[3] > sourceExtent[2])
+  {
+    sourceExtent[3]--;
+  }
+  if (sourceExtent[5] > sourceExtent[4])
+  {
+    sourceExtent[5]--;
+  }
+  if (targetExtent[1] > targetExtent[0])
+  {
+    targetExtent[1]--;
+  }
+  if (targetExtent[3] > targetExtent[2])
+  {
+    targetExtent[3]--;
+  }
+  if (targetExtent[5] > targetExtent[4])
+  {
+    targetExtent[5]--;
+  }
   target->GetCellData()->CopyStructuredData(
     source->GetCellData(), sourceExtent, targetExtent, !this->OutputInitialized);
 
   this->OutputInitialized = true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDIYAggregateDataSetFilter::ExtractRectilinearGridCoordinates(int* sourceExtent,
   int* targetExtent, vtkDataArray* sourceCoordinates, vtkDataArray* targetCoordinates)
 {
@@ -685,9 +694,10 @@ void vtkDIYAggregateDataSetFilter::ExtractRectilinearGridCoordinates(int* source
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDIYAggregateDataSetFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "OutputInitialized: " << this->OutputInitialized << endl;
 }
+VTK_ABI_NAMESPACE_END

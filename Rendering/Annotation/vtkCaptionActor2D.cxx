@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCaptionActor2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCaptionActor2D.h"
 
 #include "vtkActor.h"
@@ -33,6 +21,7 @@
 #include "vtkTrivialProducer.h"
 #include "vtkViewport.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCaptionActor2D);
 
 vtkCxxSetObjectMacro(vtkCaptionActor2D, CaptionTextProperty, vtkTextProperty);
@@ -48,7 +37,7 @@ public:
 
 vtkStandardNewMacro(vtkCaptionActor2DConnection);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCaptionActor2D::vtkCaptionActor2D()
 {
   // Positioning information
@@ -172,7 +161,7 @@ vtkCaptionActor2D::vtkCaptionActor2D()
   this->LeaderActor3D->SetMapper(this->LeaderMapper3D);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCaptionActor2D::~vtkCaptionActor2D()
 {
   this->AttachmentPointCoordinate->Delete();
@@ -202,13 +191,13 @@ vtkCaptionActor2D::~vtkCaptionActor2D()
   this->SetCaptionTextProperty(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionActor2D::SetLeaderGlyphConnection(vtkAlgorithmOutput* ao)
 {
   this->LeaderGlyphConnectionHolder->SetInputConnection(ao);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionActor2D::SetLeaderGlyphData(vtkPolyData* leader)
 {
   vtkTrivialProducer* tp = vtkTrivialProducer::New();
@@ -217,7 +206,7 @@ void vtkCaptionActor2D::SetLeaderGlyphData(vtkPolyData* leader)
   tp->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkCaptionActor2D::GetLeaderGlyph()
 {
   if (this->LeaderGlyphConnectionHolder->GetNumberOfInputConnections(0) < 1)
@@ -227,19 +216,19 @@ vtkPolyData* vtkCaptionActor2D::GetLeaderGlyph()
   return vtkPolyData::SafeDownCast(this->LeaderGlyphConnectionHolder->GetInputDataObject(0, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionActor2D::SetCaption(const char* caption)
 {
   this->TextActor->SetInput(caption);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkCaptionActor2D::GetCaption()
 {
   return this->TextActor->GetInput();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -277,7 +266,7 @@ int vtkCaptionActor2D::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCaptionActor2D::RenderOpaqueGeometry(vtkViewport* viewport)
 {
   // Build the caption (almost always needed so we don't check mtime)
@@ -443,7 +432,7 @@ int vtkCaptionActor2D::RenderOpaqueGeometry(vtkViewport* viewport)
 
     // compute the scale
     double length = this->GetLeaderGlyph()->GetLength();
-    int* sze = viewport->GetSize();
+    const int* sze = viewport->GetSize();
     int numPixels = static_cast<int>(
       this->LeaderGlyphSize * sqrt(static_cast<double>(sze[0] * sze[0] + sze[1] * sze[1])));
     numPixels =
@@ -523,7 +512,7 @@ int vtkCaptionActor2D::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkCaptionActor2D::HasTranslucentPolygonalGeometry()
@@ -531,7 +520,7 @@ vtkTypeBool vtkCaptionActor2D::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionActor2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -574,7 +563,7 @@ void vtkCaptionActor2D::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "AttachEdgeOnly: " << (this->AttachEdgeOnly ? "On\n" : "Off\n");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCaptionActor2D::ShallowCopy(vtkProp* prop)
 {
   vtkCaptionActor2D* a = vtkCaptionActor2D::SafeDownCast(prop);
@@ -602,3 +591,4 @@ void vtkCaptionActor2D::ShallowCopy(vtkProp* prop)
   // Now do superclass
   this->vtkActor2D::ShallowCopy(prop);
 }
+VTK_ABI_NAMESPACE_END

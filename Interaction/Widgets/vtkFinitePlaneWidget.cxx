@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFinitePlaneWidget.cxx
-
-  Copyright (c)
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkFinitePlaneWidget.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCommand.h"
@@ -25,9 +13,10 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkFinitePlaneWidget);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFinitePlaneWidget::vtkFinitePlaneWidget()
 {
   this->WidgetState = vtkFinitePlaneWidget::Start;
@@ -43,22 +32,22 @@ vtkFinitePlaneWidget::vtkFinitePlaneWidget()
     vtkCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkFinitePlaneWidget::MoveAction);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFinitePlaneWidget::~vtkFinitePlaneWidget() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFinitePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFinitePlaneWidget::SetRepresentation(vtkFinitePlaneRepresentation* r)
 {
   this->Superclass::SetWidgetRepresentation(r);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFinitePlaneWidget::SelectAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -93,7 +82,7 @@ void vtkFinitePlaneWidget::SelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFinitePlaneWidget::MoveAction(vtkAbstractWidget* w)
 {
   vtkFinitePlaneWidget* self = reinterpret_cast<vtkFinitePlaneWidget*>(w);
@@ -142,7 +131,7 @@ void vtkFinitePlaneWidget::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFinitePlaneWidget::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkFinitePlaneWidget* self = reinterpret_cast<vtkFinitePlaneWidget*>(w);
@@ -169,7 +158,7 @@ void vtkFinitePlaneWidget::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFinitePlaneWidget::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -178,7 +167,7 @@ void vtkFinitePlaneWidget::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFinitePlaneWidget::UpdateCursorShape(int state)
 {
   // So as to change the cursor shape when the mouse is poised over
@@ -197,3 +186,4 @@ int vtkFinitePlaneWidget::UpdateCursorShape(int state)
 
   return 0;
 }
+VTK_ABI_NAMESPACE_END

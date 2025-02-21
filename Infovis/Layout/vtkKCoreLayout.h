@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkKCoreLayout.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkKCoreLayout
  * @brief   Produces a layout for a graph labeled with K-Core
@@ -56,6 +41,7 @@
 #include "vtkGraphAlgorithm.h"
 #include "vtkInfovisLayoutModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKINFOVISLAYOUT_EXPORT vtkKCoreLayout : public vtkGraphAlgorithm
 {
 public:
@@ -71,15 +57,15 @@ public:
 
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
-  //@{
+  ///@{
   /**
    * Set the name of the vertex attribute array storing k-core labels.
    * Default: kcore
    */
   vtkSetStringMacro(KCoreLabelArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Output polar coordinates for vertices if True.  Default column names are
    * coord_radius, coord_angle.
@@ -88,9 +74,9 @@ public:
   vtkGetMacro(Polar, bool);
   vtkSetMacro(Polar, bool);
   vtkBooleanMacro(Polar, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set whether or not to convert output to cartesian coordinates.  If false, coordinates
    * will be returned in polar coordinates (radius, angle).
@@ -99,9 +85,9 @@ public:
   vtkGetMacro(Cartesian, bool);
   vtkSetMacro(Cartesian, bool);
   vtkBooleanMacro(Cartesian, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Polar coordinates array name for radius values.
    * This is only used if OutputCartesianCoordinates is False.
@@ -109,9 +95,9 @@ public:
    */
   vtkSetStringMacro(PolarCoordsRadiusArrayName);
   vtkGetStringMacro(PolarCoordsRadiusArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Polar coordinates array name for angle values in radians.
    * This is only used if OutputCartesianCoordinates is False.
@@ -119,9 +105,9 @@ public:
    */
   vtkSetStringMacro(PolarCoordsAngleArrayName);
   vtkGetStringMacro(PolarCoordsAngleArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Cartesian coordinates array name for the X coordinates.
    * This is only used if OutputCartesianCoordinates is True.
@@ -129,9 +115,9 @@ public:
    */
   vtkSetStringMacro(CartesianCoordsXArrayName);
   vtkGetStringMacro(CartesianCoordsXArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Cartesian coordinates array name for the Y coordinates.
    * This is only used if OutputCartesianCoordinates is True.
@@ -139,25 +125,25 @@ public:
    */
   vtkSetStringMacro(CartesianCoordsYArrayName);
   vtkGetStringMacro(CartesianCoordsYArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Epsilon value used in the algorithm.
    * Default = 0.2
    */
   vtkSetMacro(Epsilon, float);
   vtkGetMacro(Epsilon, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Unit Radius value used in the algorithm.
    * Default = 1.0
    */
   vtkSetMacro(UnitRadius, float);
   vtkGetMacro(UnitRadius, float);
-  //@}
+  ///@}
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -181,4 +167,5 @@ private:
   void operator=(const vtkKCoreLayout&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

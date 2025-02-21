@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSkybox.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class vtkSkybox
  * @brief Renders a skybox environment
@@ -24,8 +12,10 @@
 
 #include "vtkActor.h"
 #include "vtkRenderingCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"       // For VTK_MARSHALAUTO
 
-class VTKRENDERINGCORE_EXPORT vtkSkybox : public vtkActor
+VTK_ABI_NAMESPACE_BEGIN
+class VTKRENDERINGCORE_EXPORT VTK_MARSHALAUTO vtkSkybox : public vtkActor
 {
 public:
   static vtkSkybox* New();
@@ -39,7 +29,7 @@ public:
   using Superclass::GetBounds;
   double* GetBounds() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the projection to be used
    */
@@ -56,9 +46,9 @@ public:
   void SetProjectionToSphere() { this->SetProjection(vtkSkybox::Sphere); }
   void SetProjectionToStereoSphere() { this->SetProjection(vtkSkybox::StereoSphere); }
   void SetProjectionToFloor() { this->SetProjection(vtkSkybox::Floor); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the plane equation for the floor.
    */
@@ -66,7 +56,30 @@ public:
   vtkGetVector4Macro(FloorPlane, float);
   vtkSetVector3Macro(FloorRight, float);
   vtkGetVector3Macro(FloorRight, float);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the [u,v] texture coordinate scaling for the floor projection.
+   * Defaults to [1, 1] i.e. no scaling, which means the floor texture coordinates are computed
+   * based on the view coordinates of the plane points.
+   *
+   * \sa SetProjectionToFloor()
+   */
+  vtkGetVector2Macro(FloorTexCoordScale, float);
+  vtkSetVector2Macro(FloorTexCoordScale, float);
+  ///@}
+
+  ///@{
+  /**
+   * Define if the colors should be gamma corrected.
+   * This is generally required if the input texture is in linear color space.
+   * Default is off.
+   */
+  vtkGetMacro(GammaCorrect, bool);
+  vtkSetMacro(GammaCorrect, bool);
+  vtkBooleanMacro(GammaCorrect, bool);
+  ///@}
 
 protected:
   vtkSkybox();
@@ -75,10 +88,14 @@ protected:
   int Projection;
   float FloorPlane[4];
   float FloorRight[3];
+  float FloorTexCoordScale[2];
+
+  bool GammaCorrect = false;
 
 private:
   vtkSkybox(const vtkSkybox&) = delete;
   void operator=(const vtkSkybox&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkSkybox_h

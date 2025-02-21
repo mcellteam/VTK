@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkScalarTree.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkScalarTree
  * @brief   organize data according to scalar values (used to accelerate contouring operations)
@@ -45,6 +33,7 @@
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCell;
 class vtkDataArray;
 class vtkDataSet;
@@ -54,13 +43,13 @@ class vtkTimeStamp;
 class VTKCOMMONEXECUTIONMODEL_EXPORT vtkScalarTree : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard type related macros and PrintSelf() method.
    */
   vtkTypeMacro(vtkScalarTree, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * This method is used to copy data members when cloning an instance of the
@@ -68,16 +57,16 @@ public:
    */
   virtual void ShallowCopy(vtkScalarTree* stree);
 
-  //@{
+  ///@{
   /**
    * Build the tree from the points/cells and scalars defining this
    * dataset.
    */
   virtual void SetDataSet(vtkDataSet*);
   vtkGetObjectMacro(DataSet, vtkDataSet);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Build the tree from the points/cells and scalars defining the
    * dataset and scalars provided. Typically the scalars come from
@@ -88,7 +77,7 @@ public:
    */
   virtual void SetScalars(vtkDataArray*);
   vtkGetObjectMacro(Scalars, vtkDataArray);
-  //@}
+  ///@}
 
   /**
    * Construct the scalar tree from the dataset provided. Checks build times
@@ -156,4 +145,5 @@ private:
   void operator=(const vtkScalarTree&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

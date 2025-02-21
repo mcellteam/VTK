@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtentSplitter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtentSplitter
  * @brief   Split an extent across other extents.
@@ -30,8 +18,10 @@
 #define vtkExtentSplitter_h
 
 #include "vtkCommonExecutionModelModule.h" // For export macro
+#include "vtkDeprecation.h"                // For VTK_DEPRECATED_IN_9_5_0
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkExtentSplitterInternals;
 
 class VTKCOMMONEXECUTIONMODEL_EXPORT vtkExtentSplitter : public vtkObject
@@ -41,7 +31,7 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkExtentSplitter* New();
 
-  //@{
+  ///@{
   /**
    * Add/Remove a source providing the given extent.  Sources with
    * higher priority numbers are favored.  Source id numbers and
@@ -51,16 +41,16 @@ public:
   void AddExtentSource(int id, int priority, int* extent);
   void RemoveExtentSource(int id);
   void RemoveAllExtentSources();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add an extent to the queue of extents to be split among the
    * available sources.
    */
   void AddExtent(int x0, int x1, int y0, int y1, int z0, int z1);
   void AddExtent(int* extent);
-  //@}
+  ///@}
 
   /**
    * Split the extents currently in the queue among the available
@@ -77,7 +67,7 @@ public:
    */
   int GetNumberOfSubExtents();
 
-  //@{
+  ///@{
   /**
    * Get the sub-extent associated with the given index.  Use
    * GetSubExtentSource to get the id of the source from which this
@@ -86,7 +76,7 @@ public:
    */
   int* GetSubExtent(int index) VTK_SIZEHINT(6);
   void GetSubExtent(int index, int* extent);
-  //@}
+  ///@}
 
   /**
    * Get the id of the source from which the sub-extent associated
@@ -95,7 +85,7 @@ public:
    */
   int GetSubExtentSource(int index);
 
-  //@{
+  ///@{
   /**
    * Get/Set whether "point mode" is on.  In point mode, sub-extents
    * are generated to ensure every point in the update request is
@@ -106,7 +96,7 @@ public:
   vtkGetMacro(PointMode, vtkTypeBool);
   vtkSetMacro(PointMode, vtkTypeBool);
   vtkBooleanMacro(PointMode, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkExtentSplitter();
@@ -115,7 +105,9 @@ protected:
   // Internal utility methods.
   void SplitExtent(int* extent, int* subextent);
   int IntersectExtents(const int* extent1, const int* extent2, int* result);
+  VTK_DEPRECATED_IN_9_5_0("Use std::min instead")
   int Min(int a, int b);
+  VTK_DEPRECATED_IN_9_5_0("Use std::max instead")
   int Max(int a, int b);
 
   // Internal implementation data.
@@ -131,4 +123,5 @@ private:
   void operator=(const vtkExtentSplitter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

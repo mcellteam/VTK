@@ -1,19 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkActor.h"
 
+#include "vtkCompositePolyDataMapper.h"
 #include "vtkDataArray.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
@@ -33,6 +22,7 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkActor, Texture, vtkTexture);
 vtkCxxSetObjectMacro(vtkActor, Mapper, vtkMapper);
 vtkCxxSetObjectMacro(vtkActor, BackfaceProperty, vtkProperty);
@@ -59,7 +49,7 @@ vtkActor::vtkActor()
   vtkMath::UninitializeBounds(this->MapperBounds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkActor::~vtkActor()
 {
   if (this->Property != nullptr)
@@ -82,7 +72,7 @@ vtkActor::~vtkActor()
   this->SetTexture(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Shallow copy of an actor.
 void vtkActor::ShallowCopy(vtkProp* prop)
 {
@@ -93,13 +83,14 @@ void vtkActor::ShallowCopy(vtkProp* prop)
     this->SetProperty(a->GetProperty());
     this->SetBackfaceProperty(a->GetBackfaceProperty());
     this->SetTexture(a->GetTexture());
+    this->SetPropertyKeys(a->GetPropertyKeys());
   }
 
   // Now do superclass
   this->vtkProp3D::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkActor::GetActors(vtkPropCollection* ac)
 {
   ac->AddItem(this);
@@ -122,15 +113,21 @@ vtkTypeBool vtkActor::HasOpaqueGeometry()
     // force creation of a property
     this->GetProperty();
   }
-  bool is_opaque = (this->Property->GetOpacity() >= 1.0);
+  bool hasOpaque = (this->Property->GetOpacity() >= 1.0);
 
   // are we using an opaque texture, if any?
-  is_opaque = is_opaque && (this->Texture == nullptr || this->Texture->IsTranslucent() == 0);
+  hasOpaque = hasOpaque && (this->Texture == nullptr || this->Texture->IsTranslucent() == 0);
 
   // are we using an opaque scalar array, if any?
-  is_opaque = is_opaque && (this->Mapper == nullptr || this->Mapper->HasOpaqueGeometry());
+  hasOpaque = hasOpaque && (this->Mapper == nullptr || this->Mapper->HasOpaqueGeometry());
 
-  return is_opaque ? 1 : 0;
+  // are we using a composite mapper that could have an opacity override per block?
+  if (auto* cpdm = vtkCompositePolyDataMapper::SafeDownCast(this->Mapper))
+  {
+    hasOpaque = hasOpaque || cpdm->HasOpaqueGeometry();
+  }
+
+  return hasOpaque ? 1 : 0;
 }
 
 vtkTypeBool vtkActor::HasTranslucentPolygonalGeometry()
@@ -169,14 +166,14 @@ vtkTypeBool vtkActor::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // should be called from the render methods only
 int vtkActor::GetIsOpaque()
 {
   return this->HasOpaqueGeometry();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This causes the actor to be rendered. It in turn will render the actor's
 // property, texture map and then mapper. If a property hasn't been
 // assigned, then the actor will create one automatically. Note that a
@@ -244,7 +241,7 @@ int vtkActor::RenderOpaqueGeometry(vtkViewport* vp)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkActor::RenderTranslucentPolygonalGeometry(vtkViewport* vp)
 {
   int renderedSomething = 0;
@@ -312,7 +309,7 @@ int vtkActor::RenderTranslucentPolygonalGeometry(vtkViewport* vp)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkActor::ReleaseGraphicsResources(vtkWindow* win)
 {
   vtkRenderWindow* renWin = static_cast<vtkRenderWindow*>(win);
@@ -340,13 +337,13 @@ void vtkActor::ReleaseGraphicsResources(vtkWindow* win)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProperty* vtkActor::MakeProperty()
 {
   return vtkProperty::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkProperty* vtkActor::GetProperty()
 {
   if (this->Property == nullptr)
@@ -358,7 +355,7 @@ vtkProperty* vtkActor::GetProperty()
   return this->Property;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the bounds for this Actor as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
 double* vtkActor::GetBounds()
 {
@@ -394,8 +391,13 @@ double* vtkActor::GetBounds()
   // of caching. If the values returned this time are different, or
   // the modified time of this class is newer than the cached time,
   // then we need to rebuild.
+  //
+  // `clang-tidy` is wary of this mechanism, but we are also OK if different
+  // NaN representations busts the cache (NaN bounds are likely problematic
+  // elsewhere too).
+  // NOLINTNEXTLINE(bugprone-suspicious-memory-comparison)
   if ((memcmp(this->MapperBounds, bounds, 6 * sizeof(double)) != 0) ||
-    (this->GetMTime() > this->BoundsMTime))
+    (this->GetMTime() > this->BoundsMTime) || this->CoordinateSystem != vtkProp3D::WORLD)
   {
     vtkDebugMacro(<< "Recomputing bounds...");
 
@@ -465,7 +467,7 @@ double* vtkActor::GetBounds()
   return this->Bounds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkActor::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
@@ -492,7 +494,7 @@ vtkMTimeType vtkActor::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkActor::GetRedrawMTime()
 {
   vtkMTimeType mTime = this->GetMTime();
@@ -514,7 +516,7 @@ vtkMTimeType vtkActor::GetRedrawMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -562,7 +564,7 @@ void vtkActor::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "ForceTranslucent: " << (this->ForceTranslucent ? "true" : "false") << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkActor::GetSupportsSelection()
 {
   if (this->Mapper)
@@ -581,3 +583,4 @@ void vtkActor::ProcessSelectorPixelBuffers(
     this->Mapper->ProcessSelectorPixelBuffers(sel, pixeloffsets, this);
   }
 }
+VTK_ABI_NAMESPACE_END

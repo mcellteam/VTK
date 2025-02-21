@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataObjectTree.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataObjectTree
  * @brief   provides implementation for most abstract
@@ -35,7 +23,9 @@
 
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkCompositeDataSet.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCompositeDataIterator;
 class vtkDataObjectTreeIterator;
 class vtkDataObjectTreeInternals;
@@ -43,7 +33,7 @@ class vtkInformation;
 class vtkInformationStringKey;
 class vtkDataObject;
 
-class VTKCOMMONDATAMODEL_EXPORT vtkDataObjectTree : public vtkCompositeDataSet
+class VTKCOMMONDATAMODEL_EXPORT VTK_MARSHALAUTO vtkDataObjectTree : public vtkCompositeDataSet
 {
 public:
   vtkTypeMacro(vtkDataObjectTree, vtkCompositeDataSet);
@@ -83,8 +73,10 @@ public:
    */
   void SetDataSetFrom(vtkDataObjectTreeIterator* iter, vtkDataObject* dataObj);
 
+  // Needed because, otherwise vtkCompositeData::GetDataSet(unsigned int flatIndex) is hidden.
+  using Superclass::GetDataSet;
   /**
-   * Returns the dataset located at the positiong pointed by the iterator.
+   * Returns the dataset located at the position pointed by the iterator.
    * The iterator does not need to be iterating over this dataset itself. It can
    * be an iterator for composite dataset with similar structure (achieved by
    * using CopyStructure).
@@ -107,7 +99,7 @@ public:
    * be an iterator for composite dataset with similar structure (achieved by
    * using CopyStructure).
    */
-  virtual int HasMetaData(vtkCompositeDataIterator* iter);
+  virtual vtkTypeBool HasMetaData(vtkCompositeDataIterator* iter);
 
   /**
    * Return the actual size of the data in kibibytes (1024 bytes). This number
@@ -120,13 +112,14 @@ public:
    */
   void Initialize() override;
 
-  //@{
+  ///@{
   /**
-   * Shallow and Deep copy.
+   * CompositeShallow, Shallow and Deep copy.
    */
+  void CompositeShallowCopy(vtkCompositeDataSet* src) override;
   void ShallowCopy(vtkDataObject* src) override;
   void DeepCopy(vtkDataObject* src) override;
-  //@}
+  ///@}
 
   /**
    * Returns the total number of points of all blocks. This will
@@ -142,38 +135,10 @@ public:
    */
   vtkIdType GetNumberOfCells() override;
 
-  //@{
-  /**
-   * Retrieve an instance of this class from an information object.
-   */
-  static vtkDataObjectTree* GetData(vtkInformation* info);
-  static vtkDataObjectTree* GetData(vtkInformationVector* v, int i = 0);
-  //@}
-
-protected:
-  vtkDataObjectTree();
-  ~vtkDataObjectTree() override;
-
-  /**
-   * Set the number of children.
-   */
-  void SetNumberOfChildren(unsigned int num);
-
   /**
    * Get the number of children.
    */
   unsigned int GetNumberOfChildren();
-
-  /**
-   * Set child dataset at a given index. The number of children is adjusted to
-   * to be greater than the index specified.
-   */
-  void SetChild(unsigned int index, vtkDataObject*);
-
-  /**
-   * Remove the child at a given index.
-   */
-  void RemoveChild(unsigned int index);
 
   /**
    * Returns a child dataset at a given index.
@@ -188,15 +153,56 @@ protected:
   vtkInformation* GetChildMetaData(unsigned int index);
 
   /**
+   * Returns if meta-data information is available for the given child index.
+   * Returns 1 is present, 0 otherwise.
+   */
+  vtkTypeBool HasChildMetaData(unsigned int index);
+
+  ///@{
+  /**
+   * Retrieve an instance of this class from an information object.
+   */
+  static vtkDataObjectTree* GetData(vtkInformation* info);
+  static vtkDataObjectTree* GetData(vtkInformationVector* v, int i = 0);
+  ///@}
+
+  /**
+   * Overridden to return `VTK_DATA_OBJECT_TREE`.
+   */
+  int GetDataObjectType() override { return VTK_DATA_OBJECT_TREE; }
+
+protected:
+  vtkDataObjectTree();
+  ~vtkDataObjectTree() override;
+
+  /**
+   * Set the number of children.
+   */
+  void SetNumberOfChildren(unsigned int num);
+
+  /**
+   * Set child dataset at a given index. The number of children is adjusted to
+   * to be greater than the index specified.
+   */
+  void SetChild(unsigned int index, vtkDataObject*);
+
+  /**
+   * Remove the child at a given index.
+   */
+  void RemoveChild(unsigned int index);
+
+  /**
    * Sets the meta-data at a given index.
    */
   void SetChildMetaData(unsigned int index, vtkInformation* info);
 
   /**
-   * Returns if meta-data information is available for the given child index.
-   * Returns 1 is present, 0 otherwise.
+   * When copying structure from another vtkDataObjectTree, this method gets
+   * called for create a new non-leaf for the `other` node. Subclasses can
+   * override this to create a different type of vtkDataObjectTree subclass, if
+   * appropriate. Default implementation, simply calls `NewInstance` on other;
    */
-  int HasChildMetaData(unsigned int index);
+  virtual vtkDataObjectTree* CreateForCopyStructure(vtkDataObjectTree* other);
 
   // The internal datastructure. Subclasses need not access this directly.
   vtkDataObjectTreeInternals* Internals;
@@ -208,4 +214,5 @@ private:
   void operator=(const vtkDataObjectTree&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

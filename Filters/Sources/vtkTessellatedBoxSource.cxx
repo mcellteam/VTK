@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTessellatedBoxSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTessellatedBoxSource.h"
 #include "vtkCellArray.h"
 #include "vtkInformation.h"
@@ -21,9 +9,10 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTessellatedBoxSource);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTessellatedBoxSource::vtkTessellatedBoxSource()
 {
   this->Bounds[0] = -0.5;
@@ -41,7 +30,7 @@ vtkTessellatedBoxSource::vtkTessellatedBoxSource()
   this->SetNumberOfInputPorts(0); // this is a source.
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTessellatedBoxSource::~vtkTessellatedBoxSource() = default;
 
 // Duplicate point method.
@@ -86,7 +75,7 @@ static int faces[6][4] = { { 3, 10, -7, -2 }, // 0: -x face
   { -1, 2, 6, -4 },                           // 4: -z face
   { 9, 11, -12, -10 } };                      // 5: +z face
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Called by the superclass. Actual creation of the points and cells
 // happens here.
@@ -169,7 +158,7 @@ void vtkTessellatedBoxSource::DuplicateSharedPointsMethod(
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTessellatedBoxSource::MinimalPointsMethod(
   double* bounds, vtkPoints* points, vtkCellArray* polys)
 {
@@ -379,7 +368,7 @@ void vtkTessellatedBoxSource::MinimalPointsMethod(
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Compute the pointId of point (i,j) of face f.
 // Used by MinimalPointsMethod().
@@ -534,7 +523,7 @@ vtkIdType vtkTessellatedBoxSource::LocalFacePointCoordinatesToPointId(int f, int
   return result;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Build one of the face of the box with some level of tessellation.
 // facePoints[0] is the lower-left point
@@ -637,7 +626,7 @@ void vtkTessellatedBoxSource::BuildFace(vtkPoints* points, vtkCellArray* polys,
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTessellatedBoxSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -674,3 +663,4 @@ void vtkTessellatedBoxSource::PrintSelf(ostream& os, vtkIndent indent)
   os << endl;
   os << indent << "Output Points Precision: " << this->OutputPointsPrecision << endl;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRendererDelegate.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkRendererDelegate
  * @brief   Render the props of a vtkRenderer
@@ -32,6 +20,7 @@
 #include "vtkObject.h"
 #include "vtkRenderingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 
 class VTKRENDERINGCORE_EXPORT vtkRendererDelegate : public vtkObject
@@ -45,7 +34,7 @@ public:
    */
   virtual void Render(vtkRenderer* r) = 0;
 
-  //@{
+  ///@{
   /**
    * Tells if the delegate has to be used by the renderer or not.
    * Initial value is off.
@@ -53,7 +42,7 @@ public:
   vtkSetMacro(Used, bool);
   vtkGetMacro(Used, bool);
   vtkBooleanMacro(Used, bool);
-  //@}
+  ///@}
 
 protected:
   vtkRendererDelegate();
@@ -66,4 +55,5 @@ private:
   void operator=(const vtkRendererDelegate&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

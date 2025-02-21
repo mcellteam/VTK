@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLabelHierarchyIterator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkLabelHierarchyIterator
  * @brief   iterator over vtkLabelHierarchy
@@ -31,8 +15,8 @@
 #include "vtkObject.h"
 #include "vtkRenderingLabelModule.h" // For export macro
 #include "vtkStdString.h"            // for std string
-#include "vtkUnicodeString.h"        // for unicode string
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdTypeArray;
 class vtkLabelHierarchy;
 class vtkPolyData;
@@ -87,11 +71,6 @@ public:
   virtual vtkStdString GetLabel();
 
   /**
-   * Retrieves the current label as a unicode string.
-   */
-  virtual vtkUnicodeString GetUnicodeLabel();
-
-  /**
    * Retrieves the current label orientation.
    */
   virtual double GetOrientation();
@@ -101,12 +80,12 @@ public:
    */
   virtual vtkIdType GetLabelId() { return -1; }
 
-  //@{
+  ///@{
   /**
    * Get the label hierarchy associated with the current label.
    */
   vtkGetObjectMacro(Hierarchy, vtkLabelHierarchy);
-  //@}
+  ///@}
 
   /**
    * Sets a polydata to fill with geometry representing
@@ -136,7 +115,7 @@ public:
    */
   virtual void BoxAllNodes(vtkPolyData*);
 
-  //@{
+  ///@{
   /**
    * Set/get whether all nodes in the hierarchy should be added to the TraversedBounds
    * polydata or only those traversed.
@@ -145,7 +124,7 @@ public:
    */
   vtkSetMacro(AllBounds, int);
   vtkGetMacro(AllBounds, int);
-  //@}
+  ///@}
 
 protected:
   vtkLabelHierarchyIterator();
@@ -170,4 +149,5 @@ private:
   void operator=(const vtkLabelHierarchyIterator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkLabelHierarchyIterator_h

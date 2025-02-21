@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBandedPolyDataContourFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkBandedPolyDataContourFilter.h"
 
 #include <algorithm>
@@ -34,6 +22,7 @@
 
 #include <cfloat>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkBandedPolyDataContourFilter);
 
 namespace
@@ -142,27 +131,29 @@ struct vtkBandedPolyDataContourFilterInternals
 // Construct object.
 vtkBandedPolyDataContourFilter::vtkBandedPolyDataContourFilter()
 {
-  Internal = new vtkBandedPolyDataContourFilterInternals;
+  this->Internal = new vtkBandedPolyDataContourFilterInternals;
+  this->ContourValues = vtkSmartPointer<vtkContourValues>::New();
 
-  this->ContourValues = vtkContourValues::New();
   this->Clipping = 0;
   this->ScalarMode = VTK_SCALAR_MODE_INDEX;
   this->Component = 0;
 
   this->SetNumberOfOutputPorts(2);
 
-  vtkPolyData* output2 = vtkPolyData::New();
+  vtkNew<vtkPolyData> output2;
   this->GetExecutive()->SetOutputData(1, output2);
-  output2->Delete();
   this->ClipTolerance = FLT_EPSILON;
   this->Internal->ClipTolerance = FLT_EPSILON;
   this->GenerateContourEdges = 0;
+
+  // by default process active point scalars
+  this->SetInputArrayToProcess(
+    0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::SCALARS);
 }
 
 //------------------------------------------------------------------------------
 vtkBandedPolyDataContourFilter::~vtkBandedPolyDataContourFilter()
 {
-  this->ContourValues->Delete();
   delete this->Internal;
 }
 
@@ -263,7 +254,7 @@ int vtkBandedPolyDataContourFilter::ClipEdge(int v1, int v2, vtkPoints* newPts,
 }
 
 //------------------------------------------------------------------------------
-inline int vtkBandedPolyDataContourFilter::InsertCell(
+int vtkBandedPolyDataContourFilter::InsertCell(
   vtkCellArray* cells, int npts, const vtkIdType* pts, int cellId, double s, vtkFloatArray* newS)
 {
   int idx = this->ComputeClippedIndex(s);
@@ -276,7 +267,7 @@ inline int vtkBandedPolyDataContourFilter::InsertCell(
 }
 
 //------------------------------------------------------------------------------
-inline int vtkBandedPolyDataContourFilter::InsertLine(
+int vtkBandedPolyDataContourFilter::InsertLine(
   vtkCellArray* cells, vtkIdType pt1, vtkIdType pt2, int cellId, double s, vtkFloatArray* newS)
 {
   int idx = this->ComputeClippedIndex(s);
@@ -340,9 +331,8 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
   vtkPointData* outPD = output->GetPointData();
   vtkCellData* outCD = output->GetCellData();
   vtkPoints* inPts = input->GetPoints();
-  vtkDataArray* inScalars = pd->GetScalars();
-  int abort = 0;
-  vtkPoints* newPts;
+  vtkDataArray* inScalars = this->GetInputArrayToProcess(0, inputVector);
+  bool abort = false;
   vtkIdType npts = 0;
   vtkIdType cellId = 0;
   const vtkIdType* pts = nullptr;
@@ -360,9 +350,15 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
   //
 
   numCells = input->GetNumberOfCells();
-  if (!inPts || (numPts = inPts->GetNumberOfPoints()) < 1 || !inScalars || numCells < 1)
+  if (!inPts || (numPts = inPts->GetNumberOfPoints()) < 1 || numCells < 1)
   {
     vtkErrorMacro(<< "No input data!");
+    return 1;
+  }
+
+  if (!inScalars)
+  {
+    vtkErrorMacro(<< "No input data: point scalars required!");
     return 1;
   }
 
@@ -445,18 +441,19 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
 
   // The original set of points and point data are copied. Later on
   // intersection points due to clipping will be created.
-  newPts = vtkPoints::New();
+  vtkNew<vtkPoints> newPts;
 
   // Note: since we use the output scalars in the execution of the algorithm,
   // the output point scalars MUST BE double or bad things happen due to
   // numerical precision issues.
   newPts->Allocate(estimatedSize, estimatedSize);
   outPD->CopyScalarsOff();
+  outPD->CopyFieldOff(inScalars->GetName());
   outPD->InterpolateAllocate(pd, 3 * numPts, numPts);
-  vtkDoubleArray* outScalars = vtkDoubleArray::New();
+  vtkNew<vtkDoubleArray> outScalars;
+  outScalars->SetName(inScalars->GetName());
   outScalars->Allocate(3 * numPts, numPts);
   outPD->SetScalars(outScalars);
-  outScalars->Delete();
 
   for (int i = 0; i < numPts; i++)
   {
@@ -467,13 +464,13 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
   }
 
   // These are the new cell scalars
-  vtkFloatArray* newScalars = vtkFloatArray::New();
+  vtkNew<vtkFloatArray> newScalars;
   newScalars->Allocate(numCells * 5, numCells);
   newScalars->SetName("Scalars");
 
   // Used to keep track of intersections
-  vtkEdgeTable* edgeTable = vtkEdgeTable::New();
-  vtkCellArray* intList = vtkCellArray::New(); // intersection point ids
+  vtkNew<vtkEdgeTable> edgeTable;
+  vtkNew<vtkCellArray> intList; // intersection point ids
 
   // All vertices are filled and passed through; poly-vertices are broken
   // into single vertices. Cell data per vertex is set.
@@ -481,10 +478,10 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
   if (input->GetVerts()->GetNumberOfCells() > 0)
   {
     vtkCellArray* verts = input->GetVerts();
-    vtkCellArray* newVerts = vtkCellArray::New();
+    vtkNew<vtkCellArray> newVerts;
     newVerts->AllocateCopy(verts);
     for (verts->InitTraversal(); verts->GetNextCell(npts, pts) && !abort;
-         abort = this->GetAbortExecute())
+         abort = this->CheckAbort())
     {
       for (int i = 0; i < npts; i++)
       {
@@ -493,7 +490,6 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
       }
     }
     output->SetVerts(newVerts);
-    newVerts->Delete();
   }
   this->UpdateProgress(0.05);
 
@@ -506,22 +502,22 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
     maxCellSize = lines->GetMaxCellSize();
     maxCellSize *= (1 + numClipValues);
 
-    vtkIdType* fullLine = new vtkIdType[maxCellSize];
-    vtkCellArray* newLines = vtkCellArray::New();
+    std::vector<vtkIdType> fullLine(maxCellSize);
+    vtkNew<vtkCellArray> newLines;
     newLines->AllocateCopy(lines);
     edgeTable->InitEdgeInsertion(numPts, 1); // store attributes on edge
 
     // start by generating intersection points
     for (lines->InitTraversal(); lines->GetNextCell(npts, pts) && !abort;
-         abort = this->GetAbortExecute())
+         abort = this->CheckAbort())
     {
       for (int i = 0; i < (npts - 1); i++)
       {
-        numEdgePts =
-          this->ClipEdge(pts[i], pts[i + 1], newPts, inScalars, outScalars, pd, outPD, fullLine);
+        numEdgePts = this->ClipEdge(
+          pts[i], pts[i + 1], newPts, inScalars, outScalars, pd, outPD, fullLine.data());
         if (numEdgePts > 0) // there is an intersection
         {
-          intList->InsertNextCell(numEdgePts, fullLine);
+          intList->InsertNextCell(numEdgePts, fullLine.data());
           edgeTable->InsertEdge(pts[i], pts[i + 1], // associate ints with edge
             intList->GetNumberOfCells() - 1);
         }
@@ -534,7 +530,7 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
 
     // now create line segments
     for (lines->InitTraversal(); lines->GetNextCell(npts, pts) && !abort;
-         abort = this->GetAbortExecute())
+         abort = this->CheckAbort())
     {
       for (int i = 0; i < (npts - 1); i++)
       {
@@ -580,10 +576,7 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
       }
     }
 
-    delete[] fullLine;
-
     output->SetLines(newLines);
-    newLines->Delete();
   }
   this->UpdateProgress(0.1);
 
@@ -603,16 +596,14 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
     intList->Reset();
 
     vtkCellArray* polys = input->GetPolys();
-    vtkCellArray* tmpPolys = nullptr;
 
     // If contour edges requested, set things up.
-    vtkCellArray* contourEdges = nullptr;
+    vtkSmartPointer<vtkCellArray> contourEdges;
     if (this->GenerateContourEdges)
     {
-      contourEdges = vtkCellArray::New();
+      contourEdges = vtkSmartPointer<vtkCellArray>::New();
       contourEdges->AllocateEstimate(numCells, 2);
       this->GetContourEdgesOutput()->SetLines(contourEdges);
-      contourEdges->Delete();
       this->GetContourEdgesOutput()->SetPoints(newPts);
     }
 
@@ -629,10 +620,11 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
 
     // Lump strips and polygons together.
     // Decompose strips into triangles.
+    vtkSmartPointer<vtkCellArray> tmpPolys;
     if (numStrips > 0)
     {
       vtkCellArray* strips = input->GetStrips();
-      tmpPolys = vtkCellArray::New();
+      tmpPolys = vtkSmartPointer<vtkCellArray>::New();
       if (numPolys > 0)
       {
         tmpPolys->DeepCopy(polys);
@@ -655,7 +647,7 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
     vtkIdType count = 0;
     pointIds.resize(this->Internal->ClipValues.size(), -1);
     for (polys->InitTraversal(); polys->GetNextCell(npts, pts) && !abort;
-         abort = this->GetAbortExecute())
+         abort = this->CheckAbort())
     {
       if (!(++count % updateCount))
       {
@@ -669,10 +661,10 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
         if (edgeTable->IsEdge(v, vR) == -1)
         {
           numEdgePts =
-            this->ClipEdge(v, vR, newPts, inScalars, outScalars, pd, outPD, &pointIds[0]);
+            this->ClipEdge(v, vR, newPts, inScalars, outScalars, pd, outPD, pointIds.data());
           if (numEdgePts > 0)
           {
-            intList->InsertNextCell(numEdgePts, &pointIds[0]);
+            intList->InsertNextCell(numEdgePts, pointIds.data());
             edgeTable->InsertEdge(v, vR, // associate ints with edge
               intList->GetNumberOfCells() - 1);
           }
@@ -686,7 +678,7 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
 
     // Process polygons to produce output triangles------------------------
     //
-    vtkCellArray* newPolys = vtkCellArray::New();
+    vtkNew<vtkCellArray> newPolys;
     newPolys->AllocateCopy(polys);
     count = 0;
 
@@ -699,7 +691,7 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
     index.reserve(maxCellSize + 1);
 
     for (polys->InitTraversal(); polys->GetNextCell(npts, pts) && !abort;
-         abort = this->GetAbortExecute())
+         abort = this->CheckAbort())
     {
       if (!(++count % updateCount))
       {
@@ -767,8 +759,8 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
 
       // Find the starting vertex, i.e. the vertex with the lowest scalar value,
       // and rotate the indexing array such that it is the first of the indices
-      auto indexed_less = [&polygon, &point_less](
-                            int i1, int i2) { return point_less(polygon[i1], polygon[i2]); };
+      auto indexed_less = [&polygon, &point_less](int i1, int i2)
+      { return point_less(polygon[i1], polygon[i2]); };
       std::rotate(
         index.begin(), std::min_element(index.begin(), index.end(), indexed_less), index.end());
 
@@ -811,7 +803,8 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
       It l1 = index.end() - 1;
       while (r1 < l1)
       {
-        auto in_band = [&clip_scalar, &polygon](int i) {
+        auto in_band = [&clip_scalar, &polygon](int i)
+        {
           return (polygon[i].scalar == clip_scalar) ||
             ((polygon[i].type == PointType::VERTEX && polygon[i].scalar > clip_scalar));
         };
@@ -885,7 +878,7 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
           std::transform(r1, r, it, copyPointIds);
           vtkDebugMacro(<< "clip_scalar=" << clip_scalar << "\n"
                         << " pointIds=" << pointIds);
-          cellId = this->InsertCell(newPolys, static_cast<int>(pointIds.size()), &pointIds[0],
+          cellId = this->InsertCell(newPolys, static_cast<int>(pointIds.size()), pointIds.data(),
             cellId, clip_scalar, newScalars);
           if (this->GenerateContourEdges && r2 != l1)
           {
@@ -901,11 +894,6 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
     } // for all polygons
 
     output->SetPolys(newPolys);
-    newPolys->Delete();
-    if (tmpPolys)
-    {
-      tmpPolys->Delete();
-    }
   } // for all polygons (and strips) in input
 
   vtkDebugMacro(<< "Created " << cellId << " total cells\n");
@@ -916,16 +904,10 @@ int vtkBandedPolyDataContourFilter::RequestData(vtkInformation* vtkNotUsed(reque
 
   //  Update ourselves and release temporary memory
   //
-  intList->Delete();
-  edgeTable->Delete();
-
   output->SetPoints(newPts);
-  newPts->Delete();
 
   int arrayIdx = outCD->AddArray(newScalars);
   outCD->SetActiveAttribute(arrayIdx, vtkDataSetAttributes::SCALARS);
-
-  newScalars->Delete();
 
   output->Squeeze();
 
@@ -977,3 +959,4 @@ void vtkBandedPolyDataContourFilter::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Clip Tolerance: " << this->ClipTolerance << "\n";
 }
+VTK_ABI_NAMESPACE_END

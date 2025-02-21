@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFreeTypeLabelRenderStrategy.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFreeTypeLabelRenderStrategy
  * @brief   Renders labels with freetype
@@ -26,12 +14,15 @@
 
 #include "vtkLabelRenderStrategy.h"
 #include "vtkRenderingLabelModule.h" // For export macro
+#include "vtkWrappingHints.h"        // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor2D;
 class vtkTextRenderer;
 class vtkTextMapper;
 
-class VTKRENDERINGLABEL_EXPORT vtkFreeTypeLabelRenderStrategy : public vtkLabelRenderStrategy
+class VTKRENDERINGLABEL_EXPORT VTK_MARSHALAUTO vtkFreeTypeLabelRenderStrategy
+  : public vtkLabelRenderStrategy
 {
 public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
@@ -51,29 +42,14 @@ public:
   /**
    * Compute the bounds of a label. Must be performed after the renderer is set.
    */
-  void ComputeLabelBounds(vtkTextProperty* tprop, vtkStdString label, double bds[4]) override
-  {
-    this->Superclass::ComputeLabelBounds(tprop, label, bds);
-  }
-  void ComputeLabelBounds(vtkTextProperty* tprop, vtkUnicodeString label, double bds[4]) override;
+  void ComputeLabelBounds(vtkTextProperty* tprop, vtkStdString label, double bds[4]) override;
 
+  using vtkLabelRenderStrategy::RenderLabel;
   /**
    * Render a label at a location in world coordinates.
    * Must be performed between StartFrame() and EndFrame() calls.
    */
-  void RenderLabel(int x[2], vtkTextProperty* tprop, vtkStdString label) override
-  {
-    this->Superclass::RenderLabel(x, tprop, label);
-  }
-  void RenderLabel(int x[2], vtkTextProperty* tprop, vtkStdString label, int width) override
-  {
-    this->Superclass::RenderLabel(x, tprop, label, width);
-  }
-  void RenderLabel(int x[2], vtkTextProperty* tprop, vtkUnicodeString label) override;
-  void RenderLabel(int x[2], vtkTextProperty* tprop, vtkUnicodeString label, int width) override
-  {
-    this->Superclass::RenderLabel(x, tprop, label, width);
-  }
+  void RenderLabel(int x[2], vtkTextProperty* tprop, vtkStdString label) override;
 
   /**
    * Release any graphics resources that are being consumed by this strategy.
@@ -95,4 +71,5 @@ private:
   void operator=(const vtkFreeTypeLabelRenderStrategy&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkDepthPeelingPass.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkTDxQtUnixDevices.h"
 #include "vtkSmartPointer.h"
@@ -20,6 +8,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include <X11/Xlib.h> // Needed for X types used in the public interface
 #include <map>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLessThanWindowId
 {
 public:
@@ -38,19 +27,19 @@ public:
   vtkWindowIdToDevice Map;
 };
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTDxQtUnixDevices::vtkTDxQtUnixDevices()
 {
   this->Private = new vtkTDxQtUnixDevicesPrivate;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTDxQtUnixDevices::~vtkTDxQtUnixDevices()
 {
   delete this->Private;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTDxQtUnixDevices::ProcessEvent(vtkTDxUnixDeviceXEvent* e)
 {
   const XEvent* event = static_cast<const XEvent*>(e);
@@ -58,7 +47,7 @@ void vtkTDxQtUnixDevices::ProcessEvent(vtkTDxUnixDeviceXEvent* e)
   // Find the real X11 window id.
   QWidgetList l = static_cast<QApplication*>(QApplication::instance())->topLevelWidgets();
   int winIdLast = 0;
-  foreach (QWidget* w, l)
+  Q_FOREACH (QWidget* w, l)
   {
     if (!w->isHidden())
     {
@@ -78,7 +67,7 @@ void vtkTDxQtUnixDevices::ProcessEvent(vtkTDxUnixDeviceXEvent* e)
       // not yet created.
       device = vtkSmartPointer<vtkTDxUnixDevice>::New();
       this->Private->Map.insert(
-        std::pair<const vtkTDxUnixDeviceWindow, vtkSmartPointer<vtkTDxUnixDevice> >(winId, device));
+        std::pair<const vtkTDxUnixDeviceWindow, vtkSmartPointer<vtkTDxUnixDevice>>(winId, device));
 
       device->SetDisplayId(event->xany.display);
       device->SetWindowId(winId);
@@ -92,7 +81,7 @@ void vtkTDxQtUnixDevices::ProcessEvent(vtkTDxUnixDeviceXEvent* e)
       else
       {
         cout << "device initialized on window" << winId << hex << winId << dec;
-        emit CreateDevice(device);
+        Q_EMIT CreateDevice(device);
       }
     }
     else
@@ -110,3 +99,4 @@ void vtkTDxQtUnixDevices::ProcessEvent(vtkTDxUnixDeviceXEvent* e)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

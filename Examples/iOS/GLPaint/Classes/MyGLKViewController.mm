@@ -1,16 +1,5 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #import "MyGLKViewController.h"
 #import "vtkIOSRenderWindow.h"
@@ -141,7 +130,7 @@ PURPOSE.  See the above copyright notice for more information.
 
   [EAGLContext setCurrentContext:self.context];
   [self resizeView];
-  [self getVTKRenderWindow] -> Render();
+  [self getVTKRenderWindow]->Render();
 }
 
 - (void)dealloc
@@ -185,8 +174,8 @@ PURPOSE.  See the above copyright notice for more information.
 - (void)resizeView
 {
   double scale = self.view.contentScaleFactor;
-  [self getVTKRenderWindow] -> SetSize(self.view.bounds.size.width * scale,
-                              self.view.bounds.size.height * scale);
+  [self getVTKRenderWindow]->SetSize(
+    self.view.bounds.size.width * scale, self.view.bounds.size.height * scale);
 }
 
 - (void)viewWillLayoutSubviews
@@ -196,7 +185,7 @@ PURPOSE.  See the above copyright notice for more information.
 
 - (void)glkView:(GLKView*)view drawInRect:(CGRect)rect
 {
-  [self getVTKRenderWindow] -> Render();
+  [self getVTKRenderWindow]->Render();
 }
 
 //=================================================================

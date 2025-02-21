@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAngleRepresentation3D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAngleRepresentation3D.h"
 #include "vtkActor.h"
 #include "vtkArcSource.h"
@@ -29,9 +17,10 @@
 #include "vtkVectorText.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkAngleRepresentation3D);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAngleRepresentation3D::vtkAngleRepresentation3D()
 {
   this->Angle = 0.0;
@@ -76,7 +65,7 @@ vtkAngleRepresentation3D::vtkAngleRepresentation3D()
   this->ScaleInitialized = false;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAngleRepresentation3D::~vtkAngleRepresentation3D()
 {
   this->Line2Source->Delete();
@@ -93,13 +82,13 @@ vtkAngleRepresentation3D::~vtkAngleRepresentation3D()
   this->TextActor->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkAngleRepresentation3D::GetAngle()
 {
   return this->Angle;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::GetPoint1WorldPosition(double pos[3])
 {
   if (this->Point1Representation)
@@ -112,7 +101,7 @@ void vtkAngleRepresentation3D::GetPoint1WorldPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::GetCenterWorldPosition(double pos[3])
 {
   if (this->CenterRepresentation)
@@ -125,7 +114,7 @@ void vtkAngleRepresentation3D::GetCenterWorldPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::GetPoint2WorldPosition(double pos[3])
 {
   if (this->Point2Representation)
@@ -138,7 +127,7 @@ void vtkAngleRepresentation3D::GetPoint2WorldPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::SetPoint1WorldPosition(double x[3])
 {
   if (!this->Point1Representation)
@@ -149,7 +138,7 @@ void vtkAngleRepresentation3D::SetPoint1WorldPosition(double x[3])
   this->Point1Representation->SetWorldPosition(x);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::SetCenterWorldPosition(double x[3])
 {
   if (!this->CenterRepresentation)
@@ -160,7 +149,7 @@ void vtkAngleRepresentation3D::SetCenterWorldPosition(double x[3])
   this->CenterRepresentation->SetWorldPosition(x);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::SetPoint2WorldPosition(double x[3])
 {
   if (!this->Point2Representation)
@@ -171,7 +160,7 @@ void vtkAngleRepresentation3D::SetPoint2WorldPosition(double x[3])
   this->Point2Representation->SetWorldPosition(x);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::SetPoint1DisplayPosition(double x[3])
 {
   if (!this->Point1Representation)
@@ -185,7 +174,7 @@ void vtkAngleRepresentation3D::SetPoint1DisplayPosition(double x[3])
   this->Point1Representation->SetWorldPosition(p);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::SetCenterDisplayPosition(double x[3])
 {
   if (!this->CenterRepresentation)
@@ -199,7 +188,7 @@ void vtkAngleRepresentation3D::SetCenterDisplayPosition(double x[3])
   this->CenterRepresentation->SetWorldPosition(p);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::SetPoint2DisplayPosition(double x[3])
 {
   if (!this->Point2Representation)
@@ -213,7 +202,7 @@ void vtkAngleRepresentation3D::SetPoint2DisplayPosition(double x[3])
   this->Point2Representation->SetWorldPosition(p);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::GetPoint1DisplayPosition(double pos[3])
 {
   if (this->Point1Representation)
@@ -227,7 +216,7 @@ void vtkAngleRepresentation3D::GetPoint1DisplayPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::GetCenterDisplayPosition(double pos[3])
 {
   if (this->CenterRepresentation)
@@ -241,7 +230,7 @@ void vtkAngleRepresentation3D::GetCenterDisplayPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::GetPoint2DisplayPosition(double pos[3])
 {
   if (this->Point2Representation)
@@ -255,7 +244,7 @@ void vtkAngleRepresentation3D::GetPoint2DisplayPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::BuildRepresentation()
 {
   if (this->Point1Representation == nullptr || this->CenterRepresentation == nullptr ||
@@ -331,7 +320,8 @@ void vtkAngleRepresentation3D::BuildRepresentation()
       points->GetPoint(npoints / 2, this->TextPosition);
 
       char string[512];
-      snprintf(string, sizeof(string), this->LabelFormat, vtkMath::DegreesFromRadians(this->Angle));
+      snprintf(string, sizeof(string), this->LabelFormat,
+        vtkMath::DegreesFromRadians(this->Angle) * this->Scale);
 
       this->TextInput->SetText(string);
       this->TextActor->SetCamera(this->Renderer->GetActiveCamera());
@@ -350,20 +340,20 @@ void vtkAngleRepresentation3D::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::SetTextActorScale(double scale[3])
 {
   this->TextActor->SetScale(scale);
   this->ScaleInitialized = true;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkAngleRepresentation3D::GetTextActorScale()
 {
   return this->TextActor->GetScale();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->Ray1->ReleaseGraphicsResources(w);
@@ -372,7 +362,7 @@ void vtkAngleRepresentation3D::ReleaseGraphicsResources(vtkWindow* w)
   this->TextActor->ReleaseGraphicsResources(w);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAngleRepresentation3D::RenderOpaqueGeometry(vtkViewport* v)
 {
   this->BuildRepresentation();
@@ -398,7 +388,7 @@ int vtkAngleRepresentation3D::RenderOpaqueGeometry(vtkViewport* v)
   return count;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAngleRepresentation3D::RenderTranslucentPolygonalGeometry(vtkViewport* v)
 {
   this->BuildRepresentation();
@@ -424,7 +414,7 @@ int vtkAngleRepresentation3D::RenderTranslucentPolygonalGeometry(vtkViewport* v)
   return count;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkAngleRepresentation3D::HasTranslucentPolygonalGeometry()
 {
   int result = 0;
@@ -436,7 +426,7 @@ vtkTypeBool vtkAngleRepresentation3D::HasTranslucentPolygonalGeometry()
   return result;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAngleRepresentation3D::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -482,3 +472,4 @@ void vtkAngleRepresentation3D::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

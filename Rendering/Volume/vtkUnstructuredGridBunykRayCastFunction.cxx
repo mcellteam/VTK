@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkUnstructuredGridBunykRayCastFunction.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkUnstructuredGridBunykRayCastFunction.h"
 
 #include "vtkArrayDispatch.h"
@@ -41,6 +29,7 @@
 #include <cassert>
 #include <cstdlib>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkUnstructuredGridBunykRayCastFunction);
 
 #define VTK_BUNYKRCF_NUMLISTS 100000
@@ -212,7 +201,7 @@ struct TemplateCastRayWorker
       // seen the case where we reach here with farZ == nearZ.  This is very
       // bad as we need ensure we always move forward so that we do not get
       // into loops.  I think there is something with GCC 3.2.3 that makes
-      // the optimizer be too ambitous and turn the > into >=.
+      // the optimizer be too ambitious and turn the > into >=.
       if ((minIdx == -1) || (farZ <= nearZ))
       {
         // The ray never exited the cell?  Perhaps numerical inaccuracies
@@ -336,7 +325,7 @@ struct TemplateCastRayWorker
 
 } // end anon namespace
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // This is an internal hidden class.
 
@@ -476,7 +465,7 @@ vtkIdType vtkUnstructuredGridBunykRayCastIterator::GetNextIntersections(vtkIdLis
   return numIntersections;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Constructor - initially everything to null, and create a matrix for use later
 vtkUnstructuredGridBunykRayCastFunction::vtkUnstructuredGridBunykRayCastFunction()
@@ -730,7 +719,9 @@ void vtkUnstructuredGridBunykRayCastFunction::TransformPoints()
   perspectiveTransform->Concatenate(
     cam->GetProjectionTransformMatrix(aspect[0] / aspect[1], 0.0, 1.0));
   perspectiveTransform->Concatenate(cam->GetViewTransformMatrix());
-  perspectiveTransform->Concatenate(vol->GetMatrix());
+  vtkNew<vtkMatrix4x4> modelToWorld;
+  vol->GetModelToWorldMatrix(modelToWorld);
+  perspectiveTransform->Concatenate(modelToWorld);
   perspectiveMatrix->DeepCopy(perspectiveTransform->GetMatrix());
 
   // Invert this project matrix and store for later use
@@ -1180,7 +1171,7 @@ void vtkUnstructuredGridBunykRayCastFunction::Finalize()
   this->Valid = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkUnstructuredGridBunykRayCastFunction::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1189,3 +1180,4 @@ void vtkUnstructuredGridBunykRayCastFunction::PrintSelf(ostream& os, vtkIndent i
   // this->ScalarOpacityUnitDistance , or this->ImageOrigin - these are
   // internal ivar and not part of the public API for this class
 }
+VTK_ABI_NAMESPACE_END

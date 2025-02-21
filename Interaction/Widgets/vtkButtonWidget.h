@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkButtonWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkButtonWidget
  * @brief   activate an n-state button
@@ -56,11 +44,14 @@
 #define vtkButtonWidget_h
 
 #include "vtkAbstractWidget.h"
+#include "vtkDeprecation.h"              // For VTK_DEPRECATED_IN_9_4_0
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkButtonRepresentation;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkButtonWidget : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkButtonWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -68,13 +59,13 @@ public:
    */
   static vtkButtonWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard macros.
    */
   vtkTypeMacro(vtkButtonWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -89,10 +80,16 @@ public:
   /**
    * Return the representation as a vtkButtonRepresentation.
    */
-  vtkButtonRepresentation* GetSliderRepresentation()
+  vtkButtonRepresentation* GetButtonRepresentation()
   {
     return reinterpret_cast<vtkButtonRepresentation*>(this->WidgetRep);
   }
+
+  /**
+   * Incorrect name for GetButtonRepresentation(), for backwards compatibility.
+   */
+  VTK_DEPRECATED_IN_9_4_0("Please use GetButtonRepresentation() instead.")
+  vtkButtonRepresentation* GetSliderRepresentation() { return this->GetButtonRepresentation(); }
 
   /**
    * Create the default widget representation if one is not set.
@@ -110,7 +107,7 @@ public:
 
 protected:
   vtkButtonWidget();
-  ~vtkButtonWidget() override {}
+  ~vtkButtonWidget() override = default;
 
   // These are the events that are handled
   static void SelectAction(vtkAbstractWidget*);
@@ -119,7 +116,7 @@ protected:
 
   // Manage the state of the widget
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Hovering,
@@ -131,4 +128,5 @@ private:
   void operator=(const vtkButtonWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

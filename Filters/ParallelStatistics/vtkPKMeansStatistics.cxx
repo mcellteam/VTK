@@ -1,24 +1,8 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2011 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
-  Program:   Visualization Toolkit
-  Module:    vtkPKMeansStatistics.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2011 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
-  -------------------------------------------------------------------------*/
-#include "vtkToolkits.h"
-
+#include "vtkPKMeansStatistics.h"
 #include "vtkCommunicator.h"
 #include "vtkDoubleArray.h"
 #include "vtkIdTypeArray.h"
@@ -27,33 +11,33 @@
 #include "vtkKMeansStatistics.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkPKMeansStatistics.h"
 #include "vtkTable.h"
 #include "vtkVariantArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPKMeansStatistics);
 vtkCxxSetObjectMacro(vtkPKMeansStatistics, Controller, vtkMultiProcessController);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPKMeansStatistics::vtkPKMeansStatistics()
 {
-  this->Controller = 0;
+  this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPKMeansStatistics::~vtkPKMeansStatistics()
 {
-  this->SetController(0);
+  this->SetController(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPKMeansStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPKMeansStatistics::GetTotalNumberOfObservations(vtkIdType numObservations)
 {
   int np = this->Controller->GetNumberOfProcesses();
@@ -74,7 +58,7 @@ vtkIdType vtkPKMeansStatistics::GetTotalNumberOfObservations(vtkIdType numObserv
   return totalNumObservations;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPKMeansStatistics::UpdateClusterCenters(vtkTable* newClusterElements,
   vtkTable* curClusterElements, vtkIdTypeArray* numMembershipChanges,
   vtkIdTypeArray* numDataElementsInCluster, vtkDoubleArray* error, vtkIdTypeArray* startRunID,
@@ -186,7 +170,7 @@ void vtkPKMeansStatistics::UpdateClusterCenters(vtkTable* newClusterElements,
   allNewClusterElements->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPKMeansStatistics::CreateInitialClusterCenters(vtkIdType numToAllocate,
   vtkIdTypeArray* numberOfClusters, vtkTable* inData, vtkTable* curClusterElements,
   vtkTable* newClusterElements)
@@ -245,3 +229,4 @@ void vtkPKMeansStatistics::CreateInitialClusterCenters(vtkIdType numToAllocate,
 
   this->DistanceFunctor->DeallocateElementArray(localElements);
 }
+VTK_ABI_NAMESPACE_END

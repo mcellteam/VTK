@@ -1,39 +1,23 @@
-/*=========================================================================
-
-Program:   Visualization Toolkit
-Module:    vtkSQLDatabase.cxx
-
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkSQLDatabase.h"
 #include "vtkInformationObjectBaseKey.h"
 #include "vtkSQLQuery.h"
-#include "vtkToolkits.h"
 
 #include "vtkSQLDatabaseSchema.h"
 
 #include "vtkSQLiteDatabase.h"
 
-#include "vtkCriticalSection.h"
 #include "vtkObjectFactory.h"
 #include "vtkStdString.h"
 
+#include <mutex>
 #include <sstream>
 #include <vtksys/SystemTools.hxx>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkSQLDatabase::vtkCallbackVector : public std::vector<vtkSQLDatabase::CreateFunction>
 {
 public:
@@ -57,7 +41,7 @@ vtkSQLDatabase::vtkCallbackVector* vtkSQLDatabase::Callbacks = nullptr;
 class vtkSQLDatabaseCleanup
 {
 public:
-  inline void Use() {}
+  void Use() {}
   ~vtkSQLDatabaseCleanup() { vtkSQLDatabase::UnRegisterAllCreateFromURLCallbacks(); }
 };
 
@@ -66,25 +50,25 @@ static vtkSQLDatabaseCleanup vtkCleanupSQLDatabaseGlobal;
 
 vtkInformationKeyMacro(vtkSQLDatabase, DATABASE, ObjectBase);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSQLDatabase::vtkSQLDatabase() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSQLDatabase::~vtkSQLDatabase() = default;
 
-// ----------------------------------------------------------------------
-void vtkSQLDatabase::RegisterCreateFromURLCallback(vtkSQLDatabase::CreateFunction func)
+//------------------------------------------------------------------------------
+void vtkSQLDatabase::RegisterCreateFromURLCallback(vtkSQLDatabase::CreateFunction callback)
 {
   if (!vtkSQLDatabase::Callbacks)
   {
     vtkCleanupSQLDatabaseGlobal.Use();
     vtkSQLDatabase::Callbacks = new vtkCallbackVector();
   }
-  vtkSQLDatabase::Callbacks->push_back(func);
+  vtkSQLDatabase::Callbacks->push_back(callback);
 }
 
-// ----------------------------------------------------------------------
-void vtkSQLDatabase::UnRegisterCreateFromURLCallback(vtkSQLDatabase::CreateFunction func)
+//------------------------------------------------------------------------------
+void vtkSQLDatabase::UnRegisterCreateFromURLCallback(vtkSQLDatabase::CreateFunction callback)
 {
   if (vtkSQLDatabase::Callbacks)
   {
@@ -92,7 +76,7 @@ void vtkSQLDatabase::UnRegisterCreateFromURLCallback(vtkSQLDatabase::CreateFunct
     for (iter = vtkSQLDatabase::Callbacks->begin(); iter != vtkSQLDatabase::Callbacks->end();
          ++iter)
     {
-      if ((*iter) == func)
+      if ((*iter) == callback)
       {
         vtkSQLDatabase::Callbacks->erase(iter);
         break;
@@ -101,20 +85,20 @@ void vtkSQLDatabase::UnRegisterCreateFromURLCallback(vtkSQLDatabase::CreateFunct
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSQLDatabase::UnRegisterAllCreateFromURLCallbacks()
 {
   delete vtkSQLDatabase::Callbacks;
   vtkSQLDatabase::Callbacks = nullptr;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSQLDatabase::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkSQLDatabase::GetColumnSpecification(
   vtkSQLDatabaseSchema* schema, int tblHandle, int colHandle)
 {
@@ -123,7 +107,7 @@ vtkStdString vtkSQLDatabase::GetColumnSpecification(
 
   // Figure out column type
   int colType = schema->GetColumnTypeFromHandle(tblHandle, colHandle);
-  vtkStdString colTypeStr;
+  std::string colTypeStr;
   switch (static_cast<vtkSQLDatabaseSchema::DatabaseColumnType>(colType))
   {
     case vtkSQLDatabaseSchema::SERIAL:
@@ -171,7 +155,7 @@ vtkStdString vtkSQLDatabase::GetColumnSpecification(
   else // if ( colTypeStr.size() )
   {
     vtkGenericWarningMacro("Unable to get column specification: unsupported data type " << colType);
-    return vtkStdString();
+    return {};
   }
 
   // Decide whether size is allowed, required, or unused
@@ -236,7 +220,7 @@ vtkStdString vtkSQLDatabase::GetColumnSpecification(
     }
   }
 
-  vtkStdString attStr = schema->GetColumnAttributesFromHandle(tblHandle, colHandle);
+  std::string attStr = schema->GetColumnAttributesFromHandle(tblHandle, colHandle);
   if (!attStr.empty())
   {
     queryStr << " " << attStr;
@@ -245,7 +229,7 @@ vtkStdString vtkSQLDatabase::GetColumnSpecification(
   return queryStr.str();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkSQLDatabase::GetIndexSpecification(
   vtkSQLDatabaseSchema* schema, int tblHandle, int idxHandle, bool& skipped)
 {
@@ -269,7 +253,7 @@ vtkStdString vtkSQLDatabase::GetIndexSpecification(
       skipped = true;
       break;
     default:
-      return vtkStdString();
+      return {};
   }
 
   // No index_name for PRIMARY KEYs nor UNIQUEs
@@ -293,7 +277,7 @@ vtkStdString vtkSQLDatabase::GetIndexSpecification(
   {
     vtkGenericWarningMacro(
       "Unable to get index specification: index has incorrect number of columns " << numCnm);
-    return vtkStdString();
+    return {};
   }
 
   bool firstCnm = true;
@@ -314,7 +298,7 @@ vtkStdString vtkSQLDatabase::GetIndexSpecification(
   return queryStr;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkSQLDatabase::GetTriggerSpecification(
   vtkSQLDatabaseSchema* schema, int tblHandle, int trgHandle)
 {
@@ -355,7 +339,7 @@ vtkStdString vtkSQLDatabase::GetTriggerSpecification(
   return queryStr;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSQLDatabase* vtkSQLDatabase::CreateFromURL(const char* URL)
 {
   std::string urlstr(URL ? URL : "");
@@ -368,21 +352,21 @@ vtkSQLDatabase* vtkSQLDatabase::CreateFromURL(const char* URL)
   std::string dataglom;
   vtkSQLDatabase* db = nullptr;
 
-  static vtkSimpleCriticalSection dbURLCritSec;
-  dbURLCritSec.Lock();
+  static std::mutex dbURLCritSec;
+  dbURLCritSec.lock();
 
   // SQLite is a bit special so lets get that out of the way :)
   if (!vtksys::SystemTools::ParseURLProtocol(urlstr, protocol, dataglom))
   {
-    vtkGenericWarningMacro("Invalid URL (no protocol found): \"" << urlstr.c_str() << "\"");
-    dbURLCritSec.Unlock();
+    vtkGenericWarningMacro("Invalid URL (no protocol found): \"" << urlstr << "\"");
+    dbURLCritSec.unlock();
     return nullptr;
   }
   if (protocol == "sqlite")
   {
     db = vtkSQLiteDatabase::New();
     db->ParseURL(URL);
-    dbURLCritSec.Unlock();
+    dbURLCritSec.unlock();
     return db;
   }
 
@@ -390,8 +374,8 @@ vtkSQLDatabase* vtkSQLDatabase::CreateFromURL(const char* URL)
   if (!vtksys::SystemTools::ParseURL(
         urlstr, protocol, username, unused, hostname, dataport, database))
   {
-    vtkGenericWarningMacro("Invalid URL (other components missing): \"" << urlstr.c_str() << "\"");
-    dbURLCritSec.Unlock();
+    vtkGenericWarningMacro("Invalid URL (other components missing): \"" << urlstr << "\"");
+    dbURLCritSec.unlock();
     return nullptr;
   }
 
@@ -404,13 +388,13 @@ vtkSQLDatabase* vtkSQLDatabase::CreateFromURL(const char* URL)
 
   if (!db)
   {
-    vtkGenericWarningMacro("Unsupported protocol: " << protocol.c_str());
+    vtkGenericWarningMacro("Unsupported protocol: " << protocol);
   }
-  dbURLCritSec.Unlock();
+  dbURLCritSec.unlock();
   return db;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExists)
 {
   if (!this->IsOpen())
@@ -433,13 +417,14 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
   {
     // Don't execute if the statement is not for this backend
     const char* preBackend = schema->GetPreambleBackendFromHandle(preHandle);
-    if (strcmp(preBackend, VTK_SQL_ALLBACKENDS) && strcmp(preBackend, this->GetClassName()))
+    if (strcmp(preBackend, VTK_SQL_ALLBACKENDS) != 0 &&
+      strcmp(preBackend, this->GetClassName()) != 0)
     {
       continue;
     }
 
     vtkStdString preStr = schema->GetPreambleActionFromHandle(preHandle);
-    query->SetQuery(preStr);
+    query->SetQuery(preStr.c_str());
     if (!query->Execute())
     {
       vtkGenericWarningMacro("Unable to effect the schema: unable to execute query.\nDetails: "
@@ -455,7 +440,7 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
   for (int tblHandle = 0; tblHandle < numTbl; ++tblHandle)
   {
     // Construct the CREATE TABLE query for this table
-    vtkStdString queryStr("CREATE TABLE ");
+    std::string queryStr("CREATE TABLE ");
     queryStr += this->GetTablePreamble(dropIfExists);
     queryStr += schema->GetTableNameFromHandle(tblHandle);
     queryStr += " (";
@@ -482,7 +467,7 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
       }
 
       // Get column creation syntax (backend-dependent)
-      vtkStdString colStr = this->GetColumnSpecification(schema, tblHandle, colHandle);
+      std::string colStr = this->GetColumnSpecification(schema, tblHandle, colHandle);
       if (!colStr.empty())
       {
         queryStr += colStr;
@@ -505,14 +490,14 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
     }
 
     // In case separate INDEX statements are needed (backend-specific)
-    std::vector<vtkStdString> idxStatements;
+    std::vector<std::string> idxStatements;
     bool skipped = false;
 
     // Loop over all indices of the current table
     for (int idxHandle = 0; idxHandle < numIdx; ++idxHandle)
     {
       // Get index creation syntax (backend-dependent)
-      vtkStdString idxStr = this->GetIndexSpecification(schema, tblHandle, idxHandle, skipped);
+      std::string idxStr = this->GetIndexSpecification(schema, tblHandle, idxHandle, skipped);
       if (!idxStr.empty())
       {
         if (skipped)
@@ -546,7 +531,7 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
     for (int optHandle = 0; optHandle < numOpt; ++optHandle)
     {
       vtkStdString optBackend = schema->GetOptionBackendFromHandle(tblHandle, optHandle);
-      if (strcmp(optBackend, VTK_SQL_ALLBACKENDS) && strcmp(optBackend, this->GetClassName()))
+      if (optBackend != VTK_SQL_ALLBACKENDS && optBackend != this->GetClassName())
       {
         continue;
       }
@@ -555,7 +540,7 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
     }
 
     // Execute the CREATE TABLE query
-    query->SetQuery(queryStr);
+    query->SetQuery(queryStr.c_str());
     if (!query->Execute())
     {
       vtkGenericWarningMacro("Unable to effect the schema: unable to execute query.\nDetails: "
@@ -566,10 +551,10 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
     }
 
     // Execute separate CREATE INDEX statements if needed
-    for (std::vector<vtkStdString>::iterator it = idxStatements.begin(); it != idxStatements.end();
+    for (std::vector<std::string>::iterator it = idxStatements.begin(); it != idxStatements.end();
          ++it)
     {
-      query->SetQuery(*it);
+      query->SetQuery(it->c_str());
       if (!query->Execute())
       {
         vtkGenericWarningMacro("Unable to effect the schema: unable to execute query.\nDetails: "
@@ -597,18 +582,19 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
       {
         // Don't execute if the trigger is not for this backend
         const char* trgBackend = schema->GetTriggerBackendFromHandle(tblHandle, trgHandle);
-        if (strcmp(trgBackend, VTK_SQL_ALLBACKENDS) && strcmp(trgBackend, this->GetClassName()))
+        if (strcmp(trgBackend, VTK_SQL_ALLBACKENDS) != 0 &&
+          strcmp(trgBackend, this->GetClassName()) != 0)
         {
           continue;
         }
 
         // Get trigger creation syntax (backend-dependent)
-        vtkStdString trgStr = this->GetTriggerSpecification(schema, tblHandle, trgHandle);
+        std::string trgStr = this->GetTriggerSpecification(schema, tblHandle, trgHandle);
 
         // If not empty, execute query
         if (!trgStr.empty())
         {
-          query->SetQuery(vtkStdString(trgStr));
+          query->SetQuery(trgStr.c_str());
           if (!query->Execute())
           {
             vtkGenericWarningMacro(
@@ -647,3 +633,4 @@ bool vtkSQLDatabase::EffectSchema(vtkSQLDatabaseSchema* schema, bool dropIfExist
   query->Delete();
   return true;
 }
+VTK_ABI_NAMESPACE_END

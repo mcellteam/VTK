@@ -1,31 +1,24 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkCellValidator.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkCellValidator.h"
 
 #include "vtkCell.h"
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
 #include "vtkCellIterator.h"
-#include "vtkPointData.h"
-#include "vtkShortArray.h"
-
+#include "vtkDataObjectImplicitBackendInterface.h"
 #include "vtkIdList.h"
+#include "vtkImplicitArray.h"
+#include "vtkInformation.h"
+#include "vtkInformationVector.h"
 #include "vtkMath.h"
 #include "vtkNew.h"
+#include "vtkPointData.h"
 #include "vtkPoints.h"
+#include "vtkUnstructuredGrid.h"
 
+// cell classes
 #include "vtkBezierCurve.h"
 #include "vtkBezierHexahedron.h"
 #include "vtkBezierQuadrilateral.h"
@@ -69,32 +62,57 @@
 #include "vtkQuadraticWedge.h"
 #include "vtkTetra.h"
 #include "vtkTriQuadraticHexahedron.h"
+#include "vtkTriQuadraticPyramid.h"
 #include "vtkTriangle.h"
 #include "vtkTriangleStrip.h"
 #include "vtkVertex.h"
 #include "vtkVoxel.h"
 #include "vtkWedge.h"
 
-#include "vtkInformation.h"
-#include "vtkInformationVector.h"
-#include "vtkUnstructuredGrid.h"
-
 #include <cassert>
 #include <cmath>
 #include <sstream>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCellValidator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::vtkCellValidator()
 {
   this->Tolerance = FLT_EPSILON;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
+/**
+ * Implicit array back-end returning dynamically the state of the given cell.
+ */
+struct vtkCellStateBackend : public vtkDataObjectImplicitBackendInterface<short>
+{
+  vtkCellStateBackend(vtkDataSet* dataset, double tolerance, const std::string& name, int type)
+    : vtkDataObjectImplicitBackendInterface(dataset, name, type)
+    , Tolerance(tolerance)
+    , DataSet(dataset)
+  {
+  }
+  ~vtkCellStateBackend() override = default;
+
+  short GetValueFromDataObject(const vtkIdType index) const override
+  {
+    vtkNew<vtkGenericCell> cell;
+    this->DataSet->GetCell(index, cell);
+    vtkCellValidator::State state = vtkCellValidator::Check(cell, this->Tolerance);
+
+    return static_cast<short>(state);
+  }
+
+  double Tolerance = FLT_EPSILON;
+  // Useful to avoid cast. Superclass handles its DeleteEvent
+  vtkWeakPointer<vtkDataSet> DataSet;
+};
+
 bool PointsAreCoincident(double p[3], double q[3], double tolerance)
 {
   return (std::abs(p[0] - q[0]) < tolerance && std::abs(p[1] - q[1]) < tolerance &&
@@ -104,8 +122,7 @@ bool PointsAreCoincident(double p[3], double q[3], double tolerance)
 bool LineSegmentsIntersect(double p1[3], double p2[3], double q1[3], double q2[3], double tolerance)
 {
   double u, v;
-  static const int VTK_YES_INTERSECTION = 2;
-  if (vtkLine::Intersection3D(p1, p2, q1, q2, u, v) == VTK_YES_INTERSECTION)
+  if (vtkLine::Intersection(p1, p2, q1, q2, u, v) == vtkLine::Intersect)
   {
     if ((std::abs(u) > tolerance && std::abs(u - 1.) > tolerance) ||
       (std::abs(v) > tolerance && std::abs(v - 1.) > tolerance))
@@ -117,7 +134,7 @@ bool LineSegmentsIntersect(double p1[3], double p2[3], double q1[3], double q2[3
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCellValidator::NoIntersectingEdges(vtkCell* cell, double tolerance)
 {
   // Ensures no cell edges intersect.
@@ -159,7 +176,7 @@ bool vtkCellValidator::NoIntersectingEdges(vtkCell* cell, double tolerance)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 bool TrianglesIntersect(double p1[3], double p2[3], double p3[3], double q1[3], double q2[3],
@@ -189,7 +206,7 @@ bool TrianglesIntersect(double p1[3], double p2[3], double p3[3], double q1[3], 
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCellValidator::NoIntersectingFaces(vtkCell* cell, double tolerance)
 {
   // Ensures no cell faces intersect.
@@ -230,7 +247,7 @@ bool vtkCellValidator::NoIntersectingFaces(vtkCell* cell, double tolerance)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCellValidator::ContiguousEdges(vtkCell* twoDimensionalCell, double tolerance)
 {
   // Ensures that a two-dimensional cell's edges are contiguous.
@@ -256,12 +273,8 @@ bool vtkCellValidator::ContiguousEdges(vtkCell* twoDimensionalCell, double toler
     edge->GetPoints()->GetPoint(0, x[0]);
     edge->GetPoints()->GetPoint(1, x[1]);
 
-    static const int VTK_NO_INTERSECTION = 0;
-    if (vtkLine::Intersection3D(p[0], p[1], x[0], x[1], u, v) == VTK_NO_INTERSECTION)
-    {
-      return false;
-    }
-    else if ((std::abs(u) > tolerance && std::abs(1. - u) > tolerance) ||
+    vtkLine::Intersection(p[0], p[1], x[0], x[1], u, v, vtkMath::Inf());
+    if ((std::abs(u) > tolerance && std::abs(1. - u) > tolerance) ||
       (std::abs(v) > tolerance && std::abs(1. - v) > tolerance))
     {
       return false;
@@ -272,17 +285,21 @@ bool vtkCellValidator::ContiguousEdges(vtkCell* twoDimensionalCell, double toler
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 void Centroid(vtkCell* cell, double* centroid)
 {
   // Return the centroid of a cell in world coordinates.
-  static double weights[512];
+  static std::vector<double> weights;
+  if (weights.size() < static_cast<size_t>(cell->GetNumberOfPoints()))
+  {
+    weights.resize(cell->GetNumberOfPoints());
+  }
   double pCenter[3];
   int subId = -1;
   cell->GetParametricCenter(pCenter);
-  cell->EvaluateLocation(subId, pCenter, centroid, weights);
+  cell->EvaluateLocation(subId, pCenter, centroid, weights.data());
 }
 
 void Normal(vtkCell* twoDimensionalCell, double* normal)
@@ -293,9 +310,27 @@ void Normal(vtkCell* twoDimensionalCell, double* normal)
 
   vtkPolygon::ComputeNormal(twoDimensionalCell->GetPoints(), normal);
 }
+
+struct MappingFunctor
+{
+  template <typename CellStateT>
+  void operator()(CellStateT& state, std::unordered_map<int, int>& node_mapping)
+  {
+
+    using ValueType = typename CellStateT::ValueType;
+    auto* conn = state.GetConnectivity();
+    const vtkIdType nids = conn->GetNumberOfValues();
+    for (vtkIdType i = 0; i < nids; ++i)
+    {
+      ValueType tmp = conn->GetValue(i);
+      conn->SetValue(i, node_mapping.at(tmp));
+    }
+  }
+};
+
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCellValidator::Convex(vtkCell* cell, double vtkNotUsed(tolerance))
 {
   // Determine whether or not a cell is convex. vtkPolygon and vtkPolyhedron can
@@ -316,17 +351,43 @@ bool vtkCellValidator::Convex(vtkCell* cell, double vtkNotUsed(tolerance))
         return polyhedron->IsConvex();
       }
       vtkNew<vtkCellArray> polyhedronFaces;
-      for (vtkIdType i = 0; i < cell->GetNumberOfFaces(); i++)
+      vtkIdType faces_n = cell->GetNumberOfFaces();
+      for (vtkIdType i = 0; i < faces_n; i++)
       {
         polyhedronFaces->InsertNextCell(cell->GetFace(i));
       }
-      vtkNew<vtkIdTypeArray> faceBuffer;
-      polyhedronFaces->ExportLegacyFormat(faceBuffer);
+
+      // Explanation of the mapping with an example of a cell containing 3 points:
+      // The input is:
+      // input_grid_ids      10      11     12
+      // input_grid_points   (0.0)   (0.1)  (0.2)
+
+      // cell_ids      11      12     10
+      // cell_points   (0.1)  (0.2)   (0.0)
+
+      // The output has to be:
+      // new_grid_ids       0      1     2       ( grid ids cannot be set)
+      // new_grid_points   (0.1)  (0.2)   (0.0)  ( set with cell>GetPoints())
+
+      // polygon_cell_id    0      1      2
+      // So the mapping for the new nodes is such that 11->0, 12->1 and 10->3
+      // This mapping is used to update the node ids of the faces
+
+      vtkIdType points_n = cell->GetNumberOfPoints();
+      std::vector<vtkIdType> polyhedron_pointIds(points_n);
+      std::unordered_map<int, int> node_mapping;
+      for (vtkIdType i = 0; i < points_n; i++)
+      {
+        node_mapping.emplace(cell->PointIds->GetId(i), i);
+        polyhedron_pointIds[i] = i;
+      }
+
+      // update the face ids
+      polyhedronFaces->Visit(MappingFunctor{}, node_mapping);
+
       vtkNew<vtkUnstructuredGrid> ugrid;
       ugrid->SetPoints(cell->GetPoints());
-      ugrid->InsertNextCell(VTK_POLYHEDRON, cell->GetNumberOfPoints(),
-        cell->GetPointIds()->GetPointer(0), polyhedronFaces->GetNumberOfCells(),
-        faceBuffer->GetPointer(0));
+      ugrid->InsertNextCell(VTK_POLYHEDRON, points_n, polyhedron_pointIds.data(), polyhedronFaces);
 
       vtkPolyhedron* polyhedron = vtkPolyhedron::SafeDownCast(ugrid->GetCell(0));
       return polyhedron->IsConvex();
@@ -336,25 +397,7 @@ bool vtkCellValidator::Convex(vtkCell* cell, double vtkNotUsed(tolerance))
   }
 }
 
-//----------------------------------------------------------------------------
-namespace
-{
-// The convention for three-dimensional cells is that the normal of each face
-// cell is oriented outwards. Some cells break this convention and remain
-// inconsistent to maintain backwards compatibility.
-bool outwardOrientation(int cellType)
-{
-  if (cellType == VTK_QUADRATIC_LINEAR_WEDGE || cellType == VTK_BIQUADRATIC_QUADRATIC_WEDGE ||
-    cellType == VTK_QUADRATIC_WEDGE)
-  {
-    return false;
-  }
-
-  return true;
-}
-}
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCellValidator::FacesAreOrientedCorrectly(vtkCell* threeDimensionalCell, double tolerance)
 {
   // Ensure that a 3-dimensional cell's faces are oriented away from the
@@ -365,8 +408,6 @@ bool vtkCellValidator::FacesAreOrientedCorrectly(vtkCell* threeDimensionalCell, 
   double faceNorm[3], norm[3], cellCentroid[3], faceCentroid[3];
   vtkCell* face;
   Centroid(threeDimensionalCell, cellCentroid);
-
-  bool hasOutwardOrientation = outwardOrientation(threeDimensionalCell->GetCellType());
 
   for (vtkIdType i = 0; i < threeDimensionalCell->GetNumberOfFaces(); i++)
   {
@@ -385,7 +426,7 @@ bool vtkCellValidator::FacesAreOrientedCorrectly(vtkCell* threeDimensionalCell, 
     vtkMath::Normalize(norm);
     double dot = vtkMath::Dot(faceNorm, norm);
 
-    if (hasOutwardOrientation == (dot < 0.))
+    if (dot < 0.)
     {
       return false;
     }
@@ -393,7 +434,7 @@ bool vtkCellValidator::FacesAreOrientedCorrectly(vtkCell* threeDimensionalCell, 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkCell* cell, double tolerance)
 {
   // Ensure the number of points is at least as great as the number of point ids
@@ -435,6 +476,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkCell* cell, double tolerance)
     CheckCase(VTK_QUADRATIC_PYRAMID, vtkQuadraticPyramid);
     CheckCase(VTK_BIQUADRATIC_QUAD, vtkBiQuadraticQuad);
     CheckCase(VTK_TRIQUADRATIC_HEXAHEDRON, vtkTriQuadraticHexahedron);
+    CheckCase(VTK_TRIQUADRATIC_PYRAMID, vtkTriQuadraticPyramid);
     CheckCase(VTK_QUADRATIC_LINEAR_QUAD, vtkQuadraticLinearQuad);
     CheckCase(VTK_QUADRATIC_LINEAR_WEDGE, vtkQuadraticLinearWedge);
     CheckCase(VTK_BIQUADRATIC_QUADRATIC_WEDGE, vtkBiQuadraticQuadraticWedge);
@@ -462,19 +504,19 @@ vtkCellValidator::State vtkCellValidator::Check(vtkCell* cell, double tolerance)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkGenericCell* cell, double tolerance)
 {
   return vtkCellValidator::Check(cell->GetRepresentativeCell(), tolerance);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkEmptyCell*, double)
 {
   return State::Valid;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkVertex* vertex, double vtkNotUsed(tolerance))
 {
   State state = State::Valid;
@@ -488,7 +530,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkVertex* vertex, double vtkNot
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(
   vtkPolyVertex* polyVertex, double vtkNotUsed(tolerance))
 {
@@ -503,7 +545,7 @@ vtkCellValidator::State vtkCellValidator::Check(
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkLine* line, double vtkNotUsed(tolerance))
 {
   State state = State::Valid;
@@ -517,7 +559,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkLine* line, double vtkNotUsed
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkPolyLine* polyLine, double vtkNotUsed(tolerance))
 {
   State state = State::Valid;
@@ -531,7 +573,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkPolyLine* polyLine, double vt
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkTriangle* triangle, double tolerance)
 {
   State state = State::Valid;
@@ -552,7 +594,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkTriangle* triangle, double to
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkTriangleStrip* triangleStrip, double tolerance)
 {
   State state = State::Valid;
@@ -573,7 +615,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkTriangleStrip* triangleStrip,
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkPolygon* polygon, double tolerance)
 {
   State state = State::Valid;
@@ -606,7 +648,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkPolygon* polygon, double tole
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkPixel* pixel, double tolerance)
 {
   State state = State::Valid;
@@ -642,7 +684,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkPixel* pixel, double toleranc
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuad* quad, double tolerance)
 {
   State state = State::Valid;
@@ -675,7 +717,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuad* quad, double tolerance)
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkTetra* tetra, double tolerance)
 {
   State state = State::Valid;
@@ -702,7 +744,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkTetra* tetra, double toleranc
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkVoxel* voxel, double tolerance)
 {
   State state = State::Valid;
@@ -751,7 +793,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkVoxel* voxel, double toleranc
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkHexahedron* hex, double tolerance)
 {
   State state = State::Valid;
@@ -790,7 +832,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkHexahedron* hex, double toler
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkWedge* wedge, double tolerance)
 {
   State state = State::Valid;
@@ -829,7 +871,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkWedge* wedge, double toleranc
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkPyramid* pyramid, double tolerance)
 {
   State state = State::Valid;
@@ -868,7 +910,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkPyramid* pyramid, double tole
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(
   vtkPentagonalPrism* pentagonalPrism, double tolerance)
 {
@@ -908,7 +950,7 @@ vtkCellValidator::State vtkCellValidator::Check(
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkHexagonalPrism* hexagonalPrism, double tolerance)
 {
   State state = State::Valid;
@@ -947,7 +989,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkHexagonalPrism* hexagonalPris
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticEdge* edge, double tolerance)
 {
   State state = State::Valid;
@@ -968,7 +1010,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticEdge* edge, double t
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticTriangle* triangle, double tolerance)
 {
   State state = State::Valid;
@@ -995,7 +1037,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticTriangle* triangle, 
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticQuad* quad, double tolerance)
 {
   State state = State::Valid;
@@ -1022,7 +1064,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticQuad* quad, double t
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticPolygon* polygon, double tolerance)
 {
   State state = State::Valid;
@@ -1049,7 +1091,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticPolygon* polygon, do
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticTetra* tetra, double tolerance)
 {
   State state = State::Valid;
@@ -1082,7 +1124,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticTetra* tetra, double
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticHexahedron* hex, double tolerance)
 {
   State state = State::Valid;
@@ -1115,7 +1157,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticHexahedron* hex, dou
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticWedge* wedge, double tolerance)
 {
   State state = State::Valid;
@@ -1148,7 +1190,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticWedge* wedge, double
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticPyramid* pyramid, double tolerance)
 {
   State state = State::Valid;
@@ -1181,7 +1223,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticPyramid* pyramid, do
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkBiQuadraticQuad* quad, double tolerance)
 {
   State state = State::Valid;
@@ -1208,7 +1250,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkBiQuadraticQuad* quad, double
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkTriQuadraticHexahedron* hex, double tolerance)
 {
   State state = State::Valid;
@@ -1241,7 +1283,40 @@ vtkCellValidator::State vtkCellValidator::Check(vtkTriQuadraticHexahedron* hex, 
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkCellValidator::State vtkCellValidator::Check(vtkTriQuadraticPyramid* pyramid, double tolerance)
+{
+  State state = State::Valid;
+
+  // Ensure there are thirteen underlying point ids for the pyramid
+  if (pyramid->GetNumberOfPoints() != 19)
+  {
+    state |= State::WrongNumberOfPoints;
+    return state;
+  }
+
+  // Ensure that no edges intersect
+  if (!NoIntersectingEdges(pyramid, tolerance))
+  {
+    state |= State::IntersectingEdges;
+  }
+
+  // Ensure that no faces intersect
+  if (!NoIntersectingFaces(pyramid, tolerance))
+  {
+    state |= State::IntersectingEdges;
+  }
+
+  // Ensure the wedge's faces are oriented correctly
+  if (!FacesAreOrientedCorrectly(pyramid, tolerance))
+  {
+    state |= State::FacesAreOrientedIncorrectly;
+  }
+
+  return state;
+}
+
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticLinearQuad* quad, double tolerance)
 {
   State state = State::Valid;
@@ -1268,7 +1343,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticLinearQuad* quad, do
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticLinearWedge* wedge, double tolerance)
 {
   State state = State::Valid;
@@ -1301,7 +1376,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkQuadraticLinearWedge* wedge, 
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(
   vtkBiQuadraticQuadraticWedge* wedge, double tolerance)
 {
@@ -1335,7 +1410,7 @@ vtkCellValidator::State vtkCellValidator::Check(
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(
   vtkBiQuadraticQuadraticHexahedron* hex, double tolerance)
 {
@@ -1369,7 +1444,7 @@ vtkCellValidator::State vtkCellValidator::Check(
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkBiQuadraticTriangle* triangle, double tolerance)
 {
   State state = State::Valid;
@@ -1396,7 +1471,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkBiQuadraticTriangle* triangle
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkCubicLine* line, double vtkNotUsed(tolerance))
 {
   State state = State::Valid;
@@ -1411,7 +1486,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkCubicLine* line, double vtkNo
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkConvexPointSet* pointSet, double tolerance)
 {
   State state = State::Valid;
@@ -1432,7 +1507,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkConvexPointSet* pointSet, dou
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkPolyhedron* polyhedron, double tolerance)
 {
   State state = State::Valid;
@@ -1471,7 +1546,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkPolyhedron* polyhedron, doubl
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeCurve* curve, double tolerance)
 {
   State state = State::Valid;
@@ -1492,7 +1567,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeCurve* curve, double 
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeTriangle* triangle, double tolerance)
 {
   State state = State::Valid;
@@ -1519,7 +1594,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeTriangle* triangle, d
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(
   vtkLagrangeQuadrilateral* quadrilateral, double tolerance)
 {
@@ -1547,7 +1622,7 @@ vtkCellValidator::State vtkCellValidator::Check(
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeTetra* tetrahedron, double tolerance)
 {
   State state = State::Valid;
@@ -1580,7 +1655,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeTetra* tetrahedron, d
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeHexahedron* hexahedron, double tolerance)
 {
   State state = State::Valid;
@@ -1613,7 +1688,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeHexahedron* hexahedro
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeWedge* wedge, double tolerance)
 {
   State state = State::Valid;
@@ -1646,7 +1721,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkLagrangeWedge* wedge, double 
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkBezierCurve* curve, double tolerance)
 {
   State state = State::Valid;
@@ -1667,7 +1742,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkBezierCurve* curve, double to
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkBezierTriangle* triangle, double tolerance)
 {
   State state = State::Valid;
@@ -1694,7 +1769,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkBezierTriangle* triangle, dou
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(
   vtkBezierQuadrilateral* quadrilateral, double tolerance)
 {
@@ -1722,7 +1797,7 @@ vtkCellValidator::State vtkCellValidator::Check(
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkBezierTetra* tetrahedron, double tolerance)
 {
   State state = State::Valid;
@@ -1755,7 +1830,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkBezierTetra* tetrahedron, dou
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkBezierHexahedron* hexahedron, double tolerance)
 {
   State state = State::Valid;
@@ -1788,7 +1863,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkBezierHexahedron* hexahedron,
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellValidator::State vtkCellValidator::Check(vtkBezierWedge* wedge, double tolerance)
 {
   State state = State::Valid;
@@ -1821,7 +1896,7 @@ vtkCellValidator::State vtkCellValidator::Check(vtkBezierWedge* wedge, double to
   return state;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCellValidator::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -1838,44 +1913,24 @@ int vtkCellValidator::RequestData(vtkInformation* vtkNotUsed(request),
   output->GetPointData()->PassData(input->GetPointData());
   output->GetCellData()->PassData(input->GetCellData());
 
-  vtkNew<vtkShortArray> stateArray;
+  vtkNew<vtkImplicitArray<vtkCellStateBackend>> stateArray;
   stateArray->SetNumberOfComponents(1);
   stateArray->SetName("ValidityState"); // set the name of the value
-  stateArray->SetNumberOfTuples(input->GetNumberOfCells());
+  stateArray->SetNumberOfTuples(output->GetNumberOfCells());
+  stateArray->ConstructBackend(output, this->Tolerance, "ValidityState", vtkDataObject::CELL);
 
-  vtkGenericCell* cell = vtkGenericCell::New();
-  vtkCellIterator* it = input->NewCellIterator();
-  vtkIdType counter = 0;
-  State state;
-  for (it->InitTraversal(); !it->IsDoneWithTraversal(); it->GoToNextCell())
-  {
-    it->GetCell(cell);
-    state = Check(cell, this->Tolerance);
-    stateArray->SetValue(counter, static_cast<short>(state));
-    if (state != State::Valid)
-    {
-      std::stringstream s;
-      cell->Print(s);
-      this->PrintState(state, s, vtkIndent(0));
-      vtkOutputWindowDisplayText(s.str().c_str());
-    }
-    ++counter;
-  }
-  cell->Delete();
-  it->Delete();
-
-  output->GetCellData()->AddArray(stateArray.GetPointer());
+  output->GetCellData()->AddArray(stateArray);
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellValidator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellValidator::PrintState(vtkCellValidator::State state, ostream& os, vtkIndent indent)
 {
   if (state == State::Valid)
@@ -1912,3 +1967,4 @@ void vtkCellValidator::PrintState(vtkCellValidator::State state, ostream& os, vt
     }
   }
 }
+VTK_ABI_NAMESPACE_END

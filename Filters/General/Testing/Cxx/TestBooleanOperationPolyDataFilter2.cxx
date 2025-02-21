@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestBooleanOperationPolyDataFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtkActor.h>
 #include <vtkAppendPolyData.h>
@@ -58,18 +47,24 @@ static vtkActor* GetBooleanOperationActor(double x, int operation)
 
   if (operation == vtkBooleanOperationPolyDataFilter::VTK_UNION)
   {
-    thresh1->ThresholdByUpper(0.0);
-    thresh2->ThresholdByUpper(0.0);
+    thresh1->SetThresholdFunction(vtkThreshold::THRESHOLD_UPPER);
+    thresh1->SetUpperThreshold(0.0);
+    thresh2->SetThresholdFunction(vtkThreshold::THRESHOLD_UPPER);
+    thresh2->SetUpperThreshold(0.0);
   }
   else if (operation == vtkBooleanOperationPolyDataFilter::VTK_INTERSECTION)
   {
-    thresh1->ThresholdByLower(0.0);
-    thresh2->ThresholdByLower(0.0);
+    thresh1->SetThresholdFunction(vtkThreshold::THRESHOLD_LOWER);
+    thresh1->SetLowerThreshold(0.0);
+    thresh2->SetThresholdFunction(vtkThreshold::THRESHOLD_LOWER);
+    thresh2->SetLowerThreshold(0.0);
   }
   else // Difference
   {
-    thresh1->ThresholdByUpper(0.0);
-    thresh2->ThresholdByLower(0.0);
+    thresh1->SetThresholdFunction(vtkThreshold::THRESHOLD_UPPER);
+    thresh1->SetUpperThreshold(0.0);
+    thresh2->SetThresholdFunction(vtkThreshold::THRESHOLD_LOWER);
+    thresh2->SetLowerThreshold(0.0);
   }
 
   vtkSmartPointer<vtkDataSetSurfaceFilter> surface1 =

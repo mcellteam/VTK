@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTypeList.txx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkTypeList_txx
 #define vtkTypeList_txx
@@ -20,9 +8,9 @@
 
 namespace vtkTypeList
 {
-
 namespace detail
 {
+VTK_ABI_NAMESPACE_BEGIN
 
 template <typename... Ts>
 struct CreateImpl;
@@ -33,20 +21,20 @@ struct CreateImpl<T1, T2, T3, T4>
 {
   using type = vtkTypeList::TypeList<T1,
     vtkTypeList::TypeList<T2,
-      vtkTypeList::TypeList<T3, vtkTypeList::TypeList<T4, vtkTypeList::NullType> > > >;
+      vtkTypeList::TypeList<T3, vtkTypeList::TypeList<T4, vtkTypeList::NullType>>>>;
 };
 
 template <typename T1, typename T2, typename T3>
 struct CreateImpl<T1, T2, T3>
 {
   using type = vtkTypeList::TypeList<T1,
-    vtkTypeList::TypeList<T2, vtkTypeList::TypeList<T3, vtkTypeList::NullType> > >;
+    vtkTypeList::TypeList<T2, vtkTypeList::TypeList<T3, vtkTypeList::NullType>>>;
 };
 
 template <typename T1, typename T2>
 struct CreateImpl<T1, T2>
 {
-  using type = vtkTypeList::TypeList<T1, vtkTypeList::TypeList<T2, vtkTypeList::NullType> >;
+  using type = vtkTypeList::TypeList<T1, vtkTypeList::TypeList<T2, vtkTypeList::NullType>>;
 };
 
 template <typename T1>
@@ -55,16 +43,25 @@ struct CreateImpl<T1>
   using type = vtkTypeList::TypeList<T1, vtkTypeList::NullType>;
 };
 
+template <>
+struct CreateImpl<>
+{
+  using type = vtkTypeList::NullType;
+};
+
 template <typename T1, typename T2, typename T3, typename T4, typename... Tail>
 struct CreateImpl<T1, T2, T3, T4, Tail...>
 {
   using type = vtkTypeList::TypeList<T1,
     vtkTypeList::TypeList<T2,
       vtkTypeList::TypeList<T3,
-        vtkTypeList::TypeList<T4, typename vtkTypeList::detail::CreateImpl<Tail...>::type> > > >;
+        vtkTypeList::TypeList<T4, typename vtkTypeList::detail::CreateImpl<Tail...>::type>>>>;
 };
 
+VTK_ABI_NAMESPACE_END
 }
+
+VTK_ABI_NAMESPACE_BEGIN
 
 //------------------------------------------------------------------------------
 // Description:
@@ -221,7 +218,7 @@ struct Unique<NullType>
 };
 
 template <typename Head, typename Tail>
-struct Unique<TypeList<Head, Tail> >
+struct Unique<TypeList<Head, Tail>>
 {
 private:
   typedef typename Unique<Tail>::Result UniqueTail;
@@ -334,7 +331,7 @@ struct DerivedToFront<NullType>
 
 // Recursive case:
 template <typename Head, typename Tail>
-struct DerivedToFront<TypeList<Head, Tail> >
+struct DerivedToFront<TypeList<Head, Tail>>
 {
 private:
   typedef typename MostDerived<Tail, Head>::Result Derived;
@@ -365,7 +362,7 @@ struct Append<vtkTypeList::NullType, T>
 
 // Terminal case (TypeList):
 template <typename Head, typename Tail>
-struct Append<vtkTypeList::NullType, vtkTypeList::TypeList<Head, Tail> >
+struct Append<vtkTypeList::NullType, vtkTypeList::TypeList<Head, Tail>>
 {
   typedef vtkTypeList::TypeList<Head, Tail> Result;
 };
@@ -377,6 +374,7 @@ struct Append<vtkTypeList::TypeList<Head, Tail>, T>
   typedef vtkTypeList::TypeList<Head, typename Append<Tail, T>::Result> Result;
 };
 
+VTK_ABI_NAMESPACE_END
 }
 
 #endif // vtkTypeList_txx

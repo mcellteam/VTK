@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMathTextUtilities.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMathTextUtilities.h"
 
@@ -25,25 +13,26 @@
 
 #include <algorithm>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The singleton, and the singleton cleanup
+VTK_ABI_NAMESPACE_BEGIN
 vtkMathTextUtilities* vtkMathTextUtilities::Instance = nullptr;
 vtkMathTextUtilitiesCleanup vtkMathTextUtilities::Cleanup;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Create the singleton cleanup
 // Register our singleton cleanup callback against the FTLibrary so that
 // it might be called before the FTLibrary singleton is destroyed.
 vtkMathTextUtilitiesCleanup::vtkMathTextUtilitiesCleanup() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Delete the singleton cleanup
 vtkMathTextUtilitiesCleanup::~vtkMathTextUtilitiesCleanup()
 {
   vtkMathTextUtilities::SetInstance(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMathTextUtilities* vtkMathTextUtilities::GetInstance()
 {
   if (!vtkMathTextUtilities::Instance)
@@ -55,7 +44,7 @@ vtkMathTextUtilities* vtkMathTextUtilities::GetInstance()
   return vtkMathTextUtilities::Instance;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMathTextUtilities::SetInstance(vtkMathTextUtilities* instance)
 {
   if (vtkMathTextUtilities::Instance == instance)
@@ -77,7 +66,7 @@ void vtkMathTextUtilities::SetInstance(vtkMathTextUtilities* instance)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMathTextUtilities::GetConstrainedFontSize(
   const char* str, vtkTextProperty* tprop, int targetWidth, int targetHeight, int dpi)
 {
@@ -139,7 +128,7 @@ int vtkMathTextUtilities::GetConstrainedFontSize(
   return fontSize;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMathTextUtilities* vtkMathTextUtilities::New()
 {
   vtkMathTextUtilities* ret = vtkMathTextUtilities::GetInstance();
@@ -150,16 +139,17 @@ vtkMathTextUtilities* vtkMathTextUtilities::New()
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMathTextUtilities::vtkMathTextUtilities() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMathTextUtilities::~vtkMathTextUtilities() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMathTextUtilities::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
-  os << indent << "Instance: " << this->Instance << endl;
+  os << indent << "Instance: " << vtkMathTextUtilities::Instance << endl;
 }
+VTK_ABI_NAMESPACE_END

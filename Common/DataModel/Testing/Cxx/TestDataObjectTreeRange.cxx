@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestDataObjectTreeRange.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <vtkDataObjectTreeIterator.h>
 #include <vtkDataObjectTreeRange.h>
@@ -249,22 +237,23 @@ bool TestOptions(vtkDataObjectTree* cds)
 vtkSmartPointer<vtkDataObjectTree> CreateDataSet()
 {
   auto addPolyData = [](unsigned int blockNum,
-                       vtkMultiBlockDataSet* mbds) -> vtkSmartPointer<vtkPolyData> {
+                       vtkMultiBlockDataSet* mbds) -> vtkSmartPointer<vtkPolyData>
+  {
     vtkNew<vtkPolyData> pd;
     mbds->SetBlock(blockNum, pd);
     return { pd };
   };
 
   auto addMultiBlock = [](unsigned int blockNum,
-                         vtkMultiBlockDataSet* mbds) -> vtkSmartPointer<vtkMultiBlockDataSet> {
+                         vtkMultiBlockDataSet* mbds) -> vtkSmartPointer<vtkMultiBlockDataSet>
+  {
     auto newMbds = vtkSmartPointer<vtkMultiBlockDataSet>::New();
     mbds->SetBlock(blockNum, newMbds);
     return newMbds;
   };
 
-  auto addNullDataSet = [](unsigned int blockNum, vtkMultiBlockDataSet* mbds) -> void {
-    mbds->SetBlock(blockNum, nullptr);
-  };
+  auto addNullDataSet = [](unsigned int blockNum, vtkMultiBlockDataSet* mbds) -> void
+  { mbds->SetBlock(blockNum, nullptr); };
 
   auto cds00 = vtkSmartPointer<vtkMultiBlockDataSet>::New();
   cds00->SetNumberOfBlocks(4);
@@ -303,8 +292,7 @@ vtkSmartPointer<vtkDataObjectTree> CreateDataSet()
   cds40->SetNumberOfBlocks(1);
   addPolyData(0, cds40);
 
-  // explicit move needed to silence warnings about C++11 defect
-  return std::move(cds00);
+  return cds00;
 }
 
 } // end anon namespace

@@ -1,19 +1,7 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkExternalOpenGLRenderWindow.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include "vtkExternalOpenGLRenderWindow.h"
 #include "vtkObjectFactory.h"
@@ -22,24 +10,23 @@
 #include "vtkRenderer.h"
 #include "vtkRendererCollection.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkExternalOpenGLRenderWindow);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExternalOpenGLRenderWindow::vtkExternalOpenGLRenderWindow()
 {
   this->AutomaticWindowPositionAndResize = 1;
   this->UseExternalContent = true;
+  this->FrameBlitMode = BlitToCurrent;
 }
 
-//----------------------------------------------------------------------------
-vtkExternalOpenGLRenderWindow::~vtkExternalOpenGLRenderWindow() {}
+//------------------------------------------------------------------------------
+vtkExternalOpenGLRenderWindow::~vtkExternalOpenGLRenderWindow() = default;
 
-//----------------------------------------------------------------------------
-void vtkExternalOpenGLRenderWindow::Start(void)
+//------------------------------------------------------------------------------
+void vtkExternalOpenGLRenderWindow::Start()
 {
-  // Make sure all important OpenGL options are set for VTK
-  this->OpenGLInit();
-
   // Use hardware acceleration
   this->SetIsDirect(1);
 
@@ -56,7 +43,7 @@ void vtkExternalOpenGLRenderWindow::Start(void)
   // creates or resizes the framebuffer
   this->Size[0] = (this->Size[0] > 0 ? this->Size[0] : 300);
   this->Size[1] = (this->Size[1] > 0 ? this->Size[1] : 300);
-  this->CreateOffScreenFramebuffer(this->Size[0], this->Size[1]);
+  this->CreateFramebuffers(this->Size[0], this->Size[1]);
 
   // For stereo, render the correct eye based on the OpenGL buffer mode
   GLint bufferType;
@@ -81,26 +68,22 @@ void vtkExternalOpenGLRenderWindow::Start(void)
 
   if (this->UseExternalContent)
   {
-    const int destExtents[4] = { 0, this->Size[0], 0, this->Size[1] };
-    this->OffScreenFramebuffer->Bind(GL_DRAW_FRAMEBUFFER);
-    this->GetState()->vtkglViewport(0, 0, this->Size[0], this->Size[1]);
-    this->GetState()->vtkglScissor(0, 0, this->Size[0], this->Size[1]);
-    vtkOpenGLFramebufferObject::Blit(
-      destExtents, destExtents, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    this->BlitToRenderFramebuffer(true);
   }
 
-  this->OffScreenFramebuffer->Bind();
+  this->RenderFramebuffer->Bind();
 }
 
-//----------------------------------------------------------------------------
-bool vtkExternalOpenGLRenderWindow::IsCurrent(void)
+//------------------------------------------------------------------------------
+bool vtkExternalOpenGLRenderWindow::IsCurrent()
 {
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExternalOpenGLRenderWindow::PrintSelf(ostream& os, vtkIndent indent)
 {
   os << indent << "UseExternalContent: " << this->UseExternalContent << endl;
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

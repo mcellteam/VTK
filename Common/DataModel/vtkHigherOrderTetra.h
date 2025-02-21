@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHigherOrderTetra.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHigherOrderTetra
  * @brief   A 3D cell that represents an arbitrary order HigherOrder tetrahedron
@@ -31,6 +19,8 @@
 #ifndef vtkHigherOrderTetra_h
 #define vtkHigherOrderTetra_h
 
+#include <functional> //For std::function
+
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkNew.h"                   // For member variable.
 #include "vtkNonLinearCell.h"
@@ -38,6 +28,7 @@
 
 #include <vector> //For caching
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTetra;
 class vtkHigherOrderCurve;
 class vtkHigherOrderTriangle;
@@ -56,8 +47,12 @@ public:
   int GetNumberOfFaces() override { return 4; }
   vtkCell* GetEdge(int edgeId) override = 0;
   vtkCell* GetFace(int faceId) override = 0;
-  void GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* result, int edgeId);
-  void GetFaceWithoutRationalWeights(vtkHigherOrderTriangle* result, int edgeId);
+  void SetEdgeIdsAndPoints(int edgeId,
+    const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+    const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points);
+  static void SetFaceIdsAndPoints(int faceId, int order, vtkIdType numPts,
+    const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+    const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points);
 
   void Initialize() override;
 
@@ -73,7 +68,7 @@ public:
     vtkIdType cellId, vtkCellData* outCd, int insideOut) override;
   int IntersectWithLine(const double p1[3], const double p2[3], double tol, double& t, double x[3],
     double pcoords[3], int& subId) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   void JacobianInverse(const double pcoords[3], double** inverse, double* derivs);
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
@@ -88,15 +83,18 @@ public:
 
   vtkIdType GetOrder() const { return this->Order; }
   vtkIdType ComputeOrder();
-  static vtkIdType ComputeOrder(const vtkIdType nPoints);
+  static vtkIdType ComputeOrder(vtkIdType nPoints);
+  /// Return true if the number of points supports a cell of uniform
+  /// degree along each axis.
+  static bool PointCountSupportsUniformOrder(vtkIdType pointsPerCell);
 
   void ToBarycentricIndex(vtkIdType index, vtkIdType* bindex);
   vtkIdType ToIndex(const vtkIdType* bindex);
 
   static void BarycentricIndex(vtkIdType index, vtkIdType* bindex, vtkIdType order);
   static vtkIdType Index(const vtkIdType* bindex, vtkIdType order);
-  virtual vtkHigherOrderCurve* getEdgeCell() = 0;
-  virtual vtkHigherOrderTriangle* getFaceCell() = 0;
+  virtual vtkHigherOrderCurve* GetEdgeCell() = 0;
+  virtual vtkHigherOrderTriangle* GetFaceCell() = 0;
 
 protected:
   vtkHigherOrderTetra();
@@ -128,4 +126,5 @@ private:
   void operator=(const vtkHigherOrderTetra&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

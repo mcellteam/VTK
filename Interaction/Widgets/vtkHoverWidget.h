@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHoverWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHoverWidget
  * @brief   invoke a vtkTimerEvent when hovering
@@ -72,8 +60,10 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkHoverWidget : public vtkAbstractWidget
+VTK_ABI_NAMESPACE_BEGIN
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkHoverWidget : public vtkAbstractWidget
 {
 public:
   /**
@@ -81,15 +71,15 @@ public:
    */
   static vtkHoverWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for a VTK class.
    */
   vtkTypeMacro(vtkHoverWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the hovering interval (in milliseconds). If after moving the
    * mouse the pointer stays over a vtkProp for this duration, then a
@@ -97,7 +87,7 @@ public:
    */
   vtkSetClampMacro(TimerDuration, int, 1, 100000);
   vtkGetMacro(TimerDuration, int);
-  //@}
+  ///@}
 
   /**
    * The method for activating and deactivating this widget. This method
@@ -138,17 +128,18 @@ protected:
   virtual int SubclassEndHoverAction() { return 0; }
   virtual int SubclassSelectAction() { return 0; }
 
-  //@{
+  ///@{
   /**
    * Helper methods for creating and destroying timers.
    */
   int TimerId;
   int TimerDuration;
-  //@}
+  ///@}
 
 private:
   vtkHoverWidget(const vtkHoverWidget&) = delete;
   void operator=(const vtkHoverWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

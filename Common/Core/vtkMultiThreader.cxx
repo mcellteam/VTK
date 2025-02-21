@@ -1,23 +1,13 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMultiThreader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkMultiThreader.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkWindows.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkMultiThreader);
+VTK_ABI_NAMESPACE_END
 
 // Need to define "vtkExternCThreadFunctionType" to avoid warning on some
 // platforms about passing function pointer to an argument expecting an
@@ -38,6 +28,7 @@ typedef vtkThreadFunctionType vtkExternCThreadFunctionType;
 #include <sys/types.h>
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 // Initialize static member that controls global maximum number of threads
 static int vtkMultiThreaderGlobalMaximumNumberOfThreads = 0;
 
@@ -53,6 +44,11 @@ void vtkMultiThreader::SetGlobalMaximumNumberOfThreads(int val)
 int vtkMultiThreader::GetGlobalMaximumNumberOfThreads()
 {
   return vtkMultiThreaderGlobalMaximumNumberOfThreads;
+}
+
+int vtkMultiThreader::GetGlobalStaticMaximumNumberOfThreads()
+{
+  return VTK_MAX_THREADS;
 }
 
 // 0 => Not initialized.
@@ -152,7 +148,7 @@ vtkMultiThreader::~vtkMultiThreader()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMultiThreader::GetNumberOfThreads()
 {
   int num = this->NumberOfThreads;
@@ -273,7 +269,7 @@ void vtkMultiThreader::SingleMethodExecute()
   pthread_attr_t attr;
 
   pthread_attr_init(&attr);
-#if !defined(__CYGWIN__)
+#if !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
   pthread_attr_setscope(&attr, PTHREAD_SCOPE_PROCESS);
 #endif
 
@@ -306,6 +302,7 @@ void vtkMultiThreader::SingleMethodExecute()
 
 #ifndef VTK_USE_WIN32_THREADS
 #ifndef VTK_USE_PTHREADS
+  (void)thread_loop;
   // There is no multi threading, so there is only one thread.
   this->ThreadInfoArray[0].UserData = this->SingleData;
   this->ThreadInfoArray[0].NumberOfThreads = this->NumberOfThreads;
@@ -336,7 +333,7 @@ void vtkMultiThreader::MultipleMethodExecute()
 
   for (thread_loop = 0; thread_loop < this->NumberOfThreads; thread_loop++)
   {
-    if (this->MultipleMethod[thread_loop] == (vtkThreadFunctionType)nullptr)
+    if (this->MultipleMethod[thread_loop] == (vtkThreadFunctionType) nullptr)
     {
       vtkErrorMacro(<< "No multiple method set for: " << thread_loop);
       return;
@@ -401,7 +398,7 @@ void vtkMultiThreader::MultipleMethodExecute()
   pthread_attr_t attr;
 
   pthread_attr_init(&attr);
-#ifndef __CYGWIN__
+#if !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
   pthread_attr_setscope(&attr, PTHREAD_SCOPE_PROCESS);
 #endif
 
@@ -447,7 +444,7 @@ int vtkMultiThreader::SpawnThread(vtkThreadFunctionType f, void* userdata)
     {
       this->SpawnedThreadActiveFlagLock[id] = new std::mutex;
     }
-    std::lock_guard<std::mutex>(*this->SpawnedThreadActiveFlagLock[id]);
+    std::lock_guard<std::mutex> lockGuard(*this->SpawnedThreadActiveFlagLock[id]);
     if (this->SpawnedThreadActiveFlag[id] == 0)
     {
       // We've got a usable thread id, so grab it
@@ -484,7 +481,7 @@ int vtkMultiThreader::SpawnThread(vtkThreadFunctionType f, void* userdata)
   //
   pthread_attr_t attr;
   pthread_attr_init(&attr);
-#ifndef __CYGWIN__
+#if !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)
   pthread_attr_setscope(&attr, PTHREAD_SCOPE_PROCESS);
 #endif
 
@@ -496,6 +493,7 @@ int vtkMultiThreader::SpawnThread(vtkThreadFunctionType f, void* userdata)
 
 #ifndef VTK_USE_WIN32_THREADS
 #ifndef VTK_USE_PTHREADS
+  (void)f;
   // There is no multi threading, so there is only one thread.
   // This won't work - so give an error message.
   vtkErrorMacro(<< "Cannot spawn thread in a single threaded environment!");
@@ -525,7 +523,7 @@ void vtkMultiThreader::TerminateThread(int threadId)
   // If we do have a lock, use it and find out the status of the active flag
   int val = 0;
   {
-    std::lock_guard<std::mutex>(*this->SpawnedThreadActiveFlagLock[threadId]);
+    std::lock_guard<std::mutex> lockGuard(*this->SpawnedThreadActiveFlagLock[threadId]);
     val = this->SpawnedThreadActiveFlag[threadId];
   }
 
@@ -538,7 +536,7 @@ void vtkMultiThreader::TerminateThread(int threadId)
   // OK - now we know we have an active thread - set the active flag to 0
   // to indicate to the thread that it should terminate itself
   {
-    std::lock_guard<std::mutex>(*this->SpawnedThreadActiveFlagLock[threadId]);
+    std::lock_guard<std::mutex> lockGuard(*this->SpawnedThreadActiveFlagLock[threadId]);
     this->SpawnedThreadActiveFlag[threadId] = 0;
   }
 
@@ -563,7 +561,7 @@ void vtkMultiThreader::TerminateThread(int threadId)
   this->SpawnedThreadActiveFlagLock[threadId] = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMultiThreaderIDType vtkMultiThreader::GetCurrentThreadID()
 {
 #if defined(VTK_USE_PTHREADS)
@@ -595,7 +593,7 @@ vtkTypeBool vtkMultiThreader::IsThreadActive(int threadId)
   // We have a lock - use it to get the active flag value
   int val = 0;
   {
-    std::lock_guard<std::mutex>(*this->SpawnedThreadActiveFlagLock[threadId]);
+    std::lock_guard<std::mutex> lockGuard(*this->SpawnedThreadActiveFlagLock[threadId]);
     val = this->SpawnedThreadActiveFlag[threadId];
   }
 
@@ -603,7 +601,7 @@ vtkTypeBool vtkMultiThreader::IsThreadActive(int threadId)
   return val;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkMultiThreader::ThreadsEqual(vtkMultiThreaderIDType t1, vtkMultiThreaderIDType t2)
 {
 #if defined(VTK_USE_PTHREADS)
@@ -611,6 +609,8 @@ vtkTypeBool vtkMultiThreader::ThreadsEqual(vtkMultiThreaderIDType t1, vtkMultiTh
 #elif defined(VTK_USE_WIN32_THREADS)
   return t1 == t2;
 #else
+  (void)t1;
+  (void)t2;
   // No threading implementation.  Assume all callers are in the same
   // thread.
   return 1;
@@ -637,3 +637,4 @@ void vtkMultiThreader::PrintSelf(ostream& os, vtkIndent indent)
 #endif
      << endl;
 }
+VTK_ABI_NAMESPACE_END

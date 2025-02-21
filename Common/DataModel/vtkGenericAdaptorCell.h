@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericAdaptorCell.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericAdaptorCell
  * @brief   defines cell interface
@@ -62,6 +50,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkLine;
 class vtkTetra;
 class vtkPoints;
@@ -212,7 +201,7 @@ public:
    */
   virtual void GetBoundaryIterator(vtkGenericCellIterator* boundaries, int dim = -1) = 0;
 
-  //@{
+  ///@{
   /**
    * Number of cells (dimension>boundary->GetDimension()) of the dataset
    * that share the boundary `boundary' of `this'.
@@ -225,7 +214,7 @@ public:
    */
   virtual int CountNeighbors(vtkGenericAdaptorCell* boundary) = 0;
   virtual void CountEdgeNeighbors(int* sharing) = 0;
-  //@}
+  ///@}
 
   /**
    * Put into `neighbors' the cells (dimension>boundary->GetDimension())
@@ -622,4 +611,5 @@ private:
   void operator=(const vtkGenericAdaptorCell&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

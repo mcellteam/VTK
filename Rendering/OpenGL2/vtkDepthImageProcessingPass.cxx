@@ -1,17 +1,6 @@
-/*=========================================================================
-
-   Program: ParaView
-   Module:    vtkDepthImageProcessingPass.cxx
-
-  Copyright (c) Sandia Corporation, Kitware Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation, Kitware Inc
+// SPDX-License-Identifier: BSD-3-Clause
 /*----------------------------------------------------------------------
 Acknowledgement:
 This algorithm is the result of joint work by Electricité de France,
@@ -33,7 +22,8 @@ Ph.D. thesis of Christian BOUCHENY.
 #include "vtkMath.h"
 #include "vtkPixelBufferObject.h"
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkDepthImageProcessingPass::vtkDepthImageProcessingPass()
 {
   this->Origin[0] = 0;
@@ -45,16 +35,16 @@ vtkDepthImageProcessingPass::vtkDepthImageProcessingPass()
   this->ExtraPixels = 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDepthImageProcessingPass::~vtkDepthImageProcessingPass() = default;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDepthImageProcessingPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Render delegate with a image of different dimensions than the
 // original one.
@@ -107,7 +97,7 @@ void vtkDepthImageProcessingPass::RenderDelegate(const vtkRenderState* s, int wi
       small = height;
     }
     double angle = vtkMath::RadiansFromDegrees(newCamera->GetViewAngle());
-    angle = 2.0 * atan(tan(angle / 2.0) * large / static_cast<double>(small));
+    angle = 2.0 * atan(tan(angle / 2.0) * large / small);
 
     newCamera->SetViewAngle(vtkMath::DegreesFromRadians(angle));
   }
@@ -137,7 +127,7 @@ void vtkDepthImageProcessingPass::RenderDelegate(const vtkRenderState* s, int wi
   savedCamera->UnRegister(this);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Read window size from parent
 // \pre s_exists: s!=0
@@ -162,3 +152,4 @@ void vtkDepthImageProcessingPass::ReadWindowSize(const vtkRenderState* s)
     this->Height = size[1];
   }
 }
+VTK_ABI_NAMESPACE_END

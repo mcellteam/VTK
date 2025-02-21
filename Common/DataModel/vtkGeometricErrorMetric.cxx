@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeometricErrorMetric.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGeometricErrorMetric.h"
 
 #include "vtkGenericAdaptorCell.h"
@@ -22,9 +10,10 @@
 #include "vtkObjectFactory.h"
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGeometricErrorMetric);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGeometricErrorMetric::vtkGeometricErrorMetric()
 {
   this->AbsoluteGeometricTolerance = 1.0; // arbitrary positive value
@@ -32,10 +21,10 @@ vtkGeometricErrorMetric::vtkGeometricErrorMetric()
   this->SmallestSize = 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGeometricErrorMetric::~vtkGeometricErrorMetric() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description :
 // Set the geometric accuracy with an absolute value.
 // Subdivision will be required if the square distance is greater than
@@ -52,7 +41,7 @@ void vtkGeometricErrorMetric::SetAbsoluteGeometricTolerance(double value)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description :
 // Set the geometric accuracy with a value relative to the bounding box of
 // the dataset. Internally compute the absolute tolerance.
@@ -103,7 +92,7 @@ void vtkGeometricErrorMetric::SetRelativeGeometricTolerance(double value, vtkGen
 
 #define VTK_DISTANCE_LINE_POINT
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeometricErrorMetric::RequiresEdgeSubdivision(
   double* leftPoint, double* midPoint, double* rightPoint,
 #ifdef VTK_DISTANCE_LINE_POINT
@@ -140,7 +129,7 @@ int vtkGeometricErrorMetric::RequiresEdgeSubdivision(
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the error at the mid-point. The type of error depends on the state
 // of the concrete error metric. For instance, it can return an absolute
@@ -188,7 +177,7 @@ double vtkGeometricErrorMetric::GetError(double* leftPoint, double* midPoint, do
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the type of output of GetError()
 int vtkGeometricErrorMetric::GetRelative()
@@ -196,7 +185,7 @@ int vtkGeometricErrorMetric::GetRelative()
   return this->Relative;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Square distance between a straight line (defined by points x and y)
 // and a point z. Property: if x and y are equal, the line is a point and
@@ -226,10 +215,11 @@ double vtkGeometricErrorMetric::Distance2LinePoint(double x[3], double y[3], dou
   return vtkMath::Dot(w, w);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeometricErrorMetric::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "AbsoluteGeometricTolerance: " << this->AbsoluteGeometricTolerance << endl;
 }
+VTK_ABI_NAMESPACE_END

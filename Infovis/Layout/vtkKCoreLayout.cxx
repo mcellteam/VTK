@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkKCoreLayout.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkKCoreLayout.h"
 
 #include "vtkAdjacentVertexIterator.h"
@@ -34,16 +19,18 @@
 
 #include <iostream>
 
+#if defined(_MSC_VER)
 #define _USE_MATH_DEFINES
+#endif
 #include <cstdlib>
 
-using std::cout;
 using std::endl;
 
 #define VTK_CREATE(type, name) vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 
 ///////////////////////////////////////////////////////////////////////////////////
 // vtkKCoreLayout
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkKCoreLayout);
 
 // Default Constructor
@@ -355,3 +342,4 @@ int vtkKCoreLayout::RequestData(vtkInformation* vtkNotUsed(request),
   }
   return 1;
 }
+VTK_ABI_NAMESPACE_END

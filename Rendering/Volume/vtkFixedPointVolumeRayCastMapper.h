@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkFixedPointVolumeRayCastMapper.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkFixedPointVolumeRayCastMapper
  * @brief   A fixed point mapper for volumes
@@ -34,7 +22,7 @@
  *   - it does only maximum scalar value MIP
  *
  * This mapper handles all data type from unsigned char through double.
- * However, some of the internal calcultions are performed in float and
+ * However, some of the internal calculations are performed in float and
  * therefore even the full float range may cause problems for this mapper
  * (both in scalar data values and in spacing between samples).
  *
@@ -42,7 +30,7 @@
  * cells in the original volume are represented by a min, max, and
  * combined gradient and flag value. The min max volume has three
  * unsigned shorts per 4x4x4 group of cells from the original volume -
- * one reprenting the minimum scalar index (the scalar value adjusted
+ * one representing the minimum scalar index (the scalar value adjusted
  * to fit in the 15 bit range), the maximum scalar index, and a
  * third unsigned short which is both the maximum gradient opacity in
  * the neighborhood (an unsigned char) and the flag that is filled
@@ -57,6 +45,7 @@
 #define vtkFixedPointVolumeRayCastMapper_h
 
 #include "vtkRenderingVolumeModule.h" // For export macro
+#include "vtkThreads.h"               // for VTK_THREAD_RETURN_TYPE
 #include "vtkVolumeMapper.h"
 
 #define VTKKW_FP_SHIFT 15
@@ -64,6 +53,7 @@
 #define VTKKW_FP_MASK 0x7fff
 #define VTKKW_FP_SCALE 32767.0
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMatrix4x4;
 class vtkMultiThreader;
 class vtkPlaneCollection;
@@ -98,7 +88,7 @@ public:
   vtkTypeMacro(vtkFixedPointVolumeRayCastMapper, vtkVolumeMapper);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the distance between samples used for rendering
    * when AutoAdjustSampleDistances is off, or when this mapper
@@ -106,9 +96,9 @@ public:
    */
   vtkSetMacro(SampleDistance, float);
   vtkGetMacro(SampleDistance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the distance between samples when interactive rendering is happening.
    * In this case, interactive is defined as this volume mapper having less than 1
@@ -118,9 +108,9 @@ public:
    */
   vtkSetMacro(InteractiveSampleDistance, float);
   vtkGetMacro(InteractiveSampleDistance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Sampling distance in the XY image dimensions. Default value of 1 meaning
    * 1 ray cast per pixel. If set to 0.5, 4 rays will be cast per pixel. If
@@ -130,27 +120,27 @@ public:
    */
   vtkSetClampMacro(ImageSampleDistance, float, 0.1f, 100.0f);
   vtkGetMacro(ImageSampleDistance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This is the minimum image sample distance allow when the image
    * sample distance is being automatically adjusted.
    */
   vtkSetClampMacro(MinimumImageSampleDistance, float, 0.1f, 100.0f);
   vtkGetMacro(MinimumImageSampleDistance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This is the maximum image sample distance allow when the image
    * sample distance is being automatically adjusted.
    */
   vtkSetClampMacro(MaximumImageSampleDistance, float, 0.1f, 100.0f);
   vtkGetMacro(MaximumImageSampleDistance, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If AutoAdjustSampleDistances is on, the ImageSampleDistance
    * and the SampleDistance will be varied to achieve the allocated
@@ -163,9 +153,9 @@ public:
   vtkSetClampMacro(AutoAdjustSampleDistances, vtkTypeBool, 0, 1);
   vtkGetMacro(AutoAdjustSampleDistances, vtkTypeBool);
   vtkBooleanMacro(AutoAdjustSampleDistances, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Automatically compute the sample distance from the data spacing.  When
    * the number of voxels is 8, the sample distance will be roughly 1/200
@@ -177,9 +167,9 @@ public:
   vtkSetClampMacro(LockSampleDistanceToInputSpacing, vtkTypeBool, 0, 1);
   vtkGetMacro(LockSampleDistanceToInputSpacing, vtkTypeBool);
   vtkBooleanMacro(LockSampleDistanceToInputSpacing, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of threads to use. This by default is equal to
    * the number of available processors detected.
@@ -187,9 +177,9 @@ public:
    */
   void SetNumberOfThreads(int num);
   int GetNumberOfThreads();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If IntermixIntersectingGeometry is turned on, the zbuffer will be
    * captured and used to limit the traversal of the rays.
@@ -197,9 +187,9 @@ public:
   vtkSetClampMacro(IntermixIntersectingGeometry, vtkTypeBool, 0, 1);
   vtkGetMacro(IntermixIntersectingGeometry, vtkTypeBool);
   vtkBooleanMacro(IntermixIntersectingGeometry, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * What is the image sample distance required to achieve the desired time?
    * A version of this method is provided that does not require the volume
@@ -209,7 +199,7 @@ public:
    */
   float ComputeRequiredImageSampleDistance(float desiredTime, vtkRenderer* ren);
   float ComputeRequiredImageSampleDistance(float desiredTime, vtkRenderer* ren, vtkVolume* vol);
-  //@}
+  ///@}
 
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
@@ -268,7 +258,7 @@ public:
 
   int ShouldUseNearestNeighborInterpolation(vtkVolume* vol);
 
-  //@{
+  ///@{
   /**
    * Set / Get the underlying image object. One will be automatically
    * created - only need to set it when using from an AMR mapper which
@@ -276,7 +266,7 @@ public:
    */
   void SetRayCastImage(vtkFixedPointRayCastImage*);
   vtkGetObjectMacro(RayCastImage, vtkFixedPointRayCastImage);
-  //@}
+  ///@}
 
   int PerImageInitialization(vtkRenderer*, vtkVolume*, int, double*, double*, int*);
   void PerVolumeInitialization(vtkRenderer*, vtkVolume*);
@@ -300,7 +290,7 @@ public:
   }
   float GetEstimatedRenderTime(vtkRenderer* ren) { return this->RetrieveRenderTime(ren); }
 
-  //@{
+  ///@{
   /**
    * Set/Get the window / level applied to the final color.
    * This allows brightness / contrast adjustments on the
@@ -318,7 +308,7 @@ public:
   vtkGetMacro(FinalColorWindow, float);
   vtkSetMacro(FinalColorLevel, float);
   vtkGetMacro(FinalColorLevel, float);
-  //@}
+  ///@}
 
   // Here to be used by the mapper to tell the helper
   // to flip the MIP comparison in order to support
@@ -357,10 +347,10 @@ protected:
 
   // Internal method for computing matrices needed during
   // ray casting
-  void ComputeMatrices(double volumeOrigin[3], double volumeSpacing[3], int volumeExtent[6],
+  void ComputeMatrices(double inputOrigin[3], double inputSpacing[3], int inputExtent[6],
     vtkRenderer* ren, vtkVolume* vol);
 
-  int ComputeRowBounds(vtkRenderer* ren, int imageFlag, int rowBoundsFlag, int volumeExtent[6]);
+  int ComputeRowBounds(vtkRenderer* ren, int imageFlag, int rowBoundsFlag, int inputExtent[6]);
 
   void CaptureZBuffer(vtkRenderer* ren);
 
@@ -453,7 +443,7 @@ protected:
   vtkVolume* Volume;
 
   int ClipRayAgainstVolume(
-    float rayStart[3], float rayEnd[3], float rayDirection[3], double bounds[6]);
+    double rayStart[3], double rayEnd[3], float rayDirection[3], double bounds[6]);
 
   int UpdateColorTable(vtkVolume* vol);
   int UpdateGradients(vtkVolume* vol);
@@ -463,7 +453,7 @@ protected:
   void ComputeGradients(vtkVolume* vol);
 
   int ClipRayAgainstClippingPlanes(
-    float rayStart[3], float rayEnd[3], int numClippingPlanes, float* clippingPlanes);
+    double rayStart[3], double rayEnd[3], int numClippingPlanes, float* clippingPlanes);
 
   unsigned int FixedPointCroppingRegionPlanes[6];
   unsigned int CroppingRegionMask[27];
@@ -740,4 +730,5 @@ inline int vtkFixedPointVolumeRayCastMapper::CheckIfCropped(unsigned int pos[3])
   return !(static_cast<unsigned int>(this->CroppingRegionFlags) & this->CroppingRegionMask[idx]);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

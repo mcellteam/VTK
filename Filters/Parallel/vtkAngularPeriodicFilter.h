@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPeriodicFiler.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkAngularPeriodicFilter
@@ -41,6 +29,7 @@
 #include "vtkFiltersParallelModule.h" // For export macro
 #include "vtkPeriodicFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSetAttributes;
 class vtkMultiPieceDataSet;
 class vtkPointSet;
@@ -55,7 +44,7 @@ public:
   vtkTypeMacro(vtkAngularPeriodicFilter, vtkPeriodicFilter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get whether the rotated array values should be computed
    * on-the-fly (default), which is compute-intensive, or the arrays should be
@@ -64,9 +53,9 @@ public:
   vtkSetMacro(ComputeRotationsOnTheFly, bool);
   vtkGetMacro(ComputeRotationsOnTheFly, bool);
   vtkBooleanMacro(ComputeRotationsOnTheFly, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get The rotation mode.
    * VTK_ROTATION_MODE_DIRECT_ANGLE to specify an angle value (default),
@@ -77,9 +66,9 @@ public:
   vtkGetMacro(RotationMode, int);
   void SetRotationModeToDirectAngle() { this->SetRotationMode(VTK_ROTATION_MODE_DIRECT_ANGLE); }
   void SetRotationModeToArrayValue() { this->SetRotationMode(VTK_ROTATION_MODE_ARRAY_VALUE); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get Rotation angle, in degrees.
    * Used only with VTK_ROTATION_MODE_DIRECT_ANGLE.
@@ -87,18 +76,18 @@ public:
    */
   vtkSetMacro(RotationAngle, double);
   vtkGetMacro(RotationAngle, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get Name of array to get the angle from.
    * Used only with VTK_ROTATION_MODE_ARRAY_VALUE.
    */
   vtkSetStringMacro(RotationArrayName);
   vtkGetStringMacro(RotationArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get Rotation Axis, 0 for X, 1 for Y, 2 for Z
    */
@@ -107,15 +96,15 @@ public:
   void SetRotationAxisToX();
   void SetRotationAxisToY();
   void SetRotationAxisToZ();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get Rotation Center
    */
   vtkSetVector3Macro(Center, double);
   vtkGetVector3Macro(Center, double);
-  //@}
+  ///@}
 
 protected:
   vtkAngularPeriodicFilter();
@@ -180,4 +169,5 @@ private:
   double Center[3]; // Center of rotation
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

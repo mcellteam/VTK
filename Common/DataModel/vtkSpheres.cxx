@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSpheres.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSpheres.h"
 
 #include "vtkDoubleArray.h"
@@ -21,10 +9,11 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSpheres);
 vtkCxxSetObjectMacro(vtkSpheres, Centers, vtkPoints);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSpheres::vtkSpheres()
 {
   this->Centers = nullptr;
@@ -32,7 +21,7 @@ vtkSpheres::vtkSpheres()
   this->Sphere = vtkSphere::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSpheres::~vtkSpheres()
 {
   if (this->Centers)
@@ -46,7 +35,7 @@ vtkSpheres::~vtkSpheres()
   this->Sphere->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpheres::SetRadii(vtkDataArray* radii)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting Radii to " << radii);
@@ -72,7 +61,7 @@ void vtkSpheres::SetRadii(vtkDataArray* radii)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate sphere equations. Return smallest absolute value.
 double vtkSpheres::EvaluateFunction(double x[3])
 {
@@ -96,7 +85,7 @@ double vtkSpheres::EvaluateFunction(double x[3])
   {
     this->Radii->GetTuple(i, radius);
     this->Centers->GetPoint(i, center);
-    val = this->Sphere->Evaluate(center, radius[0], x);
+    val = vtkSphere::Evaluate(center, radius[0], x);
     if (val < minVal)
     {
       minVal = val;
@@ -106,7 +95,7 @@ double vtkSpheres::EvaluateFunction(double x[3])
   return minVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Evaluate spheres gradient.
 void vtkSpheres::EvaluateGradient(double x[3], double n[3])
 {
@@ -131,7 +120,7 @@ void vtkSpheres::EvaluateGradient(double x[3], double n[3])
   {
     this->Radii->GetTuple(i, rTemp);
     this->Centers->GetPoint(i, cTemp);
-    val = this->Sphere->Evaluate(cTemp, rTemp[0], x);
+    val = vtkSphere::Evaluate(cTemp, rTemp[0], x);
     if (val < minVal)
     {
       minVal = val;
@@ -142,7 +131,7 @@ void vtkSpheres::EvaluateGradient(double x[3], double n[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSpheres::GetNumberOfSpheres()
 {
   if (this->Centers && this->Radii)
@@ -157,7 +146,7 @@ int vtkSpheres::GetNumberOfSpheres()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSphere* vtkSpheres::GetSphere(int i)
 {
   double radius[1];
@@ -177,7 +166,7 @@ vtkSphere* vtkSpheres::GetSphere(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpheres::GetSphere(int i, vtkSphere* sphere)
 {
   if (i >= 0 && i < this->GetNumberOfSpheres())
@@ -191,7 +180,7 @@ void vtkSpheres::GetSphere(int i, vtkSphere* sphere)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSpheres::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -215,3 +204,4 @@ void vtkSpheres::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Radii: (none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

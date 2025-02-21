@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLabelSizeCalculator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkLabelSizeCalculator
@@ -40,6 +28,7 @@
 #include "vtkPassInputTypeAlgorithm.h"
 #include "vtkRenderingLabelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIntArray;
 class vtkTextRenderer;
 class vtkStringArray;
@@ -52,7 +41,7 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkLabelSizeCalculator, vtkPassInputTypeAlgorithm);
 
-  //@{
+  ///@{
   /**
    * Get/Set the font used compute label sizes.
    * This defaults to "Arial" at 12 points.
@@ -61,25 +50,25 @@ public:
    */
   virtual void SetFontProperty(vtkTextProperty* fontProp, int type = 0);
   virtual vtkTextProperty* GetFontProperty(int type = 0);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The name of the output array containing text label sizes
    * This defaults to "LabelSize"
    */
   vtkSetStringMacro(LabelSizeArrayName);
   vtkGetStringMacro(LabelSizeArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the DPI at which the labels are to be rendered. Defaults to 72.
    * @sa vtkWindow::GetDPI()
    */
   vtkSetMacro(DPI, int);
   vtkGetMacro(DPI, int);
-  //@}
+  ///@}
 
 protected:
   vtkLabelSizeCalculator();
@@ -107,4 +96,5 @@ private:
   void operator=(const vtkLabelSizeCalculator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkLabelSizeCalculator_h

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMetaImageWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMetaImageWriter
  * @brief   write a binary UNC meta image data
@@ -70,6 +58,7 @@ namespace vtkmetaio
 class MetaImage;
 } // forward declaration
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOIMAGE_EXPORT vtkMetaImageWriter : public vtkImageWriter
 {
 public:
@@ -84,19 +73,22 @@ public:
   /**
    * Specify file name of meta file
    */
-  void SetFileName(const char* fname) override;
-  char* GetFileName() override { return this->MHDFileName; }
+  void SetFileName(VTK_FILEPATH const char* fname) override;
+  VTK_FILEPATH VTK_FUTURE_CONST char* GetFileName() VTK_FUTURE_CONST override
+  {
+    return this->MHDFileName;
+  }
 
-  //@{
+  ///@{
   /**
    * Specify the file name of the raw image data.
    */
-  virtual void SetRAWFileName(const char* fname);
-  virtual char* GetRAWFileName();
-  //@}
+  virtual void SetRAWFileName(VTK_FILEPATH const char* fname);
+  virtual VTK_FILEPATH VTK_FUTURE_CONST char* GetRAWFileName() VTK_FUTURE_CONST;
+  ///@}
 
   virtual void SetCompression(bool compress) { this->Compress = compress; }
-  virtual bool GetCompression(void) { return this->Compress; }
+  virtual bool GetCompression() { return this->Compress; }
 
   // This is called by the superclass.
   // This is the method you should override.
@@ -106,7 +98,7 @@ protected:
   vtkMetaImageWriter();
   ~vtkMetaImageWriter() override;
 
-  vtkSetStringMacro(MHDFileName);
+  vtkSetFilePathMacro(MHDFileName);
   char* MHDFileName;
   bool Compress;
 
@@ -117,4 +109,5 @@ private:
   vtkmetaio::MetaImage* MetaImagePtr;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

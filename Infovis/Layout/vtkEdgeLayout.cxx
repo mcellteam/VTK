@@ -1,21 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEdgeLayout.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*----------------------------------------------------------------------------
- Copyright (c) Sandia Corporation
- See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-----------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) Sandia Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkEdgeLayout.h"
 
@@ -32,9 +17,10 @@
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkEdgeLayout);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkEdgeLayout::vtkEdgeLayout()
 {
@@ -46,7 +32,7 @@ vtkEdgeLayout::vtkEdgeLayout()
   this->EventForwarder->SetTarget(this);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkEdgeLayout::~vtkEdgeLayout()
 {
@@ -61,7 +47,7 @@ vtkEdgeLayout::~vtkEdgeLayout()
   this->EventForwarder->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkEdgeLayout::SetLayoutStrategy(vtkEdgeLayoutStrategy* strategy)
 {
@@ -91,7 +77,7 @@ void vtkEdgeLayout::SetLayoutStrategy(vtkEdgeLayoutStrategy* strategy)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkMTimeType vtkEdgeLayout::GetMTime()
 {
@@ -106,7 +92,7 @@ vtkMTimeType vtkEdgeLayout::GetMTime()
   return mTime;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkEdgeLayout::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -155,7 +141,7 @@ int vtkEdgeLayout::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkEdgeLayout::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -171,3 +157,4 @@ void vtkEdgeLayout::PrintSelf(ostream& os, vtkIndent indent)
     this->InternalGraph->PrintSelf(os, indent.GetNextIndent());
   }
 }
+VTK_ABI_NAMESPACE_END

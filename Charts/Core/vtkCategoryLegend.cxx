@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCategoryLegend.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkCategoryLegend.h"
 #include "vtkBrush.h"
@@ -21,10 +9,12 @@
 #include "vtkTextProperty.h"
 #include "vtkVariantArray.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCategoryLegend);
+vtkCxxSetObjectMacro(vtkCategoryLegend, Values, vtkVariantArray);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCategoryLegend::vtkCategoryLegend()
 {
   this->SetInline(false);
@@ -46,10 +36,13 @@ vtkCategoryLegend::vtkCategoryLegend()
   this->OutlierLabel = "outliers";
 }
 
-//-----------------------------------------------------------------------------
-vtkCategoryLegend::~vtkCategoryLegend() = default;
+//------------------------------------------------------------------------------
+vtkCategoryLegend::~vtkCategoryLegend()
+{
+  this->SetValues(nullptr);
+}
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCategoryLegend::Paint(vtkContext2D* painter)
 {
   if (!this->Visible || this->ScalarsToColors == nullptr || this->Values == nullptr)
@@ -97,7 +90,7 @@ bool vtkCategoryLegend::Paint(vtkContext2D* painter)
   // draw all of the marks & labels
   for (vtkIdType l = 0; l < this->Values->GetNumberOfTuples(); ++l)
   {
-    vtkStdString currentString = this->Values->GetValue(l).ToString();
+    std::string currentString = this->Values->GetValue(l).ToString();
     if (currentString.empty())
     {
       continue;
@@ -136,19 +129,19 @@ bool vtkCategoryLegend::Paint(vtkContext2D* painter)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCategoryLegend::SetScalarsToColors(vtkScalarsToColors* stc)
 {
   this->ScalarsToColors = stc;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkScalarsToColors* vtkCategoryLegend::GetScalarsToColors()
 {
   return this->ScalarsToColors;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectf vtkCategoryLegend::GetBoundingRect(vtkContext2D* painter)
 {
   if (this->CacheBounds && this->RectTime > this->GetMTime() && this->RectTime > this->PlotTime &&
@@ -265,14 +258,36 @@ vtkRectf vtkCategoryLegend::GetBoundingRect(vtkContext2D* painter)
   return this->Rect;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCategoryLegend::SetTitle(const vtkStdString& title)
 {
   this->Title = title;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkCategoryLegend::GetTitle()
 {
   return this->Title;
 }
+
+//------------------------------------------------------------------------------
+void vtkCategoryLegend::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+  os << indent << "HasOutliers: " << this->HasOutliers << endl;
+  os << indent << "TitleWidthOffset: " << this->TitleWidthOffset << endl;
+  os << indent << "ScalarsToColors: \n";
+  if (this->ScalarsToColors)
+  {
+    this->ScalarsToColors->PrintSelf(os, indent.GetNextIndent());
+  }
+  else
+  {
+    os << indent.GetNextIndent() << "(null)" << endl;
+  }
+  os << indent << "OutlierLabel: " << this->OutlierLabel << endl;
+  os << indent << "Title: " << this->Title << endl;
+  os << indent << "TitleProperties: \n";
+  this->TitleProperties->PrintSelf(os, indent.GetNextIndent());
+}
+VTK_ABI_NAMESPACE_END

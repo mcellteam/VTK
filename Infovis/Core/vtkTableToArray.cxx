@@ -1,26 +1,10 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTableToArray.cxx
-
--------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkTableToArray.h"
 #include "vtkAbstractArray.h"
+#include "vtkArrayData.h"
 #include "vtkDenseArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -31,6 +15,7 @@
 
 #include <algorithm>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkTableToArray::implementation
 {
 public:
@@ -44,11 +29,11 @@ public:
   std::vector<vtkVariant> Columns;
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkTableToArray);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkTableToArray::vtkTableToArray()
   : Implementation(new implementation())
@@ -57,14 +42,14 @@ vtkTableToArray::vtkTableToArray()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkTableToArray::~vtkTableToArray()
 {
   delete this->Implementation;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkTableToArray::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -87,19 +72,19 @@ void vtkTableToArray::AddColumn(const char* name)
     return;
   }
 
-  this->Implementation->Columns.push_back(vtkVariant(vtkStdString(name)));
+  this->Implementation->Columns.emplace_back(vtkStdString(name));
   this->Modified();
 }
 
 void vtkTableToArray::AddColumn(vtkIdType index)
 {
-  this->Implementation->Columns.push_back(vtkVariant(static_cast<int>(index)));
+  this->Implementation->Columns.emplace_back(static_cast<int>(index));
   this->Modified();
 }
 
 void vtkTableToArray::AddAllColumns()
 {
-  this->Implementation->Columns.push_back(vtkVariant(static_cast<char>('A')));
+  this->Implementation->Columns.emplace_back('A');
   this->Modified();
 }
 
@@ -115,7 +100,7 @@ int vtkTableToArray::FillInputPortInformation(int port, vtkInformation* info)
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkTableToArray::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -132,8 +117,7 @@ int vtkTableToArray::RequestData(
         table->GetColumnByName(this->Implementation->Columns[i].ToString().c_str()));
       if (!columns.back())
       {
-        vtkErrorMacro(<< "Missing table column: "
-                      << this->Implementation->Columns[i].ToString().c_str());
+        vtkErrorMacro(<< "Missing table column: " << this->Implementation->Columns[i].ToString());
         return 0;
       }
     }
@@ -176,3 +160,4 @@ int vtkTableToArray::RequestData(
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

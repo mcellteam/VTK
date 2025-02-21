@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPolyDataReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLPolyDataReader.h"
 #include "vtkCellArray.h"
 #include "vtkIdTypeArray.h"
@@ -24,9 +12,10 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLPolyDataReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPolyDataReader::vtkXMLPolyDataReader()
 {
   this->VertElements = nullptr;
@@ -49,7 +38,7 @@ vtkXMLPolyDataReader::vtkXMLPolyDataReader()
   this->PolysOffset = static_cast<unsigned long>(-1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPolyDataReader::~vtkXMLPolyDataReader()
 {
   if (this->NumberOfPieces)
@@ -58,55 +47,55 @@ vtkXMLPolyDataReader::~vtkXMLPolyDataReader()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPolyDataReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkXMLPolyDataReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkXMLPolyDataReader::GetOutput(int idx)
 {
   return vtkPolyData::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPolyDataReader::GetNumberOfVerts()
 {
   return this->TotalNumberOfVerts;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPolyDataReader::GetNumberOfLines()
 {
   return this->TotalNumberOfLines;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPolyDataReader::GetNumberOfStrips()
 {
   return this->TotalNumberOfStrips;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPolyDataReader::GetNumberOfPolys()
 {
   return this->TotalNumberOfPolys;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLPolyDataReader::GetDataSetName()
 {
   return "PolyData";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPolyDataReader::GetOutputUpdateExtent(int& piece, int& numberOfPieces, int& ghostLevel)
 {
   vtkInformation* outInfo = this->GetCurrentOutputInformation();
@@ -115,7 +104,7 @@ void vtkXMLPolyDataReader::GetOutputUpdateExtent(int& piece, int& numberOfPieces
   ghostLevel = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPolyDataReader::SetupOutputTotals()
 {
   this->Superclass::SetupOutputTotals();
@@ -143,7 +132,7 @@ void vtkXMLPolyDataReader::SetupOutputTotals()
   this->StartPoly = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPolyDataReader::SetupPieces(int numPieces)
 {
   this->Superclass::SetupPieces(numPieces);
@@ -164,7 +153,7 @@ void vtkXMLPolyDataReader::SetupPieces(int numPieces)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPolyDataReader::DestroyPieces()
 {
   delete[] this->PolyElements;
@@ -178,14 +167,14 @@ void vtkXMLPolyDataReader::DestroyPieces()
   this->Superclass::DestroyPieces();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLPolyDataReader::GetNumberOfCellsInPiece(int piece)
 {
   return (this->NumberOfVerts[piece] + this->NumberOfLines[piece] + this->NumberOfStrips[piece] +
     this->NumberOfPolys[piece]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPolyDataReader::SetupOutputData()
 {
   this->Superclass::SetupOutputData();
@@ -208,7 +197,7 @@ void vtkXMLPolyDataReader::SetupOutputData()
   outVerts->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPolyDataReader::ReadPiece(vtkXMLDataElement* ePiece)
 {
   if (!this->Superclass::ReadPiece(ePiece))
@@ -258,7 +247,7 @@ int vtkXMLPolyDataReader::ReadPiece(vtkXMLDataElement* ePiece)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPolyDataReader::SetupNextPiece()
 {
   this->Superclass::SetupNextPiece();
@@ -268,7 +257,7 @@ void vtkXMLPolyDataReader::SetupNextPiece()
   this->StartPoly += this->NumberOfPolys[this->Piece];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPolyDataReader::ReadPieceData()
 {
   // The amount of data read by the superclass's ReadPieceData comes
@@ -396,7 +385,7 @@ int vtkXMLPolyDataReader::ReadPieceData()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPolyDataReader::ReadArrayForCells(vtkXMLDataElement* da, vtkAbstractArray* outArray)
 {
   // Split progress range according to the fraction of data that will
@@ -471,9 +460,10 @@ int vtkXMLPolyDataReader::ReadArrayForCells(vtkXMLDataElement* da, vtkAbstractAr
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPolyDataReader::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

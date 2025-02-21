@@ -1,18 +1,9 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkHigherOrderTriangle.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkHigherOrderTriangle.h"
+
+#include <cstdint>
 
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
@@ -29,7 +20,8 @@
 #define ENABLE_CACHING
 #define SEVEN_POINT_TRIANGLE
 
-//----------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
+//------------------------------------------------------------------------------
 vtkHigherOrderTriangle::vtkHigherOrderTriangle()
 {
   this->Order = 0;
@@ -47,20 +39,21 @@ vtkHigherOrderTriangle::vtkHigherOrderTriangle()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHigherOrderTriangle::~vtkHigherOrderTriangle()
 {
   this->Face->Delete();
   this->Scalars->Delete();
 }
 
-//----------------------------------------------------------------------------
-void vtkHigherOrderTriangle::GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* result, int edgeId)
+//------------------------------------------------------------------------------
+void vtkHigherOrderTriangle::SetEdgeIdsAndPoints(int edgeId,
+  const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+  const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points)
 {
-  result->PointIds->Reset();
-  result->Points->Reset();
-
   vtkIdType order = this->GetOrder();
+
+  set_number_of_ids_and_points(order + 1);
 
   vtkIdType bindex[3] = { 0, 0, 0 };
   bindex[(edgeId + 2) % 3] = order;
@@ -75,15 +68,14 @@ void vtkHigherOrderTriangle::GetEdgeWithoutRationalWeights(vtkHigherOrderCurve* 
     // maps from this iteration loop to the edge's ordering.
     vtkIdType edgeIndex = (i == 0 ? 0 : (i == order ? 1 : i + 1));
 
-    result->GetPointIds()->InsertId(edgeIndex, this->PointIds->GetId(triangleIndex));
-    result->GetPoints()->InsertPoint(edgeIndex, this->Points->GetPoint(triangleIndex));
+    set_ids_and_points(edgeIndex, triangleIndex);
 
     bindex[(edgeId + 2) % 3]--;
     bindex[edgeId]++;
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::Initialize()
 {
   vtkIdType order = this->ComputeOrder();
@@ -120,7 +112,7 @@ void vtkHigherOrderTriangle::Initialize()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHigherOrderTriangle::ComputeNumberOfSubtriangles()
 {
 #ifdef SEVEN_POINT_TRIANGLE
@@ -133,7 +125,7 @@ vtkIdType vtkHigherOrderTriangle::ComputeNumberOfSubtriangles()
   return order * order;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::SubtriangleBarycentricPointIndices(
   vtkIdType cellIndex, vtkIdType (&pointBIndices)[3][3])
 {
@@ -248,7 +240,7 @@ void vtkHigherOrderTriangle::SubtriangleBarycentricPointIndices(
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTriangle::CellBoundary(
   int vtkNotUsed(subId), const double pcoords[3], vtkIdList* pts)
 {
@@ -289,7 +281,7 @@ int vtkHigherOrderTriangle::CellBoundary(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTriangle::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& minDist2, double weights[])
 {
@@ -301,6 +293,15 @@ int vtkHigherOrderTriangle::EvaluatePosition(const double x[3], double closestPo
   vtkIdType order = this->GetOrder();
   vtkIdType numberOfSubtriangles = this->GetNumberOfSubtriangles();
 
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return 0;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
   minDist2 = VTK_DOUBLE_MAX;
   for (vtkIdType subCellId = 0; subCellId < numberOfSubtriangles; subCellId++)
   {
@@ -309,12 +310,12 @@ int vtkHigherOrderTriangle::EvaluatePosition(const double x[3], double closestPo
     for (vtkIdType i = 0; i < 3; i++)
     {
       pointIndices[i] = this->ToIndex(bindices[i]);
-      this->Face->Points->SetPoint(i, this->Points->GetPoint(pointIndices[i]));
+      this->Face->Points->SetPoint(i, pts + 3 * pointIndices[i]);
     }
 
     status = this->Face->EvaluatePosition(x, closest, ignoreId, pc, dist2, tempWeights);
 
-    if (status != -1 && dist2 < minDist2)
+    if (status != -1 && ((dist2 < minDist2) || ((dist2 == minDist2) && (returnStatus == 0))))
     {
       returnStatus = status;
       minDist2 = dist2;
@@ -358,7 +359,7 @@ int vtkHigherOrderTriangle::EvaluatePosition(const double x[3], double closestPo
   return returnStatus;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
@@ -366,11 +367,20 @@ void vtkHigherOrderTriangle::EvaluateLocation(
 
   this->InterpolateFunctions(pcoords, weights);
 
-  double p[3];
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
+  const double* p;
   vtkIdType nPoints = this->GetPoints()->GetNumberOfPoints();
   for (vtkIdType idx = 0; idx < nPoints; idx++)
   {
-    this->Points->GetPoint(idx, p);
+    p = pts + 3 * idx;
     for (vtkIdType jdx = 0; jdx < 3; jdx++)
     {
       x[jdx] += p[jdx] * weights[idx];
@@ -378,7 +388,7 @@ void vtkHigherOrderTriangle::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::Contour(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* verts, vtkCellArray* lines,
   vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
@@ -407,7 +417,7 @@ void vtkHigherOrderTriangle::Contour(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::Clip(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd,
   vtkCellData* inCd, vtkIdType cellId, vtkCellData* outCd, int insideOut)
@@ -435,7 +445,7 @@ void vtkHigherOrderTriangle::Clip(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTriangle::IntersectWithLine(
   const double* p1, const double* p2, double tol, double& t, double* x, double* pcoords, int& subId)
 {
@@ -463,10 +473,18 @@ int vtkHigherOrderTriangle::IntersectWithLine(
       for (vtkIdType i = 0; i < 3; i++)
       {
         x[i] = xMin[i];
-        pcoords[i] = (i < 2 ? (bindices[0][i] + pcoordsMin[0] * (bindices[1][i] - bindices[0][i]) +
-                                pcoordsMin[1] * (bindices[2][i] - bindices[0][i])) /
-              order
-                            : 0.);
+
+        if (i < 2)
+        {
+          int64_t b0 = static_cast<int64_t>(bindices[0][i]);
+          int64_t b1 = static_cast<int64_t>(bindices[1][i]) - static_cast<int64_t>(bindices[0][i]);
+          int64_t b2 = static_cast<int64_t>(bindices[2][i]) - static_cast<int64_t>(bindices[0][i]);
+          pcoords[i] = (b0 + pcoordsMin[0] * b1 + pcoordsMin[1] * b2) / order;
+        }
+        else
+        {
+          pcoords[i] = 0.0;
+        }
       }
       t = tTmp;
     }
@@ -476,29 +494,23 @@ int vtkHigherOrderTriangle::IntersectWithLine(
   return (t == VTK_DOUBLE_MAX ? 0 : 1);
 }
 
-//----------------------------------------------------------------------------
-int vtkHigherOrderTriangle::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+//------------------------------------------------------------------------------
+int vtkHigherOrderTriangle::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  pts->Reset();
-  ptIds->Reset();
 
 #ifdef SEVEN_POINT_TRIANGLE
   if (this->Points->GetNumberOfPoints() == 7)
   {
     static constexpr vtkIdType edgeOrder[7] = { 0, 3, 1, 4, 2, 5, 0 };
-    pts->SetNumberOfPoints(18);
     ptIds->SetNumberOfIds(18);
     vtkIdType pointId = 0;
     for (vtkIdType i = 0; i < 6; i++)
     {
-      ptIds->SetId(pointId, this->PointIds->GetId(edgeOrder[i]));
-      pts->SetPoint(pointId, this->Points->GetPoint(edgeOrder[i]));
+      ptIds->SetId(pointId, edgeOrder[i]);
       pointId++;
-      ptIds->SetId(pointId, this->PointIds->GetId(edgeOrder[i + 1]));
-      pts->SetPoint(pointId, this->Points->GetPoint(edgeOrder[i + 1]));
+      ptIds->SetId(pointId, edgeOrder[i + 1]);
       pointId++;
-      ptIds->SetId(pointId, this->PointIds->GetId(6));
-      pts->SetPoint(pointId, this->Points->GetPoint(6));
+      ptIds->SetId(pointId, 6);
       pointId++;
     }
     return 1;
@@ -507,25 +519,19 @@ int vtkHigherOrderTriangle::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds,
 
   vtkIdType bindices[3][3];
   vtkIdType numberOfSubtriangles = this->GetNumberOfSubtriangles();
-
-  pts->SetNumberOfPoints(3 * numberOfSubtriangles);
   ptIds->SetNumberOfIds(3 * numberOfSubtriangles);
   for (vtkIdType subCellId = 0; subCellId < numberOfSubtriangles; subCellId++)
   {
     this->SubtriangleBarycentricPointIndices(subCellId, bindices);
-
     for (vtkIdType i = 0; i < 3; i++)
     {
-      vtkIdType pointIndex = this->ToIndex(bindices[i]);
-      ptIds->SetId(3 * subCellId + i, this->PointIds->GetId(pointIndex));
-      pts->SetPoint(3 * subCellId + i, this->Points->GetPoint(pointIndex));
+      ptIds->SetId(3 * subCellId + i, this->ToIndex(bindices[i]));
     }
   }
-
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::JacobianInverse(
   const double pcoords[3], double** inverse, double* derivs)
 {
@@ -577,7 +583,7 @@ void vtkHigherOrderTriangle::JacobianInverse(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
@@ -591,7 +597,7 @@ void vtkHigherOrderTriangle::Derivatives(
   jI[0] = j0;
   jI[1] = j1;
   jI[2] = j2;
-  this->JacobianInverse(pcoords, jI, &fDs[0]);
+  this->JacobianInverse(pcoords, jI, fDs.data());
 
   // now compute derivates of values provided
   for (k = 0; k < dim; k++) // loop over values per vertex
@@ -613,7 +619,7 @@ void vtkHigherOrderTriangle::Derivatives(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef SEVEN_POINT_TRIANGLE
 namespace
 {
@@ -644,7 +650,7 @@ void vtkHigherOrderTriangle::SetParametricCoords()
   {
     this->PointParametricCoordinates->Initialize();
 
-    double order_d = static_cast<vtkIdType>(order);
+    double order_d = order;
 
     this->PointParametricCoordinates->SetNumberOfPoints(nPoints);
 
@@ -702,7 +708,7 @@ double* vtkHigherOrderTriangle::GetParametricCoords()
   return vtkDoubleArray::SafeDownCast(this->PointParametricCoordinates->GetData())->GetPointer(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTriangle::GetParametricCenter(double pcoords[3])
 {
   pcoords[0] = pcoords[1] = 1. / 3.;
@@ -710,7 +716,7 @@ int vtkHigherOrderTriangle::GetParametricCenter(double pcoords[3])
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkHigherOrderTriangle::GetParametricDistance(const double pcoords[3])
 {
   int i;
@@ -744,8 +750,8 @@ double vtkHigherOrderTriangle::GetParametricDistance(const double pcoords[3])
   return pDistMax;
 }
 
-//----------------------------------------------------------------------------
-double vtkHigherOrderTriangle::eta(vtkIdType n, vtkIdType chi, double sigma)
+//------------------------------------------------------------------------------
+double vtkHigherOrderTriangle::Eta(vtkIdType n, vtkIdType chi, double sigma)
 {
   double result = 1.;
   for (vtkIdType i = 1; i <= chi; i++)
@@ -755,8 +761,8 @@ double vtkHigherOrderTriangle::eta(vtkIdType n, vtkIdType chi, double sigma)
   return result;
 }
 
-//----------------------------------------------------------------------------
-double vtkHigherOrderTriangle::d_eta(vtkIdType n, vtkIdType chi, double sigma)
+//------------------------------------------------------------------------------
+double vtkHigherOrderTriangle::Deta(vtkIdType n, vtkIdType chi, double sigma)
 {
   if (chi == 0)
   {
@@ -765,19 +771,37 @@ double vtkHigherOrderTriangle::d_eta(vtkIdType n, vtkIdType chi, double sigma)
   else
   {
     double chi_d = static_cast<double>(chi);
-    return (n / chi_d * eta(n, chi - 1, sigma) +
-      (n * sigma - chi_d + 1.) / chi_d * d_eta(n, chi - 1, sigma));
+    return (n / chi_d * Eta(n, chi - 1, sigma) +
+      (n * sigma - chi_d + 1.) / chi_d * Deta(n, chi - 1, sigma));
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHigherOrderTriangle::ComputeOrder()
 {
   // when order = n, # points = (n+1)*(n+2)/2
   return (sqrt(8 * this->GetPoints()->GetNumberOfPoints() + 1) - 3) / 2;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+bool vtkHigherOrderTriangle::PointCountSupportsUniformOrder(vtkIdType pointsPerTri)
+{
+  // Determine if sqrt(8N + 1) is integral (and if so, what is it?).
+  vtkIdType nn = 8 * pointsPerTri + 1;
+  int h = nn % 0x0f; // Perfect squares in base 16 must end in 0, 1, 4, or 9.
+  if (h > 9 || (h > 1 && h < 4) || (h > 4 && h < 9))
+  {
+    return false;
+  }
+  int root = std::floor(std::sqrt(nn) + 0.5);
+  if (root * root != nn)
+  {
+    return false;
+  }
+  return root >= 3 && (root - 3) % 2 == 0;
+}
+
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::ToBarycentricIndex(vtkIdType index, vtkIdType* bindex)
 {
 #ifdef ENABLE_CACHING
@@ -795,7 +819,7 @@ void vtkHigherOrderTriangle::ToBarycentricIndex(vtkIdType index, vtkIdType* bind
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHigherOrderTriangle::ToIndex(const vtkIdType* bindex)
 {
 #ifdef SEVEN_POINT_TRIANGLE
@@ -817,7 +841,7 @@ vtkIdType vtkHigherOrderTriangle::ToIndex(const vtkIdType* bindex)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::BarycentricIndex(vtkIdType index, vtkIdType* bindex, vtkIdType order)
 {
   // "Barycentric index" is a triplet of integers, each running from 0 to
@@ -856,7 +880,7 @@ void vtkHigherOrderTriangle::BarycentricIndex(vtkIdType index, vtkIdType* bindex
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHigherOrderTriangle::Index(const vtkIdType* bindex, vtkIdType order)
 {
   vtkIdType index = 0;
@@ -901,8 +925,9 @@ vtkIdType vtkHigherOrderTriangle::Index(const vtkIdType* bindex, vtkIdType order
   return index;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTriangle::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

@@ -81,7 +81,7 @@ static int NC3_get_var_chunk_cache(int,int,size_t*,size_t*,float*);
 static const NC_Dispatch NC3_dispatcher = {
 
 NC_FORMATX_NC3,
-
+NC_DISPATCH_VERSION,
 NC3_create,
 NC3_open,
 
@@ -164,6 +164,13 @@ NC3_def_var_filter,
 NC3_set_var_chunk_cache,
 NC3_get_var_chunk_cache,
 
+NC_NOOP_inq_var_filter_ids,
+NC_NOOP_inq_var_filter_info,
+
+NC_NOTNC4_def_var_quantize,
+NC_NOTNC4_inq_var_quantize,
+
+NC_NOOP_inq_filter_avail,
 };
 
 const NC_Dispatch* NC3_dispatch_table = NULL; /*!< NC3 Dispatch table, moved here from ddispatch.c */

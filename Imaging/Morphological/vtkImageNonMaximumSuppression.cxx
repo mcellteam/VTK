@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageNonMaximumSuppression.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageNonMaximumSuppression.h"
 
 #include "vtkDataArray.h"
@@ -24,9 +12,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageNonMaximumSuppression);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageNonMaximumSuppression filter.
 vtkImageNonMaximumSuppression::vtkImageNonMaximumSuppression()
 {
@@ -35,7 +24,7 @@ vtkImageNonMaximumSuppression::vtkImageNonMaximumSuppression()
   this->SetNumberOfInputPorts(2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a region that holds the image extent of this filters
 // input, and changes the region to hold the image extent of this filters
 // output.
@@ -65,7 +54,7 @@ int vtkImageNonMaximumSuppression::RequestInformation(vtkInformation* vtkNotUsed
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method computes the input extent necessary to generate the output.
 int vtkImageNonMaximumSuppression::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -107,7 +96,7 @@ int vtkImageNonMaximumSuppression::RequestUpdateExtent(vtkInformation* vtkNotUse
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 // Handles the two input operations
 template <class T>
@@ -273,7 +262,7 @@ void vtkImageNonMaximumSuppressionExecute(vtkImageNonMaximumSuppression* self,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output regions, and executes the filter
 // algorithm to fill the output from the inputs.
 // It just executes a switch statement to call the correct function for
@@ -326,3 +315,4 @@ void vtkImageNonMaximumSuppression::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "HandleBoundaries: " << (this->HandleBoundaries ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

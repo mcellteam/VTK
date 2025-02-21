@@ -1,24 +1,14 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMappedUnstructuredGrid.txx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMappedUnstructuredGrid.h"
 
+#include "vtkCellArray.h"
 #include "vtkGenericCell.h"
 #include <algorithm>
 
 //------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 template <class Implementation, class CellIterator>
 void vtkMappedUnstructuredGrid<Implementation, CellIterator>::PrintSelf(
   ostream& os, vtkIndent indent)
@@ -82,6 +72,16 @@ void vtkMappedUnstructuredGrid<Implementation, CellIterator>::GetCell(
   cell->SetCellType(this->Impl->GetCellType(cellId));
   this->Impl->GetCellPoints(cellId, cell->PointIds);
   this->Points->GetPoints(cell->PointIds, cell->Points);
+
+  if (cell->RequiresExplicitFaceRepresentation())
+  {
+    vtkNew<vtkCellArray> faces;
+    this->Impl->GetPolyhedronFaces(cellId, faces);
+    if (faces->GetNumberOfCells() != 0)
+    {
+      cell->SetCellFaces(faces);
+    }
+  }
 
   if (cell->RequiresInitialization())
   {
@@ -169,9 +169,9 @@ vtkIdType vtkMappedUnstructuredGrid<Implementation, CellIterator>::InternalInser
 //------------------------------------------------------------------------------
 template <class Implementation, class CellIterator>
 vtkIdType vtkMappedUnstructuredGrid<Implementation, CellIterator>::InternalInsertNextCell(
-  int type, vtkIdType npts, const vtkIdType ptIds[], vtkIdType nfaces, const vtkIdType faces[])
+  int type, vtkIdType npts, const vtkIdType ptIds[], vtkCellArray* faces)
 {
-  return this->Impl->InsertNextCell(type, npts, ptIds, nfaces, faces);
+  return this->Impl->InsertNextCell(type, npts, ptIds, faces);
 }
 
 //------------------------------------------------------------------------------
@@ -198,9 +198,7 @@ vtkMappedUnstructuredGrid<Implementation, CellIterator>::vtkMappedUnstructuredGr
 
 //------------------------------------------------------------------------------
 template <class Implementation, class CellIterator>
-vtkMappedUnstructuredGrid<Implementation, CellIterator>::~vtkMappedUnstructuredGrid()
-{
-}
+vtkMappedUnstructuredGrid<Implementation, CellIterator>::~vtkMappedUnstructuredGrid() = default;
 
 //------------------------------------------------------------------------------
 template <class Implementation, class CellIterator>
@@ -217,3 +215,4 @@ Implementation* vtkMappedUnstructuredGrid<Implementation, CellIterator>::GetImpl
 {
   return this->Impl;
 }
+VTK_ABI_NAMESPACE_END

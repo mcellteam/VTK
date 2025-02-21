@@ -1,23 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestRect.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkRect.h"
 
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 int TestAddPoint(vtkRect<T>& expandRect, T x, T y, const vtkRect<T>& expected)
 {
@@ -63,7 +51,7 @@ int TestAddPoint(vtkRect<T>& expandRect, T x, T y, const vtkRect<T>& expected)
   return returnValue;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class T>
 int TestAddRect(vtkRect<T>& expandRect, vtkRect<T>& addRect, const vtkRect<T>& expected)
 {
@@ -111,7 +99,7 @@ int TestAddRect(vtkRect<T>& expandRect, vtkRect<T>& addRect, const vtkRect<T>& e
 
 } // end anonymous namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestRect(int, char*[])
 {
   int result = 0;

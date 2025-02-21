@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSetGradient.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-  This software is distributed WITHOUT ANY WARRANTY; without even
-  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-  PURPOSE.  See the above copyright notice for more information.
-
-  =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataSetGradient
  * @brief   computes scalar field gradient
@@ -32,6 +20,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersGeneralModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkDataSetGradient : public vtkDataSetAlgorithm
 {
 public:
@@ -39,13 +28,13 @@ public:
   vtkTypeMacro(vtkDataSetGradient, vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the name of computed vector array.
    */
   vtkSetStringMacro(ResultArrayName);
   vtkGetStringMacro(ResultArrayName);
-  //@}
+  ///@}
 
 protected:
   vtkDataSetGradient();
@@ -60,4 +49,5 @@ private:
   void operator=(const vtkDataSetGradient&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* VTK_DATA_SET_GRADIENT_H */

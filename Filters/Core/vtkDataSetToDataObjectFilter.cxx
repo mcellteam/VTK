@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSetToDataObjectFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDataSetToDataObjectFilter.h"
 
 #include "vtkCellArray.h"
@@ -32,9 +20,10 @@
 #include <sstream>
 #include <string>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkDataSetToDataObjectFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate object.
 vtkDataSetToDataObjectFilter::vtkDataSetToDataObjectFilter()
 {
@@ -49,7 +38,7 @@ vtkDataSetToDataObjectFilter::vtkDataSetToDataObjectFilter()
 
 vtkDataSetToDataObjectFilter::~vtkDataSetToDataObjectFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataSetToDataObjectFilter::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -160,7 +149,8 @@ int vtkDataSetToDataObjectFilter::RequestData(
   if (this->Topology)
   {
     // Helper lambda to add cell arrays to the field data:
-    auto addCellConnArrays = [&](vtkCellArray* ca, const std::string& name) {
+    auto addCellConnArrays = [&](vtkCellArray* ca, const std::string& name)
+    {
       if (!ca || ca->GetNumberOfCells() == 0)
       {
         return;
@@ -310,10 +300,13 @@ int vtkDataSetToDataObjectFilter::RequestData(
 
   output->SetFieldData(fd);
   fd->Delete();
+
+  this->CheckAbort();
+
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataSetToDataObjectFilter::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector*)
 {
@@ -326,7 +319,7 @@ int vtkDataSetToDataObjectFilter::RequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataSetToDataObjectFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -337,7 +330,7 @@ int vtkDataSetToDataObjectFilter::FillInputPortInformation(int port, vtkInformat
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataSetToDataObjectFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -348,3 +341,4 @@ void vtkDataSetToDataObjectFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Point Data: " << (this->PointData ? "On\n" : "Off\n");
   os << indent << "Cell Data: " << (this->CellData ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

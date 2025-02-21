@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSequencePass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkSequencePass
  * @brief   Execute render passes sequentially.
@@ -32,10 +20,12 @@
 
 #include "vtkRenderPass.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
+#include "vtkWrappingHints.h"          // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderPassCollection;
 
-class VTKRENDERINGOPENGL2_EXPORT vtkSequencePass : public vtkRenderPass
+class VTKRENDERINGOPENGL2_EXPORT VTK_MARSHALAUTO vtkSequencePass : public vtkRenderPass
 {
 public:
   static vtkSequencePass* New();
@@ -55,7 +45,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * The ordered list of render passes to execute sequentially.
    * If the pointer is NULL or the list is empty, it is silently ignored.
@@ -64,7 +54,7 @@ public:
    */
   vtkGetObjectMacro(Passes, vtkRenderPassCollection);
   virtual void SetPasses(vtkRenderPassCollection* passes);
-  //@}
+  ///@}
 
 protected:
   vtkRenderPassCollection* Passes;
@@ -77,4 +67,5 @@ private:
   void operator=(const vtkSequencePass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

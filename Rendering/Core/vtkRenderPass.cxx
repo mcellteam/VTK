@@ -1,36 +1,25 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRenderPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkRenderPass.h"
 #include "vtkRenderer.h"
 #include <cassert>
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Default constructor. Do nothing.
+VTK_ABI_NAMESPACE_BEGIN
 vtkRenderPass::vtkRenderPass()
 {
   this->NumberOfRenderedProps = 0;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Destructor. Do nothing.
 vtkRenderPass::~vtkRenderPass() = default;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources. Default implementation is empty.
@@ -42,7 +31,7 @@ void vtkRenderPass::ReleaseGraphicsResources(vtkWindow* w)
   static_cast<void>(w); // avoid warning in release mode.
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Call UpdateCamera() on Renderer. This ugly mechanism gives access to
 // a protected method of Renderer to subclasses of vtkRenderPass.
@@ -53,7 +42,7 @@ void vtkRenderPass::UpdateCamera(vtkRenderer* renderer)
   renderer->UpdateCamera();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Call ClearLights() on Renderer. See note about UpdateCamera().
 // \pre renderer_exists: renderer!=0
@@ -63,7 +52,7 @@ void vtkRenderPass::ClearLights(vtkRenderer* renderer)
   renderer->ClearLights();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Call UpdateLightGeometry() on Renderer. See note about UpdateCamera().
 // \pre renderer_exists: renderer!=0
@@ -73,7 +62,7 @@ void vtkRenderPass::UpdateLightGeometry(vtkRenderer* renderer)
   renderer->UpdateLightGeometry();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Call UpdateLights() on Renderer. See note about UpdateCamera().
 // \pre renderer_exists: renderer!=0
@@ -83,7 +72,7 @@ void vtkRenderPass::UpdateLights(vtkRenderer* renderer)
   renderer->UpdateLights();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Call UpdateGeometry() on Renderer. See note about UpdateCamera().
 // \pre renderer_exists: renderer!=0
@@ -93,7 +82,7 @@ void vtkRenderPass::UpdateGeometry(vtkRenderer* renderer, vtkFrameBufferObjectBa
   renderer->UpdateGeometry(fbo);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderPass::SetLastRenderingUsedDepthPeeling(vtkRenderer* renderer, bool value)
 {
   assert("pre: renderer_exists" && renderer != nullptr);
@@ -101,10 +90,11 @@ void vtkRenderPass::SetLastRenderingUsedDepthPeeling(vtkRenderer* renderer, bool
   renderer->LastRenderingUsedDepthPeeling = value;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRenderPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "NumberOfRenderedProps:" << this->NumberOfRenderedProps << endl;
 }
+VTK_ABI_NAMESPACE_END

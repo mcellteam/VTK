@@ -4,10 +4,15 @@ LIBRARY_NAME
   vtkIOImport
 GROUPS
   StandAlone
+SPDX_LICENSE_IDENTIFIER
+  BSD-3-Clause
+SPDX_COPYRIGHT_TEXT
+  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
 DEPENDS
   VTK::CommonCore
   VTK::CommonExecutionModel
   VTK::CommonMisc
+  VTK::IOCore
   VTK::RenderingCore
   VTK::vtksys
 PRIVATE_DEPENDS
@@ -18,7 +23,6 @@ PRIVATE_DEPENDS
   VTK::ImagingCore
   VTK::IOGeometry
   VTK::IOImage
-  VTK::jsoncpp
 TEST_DEPENDS
   VTK::CommonColor
   VTK::IOExport
@@ -29,4 +33,3 @@ TEST_DEPENDS
   VTK::InteractionStyle
   VTK::RenderingOpenGL2
   VTK::TestingRendering
-  VTK::opengl

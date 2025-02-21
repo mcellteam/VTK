@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkActor.h"
 #include "vtkCamera.h"
 #include "vtkFloatArray.h"
@@ -15,7 +17,7 @@
 #include "vtkTexture.h"
 #include "vtkTexturedSphereSource.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestMultiTexturing(int argc, char* argv[])
 {
   vtkNew<vtkRenderer> renderer;

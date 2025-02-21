@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGreedyTerrainDecimation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkGreedyTerrainDecimation.h"
 #include "vtkCellArray.h"
 #include "vtkDoubleArray.h"
@@ -29,6 +17,7 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGreedyTerrainDecimation);
 
 // Define some constants describing vertices
@@ -40,7 +29,7 @@ vtkStandardNewMacro(vtkGreedyTerrainDecimation);
 #define VTK_INTERIOR_EDGE 1
 #define VTK_BOUNDARY_EDGE 2
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Supporting classes for points
 class vtkTerrainInfo
 {
@@ -52,7 +41,7 @@ public:
   vtkIdType TriangleId;
 };
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // PIMPL STL encapsulation
 //
 // Maps input point ids to owning mesh triangle
@@ -67,7 +56,7 @@ public:
   }
 };
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Maps mesh point id to input point id
 class vtkGreedyTerrainDecimationPointInfoType : public std::vector<vtkIdType>
 {
@@ -75,7 +64,7 @@ class vtkGreedyTerrainDecimationPointInfoType : public std::vector<vtkIdType>
 
 // Begin vtkGreedyTerrainDecimation class implementation-----------------------------------------
 //
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGreedyTerrainDecimation::vtkGreedyTerrainDecimation()
 {
   this->ErrorMeasure = VTK_ERROR_SPECIFIED_REDUCTION;
@@ -89,25 +78,25 @@ vtkGreedyTerrainDecimation::vtkGreedyTerrainDecimation()
   this->Normals = nullptr;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGreedyTerrainDecimation::~vtkGreedyTerrainDecimation() = default;
 
-//----------------------------------------------------------------------
-inline void vtkGreedyTerrainDecimation::GetTerrainPoint(int i, int j, double x[3])
+//------------------------------------------------------------------------------
+void vtkGreedyTerrainDecimation::GetTerrainPoint(int i, int j, double x[3])
 {
   x[0] = this->Origin[0] + i * this->Spacing[0];
   x[1] = this->Origin[1] + j * this->Spacing[1];
 }
 
-//----------------------------------------------------------------------
-inline void vtkGreedyTerrainDecimation::ComputeImageCoordinates(vtkIdType inputPtId, int ij[2])
+//------------------------------------------------------------------------------
+void vtkGreedyTerrainDecimation::ComputeImageCoordinates(vtkIdType inputPtId, int ij[2])
 {
   ij[0] = inputPtId % this->Dimensions[0];
   ij[1] = inputPtId / this->Dimensions[0];
 }
 
-//----------------------------------------------------------------------
-inline vtkIdType vtkGreedyTerrainDecimation::InsertNextPoint(vtkIdType inputPtId, double x[3])
+//------------------------------------------------------------------------------
+vtkIdType vtkGreedyTerrainDecimation::InsertNextPoint(vtkIdType inputPtId, double x[3])
 {
   if ((this->CurrentPointId + 1) >= (vtkIdType)this->PointInfo->size())
   {
@@ -125,14 +114,14 @@ inline vtkIdType vtkGreedyTerrainDecimation::InsertNextPoint(vtkIdType inputPtId
   return this->CurrentPointId++;
 }
 
-//----------------------------------------------------------------------
-inline double* vtkGreedyTerrainDecimation::GetPoint(vtkIdType id)
+//------------------------------------------------------------------------------
+double* vtkGreedyTerrainDecimation::GetPoint(vtkIdType id)
 {
   return this->Points->GetPointer(3 * id);
 }
 
-//----------------------------------------------------------------------
-inline void vtkGreedyTerrainDecimation::GetPoint(vtkIdType id, double x[3])
+//------------------------------------------------------------------------------
+void vtkGreedyTerrainDecimation::GetPoint(vtkIdType id, double x[3])
 {
   double* ptr = this->Points->GetPointer(3 * id);
   x[0] = *ptr++;
@@ -140,9 +129,9 @@ inline void vtkGreedyTerrainDecimation::GetPoint(vtkIdType id, double x[3])
   x[2] = *ptr;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGreedyTerrainDecimation::EstimateOutputSize(
-  const vtkIdType numInputPts, vtkIdType& numPts, vtkIdType& numTris)
+  vtkIdType numInputPts, vtkIdType& numPts, vtkIdType& numTris)
 {
   switch (this->ErrorMeasure)
   {
@@ -157,10 +146,10 @@ void vtkGreedyTerrainDecimation::EstimateOutputSize(
   }
 
   numPts = numTris / 2 + 1;
-  numPts = (numPts < 4 ? 4 : numPts); // insure enough storage for initial four corner points
+  numPts = (numPts < 4 ? 4 : numPts); // ensure enough storage for initial four corner points
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGreedyTerrainDecimation::SatisfiesErrorMeasure(double error)
 {
   switch (this->ErrorMeasure)
@@ -185,7 +174,7 @@ int vtkGreedyTerrainDecimation::SatisfiesErrorMeasure(double error)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Update all triangles connected to this mesh point
 void vtkGreedyTerrainDecimation::UpdateTriangles(vtkIdType ptId)
 {
@@ -203,7 +192,7 @@ void vtkGreedyTerrainDecimation::UpdateTriangles(vtkIdType ptId)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Update all points as to which triangle they lie in. Basically a scanline algorithm.
 void vtkGreedyTerrainDecimation::UpdateTriangle(
   vtkIdType triId, vtkIdType p1, vtkIdType p2, vtkIdType p3)
@@ -215,14 +204,14 @@ void vtkGreedyTerrainDecimation::UpdateTriangle(
   this->ComputeImageCoordinates(p3, ij3);
 
   double h[4]; // extra entry added for interpolated value
-  h[0] = (double)this->Heights->GetTuple1(p1);
-  h[1] = (double)this->Heights->GetTuple1(p2);
-  h[2] = (double)this->Heights->GetTuple1(p3);
+  h[0] = this->Heights->GetTuple1(p1);
+  h[1] = this->Heights->GetTuple1(p2);
+  h[2] = this->Heights->GetTuple1(p3);
 
   this->UpdateTriangle(triId, ij1, ij2, ij3, h);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGreedyTerrainDecimation::InsertBoundaryVertices()
 {
   int i, j;
@@ -261,7 +250,7 @@ void vtkGreedyTerrainDecimation::InsertBoundaryVertices()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Determine whether point x is inside of circumcircle of triangle
 // defined by points (x1, x2, x3). Returns non-zero if inside circle.
 // (Note that z-component is ignored.)
@@ -286,7 +275,7 @@ int vtkGreedyTerrainDecimation::InCircle(double x[3], double x1[3], double x2[3]
 
 #define VTK_DEL2D_TOLERANCE 1.0e-014
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Recursive method to locate triangle containing point. Starts with arbitrary
 // triangle (tri) and "walks" towards it. Influenced by some of Guibas and
 // Stolfi's work. Returns id of enclosing triangle, or -1 if no triangle
@@ -398,7 +387,7 @@ vtkIdType vtkGreedyTerrainDecimation::FindTriangle(double x[3], vtkIdType ptIds[
 
 #undef VTK_DEL2D_TOLERANCE
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Recursive method checks whether edge is Delaunay, and if not, swaps edge.
 // Continues until all edges are Delaunay. Points p1 and p2 form the edge in
 // question; x is the coordinates of the inserted point; tri is the current
@@ -475,7 +464,7 @@ void vtkGreedyTerrainDecimation::CheckEdge(
   neighbors->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkGreedyTerrainDecimation::AddPointToTriangulation(vtkIdType inputPtId)
 {
   vtkIdType ptId, nei[3], tri[4];
@@ -497,7 +486,7 @@ vtkIdType vtkGreedyTerrainDecimation::AddPointToTriangulation(vtkIdType inputPtI
   // Start off by determining the image coordinates and the position
   this->ComputeImageCoordinates(inputPtId, ij);
   this->GetTerrainPoint(ij[0], ij[1], x);
-  x[2] = (double)this->Heights->GetTuple1(inputPtId);
+  x[2] = this->Heights->GetTuple1(inputPtId);
 
   // Seed the search
   nei[0] = (*this->TerrainInfo)[inputPtId].TriangleId;
@@ -646,7 +635,7 @@ vtkIdType vtkGreedyTerrainDecimation::AddPointToTriangulation(vtkIdType inputPtI
   return 0;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGreedyTerrainDecimation::ComputePointNormal(int i, int j, float n[3])
 {
   vtkDataArray* scalars;
@@ -711,7 +700,7 @@ void vtkGreedyTerrainDecimation::ComputePointNormal(int i, int j, float n[3])
   vtkMath::Normalize(n);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGreedyTerrainDecimation::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -728,6 +717,7 @@ int vtkGreedyTerrainDecimation::RequestData(vtkInformation* vtkNotUsed(request),
   double error, bounds[6], center[3];
   vtkCellArray* triangles;
   this->Mesh = output;
+  this->Mesh->EditableOn();
   this->InputPD = input->GetPointData();
   this->OutputPD = this->Mesh->GetPointData();
 
@@ -753,8 +743,8 @@ int vtkGreedyTerrainDecimation::RequestData(vtkInformation* vtkNotUsed(request),
   double* spacing = input->GetSpacing();
   for (int ii = 0; ii < 3; ii++)
   {
-    this->Origin[ii] = (double)origin[ii];
-    this->Spacing[ii] = (double)spacing[ii];
+    this->Origin[ii] = origin[ii];
+    this->Spacing[ii] = spacing[ii];
   }
   this->Length = input->GetLength();
   this->MaximumNumberOfTriangles = 2 * (this->Dimensions[0] - 1) * (this->Dimensions[1] - 1);
@@ -772,7 +762,7 @@ int vtkGreedyTerrainDecimation::RequestData(vtkInformation* vtkNotUsed(request),
   // Top element of VTK's priority queue returns the minimum error value. Since we want the
   // maximum error, we use 1/error relationship to insert errors.
   this->TerrainError = vtkPriorityQueue::New();
-  this->TerrainError->Allocate(numInputPts, (vtkIdType)((double)0.25 * numInputPts));
+  this->TerrainError->Allocate(numInputPts, (vtkIdType)(0.25 * numInputPts));
 
   // Initialize the triangle mesh data structures. Double precision point coordinates
   // are required because of the numerical requirements on the Delaunay algorithm.
@@ -811,25 +801,25 @@ int vtkGreedyTerrainDecimation::RequestData(vtkInformation* vtkNotUsed(request),
 
   inputPtId = 0;
   newPts->InsertPoint(0, bounds[0], bounds[2],
-    (double)this->Heights->GetTuple1(inputPtId)); // ptId=0
+    this->Heights->GetTuple1(inputPtId)); // ptId=0
   this->OutputPD->CopyData(this->InputPD, inputPtId, 0);
   (*this->PointInfo)[0] = inputPtId;
 
   inputPtId = this->Dimensions[0] - 1;
   newPts->InsertPoint(1, bounds[1], bounds[2],
-    (double)this->Heights->GetTuple1(inputPtId)); // ptId=1
+    this->Heights->GetTuple1(inputPtId)); // ptId=1
   this->OutputPD->CopyData(this->InputPD, inputPtId, 1);
   (*this->PointInfo)[1] = inputPtId;
 
   inputPtId = this->Dimensions[0] * this->Dimensions[1] - 1;
   newPts->InsertPoint(2, bounds[1], bounds[3],
-    (double)this->Heights->GetTuple1(inputPtId)); // ptId=2
+    this->Heights->GetTuple1(inputPtId)); // ptId=2
   this->OutputPD->CopyData(this->InputPD, inputPtId, 2);
   (*this->PointInfo)[2] = inputPtId;
 
   inputPtId = this->Dimensions[0] * (this->Dimensions[1] - 1);
   newPts->InsertPoint(3, bounds[0], bounds[3],
-    (double)this->Heights->GetTuple1(inputPtId)); // ptId=3
+    this->Heights->GetTuple1(inputPtId)); // ptId=3
   this->OutputPD->CopyData(this->InputPD, inputPtId, 3);
   (*this->PointInfo)[3] = inputPtId;
   this->CurrentPointId = 4;
@@ -884,7 +874,7 @@ int vtkGreedyTerrainDecimation::RequestData(vtkInformation* vtkNotUsed(request),
   // Note that this algorithm can terminate "prematurely" (e.g. compared to
   // the number of triangles) if the maximum error in the queue becomes zero.
   //
-  int abortExecute = 0;
+  bool abortExecute = false;
   vtkIdType numInsertedPoints = 0;
   int tenth = numPts / 10 + 1;
 
@@ -901,7 +891,7 @@ int vtkGreedyTerrainDecimation::RequestData(vtkInformation* vtkNotUsed(request),
       {
         this->UpdateProgress(
           (double)(numInsertedPoints > numPts ? numPts : numInsertedPoints) / numPts);
-        abortExecute = this->GetAbortExecute();
+        abortExecute = this->CheckAbort();
       }
     }
   }
@@ -965,7 +955,7 @@ int vtkGreedyTerrainDecimation::RequestData(vtkInformation* vtkNotUsed(request),
 #define VTK_TOP_TRIANGLE 2
 #define VTK_DEGENERATE 3 // should never happen in this application
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Update all points laying in the given triangle. This means indicating the triangle
 // that the point is in, plus computing the error in the height field.
 //
@@ -1009,7 +999,7 @@ void vtkGreedyTerrainDecimation::UpdateTriangle(
             {
               error = hL;
             }
-            error = fabs((double)this->Heights->GetTuple1(inputPtId) - error);
+            error = fabs(this->Heights->GetTuple1(inputPtId) - error);
             if (error > maxError)
             {
               maxError = error;
@@ -1050,7 +1040,7 @@ void vtkGreedyTerrainDecimation::UpdateTriangle(
             {
               error = hL;
             }
-            error = fabs((double)this->Heights->GetTuple1(inputPtId) - error);
+            error = fabs(this->Heights->GetTuple1(inputPtId) - error);
             if (error > maxError)
             {
               maxError = error;
@@ -1073,7 +1063,7 @@ void vtkGreedyTerrainDecimation::UpdateTriangle(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Characterize the configuration of the triangle based on image coordinates
 // (All points in triangulation are from an image).
 //
@@ -1275,14 +1265,14 @@ int vtkGreedyTerrainDecimation::CharacterizeTriangle(int ij1[2], int ij2[2], int
   return VTK_TWO_TRIANGLES;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGreedyTerrainDecimation::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkImageData");
   return 1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGreedyTerrainDecimation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1312,3 +1302,4 @@ void vtkGreedyTerrainDecimation::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "BoundaryVertexDeletion: " << (this->BoundaryVertexDeletion ? "On\n" : "Off\n");
   os << indent << "ComputeNormals: " << (this->ComputeNormals ? "On\n" : "Off\n");
 }
+VTK_ABI_NAMESPACE_END

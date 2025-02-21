@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitPlaneWidget2.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImplicitPlaneWidget2
  * @brief   3D widget for manipulating an infinite plane
@@ -94,13 +82,16 @@
 
 #include "vtkAbstractWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImplicitPlaneRepresentation;
-class vtkInteractionCallback;
+class vtkImplicitPlaneWidget2InteractionCallback;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkImplicitPlaneWidget2 : public vtkAbstractWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkImplicitPlaneWidget2
+  : public vtkAbstractWidget
 {
-  friend class vtkInteractionCallback;
+  friend class vtkImplicitPlaneWidget2InteractionCallback;
 
 public:
   /**
@@ -108,13 +99,13 @@ public:
    */
   static vtkImplicitPlaneWidget2* New();
 
-  //@{
+  ///@{
   /**
    * Standard vtkObject methods
    */
   vtkTypeMacro(vtkImplicitPlaneWidget2, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -153,7 +144,7 @@ protected:
 
   // Manage the state of the widget
   int WidgetState;
-  enum _WidgetState
+  enum WidgetStateType
   {
     Start = 0,
     Active
@@ -178,17 +169,18 @@ protected:
    */
   int UpdateCursorShape(int interactionState);
 
-  //@{
+  ///@{
   /**
    * Handle the interaction callback that may come from the representation.
    */
-  vtkInteractionCallback* InteractionCallback;
+  vtkImplicitPlaneWidget2InteractionCallback* InteractionCallback;
   void InvokeInteractionCallback();
-  //@}
+  ///@}
 
 private:
   vtkImplicitPlaneWidget2(const vtkImplicitPlaneWidget2&) = delete;
   void operator=(const vtkImplicitPlaneWidget2&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

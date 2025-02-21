@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAngularPeriodicDataArray.txx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkMath.h"
 #include "vtkMatrix3x3.h"
@@ -21,6 +9,7 @@
 
 //------------------------------------------------------------------------------
 // Can't use vtkStandardNewMacro on a templated class.
+VTK_ABI_NAMESPACE_BEGIN
 template <class Scalar>
 vtkAngularPeriodicDataArray<Scalar>* vtkAngularPeriodicDataArray<Scalar>::New()
 {
@@ -53,7 +42,7 @@ void vtkAngularPeriodicDataArray<Scalar>::InitializeArray(vtkAOSDataArrayTemplat
     data->GetNumberOfComponents() != 9)
   {
     vtkWarningMacro(<< "Original data has " << data->GetNumberOfComponents()
-                    << " components, Expecting 3 or 9.");
+                    << " components, Expecting 3, 6 or 9.");
     return;
   }
 
@@ -185,3 +174,4 @@ vtkAngularPeriodicDataArray<Scalar>::~vtkAngularPeriodicDataArray()
 {
   this->RotationMatrix->Delete();
 }
+VTK_ABI_NAMESPACE_END

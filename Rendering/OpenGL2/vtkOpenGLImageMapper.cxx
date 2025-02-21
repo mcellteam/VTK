@@ -1,20 +1,8 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLImageMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLImageMapper.h"
 
-#include "vtk_glew.h"
+#include "vtk_glad.h"
 
 #include "vtkActor2D.h"
 #include "vtkDataArray.h"
@@ -26,6 +14,8 @@
 
 #include "vtkCellArray.h"
 #include "vtkFloatArray.h"
+#include "vtkOpenGLRenderWindow.h"
+#include "vtkOpenGLState.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
@@ -40,6 +30,7 @@
 
 #include "vtkOpenGLError.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLImageMapper);
 
 vtkOpenGLImageMapper::vtkOpenGLImageMapper()
@@ -84,19 +75,20 @@ vtkOpenGLImageMapper::~vtkOpenGLImageMapper()
   this->Actor->UnRegister(this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release the graphics resources used by this texture.
 void vtkOpenGLImageMapper::ReleaseGraphicsResources(vtkWindow* renWin)
 {
   this->Actor->ReleaseGraphicsResources(renWin);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // I know #define can be evil, but this macro absolutely ensures
 // that the code will be inlined.  The macro expects 'val' to
 // be predefined to the same type as y
 
 #define vtkClampToUnsignedChar(x, y)                                                               \
+  do                                                                                               \
   {                                                                                                \
     val = (y);                                                                                     \
     if (val < 0)                                                                                   \
@@ -108,14 +100,19 @@ void vtkOpenGLImageMapper::ReleaseGraphicsResources(vtkWindow* renWin)
       val = 255;                                                                                   \
     }                                                                                              \
     (x) = static_cast<unsigned char>(val);                                                         \
-  }
+  } while (false)
 /* should do proper rounding, as follows:
+ *
+ * XXX(ben.boeckel): This is not proper rounding. This will round the value
+ * just less than 0.5 to 1.0 due to IEEE floating point rounding rules. *That*
+ * is the number to add.
   (x) = (unsigned char)(val + 0.5f); \
 */
 
 // the bit-shift must be done after the comparison to zero
 // because bit-shift is undefined behaviour for negative numbers
 #define vtkClampIntToUnsignedChar(x, y, shift)                                                     \
+  do                                                                                               \
   {                                                                                                \
     val = (y);                                                                                     \
     if (val < 0)                                                                                   \
@@ -128,7 +125,7 @@ void vtkOpenGLImageMapper::ReleaseGraphicsResources(vtkWindow* renWin)
       val = 255;                                                                                   \
     }                                                                                              \
     (x) = static_cast<unsigned char>(val);                                                         \
-  }
+  } while (false)
 
 // pad an integer to a multiply of four, for OpenGL
 inline int vtkPadToFour(int n)
@@ -164,11 +161,8 @@ void vtkOpenGLImageMapperRenderDouble(vtkOpenGLImageMapper* self, vtkImageData* 
   double range[2];
   data->GetPointData()->GetScalars()->GetDataTypeRange(range);
 
-#ifdef GL_UNPACK_ALIGNMENT
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-#else
-  assert("width must be a multiple of 4" && width == 4);
-#endif
+  auto ostate = static_cast<vtkOpenGLRenderWindow*>(viewport->GetVTKWindow())->GetState();
+  ostate->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   // reformat data into unsigned char
 
@@ -277,11 +271,8 @@ void vtkOpenGLImageMapperRenderShort(vtkOpenGLImageMapper* self, vtkImageData* d
   double range[2];
   data->GetPointData()->GetScalars()->GetDataTypeRange(range);
 
-#ifdef GL_UNPACK_ALIGNMENT
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-#else
-  assert("width must be a multiple of 4" && width == 4);
-#endif
+  auto ostate = static_cast<vtkOpenGLRenderWindow*>(viewport->GetVTKWindow())->GetState();
+  ostate->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   // Find the number of bits to use for the fraction:
   // continue increasing the bits until there is an overflow
@@ -407,19 +398,15 @@ void vtkOpenGLImageMapperRenderChar(
   double range[2];
   data->GetPointData()->GetScalars()->GetDataTypeRange(range);
 
-#ifdef GL_UNPACK_ALIGNMENT
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-#else
-  assert("width must be a multiple of 4" && width == 4);
-#endif
+  auto ostate = static_cast<vtkOpenGLRenderWindow*>(viewport->GetVTKWindow())->GetState();
+  ostate->vtkglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   //
-#ifdef GL_UNPACK_ROW_LENGTH
   if (bpp == 3)
   { // feed through RGB bytes without reformatting
     if (inInc1 != width * bpp)
     {
-      glPixelStorei(GL_UNPACK_ROW_LENGTH, inInc1 / bpp);
+      ostate->vtkglPixelStorei(GL_UNPACK_ROW_LENGTH, inInc1 / bpp);
     }
     self->DrawPixels(viewport, width, height, 3, static_cast<void*>(dataPtr));
   }
@@ -427,12 +414,11 @@ void vtkOpenGLImageMapperRenderChar(
   { // feed through RGBA bytes without reformatting
     if (inInc1 != width * bpp)
     {
-      glPixelStorei(GL_UNPACK_ROW_LENGTH, inInc1 / bpp);
+      ostate->vtkglPixelStorei(GL_UNPACK_ROW_LENGTH, inInc1 / bpp);
     }
     self->DrawPixels(viewport, width, height, 4, static_cast<void*>(dataPtr));
   }
   else
-#endif
   { // feed through other bytes without reformatting
     T* inPtr = dataPtr;
     T* inPtr1 = inPtr;
@@ -512,14 +498,12 @@ void vtkOpenGLImageMapperRenderChar(
     delete[] newPtr;
   }
 
-#ifdef GL_UNPACK_ROW_LENGTH
-  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
+  ostate->vtkglPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
   vtkOpenGLStaticCheckErrorMacro("failed after ImageMapperRenderChar");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define overloads to help the template macro below dispatch to a
 // suitable implementation for each type.  The last argument is of
 // type "long" for the template and of type "int" for the
@@ -586,7 +570,7 @@ static void vtkOpenGLImageMapperRender(vtkOpenGLImageMapper* self, vtkImageData*
   vtkOpenGLImageMapperRenderShort(self, data, dataPtr, shift, scale, viewport);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Expects data to be X, Y, components
 
 void vtkOpenGLImageMapper::RenderData(vtkViewport* viewport, vtkImageData* data, vtkActor2D* actor)
@@ -594,10 +578,15 @@ void vtkOpenGLImageMapper::RenderData(vtkViewport* viewport, vtkImageData* data,
   void* ptr0;
   double shift, scale;
 
-  vtkWindow* window = static_cast<vtkWindow*>(viewport->GetVTKWindow());
+  vtkWindow* window = viewport->GetVTKWindow();
   if (!window)
   {
     vtkErrorMacro(<< "vtkOpenGLImageMapper::RenderData - no window set for viewport");
+    return;
+  }
+
+  if (!data->GetPointData()->GetScalars())
+  {
     return;
   }
 
@@ -690,3 +679,4 @@ void vtkOpenGLImageMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

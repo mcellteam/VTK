@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractSelectionBase.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractSelectionBase
  * @brief   abstract base class for all extract selection
@@ -27,6 +15,7 @@
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkFiltersGeneralModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKFILTERSGENERAL_EXPORT vtkExtractSelectionBase : public vtkDataObjectAlgorithm
 {
 public:
@@ -42,7 +31,7 @@ public:
     this->SetInputConnection(1, algOutput);
   }
 
-  //@{
+  ///@{
   /**
    * This flag tells the extraction filter not to convert the selected
    * output into an unstructured grid, but instead to produce a vtkInsidedness
@@ -51,7 +40,7 @@ public:
   vtkSetMacro(PreserveTopology, vtkTypeBool);
   vtkGetMacro(PreserveTopology, vtkTypeBool);
   vtkBooleanMacro(PreserveTopology, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkExtractSelectionBase();
@@ -72,4 +61,5 @@ private:
   void operator=(const vtkExtractSelectionBase&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

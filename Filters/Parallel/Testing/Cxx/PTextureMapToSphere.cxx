@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    PTextureMapToSphere.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Tests PTextureMapToSphere.
 
@@ -46,7 +34,7 @@ class MyProcess : public vtkProcess
 public:
   static MyProcess* New();
 
-  virtual void Execute();
+  void Execute() override;
 
   void SetArgs(int anArgc, char* anArgv[]);
 
@@ -108,6 +96,7 @@ void MyProcess::Execute()
   vtkNew<vtkPNGReader> PNGReader;
   PNGReader->SetFileName(fname);
   PNGReader->Update();
+  delete[] fname;
 
   vtkNew<vtkTexture> texture;
   texture->SetInputConnection(PNGReader->GetOutputPort());

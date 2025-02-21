@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTensorGlyph.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTensorGlyph.h"
 
 #include "vtkCell.h"
@@ -28,8 +16,10 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTensorGlyph);
 
+//------------------------------------------------------------------------------
 // Construct object with scaling on and scale factor 1.0. Eigenvalues are
 // extracted, glyphs are colored with input scalar data, and logarithmic
 // scaling is turned off.
@@ -57,10 +47,10 @@ vtkTensorGlyph::vtkTensorGlyph()
     1, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::SCALARS);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTensorGlyph::~vtkTensorGlyph() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTensorGlyph::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -87,7 +77,7 @@ int vtkTensorGlyph::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTensorGlyph::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -255,8 +245,14 @@ int vtkTensorGlyph::RequestData(vtkInformation* vtkNotUsed(request),
   //
   trans->PreMultiply();
 
+  int checkAbortInterval = std::min(numPts / 10 + 1, (vtkIdType)1000);
+
   for (inPtId = 0; inPtId < numPts; inPtId++)
   {
+    if (inPtId % checkAbortInterval == 0 && this->CheckAbort())
+    {
+      break;
+    }
     ptIncr = numDirs * inPtId * numSourcePts;
 
     // Translation is postponed
@@ -488,7 +484,7 @@ int vtkTensorGlyph::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorGlyph::SetSourceConnection(int id, vtkAlgorithmOutput* algOutput)
 {
   if (id < 0)
@@ -515,13 +511,13 @@ void vtkTensorGlyph::SetSourceConnection(int id, vtkAlgorithmOutput* algOutput)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorGlyph::SetSourceData(vtkPolyData* source)
 {
   this->SetInputData(1, source);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkTensorGlyph::GetSource()
 {
   if (this->GetNumberOfInputConnections(1) < 1)
@@ -531,7 +527,7 @@ vtkPolyData* vtkTensorGlyph::GetSource()
   return vtkPolyData::SafeDownCast(this->GetExecutive()->GetInputData(1, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTensorGlyph::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == 1)
@@ -543,7 +539,7 @@ int vtkTensorGlyph::FillInputPortInformation(int port, vtkInformation* info)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTensorGlyph::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -560,3 +556,4 @@ void vtkTensorGlyph::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Symmetric: " << (this->Symmetric ? "On\n" : "Off\n");
   os << indent << "Length: " << this->Length << "\n";
 }
+VTK_ABI_NAMESPACE_END

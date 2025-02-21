@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "QtVTKTouchscreenRenderWindows.h"
 #include "ui_QtVTKTouchscreenRenderWindows.h"
@@ -176,7 +178,7 @@ public:
 };
 vtkStandardNewMacro(vtkInteractorStyleMultiTouchCameraExample);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QtVTKTouchscreenRenderWindows::QtVTKTouchscreenRenderWindows(int vtkNotUsed(argc), char* argv[])
 {
   this->ui = new Ui_QtVTKTouchscreenRenderWindows;

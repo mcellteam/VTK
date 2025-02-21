@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTransformCoordinateSystems.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkTransformCoordinateSystems.h"
 
 #include "vtkCoordinate.h"
@@ -21,9 +9,10 @@
 #include "vtkPointSet.h"
 #include "vtkViewport.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkTransformCoordinateSystems);
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransformCoordinateSystems::vtkTransformCoordinateSystems()
 {
   this->TransformCoordinate = vtkCoordinate::New();
@@ -33,13 +22,13 @@ vtkTransformCoordinateSystems::vtkTransformCoordinateSystems()
   this->Viewport = nullptr;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransformCoordinateSystems::~vtkTransformCoordinateSystems()
 {
   this->TransformCoordinate->Delete();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the viewport. This is a raw pointer, not a weak pointer or a reference
 // counted object to avoid cycle reference loop between rendering classes
 // and filter classes.
@@ -52,7 +41,7 @@ void vtkTransformCoordinateSystems::SetViewport(vtkViewport* viewport)
   }
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTransformCoordinateSystems::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -144,7 +133,7 @@ int vtkTransformCoordinateSystems::RequestData(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMTimeType vtkTransformCoordinateSystems::GetMTime()
 {
   vtkMTimeType mTime = this->MTime.GetMTime();
@@ -159,7 +148,7 @@ vtkMTimeType vtkTransformCoordinateSystems::GetMTime()
   return mTime;
 }
 
-//------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTransformCoordinateSystems::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -202,3 +191,4 @@ void vtkTransformCoordinateSystems::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

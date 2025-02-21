@@ -1,19 +1,5 @@
-/*=========================================================================
-
-  Program:   DICOMParser
-  Module:    DICOMParser.h
-  Language:  C++
-
-  Copyright (c) 2003 Matt Turek
-  All rights reserved.
-  See Copyright.txt for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
+// SPDX-FileCopyrightText: Copyright (c) 2003 Matt Turek
+// SPDX-License-Identifier: BSD-4-Clause
 #ifndef __DICOMParser_h_
 #define __DICOMParser_h_
 
@@ -35,11 +21,12 @@
 #include "DICOMParserMap.h"
 #include "DICOMTypes.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class DICOMCallback;
 template <class T>
 class DICOMMemberCallback;
 
-// DICOM_EXPIMP_TEMPLATE template class DICOM_EXPORT dicom_stl::vector<doublebyte>;
+// DICOM_EXPIMP_TEMPLATE template class DICOM_EXPORT std::vector<doublebyte>;
 
 class DICOMParserImplementation;
 
@@ -65,7 +52,7 @@ public:
   //
   // Opens a file and initializes the parser.
   //
-  bool OpenFile(const dicom_stl::string& filename);
+  bool OpenFile(const std::string& filename);
 
   //
   // Closes the currently open file.
@@ -75,7 +62,7 @@ public:
   //
   // Return the name of the file last processed.
   //
-  const dicom_stl::string& GetFileName();
+  const std::string& GetFileName();
 
   //
   // This method kicks off the parser.
@@ -144,10 +131,10 @@ public:
   void ModalityTag(doublebyte group, doublebyte element, VRTypes datatype, unsigned char* tempdata,
     quadbyte length);
 
-  void SetDICOMTagCallbacks(doublebyte group, doublebyte element, VRTypes datatype,
-    dicom_stl::vector<DICOMCallback*>* cbVector);
-  void AddDICOMTagCallbacks(doublebyte group, doublebyte element, VRTypes datatype,
-    dicom_stl::vector<DICOMCallback*>* cbVector);
+  void SetDICOMTagCallbacks(
+    doublebyte group, doublebyte element, VRTypes datatype, std::vector<DICOMCallback*>* cbVector);
+  void AddDICOMTagCallbacks(
+    doublebyte group, doublebyte element, VRTypes datatype, std::vector<DICOMCallback*>* cbVector);
   void AddDICOMTagCallback(
     doublebyte group, doublebyte element, VRTypes datatype, DICOMCallback* cb);
   void AddDICOMTagCallbackToAllTags(DICOMCallback* cb);
@@ -159,8 +146,8 @@ public:
   void TransferSyntaxCallback(DICOMParser* parser, doublebyte, doublebyte, DICOMParser::VRTypes,
     unsigned char* val, quadbyte);
 
-  void GetGroupsElementsDatatypes(dicom_stl::vector<doublebyte>& groups,
-    dicom_stl::vector<doublebyte>& elements, dicom_stl::vector<VRTypes>& datatypes);
+  void GetGroupsElementsDatatypes(std::vector<doublebyte>& groups,
+    std::vector<doublebyte>& elements, std::vector<VRTypes>& datatypes);
 
 protected:
   bool ParseExplicitRecord(
@@ -173,7 +160,7 @@ protected:
   //
   // void DumpTag(doublebyte group, doublebyte element, VRTypes datatype, unsigned char* data,
   // quadbyte length);
-  void DumpTag(dicom_stream::ostream& out, doublebyte group, doublebyte element, VRTypes vrtype,
+  void DumpTag(std::ostream& out, doublebyte group, doublebyte element, VRTypes vrtype,
     unsigned char* tempdata, quadbyte length);
 
   struct DICOMRecord
@@ -207,35 +194,12 @@ protected:
   bool ByteSwapData;
 
   //
-  // Stores a map from pair<group, element> keys to
-  // values of pair<vector<DICOMCallback*>, datatype>
-  //
-  // DICOMParserMap Map;
-
-  //
-  // Stores a map from pair<group, element> keys to
-  // values of datatype.  We use this to store the
-  // datatypes for implicit keys that we are
-  // interested in.
-  //
-  // DICOMImplicitTypeMap TypeMap;
-
-  //
-  // Used for outputting debug information.
-  //
-  dicom_stream::ofstream ParserOutputFile;
-
-  //
   // Pointer to the DICOMFile we're parsing.
   //
   DICOMFile* DataFile;
-  dicom_stl::string FileName;
+  std::string FileName;
 
   bool ToggleByteSwapImageData;
-
-  // dicom_stl::vector<doublebyte> Groups;
-  // dicom_stl::vector<doublebyte> Elements;
-  // dicom_stl::vector<VRTypes> Datatypes;
 
   DICOMMemberCallback<DICOMParser>* TransferSyntaxCB;
 
@@ -256,4 +220,5 @@ private:
 #pragma warning(pop)
 #endif
 
+VTK_ABI_NAMESPACE_END
 #endif // __DICOMParser_h_

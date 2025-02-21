@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkEllipticalButtonSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkEllipticalButtonSource
  * @brief   create a ellipsoidal-shaped button
@@ -43,6 +31,7 @@
 #include "vtkButtonSource.h"
 #include "vtkFiltersSourcesModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellArray;
 class vtkFloatArray;
 class vtkPoints;
@@ -58,57 +47,57 @@ public:
    */
   static vtkEllipticalButtonSource* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the width of the button (the x-ellipsoid axis length * 2).
    */
   vtkSetClampMacro(Width, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Width, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the height of the button (the y-ellipsoid axis length * 2).
    */
   vtkSetClampMacro(Height, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Height, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the depth of the button (the z-eliipsoid axis length).
    */
   vtkSetClampMacro(Depth, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Depth, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the resolution of the button in the circumferential direction.
    */
   vtkSetClampMacro(CircumferentialResolution, int, 4, VTK_INT_MAX);
   vtkGetMacro(CircumferentialResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the resolution of the texture in the radial direction in the
    * texture region.
    */
   vtkSetClampMacro(TextureResolution, int, 1, VTK_INT_MAX);
   vtkGetMacro(TextureResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the resolution of the texture in the radial direction in the
    * shoulder region.
    */
   vtkSetClampMacro(ShoulderResolution, int, 1, VTK_INT_MAX);
   vtkGetMacro(ShoulderResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the radial ratio. This is the measure of the radius of the
    * outer ellipsoid to the inner ellipsoid of the button. The outer
@@ -120,9 +109,9 @@ public:
    */
   vtkSetClampMacro(RadialRatio, double, 1.0, VTK_DOUBLE_MAX);
   vtkGetMacro(RadialRatio, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output points.
    * vtkAlgorithm::SINGLE_PRECISION - Output single-precision floating point.
@@ -130,11 +119,11 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkEllipticalButtonSource();
-  ~vtkEllipticalButtonSource() override {}
+  ~vtkEllipticalButtonSource() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -167,4 +156,5 @@ private:
   void operator=(const vtkEllipticalButtonSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

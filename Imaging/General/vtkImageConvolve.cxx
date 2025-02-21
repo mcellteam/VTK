@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageConvolve.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageConvolve.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
@@ -19,9 +7,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageConvolve);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct an instance of vtkImageConvolve filter.
 // By default zero values are eroded.
 vtkImageConvolve::vtkImageConvolve()
@@ -42,11 +31,11 @@ vtkImageConvolve::vtkImageConvolve()
   this->SetKernel3x3(kernel);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Destructor
 vtkImageConvolve::~vtkImageConvolve() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageConvolve::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -78,7 +67,7 @@ void vtkImageConvolve::PrintSelf(ostream& os, vtkIndent indent)
   os << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set a 3x3 kernel
 void vtkImageConvolve::SetKernel3x3(const double kernel[9])
 {
@@ -86,7 +75,7 @@ void vtkImageConvolve::SetKernel3x3(const double kernel[9])
   this->SetKernel(kernel, 3, 3, 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set a 5x5 kernel
 void vtkImageConvolve::SetKernel5x5(const double kernel[25])
 {
@@ -94,7 +83,7 @@ void vtkImageConvolve::SetKernel5x5(const double kernel[25])
   this->SetKernel(kernel, 5, 5, 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set a 7x7 kernel
 void vtkImageConvolve::SetKernel7x7(const double kernel[49])
 {
@@ -102,7 +91,7 @@ void vtkImageConvolve::SetKernel7x7(const double kernel[49])
   this->SetKernel(kernel, 7, 7, 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set a 3x3x3 kernel
 void vtkImageConvolve::SetKernel3x3x3(const double kernel[27])
 {
@@ -110,7 +99,7 @@ void vtkImageConvolve::SetKernel3x3x3(const double kernel[27])
   this->SetKernel(kernel, 3, 3, 3);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set a 5x5x5 kernel
 void vtkImageConvolve::SetKernel5x5x5(const double kernel[125])
 {
@@ -118,7 +107,7 @@ void vtkImageConvolve::SetKernel5x5x5(const double kernel[125])
   this->SetKernel(kernel, 5, 5, 5);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set a 7x7x7 kernel
 void vtkImageConvolve::SetKernel7x7x7(const double kernel[343])
 {
@@ -126,7 +115,7 @@ void vtkImageConvolve::SetKernel7x7x7(const double kernel[343])
   this->SetKernel(kernel, 7, 7, 7);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set a kernel, this is an internal method
 void vtkImageConvolve::SetKernel(const double* kernel, int sizeX, int sizeY, int sizeZ)
 {
@@ -153,98 +142,98 @@ void vtkImageConvolve::SetKernel(const double* kernel, int sizeX, int sizeY, int
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the 3x3 kernel
 double* vtkImageConvolve::GetKernel3x3()
 {
   return this->GetKernel();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the 5x5 kernel
 double* vtkImageConvolve::GetKernel5x5()
 {
   return this->GetKernel();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the 7x7 kernel
 double* vtkImageConvolve::GetKernel7x7()
 {
   return this->GetKernel();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the 3x3x3 kernel
 double* vtkImageConvolve::GetKernel3x3x3()
 {
   return this->GetKernel();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the 5x5x5 kernel
 double* vtkImageConvolve::GetKernel5x5x5()
 {
   return this->GetKernel();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the 7x7x7 kernel
 double* vtkImageConvolve::GetKernel7x7x7()
 {
   return this->GetKernel();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the kernel, this is an internal method
 double* vtkImageConvolve::GetKernel()
 {
   return this->Kernel;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the kernel
 void vtkImageConvolve::GetKernel3x3(double kernel[9])
 {
   this->GetKernel(kernel);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the kernel
 void vtkImageConvolve::GetKernel5x5(double kernel[25])
 {
   this->GetKernel(kernel);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the kernel
 void vtkImageConvolve::GetKernel7x7(double kernel[49])
 {
   this->GetKernel(kernel);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the kernel
 void vtkImageConvolve::GetKernel3x3x3(double kernel[27])
 {
   this->GetKernel(kernel);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the kernel
 void vtkImageConvolve::GetKernel5x5x5(double kernel[125])
 {
   this->GetKernel(kernel);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the kernel
 void vtkImageConvolve::GetKernel7x7x7(double kernel[343])
 {
   this->GetKernel(kernel);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the kernel, this is an internal method
 void vtkImageConvolve::GetKernel(double* kernel)
 {
@@ -256,7 +245,7 @@ void vtkImageConvolve::GetKernel(double* kernel)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter on any region,
 // whether it needs boundary checking or not.
 // If the filter needs to be faster, the function could be duplicated
@@ -423,7 +412,7 @@ void vtkImageConvolveExecute(vtkImageConvolve* self, vtkImageData* inData, T* in
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains the first switch statement that calls the correct
 // templated function for the input and output Data types.
 // It handles image boundaries, so the image does not shrink.
@@ -455,3 +444,4 @@ void vtkImageConvolve::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
       return;
   }
 }
+VTK_ABI_NAMESPACE_END

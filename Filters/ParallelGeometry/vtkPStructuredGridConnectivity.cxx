@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkPStructuredGridConnectivity.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkPStructuredGridConnectivity.h"
 #include "vtkMPICommunicator.h"
 #include "vtkMPIController.h"
@@ -23,12 +11,15 @@
 #include <fstream>
 #include <sstream>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkPStructuredGridConnectivity);
+vtkCxxSetObjectMacro(vtkPStructuredGridConnectivity, Controller, vtkMultiProcessController);
 
 //------------------------------------------------------------------------------
 vtkPStructuredGridConnectivity::vtkPStructuredGridConnectivity()
 {
-  this->Controller = vtkMultiProcessController::GetGlobalController();
+  this->Controller = nullptr;
+  this->SetController(vtkMultiProcessController::GetGlobalController());
   this->Initialized = false;
   this->MPIRequests = nullptr;
   this->TotalNumberOfSends = 0;
@@ -47,6 +38,8 @@ vtkPStructuredGridConnectivity::~vtkPStructuredGridConnectivity()
 
   // STEP 2: Clear all raw buffers
   this->ClearRawBuffers();
+
+  this->SetController(nullptr);
 }
 
 //------------------------------------------------------------------------------
@@ -67,7 +60,7 @@ void vtkPStructuredGridConnectivity::Initialize()
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructuredGridConnectivity::SetNumberOfGrids(const unsigned int N)
+void vtkPStructuredGridConnectivity::SetNumberOfGrids(unsigned int N)
 {
   if (N == 0)
   {
@@ -79,7 +72,7 @@ void vtkPStructuredGridConnectivity::SetNumberOfGrids(const unsigned int N)
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructuredGridConnectivity::RegisterGrid(const int gridID, int extents[6],
+void vtkPStructuredGridConnectivity::RegisterGrid(int gridID, int extents[6],
   vtkUnsignedCharArray* nodesGhostArray, vtkUnsignedCharArray* cellGhostArray,
   vtkPointData* pointData, vtkCellData* cellData, vtkPoints* gridNodes)
 {
@@ -93,8 +86,7 @@ void vtkPStructuredGridConnectivity::RegisterGrid(const int gridID, int extents[
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructuredGridConnectivity::RegisterRemoteGrid(
-  const int gridID, int extents[6], int process)
+void vtkPStructuredGridConnectivity::RegisterRemoteGrid(int gridID, int extents[6], int process)
 {
   // Sanity check
   assert("pre: gridID out-of-bounds!" && (gridID >= 0) &&
@@ -120,7 +112,7 @@ void vtkPStructuredGridConnectivity::ComputeNeighbors()
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructuredGridConnectivity::CreateGhostLayers(const int N)
+void vtkPStructuredGridConnectivity::CreateGhostLayers(int N)
 {
   assert("pre: Instance has not been initialized!" && this->Initialized);
   if (N == 0)
@@ -175,7 +167,7 @@ void vtkPStructuredGridConnectivity::CreateGhostLayers(const int N)
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::TransferRemoteNeighborData(
-  const int gridIdx, const int nei, const vtkStructuredNeighbor& Neighbor)
+  int gridIdx, int nei, const vtkStructuredNeighbor& Neighbor)
 {
   // Sanity check
   assert("pre: gridID is out-of-bounds!" && (gridIdx >= 0) &&
@@ -269,7 +261,7 @@ void vtkPStructuredGridConnectivity::TransferRemoteNeighborData(
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructuredGridConnectivity::TransferGhostDataFromNeighbors(const int gridID)
+void vtkPStructuredGridConnectivity::TransferGhostDataFromNeighbors(int gridID)
 {
   assert("pre: gridID is out-of-bounds!" && (gridID >= 0) &&
     (gridID < static_cast<int>(this->NumberOfGrids)));
@@ -377,7 +369,7 @@ void vtkPStructuredGridConnectivity::SerializeBufferSizes(int*& sizesbuf, vtkIdT
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::DeserializeBufferSizesForProcess(
-  int* buffersizes, vtkIdType N, const int vtkNotUsed(processId))
+  int* buffersizes, vtkIdType N, int vtkNotUsed(processId))
 {
   assert("pre: Controller should not be nullptr" && (this->Controller != nullptr));
   assert("pre: Cannot deserialize empty buffer size" && (buffersizes != nullptr));
@@ -694,7 +686,7 @@ void vtkPStructuredGridConnectivity::ExchangeGhostData()
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::SerializeGhostPoints(
-  const int gridIdx, int ext[6], vtkMultiProcessStream& bytestream)
+  int gridIdx, int ext[6], vtkMultiProcessStream& bytestream)
 {
   assert("pre: gridIdx is out-of-bounds" && (gridIdx >= 0) &&
     (gridIdx < static_cast<int>(this->NumberOfGrids)));
@@ -767,7 +759,7 @@ void vtkPStructuredGridConnectivity::SerializeGhostPoints(
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::DeserializeGhostPoints(
-  const int gridIdx, const int nei, int ext[6], vtkMultiProcessStream& bytestream)
+  int gridIdx, int nei, int ext[6], vtkMultiProcessStream& bytestream)
 {
   assert("pre:Cannot deserialize an empty bytestream" && !bytestream.Empty());
   assert("pre:Grid index is out-of-bounds" && (gridIdx >= 0) &&
@@ -844,9 +836,8 @@ void vtkPStructuredGridConnectivity::SerializeDataArray(
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructuredGridConnectivity::DeserializeDataArray(vtkDataArray*& dataArray,
-  const int dataType, const int numberOfTuples, const int numberOfComponents,
-  vtkMultiProcessStream& bytestream)
+void vtkPStructuredGridConnectivity::DeserializeDataArray(vtkDataArray*& dataArray, int dataType,
+  int numberOfTuples, int numberOfComponents, vtkMultiProcessStream& bytestream)
 {
   assert("pre: Cannot deserialize an empty bytestream" && !bytestream.Empty());
 
@@ -1037,7 +1028,7 @@ void vtkPStructuredGridConnectivity::DeserializeFieldData(
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::SerializeGhostPointData(
-  const int gridIdx, int ext[6], vtkMultiProcessStream& bytestream)
+  int gridIdx, int ext[6], vtkMultiProcessStream& bytestream)
 {
   assert("pre: Grid to be serialized must be local" && this->IsGridLocal(gridIdx));
   assert("pre: gridIdx is out-of-bounds" && (gridIdx >= 0) &&
@@ -1063,7 +1054,7 @@ void vtkPStructuredGridConnectivity::SerializeGhostPointData(
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::DeserializeGhostPointData(
-  const int gridIdx, const int nei, int ext[6], vtkMultiProcessStream& bytestream)
+  int gridIdx, int nei, int ext[6], vtkMultiProcessStream& bytestream)
 {
   assert("pre: Cannot deserialize an empty bytestream" && !bytestream.Empty());
   assert("pre:Grid index is out-of-bounds" && (gridIdx >= 0) &&
@@ -1093,7 +1084,7 @@ void vtkPStructuredGridConnectivity::DeserializeGhostPointData(
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::SerializeGhostCellData(
-  const int gridIdx, int ext[6], vtkMultiProcessStream& bytestream)
+  int gridIdx, int ext[6], vtkMultiProcessStream& bytestream)
 {
   assert("pre: Grid to be serialized must be local" && this->IsGridLocal(gridIdx));
   assert("pre: gridIdx is out-of-bounds" && (gridIdx >= 0) &&
@@ -1125,7 +1116,7 @@ void vtkPStructuredGridConnectivity::SerializeGhostCellData(
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::DeserializeGhostCellData(
-  const int gridIdx, const int nei, int ext[6], vtkMultiProcessStream& bytestream)
+  int gridIdx, int nei, int ext[6], vtkMultiProcessStream& bytestream)
 {
   assert("pre: Cannot deserialize an empty bytestream" && !bytestream.Empty());
   assert("pre:Grid index is out-of-bounds" && (gridIdx >= 0) &&
@@ -1156,8 +1147,8 @@ void vtkPStructuredGridConnectivity::DeserializeGhostCellData(
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructuredGridConnectivity::SerializeGhostData(const int sendGridID, const int rcvGrid,
-  int sndext[6], unsigned char*& buffer, unsigned int& size)
+void vtkPStructuredGridConnectivity::SerializeGhostData(
+  int sendGridID, int rcvGrid, int sndext[6], unsigned char*& buffer, unsigned int& size)
 {
   // Pre-conditions
   assert("pre: Grid to be serialized must be local" && this->IsGridLocal(sendGridID));
@@ -1206,8 +1197,8 @@ void vtkPStructuredGridConnectivity::SerializeGhostData(const int sendGridID, co
 }
 
 //------------------------------------------------------------------------------
-void vtkPStructuredGridConnectivity::DeserializeGhostData(const int gridID, const int neiGridID,
-  const int vtkNotUsed(neiGridIdx), int rcvext[6], unsigned char* buffer, unsigned int size)
+void vtkPStructuredGridConnectivity::DeserializeGhostData(int gridID, int neiGridID,
+  int vtkNotUsed(neiGridIdx), int rcvext[6], unsigned char* buffer, unsigned int size)
 {
   assert("pre: raw buffer is nullptr!" && (buffer != nullptr));
   assert("pre: raw buffer size > 0" && (size > 0));
@@ -1367,7 +1358,7 @@ void vtkPStructuredGridConnectivity::SerializeGridExtents(int*& sndbuffer, vtkId
 
 //------------------------------------------------------------------------------
 void vtkPStructuredGridConnectivity::DeserializeGridExtentForProcess(
-  int* rcvbuffer, vtkIdType& N, const int processId)
+  int* rcvbuffer, vtkIdType& N, int processId)
 {
   // Sanity checks
   assert("pre: Instance has not been initialized!" && this->Initialized);
@@ -1390,3 +1381,4 @@ void vtkPStructuredGridConnectivity::DeserializeGridExtentForProcess(
     this->RegisterRemoteGrid(gridID, ext, processId);
   }
 }
+VTK_ABI_NAMESPACE_END

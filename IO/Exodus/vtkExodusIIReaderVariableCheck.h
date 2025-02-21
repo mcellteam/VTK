@@ -1,7 +1,7 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef vtkExodusIIReaderVariableCheck_h
 #define vtkExodusIIReaderVariableCheck_h
-#ifndef __VTK_WRAP__
-#ifndef VTK_WRAPPING_CXX
 
 #include "vtkExodusIIReaderPrivate.h" // for ArrayInfoType
 
@@ -16,6 +16,7 @@
  * are related to each other (and should thus be glommed into a single
  * VTK array).
  */
+VTK_ABI_NAMESPACE_BEGIN
 class vtkExodusIIReaderVariableCheck
 {
 public:
@@ -122,7 +123,6 @@ protected:
   bool StillAdding;
 };
 
-#endif
-#endif
+VTK_ABI_NAMESPACE_END
 #endif // vtkExodusIIReaderVariableCheck_h
 // VTK-HeaderTest-Exclude: vtkExodusIIReaderVariableCheck.h

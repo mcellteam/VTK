@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLRenderPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkOpenGLRenderPass.h"
 
@@ -23,6 +11,7 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkInformationKeyMacro(vtkOpenGLRenderPass, RenderPasses, ObjectBaseVector);
 
 //------------------------------------------------------------------------------
@@ -70,6 +59,15 @@ void vtkOpenGLRenderPass::PreRender(const vtkRenderState* s)
   for (size_t i = 0; i < numProps; ++i)
   {
     vtkProp* prop = s->GetPropArray()[i];
+    this->PreRenderProp(prop);
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkOpenGLRenderPass::PreRenderProp(vtkProp* prop)
+{
+  if (prop)
+  {
     vtkInformation* info = prop->GetPropertyKeys();
     if (!info)
     {
@@ -89,6 +87,15 @@ void vtkOpenGLRenderPass::PostRender(const vtkRenderState* s)
   for (size_t i = 0; i < numProps; ++i)
   {
     vtkProp* prop = s->GetPropArray()[i];
+    this->PostRenderProp(prop);
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkOpenGLRenderPass::PostRenderProp(vtkProp* prop)
+{
+  if (prop)
+  {
     vtkInformation* info = prop->GetPropertyKeys();
     if (info)
     {
@@ -100,3 +107,4 @@ void vtkOpenGLRenderPass::PostRender(const vtkRenderState* s)
     }
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImplicitSum.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImplicitSum
  * @brief   implicit sum of other implicit functions
@@ -29,6 +17,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkImplicitFunction.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 class vtkImplicitFunctionCollection;
 
@@ -40,13 +29,13 @@ public:
   vtkTypeMacro(vtkImplicitSum, vtkImplicitFunction);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Evaluate implicit function using current functions and weights.
    */
   using vtkImplicitFunction::EvaluateFunction;
   double EvaluateFunction(double x[3]) override;
-  //@}
+  ///@}
 
   /**
    * Evaluate gradient of the weighted sum of functions.  Input functions
@@ -81,7 +70,7 @@ public:
    */
   void SetFunctionWeight(vtkImplicitFunction* f, double weight);
 
-  //@{
+  ///@{
   /**
    * When calculating the function and gradient values of the
    * composite function, setting NormalizeByWeight on will divide the
@@ -92,7 +81,7 @@ public:
   vtkSetMacro(NormalizeByWeight, vtkTypeBool);
   vtkGetMacro(NormalizeByWeight, vtkTypeBool);
   vtkBooleanMacro(NormalizeByWeight, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImplicitSum();
@@ -102,7 +91,7 @@ protected:
   vtkDoubleArray* Weights;
   double TotalWeight;
 
-  void CalculateTotalWeight(void);
+  void CalculateTotalWeight();
   vtkTypeBool NormalizeByWeight;
 
 private:
@@ -110,4 +99,5 @@ private:
   void operator=(const vtkImplicitSum&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

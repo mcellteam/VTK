@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLPStructuredGridReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLPStructuredGridReader.h"
 
 #include "vtkInformation.h"
@@ -22,39 +10,40 @@
 #include "vtkXMLDataElement.h"
 #include "vtkXMLStructuredGridReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkXMLPStructuredGridReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPStructuredGridReader::vtkXMLPStructuredGridReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLPStructuredGridReader::~vtkXMLPStructuredGridReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredGridReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredGridReader::SetupEmptyOutput()
 {
   this->GetCurrentOutput()->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGrid* vtkXMLPStructuredGridReader::GetOutput(int idx)
 {
   return vtkStructuredGrid::SafeDownCast(this->GetOutputDataObject(idx));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGrid* vtkXMLPStructuredGridReader::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGrid* vtkXMLPStructuredGridReader::GetPieceInput(int index)
 {
   vtkXMLStructuredGridReader* reader =
@@ -62,25 +51,25 @@ vtkStructuredGrid* vtkXMLPStructuredGridReader::GetPieceInput(int index)
   return reader->GetOutput();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLPStructuredGridReader::GetDataSetName()
 {
   return "PStructuredGrid";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredGridReader::SetOutputExtent(int* extent)
 {
   vtkStructuredGrid::SafeDownCast(this->GetCurrentOutput())->SetExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredGridReader::GetPieceInputExtent(int index, int* extent)
 {
   this->GetPieceInput(index)->GetExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPStructuredGridReader::ReadPrimaryElement(vtkXMLDataElement* ePrimary)
 {
   if (!this->Superclass::ReadPrimaryElement(ePrimary))
@@ -115,7 +104,7 @@ int vtkXMLPStructuredGridReader::ReadPrimaryElement(vtkXMLDataElement* ePrimary)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLPStructuredGridReader::SetupOutputData()
 {
   this->Superclass::SetupOutputData();
@@ -146,7 +135,7 @@ void vtkXMLPStructuredGridReader::SetupOutputData()
   points->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPStructuredGridReader::ReadPieceData()
 {
   if (!this->Superclass::ReadPieceData())
@@ -163,15 +152,16 @@ int vtkXMLPStructuredGridReader::ReadPieceData()
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLDataReader* vtkXMLPStructuredGridReader::CreatePieceReader()
 {
   return vtkXMLStructuredGridReader::New();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLPStructuredGridReader::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkStructuredGrid");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

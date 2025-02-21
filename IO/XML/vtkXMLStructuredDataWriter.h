@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLStructuredDataWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLStructuredDataWriter
  * @brief   Superclass for VTK XML structured data writers.
@@ -26,6 +14,7 @@
 #include "vtkIOXMLModule.h" // For export macro
 #include "vtkXMLWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAbstractArray;
 class vtkInformation;
 class vtkInformationVector;
@@ -36,33 +25,33 @@ public:
   vtkTypeMacro(vtkXMLStructuredDataWriter, vtkXMLWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of pieces used to stream the image through the
    * pipeline while writing to the file.
    */
   vtkSetMacro(NumberOfPieces, int);
   vtkGetMacro(NumberOfPieces, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the piece to write to the file.  If this is
    * negative, all pieces will be written.
    */
   vtkSetMacro(WritePiece, int);
   vtkGetMacro(WritePiece, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the ghost level used to pad each piece.
    */
   vtkSetMacro(GhostLevel, int);
   vtkGetMacro(GhostLevel, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the extent of the input that should be treated as the
    * WholeExtent in the output file.  The default is the WholeExtent
@@ -70,7 +59,7 @@ public:
    */
   vtkSetVector6Macro(WriteExtent, int);
   vtkGetVector6Macro(WriteExtent, int);
-  //@}
+  ///@}
 
 protected:
   vtkXMLStructuredDataWriter();
@@ -131,4 +120,5 @@ private:
   void operator=(const vtkXMLStructuredDataWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

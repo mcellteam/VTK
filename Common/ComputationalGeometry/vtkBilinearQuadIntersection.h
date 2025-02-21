@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangianParticleTracker.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-    This software is distributed WITHOUT ANY WARRANTY; without even
-    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-    PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBilinearQuadIntersection
  * @brief   Class to perform non planar quad intersection
@@ -27,6 +15,7 @@
 #include "vtkCommonComputationalGeometryModule.h" // For export macro
 #include "vtkVector.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCOMPUTATIONALGEOMETRY_EXPORT vtkBilinearQuadIntersection
 {
 public:
@@ -34,7 +23,7 @@ public:
     const vtkVector3d& Pt10, const vtkVector3d& Pt11);
   vtkBilinearQuadIntersection() = default;
 
-  //@{
+  ///@{
   /**
    * Get direct access to the underlying point data
    */
@@ -46,14 +35,14 @@ public:
 
   /**
    * Compute cartesian coordinates of point in the quad
-   * using parameteric coordinates
+   * using parametric coordinates
    */
   vtkVector3d ComputeCartesianCoordinates(double u, double v);
 
   /**
-   * Compute the intersection between a ray r->d and the quad
+   * Compute the intersection between a ray r->q and the quad
    */
-  bool RayIntersection(const vtkVector3d& r, const vtkVector3d& d, vtkVector3d& uv);
+  bool RayIntersection(const vtkVector3d& r, const vtkVector3d& q, vtkVector3d& uv);
 
 private:
   vtkVector3d Point00;
@@ -62,5 +51,6 @@ private:
   vtkVector3d Point11;
   int AxesSwapping = 0;
 };
+VTK_ABI_NAMESPACE_END
 #endif // vtkBilinearQuadIntersection_h
 // VTK-HeaderTest-Exclude: vtkBilinearQuadIntersection.h

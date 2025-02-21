@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageNonMaximumSuppression.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkImageNonMaximumSuppression
  * @brief   Performs non-maximum suppression
@@ -34,6 +22,7 @@
 #include "vtkImagingMorphologicalModule.h" // For export macro
 #include "vtkThreadedImageAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGMORPHOLOGICAL_EXPORT vtkImageNonMaximumSuppression
   : public vtkThreadedImageAlgorithm
 {
@@ -42,15 +31,15 @@ public:
   vtkTypeMacro(vtkImageNonMaximumSuppression, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the magnitude and vector inputs.
    */
   void SetMagnitudeInputData(vtkImageData* input) { this->SetInputData(0, input); }
   void SetVectorInputData(vtkImageData* input) { this->SetInputData(1, input); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If "HandleBoundariesOn" then boundary pixels are duplicated
    * So central differences can get values.
@@ -58,19 +47,19 @@ public:
   vtkSetMacro(HandleBoundaries, vtkTypeBool);
   vtkGetMacro(HandleBoundaries, vtkTypeBool);
   vtkBooleanMacro(HandleBoundaries, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Determines how the input is interpreted (set of 2d slices or a 3D volume)
    */
   vtkSetClampMacro(Dimensionality, int, 2, 3);
   vtkGetMacro(Dimensionality, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageNonMaximumSuppression();
-  ~vtkImageNonMaximumSuppression() override {}
+  ~vtkImageNonMaximumSuppression() override = default;
 
   vtkTypeBool HandleBoundaries;
   int Dimensionality;
@@ -88,4 +77,5 @@ private:
   void operator=(const vtkImageNonMaximumSuppression&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

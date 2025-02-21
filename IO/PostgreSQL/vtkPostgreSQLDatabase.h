@@ -1,23 +1,6 @@
-/* -*- Mode: C++; -*- */
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPostgreSQLDatabase.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkPostgreSQLDatabase
  * @brief   maintain a connection to a PostgreSQL database
@@ -49,6 +32,7 @@
 #include "vtkIOPostgreSQLModule.h" // For export macro
 #include "vtkSQLDatabase.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPostgreSQLQuery;
 class vtkStringArray;
 class vtkPostgreSQLDatabasePrivate;
@@ -70,7 +54,7 @@ public:
    * filename before calling this function.  Returns true if the
    * database was opened successfully; false otherwise.
    */
-  bool Open(const char* password = 0) override;
+  bool Open(const char* password = nullptr) override;
 
   /**
    * Close the connection to the database.
@@ -90,58 +74,58 @@ public:
   /**
    * Did the last operation generate an error
    */
-  virtual bool HasError() override;
+  bool HasError() override;
 
   /**
    * Get the last error text from the database
    */
   const char* GetLastErrorText() override;
 
-  //@{
+  ///@{
   /**
    * String representing database type (e.g. "psql").
    */
   const char* GetDatabaseType() override { return this->DatabaseType; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The database server host name.
    */
   virtual void SetHostName(const char*);
   vtkGetStringMacro(HostName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The user name for connecting to the database server.
    */
   virtual void SetUser(const char*);
   vtkGetStringMacro(User);
-  //@}
+  ///@}
 
   /**
    * The user's password for connecting to the database server.
    */
   virtual void SetPassword(const char*);
 
-  //@{
+  ///@{
   /**
    * The name of the database to connect to.
    */
   virtual void SetDatabaseName(const char*);
   vtkGetStringMacro(DatabaseName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Additional options for the database.
    */
   virtual void SetConnectOptions(const char*);
   vtkGetStringMacro(ConnectOptions);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The port used for connecting to the database.
    */
@@ -149,7 +133,7 @@ public:
   virtual int GetServerPortMinValue() { return 0; }
   virtual int GetServerPortMaxValue() { return VTK_INT_MAX; }
   vtkGetMacro(ServerPort, int);
-  //@}
+  ///@}
 
   /**
    * Get a URL referencing the current database connection.
@@ -195,7 +179,9 @@ public:
    * Return the SQL string with the syntax to create a column inside a
    * "CREATE TABLE" SQL statement.
    * NB: this method implements the PostgreSQL-specific syntax:
+   * \code
    * <column name> <column type> <column attributes>
+   * \endcode
    */
   vtkStdString GetColumnSpecification(
     vtkSQLDatabaseSchema* schema, int tblHandle, int colHandle) override;
@@ -296,13 +282,15 @@ vtkSetStringPlusMTimeMacro(vtkPostgreSQLDatabase, ConnectOptions, URLMTime);
 inline void vtkPostgreSQLDatabase::SetServerPort(int _arg)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting ServerPort to " << _arg);
-  if (this->ServerPort != (_arg < 0 ? 0 : (_arg > VTK_INT_MAX ? VTK_INT_MAX : _arg)))
+  _arg = std::min(std::max(_arg, 0), VTK_INT_MAX);
+  if (this->ServerPort != _arg)
   {
-    this->ServerPort = (_arg < 0 ? 0 : (_arg > VTK_INT_MAX ? VTK_INT_MAX : _arg));
+    this->ServerPort = _arg;
     this->Modified();
     this->URLMTime.Modified();
     this->Close(); // Force a re-open on next query
   }
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPostgreSQLDatabase_h

@@ -1,23 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositePolyDataMapper2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
 #include "vtkCompositeDataDisplayAttributes.h"
 #include "vtkCompositeDataSet.h"
-#include "vtkCompositePolyDataMapper2.h"
+#include "vtkCompositePolyDataMapper.h"
 #include "vtkCullerCollection.h"
 #include "vtkInformation.h"
 #include "vtkMath.h"
@@ -58,8 +46,8 @@ int TestOSPRayCompositePolyDataMapper2(int argc, char* argv[])
   win->AddRenderer(ren);
   win->SetInteractor(iren);
 
-  vtkSmartPointer<vtkCompositePolyDataMapper2> mapper =
-    vtkSmartPointer<vtkCompositePolyDataMapper2>::New();
+  vtkSmartPointer<vtkCompositePolyDataMapper> mapper =
+    vtkSmartPointer<vtkCompositePolyDataMapper>::New();
   vtkNew<vtkCompositeDataDisplayAttributes> cdsa;
   mapper->SetCompositeDataDisplayAttributes(cdsa);
 
@@ -73,14 +61,14 @@ int TestOSPRayCompositePolyDataMapper2(int argc, char* argv[])
   vtkNew<vtkMultiBlockDataSet> data;
   //  int blocksPerLevel[3] = {1,64,256};
   int blocksPerLevel[3] = { 1, 16, 32 };
-  std::vector<vtkSmartPointer<vtkMultiBlockDataSet> > blocks;
+  std::vector<vtkSmartPointer<vtkMultiBlockDataSet>> blocks;
   blocks.push_back(data);
   unsigned levelStart = 0;
   unsigned levelEnd = 1;
   int numLevels = sizeof(blocksPerLevel) / sizeof(blocksPerLevel[0]);
   int numLeaves = 0;
   int numNodes = 0;
-  vtkStdString blockName("Rolf");
+  std::string blockName("Rolf");
   mapper->SetInputDataObject(data);
   for (int level = 1; level < numLevels; ++level)
   {

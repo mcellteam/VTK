@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkHigherOrderQuadrilateral.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkHigherOrderQuadrilateral.h"
 
 #include "vtkCellData.h"
@@ -26,8 +15,10 @@
 #include "vtkQuad.h"
 #include "vtkTriangle.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
+#include <array>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkHigherOrderQuadrilateral::vtkHigherOrderQuadrilateral()
 {
   this->Approx = nullptr;
@@ -60,8 +51,9 @@ void vtkHigherOrderQuadrilateral::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Approx: " << this->Approx << "\n";
 }
 
-void vtkHigherOrderQuadrilateral::GetEdgeWithoutRationalWeights(
-  vtkHigherOrderCurve* result, int edgeId)
+void vtkHigherOrderQuadrilateral::SetEdgeIdsAndPoints(int edgeId,
+  const std::function<void(const vtkIdType&)>& set_number_of_ids_and_points,
+  const std::function<void(const vtkIdType&, const vtkIdType&)>& set_ids_and_points)
 {
   const int* order = this->GetOrder();
   // Note in calls below: quad has same edges as first 4 of hex
@@ -69,12 +61,11 @@ void vtkHigherOrderQuadrilateral::GetEdgeWithoutRationalWeights(
   vtkVector2i eidx = vtkHigherOrderInterpolation::GetPointIndicesBoundingHexEdge(edgeId);
   vtkIdType npts = order[oi] + 1;
   int sn = 0;
-  result->Points->SetNumberOfPoints(npts);
-  result->PointIds->SetNumberOfIds(npts);
+
+  set_number_of_ids_and_points(npts);
   for (int i = 0; i < 2; ++i, ++sn)
   {
-    result->Points->SetPoint(sn, this->Points->GetPoint(eidx[i]));
-    result->PointIds->SetId(sn, this->PointIds->GetId(eidx[i]));
+    set_ids_and_points(sn, eidx[i]);
   }
   // Now add edge-interior points in axis order:
   int offset = 4;
@@ -84,8 +75,7 @@ void vtkHigherOrderQuadrilateral::GetEdgeWithoutRationalWeights(
   }
   for (int jj = 0; jj < order[oi] - 1; ++jj, ++sn)
   {
-    result->Points->SetPoint(sn, this->Points->GetPoint(offset + jj));
-    result->PointIds->SetId(sn, this->PointIds->GetId(offset + jj));
+    set_ids_and_points(sn, offset + jj);
   }
 }
 
@@ -191,12 +181,21 @@ void vtkHigherOrderQuadrilateral::EvaluateLocation(
   subId = 0; // TODO: Should this be -1?
   this->InterpolateFunctions(pcoords, weights);
 
-  double p[3];
+  // Efficient point access
+  const auto pointsArray = vtkDoubleArray::FastDownCast(this->Points->GetData());
+  if (!pointsArray)
+  {
+    vtkErrorMacro(<< "Points should be double type");
+    return;
+  }
+  const double* pts = pointsArray->GetPointer(0);
+
+  const double* p;
   x[0] = x[1] = x[2] = 0.;
   vtkIdType nPoints = this->GetPoints()->GetNumberOfPoints();
   for (vtkIdType idx = 0; idx < nPoints; ++idx)
   {
-    this->Points->GetPoint(idx, p);
+    p = pts + 3 * idx;
     for (vtkIdType jdx = 0; jdx < 3; ++jdx)
     {
       x[jdx] += p[jdx] * weights[idx];
@@ -274,46 +273,108 @@ int vtkHigherOrderQuadrilateral::IntersectWithLine(
   return intersection ? 1 : 0;
 }
 
-int vtkHigherOrderQuadrilateral::Triangulate(
-  int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
+int vtkHigherOrderQuadrilateral::TriangulateLocalIds(int vtkNotUsed(index), vtkIdList* ptIds)
 {
-  ptIds->Reset();
-  pts->Reset();
+  // The base of the pyramid must be split into two triangles.  There are two
+  // ways to do this (across either diagonal).  Pick the shorter diagonal.
+  double d1 = vtkMath::Distance2BetweenPoints(this->Points->GetPoint(0), this->Points->GetPoint(2));
+  double d2 = vtkMath::Distance2BetweenPoints(this->Points->GetPoint(1), this->Points->GetPoint(3));
+  constexpr std::array<vtkIdType, 6> localPtIds1{ 0, 1, 2, 0, 2, 3 };
+  constexpr std::array<vtkIdType, 6> localPtIds2{ 0, 1, 3, 1, 2, 3 };
 
   vtkIdType nquad = vtkHigherOrderInterpolation::NumberOfIntervals<2>(this->GetOrder());
-  vtkVector3i ijk;
-  for (int i = 0; i < nquad; ++i)
+  ptIds->SetNumberOfIds(nquad * 6);
+  int i, j, k, corner;
+  int count = 0;
+  for (int subId = 0; subId < nquad; ++subId)
   {
-    vtkQuad* approx = this->GetApproximateQuad(i);
-    if (!this->SubCellCoordinatesFromId(ijk, i))
+    if (!this->SubCellCoordinatesFromId(i, j, k, subId))
     {
-      continue;
+      vtkErrorMacro("Invalid subId " << subId);
+      return 0;
     }
-    if (approx->Triangulate(
-          (ijk[0] + ijk[1] + ijk[2]) % 2, this->TmpIds.GetPointer(), this->TmpPts.GetPointer()))
+    for (vtkIdType ic : ((d1 <= d2) ? localPtIds1 : localPtIds2))
     {
-      // Sigh. Triangulate methods all reset their points/ids
-      // so we must copy them to our output.
-      vtkIdType np = this->TmpPts->GetNumberOfPoints();
-      vtkIdType ni = this->TmpIds->GetNumberOfIds();
-      for (vtkIdType ii = 0; ii < np; ++ii)
-      {
-        pts->InsertNextPoint(this->TmpPts->GetPoint(ii));
-      }
-      for (vtkIdType ii = 0; ii < ni; ++ii)
-      {
-        ptIds->InsertNextId(this->TmpIds->GetId(ii));
-      }
+      corner = this->PointIndexFromIJK(
+        i + ((((ic + 1) / 2) % 2) ? 1 : 0), j + (((ic / 2) % 2) ? 1 : 0), 0);
+      ptIds->SetId(count, corner);
+      count++;
     }
   }
   return 1;
 }
 
-void vtkHigherOrderQuadrilateral::Derivatives(int vtkNotUsed(subId),
-  const double vtkNotUsed(pcoords)[3], const double* vtkNotUsed(values), int vtkNotUsed(dim),
-  double* vtkNotUsed(derivs))
+void vtkHigherOrderQuadrilateral::Derivatives(
+  int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
-  // TODO: Fill me in?
+  vtkIdType numberOfPoints = this->Points->GetNumberOfPoints();
+
+  double sum[2], p[3];
+  std::vector<double> functionDerivs(2 * numberOfPoints);
+  double *J[3], J0[3], J1[3], J2[3];
+  double *JI[3], JI0[3], JI1[3], JI2[3];
+
+  this->InterpolateDerivs(pcoords, functionDerivs.data());
+
+  // Compute transposed Jacobian and inverse Jacobian
+  J[0] = J0;
+  J[1] = J1;
+  J[2] = J2;
+  JI[0] = JI0;
+  JI[1] = JI1;
+  JI[2] = JI2;
+  for (int k = 0; k < 3; k++)
+  {
+    J0[k] = J1[k] = 0.0;
+  }
+
+  for (int i = 0; i < numberOfPoints; i++)
+  {
+    this->Points->GetPoint(i, p);
+    for (int j = 0; j < 2; j++)
+    {
+      for (int k = 0; k < 3; k++)
+      {
+        J[j][k] += p[k] * functionDerivs[j + 2 * i];
+      }
+    }
+  }
+
+  // Compute third row vector in transposed Jacobian and normalize it, so that Jacobian determinant
+  // stays the same.
+  vtkMath::Cross(J0, J1, J2);
+  if (vtkMath::Normalize(J2) == 0.0 || !vtkMath::InvertMatrix(J, JI, 3)) // degenerate
+  {
+    for (int j = 0; j < dim; j++)
+    {
+      for (int i = 0; i < 3; i++)
+      {
+        derivs[j * dim + i] = 0.0;
+      }
+    }
+    return;
+  }
+
+  // Loop over "dim" derivative values. For each set of values,
+  // compute derivatives
+  // in local system and then transform into modelling system.
+  // First compute derivatives in local x'-y' coordinate system
+  for (int j = 0; j < dim; j++)
+  {
+    sum[0] = sum[1] = 0.0;
+    for (int i = 0; i < numberOfPoints; i++) // loop over interp. function derivatives
+    {
+      sum[0] += functionDerivs[2 * i] * values[dim * i + j];
+      sum[1] += functionDerivs[2 * i + 1] * values[dim * i + j];
+    }
+    //    dBydx = sum[0]*JI[0][0] + sum[1]*JI[0][1];
+    //    dBydy = sum[0]*JI[1][0] + sum[1]*JI[1][1];
+
+    // Transform into global system (dot product with global axes)
+    derivs[3 * j] = sum[0] * JI[0][0] + sum[1] * JI[0][1];
+    derivs[3 * j + 1] = sum[0] * JI[1][0] + sum[1] * JI[1][1];
+    derivs[3 * j + 2] = sum[0] * JI[2][0] + sum[1] * JI[2][1];
+  }
 }
 
 void vtkHigherOrderQuadrilateral::SetParametricCoords()
@@ -430,7 +491,7 @@ bool vtkHigherOrderQuadrilateral::SubCellCoordinatesFromId(int& i, int& j, int& 
   i = subId % this->Order[0];
   j = (subId / this->Order[0]) % this->Order[1];
   k = 0;
-  return i + this->Order[0] * j == subId ? true : false;
+  return i + this->Order[0] * j == subId;
 }
 
 /**\brief A convenience function to get a connectivity offset from a control-point tuple.
@@ -503,25 +564,33 @@ bool vtkHigherOrderQuadrilateral::TransformApproxToCellParams(int subCell, doubl
 /**\brief Set the degree  of the cell, given a vtkDataSet and cellId
  */
 void vtkHigherOrderQuadrilateral::SetOrderFromCellData(
-  vtkCellData* cell_data, const vtkIdType numPts, const vtkIdType cell_id)
+  vtkCellData* cell_data, vtkIdType numPts, vtkIdType cell_id)
 {
-  if (cell_data->SetActiveAttribute(
-        "HigherOrderDegrees", vtkDataSetAttributes::AttributeTypes::HIGHERORDERDEGREES) != -1)
+  vtkHigherOrderQuadrilateral::SetOrderFromCellData(cell_data, numPts, cell_id, this->Order);
+}
+
+void vtkHigherOrderQuadrilateral::SetOrderFromCellData(
+  vtkCellData* cell_data, vtkIdType numPts, vtkIdType cell_id, int* order)
+{
+  vtkDataArray* v = cell_data->GetHigherOrderDegrees();
+  if (v)
   {
     double degs[3];
-    vtkDataArray* v = cell_data->GetHigherOrderDegrees();
     v->GetTuple(cell_id, degs);
-    this->SetOrder(degs[0], degs[1]);
-    if (this->Order[2] != numPts)
-      vtkErrorMacro("The degrees are not correctly set in the input file.");
+    order[0] = degs[0];
+    order[1] = degs[1];
   }
   else
   {
-    this->SetUniformOrderFromNumPoints(numPts);
+    order[0] = order[1] = static_cast<int>(round(std::sqrt(static_cast<int>(numPts)))) - 1;
   }
+  order[2] = (order[0] + 1) * (order[1] + 1);
+  if (order[2] != numPts)
+    vtkGenericWarningMacro(
+      "The degrees are direction dependents, and should be set in the input file.");
 }
 
-void vtkHigherOrderQuadrilateral::SetUniformOrderFromNumPoints(const vtkIdType numPts)
+void vtkHigherOrderQuadrilateral::SetUniformOrderFromNumPoints(vtkIdType numPts)
 {
   int deg = static_cast<int>(round(std::sqrt(static_cast<int>(numPts)))) - 1;
   this->SetOrder(deg, deg);
@@ -529,8 +598,10 @@ void vtkHigherOrderQuadrilateral::SetUniformOrderFromNumPoints(const vtkIdType n
     vtkErrorMacro("The degrees are direction dependents, and should be set in the input file.");
 }
 
-void vtkHigherOrderQuadrilateral::SetOrder(const int s, const int t)
+void vtkHigherOrderQuadrilateral::SetOrder(int s, int t)
 {
+  if (this->PointParametricCoordinates && (Order[0] != s || Order[1] != t))
+    this->PointParametricCoordinates->Reset();
   Order[0] = s;
   Order[1] = t;
   Order[2] = (s + 1) * (t + 1);
@@ -553,3 +624,23 @@ const int* vtkHigherOrderQuadrilateral::GetOrder()
   }
   return this->Order;
 }
+
+bool vtkHigherOrderQuadrilateral::PointCountSupportsUniformOrder(vtkIdType pointsPerCell)
+{
+  // Determine if sqrt(N) is integral (and if so, what is it?).
+  vtkIdType nn = pointsPerCell;
+  int h = nn % 0x0f; // Perfect squares in base 16 must end in 0, 1, 4, or 9.
+  if (h > 9 || (h > 1 && h < 4) || (h > 4 && h < 9))
+  {
+    // Trivially reject numbers with a bad final digit.
+    return false;
+  }
+  // There's a chance we have a perfect square, do the hard work.
+  int root = std::floor(std::sqrt(nn) + 0.5);
+  if (root * root != nn)
+  {
+    return false;
+  }
+  return root >= 4;
+}
+VTK_ABI_NAMESPACE_END

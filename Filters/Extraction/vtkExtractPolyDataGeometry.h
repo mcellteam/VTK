@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractPolyDataGeometry.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractPolyDataGeometry
  * @brief   extract vtkPolyData cells that lies either entirely inside or outside of a specified
@@ -38,7 +26,7 @@
  * vtkDataSet input (see vtkExtractGeometry).
  *
  * @sa
- * vtkExtractGeometry vtkClipPolyData
+ * vtkExtractGeometry vtkClipPolyData vtkImplicitFunction
  */
 
 #ifndef vtkExtractPolyDataGeometry_h
@@ -47,6 +35,7 @@
 #include "vtkFiltersExtractionModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImplicitFunction;
 
 class VTKFILTERSEXTRACTION_EXPORT vtkExtractPolyDataGeometry : public vtkPolyDataAlgorithm
@@ -65,15 +54,15 @@ public:
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Specify the implicit function for inside/outside checks.
    */
   virtual void SetImplicitFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(ImplicitFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether to extract cells that are inside of implicit
    * function (ExtractInside == 1) or outside of implicit function
@@ -82,9 +71,9 @@ public:
   vtkSetMacro(ExtractInside, vtkTypeBool);
   vtkGetMacro(ExtractInside, vtkTypeBool);
   vtkBooleanMacro(ExtractInside, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether to extract cells that are partially inside.
    * By default, ExtractBoundaryCells is off.
@@ -92,9 +81,9 @@ public:
   vtkSetMacro(ExtractBoundaryCells, vtkTypeBool);
   vtkGetMacro(ExtractBoundaryCells, vtkTypeBool);
   vtkBooleanMacro(ExtractBoundaryCells, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether points are culled or simply passed through
    * to the output.
@@ -102,7 +91,7 @@ public:
   vtkSetMacro(PassPoints, vtkTypeBool);
   vtkGetMacro(PassPoints, vtkTypeBool);
   vtkBooleanMacro(PassPoints, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkExtractPolyDataGeometry(vtkImplicitFunction* f = nullptr);
@@ -123,7 +112,7 @@ private:
   void operator=(const vtkExtractPolyDataGeometry&) = delete;
 };
 
-//@{
+///@{
 /**
  * When not passing points, have to use a point map to keep track of things.
  */
@@ -135,6 +124,7 @@ inline vtkIdType vtkExtractPolyDataGeometry::InsertPointInMap(
   pointMap[i] = newPts->InsertNextPoint(x);
   return pointMap[i];
 }
-//@}
+///@}
 
+VTK_ABI_NAMESPACE_END
 #endif

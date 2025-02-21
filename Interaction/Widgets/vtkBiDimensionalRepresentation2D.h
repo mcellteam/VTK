@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBiDimensionalRepresentation2D.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBiDimensionalRepresentation2D
  * @brief   represent the vtkBiDimensionalWidget
@@ -44,6 +32,7 @@
 #include "vtkBiDimensionalRepresentation.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkHandleRepresentation;
 class vtkCellArray;
 class vtkPoints;
@@ -63,30 +52,30 @@ public:
    */
   static vtkBiDimensionalRepresentation2D* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK methods.
    */
   vtkTypeMacro(vtkBiDimensionalRepresentation2D, vtkBiDimensionalRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Retrieve the property used to control the appearance of the two
    * orthogonal lines.
    */
   vtkGetObjectMacro(LineProperty, vtkProperty2D);
   vtkGetObjectMacro(SelectedLineProperty, vtkProperty2D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Retrieve the property used to control the appearance of the text
    * labels.
    */
   vtkGetObjectMacro(TextProperty, vtkTextProperty);
-  //@}
+  ///@}
 
   // Used to communicate about the state of the representation
   enum
@@ -103,7 +92,7 @@ public:
     OnCenter
   };
 
-  //@{
+  ///@{
   /**
    * These are methods that satisfy vtkWidgetRepresentation's API.
    */
@@ -115,29 +104,29 @@ public:
   void StartWidgetManipulation(double e[2]) override;
   void WidgetInteraction(double e[2]) override;
   void Highlight(int highlightOn) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods required by vtkProp superclass.
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
   int RenderOverlay(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Get the text shown in the widget's label.
    */
   char* GetLabelText() override;
 
-  //@{
+  ///@{
   /**
    * Get the position of the widget's label in display coordinates.
    */
   double* GetLabelPosition() override;
   void GetLabelPosition(double pos[3]) override;
   void GetWorldLabelPosition(double pos[3]) override;
-  //@}
+  ///@}
 
 protected:
   vtkBiDimensionalRepresentation2D();
@@ -166,4 +155,5 @@ private:
   void operator=(const vtkBiDimensionalRepresentation2D&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

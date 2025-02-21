@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAxesActor.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkAxesActor
  * @brief   a 3D axes representation
@@ -50,7 +38,9 @@
 
 #include "vtkProp3D.h"
 #include "vtkRenderingAnnotationModule.h" // For export macro
+#include "vtkWrappingHints.h"             // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkActor;
 class vtkCaptionActor2D;
 class vtkConeSource;
@@ -62,7 +52,7 @@ class vtkProperty;
 class vtkRenderer;
 class vtkSphereSource;
 
-class VTKRENDERINGANNOTATION_EXPORT vtkAxesActor : public vtkProp3D
+class VTKRENDERINGANNOTATION_EXPORT VTK_MARSHALAUTO vtkAxesActor : public vtkProp3D
 {
 public:
   static vtkAxesActor* New();
@@ -76,14 +66,14 @@ public:
    */
   void GetActors(vtkPropCollection*) override;
 
-  //@{
+  ///@{
   /**
    * Support the standard render methods.
    */
   int RenderOpaqueGeometry(vtkViewport* viewport) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   int RenderOverlay(vtkViewport* viewport) override;
-  //@}
+  ///@}
 
   /**
    * Does this prop have some translucent polygonal geometry?
@@ -102,14 +92,14 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow*) override;
 
-  //@{
+  ///@{
   /**
    * Get the bounds for this Actor as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax). (The
    * method GetBounds(double bounds[6]) is available from the superclass.)
    */
   void GetBounds(double bounds[6]);
   double* GetBounds() VTK_SIZEHINT(6) override;
-  //@}
+  ///@}
 
   /**
    * Get the actors mtime plus consider its properties and texture if set.
@@ -124,25 +114,25 @@ public:
    */
   vtkMTimeType GetRedrawMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set the total length of the axes in 3 dimensions.
    */
   void SetTotalLength(double v[3]) { this->SetTotalLength(v[0], v[1], v[2]); }
   void SetTotalLength(double x, double y, double z);
   vtkGetVectorMacro(TotalLength, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the normalized (0-1) length of the shaft.
    */
   void SetNormalizedShaftLength(double v[3]) { this->SetNormalizedShaftLength(v[0], v[1], v[2]); }
   void SetNormalizedShaftLength(double x, double y, double z);
   vtkGetVectorMacro(NormalizedShaftLength, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the normalized (0-1) length of the tip.  Normally, this would be
    * 1 - the normalized length of the shaft.
@@ -150,9 +140,9 @@ public:
   void SetNormalizedTipLength(double v[3]) { this->SetNormalizedTipLength(v[0], v[1], v[2]); }
   void SetNormalizedTipLength(double x, double y, double z);
   vtkGetVectorMacro(NormalizedTipLength, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the normalized (0-1) position of the label along the length of
    * the shaft.  A value > 1 is permissible.
@@ -163,9 +153,9 @@ public:
   }
   void SetNormalizedLabelPosition(double x, double y, double z);
   vtkGetVectorMacro(NormalizedLabelPosition, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the resolution of the pieces of the axes actor.
    */
@@ -175,9 +165,9 @@ public:
   vtkGetMacro(SphereResolution, int);
   vtkSetClampMacro(CylinderResolution, int, 3, 128);
   vtkGetMacro(CylinderResolution, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the radius of the pieces of the axes actor.
    */
@@ -187,9 +177,9 @@ public:
   vtkGetMacro(SphereRadius, double);
   vtkSetClampMacro(CylinderRadius, double, 0, VTK_FLOAT_MAX);
   vtkGetMacro(CylinderRadius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the type of the shaft to a cylinder, line, or user defined geometry.
    */
@@ -198,9 +188,9 @@ public:
   void SetShaftTypeToLine() { this->SetShaftType(vtkAxesActor::LINE_SHAFT); }
   void SetShaftTypeToUserDefined() { this->SetShaftType(vtkAxesActor::USER_DEFINED_SHAFT); }
   vtkGetMacro(ShaftType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the type of the tip to a cone, sphere, or user defined geometry.
    */
@@ -209,41 +199,41 @@ public:
   void SetTipTypeToSphere() { this->SetTipType(vtkAxesActor::SPHERE_TIP); }
   void SetTipTypeToUserDefined() { this->SetTipType(vtkAxesActor::USER_DEFINED_TIP); }
   vtkGetMacro(TipType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the user defined tip polydata.
    */
   void SetUserDefinedTip(vtkPolyData*);
   vtkGetObjectMacro(UserDefinedTip, vtkPolyData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the user defined shaft polydata.
    */
   void SetUserDefinedShaft(vtkPolyData*);
   vtkGetObjectMacro(UserDefinedShaft, vtkPolyData);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the tip properties.
    */
   vtkProperty* GetXAxisTipProperty();
   vtkProperty* GetYAxisTipProperty();
   vtkProperty* GetZAxisTipProperty();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the shaft properties.
    */
   vtkProperty* GetXAxisShaftProperty();
   vtkProperty* GetYAxisShaftProperty();
   vtkProperty* GetZAxisShaftProperty();
-  //@}
+  ///@}
 
   /**
    * Retrieve handles to the X, Y and Z axis (so that you can set their text
@@ -253,7 +243,7 @@ public:
   vtkCaptionActor2D* GetYAxisCaptionActor2D() { return this->YAxisLabel; }
   vtkCaptionActor2D* GetZAxisCaptionActor2D() { return this->ZAxisLabel; }
 
-  //@{
+  ///@{
   /**
    * Set/get the label text.
    */
@@ -263,16 +253,16 @@ public:
   vtkGetStringMacro(YAxisLabelText);
   vtkSetStringMacro(ZAxisLabelText);
   vtkGetStringMacro(ZAxisLabelText);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/disable drawing the axis labels.
    */
   vtkSetMacro(AxisLabels, vtkTypeBool);
   vtkGetMacro(AxisLabels, vtkTypeBool);
   vtkBooleanMacro(AxisLabels, vtkTypeBool);
-  //@}
+  ///@}
 
   enum
   {
@@ -341,4 +331,5 @@ private:
   void operator=(const vtkAxesActor&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

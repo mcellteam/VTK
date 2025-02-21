@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParametricSuperToroid.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParametricSuperToroid
  * @brief   Generate a supertoroid.
@@ -47,6 +35,7 @@
 #include "vtkCommonComputationalGeometryModule.h" // For export macro
 #include "vtkParametricFunction.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCOMPUTATIONALGEOMETRY_EXPORT vtkParametricSuperToroid : public vtkParametricFunction
 {
 public:
@@ -72,63 +61,63 @@ public:
    */
   int GetDimension() override { return 2; }
 
-  //@{
+  ///@{
   /**
    * Set/Get the radius from the center to the middle of the ring of the
    * supertoroid. Default is 1.
    */
   vtkSetMacro(RingRadius, double);
   vtkGetMacro(RingRadius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the radius of the cross section of ring of the supertoroid.
    * Default = 0.5.
    */
   vtkSetMacro(CrossSectionRadius, double);
   vtkGetMacro(CrossSectionRadius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scaling factor for the x-axis. Default is 1.
    */
   vtkSetMacro(XRadius, double);
   vtkGetMacro(XRadius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scaling factor for the y-axis. Default is 1.
    */
   vtkSetMacro(YRadius, double);
   vtkGetMacro(YRadius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scaling factor for the z-axis. Default is 1.
    */
   vtkSetMacro(ZRadius, double);
   vtkGetMacro(ZRadius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the shape of the torus ring.  Default is 1.
    */
   vtkSetMacro(N1, double);
   vtkGetMacro(N1, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the shape of the cross section of the ring. Default is 1.
    */
   vtkSetMacro(N2, double);
   vtkGetMacro(N2, double);
-  //@}
+  ///@}
 
   /**
    * A supertoroid.
@@ -173,4 +162,5 @@ private:
   void operator=(const vtkParametricSuperToroid&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

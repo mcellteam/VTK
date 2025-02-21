@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestAMRGhostLayerStripping.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME TestAMRGhostLayerStripping.cxx -- Test for stripping ghost layers
 //
 // .SECTION Description
@@ -33,13 +21,14 @@
 #include "vtkAMRGaussianPulseSource.h"
 #include "vtkAMRInformation.h"
 #include "vtkAMRUtilities.h"
-#include "vtkCell.h"
 #include "vtkCellData.h"
 #include "vtkDoubleArray.h"
+#include "vtkGenericCell.h"
 #include "vtkMathUtilities.h"
 #include "vtkOverlappingAMR.h"
+#include "vtkPoints.h"
 #include "vtkUniformGrid.h"
-//#define DEBUG_ON
+// #define DEBUG_ON
 
 //------------------------------------------------------------------------------
 // Debugging utilities. Must link vtkIOXML to work
@@ -105,19 +94,36 @@ double ComputePulse(const int dimension, double location[3], double pulseOrigin[
 }
 
 //------------------------------------------------------------------------------
-void ComputeCellCenter(vtkUniformGrid* grid, vtkIdType cellIdx, double centroid[3])
+void GetCell(vtkUniformGrid* grid, vtkIdType cellIdx, vtkGenericCell* cell)
+{
+  const auto gridDims = grid->GetDataDimension();
+  const auto cellType = gridDims == 3
+    ? VTK_VOXEL
+    : (gridDims == 2 ? VTK_PIXEL : (gridDims == 1 ? VTK_LINE : VTK_VERTEX));
+  // vtkImageData not checks for visibility of cells, so we need to do it manually
+  cell->SetCellType(cellType);
+  grid->GetCellPoints(cellIdx, cell->PointIds);
+  for (int i = 0; i < cell->PointIds->GetNumberOfIds(); ++i)
+  {
+    cell->Points->SetPoint(i, grid->GetPoint(cell->PointIds->GetId(i)));
+  }
+}
+
+//------------------------------------------------------------------------------
+void ComputeCellCenter(
+  vtkUniformGrid* grid, vtkIdType cellIdx, vtkGenericCell* cell, double centroid[3])
 {
   assert("pre: input grid instance is nullptr" && (grid != nullptr));
   assert(
     "pre: cell index is out-of-bounds!" && (cellIdx >= 0) && (cellIdx < grid->GetNumberOfCells()));
 
   // We want to get all cells including blanked cells.
-  vtkCell* myCell = grid->vtkImageData::GetCell(cellIdx);
+  GetCell(grid, cellIdx, cell);
 
   double pcenter[3];
-  std::vector<double> weights(myCell->GetNumberOfPoints());
-  int subId = myCell->GetParametricCenter(pcenter);
-  myCell->EvaluateLocation(subId, pcenter, centroid, weights.data());
+  std::vector<double> weights(cell->GetNumberOfPoints());
+  int subId = cell->GetParametricCenter(pcenter);
+  cell->EvaluateLocation(subId, pcenter, centroid, weights.data());
 }
 
 //------------------------------------------------------------------------------
@@ -148,9 +154,10 @@ void GeneratePulseField(const int dimension, vtkUniformGrid* grid)
 
   double centroid[3];
   vtkIdType cellIdx = 0;
+  vtkNew<vtkGenericCell> cell;
   for (; cellIdx < grid->GetNumberOfCells(); ++cellIdx)
   {
-    ComputeCellCenter(grid, cellIdx, centroid);
+    ComputeCellCenter(grid, cellIdx, cell, centroid);
     centroidArray->SetComponent(cellIdx, 0, centroid[0]);
     centroidArray->SetComponent(cellIdx, 1, centroid[1]);
     centroidArray->SetComponent(cellIdx, 2, centroid[2]);
@@ -223,7 +230,7 @@ vtkOverlappingAMR* GetGhostedDataSet(const int dimension, const int NG, vtkOverl
   blocksPerLevel[0] = 1;
   blocksPerLevel[1] = 2;
 
-  ghostedAMR->Initialize(static_cast<int>(blocksPerLevel.size()), &blocksPerLevel[0]);
+  ghostedAMR->Initialize(static_cast<int>(blocksPerLevel.size()), blocksPerLevel.data());
   ghostedAMR->SetGridDescription(inputAMR->GetGridDescription());
   ghostedAMR->SetOrigin(inputAMR->GetOrigin());
 
@@ -240,7 +247,7 @@ vtkOverlappingAMR* GetGhostedDataSet(const int dimension, const int NG, vtkOverl
   vtkUniformGrid* rootGrid = vtkUniformGrid::New();
   rootGrid->DeepCopy(inputAMR->GetDataSet(0, 0));
   vtkAMRBox box(rootGrid->GetOrigin(), rootGrid->GetDimensions(), rootGrid->GetSpacing(),
-    ghostedAMR->GetOrigin(), rootGrid->GetGridDescription());
+    ghostedAMR->GetOrigin(), rootGrid->GetDataDescription());
   ghostedAMR->SetAMRBox(0, 0, box);
   ghostedAMR->SetDataSet(0, 0, rootGrid);
   rootGrid->Delete();
@@ -261,7 +268,7 @@ vtkOverlappingAMR* GetGhostedDataSet(const int dimension, const int NG, vtkOverl
     vtkUniformGrid* grid = inputAMR->GetDataSet(1, i);
     vtkUniformGrid* ghostedGrid = GetGhostedGrid(dimension, grid, ghost[i], NG);
     box = vtkAMRBox(ghostedGrid->GetOrigin(), ghostedGrid->GetDimensions(),
-      ghostedGrid->GetSpacing(), ghostedAMR->GetOrigin(), ghostedGrid->GetGridDescription());
+      ghostedGrid->GetSpacing(), ghostedAMR->GetOrigin(), ghostedGrid->GetDataDescription());
 
     ghostedAMR->SetAMRBox(1, i, box);
     ghostedAMR->SetDataSet(1, i, ghostedGrid);
@@ -287,7 +294,7 @@ vtkOverlappingAMR* GetAMRDataSet(const int dimension, const int refinementRatio)
   amrGPSource->SetRefinementRatio(refinementRatio);
   amrGPSource->Update();
   vtkOverlappingAMR* myAMR = vtkOverlappingAMR::New();
-  myAMR->ShallowCopy(amrGPSource->GetOutput());
+  myAMR->CompositeShallowCopy(amrGPSource->GetOutput());
   amrGPSource->Delete();
   return (myAMR);
 }
@@ -334,9 +341,10 @@ bool CheckFields(vtkUniformGrid* grid)
   double centroid[3];
   int dim = grid->GetDataDimension();
   vtkIdType cellIdx = 0;
+  vtkNew<vtkGenericCell> cell;
   for (; cellIdx < grid->GetNumberOfCells(); ++cellIdx)
   {
-    ComputeCellCenter(grid, cellIdx, centroid);
+    ComputeCellCenter(grid, cellIdx, cell, centroid);
     double val = ComputePulse(dim, centroid, pulseOrigin, pulseWidth, pulseAmplitude);
 
     if (!vtkMathUtilities::FuzzyCompare(val, pulses[cellIdx], 1e-9))

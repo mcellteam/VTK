@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLWriterC.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLWriterC.h"
 
 #include "vtkCellArray.h"
@@ -36,16 +24,19 @@
 
 // Function to allocate a vtkDataArray and point it at the given data.
 // The data are not copied.
+#define vtkXMLWriterC_NewDataArray VTK_ABI_NAMESPACE_MANGLE(vtkXMLWriterC_NewDataArray)
 static vtkSmartPointer<vtkDataArray> vtkXMLWriterC_NewDataArray(const char* method,
   const char* name, int dataType, void* data, vtkIdType numTuples, int numComponents);
 
 // Function to allocate a vtkCellArray and point it at the given
 // cells.  The cells are not copied.
+#define vtkXMLWriterC_NewCellArray VTK_ABI_NAMESPACE_MANGLE(vtkXMLWriterC_NewCellArray)
 static vtkSmartPointer<vtkCellArray> vtkXMLWriterC_NewCellArray(
   const char* method, vtkIdType ncells, vtkIdType* cells, vtkIdType cellsSize);
 
 // Function to implement vtkXMLWriterC_SetPointData and
 // vtkXMLWriterC_SetCellData without duplicate code.
+#define vtkXMLWriterC_SetDataInternal VTK_ABI_NAMESPACE_MANGLE(vtkXMLWriterC_SetDataInternal)
 static void vtkXMLWriterC_SetDataInternal(vtkXMLWriterC* self, const char* name, int dataType,
   void* data, vtkIdType numTuples, int numComponents, const char* role, const char* method,
   int isPoints);
@@ -109,31 +100,31 @@ extern "C"
         {
           self->DataObject = vtkSmartPointer<vtkPolyData>::New();
           self->Writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-        };
+        }
         break;
         case VTK_UNSTRUCTURED_GRID:
         {
           self->DataObject = vtkSmartPointer<vtkUnstructuredGrid>::New();
           self->Writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-        };
+        }
         break;
         case VTK_STRUCTURED_GRID:
         {
           self->DataObject = vtkSmartPointer<vtkStructuredGrid>::New();
           self->Writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
-        };
+        }
         break;
         case VTK_RECTILINEAR_GRID:
         {
           self->DataObject = vtkSmartPointer<vtkRectilinearGrid>::New();
           self->Writer = vtkSmartPointer<vtkXMLRectilinearGridWriter>::New();
-        };
+        }
         break;
         case VTK_IMAGE_DATA:
         {
           self->DataObject = vtkSmartPointer<vtkImageData>::New();
           self->Writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
-        };
+        }
         break;
       }
 
@@ -586,7 +577,7 @@ extern "C"
 
 } /* extern "C" */
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static vtkSmartPointer<vtkDataArray> vtkXMLWriterC_NewDataArray(const char* method,
   const char* name, int dataType, void* data, vtkIdType numTuples, int numComponents)
 {
@@ -616,7 +607,7 @@ static vtkSmartPointer<vtkDataArray> vtkXMLWriterC_NewDataArray(const char* meth
   return array;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static vtkSmartPointer<vtkCellArray> vtkXMLWriterC_NewCellArray(
   const char* method, vtkIdType ncells, vtkIdType* cells, vtkIdType cellsSize)
 {
@@ -641,7 +632,7 @@ static vtkSmartPointer<vtkCellArray> vtkXMLWriterC_NewCellArray(
   return cellArray;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void vtkXMLWriterC_SetDataInternal(vtkXMLWriterC* self, const char* name, int dataType,
   void* data, vtkIdType numTuples, int numComponents, const char* role, const char* method,
   int isPoints)

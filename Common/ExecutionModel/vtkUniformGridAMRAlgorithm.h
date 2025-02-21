@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkUniformGridAMRAlgorithm.h
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkUniformGridAMRAlgorithm
  *  vtkUniformGridAMR as output.
@@ -27,6 +15,7 @@
 #include "vtkAlgorithm.h"
 #include "vtkCommonExecutionModelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUniformGridAMR;
 class vtkInformation;
 class vtkInformationVector;
@@ -39,21 +28,21 @@ public:
   vtkTypeMacro(vtkUniformGridAMRAlgorithm, vtkAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm
    */
   vtkUniformGridAMR* GetOutput();
   vtkUniformGridAMR* GetOutput(int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set an input of this algorithm.
    */
   void SetInputData(vtkDataObject*);
   void SetInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
   /**
    * See vtkAlgorithm for details
@@ -101,18 +90,23 @@ protected:
     return 1;
   }
 
+  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*)
+  {
+    return 1;
+  }
+
   /**
    * Create a default executive
    */
   vtkExecutive* CreateDefaultExecutive() override;
 
-  //@{
+  ///@{
   /**
    * See algorithm for more info.
    */
   int FillOutputPortInformation(int port, vtkInformation* info) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
-  //@}
+  ///@}
 
   vtkDataObject* GetInput(int port);
 
@@ -121,4 +115,5 @@ private:
   void operator=(const vtkUniformGridAMRAlgorithm&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* VTKUNIFORMGRIDAMRALGORITHM_H_ */

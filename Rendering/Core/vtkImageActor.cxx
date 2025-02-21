@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageActor.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageActor.h"
 
 #include "vtkDataSetAttributes.h"
@@ -25,9 +13,10 @@
 #include "vtkRenderer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageActor);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageActor::vtkImageActor()
 {
   this->DisplayExtent[0] = 0;
@@ -58,7 +47,7 @@ vtkImageActor::vtkImageActor()
   this->ForceOpaque = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageActor::~vtkImageActor()
 {
   if (this->Property)
@@ -73,7 +62,7 @@ vtkImageActor::~vtkImageActor()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageActor::SetInputData(vtkImageData* input)
 {
   if (this->Mapper && input != this->Mapper->GetInput())
@@ -83,7 +72,7 @@ void vtkImageActor::SetInputData(vtkImageData* input)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAlgorithm* vtkImageActor::GetInputAlgorithm()
 {
   if (!this->Mapper)
@@ -94,7 +83,7 @@ vtkAlgorithm* vtkImageActor::GetInputAlgorithm()
   return this->Mapper->GetInputAlgorithm();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkImageActor::GetInput()
 {
   if (!this->Mapper)
@@ -105,7 +94,7 @@ vtkImageData* vtkImageActor::GetInput()
   return this->Mapper->GetInput();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageActor::SetInterpolate(vtkTypeBool i)
 {
   if (this->Property)
@@ -129,7 +118,7 @@ void vtkImageActor::SetInterpolate(vtkTypeBool i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkImageActor::GetInterpolate()
 {
   if (this->Property && this->Property->GetInterpolationType() != VTK_NEAREST_INTERPOLATION)
@@ -140,7 +129,7 @@ vtkTypeBool vtkImageActor::GetInterpolate()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageActor::SetOpacity(double o)
 {
   if (this->Property && this->Property->GetOpacity() != o)
@@ -150,7 +139,7 @@ void vtkImageActor::SetOpacity(double o)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkImageActor::GetOpacity()
 {
   if (this->Property)
@@ -161,7 +150,7 @@ double vtkImageActor::GetOpacity()
   return 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageActor::GetSliceNumber()
 {
   if (!this->Mapper || !this->Mapper->IsA("vtkImageSliceMapper"))
@@ -172,7 +161,7 @@ int vtkImageActor::GetSliceNumber()
   return static_cast<vtkImageSliceMapper*>(this->Mapper)->GetSliceNumber();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageActor::GetSliceNumberMax()
 {
   if (!this->Mapper || !this->Mapper->IsA("vtkImageSliceMapper"))
@@ -183,7 +172,7 @@ int vtkImageActor::GetSliceNumberMax()
   return static_cast<vtkImageSliceMapper*>(this->Mapper)->GetSliceNumberMaxValue();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageActor::GetSliceNumberMin()
 {
   if (!this->Mapper || !this->Mapper->IsA("vtkImageSliceMapper"))
@@ -194,7 +183,7 @@ int vtkImageActor::GetSliceNumberMin()
   return static_cast<vtkImageSliceMapper*>(this->Mapper)->GetSliceNumberMinValue();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageActor::SetDisplayExtent(const int extent[6])
 {
   int idx, modified = 0;
@@ -217,7 +206,7 @@ void vtkImageActor::SetDisplayExtent(const int extent[6])
         static_cast<vtkImageSliceMapper*>(this->Mapper)->CroppingOn();
         static_cast<vtkImageSliceMapper*>(this->Mapper)->SetCroppingRegion(this->DisplayExtent);
         static_cast<vtkImageSliceMapper*>(this->Mapper)
-          ->SetOrientation(this->GetOrientationFromExtent(this->DisplayExtent));
+          ->SetOrientation(vtkImageActor::GetOrientationFromExtent(this->DisplayExtent));
       }
       else
       {
@@ -228,14 +217,14 @@ void vtkImageActor::SetDisplayExtent(const int extent[6])
     this->Modified();
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageActor::SetDisplayExtent(int minX, int maxX, int minY, int maxY, int minZ, int maxZ)
 {
   const int extent[6] = { minX, maxX, minY, maxY, minZ, maxZ };
   this->SetDisplayExtent(extent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageActor::GetDisplayExtent(int extent[6])
 {
   for (int idx = 0; idx < 6; ++idx)
@@ -244,7 +233,7 @@ void vtkImageActor::GetDisplayExtent(int extent[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the bounds for this Volume as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
 double* vtkImageActor::GetDisplayBounds()
 {
@@ -322,7 +311,7 @@ double* vtkImageActor::GetDisplayBounds()
   return this->DisplayBounds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the bounds for the displayed data as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
 void vtkImageActor::GetDisplayBounds(double bounds[6])
 {
@@ -333,7 +322,7 @@ void vtkImageActor::GetDisplayBounds(double bounds[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the bounds for this Prop3D as (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
 double* vtkImageActor::GetBounds()
 {
@@ -409,7 +398,7 @@ double* vtkImageActor::GetBounds()
   return this->Bounds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageActor::GetOrientationFromExtent(const int extent[6])
 {
   int orientation = 2;
@@ -430,7 +419,7 @@ int vtkImageActor::GetOrientationFromExtent(const int extent[6])
   return orientation;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -449,7 +438,7 @@ void vtkImageActor::PrintSelf(ostream& os, vtkIndent indent)
   os << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageActor::GetWholeZMin()
 {
   if (!this->GetInputAlgorithm())
@@ -462,7 +451,7 @@ int vtkImageActor::GetWholeZMin()
   return extent[4];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageActor::GetWholeZMax()
 {
   if (!this->GetInputAlgorithm())
@@ -475,7 +464,7 @@ int vtkImageActor::GetWholeZMax()
   return extent[5];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkImageActor::HasTranslucentPolygonalGeometry()
@@ -551,3 +540,4 @@ vtkTypeBool vtkImageActor::HasTranslucentPolygonalGeometry()
 
   return this->TranslucentCachedResult;
 }
+VTK_ABI_NAMESPACE_END

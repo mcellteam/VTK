@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkParametricConicSpiral.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkParametricConicSpiral
  * @brief   Generate conic spiral surfaces that resemble sea-shells.
@@ -35,6 +23,7 @@
 #include "vtkCommonComputationalGeometryModule.h" // For export macro
 #include "vtkParametricFunction.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKCOMMONCOMPUTATIONALGEOMETRY_EXPORT vtkParametricConicSpiral : public vtkParametricFunction
 {
 public:
@@ -58,16 +47,16 @@ public:
    */
   int GetDimension() override { return 2; }
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale factor.
    * Default = 0.2
    */
   vtkSetMacro(A, double);
   vtkGetMacro(A, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the A function coefficient.
    * See the definition in Parametric surfaces referred to above.
@@ -75,9 +64,9 @@ public:
    */
   vtkSetMacro(B, double);
   vtkGetMacro(B, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the B function coefficient.
    * See the definition in Parametric surfaces referred to above.
@@ -85,9 +74,9 @@ public:
    */
   vtkSetMacro(C, double);
   vtkGetMacro(C, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the C function coefficient.
    * See the definition in Parametric surfaces referred to above.
@@ -95,7 +84,7 @@ public:
    */
   vtkSetMacro(N, double);
   vtkGetMacro(N, double);
-  //@}
+  ///@}
 
   /**
    * A conic spiral surface.
@@ -137,4 +126,5 @@ private:
   void operator=(const vtkParametricConicSpiral&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

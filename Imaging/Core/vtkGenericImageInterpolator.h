@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericImageInterpolator.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericImageInterpolator
  * @brief   interpolate data values from images using vtkGenericDataArray API
@@ -31,6 +19,7 @@
 #include "vtkImageInterpolator.h"
 #include "vtkImagingCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIMAGINGCORE_EXPORT vtkGenericImageInterpolator : public vtkImageInterpolator
 {
 public:
@@ -49,7 +38,7 @@ protected:
   vtkGenericImageInterpolator();
   ~vtkGenericImageInterpolator() override;
 
-  //@{
+  ///@{
   /**
    * Get the interpolation functions.
    */
@@ -57,9 +46,9 @@ protected:
     void (**doublefunc)(vtkInterpolationInfo*, const double[3], double*)) override;
   void GetInterpolationFunc(
     void (**floatfunc)(vtkInterpolationInfo*, const float[3], float*)) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the row interpolation functions.
    */
@@ -67,11 +56,12 @@ protected:
     void (**doublefunc)(vtkInterpolationWeights*, int, int, int, double*, int)) override;
   void GetRowInterpolationFunc(
     void (**floatfunc)(vtkInterpolationWeights*, int, int, int, float*, int)) override;
-  //@}
+  ///@}
 
 private:
   vtkGenericImageInterpolator(const vtkGenericImageInterpolator&) = delete;
   void operator=(const vtkGenericImageInterpolator&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

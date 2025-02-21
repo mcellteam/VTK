@@ -7,7 +7,14 @@ KIT
 IMPLEMENTS
   VTK::FiltersCore
   VTK::FiltersParallel
+DESCRIPTION
+  Filters that use the DIY MPI library to perform tasks in a distributed-memory environment.
+SPDX_LICENSE_IDENTIFIER
+  BSD-3-Clause
+SPDX_COPYRIGHT_TEXT
+  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
 DEPENDS
+  VTK::CommonMath
   VTK::FiltersCore
   VTK::FiltersParallel
   VTK::ParallelDIY
@@ -20,6 +27,7 @@ PRIVATE_DEPENDS
   VTK::ImagingCore
   VTK::IOXML
   VTK::ParallelCore
+  VTK::FiltersTemporal
 TEST_DEPENDS
   VTK::diy2
   VTK::FiltersGeometry
@@ -28,6 +36,8 @@ TEST_DEPENDS
   VTK::IOXML
   VTK::ParallelCore
   VTK::IOExodus
+  VTK::IOIOSS
+  VTK::IOParallelXML
   VTK::RenderingOpenGL2
   VTK::RenderingParallel
   VTK::TestingCore

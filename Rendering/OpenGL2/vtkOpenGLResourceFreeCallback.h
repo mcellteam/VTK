@@ -1,16 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef vtkOpenGLResourceFreeCallback_h
 #define vtkOpenGLResourceFreeCallback_h
@@ -19,6 +8,7 @@
 // Provide a mechanism for making sure graphics resources are
 // freed properly.
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkOpenGLRenderWindow;
 class vtkWindow;
 
@@ -30,12 +20,14 @@ public:
     this->VTKWindow = nullptr;
     this->Releasing = false;
   }
-  virtual ~vtkGenericOpenGLResourceFreeCallback() {}
+  virtual ~vtkGenericOpenGLResourceFreeCallback() = default;
 
   // Called when the event is invoked
   virtual void Release() = 0;
 
   virtual void RegisterGraphicsResources(vtkOpenGLRenderWindow* rw) = 0;
+
+  bool IsWindowRegistered(vtkOpenGLRenderWindow* rw) { return (rw == this->VTKWindow); }
 
   bool IsReleasing() { return this->Releasing; }
 
@@ -56,7 +48,7 @@ public:
     this->Method = method;
   }
 
-  ~vtkOpenGLResourceFreeCallback() override {}
+  ~vtkOpenGLResourceFreeCallback() override = default;
 
   void RegisterGraphicsResources(vtkOpenGLRenderWindow* rw) override
   {
@@ -95,5 +87,6 @@ protected:
   void (T::*Method)(vtkWindow*);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkOpenGLResourceFreeCallback.h

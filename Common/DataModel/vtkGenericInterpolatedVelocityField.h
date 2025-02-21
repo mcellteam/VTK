@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericInterpolatedVelocityField.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericInterpolatedVelocityField
  * @brief   Interface for obtaining
@@ -45,6 +33,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkFunctionSet.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkGenericDataSet;
 class vtkGenericCellIterator;
 class vtkGenericAdaptorCell;
@@ -97,24 +86,24 @@ public:
    */
   int GetLastLocalCoordinates(double pcoords[3]);
 
-  //@{
+  ///@{
   /**
    * Turn caching on/off.
    */
   vtkGetMacro(Caching, vtkTypeBool);
   vtkSetMacro(Caching, vtkTypeBool);
   vtkBooleanMacro(Caching, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Caching statistics.
    */
   vtkGetMacro(CacheHit, int);
   vtkGetMacro(CacheMiss, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If you want to work with an arbitrary vector array, then set its name
    * here. By default this in nullptr and the filter will use the active vector
@@ -122,9 +111,9 @@ public:
    */
   vtkGetStringMacro(VectorsSelection);
   void SelectVectors(const char* fieldName) { this->SetVectorsSelection(fieldName); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the last dataset that was visited. Can be used
    * as a first guess as to where the next point will be as
@@ -132,7 +121,7 @@ public:
    * more information about the point.
    */
   vtkGetObjectMacro(LastDataSet, vtkGenericDataSet);
-  //@}
+  ///@}
 
   /**
    * Copy the user set parameters from source. This copies
@@ -168,4 +157,5 @@ private:
   void operator=(const vtkGenericInterpolatedVelocityField&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

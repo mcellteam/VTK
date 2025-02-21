@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkChartPie.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkChartPie
@@ -26,12 +14,15 @@
 
 #include "vtkChart.h"
 #include "vtkChartsCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"    // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkChartLegend;
 class vtkTooltipItem;
 class vtkChartPiePrivate;
+class vtkPlotPie;
 
-class VTKCHARTSCORE_EXPORT vtkChartPie : public vtkChart
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkChartPie : public vtkChart
 {
 public:
   vtkTypeMacro(vtkChartPie, vtkChart);
@@ -54,15 +45,17 @@ public:
    */
   bool Paint(vtkContext2D* painter) override;
 
+  using vtkChart::AddPlot;
   /**
    * Add a plot to the chart.
    */
   vtkPlot* AddPlot(int type) override;
 
   /**
-   * Add a plot to the chart. Return the index of the plot, -1 if it failed.
+   * Set plot to use for the chart. Since this type of chart can
+   * only contain one plot, this will replace the previous plot.
    */
-  vtkIdType AddPlot(vtkPlot* plot) override { return Superclass::AddPlot(plot); }
+  virtual void SetPlot(vtkPlotPie* plot);
 
   /**
    * Get the plot at the specified index, returns null if the index is invalid.
@@ -164,4 +157,5 @@ private:
   vtkChartPiePrivate* Private;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkChartPie_h

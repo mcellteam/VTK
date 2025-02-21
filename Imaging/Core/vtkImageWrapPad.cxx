@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageWrapPad.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageWrapPad.h"
 
 #include "vtkImageData.h"
@@ -20,9 +8,16 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageWrapPad);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageWrapPad::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 // Just clip the request.
 void vtkImageWrapPad::ComputeInputUpdateExtent(int inExt[6], int outExt[6], int wholeExtent[6])
 {
@@ -66,7 +61,7 @@ void vtkImageWrapPad::ComputeInputUpdateExtent(int inExt[6], int outExt[6], int 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This templated function executes the filter for any type of data.
 template <class T>
 void vtkImageWrapPadExecute(vtkImageWrapPad* self, vtkImageData* inData, T* vtkNotUsed(inPtr),
@@ -190,7 +185,7 @@ void vtkImageWrapPadExecute(vtkImageWrapPad* self, vtkImageData* inData, T* vtkN
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output data, and executes the filter
 // algorithm to fill the output from the input.
 // It just executes a switch statement to call the correct function for
@@ -236,3 +231,4 @@ void vtkImageWrapPad::ThreadedRequestData(vtkInformation* vtkNotUsed(request),
       return;
   }
 }
+VTK_ABI_NAMESPACE_END

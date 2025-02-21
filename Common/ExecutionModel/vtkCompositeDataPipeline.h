@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositeDataPipeline.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCompositeDataPipeline
  * @brief   Executive supporting composite datasets.
@@ -26,7 +14,7 @@
  * * REQUEST_INFORMATION: The producers have to provide information about
  * the contents of the composite dataset in this pass.
  * Sources that can produce more than one piece (note that a piece is
- * different than a block; each piece consistes of 0 or more blocks) should
+ * different than a block; each piece consists of 0 or more blocks) should
  * set CAN_HANDLE_PIECE_REQUEST.
  *
  * * REQUEST_UPDATE_EXTENT: This pass is identical to the one implemented
@@ -46,10 +34,12 @@
 
 #include "vtkCommonExecutionModelModule.h" // For export macro
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include <vtkSmartPointer.h> // smart pointer
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
+#include <vtkSmartPointer.h>  // smart pointer
 
 #include <vector> // for vector in return type
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCompositeDataSet;
 class vtkCompositeDataIterator;
 class vtkInformationDoubleKey;
@@ -59,7 +49,7 @@ class vtkInformationStringKey;
 class vtkInformationDataObjectKey;
 class vtkInformationIntegerKey;
 
-class VTKCOMMONEXECUTIONMODEL_EXPORT vtkCompositeDataPipeline
+class VTKCOMMONEXECUTIONMODEL_EXPORT VTK_MARSHALAUTO vtkCompositeDataPipeline
   : public vtkStreamingDemandDrivenPipeline
 {
 public:
@@ -157,7 +147,7 @@ protected:
 
   virtual void ExecuteEach(vtkCompositeDataIterator* iter, vtkInformationVector** inInfoVec,
     vtkInformationVector* outInfoVec, int compositePort, int connection, vtkInformation* request,
-    std::vector<vtkSmartPointer<vtkCompositeDataSet> >& compositeOutput);
+    std::vector<vtkSmartPointer<vtkCompositeDataSet>>& compositeOutput);
 
   std::vector<vtkDataObject*> ExecuteSimpleAlgorithmForBlock(vtkInformationVector** inInfoVec,
     vtkInformationVector* outInfoVec, vtkInformation* inInfo, vtkInformation* request,
@@ -183,7 +173,7 @@ protected:
    * vtkUniformGrid given vtkUniformGrid inputs) or if it should be downgraded
    * to a vtkMultiBlockDataSet.
    */
-  std::vector<vtkSmartPointer<vtkDataObject> > CreateOutputCompositeDataSet(
+  std::vector<vtkSmartPointer<vtkDataObject>> CreateOutputCompositeDataSet(
     vtkCompositeDataSet* input, int compositePort, int numOutputPorts);
 
   // Override this to handle UPDATE_COMPOSITE_INDICES().
@@ -211,4 +201,5 @@ private:
   void operator=(const vtkCompositeDataPipeline&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

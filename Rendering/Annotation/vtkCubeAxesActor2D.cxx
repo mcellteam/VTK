@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCubeAxesActor2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCubeAxesActor2D.h"
 
 #include "vtkAxisActor2D.h"
@@ -23,6 +11,7 @@
 #include "vtkTrivialProducer.h"
 #include "vtkViewport.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCubeAxesActor2D);
 
 vtkCxxSetObjectMacro(vtkCubeAxesActor2D, Camera, vtkCamera);
@@ -41,7 +30,7 @@ public:
 
 vtkStandardNewMacro(vtkCubeAxesActor2DConnection);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Instantiate this object.
 vtkCubeAxesActor2D::vtkCubeAxesActor2D()
 {
@@ -119,7 +108,7 @@ vtkCubeAxesActor2D::vtkCubeAxesActor2D()
   this->ZOrigin = VTK_DOUBLE_MAX;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Shallow copy of an actor.
 void vtkCubeAxesActor2D::ShallowCopy(vtkCubeAxesActor2D* actor)
 {
@@ -129,7 +118,7 @@ void vtkCubeAxesActor2D::ShallowCopy(vtkCubeAxesActor2D* actor)
   this->SetLabelFormat(actor->GetLabelFormat());
   this->SetFontFactor(actor->GetFontFactor());
   this->SetCornerOffset(actor->GetCornerOffset());
-  this->SetInertia(static_cast<int>(actor->GetInertia()));
+  this->SetInertia(actor->GetInertia());
   this->SetXLabel(actor->GetXLabel());
   this->SetYLabel(actor->GetYLabel());
   this->SetZLabel(actor->GetZLabel());
@@ -139,7 +128,7 @@ void vtkCubeAxesActor2D::ShallowCopy(vtkCubeAxesActor2D* actor)
   this->SetCamera(actor->GetCamera());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCubeAxesActor2D::~vtkCubeAxesActor2D()
 {
   this->ConnectionHolder->Delete();
@@ -169,13 +158,13 @@ vtkCubeAxesActor2D::~vtkCubeAxesActor2D()
   this->SetAxisTitleTextProperty(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCubeAxesActor2D::SetInputConnection(vtkAlgorithmOutput* ao)
 {
   this->ConnectionHolder->SetInputConnection(ao);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCubeAxesActor2D::SetInputData(vtkDataSet* ds)
 {
   vtkTrivialProducer* tp = vtkTrivialProducer::New();
@@ -184,18 +173,18 @@ void vtkCubeAxesActor2D::SetInputData(vtkDataSet* ds)
   tp->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkCubeAxesActor2D::GetInput()
 {
   return vtkDataSet::SafeDownCast(this->ConnectionHolder->GetInputDataObject(0, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Static variable describes connections in cube.
 static int Conn[8][3] = { { 1, 2, 4 }, { 0, 3, 5 }, { 3, 0, 6 }, { 2, 1, 7 }, { 5, 6, 0 },
   { 4, 7, 1 }, { 7, 4, 2 }, { 6, 5, 3 } };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Project the bounding box and compute edges on the border of the bounding
 // cube. Determine which parts of the edges are visible via intersection
 // with the boundary of the viewport (minus borders).
@@ -226,7 +215,7 @@ int vtkCubeAxesActor2D::RenderOverlay(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Project the bounding box and compute edges on the border of the bounding
 // cube. Determine which parts of the edges are visible via intersection
 // with the boundary of the viewport (minus borders).
@@ -449,7 +438,7 @@ int vtkCubeAxesActor2D::RenderOpaqueGeometry(vtkViewport* viewport)
   this->ZAxis->SetFontFactor(AxisFontFactor);
   this->ZAxis->SetProperty(this->GetProperty());
 
-  // Rebuid text props
+  // Rebuild text props
   // Perform shallow copy here since each individual axis can be
   // accessed through the class API (i.e. each individual axis text prop
   // can be changed). Therefore, we can not just assign pointers otherwise
@@ -506,7 +495,7 @@ int vtkCubeAxesActor2D::RenderOpaqueGeometry(vtkViewport* viewport)
   return renderedSomething;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkCubeAxesActor2D::HasTranslucentPolygonalGeometry()
@@ -514,7 +503,7 @@ vtkTypeBool vtkCubeAxesActor2D::HasTranslucentPolygonalGeometry()
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Do final adjustment of axes to control offset, etc.
 void vtkCubeAxesActor2D::AdjustAxes(double pts[8][3], double bounds[6], int idx, int xIdx, int yIdx,
   int zIdx, int zIdx2, int xAxes, int yAxes, int zAxes, double xCoords[4], double yCoords[4],
@@ -639,7 +628,7 @@ void vtkCubeAxesActor2D::AdjustAxes(double pts[8][3], double bounds[6], int idx,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release any graphics resources that are being consumed by this actor.
 // The parameter window could be used to determine which graphic
 // resources to release.
@@ -650,7 +639,7 @@ void vtkCubeAxesActor2D::ReleaseGraphicsResources(vtkWindow* win)
   this->ZAxis->ReleaseGraphicsResources(win);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the ranges
 void vtkCubeAxesActor2D::GetRanges(double ranges[6])
 {
@@ -661,7 +650,7 @@ void vtkCubeAxesActor2D::GetRanges(double ranges[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the ranges
 void vtkCubeAxesActor2D::GetRanges(
   double& xmin, double& xmax, double& ymin, double& ymax, double& zmin, double& zmax)
@@ -676,7 +665,7 @@ void vtkCubeAxesActor2D::GetRanges(
   zmax = ranges[5];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the bounds
 double* vtkCubeAxesActor2D::GetRanges()
 {
@@ -685,7 +674,7 @@ double* vtkCubeAxesActor2D::GetRanges()
   return this->Ranges;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the bounds
 void vtkCubeAxesActor2D::GetBounds(double bounds[6])
 {
@@ -717,7 +706,7 @@ void vtkCubeAxesActor2D::GetBounds(double bounds[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the bounds
 void vtkCubeAxesActor2D::GetBounds(
   double& xmin, double& xmax, double& ymin, double& ymax, double& zmin, double& zmax)
@@ -732,7 +721,7 @@ void vtkCubeAxesActor2D::GetBounds(
   zmax = bounds[5];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the bounds
 double* vtkCubeAxesActor2D::GetBounds()
 {
@@ -740,7 +729,7 @@ double* vtkCubeAxesActor2D::GetBounds()
   return this->Bounds;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCubeAxesActor2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -850,7 +839,7 @@ void vtkCubeAxesActor2D::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int IsInBounds(double x[3], double bounds[6]);
 
 // Clip the axes to fit into the viewport. Do this clipping each of the three
@@ -874,7 +863,7 @@ int vtkCubeAxesActor2D::ClipBounds(vtkViewport* viewport, double pts[8][3], doub
     return 1;
   }
 
-  // Get the 6 planes defining the view frustrum
+  // Get the 6 planes defining the view frustum
   viewport->GetAspect(aspect);
   this->Camera->GetFrustumPlanes((aspect[0] / aspect[1]), planes);
 
@@ -931,7 +920,7 @@ int vtkCubeAxesActor2D::ClipBounds(vtkViewport* viewport, double pts[8][3], doub
   }
 
   // Now iteratively scale the bounding box until all points are inside
-  // the frustrum. Use bisection method.
+  // the frustum. Use bisection method.
   scale = 1.0;
   scale2 = 0.00001;
   val = this->EvaluateBounds(planes, bounds);
@@ -979,7 +968,7 @@ int vtkCubeAxesActor2D::ClipBounds(vtkViewport* viewport, double pts[8][3], doub
 }
 #undef VTK_DIVS
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCubeAxesActor2D::TransformBounds(vtkViewport* viewport, double bounds[6], double pts[8][3])
 {
   int i, j, k, idx;
@@ -1004,7 +993,7 @@ void vtkCubeAxesActor2D::TransformBounds(vtkViewport* viewport, double bounds[6]
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return smallest value of point evaluated against frustum planes. Also
 // sets the closest point coordinates in xyz.
 double vtkCubeAxesActor2D::EvaluatePoint(double planes[24], double x[3])
@@ -1027,7 +1016,7 @@ double vtkCubeAxesActor2D::EvaluatePoint(double planes[24], double x[3])
   return minPlanesValue;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return the smallest point of the bounding box evaluated against the
 // frustum planes.
 double vtkCubeAxesActor2D::EvaluateBounds(double planes[24], double bounds[6])
@@ -1056,7 +1045,7 @@ double vtkCubeAxesActor2D::EvaluateBounds(double planes[24], double bounds[6])
   return minVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int IsInBounds(double x[3], double bounds[6])
 {
   if (x[0] < bounds[0] || x[0] > bounds[1] || x[1] < bounds[2] || x[1] > bounds[3] ||
@@ -1069,3 +1058,4 @@ static int IsInBounds(double x[3], double bounds[6])
     return 1;
   }
 }
+VTK_ABI_NAMESPACE_END

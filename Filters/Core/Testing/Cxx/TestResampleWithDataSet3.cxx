@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestResampleWithDataset3.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkResampleWithDataSet.h"
 
@@ -31,6 +19,7 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
 #include "vtkSphere.h"
+#include "vtkStaticCellLocator.h"
 #include "vtkTableBasedClipDataSet.h"
 #include "vtkThreshold.h"
 #include "vtkTransform.h"
@@ -113,7 +102,8 @@ void CreateSourceDataSet(vtkMultiBlockDataSet* dataset, int numberOfBlocks)
 
   vtkNew<vtkThreshold> threshold;
   threshold->SetInputConnection(wavelet->GetOutputPort());
-  threshold->ThresholdByLower(185.0);
+  threshold->SetThresholdFunction(vtkThreshold::THRESHOLD_LOWER);
+  threshold->SetLowerThreshold(185.0);
 
   for (int i = 0; i < numberOfBlocks; ++i)
   {
@@ -143,9 +133,11 @@ int TestResampleWithDataSet3(int argc, char* argv[])
   vtkNew<vtkMultiBlockDataSet> source;
   CreateSourceDataSet(source, 4);
 
+  vtkNew<vtkStaticCellLocator> locator;
   vtkNew<vtkResampleWithDataSet> resample;
   resample->SetInputData(input);
   resample->SetSourceData(source);
+  resample->SetCellLocatorPrototype(locator);
 
   vtkMultiBlockDataSet* result;
   vtkDataSet* block0;

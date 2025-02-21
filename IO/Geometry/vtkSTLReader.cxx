@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSTLReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSTLReader.h"
 
 #include "vtkByteSwap.h"
@@ -36,6 +24,7 @@
 #include <string>
 #include <vtksys/SystemTools.hxx>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSTLReader);
 
 #define VTK_ASCII 0
@@ -110,7 +99,7 @@ int vtkSTLReader::RequestData(vtkInformation* vtkNotUsed(request),
 
   vtkNew<vtkPoints> newPts;
   vtkNew<vtkCellArray> newPolys;
-  vtkFloatArray* newScalars = nullptr;
+  vtkSmartPointer<vtkFloatArray> newScalars;
 
   // Depending upon file type, read differently
   if (this->GetSTLFileType(this->FileName) == VTK_ASCII)
@@ -119,16 +108,12 @@ int vtkSTLReader::RequestData(vtkInformation* vtkNotUsed(request),
     newPolys->AllocateEstimate(10000, 1);
     if (this->ScalarTags)
     {
-      newScalars = vtkFloatArray::New();
+      newScalars = vtkSmartPointer<vtkFloatArray>::New();
       newScalars->Allocate(5000);
     }
     if (!this->ReadASCIISTL(fp, newPts.Get(), newPolys.Get(), newScalars))
     {
       fclose(fp);
-      if (newScalars)
-      {
-        newScalars->Delete();
-      }
       return 0;
     }
   }
@@ -141,20 +126,12 @@ int vtkSTLReader::RequestData(vtkInformation* vtkNotUsed(request),
     {
       vtkErrorMacro(<< "File " << this->FileName << " not found");
       this->SetErrorCode(vtkErrorCode::CannotOpenFileError);
-      if (newScalars)
-      {
-        newScalars->Delete();
-      }
       return 0;
     }
 
     if (!this->ReadBinarySTL(fp, newPts.Get(), newPolys.Get()))
     {
       fclose(fp);
-      if (newScalars)
-      {
-        newScalars->Delete();
-      }
       return 0;
     }
   }
@@ -165,18 +142,18 @@ int vtkSTLReader::RequestData(vtkInformation* vtkNotUsed(request),
   fclose(fp);
 
   // If merging is on, create hash table and merge points/triangles.
-  vtkPoints* mergedPts = newPts.Get();
-  vtkCellArray* mergedPolys = newPolys.Get();
-  vtkFloatArray* mergedScalars = newScalars;
+  vtkSmartPointer<vtkPoints> mergedPts = newPts;
+  vtkSmartPointer<vtkCellArray> mergedPolys = newPolys;
+  vtkSmartPointer<vtkFloatArray> mergedScalars = newScalars;
   if (this->Merging)
   {
-    mergedPts = vtkPoints::New();
+    mergedPts = vtkSmartPointer<vtkPoints>::New();
     mergedPts->Allocate(newPts->GetNumberOfPoints() / 2);
-    mergedPolys = vtkCellArray::New();
+    mergedPolys = vtkSmartPointer<vtkCellArray>::New();
     mergedPolys->AllocateCopy(newPolys);
     if (newScalars)
     {
-      mergedScalars = vtkFloatArray::New();
+      mergedScalars = vtkSmartPointer<vtkFloatArray>::New();
       mergedScalars->Allocate(newPolys->GetNumberOfCells());
     }
 
@@ -211,26 +188,17 @@ int vtkSTLReader::RequestData(vtkInformation* vtkNotUsed(request),
       nextCell++;
     }
 
-    if (newScalars)
-    {
-      newScalars->Delete();
-    }
-
     vtkDebugMacro(<< "Merged to: " << mergedPts->GetNumberOfPoints() << " points, "
                   << mergedPolys->GetNumberOfCells() << " triangles");
   }
 
   output->SetPoints(mergedPts);
-  mergedPts->Delete();
-
   output->SetPolys(mergedPolys);
-  mergedPolys->Delete();
 
   if (mergedScalars)
   {
     mergedScalars->SetName("STLSolidLabeling");
     output->GetCellData()->SetScalars(mergedScalars);
-    mergedScalars->Delete();
   }
 
   if (this->Locator)
@@ -246,10 +214,12 @@ int vtkSTLReader::RequestData(vtkInformation* vtkNotUsed(request),
 //------------------------------------------------------------------------------
 bool vtkSTLReader::ReadBinarySTL(FILE* fp, vtkPoints* newPts, vtkCellArray* newPolys)
 {
-  typedef struct
+  struct facet_t_t
   {
     float n[3], v1[3], v2[3], v3[3];
-  } facet_t;
+    unsigned short junk;
+  };
+  using facet_t = struct facet_t_t;
 
   vtkDebugMacro(<< "Reading BINARY STL file");
 
@@ -307,16 +277,8 @@ bool vtkSTLReader::ReadBinarySTL(FILE* fp, vtkPoints* newPts, vtkCellArray* newP
   newPolys->AllocateEstimate(numTris, 3);
 
   facet_t facet;
-  for (int i = 0; fread(&facet, 48, 1, fp) > 0; i++)
+  for (int i = 0; fread(&facet, 50, 1, fp) > 0; i++)
   {
-    unsigned short ibuff2;
-    if (fread(&ibuff2, 2, 1, fp) != 1) // read extra junk
-    {
-      vtkErrorMacro("STLReader error reading file: " << this->FileName
-                                                     << " Premature EOF while reading extra junk.");
-      return false;
-    }
-
     vtkByteSwap::Swap4LE(facet.n);
     vtkByteSwap::Swap4LE(facet.n + 1);
     vtkByteSwap::Swap4LE(facet.n + 2);
@@ -340,7 +302,7 @@ bool vtkSTLReader::ReadBinarySTL(FILE* fp, vtkPoints* newPts, vtkCellArray* newP
 
     newPolys->InsertNextCell(3, pts);
 
-    if ((i % 5000) == 0 && i != 0)
+    if ((i % 100000) == 0 && i != 0)
     {
       vtkDebugMacro(<< "triangle# " << i);
       this->UpdateProgress(static_cast<double>(i) / numTris);
@@ -444,7 +406,7 @@ bool vtkSTLReader::ReadASCIISTL(
 
   std::string errorMessage;
 
-  for (StlAsciiScanState state = scanSolid; errorMessage.empty() == true; /*nil*/)
+  for (StlAsciiScanState state = scanSolid; errorMessage.empty(); /*nil*/)
   {
     char* cmd = fgets(line, 255, fp);
 
@@ -551,11 +513,14 @@ bool vtkSTLReader::ReadASCIISTL(
           {
             header += "\n";
           }
-          header += arg;
-          // strip end-of-line character from the end
-          while (!header.empty() && (header.back() == '\r' || header.back() == '\n'))
+          if (*arg)
           {
-            header.pop_back();
+            header += arg;
+            // strip end-of-line character from the end
+            while (!header.empty() && (header.back() == '\r' || header.back() == '\n'))
+            {
+              header.pop_back();
+            }
           }
         }
         else
@@ -733,3 +698,4 @@ void vtkSTLReader::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

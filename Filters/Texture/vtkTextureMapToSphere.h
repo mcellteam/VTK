@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkTextureMapToSphere.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkTextureMapToSphere
  * @brief   generate texture coordinates by mapping points to sphere
@@ -47,6 +35,7 @@
 #include "vtkDataSetAlgorithm.h"
 #include "vtkFiltersTextureModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 
 class VTKFILTERSTEXTURE_EXPORT vtkTextureMapToSphere : public vtkDataSetAlgorithm
@@ -61,15 +50,15 @@ public:
    */
   static vtkTextureMapToSphere* New();
 
-  //@{
+  ///@{
   /**
    * Specify a point defining the center of the sphere.
    */
   vtkSetVector3Macro(Center, double);
   vtkGetVectorMacro(Center, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off automatic sphere generation. This means it automatically
    * finds the sphere center.
@@ -77,9 +66,9 @@ public:
   vtkSetMacro(AutomaticSphereGeneration, vtkTypeBool);
   vtkGetMacro(AutomaticSphereGeneration, vtkTypeBool);
   vtkBooleanMacro(AutomaticSphereGeneration, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control how the texture coordinates are generated. If PreventSeam is
    * set, the s-coordinate ranges from 0->1 and 1->0 corresponding to the
@@ -89,7 +78,7 @@ public:
   vtkSetMacro(PreventSeam, vtkTypeBool);
   vtkGetMacro(PreventSeam, vtkTypeBool);
   vtkBooleanMacro(PreventSeam, vtkTypeBool);
-  //@}
+  ///@}
 
   /*
    * Computes the center point of the data set if AutomaticSphereGeneration is set to true.
@@ -98,7 +87,7 @@ public:
 
 protected:
   vtkTextureMapToSphere();
-  ~vtkTextureMapToSphere() override {}
+  ~vtkTextureMapToSphere() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -111,4 +100,5 @@ private:
   void operator=(const vtkTextureMapToSphere&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

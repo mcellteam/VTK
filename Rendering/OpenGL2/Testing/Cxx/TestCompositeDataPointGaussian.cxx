@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositePolyDataMapper2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
@@ -65,13 +53,13 @@ int TestCompositeDataPointGaussian(int argc, char* argv[])
     blocksPerLevel[1] = 64;
     blocksPerLevel[2] = 256;
   }
-  std::vector<vtkSmartPointer<vtkMultiBlockDataSet> > blocks;
-  blocks.push_back(data.GetPointer());
+  std::vector<vtkSmartPointer<vtkMultiBlockDataSet>> blocks;
+  blocks.emplace_back(data.GetPointer());
   unsigned levelStart = 0;
   unsigned levelEnd = 1;
   int numLevels = sizeof(blocksPerLevel) / sizeof(blocksPerLevel[0]);
   int numNodes = 0;
-  vtkStdString blockName("Rolf");
+  std::string blockName("Rolf");
   mapper->SetInputDataObject(data.GetPointer());
   for (int level = 1; level < numLevels; ++level)
   {
@@ -93,7 +81,7 @@ int TestCompositeDataPointGaussian(int argc, char* argv[])
         {
           vtkNew<vtkMultiBlockDataSet> child;
           blocks[parent]->SetBlock(block, child.GetPointer());
-          blocks.push_back(child.GetPointer());
+          blocks.emplace_back(child.GetPointer());
         }
       }
     }
@@ -133,7 +121,7 @@ int TestCompositeDataPointGaussian(int argc, char* argv[])
     double t = timer->GetElapsedTime();
     cout << "Avg Frame time: " << t / numFrames << " Frame Rate: " << numFrames / t << "\n";
   }
-  int retVal = vtkRegressionTestImageThreshold(win.GetPointer(), 15);
+  int retVal = vtkRegressionTestImageThreshold(win.GetPointer(), 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Start();

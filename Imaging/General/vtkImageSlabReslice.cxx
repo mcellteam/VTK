@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSlabReslice.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageSlabReslice.h"
 
 #include "vtkImageData.h"
@@ -20,9 +8,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageSlabReslice);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageSlabReslice::vtkImageSlabReslice()
 {
   // Input is 3D, output is a 2D projection within the slab.
@@ -39,10 +28,10 @@ vtkImageSlabReslice::vtkImageSlabReslice()
   this->SlabResolution = 1; // mm or world coords
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageSlabReslice::~vtkImageSlabReslice() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageSlabReslice::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -63,7 +52,7 @@ int vtkImageSlabReslice::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageSlabReslice::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -73,3 +62,4 @@ void vtkImageSlabReslice::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SlabThickness (world units): " << this->SlabThickness << endl;
   os << indent << "Max Number of slices blended: " << this->NumBlendSamplePoints << endl;
 }
+VTK_ABI_NAMESPACE_END

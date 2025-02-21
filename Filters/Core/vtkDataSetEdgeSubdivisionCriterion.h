@@ -1,17 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSetEdgeSubdivisionCriterion.h
-  Language:  C++
-
-  Copyright 2003 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the
-  U.S. Government. Redistribution and use in source and binary forms, with
-  or without modification, are permitted provided that this Notice and any
-  statement of authorship are reproduced on all copies.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #ifndef vtkDataSetEdgeSubdivisionCriterion_h
 #define vtkDataSetEdgeSubdivisionCriterion_h
 /**
@@ -39,6 +28,7 @@
 #include "vtkEdgeSubdivisionCriterion.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCell;
 class vtkDataSet;
 
@@ -105,7 +95,7 @@ public:
    */
   double* EvaluateFields(double* vertex, double* weights, int field_start);
 
-  //@{
+  ///@{
   /**
    * Evaluate either a cell or nodal field.
    * This exists because of the funky way that Exodus data will be handled.
@@ -113,18 +103,18 @@ public:
    */
   void EvaluatePointDataField(double* result, double* weights, int field);
   void EvaluateCellDataField(double* result, double* weights, int field);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the square of the allowable chord error at any edge's midpoint.
    * This value is used by EvaluateLocationAndFields.
    */
   vtkSetMacro(ChordError2, double);
   vtkGetMacro(ChordError2, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the square of the allowable error magnitude for the
    * scalar field \a s at any edge's midpoint.
@@ -133,7 +123,7 @@ public:
    */
   virtual void SetFieldError2(int s, double err);
   double GetFieldError2(int s) const;
-  //@}
+  ///@}
 
   /**
    * Tell the subdivider not to use any field values as subdivision criteria.
@@ -141,15 +131,19 @@ public:
    */
   virtual void ResetFieldError2();
 
-  //@{
+  ///@{
   /**
    * Return a bitfield specifying which FieldError2 criteria are positive (i.e., actively
    * used to decide edge subdivisions).
    * This is stored as separate state to make subdivisions go faster.
    */
   vtkGetMacro(ActiveFieldCriteria, int);
+
+// With VTK_USE_FUTURE_CONST, vtkGetMacro already makes the member const.
+#if !VTK_USE_FUTURE_CONST
   int GetActiveFieldCriteria() const { return this->ActiveFieldCriteria; }
-  //@}
+#endif
+  ///@}
 
 protected:
   vtkDataSetEdgeSubdivisionCriterion();
@@ -197,4 +191,5 @@ inline const vtkCell* vtkDataSetEdgeSubdivisionCriterion::GetCell() const
   return this->CurrentCellData;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkDataSetEdgeSubdivisionCriterion_h

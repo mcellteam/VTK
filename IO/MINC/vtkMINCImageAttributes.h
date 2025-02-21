@@ -1,50 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkMINCImageAttributes.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*=========================================================================
-
-Copyright (c) 2006 Atamai, Inc.
-
-Use, modification and redistribution of the software, in source or
-binary forms, are permitted provided that the following terms and
-conditions are met:
-
-1) Redistribution of the source code, in verbatim or modified
-   form, must retain the above copyright notice, this license,
-   the following disclaimer, and any notices that refer to this
-   license and/or the following disclaimer.
-
-2) Redistribution in binary form must include the above copyright
-   notice, a copy of this license and the following disclaimer
-   in the documentation or with other materials provided with the
-   distribution.
-
-3) Modified copies of the source code must be clearly marked as such,
-   and must not be misrepresented as verbatim copies of the source code.
-
-THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE SOFTWARE "AS IS"
-WITHOUT EXPRESSED OR IMPLIED WARRANTY INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  IN NO EVENT SHALL ANY COPYRIGHT HOLDER OR OTHER PARTY WHO MAY
-MODIFY AND/OR REDISTRIBUTE THE SOFTWARE UNDER THE TERMS OF THIS LICENSE
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, LOSS OF DATA OR DATA BECOMING INACCURATE
-OR LOSS OF PROFIT OR BUSINESS INTERRUPTION) ARISING IN ANY WAY OUT OF
-THE USE OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGES.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright (c) 2006 Atamai, Inc.
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkMINCImageAttributes
  * @brief   A container for a MINC image header.
@@ -71,6 +27,7 @@ POSSIBILITY OF SUCH DAMAGES.
 #include "vtkIOMINCModule.h" // For export macro
 #include "vtkObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataArray;
 class vtkStringArray;
 class vtkIdTypeArray;
@@ -94,7 +51,7 @@ public:
    */
   virtual void Reset();
 
-  //@{
+  ///@{
   /**
    * Get the name of the image, not including the path or
    * the extension.  This is only needed for printing the
@@ -102,9 +59,9 @@ public:
    */
   vtkSetStringMacro(Name);
   vtkGetStringMacro(Name);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the image data type, as stored on disk.  This information
    * is useful if the file was converted to floating-point when it
@@ -113,9 +70,9 @@ public:
    */
   vtkSetMacro(DataType, int);
   vtkGetMacro(DataType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add the names of up to five dimensions. The ordering of these
    * dimensions will determine the dimension order of the file.  If
@@ -124,7 +81,7 @@ public:
    */
   virtual void AddDimension(const char* dimension) { this->AddDimension(dimension, 0); }
   virtual void AddDimension(const char* dimension, vtkIdType length);
-  //@}
+  ///@}
 
   /**
    * Get the dimension names.  The dimension names are same order
@@ -153,7 +110,7 @@ public:
    */
   virtual vtkStringArray* GetAttributeNames(const char* variable);
 
-  //@{
+  ///@{
   /**
    * Get the image min and max arrays. These are set by the reader,
    * but they aren't used by the writer except to compute the full
@@ -163,22 +120,22 @@ public:
   virtual void SetImageMax(vtkDoubleArray* imageMax);
   virtual vtkDoubleArray* GetImageMin() { return this->ImageMin; }
   virtual vtkDoubleArray* GetImageMax() { return this->ImageMax; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the number of ImageMinMax dimensions.
    */
   vtkGetMacro(NumberOfImageMinMaxDimensions, int);
   vtkSetMacro(NumberOfImageMinMaxDimensions, int);
-  //@}
+  ///@}
 
   /**
    * Check to see if a particular attribute exists.
    */
-  virtual int HasAttribute(const char* variable, const char* attribute);
+  virtual vtkTypeBool HasAttribute(const char* variable, const char* attribute);
 
-  //@{
+  ///@{
   /**
    * Set attribute values for a variable as a vtkDataArray.
    * Set the variable to the empty string to access global attributes.
@@ -186,9 +143,9 @@ public:
   virtual void SetAttributeValueAsArray(
     const char* variable, const char* attribute, vtkDataArray* array);
   virtual vtkDataArray* GetAttributeValueAsArray(const char* variable, const char* attribute);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set an attribute value as a string.  Set the variable
    * to the empty string to access global attributes.
@@ -198,9 +155,9 @@ public:
   virtual void SetAttributeValueAsString(
     const char* variable, const char* attribute, const char* value);
   virtual const char* GetAttributeValueAsString(const char* variable, const char* attribute);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set an attribute value as an int. Set the variable
    * to the empty string to access global attributes.
@@ -209,9 +166,9 @@ public:
    */
   virtual void SetAttributeValueAsInt(const char* variable, const char* attribute, int value);
   virtual int GetAttributeValueAsInt(const char* variable, const char* attribute);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set an attribute value as a double.  Set the variable
    * to the empty string to access global attributes.
@@ -220,7 +177,7 @@ public:
    */
   virtual void SetAttributeValueAsDouble(const char* variable, const char* attribute, double value);
   virtual double GetAttributeValueAsDouble(const char* variable, const char* attribute);
-  //@}
+  ///@}
 
   /**
    * Validate a particular attribute.  This involves checking
@@ -233,7 +190,7 @@ public:
    */
   virtual int ValidateAttribute(const char* varname, const char* attname, vtkDataArray* array);
 
-  //@{
+  ///@{
   /**
    * Set this to Off if you do not want to automatically validate
    * every attribute that is set.
@@ -241,7 +198,7 @@ public:
   vtkSetMacro(ValidateAttributes, vtkTypeBool);
   vtkBooleanMacro(ValidateAttributes, vtkTypeBool);
   vtkGetMacro(ValidateAttributes, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Do a shallow copy.  This will copy all the attributes
@@ -265,14 +222,14 @@ public:
    */
   virtual void FindImageRange(double range[2]);
 
-  //@{
+  ///@{
   /**
    * A diagnostic function.  Print the header of the file in
    * the same format as ncdump or mincheader.
    */
   virtual void PrintFileHeader();
   virtual void PrintFileHeader(ostream& os);
-  //@}
+  ///@}
 
 protected:
   vtkMINCImageAttributes();
@@ -317,4 +274,5 @@ private:
   void operator=(const vtkMINCImageAttributes&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif /* vtkMINCImageAttributes_h */

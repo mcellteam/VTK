@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAttributeClustering2DLayoutStrategy.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkAttributeClustering2DLayoutStrategy.h"
 
@@ -34,6 +18,7 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkIntArray.h"
+#include "vtkLogger.h"
 #include "vtkMath.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
@@ -43,19 +28,21 @@
 
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAttributeClustering2DLayoutStrategy::Internals
 {
 public:
   // An edge consists of two vertices joined together.
   // This struct acts as a "pointer" to those two vertices.
-  typedef struct
+  struct vtkLayoutEdge_t
   {
     vtkIdType from;
     vtkIdType to;
     int dead_edge; // I'm making this an int so that the edge array is
                    // word boundary aligned... but I'm not sure what
                    // really happens in these days of magical compilers
-  } vtkLayoutEdge;
+  };
+  using vtkLayoutEdge = struct vtkLayoutEdge_t;
 
   std::vector<vtkLayoutEdge> Edges;
 };
@@ -68,7 +55,7 @@ static inline float CoolDown(float t, float r)
   return t - (t / r);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkAttributeClustering2DLayoutStrategy::vtkAttributeClustering2DLayoutStrategy()
   : Implementation(new Internals())
@@ -94,7 +81,7 @@ vtkAttributeClustering2DLayoutStrategy::vtkAttributeClustering2DLayoutStrategy()
   this->VertexAttribute = nullptr;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkAttributeClustering2DLayoutStrategy::~vtkAttributeClustering2DLayoutStrategy()
 {
@@ -206,7 +193,7 @@ void vtkAttributeClustering2DLayoutStrategy::GenerateGaussianSplat(
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the graph that will be laid out
 void vtkAttributeClustering2DLayoutStrategy::Initialize()
 {
@@ -312,7 +299,7 @@ void vtkAttributeClustering2DLayoutStrategy::Initialize()
   this->DensityGrid->SetOutputDimensions(100, 100, 1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Simple graph layout method
 void vtkAttributeClustering2DLayoutStrategy::Layout()
@@ -642,7 +629,7 @@ void vtkAttributeClustering2DLayoutStrategy::ResolveCoincidentVertices()
   giantGrid->Delete();
 
   // Report number of collision operations just for sanity check
-  // vtkWarningMacro("Collision Ops: " << totalCollisionOps);
+  vtkLog(TRACE, "Collision Ops: " << totalCollisionOps);
 }
 
 void vtkAttributeClustering2DLayoutStrategy::PrintSelf(ostream& os, vtkIndent indent)
@@ -660,3 +647,4 @@ void vtkAttributeClustering2DLayoutStrategy::PrintSelf(ostream& os, vtkIndent in
   os << indent << "VertexAttribute: " << (this->VertexAttribute ? this->VertexAttribute : "(none)")
      << endl;
 }
+VTK_ABI_NAMESPACE_END

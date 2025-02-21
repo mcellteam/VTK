@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkRayCastStructures.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkRayCastStructures
@@ -27,7 +15,10 @@
 #ifndef vtkRayCastStructures_h
 #define vtkRayCastStructures_h
 
-typedef struct
+#include "vtkABINamespace.h"
+
+VTK_ABI_NAMESPACE_BEGIN
+struct vtkRayCastRayInfo_t
 {
   // These are the input values that define the ray. Depending on
   // whether we are casting a WorldRay or a ViewRay, these are in
@@ -75,8 +66,9 @@ typedef struct
   // The number of steps we actually take if this is
   // a ray caster that takes steps
   int NumberOfStepsTaken;
+};
+using vtkRayCastRayInfo = struct vtkRayCastRayInfo_t;
 
-} vtkRayCastRayInfo;
-
+VTK_ABI_NAMESPACE_END
 #endif
 // VTK-HeaderTest-Exclude: vtkRayCastStructures.h

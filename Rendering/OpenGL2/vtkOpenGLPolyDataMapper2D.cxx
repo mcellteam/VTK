@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkOpenGLPolyDataMapper2D.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkOpenGLPolyDataMapper2D.h"
 
 #include "vtkOpenGLHelper.h"
@@ -32,8 +20,10 @@
 #include "vtkOpenGLRenderer.h"
 #include "vtkOpenGLResourceFreeCallback.h"
 #include "vtkOpenGLShaderCache.h"
+#include "vtkOpenGLShaderProperty.h"
 #include "vtkOpenGLState.h"
 #include "vtkOpenGLTexture.h"
+#include "vtkOpenGLUniforms.h"
 #include "vtkOpenGLVertexArrayObject.h"
 #include "vtkOpenGLVertexBufferObjectCache.h"
 #include "vtkOpenGLVertexBufferObjectGroup.h"
@@ -52,10 +42,11 @@
 #include "vtkPolyData2DVS.h"
 #include "vtkPolyDataWideLineGS.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkOpenGLPolyDataMapper2D);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLPolyDataMapper2D::vtkOpenGLPolyDataMapper2D()
 {
   this->TransformedPoints = nullptr;
@@ -71,7 +62,7 @@ vtkOpenGLPolyDataMapper2D::vtkOpenGLPolyDataMapper2D()
     this, &vtkOpenGLPolyDataMapper2D::ReleaseGraphicsResources);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLPolyDataMapper2D::~vtkOpenGLPolyDataMapper2D()
 {
   if (this->ResourceCallback)
@@ -99,7 +90,7 @@ vtkOpenGLPolyDataMapper2D::~vtkOpenGLPolyDataMapper2D()
   this->VBOs = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::ReleaseGraphicsResources(vtkWindow* win)
 {
   if (!this->ResourceCallback->IsReleasing())
@@ -125,7 +116,7 @@ void vtkOpenGLPolyDataMapper2D::ReleaseGraphicsResources(vtkWindow* win)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkOpenGLPolyDataMapper2D::GetNeedToRebuildShaders(
   vtkOpenGLHelper& cellBO, vtkViewport* vtkNotUsed(viewport), vtkActor2D* actor)
 {
@@ -145,22 +136,55 @@ bool vtkOpenGLPolyDataMapper2D::GetNeedToRebuildShaders(
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::BuildShaders(std::string& VSSource, std::string& FSSource,
   std::string& GSSource, vtkViewport* viewport, vtkActor2D* actor)
 {
-  VSSource = vtkPolyData2DVS;
-  FSSource = vtkPolyData2DFS;
+  auto* shaderProperty = vtkOpenGLShaderProperty::SafeDownCast(actor->GetShaderProperty());
+  VSSource =
+    shaderProperty->HasVertexShaderCode() ? shaderProperty->GetVertexShaderCode() : vtkPolyData2DVS;
+  FSSource = shaderProperty->HasFragmentShaderCode() ? shaderProperty->GetFragmentShaderCode()
+                                                     : vtkPolyData2DFS;
   if (this->HaveWideLines(viewport, actor))
   {
     GSSource = vtkPolyDataWideLineGS;
   }
   else
   {
-    GSSource.clear();
+    GSSource =
+      shaderProperty->HasGeometryShaderCode() ? shaderProperty->GetGeometryShaderCode() : "";
   }
 
+  // user specified pre replacements
+  std::map<vtkShader::Type, std::string*> shaderSources;
+  shaderSources[vtkShader::Vertex] = &VSSource;
+  shaderSources[vtkShader::Fragment] = &FSSource;
+  shaderSources[vtkShader::Geometry] = &GSSource;
+  auto& repMap = shaderProperty->GetAllShaderReplacements();
+  for (const auto& i : repMap)
+  {
+    if (i.first.ReplaceFirst)
+    {
+      auto* ssrc = shaderSources[i.first.ShaderType];
+      vtkShaderProgram::Substitute(
+        *ssrc, i.first.OriginalValue, i.second.Replacement, i.second.ReplaceAll);
+    }
+  }
   // Build our shader if necessary.
+  auto* vertexUniforms = vtkOpenGLUniforms::SafeDownCast(shaderProperty->GetVertexCustomUniforms());
+  vtkShaderProgram::Substitute(
+    VSSource, "//VTK::CustomUniforms::Dec", vertexUniforms->GetDeclarations());
+
+  auto* fragmentUniforms =
+    vtkOpenGLUniforms::SafeDownCast(shaderProperty->GetFragmentCustomUniforms());
+  vtkShaderProgram::Substitute(
+    FSSource, "//VTK::CustomUniforms::Dec", fragmentUniforms->GetDeclarations());
+
+  auto* geometryUniforms =
+    vtkOpenGLUniforms::SafeDownCast(shaderProperty->GetGeometryCustomUniforms());
+  vtkShaderProgram::Substitute(
+    GSSource, "//VTK::CustomUniforms::Dec", geometryUniforms->GetDeclarations());
+
   if (this->HaveCellScalars)
   {
     vtkShaderProgram::Substitute(FSSource, "//VTK::Color::Dec", "uniform samplerBuffer textureC;");
@@ -193,6 +217,14 @@ void vtkOpenGLPolyDataMapper2D::BuildShaders(std::string& VSSource, std::string&
     }
   }
 
+  // do we have texture maps?
+  bool haveTextures = false;
+  vtkInformation* info = actor->GetPropertyKeys();
+  if (info && info->Has(vtkProp::GeneralTextureUnit()))
+  {
+    haveTextures = true;
+  }
+
   int numTCoordComps = this->VBOs->GetNumberOfComponents("tcoordMC");
   if (numTCoordComps == 1 || numTCoordComps == 2)
   {
@@ -206,10 +238,19 @@ void vtkOpenGLPolyDataMapper2D::BuildShaders(std::string& VSSource, std::string&
         "out float tcoordVCGSOutput;");
       vtkShaderProgram::Substitute(
         GSSource, "//VTK::TCoord::Impl", "tcoordVCGSOutput = tcoordVCVSOutput[i];");
-      vtkShaderProgram::Substitute(
-        FSSource, "//VTK::TCoord::Dec", "in float tcoordVCVSOutput; uniform sampler2D texture1;");
-      vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Impl",
-        "gl_FragData[0] = gl_FragData[0]*texture2D(texture1, vec2(tcoordVCVSOutput,0));");
+      if (haveTextures)
+      {
+        vtkShaderProgram::Substitute(
+          FSSource, "//VTK::TCoord::Dec", "in float tcoordVCVSOutput; uniform sampler2D texture1;");
+        vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Impl",
+          "gl_FragData[0] = gl_FragData[0]*texture2D(texture1, vec2(tcoordVCVSOutput,0));");
+      }
+      else
+      {
+        // even though an actor doesn't have a texture, an application may still want to use
+        // the texture coordinate for some other purpose during shader customizations.
+        vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Dec", "in float tcoordVCVSOutput;");
+      }
     }
     else
     {
@@ -221,10 +262,19 @@ void vtkOpenGLPolyDataMapper2D::BuildShaders(std::string& VSSource, std::string&
         "out vec2 tcoordVCGSOutput;");
       vtkShaderProgram::Substitute(
         GSSource, "//VTK::TCoord::Impl", "tcoordVCGSOutput = tcoordVCVSOutput[i];");
-      vtkShaderProgram::Substitute(
-        FSSource, "//VTK::TCoord::Dec", "in vec2 tcoordVCVSOutput; uniform sampler2D texture1;");
-      vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Impl",
-        "gl_FragData[0] = gl_FragData[0]*texture2D(texture1, tcoordVCVSOutput.st);");
+      if (haveTextures)
+      {
+        vtkShaderProgram::Substitute(
+          FSSource, "//VTK::TCoord::Dec", "in vec2 tcoordVCVSOutput; uniform sampler2D texture1;");
+        vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Impl",
+          "gl_FragData[0] = gl_FragData[0]*texture2D(texture1, tcoordVCVSOutput.st);");
+      }
+      else
+      {
+        // even though an actor doesn't have a texture, an application may still want to use
+        // the texture coordinate for some other purpose during shader customizations.
+        vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Dec", "in vec2 tcoordVCVSOutput;");
+      }
     }
   }
 
@@ -239,9 +289,18 @@ void vtkOpenGLPolyDataMapper2D::BuildShaders(std::string& VSSource, std::string&
   {
     this->ReplaceShaderPicking(FSSource, ren, actor);
   }
+  for (const auto& i : repMap)
+  {
+    if (!i.first.ReplaceFirst)
+    {
+      auto* ssrc = shaderSources[i.first.ShaderType];
+      vtkShaderProgram::Substitute(
+        *ssrc, i.first.OriginalValue, i.second.Replacement, i.second.ReplaceAll);
+    }
+  }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::UpdateShaders(
   vtkOpenGLHelper& cellBO, vtkViewport* viewport, vtkActor2D* actor)
 {
@@ -273,13 +332,28 @@ void vtkOpenGLPolyDataMapper2D::UpdateShaders(
 
   if (cellBO.Program)
   {
+    this->SetCustomUniforms(cellBO, actor);
     this->SetMapperShaderParameters(cellBO, viewport, actor);
     this->SetPropertyShaderParameters(cellBO, viewport, actor);
     this->SetCameraShaderParameters(cellBO, viewport, actor);
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkOpenGLPolyDataMapper2D::SetCustomUniforms(vtkOpenGLHelper& cellBO, vtkActor2D* actor)
+{
+  vtkShaderProperty* shaderProperty = actor->GetShaderProperty();
+  auto vertexUniforms = vtkOpenGLUniforms::SafeDownCast(shaderProperty->GetVertexCustomUniforms());
+  vertexUniforms->SetUniforms(cellBO.Program);
+  auto fragmentUniforms =
+    vtkOpenGLUniforms::SafeDownCast(shaderProperty->GetFragmentCustomUniforms());
+  fragmentUniforms->SetUniforms(cellBO.Program);
+  auto geometryUniforms =
+    vtkOpenGLUniforms::SafeDownCast(shaderProperty->GetGeometryCustomUniforms());
+  geometryUniforms->SetUniforms(cellBO.Program);
+}
+
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::SetMapperShaderParameters(
   vtkOpenGLHelper& cellBO, vtkViewport* viewport, vtkActor2D* actor)
 {
@@ -329,7 +403,7 @@ void vtkOpenGLPolyDataMapper2D::SetMapperShaderParameters(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::SetPropertyShaderParameters(
   vtkOpenGLHelper& cellBO, vtkViewport*, vtkActor2D* actor)
 {
@@ -341,13 +415,13 @@ void vtkOpenGLPolyDataMapper2D::SetPropertyShaderParameters(
     float opacity = static_cast<float>(actor->GetProperty()->GetOpacity());
     double* dColor = actor->GetProperty()->GetColor();
     float diffuseColor[4] = { static_cast<float>(dColor[0]), static_cast<float>(dColor[1]),
-      static_cast<float>(dColor[2]), static_cast<float>(opacity) };
+      static_cast<float>(dColor[2]), opacity };
 
     program->SetUniform4f("diffuseColor", diffuseColor);
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::ReplaceShaderPicking(
   std::string& fssource, vtkRenderer*, vtkActor2D*)
 {
@@ -356,7 +430,7 @@ void vtkOpenGLPolyDataMapper2D::ReplaceShaderPicking(
     fssource, "//VTK::Picking::Impl", "gl_FragData[0] = vec4(mapperIndex,1.0);\n");
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::SetCameraShaderParameters(
   vtkOpenGLHelper& cellBO, vtkViewport* viewport, vtkActor2D* actor)
 {
@@ -394,7 +468,7 @@ void vtkOpenGLPolyDataMapper2D::SetCameraShaderParameters(
   size[0] = static_cast<int>(std::round(size[0] * (visVP[2] - visVP[0]) / (vport[2] - vport[0])));
   size[1] = static_cast<int>(std::round(size[1] * (visVP[3] - visVP[1]) / (vport[3] - vport[1])));
 
-  int* winSize = viewport->GetVTKWindow()->GetSize();
+  const int* winSize = viewport->GetVTKWindow()->GetSize();
 
   int xoff = static_cast<int>(actorPos[0] - (visVP[0] - vport[0]) * winSize[0]);
   int yoff = static_cast<int>(actorPos[1] - (visVP[1] - vport[1]) * winSize[1]);
@@ -416,25 +490,16 @@ void vtkOpenGLPolyDataMapper2D::SetCameraShaderParameters(
     top = bottom + 1.0;
   }
 
-  float nearV = 0;
-  float farV = VTK_FLOAT_MAX;
-  if (actor->GetProperty()->GetDisplayLocation() != VTK_FOREGROUND_LOCATION)
-  {
-    nearV = -VTK_FLOAT_MAX;
-    farV = 0;
-  }
-
   // compute the combined ModelView matrix and send it down to save time in the shader
   vtkMatrix4x4* tmpMat = vtkMatrix4x4::New();
   tmpMat->SetElement(0, 0, 2.0 / (right - left));
   tmpMat->SetElement(1, 1, 2.0 / (top - bottom));
-  // XXX(cppcheck): possible division by zero
-  tmpMat->SetElement(2, 2, -2.0 / (farV - nearV));
-  tmpMat->SetElement(3, 3, 1.0);
   tmpMat->SetElement(0, 3, -1.0 * (right + left) / (right - left));
   tmpMat->SetElement(1, 3, -1.0 * (top + bottom) / (top - bottom));
-  // XXX(cppcheck): possible division by zero
-  tmpMat->SetElement(2, 3, -1.0 * (farV + nearV) / (farV - nearV));
+  tmpMat->SetElement(2, 2, 0.0);
+  tmpMat->SetElement(
+    2, 3, actor->GetProperty()->GetDisplayLocation() == VTK_FOREGROUND_LOCATION ? -1.0 : 1.0);
+  tmpMat->SetElement(3, 3, 1.0);
   tmpMat->Transpose();
   /*
     if (this->VBO->GetCoordShiftAndScaleEnabled())
@@ -450,7 +515,7 @@ void vtkOpenGLPolyDataMapper2D::SetCameraShaderParameters(
   tmpMat->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::UpdateVBO(vtkActor2D* act, vtkViewport* viewport)
 {
   vtkPolyData* poly = this->GetInput();
@@ -513,14 +578,6 @@ void vtkOpenGLPolyDataMapper2D::UpdateVBO(vtkActor2D* act, vtkViewport* viewport
     c = nullptr;
   }
 
-  // do we have texture maps?
-  bool haveTextures = false;
-  vtkInformation* info = act->GetPropertyKeys();
-  if (info && info->Has(vtkProp::GeneralTextureUnit()))
-  {
-    haveTextures = true;
-  }
-
   // Transform the points, if necessary
   vtkPoints* p = poly->GetPoints();
   if (this->TransformCoordinate)
@@ -550,20 +607,19 @@ void vtkOpenGLPolyDataMapper2D::UpdateVBO(vtkActor2D* act, vtkViewport* viewport
 
   vtkOpenGLRenderWindow* renWin = vtkOpenGLRenderWindow::SafeDownCast(viewport->GetVTKWindow());
   vtkOpenGLVertexBufferObjectCache* cache = renWin->GetVBOCache();
-
+  auto* tcoords = poly->GetPointData()->GetTCoords();
   this->VBOs->CacheDataArray("vertexWC", p->GetData(), cache, VTK_FLOAT);
-  this->VBOs->CacheDataArray(
-    "tcoordMC", (haveTextures ? poly->GetPointData()->GetTCoords() : nullptr), cache, VTK_FLOAT);
+  this->VBOs->CacheDataArray("tcoordMC", tcoords, cache, VTK_FLOAT);
   this->VBOs->CacheDataArray("diffuseColor", c, cache, VTK_UNSIGNED_CHAR);
 
-  this->VBOs->BuildAllVBOs(cache);
+  this->VBOs->BuildAllVBOs(viewport);
   this->VBOUpdateTime
     .Modified(); // need to call all the time or GetNeedToRebuild will always return true;
 
   this->Points.IBO->IndexCount = this->Points.IBO->CreatePointIndexBuffer(prims[0]);
   this->Lines.IBO->IndexCount = this->Lines.IBO->CreateLineIndexBuffer(prims[1]);
   this->Tris.IBO->IndexCount =
-    this->Tris.IBO->CreateTriangleIndexBuffer(prims[2], poly->GetPoints());
+    this->Tris.IBO->CreateTriangleIndexBuffer(prims[2], poly->GetPoints(), nullptr, nullptr);
   this->TriStrips.IBO->IndexCount = this->TriStrips.IBO->CreateStripIndexBuffer(prims[3], false);
 }
 
@@ -581,6 +637,7 @@ bool vtkOpenGLPolyDataMapper2D::HaveWideLines(vtkViewport* ren, vtkActor2D* acto
   return false;
 }
 
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::RenderOverlay(vtkViewport* viewport, vtkActor2D* actor)
 {
   vtkOpenGLClearErrorMacro();
@@ -607,9 +664,10 @@ void vtkOpenGLPolyDataMapper2D::RenderOverlay(vtkViewport* viewport, vtkActor2D*
     this->CreateDefaultLookupTable();
   }
 
-  vtkRenderWindow* renWin = vtkRenderWindow::SafeDownCast(viewport->GetVTKWindow());
+  vtkOpenGLRenderWindow* renWin = static_cast<vtkOpenGLRenderWindow*>(viewport->GetVTKWindow());
+  vtkOpenGLState* ostate = renWin->GetState();
 
-  this->ResourceCallback->RegisterGraphicsResources(static_cast<vtkOpenGLRenderWindow*>(renWin));
+  this->ResourceCallback->RegisterGraphicsResources(renWin);
 
   vtkRenderer* ren = vtkRenderer::SafeDownCast(viewport);
   vtkHardwareSelector* selector = ren->GetSelector();
@@ -627,7 +685,7 @@ void vtkOpenGLPolyDataMapper2D::RenderOverlay(vtkViewport* viewport, vtkActor2D*
 
   // Assume we want to do Zbuffering for now.
   // we may turn this off later
-  static_cast<vtkOpenGLRenderWindow*>(renWin)->GetState()->vtkglDepthMask(GL_TRUE);
+  ostate->vtkglDepthMask(GL_TRUE);
 
   // Update the VBO if needed.
   if (this->VBOUpdateTime < this->GetMTime() || this->VBOUpdateTime < actor->GetMTime() ||
@@ -653,7 +711,7 @@ void vtkOpenGLPolyDataMapper2D::RenderOverlay(vtkViewport* viewport, vtkActor2D*
 
   int numVerts = this->VBOs->GetNumberOfTuples("vertexWC");
 
-  if (this->Points.IBO->IndexCount)
+  if (this->Points.IBO->IndexCount && actor->GetProperty()->GetPointSize() != 0.f)
   {
     this->UpdateShaders(this->Points, viewport, actor);
     if (this->Points.Program)
@@ -662,9 +720,7 @@ void vtkOpenGLPolyDataMapper2D::RenderOverlay(vtkViewport* viewport, vtkActor2D*
     }
 
     // Set the PointSize
-#ifndef GL_ES_VERSION_3_0
-    glPointSize(actor->GetProperty()->GetPointSize()); // not on ES2
-#endif
+    ostate->vtkglPointSize(actor->GetProperty()->GetPointSize());
     this->Points.IBO->Bind();
     glDrawRangeElements(GL_POINTS, 0, static_cast<GLuint>(numVerts - 1),
       static_cast<GLsizei>(this->Points.IBO->IndexCount), GL_UNSIGNED_INT, nullptr);
@@ -672,7 +728,7 @@ void vtkOpenGLPolyDataMapper2D::RenderOverlay(vtkViewport* viewport, vtkActor2D*
     this->PrimitiveIDOffset += (int)this->Points.IBO->IndexCount;
   }
 
-  if (this->Lines.IBO->IndexCount)
+  if (this->Lines.IBO->IndexCount && actor->GetProperty()->GetLineWidth() != 0.f)
   {
     // Set the LineWidth
     this->UpdateShaders(this->Lines, viewport, actor);
@@ -681,7 +737,7 @@ void vtkOpenGLPolyDataMapper2D::RenderOverlay(vtkViewport* viewport, vtkActor2D*
       this->Lines.Program->SetUniformi("PrimitiveIDOffset", this->PrimitiveIDOffset);
       if (!this->HaveWideLines(viewport, actor))
       {
-        glLineWidth(actor->GetProperty()->GetLineWidth());
+        ostate->vtkglLineWidth(actor->GetProperty()->GetLineWidth());
       }
       this->Lines.IBO->Bind();
       glDrawRangeElements(GL_LINES, 0, static_cast<GLuint>(numVerts - 1),
@@ -739,8 +795,9 @@ void vtkOpenGLPolyDataMapper2D::RenderOverlay(vtkViewport* viewport, vtkActor2D*
   vtkOpenGLCheckErrorMacro("failed after RenderOverlay");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLPolyDataMapper2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+VTK_ABI_NAMESPACE_END

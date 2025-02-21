@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkBandedPolyDataContourFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkBandedPolyDataContourFilter
  * @brief   generate filled contours for vtkPolyData
@@ -46,6 +34,7 @@
 
 #include "vtkContourValues.h" // Needed for inline methods
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPoints;
 class vtkCellArray;
 class vtkPointData;
@@ -68,7 +57,7 @@ public:
    */
   static vtkBandedPolyDataContourFilter* New();
 
-  //@{
+  ///@{
   /**
    * Methods to set / get contour values. A single value at a time can be
    * set with SetValue(). Multiple contour values can be set with
@@ -83,9 +72,9 @@ public:
   vtkIdType GetNumberOfContours();
   void GenerateValues(int numContours, double range[2]);
   void GenerateValues(int numContours, double rangeStart, double rangeEnd);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Indicate whether to clip outside the range specified by the user.
    * (The range is contour value[0] to contour value[numContours-1].)
@@ -95,9 +84,9 @@ public:
   vtkSetMacro(Clipping, vtkTypeBool);
   vtkGetMacro(Clipping, vtkTypeBool);
   vtkBooleanMacro(Clipping, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control whether the cell scalars are output as an integer index or
    * a scalar value. If an index, the index refers to the bands produced
@@ -108,9 +97,9 @@ public:
   vtkGetMacro(ScalarMode, int);
   void SetScalarModeToIndex() { this->SetScalarMode(VTK_SCALAR_MODE_INDEX); }
   void SetScalarModeToValue() { this->SetScalarMode(VTK_SCALAR_MODE_VALUE); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off a flag to control whether contour edges are generated.
    * Contour edges are the edges between bands. If enabled, they are
@@ -120,9 +109,9 @@ public:
   vtkSetMacro(GenerateContourEdges, vtkTypeBool);
   vtkGetMacro(GenerateContourEdges, vtkTypeBool);
   vtkBooleanMacro(GenerateContourEdges, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the clip tolerance. Warning: setting this too large will
    * certainly cause numerical issues. Change from the default value
@@ -131,16 +120,16 @@ public:
    */
   vtkSetMacro(ClipTolerance, double);
   vtkGetMacro(ClipTolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the component to use of an input scalars array with more than one
    * component. Default is 0.
    */
   vtkSetMacro(Component, int);
   vtkGetMacro(Component, int);
-  //@}
+  ///@}
 
   /**
    * Get the second output which contains the edges dividing the contour
@@ -169,7 +158,7 @@ protected:
   int ComputeClippedIndex(double s);
   int InsertNextScalar(vtkFloatArray* scalars, int cellId, int idx);
   // data members
-  vtkContourValues* ContourValues;
+  vtkSmartPointer<vtkContourValues> ContourValues;
 
   vtkTypeBool Clipping;
   int ScalarMode;
@@ -258,4 +247,5 @@ inline void vtkBandedPolyDataContourFilter::GenerateValues(
   this->ContourValues->GenerateValues(numContours, rangeStart, rangeEnd);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

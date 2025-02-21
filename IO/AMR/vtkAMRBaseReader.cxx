@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRBaseReader.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMRBaseReader.h"
 #include "vtkAMRDataSetCache.h"
 #include "vtkAMRInformation.h"
@@ -35,6 +23,9 @@
 
 #include <cassert>
 
+VTK_ABI_NAMESPACE_BEGIN
+vtkCxxSetObjectMacro(vtkAMRBaseReader, Controller, vtkMultiProcessController);
+
 vtkAMRBaseReader::vtkAMRBaseReader()
 {
   this->LoadedMetaData = false;
@@ -42,6 +33,8 @@ vtkAMRBaseReader::vtkAMRBaseReader()
   this->NumBlocksFromFile = 0;
   this->EnableCaching = 0;
   this->Cache = nullptr;
+  this->FileName = nullptr;
+  this->Controller = nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -62,6 +55,11 @@ vtkAMRBaseReader::~vtkAMRBaseReader()
   {
     this->Metadata->Delete();
   }
+
+  delete[] this->FileName;
+  this->FileName = nullptr;
+
+  this->SetController(nullptr);
 }
 
 //------------------------------------------------------------------------------
@@ -86,7 +84,7 @@ void vtkAMRBaseReader::Initialize()
   this->FileName = nullptr;
   this->MaxLevel = 0;
   this->Metadata = nullptr;
-  this->Controller = vtkMultiProcessController::GetGlobalController();
+  this->SetController(vtkMultiProcessController::GetGlobalController());
   this->InitialRequest = true;
   this->Cache = vtkAMRDataSetCache::New();
 
@@ -101,7 +99,7 @@ void vtkAMRBaseReader::Initialize()
   vtkTimerLog::MarkEndEvent("vtkAMRBaseReader::Initialize");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMRBaseReader::SelectionModifiedCallback(vtkObject*, unsigned long, void* clientdata, void*)
 {
   static_cast<vtkAMRBaseReader*>(clientdata)->Modified();
@@ -171,7 +169,7 @@ void vtkAMRBaseReader::SetCellArrayStatus(const char* name, int status)
 }
 
 //------------------------------------------------------------------------------
-int vtkAMRBaseReader::GetBlockProcessId(const int blockIdx)
+int vtkAMRBaseReader::GetBlockProcessId(int blockIdx)
 {
   // If this is reader instance is serial, return Process 0
   // as the Process ID for the corresponding block.
@@ -185,7 +183,7 @@ int vtkAMRBaseReader::GetBlockProcessId(const int blockIdx)
 }
 
 //------------------------------------------------------------------------------
-bool vtkAMRBaseReader::IsBlockMine(const int blockIdx)
+bool vtkAMRBaseReader::IsBlockMine(int blockIdx)
 {
   // If this reader instance does not run in parallel, then,
   // all blocks are owned by this reader.
@@ -195,11 +193,7 @@ bool vtkAMRBaseReader::IsBlockMine(const int blockIdx)
   }
 
   int myRank = this->Controller->GetLocalProcessId();
-  if (myRank == this->GetBlockProcessId(blockIdx))
-  {
-    return true;
-  }
-  return false;
+  return myRank == this->GetBlockProcessId(blockIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -221,12 +215,7 @@ bool vtkAMRBaseReader::IsParallel()
     return false;
   }
 
-  if (this->Controller->GetNumberOfProcesses() > 1)
-  {
-    return true;
-  }
-
-  return false;
+  return this->Controller->GetNumberOfProcesses() > 1;
 }
 
 //------------------------------------------------------------------------------
@@ -256,11 +245,11 @@ int vtkAMRBaseReader::RequestInformation(
   {
     double dataTime = this->Metadata->GetInformation()->Get(vtkDataObject::DATA_TIME_STEP());
     info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &dataTime, 1);
-  }
 
-  vtkTimerLog::MarkStartEvent("vtkAMRBaseReader::GenerateParentChildInformation");
-  this->Metadata->GenerateParentChildInformation();
-  vtkTimerLog::MarkEndEvent("vtkAMRBaseReader::GenerateParentChildInformation");
+    vtkTimerLog::MarkStartEvent("vtkAMRBaseReader::GenerateParentChildInformation");
+    this->Metadata->GenerateParentChildInformation();
+    vtkTimerLog::MarkEndEvent("vtkAMRBaseReader::GenerateParentChildInformation");
+  }
 
   info->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
 
@@ -315,7 +304,7 @@ void vtkAMRBaseReader::SetupBlockRequest(vtkInformation* outInf)
 }
 
 //------------------------------------------------------------------------------
-void vtkAMRBaseReader::GetAMRData(const int blockIdx, vtkUniformGrid* block, const char* fieldName)
+void vtkAMRBaseReader::GetAMRData(int blockIdx, vtkUniformGrid* block, const char* fieldName)
 {
   assert("pre: AMR block is nullptr" && (block != nullptr));
   assert("pre: field name is nullptr" && (fieldName != nullptr));
@@ -354,8 +343,7 @@ void vtkAMRBaseReader::GetAMRData(const int blockIdx, vtkUniformGrid* block, con
 }
 
 //------------------------------------------------------------------------------
-void vtkAMRBaseReader::GetAMRPointData(
-  const int blockIdx, vtkUniformGrid* block, const char* fieldName)
+void vtkAMRBaseReader::GetAMRPointData(int blockIdx, vtkUniformGrid* block, const char* fieldName)
 {
   assert("pre: AMR block is nullptr" && (block != nullptr));
   assert("pre: field name is nullptr" && (fieldName != nullptr));
@@ -394,7 +382,7 @@ void vtkAMRBaseReader::GetAMRPointData(
 }
 
 //------------------------------------------------------------------------------
-vtkUniformGrid* vtkAMRBaseReader::GetAMRBlock(const int blockIdx)
+vtkUniformGrid* vtkAMRBaseReader::GetAMRBlock(int blockIdx)
 {
 
   // If caching is disabled load the data from file
@@ -443,7 +431,7 @@ vtkUniformGrid* vtkAMRBaseReader::GetAMRBlock(const int blockIdx)
 }
 
 //------------------------------------------------------------------------------
-void vtkAMRBaseReader::LoadPointData(const int blockIdx, vtkUniformGrid* block)
+void vtkAMRBaseReader::LoadPointData(int blockIdx, vtkUniformGrid* block)
 {
   // Sanity check!
   assert("pre: AMR block should not be nullptr" && (block != nullptr));
@@ -458,7 +446,7 @@ void vtkAMRBaseReader::LoadPointData(const int blockIdx, vtkUniformGrid* block)
 }
 
 //------------------------------------------------------------------------------
-void vtkAMRBaseReader::LoadCellData(const int blockIdx, vtkUniformGrid* block)
+void vtkAMRBaseReader::LoadCellData(int blockIdx, vtkUniformGrid* block)
 {
   // Sanity check!
   assert("pre: AMR block should not be nullptr" && (block != nullptr));
@@ -635,3 +623,4 @@ int vtkAMRBaseReader::RequestData(vtkInformation* vtkNotUsed(request),
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageSinusoidSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageSinusoidSource.h"
 
 #include "vtkImageData.h"
@@ -23,9 +11,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageSinusoidSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageSinusoidSource::vtkImageSinusoidSource()
 {
   this->Direction[0] = 1.0;
@@ -81,7 +70,7 @@ void vtkImageSinusoidSource::SetDirection(double v0, double v1, double v2)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageSinusoidSource::SetWholeExtent(
   int xMin, int xMax, int yMin, int yMax, int zMin, int zMax)
 {
@@ -123,7 +112,7 @@ void vtkImageSinusoidSource::SetWholeExtent(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageSinusoidSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -137,7 +126,7 @@ int vtkImageSinusoidSource::RequestInformation(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageSinusoidSource::ExecuteDataWithInformation(
   vtkDataObject* output, vtkInformation* outInfo)
 {
@@ -198,7 +187,7 @@ void vtkImageSinusoidSource::ExecuteDataWithInformation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageSinusoidSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -209,3 +198,4 @@ void vtkImageSinusoidSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Direction: ( " << this->Direction[0] << ", " << this->Direction[1] << ", "
      << this->Direction[2] << " )\n";
 }
+VTK_ABI_NAMESPACE_END

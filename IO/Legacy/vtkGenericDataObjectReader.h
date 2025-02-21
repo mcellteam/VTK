@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGenericDataObjectReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGenericDataObjectReader
  * @brief   class to read any type of vtk data object
@@ -38,6 +26,8 @@
 #include "vtkDataReader.h"
 #include "vtkIOLegacyModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
+class vtkCellGrid;
 class vtkDataObject;
 class vtkGraph;
 class vtkMolecule;
@@ -56,15 +46,15 @@ public:
   vtkTypeMacro(vtkGenericDataObjectReader, vtkDataReader);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output of this filter
    */
   vtkDataObject* GetOutput();
   vtkDataObject* GetOutput(int idx);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the output as various concrete types. This method is typically used
    * when you know exactly what type of data is being read.  Otherwise, use
@@ -72,6 +62,7 @@ public:
    * returned.  (You must also set the filename of the object prior to
    * getting the output.)
    */
+  vtkCellGrid* GetCellGridOutput();
   vtkGraph* GetGraphOutput();
   vtkMolecule* GetMoleculeOutput();
   vtkPolyData* GetPolyDataOutput();
@@ -81,7 +72,7 @@ public:
   vtkTable* GetTableOutput();
   vtkTree* GetTreeOutput();
   vtkUnstructuredGrid* GetUnstructuredGridOutput();
-  //@}
+  ///@}
 
   /**
    * This method can be used to find out the type of output expected without
@@ -92,12 +83,12 @@ public:
   /**
    * Read metadata from file.
    */
-  int ReadMetaDataSimple(const std::string& fname, vtkInformation* metadata) override;
+  int ReadMetaDataSimple(VTK_FILEPATH const std::string& fname, vtkInformation* metadata) override;
 
   /**
    * Actual reading happens here
    */
-  int ReadMeshSimple(const std::string& fname, vtkDataObject* output) override;
+  int ReadMeshSimple(VTK_FILEPATH const std::string& fname, vtkDataObject* output) override;
 
 protected:
   vtkGenericDataObjectReader();
@@ -117,4 +108,5 @@ private:
   vtkSetStringMacro(Header);
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

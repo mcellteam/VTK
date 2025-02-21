@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGAMBITReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkGAMBITReader
  * @brief   reads a dataset in Fluent GAMBIT neutral file format
@@ -35,6 +23,7 @@
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDoubleArray;
 class VTKIOGEOMETRY_EXPORT vtkGAMBITReader : public vtkUnstructuredGridAlgorithm
 {
@@ -43,37 +32,37 @@ public:
   vtkTypeMacro(vtkGAMBITReader, vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the file name of the GAMBIT data file to read.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the total number of cells. The number of cells is only valid after a
    * successful read of the data file is performed.
    */
   vtkGetMacro(NumberOfCells, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the total number of nodes. The number of nodes is only valid after a
    * successful read of the data file is performed.
    */
   vtkGetMacro(NumberOfNodes, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the number of data components at the nodes and cells.
    */
   vtkGetMacro(NumberOfNodeFields, int);
   vtkGetMacro(NumberOfCellFields, int);
-  //@}
+  ///@}
 
 protected:
   vtkGAMBITReader();
@@ -120,4 +109,5 @@ private:
   void operator=(const vtkGAMBITReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

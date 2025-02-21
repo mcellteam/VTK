@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVolumeOutlineSource.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVolumeOutlineSource
  * @brief   outline of volume cropping region
@@ -33,6 +21,7 @@
 #include "vtkPolyDataAlgorithm.h"
 #include "vtkRenderingVolumeModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkVolumeMapper;
 
 class VTKRENDERINGVOLUME_EXPORT vtkVolumeOutlineSource : public vtkPolyDataAlgorithm
@@ -42,7 +31,7 @@ public:
   vtkTypeMacro(vtkVolumeOutlineSource, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the mapper that has the cropping region that the outline will
    * be generated for.  The mapper must have an input, because the
@@ -51,9 +40,9 @@ public:
    */
   virtual void SetVolumeMapper(vtkVolumeMapper* mapper);
   vtkVolumeMapper* GetVolumeMapper() { return this->VolumeMapper; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set whether to generate color scalars for the output.  By default,
    * the output has no scalars and the color must be set in the
@@ -62,9 +51,9 @@ public:
   vtkSetMacro(GenerateScalars, vtkTypeBool);
   vtkBooleanMacro(GenerateScalars, vtkTypeBool);
   vtkGetMacro(GenerateScalars, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set whether to generate an outline wherever an input face was
    * cut by a plane.  This is on by default.
@@ -72,9 +61,9 @@ public:
   vtkSetMacro(GenerateOutline, vtkTypeBool);
   vtkBooleanMacro(GenerateOutline, vtkTypeBool);
   vtkGetMacro(GenerateOutline, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set whether to generate polygonal faces for the output.  By default,
    * only lines are generated.  The faces will form a closed, watertight
@@ -83,18 +72,18 @@ public:
   vtkSetMacro(GenerateFaces, vtkTypeBool);
   vtkBooleanMacro(GenerateFaces, vtkTypeBool);
   vtkGetMacro(GenerateFaces, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the color of the outline.  This has no effect unless GenerateScalars
    * is On.  The default color is red.
    */
   vtkSetVector3Macro(Color, double);
   vtkGetVector3Macro(Color, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the active plane, e.g. to display which plane is currently being
    * modified by an interaction.  Set this to -1 if there is no active plane.
@@ -102,9 +91,9 @@ public:
    */
   vtkSetMacro(ActivePlaneId, int);
   vtkGetMacro(ActivePlaneId, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the color of the active cropping plane.  This has no effect unless
    * GenerateScalars is On and ActivePlaneId is non-negative.  The default
@@ -112,7 +101,7 @@ public:
    */
   vtkSetVector3Macro(ActivePlaneColor, double);
   vtkGetVector3Macro(ActivePlaneColor, double);
-  //@}
+  ///@}
 
 protected:
   vtkVolumeOutlineSource();
@@ -160,4 +149,5 @@ private:
   void operator=(const vtkVolumeOutlineSource&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

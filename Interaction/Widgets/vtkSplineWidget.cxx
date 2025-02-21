@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSplineWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSplineWidget.h"
 
 #include "vtkActor.h"
@@ -35,6 +23,7 @@
 #include "vtkSphereSource.h"
 #include "vtkTransform.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkSplineWidget);
 
 vtkCxxSetObjectMacro(vtkSplineWidget, HandleProperty, vtkProperty);
@@ -116,7 +105,7 @@ vtkSplineWidget::vtkSplineWidget()
 
   vtkPolyDataMapper* lineMapper = vtkPolyDataMapper::New();
   lineMapper->SetInputConnection(this->ParametricFunctionSource->GetOutputPort());
-  lineMapper->SetResolveCoincidentTopologyToPolygonOffset();
+  vtkPolyDataMapper::SetResolveCoincidentTopologyToPolygonOffset();
 
   this->LineActor = vtkActor::New();
   this->LineActor->SetMapper(lineMapper);
@@ -357,7 +346,7 @@ void vtkSplineWidget::SetEnabled(int enabling)
   this->Interactor->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget::RegisterPickers()
 {
   vtkPickingManager* pm = this->GetPickingManager();
@@ -369,7 +358,7 @@ void vtkSplineWidget::RegisterPickers()
   pm->AddPicker(this->LinePicker, this);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget::ProcessEventsHandler(
   vtkObject* vtkNotUsed(object), unsigned long event, void* clientdata, void* vtkNotUsed(calldata))
 {
@@ -1485,3 +1474,4 @@ int vtkSplineWidget::IsClosed()
 
   return result;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageMapToWindowLevelColors.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageMapToWindowLevelColors.h"
 
 #include "vtkDataArray.h"
@@ -22,6 +10,9 @@
 #include "vtkPointData.h"
 #include "vtkScalarsToColors.h"
 
+#include <cmath>
+
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageMapToWindowLevelColors);
 
 // Constructor sets default values
@@ -33,7 +24,7 @@ vtkImageMapToWindowLevelColors::vtkImageMapToWindowLevelColors()
 
 vtkImageMapToWindowLevelColors::~vtkImageMapToWindowLevelColors() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method checks to see if we can simply reference the input data
 int vtkImageMapToWindowLevelColors::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -69,13 +60,14 @@ int vtkImageMapToWindowLevelColors::RequestData(
       this->DataWasPassed = 0;
     }
 
+    // NOLINTNEXTLINE(bugprone-parent-virtual-call)
     return this->vtkThreadedImageAlgorithm::RequestData(request, inputVector, outputVector);
   }
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageMapToWindowLevelColors::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -236,7 +228,7 @@ void vtkImageMapToWindowLevelClamps(vtkImageData* data, double w, double l, T& l
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This non-templated function executes the filter for any type of data.
 template <class T>
 void vtkImageMapToWindowLevelColorsExecute(vtkImageMapToWindowLevelColors* self,
@@ -286,7 +278,7 @@ void vtkImageMapToWindowLevelColorsExecute(vtkImageMapToWindowLevelColors* self,
 
   // Loop through output pixels
   outPtr1 = outPtr;
-  inPtr1 = inPtr;
+  inPtr1 = inPtr + self->GetActiveComponent();
   for (idxZ = 0; idxZ < extZ; idxZ++)
   {
     for (idxY = 0; !self->AbortExecute && idxY < extY; idxY++)
@@ -305,8 +297,8 @@ void vtkImageMapToWindowLevelColorsExecute(vtkImageMapToWindowLevelColors* self,
 
       if (lookupTable)
       {
-        lookupTable->MapScalarsThroughTable2(inPtr1, static_cast<unsigned char*>(outPtr1), dataType,
-          extX, numberOfComponents, outputFormat);
+        lookupTable->MapScalarsThroughTable2(
+          inPtr1, outPtr1, dataType, extX, numberOfComponents, outputFormat);
 
         for (idxX = 0; idxX < extX; idxX++)
         {
@@ -386,7 +378,7 @@ void vtkImageMapToWindowLevelColorsExecute(vtkImageMapToWindowLevelColors* self,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output data, and executes the filter
 // algorithm to fill the output from the input.
 
@@ -414,3 +406,4 @@ void vtkImageMapToWindowLevelColors::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Window: " << this->Window << endl;
   os << indent << "Level: " << this->Level << endl;
 }
+VTK_ABI_NAMESPACE_END

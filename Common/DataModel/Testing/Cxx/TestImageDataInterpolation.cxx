@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    TestImageDataInterpolation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 // .NAME TestImageDataInterpolation.cxx -- Test interpolation from image data
 //
 // .SECTION Description
@@ -54,9 +42,7 @@ bool eq(double a, double b, double TOL = 1e-9)
   double adiff = std::abs(a - b);
   double d1 = SafeDiv(adiff, std::abs(a));
   double d2 = SafeDiv(adiff, std::abs(b));
-  if ((d1 <= TOL) || (d2 <= TOL))
-    return true;
-  return false;
+  return d1 <= TOL || d2 <= TOL;
 }
 
 // Description:

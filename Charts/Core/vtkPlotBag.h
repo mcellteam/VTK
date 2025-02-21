@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPlotBag.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPlotBag
@@ -35,10 +23,12 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkPlotPoints.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPen;
 
-class VTKCHARTSCORE_EXPORT vtkPlotBag : public vtkPlotPoints
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPlotBag : public vtkPlotPoints
 {
 public:
   vtkTypeMacro(vtkPlotBag, vtkPlotPoints);
@@ -48,13 +38,6 @@ public:
    * Creates a new Bag Plot object.
    */
   static vtkPlotBag* New();
-
-  /**
-   * Perform any updates to the item that may be necessary before rendering.
-   * The scene should take care of calling this on all items before their
-   * Paint function is invoked.
-   */
-  void Update() override;
 
   /**
    * Paint event for the XY plot, called whenever the chart needs to be drawn.
@@ -82,7 +65,7 @@ public:
   vtkStdString GetTooltipLabel(
     const vtkVector2d& plotPos, vtkIdType seriesIndex, vtkIdType segmentIndex) override;
 
-  //@{
+  ///@{
   /**
    * Set the input, we are expecting a vtkTable with three columns. The first
    * column and the second represent the x,y position . The five others
@@ -95,27 +78,27 @@ public:
     vtkTable* table, const vtkStdString& yColumn, const vtkStdString& densityColumn) override;
   virtual void SetInputData(vtkTable* table, const vtkStdString& xColumn,
     const vtkStdString& yColumn, const vtkStdString& densityColumn);
-  //@}
+  ///@}
 
   virtual void SetInputData(
     vtkTable* table, vtkIdType xColumn, vtkIdType yColumn, vtkIdType densityColumn);
 
-  //@{
+  ///@{
   /**
    * Set/get the visibility of the bags.
    * True by default.
    */
   vtkSetMacro(BagVisible, bool);
   vtkGetMacro(BagVisible, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the vtkPen object that controls how this plot draws boundary lines.
    */
   void SetLinePen(vtkPen* pen);
   vtkGetObjectMacro(LinePen, vtkPen);
-  //@}
+  ///@}
 
   /**
    * Set/get the vtkPen object that controls how this plot draws points.
@@ -125,11 +108,17 @@ public:
   void SetPointPen(vtkPen* pen) { this->SetPen(pen); }
   vtkPen* GetPointPen() { return this->GetPen(); }
 
+  /**
+   * Update the internal cache. Returns true if cache was successfully updated. Default does
+   * nothing.
+   * This method is called by Update() when either the plot's data has changed or
+   * CacheRequiresUpdate() returns true. It is not necessary to call this method explicitly.
+   */
+  bool UpdateCache() override;
+
 protected:
   vtkPlotBag();
   ~vtkPlotBag() override;
-
-  void UpdateTableCache(vtkDataArray*);
 
   bool BagVisible;
   vtkPoints2D* MedianPoints;
@@ -141,4 +130,5 @@ private:
   void operator=(const vtkPlotBag&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPlotBag_h

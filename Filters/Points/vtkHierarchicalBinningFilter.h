@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHierarchicalBinningFilter.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHierarchicalBinningFilter
  * @brief   uniform binning of points into
@@ -75,12 +63,13 @@
 
 #define VTK_MAX_LEVEL 12
 
+VTK_ABI_NAMESPACE_BEGIN
 struct vtkBinTree;
 
 class VTKFILTERSPOINTS_EXPORT vtkHierarchicalBinningFilter : public vtkPolyDataAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiating, obtaining type information, and
    * printing information.
@@ -88,18 +77,18 @@ public:
   static vtkHierarchicalBinningFilter* New();
   vtkTypeMacro(vtkHierarchicalBinningFilter, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the number of levels in the spatial hierarchy. By default, the
    * number of levels is three.
    */
   vtkSetClampMacro(NumberOfLevels, int, 1, VTK_MAX_LEVEL);
   vtkGetMacro(NumberOfLevels, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether to determine the determine the level divisions, and the bounding
    * box automatically (by default this is on). If off, then the user must specify both
@@ -109,9 +98,9 @@ public:
   vtkSetMacro(Automatic, bool);
   vtkGetMacro(Automatic, bool);
   vtkBooleanMacro(Automatic, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of branching divisions in each binning direction. Each
    * level of the tree is subdivided by this factor. The Divisions[i] must be
@@ -120,9 +109,9 @@ public:
    */
   vtkSetVector3Macro(Divisions, int);
   vtkGetVectorMacro(Divisions, int, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the bounding box of the point cloud. If Automatic is enabled, then
    * this is computed during filter execution. If manually specified
@@ -132,7 +121,7 @@ public:
    */
   vtkSetVector6Macro(Bounds, double);
   vtkGetVectorMacro(Bounds, double, 6);
-  //@}
+  ///@}
 
   /**
    * Convenience methods for extracting useful information about this bin
@@ -209,4 +198,5 @@ private:
   void operator=(const vtkHierarchicalBinningFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

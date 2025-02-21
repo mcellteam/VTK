@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkHoudiniPolyDataWriter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkHoudiniPolyDataWriter
  * @brief   write vtk polygonal data to Houdini file.
@@ -28,6 +16,7 @@
 #include "vtkIOGeometryModule.h" // For export macro
 #include "vtkWriter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkPolyData;
 
 class VTKIOGEOMETRY_EXPORT vtkHoudiniPolyDataWriter : public vtkWriter
@@ -37,13 +26,13 @@ public:
   vtkTypeMacro(vtkHoudiniPolyDataWriter, vtkWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specifies the delimited text file to be loaded.
    */
-  vtkGetStringMacro(FileName);
-  vtkSetStringMacro(FileName);
-  //@}
+  vtkGetFilePathMacro(FileName);
+  vtkSetFilePathMacro(FileName);
+  ///@}
 
 protected:
   vtkHoudiniPolyDataWriter();
@@ -60,4 +49,5 @@ private:
   void operator=(const vtkHoudiniPolyDataWriter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLoopBooleanPolyDataFilter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /** @file vtkLoopBooleanPolyDataFilter.cxx
  *  @brief This is the filter to perform boolean operations
  *  @author Adam Updegrove
@@ -47,8 +35,9 @@
 #include <sstream>
 #include <string>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper typedefs and data structures.
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 
@@ -315,7 +304,7 @@ int vtkLoopBooleanPolyDataFilter::Impl::FindRegionTipToe(int inputIndex, int fil
           this->Mesh[inputIndex]->GetCellEdgeNeighbors(cellId, p1, p2, neighbors);
           vtkIdType numNeighbors = neighbors->GetNumberOfIds();
 
-          // Check to make sure it is an oustide surface cell,
+          // Check to make sure it is an outside surface cell,
           // i.e. one neighbor
           if (numNeighbors == 1)
           {
@@ -635,6 +624,7 @@ int vtkLoopBooleanPolyDataFilter::Impl::GetCellOrientation(
     vtkSmartPointer<vtkTransformPolyDataFilter>::New();
   transformer->SetInputData(cellPD);
   transformer->SetTransform(transform);
+  transformer->SetContainerAlgorithm(this->ParentFilter);
   transformer->Update();
 
   vtkSmartPointer<vtkPolyData> transPD = vtkSmartPointer<vtkPolyData>::New();
@@ -769,13 +759,12 @@ void vtkLoopBooleanPolyDataFilter::Impl::SetCheckArrays()
     }
   }
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkLoopBooleanPolyDataFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLoopBooleanPolyDataFilter::vtkLoopBooleanPolyDataFilter()
-  : vtkPolyDataAlgorithm()
 {
   this->Operation = VTK_UNION;
 
@@ -790,10 +779,10 @@ vtkLoopBooleanPolyDataFilter::vtkLoopBooleanPolyDataFilter()
   this->Tolerance = 1e-6;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLoopBooleanPolyDataFilter::~vtkLoopBooleanPolyDataFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLoopBooleanPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -830,8 +819,9 @@ int vtkLoopBooleanPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request
   polydataIntersection->SplitFirstOutputOn();
   polydataIntersection->SplitSecondOutputOn();
   polydataIntersection->SetTolerance(this->Tolerance);
+  polydataIntersection->SetContainerAlgorithm(this);
   polydataIntersection->Update();
-  if (polydataIntersection->GetStatus() != 1)
+  if (this->CheckAbort() || polydataIntersection->GetStatus() != 1)
   {
     this->Status = 0;
     return 0;
@@ -853,7 +843,7 @@ int vtkLoopBooleanPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request
   if (this->NumberOfIntersectionPoints == 0 || this->NumberOfIntersectionLines == 0)
   {
     vtkWarningMacro(<< "No intersections!");
-    if (this->NoIntersectionOutput == 0)
+    if (this->CheckAbort() || this->NoIntersectionOutput == 0)
     {
       delete impl;
       return 1;
@@ -900,6 +890,7 @@ int vtkLoopBooleanPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request
         vtkSmartPointer<vtkAppendPolyData> appender = vtkSmartPointer<vtkAppendPolyData>::New();
         appender->AddInputData(impl->Mesh[0]);
         appender->AddInputData(impl->Mesh[1]);
+        appender->SetContainerAlgorithm(this);
         appender->Update();
         outputSurface->DeepCopy(appender->GetOutput());
       }
@@ -956,6 +947,7 @@ int vtkLoopBooleanPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request
   vtkSmartPointer<vtkPolyDataNormals> normaler = vtkSmartPointer<vtkPolyDataNormals>::New();
   normaler->SetInputData(outputSurface);
   normaler->AutoOrientNormalsOn();
+  normaler->SetContainerAlgorithm(this);
   normaler->Update();
   outputSurface->DeepCopy(normaler->GetOutput());
 
@@ -968,7 +960,7 @@ int vtkLoopBooleanPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLoopBooleanPolyDataFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -995,7 +987,7 @@ void vtkLoopBooleanPolyDataFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "NumberOfIntersectionLines: " << this->NumberOfIntersectionLines << "\n";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLoopBooleanPolyDataFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -1014,7 +1006,7 @@ int vtkLoopBooleanPolyDataFilter::FillInputPortInformation(int port, vtkInformat
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Determine type of intersection
 void vtkLoopBooleanPolyDataFilter::Impl::DetermineIntersection(std::vector<simLoop>* loops)
@@ -1029,7 +1021,7 @@ void vtkLoopBooleanPolyDataFilter::Impl::DetermineIntersection(std::vector<simLo
 
   for (vtkIdType interPt = 0; interPt < numInterPts; interPt++)
   {
-    if (usedPt[interPt] == false)
+    if (!usedPt[interPt])
     {
       simLoop newloop;
       vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
@@ -1231,11 +1223,11 @@ int vtkLoopBooleanPolyDataFilter::Impl::RunLoopTest(
       nextPt = pointIds->GetId(0);
     }
 
-    if (usedPt[nextPt] == true)
+    if (usedPt[nextPt])
     {
       vtkDebugWithObjectMacro(this->ParentFilter, << "Bad One");
     }
-    if (cellId != stopCell && usedPt[nextPt] != true)
+    if (cellId != stopCell && !usedPt[nextPt])
     {
       simLine newline;
       newline.id = cellId;
@@ -1321,7 +1313,9 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
   this->ThresholdRegions(surfaces);
   // thresholder->SetInputData(this->Mesh[0]);
   // thresholder->SetInputArrayToProcess(0, 0, 0, 1, "BooleanRegion");
-  // thresholder->ThresholdBetween(-1, -1);
+  // thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  // thresholder->SetLowerThreshold(-1.0);
+  // thresholder->SetUpperThreshold(-1.0);
   // thresholder->Update();
   // surfacer->SetInputData(thresholder->GetOutput());
   // surfacer->Update();
@@ -1329,7 +1323,9 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
 
   // thresholder->SetInputData(this->Mesh[0]);
   // thresholder->SetInputArrayToProcess(0, 0, 0, 1, "BooleanRegion");
-  // thresholder->ThresholdBetween(1, 1);
+  // thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  // thresholder->SetLowerThreshold(1.0);
+  // thresholder->SetUpperThreshold(1.0);
   // thresholder->Update();
   // surfacer->SetInputData(thresholder->GetOutput());
   // surfacer->Update();
@@ -1337,7 +1333,9 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
 
   // thresholder->SetInputData(this->Mesh[1]);
   // thresholder->SetInputArrayToProcess(0, 0, 0, 1, "BooleanRegion");
-  // thresholder->ThresholdBetween(1, 1);
+  // thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  // thresholder->SetLowerThreshold(1.0);
+  // thresholder->SetUpperThreshold(1.0);
   // thresholder->Update();
   // surfacer->SetInputData(thresholder->GetOutput());
   // surfacer->Update();
@@ -1345,7 +1343,9 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
 
   // thresholder->SetInputData(this->Mesh[1]);
   // thresholder->SetInputArrayToProcess(0, 0, 0, 1, "BooleanRegion");
-  // thresholder->ThresholdBetween(-1, -1);
+  // thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  // thresholder->SetLowerThreshold(-1.0);
+  // thresholder->SetUpperThreshold(-1.0);
   // thresholder->Update();
   // surfacer->SetInputData(thresholder->GetOutput());
   // surfacer->Update();
@@ -1398,6 +1398,7 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
     appender->AddInputData(surfaces[0]);
     appender->AddInputData(surfaces[3]);
   }
+  appender->SetContainerAlgorithm(this->ParentFilter);
   appender->Update();
 
   output->DeepCopy(appender->GetOutput());
@@ -1487,3 +1488,4 @@ void vtkLoopBooleanPolyDataFilter::Impl::ThresholdRegions(vtkPolyData** surfaces
     booleanCells[i]->Delete();
   }
 }
+VTK_ABI_NAMESPACE_END

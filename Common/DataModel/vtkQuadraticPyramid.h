@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkQuadraticPyramid.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkQuadraticPyramid
  * @brief   cell represents a parabolic, 13-node isoparametric pyramid
@@ -42,6 +30,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkNonLinearCell.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkQuadraticEdge;
 class vtkQuadraticQuad;
 class vtkQuadraticTriangle;
@@ -56,7 +45,7 @@ public:
   vtkTypeMacro(vtkQuadraticPyramid, vtkNonLinearCell);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Implement the vtkCell API. See the vtkCell API for descriptions
    * of these methods.
@@ -67,7 +56,7 @@ public:
   int GetNumberOfFaces() override { return 5; }
   vtkCell* GetEdge(int edgeId) override;
   vtkCell* GetFace(int faceId) override;
-  //@}
+  ///@}
 
   int CellBoundary(int subId, const double pcoords[3], vtkIdList* pts) override;
   void Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
@@ -76,7 +65,7 @@ public:
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
   void Derivatives(
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
   double* GetParametricCoords() override;
@@ -104,7 +93,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[13]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[39]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -117,8 +106,8 @@ public:
   {
     vtkQuadraticPyramid::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * Return the ids of the vertices defining edge/face (`edgeId`/`faceId').
    * Ids are related to the cell, not to the dataset.
@@ -128,7 +117,7 @@ public:
    */
   static const vtkIdType* GetEdgeArray(vtkIdType edgeId);
   static const vtkIdType* GetFaceArray(vtkIdType faceId);
-  //@}
+  ///@}
 
   /**
    * Given parametric coordinates compute inverse Jacobian transformation
@@ -151,7 +140,7 @@ protected:
   vtkDoubleArray* CellScalars;
   vtkDoubleArray* Scalars; // used to avoid New/Delete in contouring/clipping
 
-  //@{
+  ///@{
   /**
    * This method adds in a point at the center of the quadrilateral face
    * and then interpolates values to that point. In order to do this it
@@ -160,8 +149,8 @@ protected:
    **/
   void Subdivide(
     vtkPointData* inPd, vtkCellData* inCd, vtkIdType cellId, vtkDataArray* cellScalars);
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * Resize the superclasses' member arrays to newSize where newSize should either be
    * 13 or 14. Call with 13 to reset the reallocation done in the Subdivide()
@@ -169,7 +158,7 @@ protected:
    * Subdivice. For efficiency it only resizes the superclasses' arrays.
    **/
   void ResizeArrays(vtkIdType newSize);
-  //@}
+  ///@}
 
 private:
   vtkQuadraticPyramid(const vtkQuadraticPyramid&) = delete;
@@ -185,4 +174,5 @@ inline int vtkQuadraticPyramid::GetParametricCenter(double pcoords[3])
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,26 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVisibilitySort.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-
-/*
- * Copyright 2003 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2003 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 #include "vtkVisibilitySort.h"
 
 #include "vtkCamera.h"
@@ -29,12 +9,13 @@
 #include "vtkIdList.h"
 #include "vtkMatrix4x4.h"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkVisibilitySort, Camera, vtkCamera);
 vtkCxxSetObjectMacro(vtkVisibilitySort, Input, vtkDataSet);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkVisibilitySort::vtkVisibilitySort()
 {
@@ -51,7 +32,7 @@ vtkVisibilitySort::vtkVisibilitySort()
   this->MaxCellsReturned = VTK_INT_MAX;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkVisibilitySort::~vtkVisibilitySort()
 {
@@ -62,17 +43,7 @@ vtkVisibilitySort::~vtkVisibilitySort()
   this->SetInput(nullptr);
 }
 
-//-----------------------------------------------------------------------------
-
-void vtkVisibilitySort::Register(vtkObjectBase* o)
-{
-  this->RegisterInternal(o, 1);
-}
-
-void vtkVisibilitySort::UnRegister(vtkObjectBase* o)
-{
-  this->UnRegisterInternal(o, 1);
-}
+//------------------------------------------------------------------------------
 
 void vtkVisibilitySort::ReportReferences(vtkGarbageCollector* collector)
 {
@@ -80,7 +51,7 @@ void vtkVisibilitySort::ReportReferences(vtkGarbageCollector* collector)
   vtkGarbageCollectorReport(collector, this->Input, "Input");
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkVisibilitySort::SetModelTransform(vtkMatrix4x4* mat)
 {
@@ -101,7 +72,7 @@ void vtkVisibilitySort::SetModelTransform(vtkMatrix4x4* mat)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkVisibilitySort::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -131,3 +102,4 @@ void vtkVisibilitySort::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "Camera: (" << this->Camera << ")" << endl;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCachedStreamingDemandDrivenPipeline.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCachedStreamingDemandDrivenPipeline.h"
 
 #include "vtkInformationIntegerKey.h"
@@ -25,9 +13,10 @@
 #include "vtkInformationVector.h"
 #include "vtkPointData.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCachedStreamingDemandDrivenPipeline);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCachedStreamingDemandDrivenPipeline ::vtkCachedStreamingDemandDrivenPipeline()
 {
   this->CacheSize = 0;
@@ -37,13 +26,13 @@ vtkCachedStreamingDemandDrivenPipeline ::vtkCachedStreamingDemandDrivenPipeline(
   this->SetCacheSize(10);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCachedStreamingDemandDrivenPipeline ::~vtkCachedStreamingDemandDrivenPipeline()
 {
   this->SetCacheSize(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCachedStreamingDemandDrivenPipeline::SetCacheSize(int size)
 {
   int idx;
@@ -85,14 +74,14 @@ void vtkCachedStreamingDemandDrivenPipeline::SetCacheSize(int size)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCachedStreamingDemandDrivenPipeline ::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "CacheSize: " << this->CacheSize << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCachedStreamingDemandDrivenPipeline ::NeedToExecuteData(
   int outputPort, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -105,6 +94,7 @@ int vtkCachedStreamingDemandDrivenPipeline ::NeedToExecuteData(
 
   // Does the superclass want to execute? We must skip our direct superclass
   // because it looks at update extents but does not know about the cache
+  // NOLINTNEXTLINE(bugprone-parent-virtual-call)
   if (this->vtkDemandDrivenPipeline::NeedToExecuteData(outputPort, inInfoVec, outInfoVec))
   {
     return 1;
@@ -208,7 +198,7 @@ int vtkCachedStreamingDemandDrivenPipeline ::NeedToExecuteData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCachedStreamingDemandDrivenPipeline ::ExecuteData(
   vtkInformation* request, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -272,3 +262,4 @@ int vtkCachedStreamingDemandDrivenPipeline ::ExecuteData(
 
   return result;
 }
+VTK_ABI_NAMESPACE_END

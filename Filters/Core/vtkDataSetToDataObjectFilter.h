@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDataSetToDataObjectFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkDataSetToDataObjectFilter
  * @brief   map dataset into data object (i.e., a field)
@@ -50,6 +38,7 @@
 #include "vtkDataObjectAlgorithm.h"
 #include "vtkFiltersCoreModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkDataSet;
 
 class VTKFILTERSCORE_EXPORT vtkDataSetToDataObjectFilter : public vtkDataObjectAlgorithm
@@ -63,25 +52,25 @@ public:
    */
   static vtkDataSetToDataObjectFilter* New();
 
-  //@{
+  ///@{
   /**
    * Turn on/off the conversion of dataset geometry to a data object.
    */
   vtkSetMacro(Geometry, vtkTypeBool);
   vtkGetMacro(Geometry, vtkTypeBool);
   vtkBooleanMacro(Geometry, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the conversion of dataset topology to a data object.
    */
   vtkSetMacro(Topology, vtkTypeBool);
   vtkGetMacro(Topology, vtkTypeBool);
   vtkBooleanMacro(Topology, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If LegacyTopology and Topology are both true, print out the legacy topology
    * arrays. Default is true.
@@ -89,9 +78,9 @@ public:
   vtkSetMacro(LegacyTopology, vtkTypeBool);
   vtkGetMacro(LegacyTopology, vtkTypeBool);
   vtkBooleanMacro(LegacyTopology, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If ModernTopology and Topology are both true, print out the modern topology
    * arrays. Default is true.
@@ -99,34 +88,34 @@ public:
   vtkSetMacro(ModernTopology, vtkTypeBool);
   vtkGetMacro(ModernTopology, vtkTypeBool);
   vtkBooleanMacro(ModernTopology, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the conversion of dataset field data to a data object.
    */
   vtkSetMacro(FieldData, vtkTypeBool);
   vtkGetMacro(FieldData, vtkTypeBool);
   vtkBooleanMacro(FieldData, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the conversion of dataset point data to a data object.
    */
   vtkSetMacro(PointData, vtkTypeBool);
   vtkGetMacro(PointData, vtkTypeBool);
   vtkBooleanMacro(PointData, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the conversion of dataset cell data to a data object.
    */
   vtkSetMacro(CellData, vtkTypeBool);
   vtkGetMacro(CellData, vtkTypeBool);
   vtkBooleanMacro(CellData, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkDataSetToDataObjectFilter();
@@ -151,4 +140,5 @@ private:
   void operator=(const vtkDataSetToDataObjectFilter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

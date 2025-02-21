@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCompositePolyDataMapper2.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkActor.h"
 #include "vtkCamera.h"
@@ -57,13 +45,13 @@ int TestCompositeDataPointGaussianSelection(int argc, char* argv[])
   // build a composite dataset
   vtkNew<vtkMultiBlockDataSet> data;
   int blocksPerLevel[3] = { 1, 16, 32 };
-  std::vector<vtkSmartPointer<vtkMultiBlockDataSet> > blocks;
-  blocks.push_back(data.GetPointer());
+  std::vector<vtkSmartPointer<vtkMultiBlockDataSet>> blocks;
+  blocks.emplace_back(data.GetPointer());
   unsigned levelStart = 0;
   unsigned levelEnd = 1;
   int numLevels = sizeof(blocksPerLevel) / sizeof(blocksPerLevel[0]);
   int numNodes = 0;
-  vtkStdString blockName("Rolf");
+  std::string blockName("Rolf");
   mapper->SetInputDataObject(data.GetPointer());
   for (int level = 1; level < numLevels; ++level)
   {
@@ -85,7 +73,7 @@ int TestCompositeDataPointGaussianSelection(int argc, char* argv[])
         {
           vtkNew<vtkMultiBlockDataSet> child;
           blocks[parent]->SetBlock(block, child.GetPointer());
-          blocks.push_back(child.GetPointer());
+          blocks.emplace_back(child.GetPointer());
         }
       }
     }
@@ -141,7 +129,7 @@ int TestCompositeDataPointGaussianSelection(int argc, char* argv[])
       result->GetNode(0)->GetProperties()->Get(vtkSelectionNode::PROP()) == actor.Get() &&
       result->GetNode(0)->GetProperties()->Get(vtkSelectionNode::COMPOSITE_INDEX()) == 305 &&
       result->GetNode(2)->GetProperties()->Get(vtkSelectionNode::COMPOSITE_INDEX()) == 340 &&
-      selIds && selIds->GetNumberOfTuples() == 5 && selIds->GetValue(2) == 56)
+      selIds && selIds->GetNumberOfTuples() == 4 && selIds->GetValue(2) == 70)
     {
       goodPick = true;
     }
@@ -154,7 +142,7 @@ int TestCompositeDataPointGaussianSelection(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  int retVal = vtkRegressionTestImageThreshold(win.GetPointer(), 15);
+  int retVal = vtkRegressionTestImageThreshold(win.GetPointer(), 0.05);
   if (retVal == vtkRegressionTester::DO_INTERACTOR)
   {
     iren->Start();

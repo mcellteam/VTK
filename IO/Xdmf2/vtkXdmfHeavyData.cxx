@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXdmfHeavyData.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXdmfHeavyData.h"
 
 #include "vtkCellArray.h"
@@ -20,7 +8,7 @@
 #include "vtkDataArrayRange.h"
 #include "vtkDataObjectTypes.h"
 #include "vtkDoubleArray.h"
-#include "vtkExtractSelectedIds.h"
+#include "vtkExtractSelection.h"
 #include "vtkFloatArray.h"
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
@@ -48,7 +36,6 @@
 #include <cassert>
 #include <deque>
 #include <numeric>
-#include <type_traits>
 #include <vector>
 
 #include "vtk_libxml2.h"
@@ -62,6 +49,7 @@ typedef XdmfInt32 vtkXdmfIdType;
 
 using namespace xdmf2;
 
+VTK_ABI_NAMESPACE_BEGIN
 static void vtkScaleExtents(int in_exts[6], int out_exts[6], int stride[3])
 {
   out_exts[0] = in_exts[0] / stride[0];
@@ -79,7 +67,7 @@ static void vtkGetDims(int exts[6], int dims[3])
   dims[2] = exts[5] - exts[4] + 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmfHeavyData::vtkXdmfHeavyData(vtkXdmfDomain* domain, vtkAlgorithm* reader)
 {
   this->Reader = reader;
@@ -92,10 +80,10 @@ vtkXdmfHeavyData::vtkXdmfHeavyData(vtkXdmfDomain* domain, vtkAlgorithm* reader)
   this->Stride[0] = this->Stride[1] = this->Stride[2] = 1;
 }
 
-//----------------------------------------------------------------------------
-vtkXdmfHeavyData::~vtkXdmfHeavyData() {}
+//------------------------------------------------------------------------------
+vtkXdmfHeavyData::~vtkXdmfHeavyData() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkXdmfHeavyData::ReadData()
 {
   if (this->Domain->GetNumberOfGrids() == 1)
@@ -104,7 +92,7 @@ vtkDataObject* vtkXdmfHeavyData::ReadData()
     // need to be care:
     // 1. If the data is structured, we respect the update-extent and read
     //    accordingly.
-    // 2. If the data is unstructrued, we read only on the root node. The user
+    // 2. If the data is unstructured, we read only on the root node. The user
     //    can apply D3 or something to repartition the data.
     return this->ReadData(this->Domain->GetGrid(0));
   }
@@ -149,13 +137,13 @@ vtkDataObject* vtkXdmfHeavyData::ReadData()
   return mb;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkXdmfHeavyData::ReadData(XdmfGrid* xmfGrid, int blockId)
 {
   if (!xmfGrid || xmfGrid->GetGridType() == XDMF_GRID_UNSET)
   {
     // sanity check-ensure that the xmfGrid is valid.
-    return 0;
+    return nullptr;
   }
 
   XdmfInt32 gridType = (xmfGrid->GetGridType() & XDMF_GRID_MASK);
@@ -175,7 +163,7 @@ vtkDataObject* vtkXdmfHeavyData::ReadData(XdmfGrid* xmfGrid, int blockId)
   return this->ReadUniformData(xmfGrid, blockId);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkXdmfHeavyData::ReadComposite(XdmfGrid* xmfComposite)
 {
   assert(((xmfComposite->GetGridType() & XDMF_GRID_COLLECTION &&
@@ -212,7 +200,7 @@ vtkDataObject* vtkXdmfHeavyData::ReadComposite(XdmfGrid* xmfComposite)
   return multiBlock;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkXdmfHeavyData::ReadTemporalCollection(
   XdmfGrid* xmfTemporalCollection, int blockId)
 {
@@ -245,7 +233,7 @@ vtkDataObject* vtkXdmfHeavyData::ReadTemporalCollection(
   // if no child matched this timestep, handle the case where the user didn't
   // specify any <Time /> element for the temporal collection.
   for (XdmfInt32 cc = 0;
-       valid_children.size() == 0 && cc < xmfTemporalCollection->GetNumberOfChildren(); cc++)
+       valid_children.empty() && cc < xmfTemporalCollection->GetNumberOfChildren(); cc++)
   {
     XdmfGrid* child = xmfTemporalCollection->GetChild(cc);
     if (child && child->GetTime()->GetTimeType() == XDMF_TIME_UNSET)
@@ -254,19 +242,19 @@ vtkDataObject* vtkXdmfHeavyData::ReadTemporalCollection(
     }
   }
 
-  if (valid_children.size() == 0)
+  if (valid_children.empty())
   {
-    return 0;
+    return nullptr;
   }
 
-  std::deque<vtkSmartPointer<vtkDataObject> > child_data_objects;
+  std::deque<vtkSmartPointer<vtkDataObject>> child_data_objects;
   std::deque<XdmfGrid*>::iterator iter;
   for (iter = valid_children.begin(); iter != valid_children.end(); ++iter)
   {
     vtkDataObject* childDO = this->ReadData(*iter, blockId);
     if (childDO)
     {
-      child_data_objects.push_back(childDO);
+      child_data_objects.emplace_back(childDO);
       childDO->Delete();
     }
   }
@@ -288,10 +276,10 @@ vtkDataObject* vtkXdmfHeavyData::ReadTemporalCollection(
     return mb;
   }
 
-  return 0;
+  return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Read a non-composite grid. Note here uniform has nothing to do with
 // vtkUniformGrid but to what Xdmf's GridType="Uniform".
 vtkDataObject* vtkXdmfHeavyData::ReadUniformData(XdmfGrid* xmfGrid, int blockId)
@@ -386,10 +374,10 @@ vtkDataObject* vtkXdmfHeavyData::ReadUniformData(XdmfGrid* xmfGrid, int blockId)
   XdmfInt32 status = xmfGrid->Update();
   if (status == XDMF_FAIL)
   {
-    return 0;
+    return nullptr;
   }
 
-  vtkDataObject* dataObject = 0;
+  vtkDataObject* dataObject = nullptr;
 
   switch (vtk_data_type)
   {
@@ -415,18 +403,31 @@ vtkDataObject* vtkXdmfHeavyData::ReadUniformData(XdmfGrid* xmfGrid, int blockId)
 
     default:
       // un-handled case.
-      return 0;
+      dataObject = nullptr;
+      break;
   }
+  // grid's memory needs to be released because otherwise, it will be cached
+  // which can lead to out-of-memory issues for big datasets
+  xmfGrid->Release();
 
-  if (caching)
+  // dataObject can be nullptr if an error occur inside Read*(xmfGrid)
+  // so it needs to be handled carefully
+  if (dataObject)
   {
-    cache[blockId].dataset = vtkDataSet::SafeDownCast(dataObject);
-    dataObject->Register(0);
+    if (caching)
+    {
+      cache[blockId].dataset = vtkDataSet::SafeDownCast(dataObject);
+      dataObject->Register(nullptr);
+    }
+    return dataObject;
   }
-  return dataObject;
+  else
+  {
+    return nullptr;
+  }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmfHeavyData::GetNumberOfPointsPerCell(int vtk_cell_type)
 {
   switch (vtk_cell_type)
@@ -471,11 +472,11 @@ int vtkXdmfHeavyData::GetNumberOfPointsPerCell(int vtk_cell_type)
     case VTK_BIQUADRATIC_QUADRATIC_HEXAHEDRON:
       return 24;
     case VTK_TRIQUADRATIC_HEXAHEDRON:
-      return 24;
+      return 27;
   }
   return -1;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmfHeavyData::GetVTKCellType(XdmfInt32 topologyType)
 {
   switch (topologyType)
@@ -498,6 +499,8 @@ int vtkXdmfHeavyData::GetVTKCellType(XdmfInt32 topologyType)
       return VTK_WEDGE;
     case XDMF_HEX:
       return VTK_HEXAHEDRON;
+    case XDMF_POLYHEDRON:
+      return VTK_POLYHEDRON;
     case XDMF_EDGE_3:
       return VTK_QUADRATIC_EDGE;
     case XDMF_TRI_6:
@@ -528,7 +531,7 @@ int vtkXdmfHeavyData::GetVTKCellType(XdmfInt32 topologyType)
   return VTK_EMPTY_CELL;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkXdmfHeavyData::ReadUnstructuredGrid(XdmfGrid* xmfGrid)
 {
   vtkSmartPointer<vtkUnstructuredGrid> ugData = vtkSmartPointer<vtkUnstructuredGrid>::New();
@@ -625,27 +628,60 @@ vtkDataObject* vtkXdmfHeavyData::ReadUnstructuredGrid(XdmfGrid* xmfGrid)
     for (vtkIdType cc = 0; cc < numCells; cc++)
     {
       int vtk_cell_typeI = this->GetVTKCellType(xmfConnections[index++]);
-      XdmfInt32 numPointsPerCell = this->GetNumberOfPointsPerCell(vtk_cell_typeI);
-      if (numPointsPerCell == -1)
+      if (vtk_cell_typeI != VTK_POLYHEDRON)
       {
-        // encountered an unknown cell.
-        return nullptr;
+        XdmfInt32 numPointsPerCell = this->GetNumberOfPointsPerCell(vtk_cell_typeI);
+        if (numPointsPerCell == -1)
+        {
+          // encountered an unknown cell.
+          return nullptr;
+        }
+
+        if (numPointsPerCell == 0)
+        {
+          // cell type does not have a fixed number of points in which case the
+          // next entry in xmfConnections tells us the number of points.
+          numPointsPerCell = xmfConnections[index++];
+        }
+
+        cell_types->SetValue(cc, static_cast<unsigned char>(vtk_cell_typeI));
+        offsets->SetValue(cc, offset);
+        offset += numPointsPerCell;
+
+        for (vtkIdType i = 0; i < numPointsPerCell; i++)
+        {
+          conn->SetValue(connIndex++, xmfConnections[index++]);
+        }
       }
-
-      if (numPointsPerCell == 0)
+      else
       {
-        // cell type does not have a fixed number of points in which case the
-        // next entry in xmfConnections tells us the number of points.
-        numPointsPerCell = xmfConnections[index++];
-      }
+        // The polyhedron reader was copied from the Xdmf3 implementation.
+        // polyhedrons do not have a fixed number of faces in which case the
+        // next entry in xmfConnections tells us the number of faces.
+        const unsigned int numFacesPerCell = xmfConnections[index++];
 
-      cell_types->SetValue(cc, static_cast<unsigned char>(vtk_cell_typeI));
-      offsets->SetValue(cc, offset);
-      offset += numPointsPerCell;
+        // polyhedrons do not have a fixed number of points in which case the
+        // the number of points needs to be obtained from the data.
+        unsigned int numPointsPerCell = 0;
+        for (vtkIdType i = 0; i < static_cast<vtkIdType>(numFacesPerCell); i++)
+        {
+          // faces do not have a fixed number of points in which case the next
+          // entry in xmfConnections tells us the number of points.
+          numPointsPerCell += xmfConnections[index + numPointsPerCell + i];
+        }
 
-      for (vtkIdType i = 0; i < numPointsPerCell; i++)
-      {
-        conn->SetValue(connIndex++, xmfConnections[index++]);
+        // add cell entry to the array, which for polyhedrons is in the format:
+        // [cellLength, nCellFaces, nFace0Pts, id0_0, id0_1, ...,
+        //                          nFace1Pts, id1_0, id1_1, ...,
+        //                          ...]
+        cell_types->SetValue(cc, static_cast<unsigned char>(vtk_cell_typeI));
+        offsets->SetValue(cc, offset);
+        offset += numPointsPerCell + numFacesPerCell + 1;
+        conn->SetValue(connIndex++, numFacesPerCell);
+        for (vtkIdType i = 0; i < static_cast<vtkIdType>(numPointsPerCell + numFacesPerCell); i++)
+        {
+          conn->SetValue(connIndex++, xmfConnections[index++]);
+        }
       }
     }
     offsets->SetValue(numCells, offset); // final offset value
@@ -704,7 +740,7 @@ inline bool vtkExtentsAreEqual(int* exts1, int* exts2)
     exts1[3] == exts2[3] && exts1[4] == exts2[4] && exts1[5] == exts2[5]);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRectilinearGrid* vtkXdmfHeavyData::RequestRectilinearGrid(XdmfGrid* xmfGrid)
 {
   vtkSmartPointer<vtkRectilinearGrid> rg = vtkSmartPointer<vtkRectilinearGrid>::New();
@@ -815,7 +851,7 @@ vtkRectilinearGrid* vtkXdmfHeavyData::RequestRectilinearGrid(XdmfGrid* xmfGrid)
   return rg;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStructuredGrid* vtkXdmfHeavyData::RequestStructuredGrid(XdmfGrid* xmfGrid)
 {
   vtkStructuredGrid* sg = vtkStructuredGrid::New();
@@ -846,7 +882,7 @@ vtkStructuredGrid* vtkXdmfHeavyData::RequestStructuredGrid(XdmfGrid* xmfGrid)
   return sg;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageData* vtkXdmfHeavyData::RequestImageData(XdmfGrid* xmfGrid, bool use_uniform_grid)
 {
   vtkImageData* imageData =
@@ -890,7 +926,7 @@ vtkImageData* vtkXdmfHeavyData::RequestImageData(XdmfGrid* xmfGrid, bool use_uni
   return imageData;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPoints* vtkXdmfHeavyData::ReadPoints(
   XdmfGeometry* xmfGeometry, int* update_extents /*=nullptr*/, int* whole_extents /*=nullptr*/)
 {
@@ -999,14 +1035,14 @@ vtkPoints* vtkXdmfHeavyData::ReadPoints(
     }
   }
 
-  points->Register(0);
+  points->Register(nullptr);
   return points;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfHeavyData::ReadAttributes(vtkDataSet* dataSet, XdmfGrid* xmfGrid, int* update_extents)
 {
-  int data_dimensionality = this->Domain->GetDataDimensionality(xmfGrid);
+  int data_dimensionality = vtkXdmfDomain::GetDataDimensionality(xmfGrid);
 
   int numAttributes = xmfGrid->GetNumberOfAttributes();
   for (int cc = 0; cc < numAttributes; cc++)
@@ -1020,7 +1056,7 @@ bool vtkXdmfHeavyData::ReadAttributes(vtkDataSet* dataSet, XdmfGrid* xmfGrid, in
       continue;
     }
 
-    vtkFieldData* fieldData = 0;
+    vtkFieldData* fieldData = nullptr;
     // skip disabled arrays.
     switch (attrCenter)
     {
@@ -1120,7 +1156,7 @@ void vtkConvertTensor6(T* source, T* dest, vtkIdType numTensors)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataArray* vtkXdmfHeavyData::ReadAttribute(
   XdmfAttribute* xmfAttribute, int data_dimensionality, int* update_extents /*=0*/)
 {
@@ -1151,6 +1187,9 @@ vtkDataArray* vtkXdmfHeavyData::ReadAttribute(
       break;
     case XDMF_ATTRIBUTE_TYPE_VECTOR:
       numComponents = 3;
+      break;
+    case XDMF_ATTRIBUTE_TYPE_MATRIX:
+      numComponents = data_dims[data_rank - 1];
       break;
     default:
       numComponents = 1;
@@ -1207,7 +1246,7 @@ vtkDataArray* vtkXdmfHeavyData::ReadAttribute(
   if (xmfDataItem.Update() == XDMF_FAIL)
   {
     vtkErrorWithObjectMacro(this->Reader, "Failed to read attribute data");
-    return 0;
+    return nullptr;
   }
 
   vtkXdmfDataArray* xmfConvertor = vtkXdmfDataArray::New();
@@ -1259,7 +1298,7 @@ vtkDataArray* vtkXdmfHeavyData::ReadAttribute(
   return dataArray;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Read ghost cell/point information. This is simply loaded info a
 // vtkGhostType attribute array.
 bool vtkXdmfHeavyData::ReadGhostSets(
@@ -1277,7 +1316,7 @@ bool vtkXdmfHeavyData::ReadGhostSets(
     }
     XdmfInt32 setCenter = xmfSet->GetSetType();
     vtkIdType numElems = 0;
-    vtkDataSetAttributes* dsa = 0;
+    vtkDataSetAttributes* dsa = nullptr;
     unsigned char ghostFlag = 0;
     switch (setCenter)
     {
@@ -1339,7 +1378,7 @@ bool vtkXdmfHeavyData::ReadGhostSets(
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMultiBlockDataSet* vtkXdmfHeavyData::ReadSets(
   vtkDataSet* dataSet, XdmfGrid* xmfGrid, int* vtkNotUsed(update_extents) /*=0*/)
 {
@@ -1384,7 +1423,7 @@ vtkMultiBlockDataSet* vtkXdmfHeavyData::ReadSets(
     }
 
     // Okay now we have an enabled set. Create a new dataset for it
-    vtkDataSet* set = 0;
+    vtkDataSet* set = nullptr;
 
     XdmfInt32 setType = xmfSet->GetSetType();
     switch (setType)
@@ -1416,7 +1455,7 @@ vtkMultiBlockDataSet* vtkXdmfHeavyData::ReadSets(
   return mb;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkXdmfHeavyData::ExtractPoints(XdmfSet* xmfSet, vtkDataSet* dataSet)
 {
   // TODO: How to handle structured datasets with update_extents/strides etc.
@@ -1482,7 +1521,7 @@ vtkDataSet* vtkXdmfHeavyData::ExtractPoints(XdmfSet* xmfSet, vtkDataSet* dataSet
   return output;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkXdmfHeavyData::ExtractCells(XdmfSet* xmfSet, vtkDataSet* dataSet)
 {
   // TODO: How to handle structured datasets with update_extents/strides etc.
@@ -1495,7 +1534,7 @@ vtkDataSet* vtkXdmfHeavyData::ExtractCells(XdmfSet* xmfSet, vtkDataSet* dataSet)
   XdmfArray* xmfIds = xmfSet->GetIds();
   XdmfInt64 numIds = xmfIds->GetNumberOfElements();
 
-  vtkIdTypeArray* ids = vtkIdTypeArray::New();
+  vtkNew<vtkIdTypeArray> ids;
   ids->SetNumberOfComponents(1);
   ids->SetNumberOfTuples(numIds);
   xmfIds->GetValues(0, (vtkXdmfIdType*)ids->GetPointer(0), numIds);
@@ -1505,26 +1544,21 @@ vtkDataSet* vtkXdmfHeavyData::ExtractCells(XdmfSet* xmfSet, vtkDataSet* dataSet)
 
   // We directly use vtkExtractSelectedIds for extract cells since the logic to
   // extract cells it no trivial (like extracting points).
-  vtkSelectionNode* selNode = vtkSelectionNode::New();
+  vtkNew<vtkSelectionNode> selNode;
   selNode->SetContentType(vtkSelectionNode::INDICES);
   selNode->SetFieldType(vtkSelectionNode::CELL);
   selNode->SetSelectionList(ids);
 
-  vtkSelection* sel = vtkSelection::New();
+  vtkNew<vtkSelection> sel;
   sel->AddNode(selNode);
-  selNode->Delete();
 
-  vtkExtractSelectedIds* extractCells = vtkExtractSelectedIds::New();
+  vtkNew<vtkExtractSelection> extractCells;
   extractCells->SetInputData(0, dataSet);
   extractCells->SetInputData(1, sel);
   extractCells->Update();
 
   vtkDataSet* output = vtkDataSet::SafeDownCast(extractCells->GetOutput()->NewInstance());
   output->CopyStructure(vtkDataSet::SafeDownCast(extractCells->GetOutput()));
-
-  sel->Delete();
-  extractCells->Delete();
-  ids->Delete();
 
   // Read cell-centered attributes that may be defined on this set.
   int numAttributes = xmfSet->GetNumberOfAttributes();
@@ -1549,7 +1583,7 @@ vtkDataSet* vtkXdmfHeavyData::ExtractCells(XdmfSet* xmfSet, vtkDataSet* dataSet)
   return output;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkXdmfHeavyData::ExtractFaces(XdmfSet* xmfSet, vtkDataSet* dataSet)
 {
   xmfSet->Update();
@@ -1633,7 +1667,7 @@ vtkDataSet* vtkXdmfHeavyData::ExtractFaces(XdmfSet* xmfSet, vtkDataSet* dataSet)
   return output;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkXdmfHeavyData::ExtractEdges(XdmfSet* xmfSet, vtkDataSet* dataSet)
 {
   xmfSet->Update();
@@ -1726,3 +1760,4 @@ vtkDataSet* vtkXdmfHeavyData::ExtractEdges(XdmfSet* xmfSet, vtkDataSet* dataSet)
 
   return output;
 }
+VTK_ABI_NAMESPACE_END

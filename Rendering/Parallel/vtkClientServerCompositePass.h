@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkClientServerCompositePass.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkClientServerCompositePass
  *
@@ -26,6 +14,7 @@
 #include "vtkRenderPass.h"
 #include "vtkRenderingParallelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkMultiProcessController;
 
 class VTKRENDERINGPARALLEL_EXPORT vtkClientServerCompositePass : public vtkRenderPass
@@ -48,7 +37,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Controller
    * If it is NULL, nothing will be rendered and a warning will be emitted.
@@ -58,9 +47,9 @@ public:
    */
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
   virtual void SetController(vtkMultiProcessController* controller);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the render pass used to do the actual rendering.
    * When ServerSideRendering is true, the rendering-pass is called only on the
@@ -68,9 +57,9 @@ public:
    */
   void SetRenderPass(vtkRenderPass*);
   vtkGetObjectMacro(RenderPass, vtkRenderPass);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the optional post-fetch render pass.
    * On the client-process this is called after the server-side image is fetched
@@ -81,9 +70,9 @@ public:
    */
   void SetPostProcessingRenderPass(vtkRenderPass*);
   vtkGetObjectMacro(PostProcessingRenderPass, vtkRenderPass);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the current process type. This is needed since when using the socket
    * communicator there's no easy way of determining which process is the server
@@ -92,9 +81,9 @@ public:
   vtkSetMacro(ProcessIsServer, bool);
   vtkBooleanMacro(ProcessIsServer, bool);
   vtkGetMacro(ProcessIsServer, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/Disable fetching of the image from the server side to the client. If
    * this flag is disabled, then this pass just acts as a "pass-through" pass.
@@ -103,7 +92,7 @@ public:
   vtkSetMacro(ServerSideRendering, bool);
   vtkBooleanMacro(ServerSideRendering, bool);
   vtkGetMacro(ServerSideRendering, bool);
-  //@}
+  ///@}
 
 protected:
   vtkClientServerCompositePass();
@@ -121,4 +110,5 @@ private:
   void operator=(const vtkClientServerCompositePass&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

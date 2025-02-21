@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkWin32Header.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkWin32Header
  * @brief   manage Windows system differences
@@ -28,7 +16,8 @@ Do_not_include_vtkWin32Header_directly_vtkSystemIncludes_includes_it;
 #endif
 
 #include "vtkABI.h"
-#include "vtkConfigure.h"
+#include "vtkBuild.h"    // For VTK_BUILD_SHARED_LIBS
+#include "vtkPlatform.h" // for VTK_REQUIRE_LARGE_FILE_SUPPORT
 
 /*
  * This is a support for files on the disk that are larger than 2GB.
@@ -50,20 +39,16 @@ Do_not_include_vtkWin32Header_directly_vtkSystemIncludes_includes_it;
 // Windows specific stuff------------------------------------------
 #if defined(_WIN32)
 
-// define strict header for windows
-#ifndef STRICT
-#define STRICT
+// Define strict header for Windows (definition as itself ensures that no code breaks)
+#ifdef STRICT
+#undef STRICT
 #endif
+#define STRICT STRICT
 
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 
-#endif
-
-// Never include the windows header here when building VTK itself.
-#if defined(VTK_IN_VTK)
-#undef VTK_INCLUDE_WINDOWS_H
 #endif
 
 #if defined(_WIN32)

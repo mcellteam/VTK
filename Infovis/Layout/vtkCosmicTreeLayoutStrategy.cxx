@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkCosmicTreeLayoutStrategy.h"
 
 #include "vtkDataSetAttributes.h"
@@ -22,6 +24,7 @@
 // Define to print debug showing convergence (or lack thereof) of loop to find enclosing radius, Re
 #undef VTK_COSMIC_DBG
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkCosmicTreeLayoutStrategy);
 
 /// Represent a circle to be placed
@@ -439,7 +442,7 @@ void vtkCosmicTreeLayoutStrategy::LayoutChildren(vtkTree* tree, vtkPoints* pts,
       for (childIdx = 0; childIdx < numberOfChildren; ++childIdx)
       {
         child = tree->GetChild(root, childIdx);
-        circles.push_back(vtkCosmicTreeEntry(child, childIdx, radii->GetValue(child)));
+        circles.emplace_back(child, childIdx, radii->GetValue(child));
       }
       break;
     case NONE:
@@ -454,7 +457,7 @@ void vtkCosmicTreeLayoutStrategy::LayoutChildren(vtkTree* tree, vtkPoints* pts,
       {
         child = tree->GetChild(root, childIdx);
         this->LayoutChildren(tree, pts, radii, scale, child, depth - 1, mode);
-        circles.push_back(vtkCosmicTreeEntry(child, childIdx, radii->GetValue(child)));
+        circles.emplace_back(child, childIdx, radii->GetValue(child));
       }
       break;
   }
@@ -564,3 +567,4 @@ vtkDoubleArray* vtkCosmicTreeLayoutStrategy::CreateScaleFactors(vtkIdType numVer
   scale->SetName("TreeScaleFactor");
   return scale;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLStructuredDataReader.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkXMLStructuredDataReader
  * @brief   Superclass for structured data XML readers.
@@ -30,6 +18,7 @@
 #include "vtkIOXMLModule.h" // For export macro
 #include "vtkXMLDataReader.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class VTKIOXML_EXPORT vtkXMLStructuredDataReader : public vtkXMLDataReader
 {
 public:
@@ -46,7 +35,7 @@ public:
    */
   vtkIdType GetNumberOfCells() override;
 
-  //@{
+  ///@{
   /**
    * Get/Set whether the reader gets a whole slice from disk when only
    * a rectangle inside it is needed.  This mode reads more data than
@@ -56,7 +45,7 @@ public:
   vtkSetMacro(WholeSlices, vtkTypeBool);
   vtkGetMacro(WholeSlices, vtkTypeBool);
   vtkBooleanMacro(WholeSlices, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * For the specified port, copy the information this reader sets up in
@@ -119,4 +108,5 @@ private:
   void operator=(const vtkXMLStructuredDataReader&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCaptionWidget.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCaptionWidget
  * @brief   widget for placing a caption (text plus leader)
@@ -40,14 +28,16 @@
 
 #include "vtkBorderWidget.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
+#include "vtkWrappingHints.h"            // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCaptionRepresentation;
 class vtkCaptionActor2D;
 class vtkHandleWidget;
 class vtkPointHandleRepresentation3D;
 class vtkCaptionAnchorCallback;
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkCaptionWidget : public vtkBorderWidget
+class VTKINTERACTIONWIDGETS_EXPORT VTK_MARSHALAUTO vtkCaptionWidget : public vtkBorderWidget
 {
 public:
   /**
@@ -55,13 +45,13 @@ public:
    */
   static vtkCaptionWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK class methods.
    */
   vtkTypeMacro(vtkCaptionWidget, vtkBorderWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Override superclasses' SetEnabled() method because the caption leader
@@ -79,7 +69,7 @@ public:
     this->Superclass::SetWidgetRepresentation(reinterpret_cast<vtkWidgetRepresentation*>(r));
   }
 
-  //@{
+  ///@{
   /**
    * Specify a vtkCaptionActor2D to manage. This is convenient, alternative
    * method to SetRepresentation(). It internally create a vtkCaptionRepresentation
@@ -87,7 +77,7 @@ public:
    */
   void SetCaptionActor2D(vtkCaptionActor2D* capActor);
   vtkCaptionActor2D* GetCaptionActor2D();
-  //@}
+  ///@}
 
   /**
    * Create the default widget representation if one is not set.
@@ -116,4 +106,5 @@ private:
   void operator=(const vtkCaptionWidget&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCellCentersPointPlacer.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCellCentersPointPlacer
  * @brief   Snaps points at the center of a cell
@@ -41,6 +29,7 @@
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPointPlacer.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkPropCollection;
 class vtkProp;
@@ -54,21 +43,21 @@ public:
    */
   static vtkCellCentersPointPlacer* New();
 
-  //@{
+  ///@{
   /**
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkCellCentersPointPlacer, vtkPointPlacer);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  // Descuription:
-  // Add an actor (that represents a terrain in a rendererd scene) to the
+  // Description:
+  // Add an actor (that represents a terrain in a rendered scene) to the
   // list. Only props in this list are considered by the PointPlacer
   virtual void AddProp(vtkProp*);
   virtual void RemoveViewProp(vtkProp* prop);
   virtual void RemoveAllProps();
-  int HasProp(vtkProp*);
+  vtkTypeBool HasProp(vtkProp*);
   int GetNumberOfProps();
 
   /**
@@ -108,14 +97,14 @@ public:
    */
   int ValidateWorldPosition(double worldPos[3], double worldOrient[9]) override;
 
-  //@{
+  ///@{
   /**
    * Get the Prop picker.
    */
   vtkGetObjectMacro(CellPicker, vtkCellPicker);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Modes to change the point placement. Parametric center picks
    * the parametric center within the cell. CellPointsMean picks
@@ -124,7 +113,7 @@ public:
    */
   vtkSetMacro(Mode, int);
   vtkGetMacro(Mode, int);
-  //@}
+  ///@}
 
   enum
   {
@@ -148,4 +137,5 @@ private:
   void operator=(const vtkCellCentersPointPlacer&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

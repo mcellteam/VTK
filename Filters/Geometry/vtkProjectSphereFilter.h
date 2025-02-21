@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkProjectSphereFilter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkProjectSphereFilter
  * @brief   A filter to 'unroll' a sphere.  The
@@ -26,6 +14,7 @@
 #include "vtkFiltersGeometryModule.h" // For export macro
 #include "vtkPointSetAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCell;
 class vtkCellArray;
 class vtkDataSetAttributes;
@@ -41,15 +30,15 @@ public:
 
   static vtkProjectSphereFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set the center of the sphere to be split. Default is 0,0,0.
    */
   vtkSetVector3Macro(Center, double);
   vtkGetVectorMacro(Center, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether or not to keep the cells using a point at
    * a pole. The default is false.
@@ -57,9 +46,9 @@ public:
   vtkGetMacro(KeepPolePoints, bool);
   vtkSetMacro(KeepPolePoints, bool);
   vtkBooleanMacro(KeepPolePoints, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether (true) or not to translate the points in the projected
    * transformation such that the input point with the smallest
@@ -68,7 +57,7 @@ public:
   vtkGetMacro(TranslateZ, bool);
   vtkSetMacro(TranslateZ, bool);
   vtkBooleanMacro(TranslateZ, bool);
-  //@}
+  ///@}
 
 protected:
   vtkProjectSphereFilter();
@@ -114,4 +103,5 @@ private:
   bool TranslateZ;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkProjectSphereFilter_h

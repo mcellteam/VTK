@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkDistanceRepresentation.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkDistanceRepresentation.h"
 #include "vtkBox.h"
 #include "vtkCoordinate.h"
@@ -24,9 +12,10 @@
 #include "vtkRenderer.h"
 #include "vtkWindow.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkDistanceRepresentation, HandleRepresentation, vtkHandleRepresentation);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDistanceRepresentation::vtkDistanceRepresentation()
 {
   this->HandleRepresentation = nullptr;
@@ -45,7 +34,7 @@ vtkDistanceRepresentation::vtkDistanceRepresentation()
   this->NumberOfRulerTicks = 5;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDistanceRepresentation::~vtkDistanceRepresentation()
 {
   if (this->HandleRepresentation)
@@ -65,7 +54,7 @@ vtkDistanceRepresentation::~vtkDistanceRepresentation()
   this->LabelFormat = nullptr;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistanceRepresentation::InstantiateHandleRepresentation()
 {
   if (!this->Point1Representation)
@@ -81,7 +70,7 @@ void vtkDistanceRepresentation::InstantiateHandleRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistanceRepresentation::GetPoint1WorldPosition(double pos[3])
 {
   if (this->Point1Representation)
@@ -90,7 +79,7 @@ void vtkDistanceRepresentation::GetPoint1WorldPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistanceRepresentation::GetPoint2WorldPosition(double pos[3])
 {
   if (this->Point2Representation)
@@ -99,7 +88,7 @@ void vtkDistanceRepresentation::GetPoint2WorldPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDistanceRepresentation::ComputeInteractionState(
   int vtkNotUsed(X), int vtkNotUsed(Y), int vtkNotUsed(modify))
 {
@@ -154,7 +143,7 @@ int vtkDistanceRepresentation::ComputeComplexInteractionState(
   return this->InteractionState;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistanceRepresentation::StartWidgetInteraction(double e[2])
 {
   double pos[3];
@@ -179,7 +168,7 @@ void vtkDistanceRepresentation::StartComplexInteraction(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistanceRepresentation::WidgetInteraction(double e[2])
 {
   double pos[3];
@@ -201,7 +190,7 @@ void vtkDistanceRepresentation::ComplexInteraction(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistanceRepresentation::BuildRepresentation()
 {
   // Make sure that tolerance is consistent between handles and this representation
@@ -215,7 +204,7 @@ void vtkDistanceRepresentation::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDistanceRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
@@ -260,3 +249,4 @@ void vtkDistanceRepresentation::PrintSelf(ostream& os, vtkIndent indent)
     os << "(none)\n";
   }
 }
+VTK_ABI_NAMESPACE_END

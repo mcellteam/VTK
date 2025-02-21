@@ -1,26 +1,17 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLReader.h"
 
 #include "vtkArrayIteratorIncludes.h"
+#include "vtkBitArray.h"
 #include "vtkCallbackCommand.h"
+#include "vtkCharArray.h"
 #include "vtkDataArray.h"
 #include "vtkDataArraySelection.h"
 #include "vtkDataCompressor.h"
 #include "vtkDataSet.h"
 #include "vtkDataSetAttributes.h"
+#include "vtkErrorCode.h"
 #include "vtkInformation.h"
 #include "vtkInformationDoubleKey.h"
 #include "vtkInformationDoubleVectorKey.h"
@@ -38,6 +29,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkQuadratureSchemeDefinition.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkStringArray.h"
 #include "vtkXMLDataElement.h"
 #include "vtkXMLDataParser.h"
 #include "vtkXMLFileReadTester.h"
@@ -51,15 +43,18 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <cmath>
 #include <functional>
 #include <locale> // C++ locale
+#include <numeric>
 #include <sstream>
 #include <vector>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkXMLReader, ReaderErrorObserver, vtkCommand);
 vtkCxxSetObjectMacro(vtkXMLReader, ParserErrorObserver, vtkCommand);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #define CaseIdTypeMacro(type, size)                                                                \
   case type:                                                                                       \
     if (size == VTK_SIZEOF_ID_TYPE)                                                                \
@@ -87,7 +82,7 @@ vtkCxxSetObjectMacro(vtkXMLReader, ParserErrorObserver, vtkCommand);
     }                                                                                              \
     break
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void ReadStringVersion(const char* version, int& major, int& minor)
 {
   if (!version)
@@ -104,7 +99,6 @@ static void ReadStringVersion(const char* version, int& major, int& minor)
 
   for (s = begin; (s != end) && (*s != '.'); ++s)
   {
-    ;
   }
 
   if (s > begin)
@@ -128,7 +122,10 @@ static void ReadStringVersion(const char* version, int& major, int& minor)
     }
   }
 }
-//----------------------------------------------------------------------------
+
+vtkCxxSetObjectMacro(vtkXMLReader, InputArray, vtkCharArray);
+
+//------------------------------------------------------------------------------
 vtkXMLReader::vtkXMLReader()
 {
   this->FileName = nullptr;
@@ -137,6 +134,7 @@ vtkXMLReader::vtkXMLReader()
   this->StringStream = nullptr;
   this->ReadFromInputString = 0;
   this->InputString = "";
+  this->InputArray = nullptr;
   this->XMLParser = nullptr;
   this->ReaderErrorObserver = nullptr;
   this->ParserErrorObserver = nullptr;
@@ -144,6 +142,7 @@ vtkXMLReader::vtkXMLReader()
   this->PointDataArraySelection = vtkDataArraySelection::New();
   this->CellDataArraySelection = vtkDataArraySelection::New();
   this->ColumnArraySelection = vtkDataArraySelection::New();
+  this->TimeDataStringArray = vtkStringArray::New();
   this->InformationError = 0;
   this->DataError = 0;
   this->ReadError = 0;
@@ -158,6 +157,9 @@ vtkXMLReader::vtkXMLReader()
   this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
   this->CellDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
   this->ColumnArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
+  this->ActiveTimeDataArrayName = nullptr;
+  this->SetActiveTimeDataArrayName("TimeValue");
+
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 
@@ -182,7 +184,7 @@ vtkXMLReader::vtkXMLReader()
   this->InReadData = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLReader::~vtkXMLReader()
 {
   this->SetFileName(nullptr);
@@ -198,6 +200,9 @@ vtkXMLReader::~vtkXMLReader()
   this->CellDataArraySelection->Delete();
   this->PointDataArraySelection->Delete();
   this->ColumnArraySelection->Delete();
+  this->TimeDataStringArray->Delete();
+  this->SetActiveTimeDataArrayName(nullptr);
+  this->SetInputArray(nullptr);
   if (this->ReaderErrorObserver)
   {
     this->ReaderErrorObserver->Delete();
@@ -209,7 +214,7 @@ vtkXMLReader::~vtkXMLReader()
   delete[] this->TimeSteps;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -217,6 +222,7 @@ void vtkXMLReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "CellDataArraySelection: " << this->CellDataArraySelection << "\n";
   os << indent << "PointDataArraySelection: " << this->PointDataArraySelection << "\n";
   os << indent << "ColumnArraySelection: " << this->PointDataArraySelection << "\n";
+  os << indent << "TimeDataStringArray: " << this->TimeDataStringArray << "\n";
   if (this->Stream)
   {
     os << indent << "Stream: " << this->Stream << "\n";
@@ -226,24 +232,26 @@ void vtkXMLReader::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Stream: (none)\n";
   }
   os << indent << "TimeStep:" << this->TimeStep << "\n";
+  os << indent << "ActiveTimeDataArrayName:"
+     << (this->ActiveTimeDataArrayName ? this->ActiveTimeDataArrayName : "(null)") << "\n";
   os << indent << "NumberOfTimeSteps:" << this->NumberOfTimeSteps << "\n";
   os << indent << "TimeStepRange:(" << this->TimeStepRange[0] << "," << this->TimeStepRange[1]
      << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkXMLReader::GetOutputAsDataSet()
 {
   return this->GetOutputAsDataSet(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkXMLReader::GetOutputAsDataSet(int index)
 {
   return vtkDataSet::SafeDownCast(this->GetOutputDataObject(index));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Major version should be incremented when older readers can no longer
 // read files written for this reader. Minor versions are for added
 // functionality that can be safely ignored by older readers.
@@ -252,7 +260,47 @@ int vtkXMLReader::CanReadFileVersion(int major, int vtkNotUsed(minor))
   return (major > vtkXMLReaderMajorVersion) ? 0 : 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkXMLReader::SetInputString(const char* in)
+{
+  int len = 0;
+  if (in != nullptr)
+  {
+    len = static_cast<int>(strlen(in));
+  }
+  this->SetInputString(in, len);
+}
+
+//------------------------------------------------------------------------------
+void vtkXMLReader::SetBinaryInputString(const char* in, int len)
+{
+  this->SetInputString(in, len);
+}
+
+//------------------------------------------------------------------------------
+void vtkXMLReader::SetInputString(const char* in, int len)
+{
+  if (this->Debug)
+  {
+    vtkDebugMacro(<< "SetInputString len: " << len << " in: " << (in ? in : "(null)"));
+  }
+
+  if (!this->InputString.empty() && in && strncmp(in, this->InputString.c_str(), len) == 0)
+  {
+    return;
+  }
+
+  this->InputString.clear();
+
+  if (in && len > 0)
+  {
+    this->InputString.assign(in, len);
+  }
+
+  this->Modified();
+}
+
+//------------------------------------------------------------------------------
 int vtkXMLReader::OpenStream()
 {
   if (this->ReadFromInputString)
@@ -265,7 +313,7 @@ int vtkXMLReader::OpenStream()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::OpenVTKFile()
 {
   if (this->FileStream)
@@ -314,7 +362,7 @@ int vtkXMLReader::OpenVTKFile()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::OpenVTKString()
 {
   if (this->StringStream)
@@ -323,7 +371,8 @@ int vtkXMLReader::OpenVTKString()
     return 1;
   }
 
-  if (!this->Stream && this->InputString.compare("") == 0)
+  if (!this->Stream && this->InputString.empty() &&
+    (this->InputArray == nullptr || this->InputArray->GetNumberOfValues() == 0))
   {
     vtkErrorMacro("Input string not specified");
     return 0;
@@ -336,13 +385,32 @@ int vtkXMLReader::OpenVTKString()
   }
 
   // Open the string stream
-  this->StringStream = new std::istringstream(this->InputString);
-  if (!this->StringStream || !(*this->StringStream))
+  if (this->InputArray)
   {
-    vtkErrorMacro("Error opening string stream");
-    delete this->StringStream;
-    this->StringStream = nullptr;
-    return 0;
+    vtkDebugMacro(<< "Reading from InputArray");
+    std::string str(this->InputArray->GetPointer(0),
+      static_cast<size_t>(
+        this->InputArray->GetNumberOfTuples() * this->InputArray->GetNumberOfComponents()));
+    this->StringStream = new std::istringstream(str);
+    if (!this->StringStream || !(*this->StringStream))
+    {
+      vtkErrorMacro("Error opening string stream");
+      delete this->StringStream;
+      this->StringStream = nullptr;
+      return 0;
+    }
+  }
+  else if (!this->InputString.empty())
+  {
+    vtkDebugMacro(<< "Reading from InputString");
+    this->StringStream = new std::istringstream(this->InputString);
+    if (!this->StringStream || !(*this->StringStream))
+    {
+      vtkErrorMacro("Error opening string stream");
+      delete this->StringStream;
+      this->StringStream = nullptr;
+      return 0;
+    }
   }
 
   // Use the string stream.
@@ -351,7 +419,7 @@ int vtkXMLReader::OpenVTKString()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::CloseStream()
 {
   if (this->Stream)
@@ -368,7 +436,7 @@ void vtkXMLReader::CloseStream()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::CloseVTKFile()
 {
   if (!this->Stream)
@@ -383,7 +451,7 @@ void vtkXMLReader::CloseVTKFile()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::CloseVTKString()
 {
   if (!this->Stream)
@@ -399,7 +467,7 @@ void vtkXMLReader::CloseVTKString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::CreateXMLParser()
 {
   if (this->XMLParser)
@@ -410,7 +478,7 @@ void vtkXMLReader::CreateXMLParser()
   this->XMLParser = vtkXMLDataParser::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::DestroyXMLParser()
 {
   if (!this->XMLParser)
@@ -422,7 +490,7 @@ void vtkXMLReader::DestroyXMLParser()
   this->XMLParser = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetupCompressor(const char* type)
 {
   // Instantiate a compressor of the given type.
@@ -463,7 +531,7 @@ void vtkXMLReader::SetupCompressor(const char* type)
   compressor->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::ReadXMLInformation()
 {
   // only Parse if something has changed
@@ -474,6 +542,8 @@ int vtkXMLReader::ReadXMLInformation()
     {
       this->DestroyXMLParser();
     }
+
+    this->TimeDataArray = nullptr;
 
     // Open the input file.  If it fails, the error was already
     // reported by OpenStream.
@@ -512,26 +582,29 @@ int vtkXMLReader::ReadXMLInformation()
 
     if (this->FieldDataElement) // read the field data information
     {
+      this->TimeDataStringArray->Initialize();
       for (int i = 0; i < this->FieldDataElement->GetNumberOfNestedElements(); i++)
       {
         vtkXMLDataElement* eNested = this->FieldDataElement->GetNestedElement(i);
         const char* name = eNested->GetAttribute("Name");
-        if (name && strncmp(name, "TimeValue", 9) == 0)
+        if (name)
         {
           vtkAbstractArray* array = this->CreateArray(eNested);
-          array->SetNumberOfTuples(1);
-          if (!this->ReadArrayValues(eNested, 0, array, 0, 1))
+          if (array->IsNumeric())
           {
-            this->DataError = 1;
-          }
-          vtkDataArray* da = vtkDataArray::SafeDownCast(array);
-          if (da)
-          {
-            double val = da->GetComponent(0, 0);
-            vtkInformation* info = this->GetCurrentOutputInformation();
-            info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &val, 1);
-            double range[2] = { val, val };
-            info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), range, 2);
+            array->SetNumberOfTuples(1);
+            if (this->ReadArrayValues(eNested, 0, array, 0, 1))
+            {
+              this->TimeDataStringArray->InsertNextValue(name);
+              if (this->ActiveTimeDataArrayName && strcmp(name, this->ActiveTimeDataArrayName) == 0)
+              {
+                this->TimeDataArray = vtkDataArray::SafeDownCast(array);
+              }
+            }
+            else
+            {
+              this->DataError = 1;
+            }
           }
           array->Delete();
         }
@@ -546,7 +619,7 @@ int vtkXMLReader::ReadXMLInformation()
   return !this->ReadError;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::RequestInformation(vtkInformation* request,
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -559,26 +632,35 @@ int vtkXMLReader::RequestInformation(vtkInformation* request,
     vtkInformation* outInfo = outputVector->GetInformationObject(0);
     this->SetupOutputInformation(outInfo);
 
-    if (!outInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_RANGE()))
+    if (this->TimeDataArray && this->TimeDataArray->GetNumberOfTuples() >= 1)
     {
+      // this is set in ReadXMLInformation if this->ActiveTimeDataArrayName was selected.
+      double tvalue = this->TimeDataArray->GetComponent(0, 0);
+      double trange[2] = { tvalue, tvalue };
+      outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &tvalue, 1);
+      outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), trange, 2);
+    }
+    else if (this->GetNumberOfTimeSteps() > 0)
+    {
+      // note: I think is here to handle the case where multiple timesteps are
+      // provided in the same XML file.
+
       // this->NumberOfTimeSteps has been set during the
       // this->ReadXMLInformation()
       int numTimesteps = this->GetNumberOfTimeSteps();
       this->TimeStepRange[0] = 0;
       this->TimeStepRange[1] = (numTimesteps > 0 ? numTimesteps - 1 : 0);
-      if (numTimesteps != 0)
-      {
-        std::vector<double> timeSteps(numTimesteps);
-        for (int i = 0; i < numTimesteps; i++)
-        {
-          timeSteps[i] = i;
-        }
-        outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &timeSteps[0], numTimesteps);
-        double timeRange[2];
-        timeRange[0] = timeSteps[0];
-        timeRange[1] = timeSteps[numTimesteps - 1];
-        outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-      }
+      std::vector<double> timeSteps(numTimesteps);
+      std::iota(timeSteps.begin(), timeSteps.end(), 0.0);
+      double timeRange[2] = { timeSteps[0], timeSteps[numTimesteps - 1] };
+      outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), timeSteps.data(), numTimesteps);
+      outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+    }
+    else
+    {
+      this->TimeStepRange[0] = this->TimeStepRange[1] = 0;
+      outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+      outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
     }
   }
   else
@@ -589,7 +671,7 @@ int vtkXMLReader::RequestInformation(vtkInformation* request,
   return !this->InformationError;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -674,6 +756,11 @@ int vtkXMLReader::RequestData(vtkInformation* vtkNotUsed(request),
     {
       this->SetupEmptyOutput();
     }
+    if (this->DataError)
+    {
+      // There was an error reading data, but it can be many things so we use unknown error code.
+      this->SetErrorCode(vtkErrorCode::UnknownError);
+    }
   }
   else
   {
@@ -700,7 +787,7 @@ int vtkXMLReader::RequestData(vtkInformation* vtkNotUsed(request),
 
 namespace
 {
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class iterT>
 int vtkXMLDataReaderReadArrayValues(vtkXMLDataElement* da, vtkXMLDataParser* xmlparser,
   vtkIdType arrayIndex, iterT* iter, vtkIdType startIndex, vtkIdType numValues)
@@ -735,7 +822,53 @@ int vtkXMLDataReaderReadArrayValues(vtkXMLDataElement* da, vtkXMLDataParser* xml
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+template <>
+int vtkXMLDataReaderReadArrayValues(vtkXMLDataElement* da, vtkXMLDataParser* xmlparser,
+  vtkIdType arrayIndex, vtkBitArrayIterator* iter, vtkIdType startIndex, vtkIdType numValues)
+{
+  // We need to handle bit array separately because the "word" concept is a bit
+  // different: a word size is in bits rather than bytes...
+  if (!iter)
+  {
+    return 0;
+  }
+  vtkBitArray* array = vtkArrayDownCast<vtkBitArray>(iter->GetArray());
+  // Number of expected words:
+  int bitShift = startIndex % 8;
+  size_t numBytes = (numValues + bitShift + 7) / 8;
+  size_t startByteIndex = startIndex / 8;
+  int result;
+
+  vtkNew<vtkBitArray> tmp;
+  tmp->SetNumberOfValues(numValues + bitShift);
+  tmp->SetNumberOfComponents(array->GetNumberOfComponents());
+
+  void* data = tmp->GetVoidPointer(0);
+  if (da->GetAttribute("offset"))
+  {
+    vtkTypeInt64 offset = 0;
+    da->GetScalarAttribute("offset", offset);
+    result =
+      (xmlparser->ReadAppendedData(offset, data, startByteIndex, numBytes, VTK_BIT) == numBytes);
+  }
+  else
+  {
+    int isAscii = 1;
+    const char* format = da->GetAttribute("format");
+    if (format && (strcmp(format, "binary") == 0))
+    {
+      isAscii = 0;
+    }
+    result =
+      (xmlparser->ReadInlineData(da, isAscii, data, startByteIndex, numBytes, VTK_BIT) == numBytes);
+  }
+
+  array->InsertTuples(arrayIndex, numValues / tmp->GetNumberOfComponents(), bitShift, tmp);
+  return result;
+}
+
+//------------------------------------------------------------------------------
 template <>
 int vtkXMLDataReaderReadArrayValues(vtkXMLDataElement* da, vtkXMLDataParser* xmlparser,
   vtkIdType arrayIndex, vtkArrayIteratorTemplate<vtkStdString>* iter, vtkIdType startIndex,
@@ -773,7 +906,7 @@ int vtkXMLDataReaderReadArrayValues(vtkXMLDataElement* da, vtkXMLDataParser* xml
   int result = 1;
   vtkIdType inIndex = 0;
   vtkIdType outIndex = arrayIndex;
-  vtkStdString prev_string;
+  std::string prev_string;
   while (result && inIndex < actualNumValues)
   {
     size_t chars_read = 0;
@@ -799,7 +932,7 @@ int vtkXMLDataReaderReadArrayValues(vtkXMLDataElement* da, vtkXMLDataParser* xml
 
     while (ptr < end_ptr)
     {
-      vtkStdString temp_string = ptr; // will read in string until 0x0;
+      std::string temp_string = ptr; // will read in string until 0x0;
       ptr += temp_string.size() + 1;
       if (!prev_string.empty())
       {
@@ -832,7 +965,7 @@ int vtkXMLDataReaderReadArrayValues(vtkXMLDataElement* da, vtkXMLDataParser* xml
 
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::ReadArrayValues(vtkXMLDataElement* da, vtkIdType arrayIndex,
   vtkAbstractArray* array, vtkIdType startIndex, vtkIdType numValues, FieldType fieldType)
 {
@@ -844,6 +977,12 @@ int vtkXMLReader::ReadArrayValues(vtkXMLDataElement* da, vtkIdType arrayIndex,
   this->InReadData = 1;
   int result;
   vtkArrayIterator* iter = array->NewIterator();
+  if (arrayIndex + numValues > array->GetNumberOfValues())
+  {
+    vtkErrorMacro("Array has " << array->GetNumberOfValues() << " allocated elements, but "
+                               << arrayIndex + numValues << " were requested to be read");
+    return 0;
+  }
   switch (array->GetDataType())
   {
     vtkArrayIteratorTemplateMacro(result = vtkXMLDataReaderReadArrayValues(da, this->XMLParser,
@@ -869,7 +1008,18 @@ int vtkXMLReader::ReadArrayValues(vtkXMLDataElement* da, vtkIdType arrayIndex,
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkXMLReader::ReadArrayTuples(vtkXMLDataElement* da, vtkIdType arrayTupleIndex,
+  vtkAbstractArray* array, vtkIdType startTupleIndex, vtkIdType numTuples, FieldType fieldType)
+{
+  assert(array != nullptr);
+
+  int noc = array->GetNumberOfComponents();
+  return this->ReadArrayValues(
+    da, noc * arrayTupleIndex, array, noc * startTupleIndex, noc * numTuples, fieldType);
+}
+
+//------------------------------------------------------------------------------
 void vtkXMLReader::ReadXMLData()
 {
   // Initialize the output's data.
@@ -879,7 +1029,7 @@ void vtkXMLReader::ReadXMLData()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::ReadVTKFile(vtkXMLDataElement* eVTKFile)
 {
   // Check if the file version is one we support.
@@ -924,7 +1074,7 @@ int vtkXMLReader::ReadVTKFile(vtkXMLDataElement* eVTKFile)
   return this->ReadPrimaryElement(ePrimary);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::ReadPrimaryElement(vtkXMLDataElement* ePrimary)
 {
   int numTimeSteps =
@@ -948,7 +1098,7 @@ int vtkXMLReader::ReadPrimaryElement(vtkXMLDataElement* ePrimary)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetupOutputData()
 {
   // Initialize the output.
@@ -989,7 +1139,7 @@ void vtkXMLReader::ReadFieldData()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Methods used for deserializing vtkInformation. ----------------------------
 namespace
 {
@@ -1094,7 +1244,7 @@ bool readVectorInfo(KeyType* key, vtkInformation* info, vtkXMLDataElement* eleme
     }
     values.push_back(value);
   }
-  info->Set(key, &values[0], length);
+  info->Set(key, values.data(), length);
 
   return true;
 }
@@ -1137,10 +1287,10 @@ bool readVectorInfo(
 }
 
 } // end anon namespace
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::CreateInformationKey(vtkXMLDataElement* element, vtkInformation* info)
 {
   const char* name = element->GetAttribute("name");
@@ -1273,7 +1423,7 @@ int vtkXMLReader::CreateInformationKey(vtkXMLDataElement* element, vtkInformatio
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXMLReader::ReadInformation(vtkXMLDataElement* infoRoot, vtkInformation* info)
 {
   int numChildren = infoRoot->GetNumberOfNestedElements();
@@ -1294,7 +1444,36 @@ bool vtkXMLReader::ReadInformation(vtkXMLDataElement* infoRoot, vtkInformation* 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkXMLReader::MarkIdTypeArrays(vtkXMLDataElement* eDSA)
+{
+  auto gidArrayName = eDSA->GetAttribute(
+    vtkDataSetAttributes::GetAttributeTypeAsString(vtkDataSetAttributes::GLOBALIDS));
+  auto pidArrayName = eDSA->GetAttribute(
+    vtkDataSetAttributes::GetAttributeTypeAsString(vtkDataSetAttributes::PEDIGREEIDS));
+
+  if (gidArrayName == nullptr && pidArrayName == nullptr)
+  {
+    return;
+  }
+  for (int i = 0; i < eDSA->GetNumberOfNestedElements(); i++)
+  {
+    auto eNested = eDSA->GetNestedElement(i);
+    if (auto ename = eNested->GetAttribute("Name"))
+    {
+      if ((gidArrayName && strcmp(ename, gidArrayName) == 0) ||
+        (pidArrayName && strcmp(ename, pidArrayName) == 0))
+      {
+        if (eNested->GetAttribute("IdType") == nullptr)
+        {
+          eNested->SetIntAttribute("IdType", 1);
+        }
+      }
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 int vtkXMLReader::GetLocalDataType(vtkXMLDataElement* da, int dataType)
 {
   int idType;
@@ -1320,7 +1499,7 @@ int vtkXMLReader::GetLocalDataType(vtkXMLDataElement* da, int dataType)
   return dataType;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAbstractArray* vtkXMLReader::CreateArray(vtkXMLDataElement* da)
 {
   int dataType = 0;
@@ -1345,7 +1524,7 @@ vtkAbstractArray* vtkXMLReader::CreateArray(vtkXMLDataElement* da)
   // determine what component names have been saved in the file.
   const char* compName = nullptr;
   std::ostringstream buff;
-  for (int i = 0; i < components && i < 10; ++i)
+  for (int i = 0; i < components; ++i)
   {
     // get the component names
     buff << "ComponentName" << i;
@@ -1375,7 +1554,7 @@ vtkAbstractArray* vtkXMLReader::CreateArray(vtkXMLDataElement* da)
   return array;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::CanReadFile(const char* name)
 {
   // First make sure the file exists.  This prevents an empty file
@@ -1401,16 +1580,28 @@ int vtkXMLReader::CanReadFile(const char* name)
   }
 
   tester->Delete();
+  // sizeof(long) == 4 on _WIN32, check for Expat config that uses 'long long' instead
+  if (VTK_SIZEOF_LONG == 4 && result)
+  {
+    auto fileSize = fs.st_size;
+    if (fileSize > VTK_LONG_MAX && !vtkXMLParser::hasLargeOffsets())
+    {
+      vtkErrorMacro("Unable to read file, Expat must be configured with XML_LARGE_SIZE to read "
+                    "files > 2Gb: "
+        << name);
+      result = 0;
+    }
+  }
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::CanReadFileWithDataType(const char* dsname)
 {
   return (dsname && strcmp(dsname, this->GetDataSetName()) == 0) ? 1 : 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::CanReadFileVersionString(const char* version)
 {
   int major = 0;
@@ -1419,7 +1610,7 @@ int vtkXMLReader::CanReadFileVersionString(const char* version)
   return this->CanReadFileVersion(major, minor);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::IntersectExtents(int* extent1, int* extent2, int* result)
 {
   if ((extent1[0] > extent2[1]) || (extent1[2] > extent2[3]) || (extent1[4] > extent2[5]) ||
@@ -1430,29 +1621,29 @@ int vtkXMLReader::IntersectExtents(int* extent1, int* extent2, int* result)
   }
 
   // Get the intersection of the extents.
-  result[0] = this->Max(extent1[0], extent2[0]);
-  result[1] = this->Min(extent1[1], extent2[1]);
-  result[2] = this->Max(extent1[2], extent2[2]);
-  result[3] = this->Min(extent1[3], extent2[3]);
-  result[4] = this->Max(extent1[4], extent2[4]);
-  result[5] = this->Min(extent1[5], extent2[5]);
+  result[0] = std::max(extent1[0], extent2[0]);
+  result[1] = std::min(extent1[1], extent2[1]);
+  result[2] = std::max(extent1[2], extent2[2]);
+  result[3] = std::min(extent1[3], extent2[3]);
+  result[4] = std::max(extent1[4], extent2[4]);
+  result[5] = std::min(extent1[5], extent2[5]);
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::Min(int a, int b)
 {
-  return (a < b) ? a : b;
+  return std::min(a, b);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::Max(int a, int b)
 {
-  return (a > b) ? a : b;
+  return std::max(a, b);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::ComputePointDimensions(int* extent, int* dimensions)
 {
   dimensions[0] = extent[1] - extent[0] + 1;
@@ -1460,7 +1651,7 @@ void vtkXMLReader::ComputePointDimensions(int* extent, int* dimensions)
   dimensions[2] = extent[5] - extent[4] + 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::ComputePointIncrements(int* extent, vtkIdType* increments)
 {
   increments[0] = 1;
@@ -1468,7 +1659,7 @@ void vtkXMLReader::ComputePointIncrements(int* extent, vtkIdType* increments)
   increments[2] = increments[1] * (extent[3] - extent[2] + 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::ComputeCellDimensions(int* extent, int* dimensions)
 {
   // For structured cells, axes that are empty of cells are treated as
@@ -1487,7 +1678,7 @@ void vtkXMLReader::ComputeCellDimensions(int* extent, int* dimensions)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::ComputeCellIncrements(int* extent, vtkIdType* increments)
 {
   // For structured cells, axes that are empty of cells do not
@@ -1507,7 +1698,7 @@ void vtkXMLReader::ComputeCellIncrements(int* extent, vtkIdType* increments)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLReader::GetStartTuple(int* extent, vtkIdType* increments, int i, int j, int k)
 {
   vtkIdType offset = (i - extent[0]) * increments[0];
@@ -1516,7 +1707,7 @@ vtkIdType vtkXMLReader::GetStartTuple(int* extent, vtkIdType* increments, int i,
   return offset;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::ReadAttributeIndices(vtkXMLDataElement* eDSA, vtkDataSetAttributes* dsa)
 {
   // Setup attribute indices.
@@ -1530,7 +1721,7 @@ void vtkXMLReader::ReadAttributeIndices(vtkXMLDataElement* eDSA, vtkDataSetAttri
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char** vtkXMLReader::CreateStringArray(int numStrings)
 {
   char** strings = new char*[numStrings];
@@ -1541,7 +1732,7 @@ char** vtkXMLReader::CreateStringArray(int numStrings)
   return strings;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::DestroyStringArray(int numStrings, char** strings)
 {
   for (int i = 0; i < numStrings; ++i)
@@ -1551,7 +1742,7 @@ void vtkXMLReader::DestroyStringArray(int numStrings, char** strings)
   delete[] strings;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetDataArraySelections(vtkXMLDataElement* eDSA, vtkDataArraySelection* sel)
 {
   if (!eDSA)
@@ -1584,7 +1775,7 @@ void vtkXMLReader::SetDataArraySelections(vtkXMLDataElement* eDSA, vtkDataArrayS
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::SetFieldDataInfo(
   vtkXMLDataElement* eDSA, int association, vtkIdType numTuples, vtkInformationVector*(&infoVector))
 {
@@ -1691,45 +1882,45 @@ int vtkXMLReader::SetFieldDataInfo(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::PointDataArrayIsEnabled(vtkXMLDataElement* ePDA)
 {
   const char* name = ePDA->GetAttribute("Name");
   return (name && this->PointDataArraySelection->ArrayIsEnabled(name));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::CellDataArrayIsEnabled(vtkXMLDataElement* eCDA)
 {
   const char* name = eCDA->GetAttribute("Name");
   return (name && this->CellDataArraySelection->ArrayIsEnabled(name));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SelectionModifiedCallback(vtkObject*, unsigned long, void* clientdata, void*)
 {
   static_cast<vtkXMLReader*>(clientdata)->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::GetNumberOfPointArrays()
 {
   return this->PointDataArraySelection->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLReader::GetPointArrayName(int index)
 {
   return this->PointDataArraySelection->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::GetPointArrayStatus(const char* name)
 {
   return this->PointDataArraySelection->ArrayIsEnabled(name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetPointArrayStatus(const char* name, int status)
 {
   if (status)
@@ -1742,25 +1933,25 @@ void vtkXMLReader::SetPointArrayStatus(const char* name, int status)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::GetNumberOfCellArrays()
 {
   return this->CellDataArraySelection->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLReader::GetCellArrayName(int index)
 {
   return this->CellDataArraySelection->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::GetCellArrayStatus(const char* name)
 {
   return this->CellDataArraySelection->ArrayIsEnabled(name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetCellArrayStatus(const char* name, int status)
 {
   if (status)
@@ -1773,25 +1964,25 @@ void vtkXMLReader::SetCellArrayStatus(const char* name, int status)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::GetNumberOfColumnArrays()
 {
   return this->ColumnArraySelection->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkXMLReader::GetColumnArrayName(int index)
 {
   return this->ColumnArraySelection->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::GetColumnArrayStatus(const char* name)
 {
   return this->ColumnArraySelection->ArrayIsEnabled(name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetColumnArrayStatus(const char* name, int status)
 {
   if (status)
@@ -1804,14 +1995,30 @@ void vtkXMLReader::SetColumnArrayStatus(const char* name, int status)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int vtkXMLReader::GetNumberOfTimeDataArrays() const
+{
+  return static_cast<int>(this->TimeDataStringArray->GetNumberOfValues());
+}
+
+//------------------------------------------------------------------------------
+const char* vtkXMLReader::GetTimeDataArray(int idx) const
+{
+  if (idx < 0 || idx > static_cast<int>(this->TimeDataStringArray->GetNumberOfValues()))
+  {
+    vtkErrorMacro("Invalid index for 'GetTimeDataArray': " << idx);
+  }
+  return this->TimeDataStringArray->GetValue(idx).c_str();
+}
+
+//------------------------------------------------------------------------------
 void vtkXMLReader::GetProgressRange(float* range)
 {
   range[0] = this->ProgressRange[0];
   range[1] = this->ProgressRange[1];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetProgressRange(const float range[2], int curStep, int numSteps)
 {
   float stepSize = (range[1] - range[0]) / numSteps;
@@ -1820,7 +2027,7 @@ void vtkXMLReader::SetProgressRange(const float range[2], int curStep, int numSt
   this->UpdateProgressDiscrete(this->ProgressRange[0]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetProgressRange(const float range[2], int curStep, const float* fractions)
 {
   float width = range[1] - range[0];
@@ -1829,13 +2036,13 @@ void vtkXMLReader::SetProgressRange(const float range[2], int curStep, const flo
   this->UpdateProgressDiscrete(this->ProgressRange[0]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::UpdateProgressDiscrete(float progress)
 {
   if (!this->AbortExecute)
   {
     // Round progress to nearest 100th.
-    float rounded = static_cast<float>(int((progress * 100) + 0.5f)) / 100.f;
+    float rounded = std::round(progress * 100) / 100.f;
     if (this->GetProgress() != rounded)
     {
       this->UpdateProgress(rounded);
@@ -1843,7 +2050,7 @@ void vtkXMLReader::UpdateProgressDiscrete(float progress)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkXMLReader::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -1892,7 +2099,7 @@ vtkTypeBool vtkXMLReader::ProcessRequest(
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLReader::SetNumberOfTimeSteps(int num)
 {
   if (num && (this->NumberOfTimeSteps != num))
@@ -1905,7 +2112,7 @@ void vtkXMLReader::SetNumberOfTimeSteps(int num)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLReader::IsTimeStepInArray(int timestep, int* timesteps, int length)
 {
   for (int i = 0; i < length; i++)
@@ -1918,14 +2125,15 @@ int vtkXMLReader::IsTimeStepInArray(int timestep, int* timesteps, int length)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkXMLReader::GetCurrentOutput()
 {
   return this->CurrentOutput;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInformation* vtkXMLReader::GetCurrentOutputInformation()
 {
   return this->CurrentOutputInformation;
 }
+VTK_ABI_NAMESPACE_END

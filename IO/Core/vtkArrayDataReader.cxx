@@ -1,25 +1,11 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkArrayDataReader.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkArrayDataReader.h"
 
+#include "vtkArray.h"
+#include "vtkArrayData.h"
 #include "vtkArrayReader.h"
 #include "vtkObjectFactory.h"
 #include "vtkSmartPointer.h"
@@ -28,6 +14,7 @@
 #include <sstream>
 #include <stdexcept>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkArrayDataReader);
 
 vtkArrayDataReader::vtkArrayDataReader()
@@ -69,7 +56,7 @@ int vtkArrayDataReader::RequestData(
     vtkArrayData* array_data = nullptr;
     if (this->ReadFromInputString)
     {
-      array_data = this->Read(this->InputString);
+      array_data = vtkArrayDataReader::Read(this->InputString);
     }
     else
     {
@@ -78,7 +65,7 @@ int vtkArrayDataReader::RequestData(
 
       vtksys::ifstream file(this->FileName, std::ios::binary);
 
-      array_data = this->Read(file);
+      array_data = vtkArrayDataReader::Read(file);
     }
     if (!array_data)
       throw std::runtime_error("Error reading vtkArrayData.");
@@ -140,3 +127,4 @@ vtkArrayData* vtkArrayDataReader::Read(istream& stream)
 
   return nullptr;
 }
+VTK_ABI_NAMESPACE_END

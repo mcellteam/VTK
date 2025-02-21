@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkView.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 /**
  * @class   vtkView
  * @brief   The superclass for all views.
@@ -43,7 +27,9 @@
 
 #include "vtkObject.h"
 #include "vtkViewsCoreModule.h" // For export macro
+#include "vtkWrappingHints.h"   // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkAlgorithmOutput;
 class vtkCommand;
 class vtkDataObject;
@@ -51,7 +37,7 @@ class vtkDataRepresentation;
 class vtkSelection;
 class vtkViewTheme;
 
-class VTKVIEWSCORE_EXPORT vtkView : public vtkObject
+class VTKVIEWSCORE_EXPORT VTK_MARSHALAUTO vtkView : public vtkObject
 {
 public:
   static vtkView* New();
@@ -153,7 +139,7 @@ public:
    */
   vtkCommand* GetObserver();
 
-  //@{
+  ///@{
   /**
    * A ptr to an instance of ViewProgressEventCallData is provided in the call
    * data when vtkCommand::ViewProgressEvent is fired.
@@ -162,7 +148,7 @@ public:
   {
     const char* Message;
     double Progress;
-    //@}
+    ///@}
 
   public:
     ViewProgressEventCallData(const char* msg, double progress)
@@ -225,7 +211,7 @@ protected:
   virtual void AddRepresentationInternal(vtkDataRepresentation* vtkNotUsed(rep)) {}
   virtual void RemoveRepresentationInternal(vtkDataRepresentation* vtkNotUsed(rep)) {}
 
-  //@{
+  ///@{
   /**
    * True if the view takes a single representation that should be reused on
    * Add/SetRepresentationFromInput(Connection) calls. Default is off.
@@ -234,7 +220,7 @@ protected:
   vtkGetMacro(ReuseSingleRepresentation, bool);
   vtkBooleanMacro(ReuseSingleRepresentation, bool);
   bool ReuseSingleRepresentation;
-  //@}
+  ///@}
 
 private:
   vtkView(const vtkView&) = delete;
@@ -251,4 +237,5 @@ private:
   vtkInternal* Internal;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

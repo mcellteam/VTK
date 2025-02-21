@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkLineWidget.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkLineWidget.h"
 
 #include "vtkActor.h"
@@ -36,9 +24,10 @@
 #include "vtkRenderer.h"
 #include "vtkSphereSource.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLineWidget);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This class is used to coordinate the interaction between the point widget
 // at the center of the line and the line widget. When the line is selected
 // (as compared to the handles), a point widget appears at the selection
@@ -62,7 +51,7 @@ public:
   vtkPointWidget* PointWidget;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This class is used to coordinate the interaction between the point widget
 // (point 1) and the line widget.
 class vtkPW1Callback : public vtkCommand
@@ -84,7 +73,7 @@ public:
   vtkPointWidget* PointWidget;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This class is used to coordinate the interaction between the point widget
 // (point 2) and the line widget.
 class vtkPW2Callback : public vtkCommand
@@ -106,7 +95,7 @@ public:
   vtkPointWidget* PointWidget;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Begin the definition of the vtkLineWidget methods
 //
 vtkLineWidget::vtkLineWidget()
@@ -205,7 +194,7 @@ vtkLineWidget::vtkLineWidget()
   this->CurrentPointWidget = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLineWidget::~vtkLineWidget()
 {
   this->LineActor->Delete();
@@ -241,7 +230,7 @@ vtkLineWidget::~vtkLineWidget()
   this->PW2Callback->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::SetEnabled(int enabling)
 {
   if (!this->Interactor)
@@ -341,7 +330,7 @@ void vtkLineWidget::SetEnabled(int enabling)
   this->Interactor->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::RegisterPickers()
 {
   vtkPickingManager* pm = this->GetPickingManager();
@@ -353,7 +342,7 @@ void vtkLineWidget::RegisterPickers()
   pm->AddPicker(this->LinePicker, this);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::ProcessEvents(
   vtkObject* vtkNotUsed(object), unsigned long event, void* clientdata, void* vtkNotUsed(calldata))
 {
@@ -386,7 +375,7 @@ void vtkLineWidget::ProcessEvents(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -451,7 +440,7 @@ void vtkLineWidget::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Point 2: (" << pt2[0] << ", " << pt2[1] << ", " << pt2[2] << ")\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::BuildRepresentation()
 {
   // int res = this->LineSource->GetResolution();
@@ -462,7 +451,7 @@ void vtkLineWidget::BuildRepresentation()
   this->HandleGeometry[1]->SetCenter(pt2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::SizeHandles()
 {
   double radius = this->vtk3DWidget::SizeHandles(1.0);
@@ -470,7 +459,7 @@ void vtkLineWidget::SizeHandles()
   this->HandleGeometry[1]->SetRadius(radius);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLineWidget::HighlightHandle(vtkProp* prop)
 {
   // first unhighlight anything picked
@@ -493,7 +482,7 @@ int vtkLineWidget::HighlightHandle(vtkProp* prop)
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLineWidget::ForwardEvent(unsigned long event)
 {
   if (!this->CurrentPointWidget)
@@ -501,12 +490,12 @@ int vtkLineWidget::ForwardEvent(unsigned long event)
     return 0;
   }
 
-  this->CurrentPointWidget->ProcessEvents(this, event, this->CurrentPointWidget, nullptr);
+  vtkPointWidget::ProcessEvents(this, event, this->CurrentPointWidget, nullptr);
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // assumed current handle is set
 void vtkLineWidget::EnablePointWidget()
 {
@@ -553,7 +542,7 @@ void vtkLineWidget::EnablePointWidget()
   this->CurrentPointWidget->On();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // assumed current handle is set
 void vtkLineWidget::DisablePointWidget()
 {
@@ -564,7 +553,7 @@ void vtkLineWidget::DisablePointWidget()
   this->CurrentPointWidget = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::HighlightHandles(int highlight)
 {
   if (highlight)
@@ -581,7 +570,7 @@ void vtkLineWidget::HighlightHandles(int highlight)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::HighlightLine(int highlight)
 {
   if (highlight)
@@ -596,7 +585,7 @@ void vtkLineWidget::HighlightLine(int highlight)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::OnLeftButtonDown()
 {
   int forward = 0;
@@ -653,7 +642,7 @@ void vtkLineWidget::OnLeftButtonDown()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::OnLeftButtonUp()
 {
   if (this->State == vtkLineWidget::Outside || this->State == vtkLineWidget::Start)
@@ -679,7 +668,7 @@ void vtkLineWidget::OnLeftButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::OnMiddleButtonDown()
 {
   int forward = 0;
@@ -738,7 +727,7 @@ void vtkLineWidget::OnMiddleButtonDown()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::OnMiddleButtonUp()
 {
   if (this->State == vtkLineWidget::Outside || this->State == vtkLineWidget::Start)
@@ -764,7 +753,7 @@ void vtkLineWidget::OnMiddleButtonUp()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::OnRightButtonDown()
 {
   int X = this->Interactor->GetEventPosition()[0];
@@ -811,7 +800,7 @@ void vtkLineWidget::OnRightButtonDown()
   this->Interactor->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::OnRightButtonUp()
 {
   if (this->State == vtkLineWidget::Outside || this->State == vtkLineWidget::Start)
@@ -831,7 +820,7 @@ void vtkLineWidget::OnRightButtonUp()
   this->Interactor->Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::OnMouseMove()
 {
   // See whether we're active
@@ -886,7 +875,7 @@ void vtkLineWidget::OnMouseMove()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::Scale(double* p1, double* p2, int vtkNotUsed(X), int Y)
 {
   // Get the motion vector
@@ -930,7 +919,7 @@ void vtkLineWidget::Scale(double* p1, double* p2, int vtkNotUsed(X), int Y)
   this->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::CreateDefaultProperties()
 {
   // Handle properties
@@ -954,7 +943,7 @@ void vtkLineWidget::CreateDefaultProperties()
   this->SelectedLineProperty->SetLineWidth(2.0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::PlaceWidget(double bds[6])
 {
   int i;
@@ -992,7 +981,7 @@ void vtkLineWidget::PlaceWidget(double bds[6])
   this->SizeHandles();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::SetPoint1(double x, double y, double z)
 {
   double xyz[3];
@@ -1009,7 +998,7 @@ void vtkLineWidget::SetPoint1(double x, double y, double z)
   this->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::SetPoint2(double x, double y, double z)
 {
   double xyz[3];
@@ -1026,7 +1015,7 @@ void vtkLineWidget::SetPoint2(double x, double y, double z)
   this->BuildRepresentation();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::SetLinePosition(double x[3])
 {
   double p1[3], p2[3], v[3];
@@ -1061,7 +1050,7 @@ void vtkLineWidget::SetLinePosition(double x[3])
   this->LastPosition[2] = x[2];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::ClampPosition(double x[3])
 {
   for (int i = 0; i < 3; i++)
@@ -1077,7 +1066,7 @@ void vtkLineWidget::ClampPosition(double x[3])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLineWidget::InBounds(double x[3])
 {
   for (int i = 0; i < 3; i++)
@@ -1090,8 +1079,9 @@ int vtkLineWidget::InBounds(double x[3])
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLineWidget::GetPolyData(vtkPolyData* pd)
 {
   pd->ShallowCopy(this->LineSource->GetOutput());
 }
+VTK_ABI_NAMESPACE_END

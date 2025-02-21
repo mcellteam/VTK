@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExtractPoints.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See LICENSE file for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExtractPoints
  * @brief   extract points within an implicit function
@@ -59,13 +47,14 @@
 #include "vtkFiltersPointsModule.h" // For export macro
 #include "vtkPointCloudFilter.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkImplicitFunction;
 class vtkPointSet;
 
 class VTKFILTERSPOINTS_EXPORT vtkExtractPoints : public vtkPointCloudFilter
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiating, obtaining type information, and
    * printing information.
@@ -73,17 +62,17 @@ public:
   static vtkExtractPoints* New();
   vtkTypeMacro(vtkExtractPoints, vtkPointCloudFilter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the implicit function for inside/outside checks.
    */
   virtual void SetImplicitFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(ImplicitFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Boolean controls whether to extract points that are inside of implicit
    * function (ExtractInside == true) or outside of implicit function
@@ -92,7 +81,7 @@ public:
   vtkSetMacro(ExtractInside, bool);
   vtkGetMacro(ExtractInside, bool);
   vtkBooleanMacro(ExtractInside, bool);
-  //@}
+  ///@}
 
   /**
    * Return the MTime taking into account changes to the implicit function
@@ -115,4 +104,5 @@ private:
   void operator=(const vtkExtractPoints&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

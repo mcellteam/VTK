@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkAbstractMapper.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAbstractMapper.h"
 
 #include "vtkAbstractArray.h"
@@ -23,7 +11,9 @@
 #include "vtkPlanes.h"
 #include "vtkPointData.h"
 #include "vtkTimerLog.h"
+#include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkCxxSetObjectMacro(vtkAbstractMapper, ClippingPlanes, vtkPlaneCollection);
 
 // Construct object.
@@ -114,6 +104,40 @@ void vtkAbstractMapper::SetClippingPlanes(vtkPlanes* planes)
   }
 }
 
+//------------------------------------------------------------------------------
+vtkUnsignedCharArray* vtkAbstractMapper::GetGhostArray(
+  vtkDataSet* input, int scalarMode, unsigned char& ghostsToSkip)
+{
+  switch (scalarMode)
+  {
+    case VTK_SCALAR_MODE_DEFAULT:
+    {
+      vtkUnsignedCharArray* ghosts = input->GetPointData()->GetGhostArray();
+      if (!ghosts)
+      {
+        ghostsToSkip = input->GetCellData()->GetGhostsToSkip();
+        return input->GetCellData()->GetGhostArray();
+      }
+      ghostsToSkip = input->GetPointData()->GetGhostsToSkip();
+      return ghosts;
+    }
+    case VTK_SCALAR_MODE_USE_POINT_DATA:
+    case VTK_SCALAR_MODE_USE_POINT_FIELD_DATA:
+      ghostsToSkip = input->GetPointData()->GetGhostsToSkip();
+      return input->GetPointData()->GetGhostArray();
+    case VTK_SCALAR_MODE_USE_CELL_DATA:
+    case VTK_SCALAR_MODE_USE_CELL_FIELD_DATA:
+      ghostsToSkip = input->GetCellData()->GetGhostsToSkip();
+      return input->GetCellData()->GetGhostArray();
+    case VTK_SCALAR_MODE_USE_FIELD_DATA:
+      ghostsToSkip = input->GetFieldData()->GetGhostsToSkip();
+      return input->GetFieldData()->GetGhostArray();
+    default:
+      return nullptr;
+  }
+}
+
+//------------------------------------------------------------------------------
 vtkDataArray* vtkAbstractMapper::GetScalars(vtkDataSet* input, int scalarMode, int arrayAccessMode,
   int arrayId, const char* arrayName, int& cellFlag)
 {
@@ -123,6 +147,7 @@ vtkDataArray* vtkAbstractMapper::GetScalars(vtkDataSet* input, int scalarMode, i
   return scalars;
 }
 
+//------------------------------------------------------------------------------
 vtkAbstractArray* vtkAbstractMapper::GetAbstractScalars(vtkDataSet* input, int scalarMode,
   int arrayAccessMode, int arrayId, const char* arrayName, int& cellFlag)
 {
@@ -235,3 +260,4 @@ int vtkAbstractMapper::GetNumberOfClippingPlanes()
 
   return n;
 }
+VTK_ABI_NAMESPACE_END

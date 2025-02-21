@@ -1,8 +1,6 @@
-/*-------------------------------------------------------------------------
-  Copyright 2009 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2009 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "EasyView.h"
 #include "ui_EasyView.h"
@@ -10,7 +8,7 @@
 // VTK includes
 #include "vtkGenericOpenGLRenderWindow.h"
 #include <vtkAnnotationLink.h>
-#include <vtkDataObjectToTable.h>
+#include <vtkAttributeDataToTableFilter.h>
 #include <vtkDataRepresentation.h>
 #include <vtkGraphLayoutView.h>
 #include <vtkQtTableView.h>
@@ -39,7 +37,7 @@ EasyView::EasyView()
   this->ui = new Ui_EasyView;
   this->ui->setupUi(this);
   vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
-  this->ui->vtkGraphViewWidget->SetRenderWindow(renderWindow);
+  this->ui->vtkGraphViewWidget->setRenderWindow(renderWindow);
 
   this->XMLReader = vtkSmartPointer<vtkXMLTreeReader>::New();
   this->GraphView = vtkSmartPointer<vtkGraphLayoutView>::New();
@@ -58,8 +56,8 @@ EasyView::EasyView()
   this->ui->columnFrame->layout()->addWidget(this->ColumnView->GetWidget());
 
   // Graph View needs to get my render window
-  this->GraphView->SetInteractor(this->ui->vtkGraphViewWidget->GetInteractor());
-  this->GraphView->SetRenderWindow(this->ui->vtkGraphViewWidget->GetRenderWindow());
+  this->GraphView->SetInteractor(this->ui->vtkGraphViewWidget->interactor());
+  this->GraphView->SetRenderWindow(this->ui->vtkGraphViewWidget->renderWindow());
 
   // Set up the theme on the graph view :)
   vtkViewTheme* theme = vtkViewTheme::CreateNeonTheme();
@@ -126,7 +124,7 @@ void EasyView::slotOpenXMLFile()
   }
 
   // Create XML reader
-  this->XMLReader->SetFileName(fileName.toLatin1());
+  this->XMLReader->SetFileName(fileName.toUtf8().data());
   this->XMLReader->ReadTagNameOff();
   this->XMLReader->Update();
 
@@ -158,9 +156,9 @@ void EasyView::slotOpenXMLFile()
   this->ColumnView->SetRepresentationFromInputConnection(this->XMLReader->GetOutputPort());
 
   // Extract a table and give to table view
-  VTK_CREATE(vtkDataObjectToTable, toTable);
+  VTK_CREATE(vtkAttributeDataToTableFilter, toTable);
   toTable->SetInputConnection(this->XMLReader->GetOutputPort());
-  toTable->SetFieldType(vtkDataObjectToTable::VERTEX_DATA);
+  toTable->SetFieldAssociation(vtkDataObject::FIELD_ASSOCIATION_VERTICES);
   this->TableView->SetRepresentationFromInputConnection(toTable->GetOutputPort());
 
   this->SetupAnnotationLink();

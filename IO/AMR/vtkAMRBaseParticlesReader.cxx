@@ -1,17 +1,5 @@
-/*=========================================================================
-
- Program:   Visualization Toolkit
- Module:    vtkAMRBaseParticlesReader.cxx
-
- Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
- All rights reserved.
- See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
- This software is distributed WITHOUT ANY WARRANTY; without even
- the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- PURPOSE.  See the above copyright notice for more information.
-
- =========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkAMRBaseParticlesReader.h"
 #include "vtkCallbackCommand.h"
 #include "vtkDataArraySelection.h"
@@ -24,7 +12,14 @@
 
 #include <cassert>
 
-vtkAMRBaseParticlesReader::vtkAMRBaseParticlesReader() = default;
+VTK_ABI_NAMESPACE_BEGIN
+vtkCxxSetObjectMacro(vtkAMRBaseParticlesReader, Controller, vtkMultiProcessController);
+
+vtkAMRBaseParticlesReader::vtkAMRBaseParticlesReader()
+{
+  this->FileName = nullptr;
+  this->Controller = nullptr;
+}
 
 //------------------------------------------------------------------------------
 vtkAMRBaseParticlesReader::~vtkAMRBaseParticlesReader()
@@ -32,6 +27,11 @@ vtkAMRBaseParticlesReader::~vtkAMRBaseParticlesReader()
   this->ParticleDataArraySelection->RemoveObserver(this->SelectionObserver);
   this->SelectionObserver->Delete();
   this->ParticleDataArraySelection->Delete();
+
+  delete[] this->FileName;
+  this->FileName = nullptr;
+
+  this->SetController(nullptr);
 }
 
 //------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ int vtkAMRBaseParticlesReader::GetNumberOfParticleArrays()
 //------------------------------------------------------------------------------
 const char* vtkAMRBaseParticlesReader::GetParticleArrayName(int index)
 {
-  assert("pre: array inded out-of-bounds!" && (index >= 0) &&
+  assert("pre: array index out-of-bounds!" && (index >= 0) &&
     (index < this->ParticleDataArraySelection->GetNumberOfArrays()));
 
   return this->ParticleDataArraySelection->GetArrayName(index);
@@ -102,7 +102,7 @@ void vtkAMRBaseParticlesReader::Initialize()
   this->Initialized = false;
   this->InitialRequest = true;
   this->FileName = nullptr;
-  this->Controller = vtkMultiProcessController::GetGlobalController();
+  this->SetController(vtkMultiProcessController::GetGlobalController());
 
   for (int i = 0; i < 3; ++i)
   {
@@ -155,15 +155,11 @@ void vtkAMRBaseParticlesReader::SetFileName(const char* fileName)
 //------------------------------------------------------------------------------
 bool vtkAMRBaseParticlesReader::IsParallel()
 {
-  if (this->Controller != nullptr && this->Controller->GetNumberOfProcesses() > 1)
-  {
-    return true;
-  }
-  return false;
+  return this->Controller != nullptr && this->Controller->GetNumberOfProcesses() > 1;
 }
 
 //------------------------------------------------------------------------------
-bool vtkAMRBaseParticlesReader::IsBlockMine(const int blkIdx)
+bool vtkAMRBaseParticlesReader::IsBlockMine(int blkIdx)
 {
   if (!this->IsParallel())
   {
@@ -171,15 +167,11 @@ bool vtkAMRBaseParticlesReader::IsBlockMine(const int blkIdx)
   }
 
   int myRank = this->Controller->GetLocalProcessId();
-  if (myRank == this->GetBlockProcessId(blkIdx))
-  {
-    return true;
-  }
-  return false;
+  return myRank == this->GetBlockProcessId(blkIdx);
 }
 
 //------------------------------------------------------------------------------
-int vtkAMRBaseParticlesReader::GetBlockProcessId(const int blkIdx)
+int vtkAMRBaseParticlesReader::GetBlockProcessId(int blkIdx)
 {
   if (!this->IsParallel())
   {
@@ -191,7 +183,7 @@ int vtkAMRBaseParticlesReader::GetBlockProcessId(const int blkIdx)
 }
 
 //------------------------------------------------------------------------------
-bool vtkAMRBaseParticlesReader::CheckLocation(const double x, const double y, const double z)
+bool vtkAMRBaseParticlesReader::CheckLocation(double x, double y, double z)
 {
   if (!this->FilterLocation)
   {
@@ -254,3 +246,4 @@ int vtkAMRBaseParticlesReader::RequestData(vtkInformation* vtkNotUsed(request),
 
   return 1;
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkExporter.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkExporter
  * @brief   abstract class to write a scene to a file
@@ -41,6 +29,7 @@
 
 #include "vtkIOExportModule.h" // For export macro
 #include "vtkObject.h"
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderWindow;
 class vtkRenderer;
 
@@ -54,22 +43,24 @@ public:
    * Write data to output. Method executes subclasses WriteData() method, as
    * well as StartWrite() and EndWrite() methods.
    */
+  VTK_UNBLOCKTHREADS
   virtual void Write();
 
   /**
    * Convenient alias for Write() method.
    */
+  VTK_UNBLOCKTHREADS
   void Update();
 
-  //@{
+  ///@{
   /**
    * Set/Get the rendering window that contains the scene to be written.
    */
   virtual void SetRenderWindow(vtkRenderWindow*);
   vtkGetObjectMacro(RenderWindow, vtkRenderWindow);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the renderer that contains actors to be written.
    * If it is set to nullptr (by default), then in most subclasses
@@ -82,16 +73,16 @@ public:
    */
   virtual void SetActiveRenderer(vtkRenderer*);
   vtkGetObjectMacro(ActiveRenderer, vtkRenderer);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods are provided for backward compatibility. Will disappear
    * soon.
    */
   void SetInput(vtkRenderWindow* renWin) { this->SetRenderWindow(renWin); }
   vtkRenderWindow* GetInput() { return this->GetRenderWindow(); }
-  //@}
+  ///@}
 
   /**
    * Specify a function to be called before data is written.  Function will
@@ -140,4 +131,5 @@ private:
   void operator=(const vtkExporter&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPiecewisePointHandleItem.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 /**
  * @class   vtkPiecewisePointHandleItem
@@ -29,14 +17,16 @@
 
 #include "vtkChartsCoreModule.h" // For export macro
 #include "vtkContextItem.h"
-#include "vtkWeakPointer.h" // Needed for weak pointer to the PiecewiseFunction.
+#include "vtkWeakPointer.h"   // Needed for weak pointer to the PiecewiseFunction.
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkContext2D;
 class vtkPiecewiseFunction;
 class vtkCallbackCommand;
 class vtkAbstractContextItem;
 
-class VTKCHARTSCORE_EXPORT vtkPiecewisePointHandleItem : public vtkContextItem
+class VTKCHARTSCORE_EXPORT VTK_MARSHALAUTO vtkPiecewisePointHandleItem : public vtkContextItem
 {
 public:
   vtkTypeMacro(vtkPiecewisePointHandleItem, vtkContextItem);
@@ -55,21 +45,21 @@ public:
    */
   bool Paint(vtkContext2D* painter) override;
 
-  //@{
+  ///@{
   /**
    * The current point id in the piecewise function being handled.
    */
   vtkSetMacro(CurrentPointIndex, vtkIdType);
   vtkGetMacro(CurrentPointIndex, vtkIdType);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the PieceWiseFunction the handles will manipulate
    */
   virtual void SetPiecewiseFunction(vtkPiecewiseFunction* piecewiseFunc);
   vtkWeakPointer<vtkPiecewiseFunction> GetPiecewiseFunction();
-  //@}
+  ///@}
 
   /**
    * Returns the index of the handle if pos is over any of the handles,
@@ -121,4 +111,5 @@ private:
   InternalPiecewisePointHandleInfo* Internal;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif // vtkPiecewisePointHandleItem_h

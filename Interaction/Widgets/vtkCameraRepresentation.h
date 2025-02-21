@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkCameraRepresentation.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkCameraRepresentation
  * @brief   represent the vtkCameraWidget
@@ -33,6 +21,7 @@
 #include "vtkBorderRepresentation.h"
 #include "vtkInteractionWidgetsModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkRenderer;
 class vtkRenderWindowInteractor;
 class vtkCamera;
@@ -52,24 +41,24 @@ public:
    */
   static vtkCameraRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK class methods.
    */
   vtkTypeMacro(vtkCameraRepresentation, vtkBorderRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the camera to interpolate. This must be specified by
    * the user.
    */
   void SetCamera(vtkCamera* camera);
   vtkGetObjectMacro(Camera, vtkCamera);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the vtkCameraInterpolator used to interpolate and save the
    * sequence of camera views. If not defined, one is created
@@ -79,25 +68,25 @@ public:
    */
   void SetInterpolator(vtkCameraInterpolator* camInt);
   vtkGetObjectMacro(Interpolator, vtkCameraInterpolator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of frames to generate when playback is initiated.
    */
   vtkSetClampMacro(NumberOfFrames, int, 1, VTK_INT_MAX);
   vtkGetMacro(NumberOfFrames, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * By obtaining this property you can specify the properties of the
    * representation.
    */
   vtkGetObjectMacro(Property, vtkProperty2D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods are used to create interpolated camera paths.  The
    * AddCameraToPath() method adds the view defined by the current camera
@@ -108,7 +97,7 @@ public:
   void AddCameraToPath();
   void AnimatePath(vtkRenderWindowInteractor* rwi);
   void InitializePath();
-  //@}
+  ///@}
 
   /**
    * Satisfy the superclasses' API.
@@ -120,7 +109,7 @@ public:
     size[1] = 2.0;
   }
 
-  //@{
+  ///@{
   /**
    * These methods are necessary to make this representation behave as
    * a vtkProp.
@@ -131,7 +120,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport*) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
 protected:
   vtkCameraRepresentation();
@@ -156,4 +145,5 @@ private:
   void operator=(const vtkCameraRepresentation&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

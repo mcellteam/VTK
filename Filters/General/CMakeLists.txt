@@ -1,10 +1,12 @@
 set(classes
+  vtkAnimateModes
   vtkAnnotationLink
   vtkAppendLocationAttributes
   vtkAppendPoints
   vtkApproximatingSubdivisionFilter
   vtkAreaContourSpectrumFilter
   vtkAxes
+  vtkAxisAlignedReflectionFilter
   vtkBlankStructuredGrid
   vtkBlankStructuredGridWithImage
   vtkBlockIdScalars
@@ -12,8 +14,9 @@ set(classes
   vtkBoxClipDataSet
   vtkBrownianPoints
   vtkCellDerivatives
-  vtkCellTreeLocator
   vtkCellValidator
+  vtkCleanUnstructuredGrid
+  vtkCleanUnstructuredGridCells
   vtkClipClosedSurface
   vtkClipConvexPolyData
   vtkClipDataSet
@@ -39,14 +42,20 @@ set(classes
   vtkDiscreteMarchingCubes
   vtkDistancePolyDataFilter
   vtkEdgePoints
+  vtkEqualizerFilter
+  vtkExplodeDataSet
   vtkExtractArray
+  vtkExtractGhostCells
   vtkExtractSelectedFrustum
   vtkExtractSelectionBase
+  vtkFiniteElementFieldDistributor
   vtkGradientFilter
   vtkGraphLayoutFilter
   vtkGraphToPoints
   vtkGraphWeightEuclideanDistanceFilter
   vtkGraphWeightFilter
+  vtkGroupDataSetsFilter
+  vtkGroupTimeStepsFilter
   vtkHierarchicalDataLevelFilter
   vtkHyperStreamline
   vtkIconGlyphFilter
@@ -55,6 +64,7 @@ set(classes
   vtkInterpolateDataSetAttributes
   vtkInterpolatingSubdivisionFilter
   vtkIntersectionPolyDataFilter
+  vtkJoinTables
   vtkLevelIdScalars
   vtkLinkEdgels
   vtkLoopBooleanPolyDataFilter
@@ -62,8 +72,9 @@ set(classes
   vtkMatricizeArray
   vtkMergeArrays
   vtkMergeCells
+  vtkMergeTimeFilter
+  vtkMergeVectorComponents
   vtkMultiBlockDataGroupFilter
-  vtkMultiBlockFromTimeSeriesFilter
   vtkMultiBlockMergeFilter
   vtkMultiThreshold
   vtkNormalizeMatrixVectors
@@ -72,7 +83,6 @@ set(classes
   vtkOverlappingAMRLevelIdScalars
   vtkPassArrays
   vtkPassSelectedArrays
-  vtkPassThrough
   vtkPointConnectivityFilter
   vtkPolyDataStreamer
   vtkPolyDataToReebGraphFilter
@@ -87,11 +97,14 @@ set(classes
   vtkRectilinearGridToTetrahedra
   vtkRecursiveDividingCubes
   vtkReflectionFilter
+  vtkRemovePolyData
   vtkRotationFilter
   vtkSampleImplicitFunctionFilter
   vtkShrinkFilter
   vtkShrinkPolyData
   vtkSpatialRepresentationFilter
+  vtkSpatioTemporalHarmonicsAttribute
+  vtkSphericalHarmonics
   vtkSplineFilter
   vtkSplitByCellScalarFilter
   vtkSplitColumnComponents
@@ -100,7 +113,9 @@ set(classes
   vtkSubPixelPositionEdgels
   vtkSubdivisionFilter
   vtkSynchronizeTimeFilter
+
   vtkTableBasedClipDataSet
+  vtkTableFFT
   vtkTableToPolyData
   vtkTableToStructuredGrid
   vtkTemporalPathLineFilter
@@ -119,5 +134,14 @@ set(classes
   vtkWarpVector
   vtkYoungsMaterialInterface)
 
+set(templates
+  vtkJoinTables.txx)
+
+set(no_wrap_classes
+  vtkReflectionUtilities)
+
 vtk_module_add_module(VTK::FiltersGeneral
-  CLASSES ${classes})
+  CLASSES ${classes}
+  NOWRAP_CLASSES ${no_wrap_classes}
+  TEMPLATES ${templates})
+vtk_add_test_mangling(VTK::FiltersGeneral)

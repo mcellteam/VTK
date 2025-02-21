@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkImageGaussianSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkImageGaussianSource.h"
 
 #include "vtkImageData.h"
@@ -22,9 +10,10 @@
 
 #include <cmath>
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkImageGaussianSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkImageGaussianSource::vtkImageGaussianSource()
 {
   this->SetNumberOfInputPorts(0);
@@ -42,7 +31,7 @@ vtkImageGaussianSource::vtkImageGaussianSource()
   this->StandardDeviation = 100.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageGaussianSource::SetWholeExtent(
   int xMin, int xMax, int yMin, int yMax, int zMin, int zMax)
 {
@@ -84,7 +73,7 @@ void vtkImageGaussianSource::SetWholeExtent(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageGaussianSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -98,7 +87,7 @@ int vtkImageGaussianSource::RequestInformation(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageGaussianSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -180,3 +169,4 @@ void vtkImageGaussianSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Center: ( " << this->Center[0] << ", " << this->Center[1] << ", "
      << this->Center[2] << " )\n";
 }
+VTK_ABI_NAMESPACE_END

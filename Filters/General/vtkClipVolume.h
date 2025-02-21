@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkClipVolume.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkClipVolume
  * @brief   clip volume data with user-specified implicit function or input scalar data
@@ -64,6 +52,7 @@
 #include "vtkFiltersGeneralModule.h" // For export macro
 #include "vtkUnstructuredGridAlgorithm.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkCellData;
 class vtkDataArray;
 class vtkIdList;
@@ -92,7 +81,7 @@ public:
    */
   static vtkClipVolume* New();
 
-  //@{
+  ///@{
   /**
    * Set the clipping value of the implicit function (if clipping with
    * implicit function) or scalar value (if clipping with scalars). The
@@ -100,9 +89,9 @@ public:
    */
   vtkSetMacro(Value, double);
   vtkGetMacro(Value, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the InsideOut flag. When off, a vertex is considered inside the
    * implicit function if its value is greater than the Value ivar. When
@@ -113,9 +102,9 @@ public:
   vtkSetMacro(InsideOut, vtkTypeBool);
   vtkGetMacro(InsideOut, vtkTypeBool);
   vtkBooleanMacro(InsideOut, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the implicit function with which to perform the clipping. If you
    * do not define an implicit function, then the input scalar data will be
@@ -123,9 +112,9 @@ public:
    */
   virtual void SetClipFunction(vtkImplicitFunction*);
   vtkGetObjectMacro(ClipFunction, vtkImplicitFunction);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this flag is enabled, then the output scalar values will be
    * interpolated from the implicit function values, and not the
@@ -135,9 +124,9 @@ public:
   vtkSetMacro(GenerateClipScalars, vtkTypeBool);
   vtkGetMacro(GenerateClipScalars, vtkTypeBool);
   vtkBooleanMacro(GenerateClipScalars, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control whether a second output is generated. The second output
    * contains the unstructured grid that's been clipped away.
@@ -145,14 +134,14 @@ public:
   vtkSetMacro(GenerateClippedOutput, vtkTypeBool);
   vtkGetMacro(GenerateClippedOutput, vtkTypeBool);
   vtkBooleanMacro(GenerateClippedOutput, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Return the clipped output.
    */
   vtkUnstructuredGrid* GetClippedOutput();
 
-  //@{
+  ///@{
   /**
    * Control whether the filter produces a mix of 3D cell types on output, or
    * whether the output cells are all tetrahedra. By default, a mixed set of
@@ -162,9 +151,9 @@ public:
   vtkSetMacro(Mixed3DCellGeneration, vtkTypeBool);
   vtkGetMacro(Mixed3DCellGeneration, vtkTypeBool);
   vtkBooleanMacro(Mixed3DCellGeneration, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the tolerance for merging clip intersection points that are near
    * the corners of voxels. This tolerance is used to prevent the generation
@@ -172,16 +161,16 @@ public:
    */
   vtkSetClampMacro(MergeTolerance, double, 0.0001, 0.25);
   vtkGetMacro(MergeTolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / Get a spatial locator for merging points. By default,
    * an instance of vtkMergePoints is used.
    */
   void SetLocator(vtkIncrementalPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
-  //@}
+  ///@}
 
   /**
    * Create default locator. Used to create one when none is specified. The
@@ -233,9 +222,9 @@ private:
   vtkCellArray* ClippedConnectivity;
   vtkUnsignedCharArray* ClippedTypes;
 
-private:
   vtkClipVolume(const vtkClipVolume&) = delete;
   void operator=(const vtkClipVolume&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

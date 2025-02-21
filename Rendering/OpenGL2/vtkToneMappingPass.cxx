@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkToneMappingPass.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include "vtkToneMappingPass.h"
 
@@ -29,9 +17,10 @@
 #include "vtkShaderProgram.h"
 #include "vtkTextureObject.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkToneMappingPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkToneMappingPass::~vtkToneMappingPass()
 {
   if (this->FrameBufferObject)
@@ -48,7 +37,7 @@ vtkToneMappingPass::~vtkToneMappingPass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkToneMappingPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -73,7 +62,7 @@ void vtkToneMappingPass::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkToneMappingPass::Render(const vtkRenderState* s)
 {
   vtkOpenGLClearErrorMacro();
@@ -199,12 +188,31 @@ void vtkToneMappingPass::Render(const vtkRenderState* s)
           "  toned = clamp(toned, vec3(0.f), vec3(1.f));\n"
           "//VTK::FSQ::Impl");
         break;
+      case NeutralPBR:
+        // adapted from Khronos reference implementation:
+        // https://github.com/KhronosGroup/ToneMapping/blob/main/PBR_Neutral/pbrNeutral.glsl
+        vtkShaderProgram::Substitute(FSSource, "//VTK::FSQ::Impl",
+          "  const float startCompression = 0.8 - 0.04;\n"
+          "  const float desaturation = 0.15;\n"
+          "  float x = min(color.r, min(color.g, color.b));\n"
+          "  float offset = x < 0.08 ? x - 6.25 * x * x : 0.04;\n"
+          "  vec3 toned = color - vec3(offset);\n"
+          "  float peak = max(toned.r, max(toned.g, toned.b));\n"
+          "  if (peak >= startCompression)\n"
+          "  {\n"
+          "    const float d = 1. - startCompression;\n"
+          "    float newPeak = 1. - d * d / (peak + d - startCompression);\n"
+          "    toned *= newPeak / peak;\n"
+          "    float g = 1. - 1. / (desaturation * (peak - newPeak) + 1.);\n"
+          "    toned = mix(toned, newPeak * vec3(1, 1, 1), g);\n"
+          "  }\n"
+          "//VTK::FSQ::Impl");
     }
 
     // Recorrect gamma and output
     vtkShaderProgram::Substitute(FSSource, "//VTK::FSQ::Impl",
       "  toned = pow(toned, vec3(1.0/2.2));\n" // to sRGB color space
-      "  gl_FragData[0] = vec4(toned , pixel.a);\n"
+      "  gl_FragData[0] = mix(pixel, vec4(toned , pixel.a), pixel.a);\n"
       "//VTK::FSQ::Impl");
 
     this->QuadHelper = new vtkOpenGLQuadHelper(renWin,
@@ -228,7 +236,7 @@ void vtkToneMappingPass::Render(const vtkRenderState* s)
   this->QuadHelper->Program->SetUniformi("source", this->ColorTexture->GetTextureUnit());
 
   // Precompute generic filmic parameters after each modification
-  if (this->PreComputeMTime > this->GetMTime())
+  if (this->PreComputeMTime < this->GetMTime())
   {
     this->PreComputeAnchorCurveGenericFilmic();
     this->PreComputeMTime = this->GetMTime();
@@ -249,6 +257,7 @@ void vtkToneMappingPass::Render(const vtkRenderState* s)
 
   ostate->vtkglDisable(GL_BLEND);
   ostate->vtkglDisable(GL_DEPTH_TEST);
+  ostate->vtkglClear(GL_DEPTH_BUFFER_BIT);
   ostate->vtkglViewport(x, y, w, h);
   ostate->vtkglScissor(x, y, w, h);
 
@@ -259,7 +268,7 @@ void vtkToneMappingPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkToneMappingPass::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->Superclass::ReleaseGraphicsResources(w);
@@ -327,3 +336,4 @@ void vtkToneMappingPass::PreComputeAnchorCurveGenericFilmic()
         (powf(m, a * d) * n - n * powf(this->HdrMax, a * d)),
       0.f);
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkSTLWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSTLWriter.h"
 #include "vtkSmartPointer.h"
 
@@ -34,6 +22,7 @@
 #include <io.h> /* unlink */
 #endif
 
+VTK_ABI_NAMESPACE_BEGIN
 namespace
 {
 // For C format strings
@@ -203,7 +192,7 @@ void vtkSTLWriter::WriteAsciiSTL(vtkPoints* pts, vtkCellArray* polys, vtkCellArr
       // Do the triangulation
       vtkNew<vtkIdList> ptIds;
       ptIds->Allocate(VTK_CELL_SIZE);
-      poly->Triangulate(ptIds);
+      poly->TriangulateLocalIds(0, ptIds);
 
       vtkIdType numPts = ptIds->GetNumberOfIds();
       vtkIdType numSimplices = numPts / 3;
@@ -240,7 +229,6 @@ void vtkSTLWriter::WriteBinarySTL(vtkPoints* pts, vtkCellArray* polys, vtkCellAr
   double dn[3], v1[3], v2[3], v3[3];
   vtkIdType npts = 0;
   const vtkIdType* indx = nullptr;
-  unsigned long ulint;
   unsigned short ibuff2 = 0;
 
   if ((fp = vtksys::SystemTools::Fopen(this->FileName, "wb")) == nullptr)
@@ -303,10 +291,6 @@ void vtkSTLWriter::WriteBinarySTL(vtkPoints* pts, vtkCellArray* polys, vtkCellAr
 
   fwrite(binaryFileHeader, 1, vtkSTLWriterBinaryHeaderSize, fp);
 
-  ulint = (unsigned long int)polys->GetNumberOfCells();
-  vtkByteSwap::Swap4LE(&ulint);
-  fwrite(&ulint, 1, 4, fp);
-
   //
   // Decompose any triangle strips into triangles
   //
@@ -320,8 +304,14 @@ void vtkSTLWriter::WriteBinarySTL(vtkPoints* pts, vtkCellArray* polys, vtkCellAr
     }
   }
 
+  // Write a dummy length as a placeholder. Fill it in later after the number
+  // of triangles is known.
+  unsigned long numTris = 0;
+  fwrite(&numTris, 1, 4, fp);
+
   //  Write out triangle strips
   //
+  numTris += polyStrips->GetNumberOfCells();
   for (polyStrips->InitTraversal(); polyStrips->GetNextCell(npts, indx);)
   {
     pts->GetPoint(indx[0], v1);
@@ -410,6 +400,7 @@ void vtkSTLWriter::WriteBinarySTL(vtkPoints* pts, vtkCellArray* polys, vtkCellAr
       vtkByteSwap::Swap4LE(n + 2);
       fwrite(n, 4, 3, fp);
       fwrite(&ibuff2, 2, 1, fp);
+      numTris++;
     }
     else if (npts > 3)
     {
@@ -426,7 +417,7 @@ void vtkSTLWriter::WriteBinarySTL(vtkPoints* pts, vtkCellArray* polys, vtkCellAr
       // Do the triangulation
       vtkNew<vtkIdList> ptIds;
       ptIds->Allocate(VTK_CELL_SIZE);
-      poly->Triangulate(ptIds);
+      poly->TriangulateLocalIds(0, ptIds);
 
       vtkIdType numPts = ptIds->GetNumberOfIds();
       vtkIdType numSimplices = numPts / 3;
@@ -457,9 +448,15 @@ void vtkSTLWriter::WriteBinarySTL(vtkPoints* pts, vtkCellArray* polys, vtkCellAr
           fwrite(n, 4, 3, fp);
         }
         fwrite(&ibuff2, 2, 1, fp);
+        numTris++;
       }
     }
   }
+
+  vtkByteSwap::Swap4LE(&numTris);
+  fseek(fp, 80, SEEK_SET);
+  fwrite(&numTris, 1, 4, fp);
+
   if (fflush(fp))
   {
     fclose(fp);
@@ -469,7 +466,7 @@ void vtkSTLWriter::WriteBinarySTL(vtkPoints* pts, vtkCellArray* polys, vtkCellAr
   fclose(fp);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSTLWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -483,21 +480,22 @@ void vtkSTLWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Input: " << this->GetInput() << std::endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkSTLWriter::GetInput()
 {
   return vtkPolyData::SafeDownCast(this->GetInput(0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkSTLWriter::GetInput(int port)
 {
   return vtkPolyData::SafeDownCast(this->Superclass::GetInput(port));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSTLWriter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData");
   return 1;
 }
+VTK_ABI_NAMESPACE_END

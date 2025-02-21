@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPoints.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPoints
  * @brief   represent and manipulate 3D points
@@ -25,12 +13,14 @@
 
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkObject.h"
+#include "vtkWrappingHints.h" // For VTK_MARSHALAUTO
 
 #include "vtkDataArray.h" // Needed for inline methods
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIdList;
 
-class VTKCOMMONCORE_EXPORT vtkPoints : public vtkObject
+class VTKCOMMONCORE_EXPORT VTK_MARSHALAUTO vtkPoints : public vtkObject
 {
 public:
   static vtkPoints* New(int dataType);
@@ -69,6 +59,7 @@ public:
 
   /**
    * Specify the underlying data type of the object.
+   * Default is VTK_FLOAT.
    */
   virtual void SetDataType(int dataType);
   void SetDataTypeToBit() { this->SetDataType(VTK_BIT); }
@@ -99,7 +90,7 @@ public:
    */
   virtual void Reset();
 
-  //@{
+  ///@{
   /**
    * Different ways to copy data. Shallow copy does reference count (i.e.,
    * assigns pointers and updates reference count); deep copy runs through
@@ -107,7 +98,7 @@ public:
    */
   virtual void DeepCopy(vtkPoints* ad);
   virtual void ShallowCopy(vtkPoints* ad);
-  //@}
+  ///@}
 
   /**
    * Return the memory in kibibytes (1024 bytes) consumed by this attribute data.
@@ -122,7 +113,7 @@ public:
   /**
    * Return number of points in array.
    */
-  vtkIdType GetNumberOfPoints() { return this->Data->GetNumberOfTuples(); }
+  vtkIdType GetNumberOfPoints() const { return this->Data->GetNumberOfTuples(); }
 
   /**
    * Return a pointer to a double point x[3] for a specific id.
@@ -162,7 +153,7 @@ public:
   void SetPoint(vtkIdType id, double x, double y, double z)
     VTK_EXPECTS(0 <= id && id < GetNumberOfPoints());
 
-  //@{
+  ///@{
   /**
    * Insert point into object. Range checking performed and memory
    * allocated as necessary.
@@ -176,7 +167,7 @@ public:
     this->Data->InsertTuple(id, x);
   }
   void InsertPoint(vtkIdType id, double x, double y, double z) VTK_EXPECTS(0 <= id);
-  //@}
+  ///@}
 
   /**
    * Copy the points indexed in srcIds from the source array to the tuple
@@ -214,7 +205,8 @@ public:
 
   /**
    * Resize the internal array while conserving the data.  Returns 1 if
-   * resizing succeeded and 0 otherwise.
+   * resizing succeeded (including shrinking) and 0 (or throw std::bad_alloc
+   * based on VTK_DONT_THROW_BAD_ALLOC configuration) otherwise.
    */
   vtkTypeBool Resize(vtkIdType numPoints);
 
@@ -301,4 +293,5 @@ inline vtkIdType vtkPoints::InsertNextPoint(double x, double y, double z)
   return this->Data->InsertNextTuple(p);
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

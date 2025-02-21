@@ -1,22 +1,6 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkGeoProjection.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-/*-------------------------------------------------------------------------
-  Copyright 2008 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-  the U.S. Government retains certain rights in this software.
--------------------------------------------------------------------------*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-FileCopyrightText: Copyright 2008 Sandia Corporation
+// SPDX-License-Identifier: LicenseRef-BSD-3-Clause-Sandia-USGov
 
 #include "vtkGeoProjection.h"
 
@@ -29,11 +13,12 @@
 
 #include "vtk_libproj.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkGeoProjection);
 
 static int vtkGeoProjectionNumProj = -1;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkGeoProjection::vtkInternals
 {
 public:
@@ -70,12 +55,10 @@ public:
   }
 
   std::map<std::string, std::string> OptionalParameters;
-#if PROJ_VERSION_MAJOR >= 5
   PJ_PROJ_INFO ProjInfo;
-#endif
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoProjection::GetNumberOfProjections()
 {
   if (vtkGeoProjectionNumProj < 0)
@@ -86,7 +69,7 @@ int vtkGeoProjection::GetNumberOfProjections()
   }
   return vtkGeoProjectionNumProj;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetProjectionName(int projection)
 {
   if (projection < 0 || projection >= vtkGeoProjection::GetNumberOfProjections())
@@ -94,7 +77,7 @@ const char* vtkGeoProjection::GetProjectionName(int projection)
 
   return proj_list_operations()[projection].id;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetProjectionDescription(int projection)
 {
   if (projection < 0 || projection >= vtkGeoProjection::GetNumberOfProjections())
@@ -102,7 +85,7 @@ const char* vtkGeoProjection::GetProjectionDescription(int projection)
 
   return proj_list_operations()[projection].descr[0];
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGeoProjection::vtkGeoProjection()
 {
   this->Name = nullptr;
@@ -114,19 +97,19 @@ vtkGeoProjection::vtkGeoProjection()
   this->SetPROJ4String("");
   this->Internals = new vtkInternals();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGeoProjection::~vtkGeoProjection()
 {
   this->SetName(nullptr);
   this->SetPROJ4String(nullptr);
   if (this->Projection)
   {
-    pj_free(this->Projection);
+    proj_destroy(this->Projection);
   }
   delete this->Internals;
   this->Internals = nullptr;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoProjection::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -141,7 +124,7 @@ void vtkGeoProjection::PrintSelf(ostream& os, vtkIndent indent)
        << this->GetOptionalParameterValue(i) << "\n";
   }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoProjection::GetIndex()
 {
   int i = 0;
@@ -154,7 +137,7 @@ int vtkGeoProjection::GetIndex()
   }
   return -1;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetDescription()
 {
   this->UpdateProjection();
@@ -162,20 +145,16 @@ const char* vtkGeoProjection::GetDescription()
   {
     return nullptr;
   }
-#if PROJ_VERSION_MAJOR >= 5
   return this->Internals->ProjInfo.description;
-#else
-  return this->Projection->descr;
-#endif
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 projPJ vtkGeoProjection::GetProjection()
 {
   this->UpdateProjection();
   return this->Projection;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoProjection::UpdateProjection()
 {
   if (this->GetMTime() <= this->ProjectionMTime)
@@ -185,13 +164,17 @@ int vtkGeoProjection::UpdateProjection()
 
   if (this->Projection)
   {
-    pj_free(this->Projection);
+    proj_destroy(this->Projection);
     this->Projection = nullptr;
   }
 
   if (this->PROJ4String && strlen(this->PROJ4String))
   {
-    this->Projection = pj_init_plus(this->PROJ4String);
+    this->Projection = proj_create(PJ_DEFAULT_CTX, this->PROJ4String);
+    if (!this->Projection)
+    {
+      vtkErrorMacro("Cannot set projection with string " << this->PROJ4String);
+    }
   }
   else
   {
@@ -230,22 +213,19 @@ int vtkGeoProjection::UpdateProjection()
       stringHolder[i] = param.str();
       pjArgs[3 + i] = stringHolder[i].c_str();
     }
-
-    this->Projection = pj_init(argSize, const_cast<char**>(pjArgs));
+    this->Projection = proj_create_argv(PJ_DEFAULT_CTX, argSize, const_cast<char**>(pjArgs));
     delete[] pjArgs;
   }
   this->ProjectionMTime = this->GetMTime();
   if (this->Projection)
   {
-#if PROJ_VERSION_MAJOR >= 5
     this->Internals->ProjInfo = proj_pj_info(this->Projection);
-#endif
     return 0;
   }
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoProjection::SetOptionalParameter(const char* key, const char* value)
 {
   if (key != nullptr && value != nullptr)
@@ -259,30 +239,31 @@ void vtkGeoProjection::SetOptionalParameter(const char* key, const char* value)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoProjection::RemoveOptionalParameter(const char* key)
 {
   this->Internals->OptionalParameters.erase(key);
   this->Modified();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoProjection::GetNumberOfOptionalParameters()
 {
   return static_cast<int>(this->Internals->OptionalParameters.size());
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetOptionalParameterKey(int index)
 {
   return this->Internals->GetKeyAt(index);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetOptionalParameterValue(int index)
 {
   return this->Internals->GetValueAt(index);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoProjection::ClearOptionalParameters()
 {
   this->Internals->OptionalParameters.clear();
   this->Modified();
 }
+VTK_ABI_NAMESPACE_END

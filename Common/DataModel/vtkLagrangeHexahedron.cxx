@@ -1,17 +1,6 @@
-/*=========================================================================
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 
-  Program:   Visualization Toolkit
-  Module:    vtkLagrangeHexahedron.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkLagrangeHexahedron.h"
 
 #include "vtkCellData.h"
@@ -28,14 +17,11 @@
 #include "vtkPoints.h"
 #include "vtkTriangle.h"
 #include "vtkVector.h"
-#include "vtkVectorOperators.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkStandardNewMacro(vtkLagrangeHexahedron);
 
-vtkLagrangeHexahedron::vtkLagrangeHexahedron()
-  : vtkHigherOrderHexahedron()
-{
-}
+vtkLagrangeHexahedron::vtkLagrangeHexahedron() = default;
 
 vtkLagrangeHexahedron::~vtkLagrangeHexahedron() = default;
 
@@ -47,18 +33,40 @@ void vtkLagrangeHexahedron::PrintSelf(ostream& os, vtkIndent indent)
 vtkCell* vtkLagrangeHexahedron::GetEdge(int edgeId)
 {
   vtkLagrangeCurve* result = EdgeCell;
-  this->GetEdgeWithoutRationalWeights(result, edgeId);
+  const auto set_number_of_ids_and_points = [&](const vtkIdType& npts) -> void
+  {
+    result->Points->SetNumberOfPoints(npts);
+    result->PointIds->SetNumberOfIds(npts);
+  };
+  const auto set_ids_and_points = [&](const vtkIdType& face_id, const vtkIdType& vol_id) -> void
+  {
+    result->Points->SetPoint(face_id, this->Points->GetPoint(vol_id));
+    result->PointIds->SetId(face_id, this->PointIds->GetId(vol_id));
+  };
+
+  this->SetEdgeIdsAndPoints(edgeId, set_number_of_ids_and_points, set_ids_and_points);
   return result;
 }
 
 vtkCell* vtkLagrangeHexahedron::GetFace(int faceId)
 {
-  if (faceId < 0 || faceId >= 6)
-  {
-    return nullptr;
-  }
   vtkLagrangeQuadrilateral* result = FaceCell;
-  this->GetFaceWithoutRationalWeights(result, faceId);
+  int faceOrder[2];
+
+  const auto set_number_of_ids_and_points = [&](const vtkIdType& npts) -> void
+  {
+    result->Points->SetNumberOfPoints(npts);
+    result->PointIds->SetNumberOfIds(npts);
+  };
+  const auto set_ids_and_points = [&](const vtkIdType& face_id, const vtkIdType& vol_id) -> void
+  {
+    result->Points->SetPoint(face_id, this->Points->GetPoint(vol_id));
+    result->PointIds->SetId(face_id, this->PointIds->GetId(vol_id));
+  };
+
+  vtkHigherOrderHexahedron::SetFaceIdsAndPoints(
+    faceId, this->Order, set_number_of_ids_and_points, set_ids_and_points, faceOrder);
+  result->SetOrder(faceOrder[0], faceOrder[1]);
   return result;
 }
 
@@ -111,15 +119,16 @@ void vtkLagrangeHexahedron::InterpolateDerivs(const double pcoords[3], double* d
 {
   vtkLagrangeInterpolation::Tensor3ShapeDerivatives(this->GetOrder(), pcoords, derivs);
 }
-vtkHigherOrderCurve* vtkLagrangeHexahedron::getEdgeCell()
+vtkHigherOrderCurve* vtkLagrangeHexahedron::GetEdgeCell()
 {
   return EdgeCell;
 }
-vtkHigherOrderQuadrilateral* vtkLagrangeHexahedron::getFaceCell()
+vtkHigherOrderQuadrilateral* vtkLagrangeHexahedron::GetFaceCell()
 {
   return FaceCell;
 }
-vtkHigherOrderInterpolation* vtkLagrangeHexahedron::getInterp()
+vtkHigherOrderInterpolation* vtkLagrangeHexahedron::GetInterpolation()
 {
   return Interp;
-};
+}
+VTK_ABI_NAMESPACE_END

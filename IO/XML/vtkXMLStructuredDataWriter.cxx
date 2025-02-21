@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkXMLStructuredDataWriter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkXMLStructuredDataWriter.h"
 
 #include "vtkArrayIteratorIncludes.h"
@@ -31,7 +19,8 @@
 #include "vtkXMLOffsetsManager.h"
 #undef vtkXMLOffsetsManager_DoNotInclude
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+VTK_ABI_NAMESPACE_BEGIN
 vtkXMLStructuredDataWriter::vtkXMLStructuredDataWriter()
 {
   this->WritePiece = -1;
@@ -52,7 +41,7 @@ vtkXMLStructuredDataWriter::vtkXMLStructuredDataWriter()
   this->CellDataOM = new OffsetsManagerArray;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLStructuredDataWriter::~vtkXMLStructuredDataWriter()
 {
   delete[] this->ProgressFractions;
@@ -60,7 +49,7 @@ vtkXMLStructuredDataWriter::~vtkXMLStructuredDataWriter()
   delete this->CellDataOM;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -71,7 +60,7 @@ void vtkXMLStructuredDataWriter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "WritePiece: " << this->WritePiece << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::SetInputUpdateExtent(int piece)
 {
   vtkInformation* inInfo = this->GetExecutive()->GetInputInformation(0, 0);
@@ -111,7 +100,7 @@ vtkIdType vtkXMLStructuredDataWriter::GetNumberOfValues(vtkDataSet* input)
   return dataSetValues;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkXMLStructuredDataWriter::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -159,7 +148,7 @@ vtkTypeBool vtkXMLStructuredDataWriter::ProcessRequest(
       vtkAbstractArray* array = fieldData->GetAbstractArray(i);
       fieldDataValues += array->GetNumberOfValues();
     }
-    vtkIdType dataSetValues = fieldDataValues + GetNumberOfValues(this->GetInputAsDataSet());
+    vtkIdType dataSetValues = fieldDataValues + GetNumberOfValues(this->GetDataSetInput());
     if (dataSetValues == 0)
     {
       dataSetValues = 1;
@@ -173,9 +162,9 @@ vtkTypeBool vtkXMLStructuredDataWriter::ProcessRequest(
       {
         return 0;
       }
-      if (this->GetInputAsDataSet() != nullptr &&
-        (this->GetInputAsDataSet()->GetPointGhostArray() != nullptr ||
-          this->GetInputAsDataSet()->GetCellGhostArray() != nullptr))
+      if (this->GetDataSetInput() != nullptr &&
+        (this->GetDataSetInput()->GetPointGhostArray() != nullptr ||
+          this->GetDataSetInput()->GetCellGhostArray() != nullptr))
       {
         // use the current version for the file
         this->UsePreviousVersion = false;
@@ -254,7 +243,7 @@ vtkTypeBool vtkXMLStructuredDataWriter::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::AllocatePositionArrays()
 {
   this->ExtentPositions = new vtkTypeInt64[this->NumberOfPieces];
@@ -265,14 +254,14 @@ void vtkXMLStructuredDataWriter::AllocatePositionArrays()
   this->CellDataOM->Allocate(this->NumberOfPieces);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::DeletePositionArrays()
 {
   delete[] this->ExtentPositions;
   this->ExtentPositions = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLStructuredDataWriter::WriteHeader()
 {
   vtkIndent indent = vtkIndent().GetNextIndent();
@@ -356,7 +345,7 @@ int vtkXMLStructuredDataWriter::WriteHeader()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLStructuredDataWriter::WriteAPiece()
 {
   vtkIndent indent = vtkIndent().GetNextIndent();
@@ -364,7 +353,7 @@ int vtkXMLStructuredDataWriter::WriteAPiece()
 
   if (this->DataMode == vtkXMLWriter::Appended)
   {
-    vtkDataSet* input = this->GetInputAsDataSet();
+    vtkDataSet* input = this->GetDataSetInput();
 
     // Make sure input is valid.
     if (input->CheckAttributes() == 0)
@@ -391,7 +380,7 @@ int vtkXMLStructuredDataWriter::WriteAPiece()
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLStructuredDataWriter::WriteFooter()
 {
   vtkIndent indent = vtkIndent().GetNextIndent();
@@ -421,10 +410,10 @@ int vtkXMLStructuredDataWriter::WriteFooter()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLStructuredDataWriter::WriteInlineMode(vtkIndent indent)
 {
-  vtkDataSet* input = this->GetInputAsDataSet();
+  vtkDataSet* input = this->GetDataSetInput();
   ostream& os = *(this->Stream);
 
   int* extent = input->GetInformation()->Get(vtkDataObject::DATA_EXTENT());
@@ -468,7 +457,7 @@ int vtkXMLStructuredDataWriter::WriteInlineMode(vtkIndent indent)
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <class iterT>
 inline void vtkXMLStructuredDataWriterCopyTuples(
   iterT* destIter, vtkIdType destTuple, iterT* srcIter, vtkIdType sourceTuple, vtkIdType numTuples)
@@ -479,7 +468,7 @@ inline void vtkXMLStructuredDataWriterCopyTuples(
   memcpy(destIter->GetTuple(destTuple), srcIter->GetTuple(sourceTuple), numTuples * tupleSize);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 inline void vtkXMLStructuredDataWriterCopyTuples(vtkArrayIteratorTemplate<vtkStdString>* destIter,
   vtkIdType destTuple, vtkArrayIteratorTemplate<vtkStdString>* srcIter, vtkIdType sourceTuple,
   vtkIdType numTuples)
@@ -494,7 +483,7 @@ inline void vtkXMLStructuredDataWriterCopyTuples(vtkArrayIteratorTemplate<vtkStd
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::WritePrimaryElementAttributes(ostream& os, vtkIndent indent)
 {
   this->Superclass::WritePrimaryElementAttributes(os, indent);
@@ -508,18 +497,18 @@ void vtkXMLStructuredDataWriter::WritePrimaryElementAttributes(ostream& os, vtkI
 
   if (this->WritePiece >= 0)
   {
-    vtkDataSet* input = this->GetInputAsDataSet();
+    vtkDataSet* input = this->GetDataSetInput();
     ext = input->GetInformation()->Get(vtkDataObject::DATA_EXTENT());
   }
 
   this->WriteVectorAttribute("WholeExtent", 6, ext);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::WriteAppendedPiece(int index, vtkIndent indent)
 {
   // Write the point data and cell data arrays.
-  vtkDataSet* input = this->GetInputAsDataSet();
+  vtkDataSet* input = this->GetDataSetInput();
   this->WritePointDataAppended(input->GetPointData(), indent, &this->PointDataOM->GetPiece(index));
   if (this->ErrorCode == vtkErrorCode::OutOfDiskSpaceError)
   {
@@ -532,11 +521,11 @@ void vtkXMLStructuredDataWriter::WriteAppendedPiece(int index, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::WriteAppendedPieceData(int index)
 {
   // Write the point data and cell data arrays.
-  vtkDataSet* input = this->GetInputAsDataSet();
+  vtkDataSet* input = this->GetDataSetInput();
 
   int* ext = input->GetInformation()->Get(vtkDataObject::DATA_EXTENT());
 
@@ -574,11 +563,11 @@ void vtkXMLStructuredDataWriter::WriteAppendedPieceData(int index)
     input->GetCellData(), this->CurrentTimeIndex, &this->CellDataOM->GetPiece(index));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::WriteInlinePiece(vtkIndent indent)
 {
   // Write the point data and cell data arrays.
-  vtkDataSet* input = this->GetInputAsDataSet();
+  vtkDataSet* input = this->GetDataSetInput();
 
   // Split progress between point data and cell data arrays.
   float progressRange[2] = { 0.f, 0.f };
@@ -601,7 +590,7 @@ void vtkXMLStructuredDataWriter::WriteInlinePiece(vtkIndent indent)
   this->WriteCellDataInline(input->GetCellData(), indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkXMLStructuredDataWriter::GetStartTuple(
   int* extent, vtkIdType* increments, int i, int j, int k)
 {
@@ -609,7 +598,7 @@ vtkIdType vtkXMLStructuredDataWriter::GetStartTuple(
     ((k - extent[4]) * increments[2]));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXMLStructuredDataWriter::CalculatePieceFractions(float* fractions)
 {
   // Calculate the fraction of total data contributed by each piece.
@@ -632,3 +621,4 @@ void vtkXMLStructuredDataWriter::CalculatePieceFractions(float* fractions)
     fractions[i + 1] = fractions[i + 1] / fractions[this->NumberOfPieces];
   }
 }
+VTK_ABI_NAMESPACE_END

@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkVertex.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkVertex
  * @brief   a cell that represents a 3D point
@@ -25,6 +13,7 @@
 #include "vtkCell.h"
 #include "vtkCommonDataModelModule.h" // For export macro
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIncrementalPointLocator;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkVertex : public vtkCell
@@ -38,7 +27,7 @@ public:
    * Make a new vtkVertex object with the same information as this object.
    */
 
-  //@{
+  ///@{
   /**
    * See the vtkCell API for descriptions of these methods.
    */
@@ -55,7 +44,14 @@ public:
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
   double* GetParametricCoords() override;
-  //@}
+  ///@}
+
+  /**
+   * This method does nothing.
+   *
+   * \return 1 if inflation was successful, 0 if no inflation was performed
+   */
+  int Inflate(double) override { return 0; }
 
   /**
    * Given parametric coordinates of a point, return the closest cell
@@ -93,7 +89,7 @@ public:
    * Triangulate the vertex. This method fills pts and ptIds with information
    * from the only point in the vertex.
    */
-  int Triangulate(int index, vtkIdList* ptIds, vtkPoints* pts) override;
+  int TriangulateLocalIds(int index, vtkIdList* ptIds) override;
 
   /**
    * Get the derivative of the vertex. Returns (0.0, 0.0, 0.0) for all
@@ -104,7 +100,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[1]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[3]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -117,11 +113,11 @@ public:
   {
     vtkVertex::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
+  ///@}
 
 protected:
   vtkVertex();
-  ~vtkVertex() override {}
+  ~vtkVertex() override = default;
 
 private:
   vtkVertex(const vtkVertex&) = delete;
@@ -135,4 +131,5 @@ inline int vtkVertex::GetParametricCenter(double pcoords[3])
   return 0;
 }
 
+VTK_ABI_NAMESPACE_END
 #endif

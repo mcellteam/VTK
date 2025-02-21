@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkPath.h
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 /**
  * @class   vtkPath
  * @brief   concrete dataset representing a path defined by Bezier
@@ -27,6 +15,7 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkPointSet.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 class vtkIntArray;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkPath : public vtkPointSet
@@ -64,22 +53,22 @@ public:
     CUBIC_CURVE
   };
 
-  //@{
+  ///@{
   /**
    * Insert the next control point in the path.
    */
   void InsertNextPoint(float pts[3], int code);
   void InsertNextPoint(double pts[3], int code);
   void InsertNextPoint(double x, double y, double z, int code);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the array of control point codes:
    */
   void SetCodes(vtkIntArray*);
   vtkIntArray* GetCodes();
-  //@}
+  ///@}
 
   /**
    * vtkPath doesn't use cells. These methods return trivial values.
@@ -90,6 +79,7 @@ public:
   void GetCell(vtkIdType, vtkGenericCell*) override;
   int GetCellType(vtkIdType) override { return 0; }
 
+  using vtkDataSet::GetCellPoints;
   /**
    * vtkPath doesn't use cells, this method just clears ptIds.
    */
@@ -105,6 +95,15 @@ public:
    */
   int GetMaxCellSize() override { return 0; }
 
+  ///@{
+  /**
+   * Get the maximum/minimum spatial dimensionality of the data
+   * which is the maximum/minimum dimension of all cells.
+   */
+  int GetMaxSpatialDimension() override { return 0; }
+  int GetMinSpatialDimension() override { return 0; }
+  ///@}
+
   /**
    * Method allocates initial storage for points. Use this method before the
    * method vtkPath::InsertNextPoint().
@@ -117,13 +116,13 @@ public:
    */
   void Reset();
 
-  //@{
+  ///@{
   /**
    * Retrieve an instance of this class from an information object.
    */
   static vtkPath* GetData(vtkInformation* info);
   static vtkPath* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
 protected:
   vtkPath();
@@ -134,4 +133,5 @@ private:
   void operator=(const vtkPath&) = delete;
 };
 
+VTK_ABI_NAMESPACE_END
 #endif

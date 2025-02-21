@@ -1,17 +1,5 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    vtkResampleWithDataSet.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+// SPDX-License-Identifier: BSD-3-Clause
 #include "vtkResampleWithDataSet.h"
 
 #include "vtkCellData.h"
@@ -21,6 +9,7 @@
 #include "vtkCompositeDataSetRange.h"
 #include "vtkDataObject.h"
 #include "vtkDataSet.h"
+#include "vtkGarbageCollector.h"
 #include "vtkIdList.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -33,9 +22,10 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkUnsignedCharArray.h"
 
+VTK_ABI_NAMESPACE_BEGIN
 vtkObjectFactoryNewMacro(vtkResampleWithDataSet);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkResampleWithDataSet::vtkResampleWithDataSet()
   : MarkBlankPointsAndCells(true)
 {
@@ -43,29 +33,29 @@ vtkResampleWithDataSet::vtkResampleWithDataSet()
   this->SetNumberOfOutputPorts(1);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkResampleWithDataSet::~vtkResampleWithDataSet() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResampleWithDataSet::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   this->Prober->PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResampleWithDataSet::SetSourceConnection(vtkAlgorithmOutput* algOutput)
 {
   this->SetInputConnection(1, algOutput);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResampleWithDataSet::SetSourceData(vtkDataObject* input)
 {
   this->SetInputData(1, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResampleWithDataSet::SetCategoricalData(bool arg)
 {
   this->Prober->SetCategoricalData(arg);
@@ -73,9 +63,7 @@ void vtkResampleWithDataSet::SetCategoricalData(bool arg)
 
 bool vtkResampleWithDataSet::GetCategoricalData()
 {
-  // work around for Visual Studio warning C4800:
-  // 'int' : forcing value to bool 'true' or 'false' (performance warning)
-  return this->Prober->GetCategoricalData() ? true : false;
+  return this->Prober->GetCategoricalData() != 0;
 }
 
 void vtkResampleWithDataSet::SetPassCellArrays(bool arg)
@@ -85,9 +73,7 @@ void vtkResampleWithDataSet::SetPassCellArrays(bool arg)
 
 bool vtkResampleWithDataSet::GetPassCellArrays()
 {
-  // work around for Visual Studio warning C4800:
-  // 'int' : forcing value to bool 'true' or 'false' (performance warning)
-  return this->Prober->GetPassCellArrays() ? true : false;
+  return this->Prober->GetPassCellArrays() != 0;
 }
 
 void vtkResampleWithDataSet::SetPassPointArrays(bool arg)
@@ -97,7 +83,7 @@ void vtkResampleWithDataSet::SetPassPointArrays(bool arg)
 
 bool vtkResampleWithDataSet::GetPassPointArrays()
 {
-  return this->Prober->GetPassPointArrays() ? true : false;
+  return this->Prober->GetPassPointArrays() != 0;
 }
 
 void vtkResampleWithDataSet::SetPassFieldArrays(bool arg)
@@ -107,7 +93,17 @@ void vtkResampleWithDataSet::SetPassFieldArrays(bool arg)
 
 bool vtkResampleWithDataSet::GetPassFieldArrays()
 {
-  return this->Prober->GetPassFieldArrays() ? true : false;
+  return this->Prober->GetPassFieldArrays() != 0;
+}
+
+void vtkResampleWithDataSet::SetPassPartialArrays(bool arg)
+{
+  this->Prober->SetPassPartialArrays(arg);
+}
+
+bool vtkResampleWithDataSet::GetPassPartialArrays()
+{
+  return this->Prober->GetPassPartialArrays();
 }
 
 void vtkResampleWithDataSet::SetCellLocatorPrototype(vtkAbstractCellLocator* locator)
@@ -120,7 +116,7 @@ vtkAbstractCellLocator* vtkResampleWithDataSet::GetCellLocatorPrototype() const
   return this->Prober->GetCellLocatorPrototype();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkResampleWithDataSet::SetTolerance(double arg)
 {
   this->Prober->SetTolerance(arg);
@@ -141,13 +137,33 @@ bool vtkResampleWithDataSet::GetComputeTolerance()
   return this->Prober->GetComputeTolerance();
 }
 
-//----------------------------------------------------------------------------
+void vtkResampleWithDataSet::SetSnapToCellWithClosestPoint(bool arg)
+{
+  this->Prober->SetSnapToCellWithClosestPoint(arg);
+}
+
+bool vtkResampleWithDataSet::GetSnapToCellWithClosestPoint()
+{
+  return this->Prober->GetSnapToCellWithClosestPoint();
+}
+
+void vtkResampleWithDataSet::SetUseImplicitArrays(bool arg)
+{
+  this->Prober->SetUseImplicitArrays(arg);
+}
+
+bool vtkResampleWithDataSet::GetUseImplicitArrays()
+{
+  return this->Prober->GetUseImplicitArrays();
+}
+
+//------------------------------------------------------------------------------
 vtkMTimeType vtkResampleWithDataSet::GetMTime()
 {
   return std::max(this->Superclass::GetMTime(), this->Prober->GetMTime());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkResampleWithDataSet::RequestInformation(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -161,7 +177,7 @@ int vtkResampleWithDataSet::RequestInformation(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkResampleWithDataSet::RequestUpdateExtent(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector*)
 {
@@ -181,44 +197,64 @@ int vtkResampleWithDataSet::RequestUpdateExtent(
   return 1;
 }
 
-//----------------------------------------------------------------------------
-int vtkResampleWithDataSet::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
+//------------------------------------------------------------------------------
+int vtkResampleWithDataSet::FillInputPortInformation(int port, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkCompositeDataSet");
+
+  if (port == 1)
+  {
+    info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkHyperTreeGrid");
+  }
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkResampleWithDataSet::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataObject");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkResampleWithDataSet::GetMaskArrayName() const
 {
   return this->Prober->GetValidPointMaskArrayName();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 
 class MarkHiddenPoints
 {
 public:
-  MarkHiddenPoints(char* maskArray, vtkUnsignedCharArray* pointGhostArray)
+  MarkHiddenPoints(
+    char* maskArray, vtkUnsignedCharArray* pointGhostArray, vtkResampleWithDataSet* filter)
     : MaskArray(maskArray)
     , PointGhostArray(pointGhostArray)
+    , Filter(filter)
   {
   }
 
   void operator()(vtkIdType begin, vtkIdType end)
   {
+    bool isFirst = vtkSMPTools::GetSingleThread();
+    vtkIdType checkAbortInterval = std::min((end - begin) / 10 + 1, (vtkIdType)1000);
     for (vtkIdType i = begin; i < end; ++i)
     {
+      if (i % checkAbortInterval == 0)
+      {
+        if (isFirst)
+        {
+          this->Filter->CheckAbort();
+        }
+        if (this->Filter->GetAbortOutput())
+        {
+          break;
+        }
+      }
       if (!this->MaskArray[i])
       {
         this->PointGhostArray->SetValue(
@@ -230,24 +266,39 @@ public:
 private:
   char* MaskArray;
   vtkUnsignedCharArray* PointGhostArray;
+  vtkResampleWithDataSet* Filter;
 };
 
 class MarkHiddenCells
 {
 public:
-  MarkHiddenCells(vtkDataSet* data, char* maskArray, vtkUnsignedCharArray* cellGhostArray)
+  MarkHiddenCells(vtkDataSet* data, char* maskArray, vtkUnsignedCharArray* cellGhostArray,
+    vtkResampleWithDataSet* filter)
     : Data(data)
     , MaskArray(maskArray)
     , CellGhostArray(cellGhostArray)
+    , Filter(filter)
   {
   }
 
   void operator()(vtkIdType begin, vtkIdType end)
   {
     vtkIdList* cellPoints = this->PointIds.Local();
-
+    bool isFirst = vtkSMPTools::GetSingleThread();
+    vtkIdType checkAbortInterval = std::min((end - begin) / 10 + 1, (vtkIdType)1000);
     for (vtkIdType i = begin; i < end; ++i)
     {
+      if (i % checkAbortInterval == 0)
+      {
+        if (isFirst)
+        {
+          this->Filter->CheckAbort();
+        }
+        if (this->Filter->GetAbortOutput())
+        {
+          break;
+        }
+      }
       this->Data->GetCellPoints(i, cellPoints);
       vtkIdType npts = cellPoints->GetNumberOfIds();
       for (vtkIdType j = 0; j < npts; ++j)
@@ -256,7 +307,7 @@ public:
         if (!this->MaskArray[ptid])
         {
           this->CellGhostArray->SetValue(
-            i, this->CellGhostArray->GetValue(i) | vtkDataSetAttributes::HIDDENPOINT);
+            i, this->CellGhostArray->GetValue(i) | vtkDataSetAttributes::HIDDENCELL);
           break;
         }
       }
@@ -267,6 +318,7 @@ private:
   vtkDataSet* Data;
   char* MaskArray;
   vtkUnsignedCharArray* CellGhostArray;
+  vtkResampleWithDataSet* Filter;
 
   vtkSMPThreadLocalObject<vtkIdList> PointIds;
 };
@@ -288,7 +340,7 @@ void vtkResampleWithDataSet::SetBlankPointsAndCells(vtkDataSet* dataset)
   vtkUnsignedCharArray* pointGhostArray = dataset->GetPointGhostArray();
 
   vtkIdType numPoints = dataset->GetNumberOfPoints();
-  MarkHiddenPoints pointWorklet(mask, pointGhostArray);
+  MarkHiddenPoints pointWorklet(mask, pointGhostArray, this);
   vtkSMPTools::For(0, numPoints, pointWorklet);
 
   dataset->AllocateCellGhostArray();
@@ -300,11 +352,11 @@ void vtkResampleWithDataSet::SetBlankPointsAndCells(vtkDataSet* dataset)
   vtkNew<vtkIdList> cpts;
   dataset->GetCellPoints(0, cpts);
 
-  MarkHiddenCells cellWorklet(dataset, mask, cellGhostArray);
+  MarkHiddenCells cellWorklet(dataset, mask, cellGhostArray, this);
   vtkSMPTools::For(0, numCells, cellWorklet);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkResampleWithDataSet::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -317,6 +369,7 @@ int vtkResampleWithDataSet::RequestData(vtkInformation* vtkNotUsed(request),
 
   vtkDataObject* inDataObject = inInfo->Get(vtkDataObject::DATA_OBJECT());
   vtkDataObject* outDataObject = outInfo->Get(vtkDataObject::DATA_OBJECT());
+  this->Prober->SetContainerAlgorithm(this);
   if (inDataObject->IsA("vtkDataSet"))
   {
     vtkDataSet* input = vtkDataSet::SafeDownCast(inDataObject);
@@ -342,6 +395,10 @@ int vtkResampleWithDataSet::RequestData(vtkInformation* vtkNotUsed(request),
     using Opts = vtk::CompositeDataSetOptions;
     for (auto node : vtk::Range(input, Opts::SkipEmptyNodes))
     {
+      if (this->CheckAbort())
+      {
+        break;
+      }
       vtkDataSet* ds = static_cast<vtkDataSet*>(node.GetDataObject());
       if (ds)
       {
@@ -363,3 +420,12 @@ int vtkResampleWithDataSet::RequestData(vtkInformation* vtkNotUsed(request),
 
   return 1;
 }
+
+//------------------------------------------------------------------------------
+void vtkResampleWithDataSet::ReportReferences(vtkGarbageCollector* collector)
+{
+  this->Superclass::ReportReferences(collector);
+  // A reference cycle with Prober exists via the pipeline
+  vtkGarbageCollectorReport(collector, this->Prober, "Prober");
+}
+VTK_ABI_NAMESPACE_END
